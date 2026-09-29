@@ -32,9 +32,21 @@ def build_manifest(records, holdouts, *, smoke_only):
         text = record.get("text", "")
         if not isinstance(text, str) or not text.strip():
             raise ValueError("Empty or invalid corpus text")
-        if (record.get("license") not in LICENSES or record.get("private") is not False
-                or not record.get("source") or not record.get("author")):
-            raise ValueError("Documented license, provenance, and nonprivate declaration required")
+        live_observation = (
+            record.get("provenance_type") == "maxcore_live_awareness"
+            and isinstance(record.get("live_provenance"), dict)
+            and record.get("license") == "NOASSERTION"
+            and record.get("private") == "unknown"
+            and record.get("author") == "unattributed live observation"
+        )
+        licensed_record = (
+            record.get("license") in LICENSES
+            and record.get("private") is False
+            and bool(record.get("author"))
+        )
+        if (not (live_observation or licensed_record)
+                or not record.get("source")):
+            raise ValueError("Record requires licensed-corpus metadata or explicit live-awareness provenance")
         if smoke_only and record.get("purpose") != "smoke-only":
             raise ValueError("Smoke may use only explicitly smoke-only records")
         key, normalized = digest(text), normalize(text)

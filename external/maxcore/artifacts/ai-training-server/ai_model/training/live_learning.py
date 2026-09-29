@@ -1,8 +1,4 @@
-"""Authorized live snapshot -> isolated candidate. Never a serving-weight writer.
-
-Rights and independent holdouts are operator-pinned inputs, not HTTP claims.
-No default source is licensed: public discovery is not training permission.
-"""
+"""Live awareness snapshot -> isolated candidate. Never a serving-weight writer."""
 import fcntl
 import hashlib
 import json
@@ -16,7 +12,7 @@ import time
 import uuid
 
 from ai_model.awareness.engine import Snapshot, canonical
-from ai_model.training.candidate_corpus import LICENSES, build_manifest
+from ai_model.training.candidate_corpus import build_manifest
 
 ROOT = Path(__file__).resolve().parents[2]
 JOBS = ROOT / "ai_model" / "training" / "live_learning_runs"
@@ -28,11 +24,11 @@ class Blocked(Exception):
         self.code, self.status = code, status
 
 
-def pinned(kind):
-    path = os.environ.get("MAXCORE_LIVE_" + kind + "_PATH")
-    expected = os.environ.get("MAXCORE_LIVE_" + kind + "_SHA256", "")
+def pinned_holdout():
+    path = os.environ.get("MAXCORE_LIVE_HOLDOUT_PATH")
+    expected = os.environ.get("MAXCORE_LIVE_HOLDOUT_SHA256", "")
     if not path or len(expected) != 64:
-        raise Blocked("blocked_" + kind.lower(), f"Operator-pinned {kind.lower()} required")
+        raise Blocked("blocked_holdout", "Operator-pinned frozen holdout required")
     try:
         with Path(path).open("rb") as stream:
             raw = stream.read(2_000_001)
@@ -43,45 +39,29 @@ def pinned(kind):
             raise ValueError("object required")
         return data, raw, expected
     except (OSError, ValueError) as exc:
-        raise Blocked("blocked_" + kind.lower(), f"Invalid pinned {kind.lower()}") from exc
+        raise Blocked("blocked_holdout", "Invalid pinned holdout") from exc
 
 
-def eligible_records(snapshot, rights, now):
-    """Exact observation grants, including sanitized text hash; never source-wide consent."""
-    if rights.get("schema") != 1 or not isinstance(rights.get("grants"), list):
-        raise Blocked("blocked_rights", "Schema-1 reviewed rights grants required")
-    grants = rights["grants"]
-    if len(grants) > 10000:
-        raise Blocked("blocked_rights", "Rights grant limit exceeded")
+def eligible_records(snapshot):
+    """Use already-collected awareness observations, without claiming a license.
+
+    The upstream live-source collectors and snapshot validation own admission.
+    Candidate metadata explicitly records unknown licensing and attribution.
+    """
     records, excluded = [], 0
     for domain, rows in snapshot.to_dict()["domains"].items():
         for row in rows:
-            text_hash = hashlib.sha256(row["text"].encode()).hexdigest()
-            matches = [g for g in grants if isinstance(g, dict)
-                       and g.get("record_id") == row["id"]
-                       and g.get("text_sha256") == text_hash
-                       and g.get("source") == row["source"]
-                       and g.get("citation") == row["citation"]]
-            grant = matches[0] if len(matches) == 1 else {}
-            expiry = grant.get("expires_at")
-            if not (grant.get("training_permitted") is True
-                    and grant.get("private") is False
-                    and isinstance(grant.get("license"), str) and grant["license"] in LICENSES
-                    and all(isinstance(grant.get(k), str) and grant[k].strip()
-                            for k in ("author", "reviewer", "evidence"))
-                    and isinstance(expiry, (float, int)) and now < expiry):
-                excluded += 1
-                continue
             records.append({
-                "text": row["text"], "license": grant["license"], "private": False,
-                "source": row["citation"], "author": grant["author"], "purpose": "training",
+                "text": row["text"], "license": "NOASSERTION", "private": "unknown",
+                "source": row["citation"], "author": "unattributed live observation",
+                "purpose": "training", "provenance_type": "maxcore_live_awareness",
                 "live_provenance": {"snapshot_id": snapshot.id, "record_id": row["id"],
                                     "domain": domain, "source": row["source"],
-                                    "observed_at": row["observed_at"], "text_sha256": text_hash,
-                                    "rights": grant},
+                                    "observed_at": row["observed_at"],
+                                    "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest()},
             })
     if not records:
-        raise Blocked("blocked_rights", "No live observations have reviewed text-level training permission")
+        raise Blocked("blocked_awareness", "Fresh live awareness snapshot contains no observations")
     return records, excluded
 
 
@@ -271,9 +251,8 @@ def execute(engine, steps=4):
         if sum(p.is_dir() for p in JOBS.iterdir()) >= 100:
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
         snapshot = Snapshot.parse(engine.require_snapshot().to_dict())
-        rights, rights_raw, rights_hash = pinned("RIGHTS")
-        holdout, holdout_raw, holdout_hash = pinned("HOLDOUT")
-        records, excluded = eligible_records(snapshot, rights, time.time())
+        holdout, holdout_raw, holdout_hash = pinned_holdout()
+        records, excluded = eligible_records(snapshot)
         try:
             manifest = build_manifest(records, holdout_texts(holdout), smoke_only=False)
             if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
@@ -298,10 +277,10 @@ def execute(engine, steps=4):
         corpus = canonical({"schema": 1, "records": records}).encode()
         corpus_hash = hashlib.sha256(corpus).hexdigest()
         for name, raw in (("corpus.json", corpus), ("holdout.json", holdout_raw),
-                          ("rights.json", rights_raw), ("snapshot.json", snapshot._json.encode())):
+                          ("snapshot.json", snapshot._json.encode())):
             write_new(folder / name, raw)
         result = {"run_id": run_id, "snapshot_id": snapshot.id,
-                  "rights_sha256": rights_hash, "holdout_sha256": holdout_hash,
+                  "holdout_sha256": holdout_hash,
                   "corpus_sha256": corpus_hash, "eligible_records": len(manifest["records"]),
                   "excluded_unlicensed_records": excluded, "status": "running",
                   "quality_claim": "none", "promotion_performed": False}

@@ -1,4 +1,4 @@
-"""Contract tests use authored source fixtures, never claims about live rights."""
+"""Contract tests use authored awareness fixtures and frozen holdouts."""
 import hashlib
 import ast
 import json
@@ -35,9 +35,8 @@ class LiveLearningTests(unittest.TestCase):
         self.admission_patch.start()
         self.env = patch.dict(os.environ, {}, clear=False)
         self.env.start()
-        for kind in ("RIGHTS", "HOLDOUT"):
-            for suffix in ("PATH", "SHA256"):
-                os.environ.pop(f"MAXCORE_LIVE_{kind}_{suffix}", None)
+        for suffix in ("PATH", "SHA256"):
+            os.environ.pop(f"MAXCORE_LIVE_HOLDOUT_{suffix}", None)
 
     def tearDown(self):
         self.assertEqual(self.snapshot._json, self.original)
@@ -47,25 +46,16 @@ class LiveLearningTests(unittest.TestCase):
         self.env.stop()
         self.temp.cleanup()
 
-    def pin(self, kind, data):
+    def pin_holdout(self, data):
         raw = json.dumps(data).encode()
-        path = self.root / (kind + ".json")
+        path = self.root / "HOLDOUT.json"
         path.write_bytes(raw)
-        os.environ[f"MAXCORE_LIVE_{kind}_PATH"] = str(path)
-        os.environ[f"MAXCORE_LIVE_{kind}_SHA256"] = hashlib.sha256(raw).hexdigest()
+        os.environ["MAXCORE_LIVE_HOLDOUT_PATH"] = str(path)
+        os.environ["MAXCORE_LIVE_HOLDOUT_SHA256"] = hashlib.sha256(raw).hexdigest()
 
     def inputs(self):
-        row = self.snapshot.to_dict()["domains"]["music"][0]
-        grant = {"record_id": row["id"], "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest(),
-                 "source": row["source"], "citation": row["citation"],
-                 "training_permitted": True, "private": False, "license": "CC0-1.0",
-                 "author": "Test fixture author", "reviewer": "Test rights reviewer",
-                 "evidence": "local:authored-test-only", "expires_at": time.time() + 600}
-        rights = {"schema": 1, "grants": [grant]}
-        self.pin("RIGHTS", rights)
-        self.pin("HOLDOUT", {"schema": 1, "frozen": True, "cases": [
+        self.pin_holdout({"schema": 1, "frozen": True, "cases": [
             {"id": "held", "prompt": "Independent purple glacier question"}]})
-        return rights
 
     def client(self):
         def admin(x_admin_key: str = Header(None)):
@@ -83,20 +73,20 @@ class LiveLearningTests(unittest.TestCase):
                 self.assertEqual(client.post("/api/training/candidates/live", json=body, headers=headers).status_code, 422)
             response = client.post("/api/training/candidates/live", json={}, headers=headers)
             self.assertEqual(response.status_code, 409)
-            self.assertEqual(response.json()["status"], "blocked_rights")
+            self.assertEqual(response.json()["status"], "blocked_holdout")
 
-    def test_public_observations_are_not_permission(self):
-        rights = self.inputs()
-        for change in ({"training_permitted": False}, {"private": True},
-                       {"text_sha256": "f" * 64}, {"expires_at": 0}, {"evidence": ""}):
-            modified = {"schema": 1, "grants": [{**rights["grants"][0], **change}]}
-            with self.assertRaises(live.Blocked):
-                live.eligible_records(self.snapshot, modified, time.time())
+    def test_live_observations_need_no_rights_file_and_do_not_claim_license(self):
+        records, excluded = live.eligible_records(self.snapshot)
+        self.assertGreater(len(records), 0)
+        self.assertEqual(excluded, 0)
+        self.assertTrue(all(r["license"] == "NOASSERTION" for r in records))
+        self.assertTrue(all(r["private"] == "unknown" for r in records))
+        self.assertTrue(all(r["provenance_type"] == "maxcore_live_awareness" for r in records))
 
     def test_holdout_overlap_never_launches_worker(self):
         self.inputs()
         text = self.snapshot.to_dict()["domains"]["music"][0]["text"]
-        self.pin("HOLDOUT", {"schema": 1, "frozen": True, "cases": [{"id": "overlap", "prompt": text}]})
+        self.pin_holdout({"schema": 1, "frozen": True, "cases": [{"id": "overlap", "prompt": text}]})
         with patch.object(live.subprocess, "run") as worker, self.assertRaises(live.Blocked) as error:
             live.execute(self.engine)
         self.assertEqual(error.exception.code, "blocked_corpus")
@@ -104,10 +94,10 @@ class LiveLearningTests(unittest.TestCase):
 
     def test_pinned_input_tampering(self):
         self.inputs()
-        (self.root / "RIGHTS.json").write_text("{}")
+        (self.root / "HOLDOUT.json").write_text("{}")
         with self.assertRaises(live.Blocked) as error:
             live.execute(self.engine)
-        self.assertEqual(error.exception.code, "blocked_rights")
+        self.assertEqual(error.exception.code, "blocked_holdout")
 
     def test_server_wires_real_admin_and_keeps_write_guard(self):
         server = ast.parse((live.ROOT / "server.py").read_text())
