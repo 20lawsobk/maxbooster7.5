@@ -83,7 +83,7 @@ class ReleaseSelectionTests(unittest.TestCase):
         self.assertEqual(output, "promptcontinuation")
         model.generate.assert_called_once_with(
             "prompt", 12, temperature=.8, top_p=.92, top_k=20,
-            repetition_penalty=1.1, min_length=3, seed=42)
+            repetition_penalty=1.1, min_length=3, seed=42, snapshot_hash=None)
         with self.assertRaises(TypeError):
             adapter.generate("prompt", unsupported_sampling=True)
 
@@ -98,7 +98,7 @@ class ReleaseSelectionTests(unittest.TestCase):
             adapter.generate("x" * 129, max_new_tokens=1, temperature=.8, top_p=.92)
         model.backend.dispatch.assert_not_called()
 
-    def test_blocked_selected_release_health_returns_503(self):
+    def test_blocked_selected_release_health_remains_liveness(self):
         import time
         tree = ast.parse((ROOT / "server.py").read_text())
         node = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "health")
@@ -108,8 +108,10 @@ class ReleaseSelectionTests(unittest.TestCase):
                  "_get_storage_mode": lambda: "offline"}
         exec(compile(ast.Module(body=[node], type_ignores=[]), "server.py", "exec"), scope)
         response = asyncio.run(scope["health"]())
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(json.loads(response.body)["status"], "unready")
+        self.assertEqual(response["status"], "healthy")
+        self.assertTrue(response["model_blocked"])
+        self.assertFalse(response["model_loaded"])
+        self.assertEqual(response["readiness_endpoint"], "/ready")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modelAuthHeaders, modelOwnedBody } from "../../external/maxcore/artifacts/api-server/src/config/model-auth.js";
+import { boundGenerationOwner, modelAuthHeaders, modelOwnedBody } from "../../external/maxcore/artifacts/api-server/src/config/model-auth.js";
 
 describe("Node to Python private MaxCore channel", () => {
   it("forwards owner identity only with a loopback-authenticated private channel", () => {
@@ -50,5 +50,14 @@ describe("Node to Python private MaxCore channel", () => {
   it("preserves explicit remote credentials for upstream verification without substituting keys", () => {
     expect(modelAuthHeaders({ authorization: "Bearer external-key" }, "127.0.0.1", "private-key"))
       .toEqual({ Authorization: "Bearer external-key" });
+  });
+
+  it("binds server-credential generation to the local channel owner", () => {
+    const headers = { authorization: "Bearer private-key", "x-maxcore-user-id": "creator" };
+    expect(boundGenerationOwner(headers, "::1", "creator", "private-key")).toBe("creator");
+    expect(boundGenerationOwner(headers, "::1", "victim", "private-key")).toBeNull();
+    expect(boundGenerationOwner(headers, "203.0.113.1", "creator", "private-key")).toBeNull();
+    expect(boundGenerationOwner({ "x-api-key": "public-key", "x-maxcore-user-id": "creator" },
+      "::1", "creator", "private-key")).toBeNull();
   });
 });

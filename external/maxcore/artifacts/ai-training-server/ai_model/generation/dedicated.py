@@ -117,15 +117,19 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
 
 
 def cleanup_owned_scratch(record):
-    """Only the per-job allocation can be deleted, never renderer caches/globs."""
+    """Return False for blocked owned cleanup; unrelated paths are not owned."""
     if not record.get("scratch_owned") or not record.get("scratch_path") or not record.get("scratch_root"):
-        return
+        return True
     path = Path(record["scratch_path"])
     root = Path(record["scratch_root"]).resolve()
-    if (path.parent.resolve() != root or not path.name.startswith("dedicated_")
-            or path.is_symlink()):
-        return
+    if path.parent.resolve() != root or not path.name.startswith("dedicated_"):
+        return True
+    # An otherwise owned allocation replaced by a link cannot be safely
+    # cleaned. Retain its journal so cleanup can retry after safe replacement.
+    if path.is_symlink():
+        return False
     path.unlink(missing_ok=True)
+    return True
 
 
 def interrupt_render(record, *, persist_job):
@@ -151,5 +155,5 @@ def deliver(record, *, persist_job, read_job, committer=None):
     if cancelled():
         raise RenderCancelled("Delivery cancelled")
     persist_job(job_id, {**record, "status": "done", "result": receipt})
-    Path(record["scratch_path"]).unlink(missing_ok=True)
+    cleanup_owned_scratch(record)
     return receipt

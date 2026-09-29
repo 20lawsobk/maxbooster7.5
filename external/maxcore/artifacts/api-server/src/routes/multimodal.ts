@@ -11,6 +11,7 @@ import {
   type GenerationEnrichment,
 } from "../services/autoPostGenerator.js";
 import { MAXCORE_URL, MAXCORE_API_KEY } from "../config/maxcore.js";
+import { boundGenerationOwner, modelAuthHeaders } from "../config/model-auth.js";
 
 const router: IRouter = Router();
 
@@ -399,11 +400,12 @@ async function maxcorePost(path: string, body: unknown): Promise<unknown> {
   return res.json();
 }
 
-async function maxcoreGet(path: string): Promise<unknown> {
+async function maxcoreGet(path: string, timeoutMs: number): Promise<unknown> {
   const res = await undiciFetch(`${MAXCORE_URL}${path}`, {
     method: "GET",
     headers: { "X-Api-Key": MAXCORE_API_KEY },
     dispatcher: _modelPool,
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const err = await res.text().catch(() => res.statusText);
@@ -417,7 +419,7 @@ async function maxcoreGet(path: string): Promise<unknown> {
  * Returns the audio URL when done. Exploits the fast-path: if the POST
  * response already has status:"done" and a url (cache hit), returns
  * immediately without a single poll. Otherwise polls /api/audio-job/:id
- * every 300 ms until done or timeout.
+ * every 300 ms until terminal status or the synchronous request budget expires.
  */
 async function renderAudioJob(
   genre: string,
@@ -440,13 +442,17 @@ async function renderAudioJob(
   const jobId = submit["job_id"] as string | undefined;
   if (!jobId) return null;
 
-  // Poll until done or timeout.
+  // This endpoint is synchronous; do not leave its HTTP request open forever
+  // when an asynchronous render is stalled. The upstream job is not cancelled.
   const deadline = Date.now() + timeoutMs;
   const POLL_MS = 300;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_MS));
     try {
-      const job = (await maxcoreGet(`/api/audio-job/${jobId}`)) as JobResp;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      const job = (await maxcoreGet(`/api/audio-job/${encodeURIComponent(jobId)}`,
+        Math.min(10_000, remaining))) as JobResp;
       if (job["status"] === "done" && typeof job["url"] === "string") {
         return job["url"] as string;
       }
@@ -454,11 +460,14 @@ async function renderAudioJob(
         return null;
       }
     } catch (error) {
-      if ((error as { status?: number }).status === 503) throw error;
+      if ((error as { status?: number }).status === 503 ||
+          (error as { status?: number }).status === 401 ||
+          (error as { status?: number }).status === 403 ||
+          (error as { status?: number }).status === 404) throw error;
       // Non-dependency transient polling errors may be retried.
     }
   }
-  return null; // timed out
+  return null;
 }
 
 // ─── Step 1: Normalize input via maxcore /analyze ─────────────────────────────
@@ -634,7 +643,7 @@ const audioWorker = {
       const url = await renderAudioJob(genre, maxDuration, awareness ?? undefined);
       if (!url) {
         throw new Error(
-          `audio generation failed (genre=${genre}, duration=${maxDuration}s): job errored or timed out`,
+          `audio generation failed (genre=${genre}, duration=${maxDuration}s): job errored, was cancelled, or exceeded the synchronous wait budget`,
         );
       }
       return [
@@ -950,6 +959,18 @@ router.get("/multimodal/packs", (_req: Request, res: Response) => {
 
 router.post("/multimodal/generate", async (req: Request, res: Response) => {
   const body = req.body as Partial<GenerationRequest>;
+  // This route uses the server's own model credential for all fan-out calls.
+  // Therefore only the private gateway's authenticated owner may select the
+  // user identity; arbitrary public API credentials cannot impersonate it.
+  const owner = modelAuthHeaders(req.headers, req.socket.remoteAddress)?.["X-MaxCore-User-Id"];
+  if (!owner || !MAXCORE_API_KEY) {
+    res.status(401).json({ error: "Authenticated MaxCore user identity is required" });
+    return;
+  }
+  if (!boundGenerationOwner(req.headers, req.socket.remoteAddress, body?.userId)) {
+    res.status(403).json({ error: "Generation userId does not match authenticated identity" });
+    return;
+  }
 
   if (
     !body.id ||

@@ -1,4 +1,4 @@
-"""Real WAV bytes and production commit validation; only private transport is doubled."""
+"""Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim."""
 import ast
 import asyncio
 import json
@@ -16,9 +16,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ai_model.generation.dedicated import deliver, render, interrupt_render, cleanup_owned_scratch
 from ai_model.generation.owner import verify_owner
 from ai_model.media_contract import commit_artifact, RenderCancelled
+from ai_model.awareness import bind
+from ai_model.generation.plan import GenerationPlan, active_plan
+from test_generation_route_bindings import snapshot
 
 
 class DeliveryTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(bind(snapshot()))
+        token = active_plan.set(GenerationPlan.from_request({}, "audio", "test-checkpoint"))
+        self.addCleanup(active_plan.reset, token)
+
     def test_actual_invalid_compact_image_control_is_terminal_failed(self):
         with tempfile.TemporaryDirectory() as directory:
             journal = Path(directory) / "invalid.json"
@@ -43,7 +51,7 @@ class DeliveryTests(unittest.TestCase):
             def persist(job, record):
                 transitions.append(record["status"])
                 journal.write_text(json.dumps(record))
-            def broken(path, *, job_id):
+            def broken(path, *, job_id, bpm=None):
                 path.write_bytes(b"partial encoded bytes")
                 raise ValueError("Decoded artifact validation failed")
             with patch("ai_model.audio.controls.render_audio", new=broken):
@@ -61,7 +69,7 @@ class DeliveryTests(unittest.TestCase):
             journal = Path(directory) / "pending.json"
             def persist(job, record):
                 journal.write_text(json.dumps(record))
-            def rendered(path, *, job_id):
+            def rendered(path, *, job_id, bpm=None):
                 with wave.open(str(path), "wb") as wav:
                     wav.setnchannels(1)
                     wav.setsampwidth(2)
@@ -158,7 +166,7 @@ class DeliveryTests(unittest.TestCase):
 
     def test_commit_journal_then_cleanup_and_delivery_only_recovery(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "actual.wav"
+            path = Path(directory) / "dedicated_actual.wav"
             with wave.open(str(path), "wb") as wav:
                 wav.setnchannels(1)
                 wav.setsampwidth(2)
@@ -166,7 +174,8 @@ class DeliveryTests(unittest.TestCase):
                 wav.writeframes(b"\x01\x00" * 800)
             journal = Path(directory) / "job.json"
             record = {"job_id": "stable-job", "owner_id": "owner-a", "status": "committing",
-                      "type": "audio", "scratch_path": str(path), "content_type": "audio/wav"}
+                      "type": "audio", "scratch_path": str(path), "content_type": "audio/wav",
+                      "scratch_owned": True, "scratch_root": directory}
             def persist(job_id, value):
                 self.assertTrue(path.exists(), "scratch must survive until durable journal save")
                 journal.write_text(json.dumps(value))
@@ -195,6 +204,19 @@ class DeliveryTests(unittest.TestCase):
             deliver({"job_id": "cancelled"}, persist_job=lambda *a: self.fail("must not publish"),
                     read_job=lambda job: {"status": "cancelled"},
                     committer=lambda *a, **k: self.fail("must not deliver"))
+
+    def test_successful_delivery_does_not_delete_unowned_renderer_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "shared-cache.wav"
+            path.write_bytes(b"shared fixture")
+            record = {"job_id": "shared", "owner_id": "owner", "status": "committing",
+                      "scratch_path": str(path), "type": "audio", "content_type": "audio/wav"}
+            saved = []
+            deliver(record, persist_job=lambda job, value: saved.append(value),
+                    read_job=lambda job: record,
+                    committer=lambda *args, **kwargs: {"durable": True, "retrievable": True})
+            self.assertEqual(saved[-1]["status"], "done")
+            self.assertTrue(path.exists())
 
 
 if __name__ == "__main__":

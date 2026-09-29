@@ -8,9 +8,11 @@ const CHANNEL_BROADCAST = "ws:broadcast";
 
 let publisher: {
   publish: (channel: string, msg: string) => Promise<unknown>;
+  quit?: () => Promise<unknown>;
 } | null = null;
 let subscriber: {
   subscribe: (...channels: string[]) => Promise<unknown>;
+  quit?: () => Promise<unknown>;
   on: (event: string, cb: (...args: unknown[]) => void) => void;
 } | null = null;
 let _ready = false;
@@ -33,9 +35,14 @@ export async function initRedisPubSub(): Promise<void> {
   // PDIM is the sole backend — use it for pub/sub directly (no ioredis socket)
   if (isPdimConfigured()) {
     try {
-      publisher = getPdimClient();
+      publisher = getPdimClient().duplicate();
       subscriber = getPdimClient().duplicate() as unknown as typeof subscriber;
-      // PDIM subscribe is HTTP-polled; register message handler if supported
+      subscriber?.on?.("pubsub-error", () => {
+        _ready = false;
+      });
+      subscriber?.on?.("pubsub-ready", () => {
+        _ready = true;
+      });
       subscriber?.on?.("message", (...args: unknown[]) => {
         const [channel, message] = args as [string, string];
         try {
@@ -56,7 +63,7 @@ export async function initRedisPubSub(): Promise<void> {
       );
     } catch (err) {
       logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${(err as any)?.message}`);
-      _ready = !!publisher;
+      _ready = false;
     }
     return;
   }
@@ -126,8 +133,11 @@ export async function publishUserNotification(
       CHANNEL_USER,
       JSON.stringify({ userId, notification }),
     );
-  } catch {
-    // silent — local delivery still works
+  } catch (err) {
+    _ready = false;
+    logger.warn(
+      `[WS PubSub] User notification publish failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -138,21 +148,24 @@ export async function publishBroadcast(notification: object): Promise<void> {
       CHANNEL_BROADCAST,
       JSON.stringify({ notification }),
     );
-  } catch {
-    // silent
+  } catch (err) {
+    _ready = false;
+    logger.warn(
+      `[WS PubSub] Broadcast publish failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
 export async function closePubSub(): Promise<void> {
   try {
-    if ((subscriber as any)?.quit) await (subscriber as any)?.quit();
+    await subscriber?.quit?.();
   } catch {
-    /* ignore */
+    logger.warn("[WS PubSub] Subscriber shutdown failed");
   }
   try {
-    if ((publisher as any)?.quit) await (publisher as any)?.quit();
+    await publisher?.quit?.();
   } catch {
-    /* ignore */
+    logger.warn("[WS PubSub] Publisher shutdown failed");
   }
   subscriber = null;
   publisher = null;

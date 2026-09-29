@@ -59,7 +59,10 @@ async function runWorker(
   const code = await new Promise<number | null>((resolve, reject) => {
     const timeout = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error("retained PDIM simulation worker timed out"));
+      reject(new Error(
+        `retained PDIM simulation worker timed out (${expectedMarker}); ` +
+        `stdout=${stdout.slice(-5_000)}; stderr=${stderr.slice(-5_000)}`,
+      ));
     }, 60_000);
     child.once("close", value => {
       clearTimeout(timeout);

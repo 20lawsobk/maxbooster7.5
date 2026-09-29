@@ -466,6 +466,14 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
   return next;
 }
 
+/**
+ * Long-lived blocking commands must not occupy a normal direct-command lane.
+ * Producers and Lua callbacks need that lane to mutate the queue and wake them.
+ */
+function _enqueueBlockingExec<T>(fn: () => Promise<T>): Promise<T> {
+  return Promise.resolve().then(fn);
+}
+
 // ── Script fast-lane ──────────────────────────────────────────────────────────
 // LuaExecutor redis.call()s are already serialized by Atomics.wait() inside the
 // Worker thread — each call blocks the Worker until the main thread signals,
@@ -610,41 +618,6 @@ function _logNetworkError(cmd: unknown, msg: string): void {
   _lastNetErrorLoggedAt = now;
 }
 
-// ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
-// Secondary layer specifically for BZPOPMIN polling: ensures at most 1 ZPOPMIN
-// is queued into the global AIMD chain at a time, with a minimal per-worker jitter gap
-// between ZPOPMIN completions.  This prevents the BullMQ worker thundering-herd
-// where 6+ pollers all enqueue ZPOPMIN simultaneously, starving Lua callbacks.
-//
-// Combined with the global AIMD chain above, the effective behaviour is:
-//   ZPOPMIN: 1 at a time, min gap = Math.max(1, autoMultiplier) ms + current AIMD gap
-//   Everything else: queues behind ZPOPMIN, served at the current AIMD gap
-let _zpopminChain: Promise<unknown> = Promise.resolve();
-// PDIM rated for 120M req/s — minimal ZPOPMIN gap; BullMQ workers poll as fast
-// as PDIM can serve.  Keep the auto-multiplier as a 1ms-per-worker jitter guard
-// so workers on a many-core VM don't all wake simultaneously.
-// VM Reserve 4-core (mult=2):  2ms  → ~500 polls/sec max
-// VM Reserve 8-core (mult=4):  4ms  → ~250 polls/sec max
-// Autoscale 6-worker 4-core (mult=12): 12ms → ~83 polls/sec per worker
-const ZPOPMIN_MIN_GAP_MS = Math.max(1, autoMultiplier);
-
-function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
-  const next = _zpopminChain
-    .then(async () => {
-      const result = await fn();
-      // Enforce a minimum gap before the next caller is allowed to proceed.
-      await new Promise((r) => setTimeout(r, ZPOPMIN_MIN_GAP_MS));
-      return result;
-    })
-    .catch(async (err) => {
-      // Even on error, enforce the gap so a burst of rejections doesn't skip waits.
-      await new Promise((r) => setTimeout(r, ZPOPMIN_MIN_GAP_MS));
-      throw err;
-    });
-  _zpopminChain = next.catch(() => {}); // prevent unhandled rejection on chain
-  return next;
-}
-
 // ── L1 in-process read-through cache ─────────────────────────────────────────
 // Serves GET / HGET results from memory when PDIM is unavailable.
 // This keeps sessions alive and rate-limit state readable through brief PDIM
@@ -736,9 +709,9 @@ function _normalizeLuaResult(val: unknown): unknown {
 }
 
 /**
- * ioredis-style chainable pipeline builder returned by pipeline()/multi().
- * Every command method queues the command and returns the same Pipeline so
- * calls can be chained; exec() flushes the queued commands sequentially.
+ * ioredis-style chainable pipeline/transaction builder.
+ * pipeline() flushes commands sequentially; multi() sends one atomic owner
+ * transaction and returns ioredis-compatible [error, result] tuples.
  */
 interface Pipeline {
   get(k: string): Pipeline;
@@ -764,10 +737,250 @@ interface Pipeline {
   exec(): Promise<unknown[]>;
 }
 
+type PdimPubSubCallback = (error: Error | null, count: number) => void;
+
 export class PdimRedisClient extends EventEmitter {
   public status: string = "ready";
   private execUrl: string;
   private bearerToken: string;
+  private disconnected = false;
+  private readonly lifecycleController = new AbortController();
+  private readonly disconnectedError = Object.assign(
+    new Error("[PDIM] Redis client disconnected"),
+    { name: "ConnectionError" },
+  );
+  private readonly pubSubChannels = new Set<string>();
+  private readonly pubSubPatterns = new Set<string>();
+  private pubSubController: AbortController | null = null;
+  private pubSubTask: Promise<void> | null = null;
+  private pubSubGeneration = 0;
+  private pubSubRefreshChain: Promise<void> = Promise.resolve();
+
+  private assertConnected(): void {
+    if (this.disconnected) throw this.disconnectedError;
+  }
+
+  private requestSignal(timeoutMs: number | null = PDIM_EXEC_TIMEOUT_MS): AbortSignal {
+    if (timeoutMs === null) return this.lifecycleController.signal;
+    return AbortSignal.any([
+      this.lifecycleController.signal,
+      AbortSignal.timeout(timeoutMs),
+    ]);
+  }
+
+  private awaitOrDisconnect<T>(operation: Promise<T>): Promise<T> {
+    if (this.disconnected) return Promise.reject(this.disconnectedError);
+    return new Promise<T>((resolve, reject) => {
+      const cleanup = () => {
+        this.lifecycleController.signal.removeEventListener("abort", onAbort);
+      };
+      const onAbort = () => {
+        cleanup();
+        reject(this.disconnectedError);
+      };
+      this.lifecycleController.signal.addEventListener("abort", onAbort, { once: true });
+      operation.then(
+        (value) => {
+          cleanup();
+          resolve(value);
+        },
+        (error) => {
+          cleanup();
+          reject(error);
+        },
+      );
+    });
+  }
+
+  private delay(ms: number): Promise<void> {
+    if (this.disconnected) return Promise.reject(this.disconnectedError);
+    if (ms <= 0) return Promise.resolve();
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.lifecycleController.signal.removeEventListener("abort", onAbort);
+      };
+      const onAbort = () => {
+        cleanup();
+        reject(this.disconnectedError);
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+      this.lifecycleController.signal.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+
+  private refreshPubSubStream(): Promise<void> {
+    const next = this.pubSubRefreshChain.then(() => this.restartPubSubStream());
+    this.pubSubRefreshChain = next.catch(() => {});
+    return next;
+  }
+
+  private async restartPubSubStream(): Promise<void> {
+    this.assertConnected();
+    const generation = ++this.pubSubGeneration;
+    const previousController = this.pubSubController;
+    const previousTask = this.pubSubTask;
+    previousController?.abort();
+    if (previousTask) await previousTask;
+    this.pubSubController = null;
+    this.pubSubTask = null;
+
+    if (this.pubSubChannels.size + this.pubSubPatterns.size === 0) return;
+
+    const controller = new AbortController();
+    this.pubSubController = controller;
+    let resolveReady!: () => void;
+    let rejectReady!: (error: unknown) => void;
+    let settled = false;
+    const ready = new Promise<void>((resolve, reject) => {
+      resolveReady = resolve;
+      rejectReady = reject;
+    });
+    const markReady = () => {
+      if (settled) return;
+      settled = true;
+      resolveReady();
+    };
+    const rejectBeforeReady = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      rejectReady(error);
+    };
+    this.pubSubTask = this.runPubSubLoop(
+      controller,
+      generation,
+      markReady,
+      rejectBeforeReady,
+    );
+    await ready;
+  }
+
+  private async runPubSubLoop(
+    controller: AbortController,
+    generation: number,
+    markReady: () => void,
+    rejectBeforeReady: (error: unknown) => void,
+  ): Promise<void> {
+    let retryMs = 200;
+    let initialReady = false;
+    const isCurrent = () =>
+      !this.disconnected &&
+      !controller.signal.aborted &&
+      !this.lifecycleController.signal.aborted &&
+      generation === this.pubSubGeneration;
+
+    while (isCurrent()) {
+      let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      try {
+        const openTimeout = new AbortController();
+        const timer = setTimeout(
+          () => openTimeout.abort(new Error("PDIM Pub/Sub connection timed out")),
+          PDIM_EXEC_TIMEOUT_MS,
+        );
+        let response: Response;
+        try {
+          response = await fetch(this.execUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${this.bearerToken}`,
+            },
+            body: JSON.stringify({
+              cmd: "SUBSCRIBE",
+              args: [...this.pubSubChannels],
+              patterns: [...this.pubSubPatterns],
+              stream: true,
+            }),
+            signal: AbortSignal.any([
+              this.lifecycleController.signal,
+              controller.signal,
+              openTimeout.signal,
+            ]),
+            redirect: "manual",
+          });
+        } finally {
+          clearTimeout(timer);
+        }
+        if (!response.ok) {
+          const text = await response.text().catch(() => "");
+          throw new Error(`PDIM Pub/Sub HTTP ${response.status}: ${text.slice(0, 200)}`);
+        }
+        if (!response.body) throw new Error("PDIM Pub/Sub response has no stream body");
+        reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffered = "";
+
+        while (isCurrent()) {
+          const { done, value } = await reader.read();
+          if (done) throw new Error("PDIM Pub/Sub stream ended unexpectedly");
+          buffered += decoder.decode(value, { stream: true });
+          if (buffered.length > 1_048_576) {
+            throw new Error("PDIM Pub/Sub stream exceeded the client buffer limit");
+          }
+          let newline = buffered.indexOf("\n");
+          while (newline >= 0) {
+            const line = buffered.slice(0, newline);
+            buffered = buffered.slice(newline + 1);
+            newline = buffered.indexOf("\n");
+            if (!line) continue;
+            const event = JSON.parse(line) as Record<string, unknown>;
+            if (event.type === "ready") {
+              initialReady = true;
+              retryMs = 200;
+              markReady();
+              this.emit("pubsub-ready");
+            } else if (
+              event.type === "message" &&
+              typeof event.channel === "string" &&
+              typeof event.message === "string"
+            ) {
+              this.emit("message", event.channel, event.message);
+            } else if (
+              event.type === "pmessage" &&
+              typeof event.pattern === "string" &&
+              typeof event.channel === "string" &&
+              typeof event.message === "string"
+            ) {
+              this.emit("pmessage", event.pattern, event.channel, event.message);
+            } else if (event.type === "heartbeat") {
+              continue;
+            } else {
+              throw new Error("PDIM Pub/Sub stream returned an invalid event");
+            }
+          }
+        }
+      } catch (error) {
+        if (!isCurrent()) {
+          if (!initialReady) rejectBeforeReady(this.disconnectedError);
+          await reader?.cancel().catch(() => {});
+          return;
+        }
+        await reader?.cancel().catch(() => {});
+        if (!initialReady) rejectBeforeReady(error);
+        this.emit("pubsub-error", error);
+        logger.warn(
+          `[PDIM] Pub/Sub stream disconnected; retrying in ${retryMs}ms: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        await new Promise<void>((resolve) => {
+          const finish = () => {
+            clearTimeout(timer);
+            controller.signal.removeEventListener("abort", finish);
+            this.lifecycleController.signal.removeEventListener("abort", finish);
+            resolve();
+          };
+          const timer = setTimeout(finish, retryMs);
+          controller.signal.addEventListener("abort", finish, { once: true });
+          this.lifecycleController.signal.addEventListener("abort", finish, { once: true });
+        });
+        retryMs = Math.min(retryMs * 2, 30_000);
+      }
+    }
+  }
 
   /**
    * BullMQ reads this._client.options.keyPrefix to validate no prefix is set,
@@ -806,6 +1019,7 @@ export class PdimRedisClient extends EventEmitter {
     }
 
     setImmediate(() => {
+      if (this.disconnected) return;
       this.emit("connect");
       this.emit("ready");
       logger.info("✅ [PDIM] Connected via HTTP exec endpoint");
@@ -839,7 +1053,11 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
 
-  private exec<T = unknown>(command: unknown[]): Promise<T> {
+  private exec<T = unknown>(
+    command: unknown[],
+    options: { blocking?: boolean; requestTimeoutMs?: number | null } = {},
+  ): Promise<T> {
+    if (this.disconnected) return Promise.reject(this.disconnectedError);
     const [cmd, ...rawArgs] = command as (string | number | null | undefined)[];
     // PDIM's HTTP contract accepts only string arguments. An absent Redis value
     // is a result (`{ result: null }`), not a valid command argument. Rejecting
@@ -860,7 +1078,8 @@ export class PdimRedisClient extends EventEmitter {
     // Enqueue through the global serializer.  All PDIM HTTP requests from ALL
     // code paths (direct calls, LuaExecutor redis.call, bzpopmin) pass through
     // this single chain, executed one at a time with a 150ms gap between them.
-    return _enqueueExec(async () => {
+    const run = async () => {
+      this.assertConnected();
       // Rate-limit backoff is evaluated INSIDE the chain (at execution time, not
       // enqueue time).  This is critical: if all callers evaluated it at enqueue
       // time, they'd all clear the check simultaneously and still burst PDIM.
@@ -868,8 +1087,9 @@ export class PdimRedisClient extends EventEmitter {
       // backoff wait at a time, preventing the burst.
       const rlWait = PdimRedisClient?._rateLimitedUntil - Date?.now();
       if (rlWait > 0) {
-        await new Promise((r) => setTimeout(r, rlWait));
+        await this.delay(rlWait);
       }
+      this.assertConnected();
 
       let counted = false; // prevent double-counting in the catch block
       try {
@@ -880,7 +1100,7 @@ export class PdimRedisClient extends EventEmitter {
             Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: AbortSignal.timeout(PDIM_EXEC_TIMEOUT_MS),
+          signal: this.requestSignal(options.requestTimeoutMs),
           // Do not follow redirects automatically — if PDIM's proxy returns 302
           // (Replit redirecting to an error/login page when the service is down)
           // we need to see the raw 302 status so our 3xx handler can trip the
@@ -1010,6 +1230,7 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err) {
+        if (this.disconnected) throw this.disconnectedError;
         // AbortSignal.timeout() throws a TimeoutError (DOMException name='TimeoutError').
         // AbortController.abort() throws an AbortError (DOMException name='AbortError').
         // Neither should trip the circuit breaker — they indicate PDIM is slow/busy,
@@ -1045,10 +1266,18 @@ export class PdimRedisClient extends EventEmitter {
         throw err;
       }
       // Note: no finally/_freePdimSlot needed — _enqueueExec handles the chain gap
-    }) as unknown as Promise<T>;
+    };
+    const operation = options.blocking
+      ? _enqueueBlockingExec(run)
+      : _enqueueExec(run);
+    return this.awaitOrDisconnect(operation as Promise<T>);
   }
 
   pipeline(): Pipeline {
+    return this.createPipeline(false);
+  }
+
+  private createPipeline(transactional: boolean): Pipeline {
     const cmds: unknown[][] = [];
     const self = this;
     const pipe: Pipeline = {
@@ -1143,6 +1372,46 @@ export class PdimRedisClient extends EventEmitter {
       // throughput parallelism still comes from concurrent *different* pipelines
       // landing in different lanes.
       exec: async () => {
+        if (transactional) {
+          const commands = cmds.map((command) => {
+            if (command.some((arg) => arg === null || arg === undefined)) {
+              throw new TypeError(
+                "[PDIM] transaction received a nullish command argument",
+              );
+            }
+            return command.map((arg) => String(arg));
+          });
+          const reply = await self.exec([
+            "__PDIM_MULTI_EXEC",
+            JSON.stringify(commands),
+          ]);
+          if (!Array.isArray(reply) || reply.length !== commands.length) {
+            throw new Error("[PDIM] invalid transaction response");
+          }
+          return reply.map((item) => {
+            if (!Array.isArray(item) || item.length !== 2) {
+              throw new Error("[PDIM] invalid transaction result tuple");
+            }
+            const [rawError, value] = item;
+            if (rawError === null || rawError === undefined) {
+              return [null, value];
+            }
+            const errorValue: {
+              message?: unknown;
+              code?: unknown;
+              name?: unknown;
+            } = typeof rawError === "object" && rawError !== null
+              ? rawError as { message?: unknown; code?: unknown; name?: unknown }
+              : { message: rawError };
+            const error = new Error(String(errorValue.message ?? rawError));
+            if (typeof errorValue.name === "string") error.name = errorValue.name;
+            if (typeof errorValue.code === "string") {
+              Object.assign(error, { code: errorValue.code });
+            }
+            return [error, null];
+          });
+        }
+
         const results: unknown[] = [];
         for (const c of cmds) {
           try {
@@ -1160,7 +1429,7 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   multi() {
-    return this.pipeline();
+    return this.createPipeline(true);
   }
 
   duplicate() {
@@ -1169,15 +1438,29 @@ export class PdimRedisClient extends EventEmitter {
 
   // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
   async connect(): Promise<void> {
+    this.assertConnected();
     // PDIM is HTTP-based — already "connected" on construction; no-op here
     this.emit("connect");
     this.emit("ready");
   }
 
   async quit(): Promise<"OK"> {
+    await this.disconnect();
     return "OK";
   }
-  async disconnect(): Promise<void> {}
+  async disconnect(): Promise<void> {
+    if (this.disconnected) return;
+    this.disconnected = true;
+    this.status = "end";
+    this.pubSubGeneration++;
+    this.pubSubController?.abort(this.disconnectedError);
+    this.lifecycleController.abort(this.disconnectedError);
+    this.emit("close");
+    this.emit("end");
+    await this.pubSubTask?.catch(() => {});
+    this.pubSubTask = null;
+    this.pubSubController = null;
+  }
 
   /**
    * BullMQ calls defineCommand() to register Lua scripts as named commands.
@@ -1220,14 +1503,14 @@ export class PdimRedisClient extends EventEmitter {
 
   async sendCommand(args: string[]): Promise<unknown> {
     const cmd = (args[0] ?? "").toUpperCase();
-    if (cmd === "PUBLISH") return 0;
-    if (
-      cmd === "SUBSCRIBE" ||
-      cmd === "UNSUBSCRIBE" ||
-      cmd === "PSUBSCRIBE" ||
-      cmd === "PUNSUBSCRIBE"
-    )
-      return null;
+    if (cmd === "PUBLISH") {
+      if (args.length !== 3) throw new Error("ERR wrong number of arguments for PUBLISH");
+      return this.publish(args[1]!, args[2]!);
+    }
+    if (cmd === "SUBSCRIBE") return this.subscribe(...args.slice(1));
+    if (cmd === "UNSUBSCRIBE") return this.unsubscribe(...args.slice(1));
+    if (cmd === "PSUBSCRIBE") return this.psubscribe(...args.slice(1));
+    if (cmd === "PUNSUBSCRIBE") return this.punsubscribe(...args.slice(1));
     return this.exec(args);
   }
 
@@ -1247,6 +1530,7 @@ export class PdimRedisClient extends EventEmitter {
    * inside exec() so script calls still honour the mandatory hold-off.
    */
   async scriptExec(args: string[]): Promise<unknown> {
+    this.assertConnected();
     const [cmd, ...rawArgs] = args;
     // Same contract as exec(): PDIM accepts only string arguments, and an
     // absent Redis value is a result, never a valid argument. Rejecting here
@@ -1262,9 +1546,11 @@ export class PdimRedisClient extends EventEmitter {
       throw new Error(`[PDIM] Circuit OPEN — ${cmd} (script) rejected`);
     }
 
-    return _enqueueScriptExec(async () => {
+    return this.awaitOrDisconnect(_enqueueScriptExec(async () => {
+      this.assertConnected();
       const rlWait = PdimRedisClient?._rateLimitedUntil - Date?.now();
-      if (rlWait > 0) await new Promise((r) => setTimeout(r, rlWait));
+      if (rlWait > 0) await this.delay(rlWait);
+      this.assertConnected();
 
       let counted = false;
       try {
@@ -1275,7 +1561,7 @@ export class PdimRedisClient extends EventEmitter {
             Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args: strArgs }),
-          signal: AbortSignal.timeout(PDIM_EXEC_TIMEOUT_MS),
+          signal: this.requestSignal(),
           // Do not follow redirects — a 3xx from Replit's proxy (PDIM sleeping)
           // must be seen as a failure here, not silently followed to an HTML page.
           // Same reasoning as the main exec() path.
@@ -1341,6 +1627,7 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err) {
+        if (this.disconnected) throw this.disconnectedError;
         // Same TimeoutError/AbortError exclusion as the main exec catch block —
         // slow PDIM responses should not trip the circuit breaker.
         const isTimeout =
@@ -1356,11 +1643,12 @@ export class PdimRedisClient extends EventEmitter {
         cbHalfOpenFailed();
         throw err;
       }
-    });
+    }));
   }
 
   // ── String commands ───────────────────────────────────────────────────────
   async get(key: string): Promise<string | null> {
+    this.assertConnected();
     const stale = _l1Read(key);
     try {
       const fresh = await this.exec<string | null>(["GET", key]);
@@ -1369,6 +1657,7 @@ export class PdimRedisClient extends EventEmitter {
     } catch (err) {
       // PDIM unavailable — serve the L1 value (even if null/"key not found")
       // so callers (session store, rate limiter) keep working through the outage.
+      this.assertConnected();
       if (stale !== undefined) return stale;
       throw err;
     }
@@ -1469,6 +1758,7 @@ export class PdimRedisClient extends EventEmitter {
 
   // ── Hash commands ─────────────────────────────────────────────────────────
   async hget(key: string, field: string): Promise<string | null> {
+    this.assertConnected();
     const l1Key = `${key}\x00${field}`;
     const stale = _l1Read(l1Key);
     try {
@@ -1476,6 +1766,7 @@ export class PdimRedisClient extends EventEmitter {
       _l1Write(l1Key, fresh);
       return fresh;
     } catch (err) {
+      this.assertConnected();
       if (stale !== undefined) return stale;
       throw err;
     }
@@ -1661,47 +1952,28 @@ export class PdimRedisClient extends EventEmitter {
     return this.exec<number>(["ZREMRANGEBYRANK", key, start, stop]);
   }
 
-  // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
-  /**
-   * BZPOPMIN — PDIM doesn't support blocking commands.
-   * Poll with ZPOPMIN every 2000ms (+0–800ms jitter) until a result arrives or
-   * timeout expires.  timeout=0 is capped at 5s to avoid infinite loops.
-   *
-   * 2000ms base (vs the old 500ms) cuts PDIM request rate by ~75% vs prior
-   * implementation.  800ms jitter range spreads concurrent worker polls across
-   * a wide enough window that simultaneous bursts can no longer align and
-   * overwhelm PDIM's per-minute rate limit.
-   *
-   * The global 429 backoff in exec() provides a second safety layer: if a
-   * burst still triggers a 429, all exec() callers pause for at least 2s
-   * (doubling on each repeat) before the next attempt.
-   */
+  // ── Sorted-set blocking commands ───────────────────────────────────────────
+  /** Waits on the canonical owner's mutation event instead of polling ZPOPMIN. */
   async bzpopmin(
     key: string,
     timeout: number,
   ): Promise<[string, string, string] | null> {
-    const deadline = Date?.now() + (timeout > 0 ? timeout * 1000 : 5000);
-    // Route every ZPOPMIN through the module-level serializer so only one fires
-    // at a time across all 6+ PdimRedisClient instances, with a 400ms enforced
-    // gap between completions.  The serializer also absorbs random stagger
-    // naturally: callers queue up and drain one at a time instead of bursting.
-    while (Date?.now() < deadline) {
-      let result: unknown = null;
-      try {
-        result = await _serializedZpopmin(() =>
-          this.exec<[string, string, string] | null>(["ZPOPMIN", key, "1"]),
-        );
-      } catch {
-        result = null;
-      }
-      if (Array.isArray(result) && result?.length >= 2) {
-        return [key, result[0] as string, result[1] as string];
-      }
-      // 1500ms additional wait after the serializer's 400ms gap completes,
-      // giving a ~1900ms effective poll interval per caller when the queue drains.
-      await new Promise((r) => setTimeout(r, 1500 + Math.random() * 500));
+    if (!Number.isFinite(timeout) || timeout < 0) {
+      throw new TypeError("BZPOPMIN timeout must be a finite non-negative number");
     }
-    return null;
+    const result = await this.exec<unknown>(
+      ["BZPOPMIN", key, String(timeout)],
+      {
+        blocking: true,
+        requestTimeoutMs:
+          timeout === 0 ? null : timeout * 1000 + PDIM_EXEC_TIMEOUT_MS,
+      },
+    );
+    if (result === null) return null;
+    if (!Array.isArray(result) || result.length !== 3) {
+      throw new Error("PDIM BZPOPMIN returned an invalid Redis response");
+    }
+    return [String(result[0]), String(result[1]), String(result[2])];
   }
 
   // ── List atomic move ───────────────────────────────────────────────────────
@@ -1867,31 +2139,89 @@ export class PdimRedisClient extends EventEmitter {
     return this.exec(["EVAL", script, numkeys, ...args]);
   }
 
-  // ── Pub/Sub no-ops ────────────────────────────────────────────────────────
-  // PDIM (Pocket Dimension) is a key-value store — it does not support Redis
-  // pub/sub commands (PUBLISH, SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUNSUBSCRIBE).
-  // Any attempt to send these commands returns HTTP 400 and burns a chain slot
-  // (2,679ms per PUBLISH call observed in production).
-  //
-  // BullMQ emits job lifecycle events via PUBLISH.  Instead of routing those
-  // through the PDIM chain (→ wait 1150ms in queue → HTTP 400 → 2.6s wasted),
-  // we return the correct Redis no-op responses immediately in-process:
-  //   PUBLISH   → 0  (0 subscribers — expected when pub/sub is unavailable)
-  //   SUBSCRIBE → void  (subscription acknowledged, no messages will arrive)
-  async publish(_channel: string, _message: string): Promise<number> {
-    return 0;
+  // ── Pub/Sub ────────────────────────────────────────────────────────────────
+  private splitSubscriptionArgs(
+    values: Array<string | PdimPubSubCallback>,
+  ): { names: string[]; callback?: PdimPubSubCallback } {
+    const last = values[values.length - 1];
+    const callback = typeof last === "function" ? last : undefined;
+    return {
+      names: values.filter((value): value is string => typeof value === "string"),
+      callback,
+    };
   }
-  subscribe(_channel: string, _callback?: Function): Promise<void> {
-    return Promise.resolve();
+
+  private async updatePubSubSubscriptions(
+    kind: "channel" | "pattern",
+    add: boolean,
+    requestedNames: string[],
+    callback?: PdimPubSubCallback,
+  ): Promise<number> {
+    this.assertConnected();
+    const subscriptions = kind === "channel" ? this.pubSubChannels : this.pubSubPatterns;
+    const names = [...new Set(requestedNames)];
+    if (add && names.length === 0) {
+      throw new TypeError(`${kind === "channel" ? "SUBSCRIBE" : "PSUBSCRIBE"} requires a name`);
+    }
+
+    const changedNames = add
+      ? names.filter((name) => !subscriptions.has(name))
+      : names.length === 0
+        ? [...subscriptions]
+        : names.filter((name) => subscriptions.has(name));
+
+    if (add) {
+      for (const name of changedNames) subscriptions.add(name);
+    } else if (names.length === 0) {
+      subscriptions.clear();
+    } else {
+      for (const name of changedNames) subscriptions.delete(name);
+    }
+
+    const count = () => this.pubSubChannels.size + this.pubSubPatterns.size;
+    try {
+      if (changedNames.length > 0) await this.refreshPubSubStream();
+    } catch (error) {
+      callback?.(error instanceof Error ? error : new Error(String(error)), count());
+      throw error;
+    }
+
+    const total = count();
+    const eventName = add
+      ? kind === "channel" ? "subscribe" : "psubscribe"
+      : kind === "channel" ? "unsubscribe" : "punsubscribe";
+    for (let index = 0; index < changedNames.length; index++) {
+      const acknowledgedCount = add
+        ? total - changedNames.length + index + 1
+        : total + changedNames.length - index - 1;
+      this.emit(eventName, changedNames[index], acknowledgedCount);
+    }
+    callback?.(null, total);
+    return total;
   }
-  psubscribe(_pattern: string, _callback?: Function): Promise<void> {
-    return Promise.resolve();
+
+  async publish(channel: string, message: string): Promise<number> {
+    return this.exec<number>(["PUBLISH", channel, message]);
   }
-  unsubscribe(_channel?: string): Promise<void> {
-    return Promise.resolve();
+
+  async subscribe(...values: Array<string | PdimPubSubCallback>): Promise<number> {
+    const { names, callback } = this.splitSubscriptionArgs(values);
+    return this.updatePubSubSubscriptions("channel", true, names, callback);
   }
-  punsubscribe(_pattern?: string): Promise<void> {
-    return Promise.resolve();
+
+  async psubscribe(...values: Array<string | PdimPubSubCallback>): Promise<number> {
+    const { names, callback } = this.splitSubscriptionArgs(values);
+    return this.updatePubSubSubscriptions("pattern", true, names, callback);
+  }
+
+  async unsubscribe(...values: Array<string | PdimPubSubCallback>): Promise<number> {
+    const { names, callback } = this.splitSubscriptionArgs(values);
+    return this.updatePubSubSubscriptions("channel", false, names, callback);
+  }
+
+  async punsubscribe(...values: Array<string | PdimPubSubCallback>): Promise<number> {
+    const { names, callback } = this.splitSubscriptionArgs(values);
+    return this.updatePubSubSubscriptions("pattern", false, names, callback);
   }
 
   // ── Server commands ───────────────────────────────────────────────────────

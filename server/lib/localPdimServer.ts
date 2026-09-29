@@ -9,12 +9,10 @@
  *   Body:    { "cmd": "COMMAND", "args": ["arg1", "arg2", ...] }
  *   Reply:   JSON — the Redis command result (string | number | null | array | object)
  *
- * Backed by an in-memory Map (with TTL) and persisted to
- * ./data/local-pdim-store.json every 30 s so data survives server restarts.
- *
- * Requests execute through the canonical engine (including real Lua, blocking
- * pops and consumer groups), not the historical pattern-matched shim below.
- * The existing synchronous snapshot boundary is retained for recovery tooling.
+ * Requests execute through the canonical RedisStore (including real Lua,
+ * blocking pops, and consumer groups). Mutations are acknowledged only after
+ * the checksummed local AOF frame is fsynced; periodic snapshots compact covered
+ * records. The historical Map shim below is not the request-serving store.
  */
 
 import http from "http";
@@ -27,12 +25,17 @@ import { RedisStore } from "../../external/pdim/artifacts/api-server/src/redis/s
 import type { RedisEntry, StreamGroup } from "../../external/pdim/artifacts/api-server/src/redis/types.js";
 import { LocalPdimCapsules } from "./localPdimCapsules.js";
 import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
+import { LocalPdimAofJournal } from "./localPdimAofJournal.js";
 
 const LOCAL_PORT = runtimePorts.localPdim;
-const PERSIST_FILE = path.resolve("./data/local-pdim-store.json");
+const PERSIST_FILE = path.resolve(
+  process.env.LOCAL_PDIM_STORE_FILE ?? "./data/local-pdim-store.json",
+);
 const PERSIST_INTERVAL_MS = 30_000;
 const CAPSULE_WATERMARK = "__local_pdim_capsule_journal_watermark__";
+const REDIS_AOF_WATERMARK = "__local_pdim_redis_aof_watermark__";
 const capsuleJournal = new LocalPdimCapsuleJournal(`${PERSIST_FILE}.capsules.jsonl`);
+const redisAofJournal = new LocalPdimAofJournal(`${PERSIST_FILE}.aof.jsonl`);
 
 // ── Store types ───────────────────────────────────────────────────────────────
 
@@ -67,6 +70,7 @@ type StoreEntry =
 
 const store = new Map<string, StoreEntry>();
 const canonicalStore = new RedisStore("local", "Max Booster shared local owner");
+let snapshotAofBaseline = 0;
 const capsuleStore = new LocalPdimCapsules(canonicalStore,
   (changes, publish) => capsuleJournal.commit(changes, publish));
 
@@ -1254,21 +1258,32 @@ let snapshotTail: Promise<unknown> = Promise.resolve();
 function saveStoreAsync(): Promise<boolean> {
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
-    const capsuleBaseline = capsuleJournal.publishedSeq;
     const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
     try {
-      const obj: Record<string, StoreEntry> = {};
-      for (const [key, value] of store) {
-        if (!expired(value)) obj[key] = value;
-      }
-      obj[CAPSULE_WATERMARK] = { type: "string", value: String(capsuleBaseline) };
-      // Serialize before yielding: mutations during disk IO must not change
-      // the checkpoint whose durable acknowledgement the caller awaits.
-      const serialized = JSON.stringify(obj);
+      const snapshot = await canonicalStore.captureEmbeddedCheckpoint((redisBaseline) => {
+        const capsuleBaseline = capsuleJournal.publishedSeq;
+        const obj: Record<string, StoreEntry> = {};
+        for (const [key, value] of store) {
+          if (!expired(value)) obj[key] = value;
+        }
+        obj[CAPSULE_WATERMARK] = {
+          type: "string",
+          value: String(capsuleBaseline),
+        };
+        obj[REDIS_AOF_WATERMARK] = {
+          type: "string",
+          value: String(redisBaseline),
+        };
+        return {
+          serialized: JSON.stringify(obj),
+          capsuleBaseline,
+          redisBaseline,
+        };
+      });
       await fs.promises.mkdir(path.dirname(PERSIST_FILE), { recursive: true });
       const file = await fs.promises.open(temporaryFile, "wx", 0o600);
       try {
-        await file.writeFile(serialized, "utf8");
+        await file.writeFile(snapshot.serialized, "utf8");
         await file.sync();
       } finally {
         await file.close();
@@ -1284,7 +1299,9 @@ function saveStoreAsync(): Promise<boolean> {
       const directory = await fs.promises.open(path.dirname(PERSIST_FILE), "r");
       try { await directory.sync(); } finally { await directory.close(); }
       snapshotPublication++;
-      await capsuleJournal.compact(capsuleBaseline);
+      await redisAofJournal.compact(snapshot.redisBaseline);
+      canonicalStore.compactEmbeddedAof(snapshot.redisBaseline);
+      await capsuleJournal.compact(snapshot.capsuleBaseline);
       return true;
     } catch (err) {
       await fs.promises.rm(temporaryFile, { force: true }).catch(() => {});
@@ -1300,11 +1317,16 @@ function saveStore(): boolean {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
     fs.mkdirSync(path.dirname(PERSIST_FILE), { recursive: true });
+    const redisBaseline = canonicalStore.getEmbeddedAofSequence();
     const obj: Record<string, StoreEntry> = {};
     for (const [k, v] of store) {
       if (!expired(v)) obj[k] = v;
     }
     obj[CAPSULE_WATERMARK] = { type: "string", value: String(capsuleJournal.publishedSeq) };
+    obj[REDIS_AOF_WATERMARK] = {
+      type: "string",
+      value: String(redisBaseline),
+    };
     fs.writeFileSync(temporaryFile, JSON.stringify(obj), {
       encoding: "utf8",
       mode: 0o600,
@@ -1338,6 +1360,28 @@ function isStringRecord(value: unknown): value is Record<string, string> {
     !Array.isArray(value) &&
     Object.values(value).every((field) => typeof field === "string")
   );
+}
+
+function normalizePersistedStreamFields(fields: unknown): string[] {
+  if (Array.isArray(fields)) {
+    return fields.map((field: unknown) => {
+      if (typeof field !== "string") {
+        throw new Error("Invalid persisted stream field array");
+      }
+      return field;
+    });
+  }
+  if (!fields || typeof fields !== "object") {
+    throw new Error("Invalid persisted stream field map");
+  }
+  const flattened: string[] = [];
+  for (const [key, value] of Object.entries(fields as Record<string, unknown>)) {
+    if (typeof value !== "string") {
+      throw new Error("Invalid persisted stream field map value");
+    }
+    flattened.push(key, value);
+  }
+  return flattened;
 }
 
 function validatePersistedEntry(key: string, value: unknown): StoreEntry {
@@ -1442,6 +1486,7 @@ function validatePersistedEntry(key: string, value: unknown): StoreEntry {
 }
 
 function loadStore(): void {
+  snapshotAofBaseline = 0;
   if (!fs.existsSync(PERSIST_FILE)) return;
   try {
     const raw = fs.readFileSync(PERSIST_FILE, "utf8");
@@ -1449,9 +1494,21 @@ function loadStore(): void {
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       throw new Error("persistence root must be a JSON object");
     }
+    const persisted = data as Record<string, unknown>;
+    const watermark = persisted[REDIS_AOF_WATERMARK];
+    if (watermark !== undefined) {
+      const entry = validatePersistedEntry(REDIS_AOF_WATERMARK, watermark);
+      if (entry.type !== "string") throw new Error("Invalid Redis AOF watermark entry");
+      snapshotAofBaseline = Number(entry.value);
+      if (!Number.isSafeInteger(snapshotAofBaseline) || snapshotAofBaseline < 0) {
+        throw new Error("Invalid Redis AOF snapshot watermark");
+      }
+    }
     // Validate the complete snapshot before mutating the live map. A corrupt
     // later entry must never leave a partially restored process.
-    const validated = Object.entries(data).map(
+    const validated = Object.entries(persisted)
+      .filter(([key]) => key !== REDIS_AOF_WATERMARK)
+      .map(
       ([key, value]) => [key, validatePersistedEntry(key, value)] as const,
     );
     let loaded = 0;
@@ -1586,6 +1643,103 @@ export function openConsistentLocalPdimSnapshot(): LocalPdimSnapshotDescriptor {
   }
 }
 
+function openLocalPubSubStream(
+  res: import("node:http").ServerResponse,
+  requestController: AbortController,
+  channels: string[],
+  patterns: string[],
+): void {
+  const maxBufferedBytes = 1024 * 1024;
+  let closed = false;
+  let blocked = false;
+  let bufferedBytes = 0;
+  let pending: string[] = [];
+  let heartbeat: ReturnType<typeof setInterval> | undefined;
+  let unsubscribe = () => {};
+
+  const dispose = () => {
+    if (closed) return;
+    closed = true;
+    res.off("drain", flush);
+    res.off("close", onResponseClose);
+    requestController.signal.removeEventListener("abort", onAbort);
+    if (heartbeat) clearInterval(heartbeat);
+    unsubscribe();
+    pending = [];
+    bufferedBytes = 0;
+  };
+
+  const flush = () => {
+    if (closed || res.destroyed) return;
+    blocked = false;
+    while (pending.length > 0) {
+      const line = pending.shift()!;
+      bufferedBytes -= Buffer.byteLength(line);
+      if (!res.write(line)) {
+        blocked = true;
+        break;
+      }
+    }
+  };
+
+  const closeStream = () => {
+    if (!requestController.signal.aborted) {
+      requestController.abort(new Error("PDIM Pub/Sub stream closed"));
+    }
+  };
+
+  const onAbort = () => {
+    dispose();
+    if (!res.destroyed && !res.writableEnded) res.end();
+  };
+
+  const onResponseClose = () => {
+    if (!res.writableEnded && !requestController.signal.aborted) {
+      requestController.abort(new Error("PDIM Pub/Sub client disconnected"));
+    }
+    dispose();
+  };
+
+  const send = (event: object) => {
+    if (closed || res.destroyed) return;
+    const line = `${JSON.stringify(event)}\n`;
+    if (blocked || pending.length > 0) {
+      bufferedBytes += Buffer.byteLength(line);
+      if (bufferedBytes > maxBufferedBytes) {
+        closeStream();
+        return;
+      }
+      pending.push(line);
+      return;
+    }
+    if (!res.write(line)) blocked = true;
+  };
+
+  res.writeHead(200, {
+    "Content-Type": "application/x-ndjson; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+  res.on("drain", flush);
+  res.on("close", onResponseClose);
+  requestController.signal.addEventListener("abort", onAbort, { once: true });
+
+  unsubscribe = canonicalStore.subscribePubSub(
+    channels,
+    patterns,
+    send,
+    closeStream,
+  );
+  if (requestController.signal.aborted) {
+    onAbort();
+    return;
+  }
+  send({ type: "ready", subscriptionCount: channels.length + patterns.length });
+  heartbeat = setInterval(() => send({ type: "heartbeat" }), 15_000);
+  heartbeat.unref();
+}
+
 export function startLocalPdimServer(): Promise<void> {
   if (cluster.isWorker || process.env.CLUSTER_WORKER_ID !== undefined) {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
@@ -1617,12 +1771,31 @@ export function startLocalPdimServer(): Promise<void> {
         const stream = entry as unknown as Extract<RedisEntry, { type: "stream" }>;
         stream.value = stream.value.map((message) => ({
           id: message.id,
-          fields: Array.isArray(message.fields) ? message.fields : Object.entries(message.fields).flat(),
+          fields: normalizePersistedStreamFields(message.fields),
         }));
         stream.groups ??= {};
       }
     }
-    canonicalStore.attachEmbeddedSnapshot(store as unknown as Map<string, RedisEntry>);
+    const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
+    canonicalStore.attachEmbeddedSnapshot(
+      store as unknown as Map<string, RedisEntry>,
+      {
+        baselineSequence: snapshotAofBaseline,
+        recoveryRecords: redisAofRecords,
+        appendAof: (records) => redisAofJournal.append(records),
+      },
+    );
+    canonicalStore.on("durability-error", (error: Error) => {
+      logger.error(
+        { err: error },
+        "[LocalPDIM] Durable Redis journal failed; the owner is unavailable",
+      );
+    });
+    if (redisAofRecords.length > 0) {
+      logger.info(
+        `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`,
+      );
+    }
 
     _server = http.createServer((req, res) => {
       // Loopback-only listener; never mounted on Express/public routes, and
@@ -1643,6 +1816,16 @@ export function startLocalPdimServer(): Promise<void> {
         return;
       }
 
+      const requestController = new AbortController();
+      req.on("aborted", () => {
+        requestController.abort(new Error("PDIM HTTP request aborted by client"));
+      });
+      res.on("close", () => {
+        if (!res.writableEnded) {
+          requestController.abort(new Error("PDIM HTTP response closed by client"));
+        }
+      });
+
       let body = "";
       let bytes = 0;
       req.on("data", (chunk) => {
@@ -1656,21 +1839,53 @@ export function startLocalPdimServer(): Promise<void> {
       });
       req.on("end", async () => {
         try {
-          const { cmd, args = [] } = JSON.parse(body) as {
+          const {
+            cmd,
+            args = [],
+            stream = false,
+            patterns = [],
+          } = JSON.parse(body) as {
             cmd: string;
             args?: unknown[];
+            stream?: boolean;
+            patterns?: unknown[];
           };
           if (typeof cmd !== "string" || !Array.isArray(args) ||
               args.some((arg) => arg === null || arg === undefined || typeof arg === "object")) {
             throw new TypeError("PDIM requires a command and non-null scalar arguments");
           }
+          if (stream) {
+            if (cmd.toUpperCase() !== "SUBSCRIBE" ||
+                args.some((channel) => typeof channel !== "string") ||
+                !Array.isArray(patterns) ||
+                patterns.some((pattern) => typeof pattern !== "string")) {
+              throw new TypeError("PDIM Pub/Sub requires string channels and patterns");
+            }
+            const channels = [...new Set(args as string[])];
+            const uniquePatterns = [...new Set(patterns as string[])];
+            if (channels.length + uniquePatterns.length === 0) {
+              throw new TypeError("PDIM Pub/Sub requires at least one subscription");
+            }
+            openLocalPubSubStream(res, requestController, channels, uniquePatterns);
+            return;
+          }
           const result = cmd.toUpperCase().startsWith("CAPSULE.")
             ? await capsuleStore.exec(cmd, args.map(String))
-            : await canonicalStore.exec(cmd, args.map(String));
+            : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
+          if (res.headersSent) {
+            res.destroy(err instanceof Error ? err : undefined);
+            return;
+          }
+          const status =
+            (err as { code?: unknown })?.code === "PDIM_DURABILITY_FAILURE"
+              ? 503
+              : 400;
+          res.writeHead(status, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
               error: err instanceof Error ? err.message : "Bad Request",
@@ -1682,7 +1897,7 @@ export function startLocalPdimServer(): Promise<void> {
 
     _server.listen(LOCAL_PORT, "127.0.0.1", () => {
       logger.info(
-        `[LocalPDIM] ✅ Local PDIM exec server started on port ${LOCAL_PORT} (in-memory + file persistence)`,
+        `[LocalPDIM] ✅ Local PDIM exec server started on port ${LOCAL_PORT} (canonical RedisStore + fsynced AOF + snapshots)`,
       );
 
       // Periodic persistence (unref so it doesn't block exit)

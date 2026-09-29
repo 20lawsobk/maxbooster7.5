@@ -45,6 +45,46 @@ describe("canonical local PDIM owner", () => {
     expect(Number(luaTime[1])).toBeLessThan(1_000_000);
   });
 
+  it("publishes exact and Redis-glob pattern messages from direct and Lua commands", async () => {
+    const store = owner();
+    const deliveries: Array<Record<string, unknown>> = [];
+    store.subscribePubSub(
+      ["alerts:critical"],
+      ["alerts:[a-c]?", "literal\\*"],
+      (event) => deliveries.push(event),
+      () => {},
+    );
+
+    expect(await store.exec("PUBLISH", ["alerts:critical", "direct"])).toBe(1);
+    expect(deliveries).toEqual([
+      { type: "message", channel: "alerts:critical", message: "direct" },
+    ]);
+
+    expect(await store.exec("PUBLISH", ["alerts:b1", "range"])).toBe(1);
+    expect(deliveries.at(-1)).toEqual({
+      type: "pmessage",
+      pattern: "alerts:[a-c]?",
+      channel: "alerts:b1",
+      message: "range",
+    });
+    const beforeNonMatch = deliveries.length;
+    expect(await store.exec("PUBLISH", ["alerts:d1", "non-match"])).toBe(0);
+    expect(deliveries).toHaveLength(beforeNonMatch);
+
+    expect(await store.exec("EVAL", [
+      "return redis.call('PUBLISH', KEYS[1], ARGV[1])",
+      "1",
+      "literal*",
+      "from-lua",
+    ])).toBe(1);
+    expect(deliveries.at(-1)).toEqual({
+      type: "pmessage",
+      pattern: "literal\\*",
+      channel: "literal*",
+      message: "from-lua",
+    });
+  });
+
   it("blocks until another client supplies a list item and times out honestly", async () => {
     const store = owner();
     const blocked = store.exec("BLPOP", ["jobs", "1"]);

@@ -7156,11 +7156,28 @@ def _job_gc() -> int:
                 continue
             fpath = os.path.join(_JOBS_DIR, fname)
             try:
+                _journal_job_id(Path(fpath))
                 if os.path.getmtime(fpath) >= threshold:
                     continue
                 with open(fpath) as _f:
-                    status = json.load(_f).get("status", "")
+                    record = json.load(_f)
+                status = record.get("status", "")
+                # RenderManager's delivery failures are retryable even though
+                # its historical journal status is "error". Keep the journal
+                # and artifact available for delivery-only restart recovery.
+                if (record.get("render_manager") and status == "error"
+                        and record.get("scratch_path")):
+                    continue
                 if status in ("done", "error", "failed", "cancelled"):
+                    if record.get("dedicated"):
+                        # Keep the durable retry handle if owned scratch cannot
+                        # be removed. The helper never deletes unowned paths or
+                        # symlinks; an unlink failure leaves this journal intact.
+                        from ai_model.generation.dedicated import cleanup_owned_scratch
+                        if status == "done" and record.get("result", {}).get("durable") is not True:
+                            continue
+                        if cleanup_owned_scratch(record) is False:
+                            continue
                     os.unlink(fpath)
                     evicted += 1
             except Exception:
@@ -7295,11 +7312,24 @@ def _require_job_owner(job: dict, request: Request) -> None:
         raise HTTPException(status_code=403, detail="Cannot access another user's MaxCore job")
 
 
+def _journal_job_id(path):
+    job_id = path.stem
+    if (job_id in ("", ".", "..") or Path(_job_path(job_id)) != path
+            or path.is_symlink()):
+        raise ValueError(f"Invalid generation journal filename: {path.name}")
+    return job_id
+
+
 def _journal_records():
-    for path in Path(_JOBS_DIR).glob("*.json"):
+    paths = list(Path(_JOBS_DIR).glob("*.json"))
+    # Validate the complete filename set before any record can be reconciled.
+    identities = [(path, _journal_job_id(path)) for path in paths]
+    for path, job_id in identities:
         # Corrupt journals are explicit errors, not invitations to re-render.
         with path.open() as handle:
-            yield json.load(handle)
+            record = json.load(handle)
+        # Legacy producers use the filename as identity and omit job_id.
+        yield {**record, "job_id": job_id}
 
 
 def _persist_generation_job(job_id, record):
@@ -7342,9 +7372,16 @@ async def recover_dedicated_delivery():
     if _render_manager is None:
         from ai_model.render_manager import RenderManager
         _render_manager = _create_durable_render_manager(RenderManager)
-    from ai_model.generation.dedicated import deliver, interrupt_render
+    from ai_model.generation.dedicated import deliver, interrupt_render, cleanup_owned_scratch
     for record in _journal_records():
+        if record.get("render_manager"):
+            continue  # Reconciled by RenderManager, never re-render here.
         if not record.get("dedicated"):
+            if record.get("status") in ("pending", "queued", "running", "rendering"):
+                _job_update(record["job_id"], {
+                    "status": "error", "failure_stage": "restart",
+                    "error": "Generation interrupted by restart; resubmit explicitly",
+                })
             continue
         if record.get("status") == "committing":
             try:
@@ -7353,11 +7390,10 @@ async def recover_dedicated_delivery():
                 # Retain committing state and original bytes for delivery-only retry.
                 if (_job_read(record["job_id"]) or {}).get("status") != "cancelled":
                     _persist_generation_job(record["job_id"], {**record, "delivery_error": str(exc)})
-        elif record.get("status") == "running":
+        elif record.get("status") in ("pending", "queued", "running"):
             interrupt_render(record, persist_job=_persist_generation_job)
         elif record.get("status") == "done" and record.get("result", {}).get("durable") is True:
-            if record.get("scratch_path"):
-                Path(record["scratch_path"]).unlink(missing_ok=True)
+            cleanup_owned_scratch(record)
 
 # -- Request models ------------------------------------------------------------
 

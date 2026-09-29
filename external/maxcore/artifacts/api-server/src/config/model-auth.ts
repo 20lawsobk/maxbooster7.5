@@ -45,3 +45,14 @@ export function modelOwnedBody(body: unknown, auth: Record<string, string>) {
   if (owner) Object.assign(clean, { user_id: owner, userId: owner, owner_id: owner });
   return clean;
 }
+
+/** Only the trusted local channel may assert a user for server-credential fan-out. */
+export function boundGenerationOwner(
+  headers: IncomingHttpHeaders,
+  peer: string | undefined,
+  claimedUserId: unknown,
+  channelToken = process.env.PDIM_LOCAL_CHANNEL_TOKEN ?? "",
+): string | null {
+  const owner = modelAuthHeaders(headers, peer, channelToken)?.["X-MaxCore-User-Id"];
+  return owner && claimedUserId === owner ? owner : null;
+}

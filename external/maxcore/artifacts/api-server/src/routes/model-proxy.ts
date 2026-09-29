@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { isPythonRestarting } from "../server-state.js";
 import { runActivation, getKeepaliveStatus } from "../keepalive.js";
 import { modelAuthHeaders, modelOwnedBody } from "../config/model-auth.js";
+import { isOperationallyReady } from "./health.js";
 import {
   recordLatency,
   recordRequest,
@@ -251,7 +252,9 @@ function handleProxyNetworkError(
   const elapsed = Date.now();
   console.error(`[Proxy] Network error proxying to ${path}:`, err);
   const e = err as any;
-  if (e.name === "AbortError" || e.code === "ABORT_ERR") {
+  if (e.name === "AbortError" || e.name === "TimeoutError" ||
+      e.code === "ABORT_ERR" || e.code === "UND_ERR_HEADERS_TIMEOUT" ||
+      e.code === "UND_ERR_BODY_TIMEOUT") {
     _cbRecordFailure();
     res.status(504).json({
       error: "Upstream aborted",
@@ -1174,7 +1177,7 @@ router.get("/warm/status", async (req, res) => {
 
 // ─── System readiness ────────────────────────────────────────────────────────
 // Native Node.js endpoint — aggregates Python health + keepalive + deep-warm
-// state into a single view MaxBooster can poll to know the VM is fully hot.
+// state into a single operational view. It is NOT a learned-quality certification.
 
 router.get("/system/readiness", async (_req, res) => {
   const PYTHON_PORT = process.env.MODEL_API_PORT || "9878";
@@ -1189,11 +1192,11 @@ router.get("/system/readiness", async (_req, res) => {
     keepalive = { running: false, message: "first cycle pending" };
   }
 
-  // Probe Python: fetch /health and /api/warm/status in parallel so we get
-  // both the model-loaded flag AND the Python-tracked deep_warm state in one pass.
+  // Probe health, generation readiness and deep-warm status independently.
   let pythonHealth: Record<string, unknown> = {};
   let pythonWarmStatus: Record<string, unknown> = {};
   let pythonReachable = false;
+  let pythonReady = false;
 
   const makeHeaders = (): Record<string, string> => {
     const h: Record<string, string> = {};
@@ -1204,62 +1207,71 @@ router.get("/system/readiness", async (_req, res) => {
   try {
     const { Agent: UA, request: ur } = await import("undici") as typeof import("undici");
     const pool = new UA({ connections: 2 });
-
-    const [healthRes, warmRes] = await Promise.allSettled([
-      ur(`${PYTHON_BASE}/health`,          { method: "GET", dispatcher: pool, headers: makeHeaders(), headersTimeout: 0, bodyTimeout: 0 }),
-      ur(`${PYTHON_BASE}/api/warm/status`, { method: "GET", dispatcher: pool, headers: makeHeaders(), headersTimeout: 0, bodyTimeout: 0 }),
-    ]);
-
-    if (healthRes.status === "fulfilled" && healthRes.value.statusCode === 200) {
-      pythonHealth = JSON.parse(await healthRes.value.body.text()) as Record<string, unknown>;
-      pythonReachable = true;
-    } else if (healthRes.status === "fulfilled") {
-      await healthRes.value.body.dump();
+    const probe = new AbortController();
+    const timer = setTimeout(() => probe.abort(), 5_000);
+    try {
+      // Consume each response *inside* its promise: waiting for every header
+      // before draining bodies deadlocks a two-connection pool with 3 probes.
+      const read = async (path: string): Promise<{ status: number; data: Record<string, unknown> }> => {
+        const reply = await ur(`${PYTHON_BASE}${path}`, {
+          method: "GET", dispatcher: pool, headers: makeHeaders(),
+          signal: probe.signal, headersTimeout: 5_000, bodyTimeout: 5_000,
+        });
+        if (reply.statusCode !== 200) {
+          await reply.body.dump();
+          return { status: reply.statusCode, data: {} };
+        }
+        return { status: 200, data: JSON.parse(await reply.body.text()) as Record<string, unknown> };
+      };
+      const [healthRes, warmRes, readyRes] = await Promise.allSettled([
+        read("/health"), read("/api/warm/status"), read("/ready"),
+      ]);
+      if (healthRes.status === "fulfilled" && healthRes.value.status === 200) {
+        pythonHealth = healthRes.value.data;
+        pythonReachable = true;
+      }
+      if (warmRes.status === "fulfilled" && warmRes.value.status === 200) {
+        pythonWarmStatus = warmRes.value.data;
+      }
+      if (readyRes.status === "fulfilled") {
+        pythonReady = readyRes.value.status === 200 && readyRes.value.data["ready"] === true;
+      }
+    } finally {
+      clearTimeout(timer);
+      await pool.destroy();
     }
-
-    if (warmRes.status === "fulfilled" && warmRes.value.statusCode === 200) {
-      pythonWarmStatus = JSON.parse(await warmRes.value.body.text()) as Record<string, unknown>;
-    } else if (warmRes.status === "fulfilled") {
-      await warmRes.value.body.dump();
-    }
-
-    await pool.close();
   } catch {
     pythonHealth = { reachable: false };
   }
 
   const modelLoaded       = pythonHealth["model_loaded"] === true;
   const warmStartState    = (pythonHealth["warm_start"] as Record<string, unknown> | undefined)?.["state"] ?? "unknown";
-  // Keepalive is opt-in (MAXCORE_KEEPALIVE=1) now that MaxCore runs as a local
-  // in-process subsystem. When disabled, readiness relies solely on Python's
-  // own health + warm state instead of keepalive sweep results.
+  // Keepalive and warm-up state are diagnostics; /ready is the authoritative
+  // serving requirement. Optional/disabled warm passes must not mark it down.
   const keepaliveEnabled  = process.env.MAXCORE_KEEPALIVE === "1";
   const keepaliveOk       = !keepaliveEnabled ||
-    (keepalive["summary"] as Record<string, number> | undefined)?.["fail"] === 0;
+    (keepalive["summary"] as Record<string, number> | undefined)?.["fail"] === 0 &&
+    typeof keepalive["cycleCount"] === "number" && keepalive["cycleCount"] > 0;
   const kaDeepWarm        = keepalive["deepWarm"] as Record<string, unknown> | undefined;
 
-  // A deep-warm counts as done if EITHER the keepalive's own POST /api/warm
-  // succeeded, OR Python's internal _deep_warm_status shows a completed pass
-  // (which includes the one triggered by python-server.ts after model load).
   const pyDeepWarmState   = (pythonWarmStatus["deep_warm"] as Record<string, unknown> | undefined)?.["state"] ?? "pending";
-  const deepWarmDone      =
-    kaDeepWarm?.["lastDeepWarmOk"] === true ||
-    pyDeepWarmState === "warm" ||
-    pyDeepWarmState === "partial";
+  // A partial pass is reported honestly without overriding Python's /ready.
+  const deepWarmDone = pyDeepWarmState === "warm";
 
-  const ready =
-    pythonReachable &&
-    modelLoaded &&
-    warmStartState !== "pending" &&
-    keepaliveOk &&
-    deepWarmDone;
+  const ready = isOperationallyReady({
+    pythonReachable, pythonReady, pythonRestarting: isPythonRestarting(),
+    circuitBreaker: _cbState(),
+  });
 
   res.status(ready ? 200 : 503).json({
     ready,
-    node: { workers: "up", keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
+    node: { workers: "up", python_restarting: isPythonRestarting(), circuit_breaker: _cbState(), keepalive_enabled: keepaliveEnabled, keepalive_running: keepalive["running"] ?? false },
     python: {
       reachable: pythonReachable,
+      generation_ready: pythonReady,
       model_loaded: modelLoaded,
+      model_blocked: pythonHealth["model_blocked"] ?? null,
+      serving_release: pythonHealth["serving_release"] ?? null,
       uptime_seconds: pythonHealth["uptime_seconds"] ?? null,
       warm_start_state: warmStartState,
       deep_warm_state: pyDeepWarmState,
@@ -1572,12 +1584,16 @@ router.post("/train/feedback", async (req, res) => {
 // ─── SSE Job Progress Streaming ──────────────────────────────────────────────
 // GET /api/jobs/:jobId/progress
 // Streams server-sent events for long-running jobs by polling the Python server
-// every 1.5 seconds. Closes when complete/failed or after 5 minutes.
+// every 300 ms. Closes on terminal status or client disconnect.
 
 router.get("/jobs/:jobId/progress", async (req, res) => {
   const { jobId } = req.params;
   const SSE_POLL_MS = 300;
-  const SSE_TIMEOUT_MS = 5 * 60 * 1_000;
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -1587,7 +1603,8 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
 
   let closed = false;
   let intervalId: ReturnType<typeof setInterval> | null = null;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let polling = false;
+  const streamAbort = new AbortController();
 
   function sendEvent(data: Record<string, unknown>): void {
     if (!closed) {
@@ -1603,7 +1620,7 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
     if (closed) return;
     closed = true;
     if (intervalId !== null) clearInterval(intervalId);
-    if (timeoutId !== null) clearTimeout(timeoutId);
+    streamAbort.abort();
     try {
       res.end();
     } catch {
@@ -1611,30 +1628,27 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
     }
   }
 
-  req.on("close", cleanup);
+  // Incoming GET request "close" can fire as soon as its body is consumed;
+  // the outgoing response owns the lifetime of the event stream.
+  res.on("close", cleanup);
 
   async function poll(): Promise<void> {
-    if (closed) return;
+    if (closed || polling) return;
+    polling = true;
     try {
       // Try audio-job first, then video-job
-      const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
-      if (!headers) {
-        res.write(`data: ${JSON.stringify({ status: "error", error: "Unauthorized job stream" })}\n\n`);
-        cleanup();
-        return;
-      }
-
       // Try /api/audio-job/:jobId first (covers audio), then /api/video-job/:jobId
       let jobData: Record<string, unknown> | null = null;
       for (const pollPath of [
-        `/api/audio-job/${jobId}`,
-        `/api/video-job/${jobId}`,
+        `/api/audio-job/${encodeURIComponent(jobId)}`,
+        `/api/video-job/${encodeURIComponent(jobId)}`,
       ]) {
         try {
           const upRes = await undiciRequest(`${MODEL_API_BASE}${pollPath}`, {
             method: "GET",
             dispatcher: _keepAlivePool,
             headers,
+            signal: AbortSignal.any([streamAbort.signal, AbortSignal.timeout(5_000)]),
             headersTimeout: 5_000,
             bodyTimeout: 5_000,
           });
@@ -1643,19 +1657,36 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
             try {
               jobData = JSON.parse(text) as Record<string, unknown>;
             } catch {
-              await upRes.body.dump();
+              sendEvent({ status: "error", error: "Invalid upstream job response" });
+              cleanup();
+              return;
             }
             break;
           } else {
             await upRes.body.dump();
+            if (upRes.statusCode === 401 || upRes.statusCode === 403) {
+              sendEvent({ status: "error", error: "Upstream job authorization denied" });
+              cleanup();
+              return;
+            }
+            if (upRes.statusCode !== 404) {
+              sendEvent({ status: "error", error: `Upstream job status ${upRes.statusCode}` });
+              cleanup();
+              return;
+            }
           }
-        } catch {
-          // try next path
+        } catch (error) {
+          if (closed) return;
+          // Transport failure cannot establish a 404; do not claim the job
+          // doesn't exist just because the poll never reached its server.
+          sendEvent({ status: "pending", stage: "polling_error", detail: String(error).slice(0, 200) });
+          return;
         }
       }
 
       if (!jobData) {
-        sendEvent({ progress: 0, status: "pending", stage: "queued" });
+        sendEvent({ status: "error", error: "Job not found" });
+        cleanup();
         return;
       }
 
@@ -1678,18 +1709,14 @@ router.get("/jobs/:jobId/progress", async (req, res) => {
     } catch (err) {
       // Non-fatal poll error — keep trying unless closed
       sendEvent({ progress: 0, status: "pending", stage: "polling_error", detail: String(err).slice(0, 200) });
+    } finally {
+      polling = false;
     }
   }
 
   // Start polling
-  await poll();
   intervalId = setInterval(() => { void poll(); }, SSE_POLL_MS);
-
-  // Hard timeout after 5 minutes
-  timeoutId = setTimeout(() => {
-    sendEvent({ progress: 0, status: "failed", stage: "timeout", error: "Job progress stream timed out after 5 minutes" });
-    cleanup();
-  }, SSE_TIMEOUT_MS);
+  void poll();
 });
 
 // ─── Job Cancel ──────────────────────────────────────────────────────────────
@@ -1714,6 +1741,7 @@ router.post("/jobs/:jobId/cancel", async (req, res) => {
           method: "DELETE",
           dispatcher: _keepAlivePool,
           headers,
+          signal: AbortSignal.timeout(5_000),
           headersTimeout: 5_000,
           bodyTimeout: 5_000,
         });
@@ -1724,12 +1752,13 @@ router.post("/jobs/:jobId/cancel", async (req, res) => {
         res.status(upRes.statusCode).json(data);
         responded = true;
         break;
-      } catch {
-        // try next
+      } catch (err) {
+        handleProxyNetworkError(err, res, delPath);
+        return;
       }
     }
     if (!responded) {
-      res.status(404).json({ error: "Job not found or cannot be cancelled" });
+      res.status(404).json({ error: "Job not found" });
     }
   } catch (err) {
     if (!res.headersSent) {
