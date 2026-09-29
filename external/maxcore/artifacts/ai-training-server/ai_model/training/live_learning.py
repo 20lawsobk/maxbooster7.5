@@ -11,7 +11,7 @@ import sys
 import time
 import uuid
 
-from ai_model.awareness.engine import Snapshot, canonical
+from ai_model.awareness.engine import canonical
 from ai_model.training.candidate_corpus import build_manifest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,26 +24,44 @@ class Blocked(Exception):
         self.code, self.status = code, status
 
 
-def eligible_records(snapshot):
-    """Use already-collected awareness observations, without claiming a license.
+def eligible_records(observation_set):
+    """Use fresh scanner observations without requiring a complete snapshot.
 
-    The upstream live-source collectors and snapshot validation own admission.
-    Candidate metadata explicitly records unknown licensing and attribution.
+    Candidate metadata records unknown licensing and attribution explicitly;
+    independent candidate evaluation remains mandatory before any promotion.
     """
+    rows = observation_set.get("records") if isinstance(observation_set, dict) else None
+    set_id = observation_set.get("id") if isinstance(observation_set, dict) else None
+    if not isinstance(rows, list) or not rows:
+        raise Blocked("blocked_observations", "No recent validated source observations are available")
+    identity = {
+        "schema": 1,
+        "records": [{key: row[key] for key in
+                     ("id", "source", "domain", "observed_at")}
+                    for row in rows if isinstance(row, dict)
+                    and all(key in row for key in ("id", "source", "domain", "observed_at"))],
+    }
+    if (len(identity["records"]) != len(rows)
+            or not isinstance(set_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", set_id)
+            or hashlib.sha256(canonical(identity).encode()).hexdigest() != set_id):
+        raise Blocked("blocked_observations", "Source observation set failed integrity validation")
     records, excluded = [], 0
-    for domain, rows in snapshot.to_dict()["domains"].items():
-        for row in rows:
-            records.append({
-                "text": row["text"], "license": "NOASSERTION", "private": "unknown",
-                "source": row["citation"], "author": "unattributed live observation",
-                "purpose": "training", "provenance_type": "maxcore_live_awareness",
-                "live_provenance": {"snapshot_id": snapshot.id, "record_id": row["id"],
-                                    "domain": domain, "source": row["source"],
-                                    "observed_at": row["observed_at"],
-                                    "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest()},
-            })
+    for row in rows:
+        records.append({
+            "text": row["text"], "license": "NOASSERTION", "private": "unknown",
+            "source": row["citation"], "author": "unattributed live observation",
+            "purpose": "training",
+            "provenance_type": "maxcore_live_awareness_observation",
+            "live_provenance": {
+                "observation_set_id": set_id, "record_id": row["id"],
+                "domain": row["domain"], "source": row["source"],
+                "observed_at": row["observed_at"],
+                "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest(),
+            },
+        })
     if not records:
-        raise Blocked("blocked_awareness", "Fresh live awareness snapshot contains no observations")
+        raise Blocked("blocked_observations", "No recent validated source observations are available")
     return records, excluded
 
 
@@ -212,8 +230,8 @@ def execute(engine, steps=4):
         # Bounded retained jobs; never silently delete audit/provenance records.
         if sum(p.is_dir() for p in JOBS.iterdir()) >= 100:
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
-        snapshot = Snapshot.parse(engine.require_snapshot().to_dict())
-        records, excluded = eligible_records(snapshot)
+        observation_set = engine.training_observations()
+        records, excluded = eligible_records(observation_set)
         try:
             manifest = build_manifest(
                 records, [], smoke_only=False, allow_live_without_holdout=True,
@@ -239,9 +257,20 @@ def execute(engine, steps=4):
                                                       "state": "pending"}).encode())
         corpus = canonical({"schema": 1, "records": records}).encode()
         corpus_hash = hashlib.sha256(corpus).hexdigest()
-        for name, raw in (("corpus.json", corpus), ("snapshot.json", snapshot._json.encode())):
+        observation_manifest = {
+            "schema": 1, "id": observation_set["id"],
+            "collected_at": observation_set["collected_at"],
+            "sources": observation_set["sources"], "domains": observation_set["domains"],
+            "records": [{"id": row["id"], "source": row["source"],
+                         "domain": row["domain"], "observed_at": row["observed_at"]}
+                        for row in observation_set["records"]],
+        }
+        for name, raw in (("corpus.json", corpus),
+                          ("observation_set.json", canonical(observation_manifest).encode())):
             write_new(folder / name, raw)
-        result = {"run_id": run_id, "snapshot_id": snapshot.id,
+        result = {"run_id": run_id, "observation_set_id": observation_set["id"],
+                  "observed_sources": observation_set["sources"],
+                  "observation_count": len(observation_set["records"]),
                   "holdout_sha256": None,
                   "corpus_sha256": corpus_hash, "eligible_records": len(manifest["records"]),
                   "excluded_unlicensed_records": excluded, "status": "running",
