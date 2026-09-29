@@ -61,6 +61,25 @@ def verify_bundle(run):
         raise ValueError("Failed training run")
     report = json.loads((run / "report.json").read_text())
     manifest = json.loads((run / "corpus.manifest.json").read_text())
+    if (run.name.startswith("live-")
+            or any("live_provenance" in r for r in manifest.get("records", []))):
+        # Sidecar admission predates trainer directory creation. Only the parent
+        # can commit certification after worker exit and evidence verification.
+        # Missing sidecars are fail-closed, including pre-migration live runs.
+        marker = run.parent.parent / "live_candidate_admissions" / run.name
+        try:
+            certificate = json.loads((marker / "certified.json").read_text())
+            result = json.loads((marker / "result.json").read_text())
+            if (certificate["schema"] != 1 or certificate["run_id"] != run.name
+                    or certificate["admission_sha256"] != sha256(marker / "admission.json")
+                    or certificate["result_sha256"] != sha256(marker / "result.json")
+                    or certificate["report_sha256"] != sha256(run / "report.json")
+                    or certificate["checkpoint_sha256"] != sha256(run / "candidate.pt")
+                    or result["run_id"] != run.name
+                    or result["status"] != "candidate_trained_unreviewed"):
+                raise ValueError("Invalid live candidate certification")
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise ValueError("Live candidate pending or uncertified") from exc
     fingerprint = canonical_hash({k: v for k, v in manifest.items() if k != "sha256"})
     if fingerprint != manifest.get("sha256") or fingerprint != report.get("manifest_sha256"):
         raise ValueError("Corpus manifest fingerprint mismatch")

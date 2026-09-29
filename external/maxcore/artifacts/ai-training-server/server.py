@@ -2509,6 +2509,15 @@ async def unified_awareness_status(_key=Depends(require_scope("generate"))):
     return get_engine().status()
 
 
+# Admin authorization is deliberately stronger than ordinary generation/train
+# access. This isolated route does not relax any serving-write rejection.
+from ai_model.training.live_learning import create_router as _live_learning_router
+from ai_model.awareness import get_engine as _live_learning_engine
+app.include_router(_live_learning_router(verify_admin, _live_learning_engine))
+from ai_model.training.media_learning import create_router as _media_learning_router
+app.include_router(_media_learning_router(verify_admin))
+
+
 @app.post("/api/awareness/unified/context")
 async def unified_awareness_context(request: Request, _key=Depends(require_scope("generate"))):
     from ai_model.awareness import get_engine, conditioning, AwarenessUnavailable
