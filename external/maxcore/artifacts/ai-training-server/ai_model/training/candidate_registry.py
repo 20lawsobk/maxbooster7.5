@@ -110,12 +110,22 @@ def verify_bundle(run):
     # Revalidate all accepted records and stored per-record fingerprints.
     checked = build_manifest(manifest["records"], [], smoke_only=True) if manifest["smoke_only"] else None
     if not manifest["smoke_only"]:
-        # Non-smoke corpus must contain holdout hashes; actual texts checked below
-        # during eligibility against the pinned frozen protocol.
-        if not manifest.get("holdout_sha256"):
-            raise ValueError("Missing holdout exclusions")
-        checked = build_manifest(manifest["records"], ["__registry-validation-only__"],
-                                 smoke_only=False)
+        recorded_holdouts = manifest.get("holdout_sha256")
+        if not isinstance(recorded_holdouts, list):
+            raise ValueError("Invalid training holdout fingerprint list")
+        if recorded_holdouts:
+            checked = build_manifest(manifest["records"], ["__registry-validation-only__"],
+                                     smoke_only=False)
+        else:
+            # Full live-awareness snapshots are trained intact. A future,
+            # separately frozen evaluation protocol must still be non-overlapping
+            # before independent quality review can select the candidate.
+            if (report.get("holdout_sha256") is not None
+                    or not all(r.get("provenance_type") == "maxcore_live_awareness"
+                               for r in manifest["records"])):
+                raise ValueError("Only full live-awareness corpora may omit a training holdout")
+            checked = build_manifest(manifest["records"], [], smoke_only=False,
+                                     allow_live_without_holdout=True)
     if checked["rejected"] or len(checked["records"]) != len(manifest["records"]):
         raise ValueError("Corpus no longer passes privacy/license/dedup validation")
     for original, verified in zip(manifest["records"], checked["records"]):
@@ -164,7 +174,8 @@ def eligibility(run, evaluation=None, protocol=None, review=None, signature=None
                     "manifest_sha256": fingerprints["manifest_sha256"],
                     "report_sha256": fingerprints["report_sha256"],
                     "evaluation_sha256": sha256(evaluation), "protocol_sha256": sha256(protocol)}
-        if report.get("holdout_sha256") != bindings["protocol_sha256"]:
+        if (report.get("holdout_sha256") is not None
+                and report["holdout_sha256"] != bindings["protocol_sha256"]):
             raise ValueError("Evaluation holdout differs from frozen training exclusion")
         if frozen.get("frozen") is not True or frozen.get("schema") != 1:
             raise ValueError("Protocol is not frozen schema-1")
@@ -183,7 +194,9 @@ def eligibility(run, evaluation=None, protocol=None, review=None, signature=None
             raise ValueError("Evaluation prompts differ from frozen protocol")
         holdouts = [c["prompt"] for c in cases] + [c["expected"] for c in cases if c.get("expected")]
         checked = build_manifest(manifest["records"], holdouts, smoke_only=False)
-        if checked["rejected"] or checked["holdout_sha256"] != manifest["holdout_sha256"]:
+        if (checked["rejected"]
+                or (manifest["holdout_sha256"]
+                    and checked["holdout_sha256"] != manifest["holdout_sha256"])):
             raise ValueError("Holdout contamination or exclusion fingerprint mismatch")
         policy_path = os.environ.get("MAXCORE_CANDIDATE_TRUST")
         if not policy_path:

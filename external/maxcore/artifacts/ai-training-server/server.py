@@ -1795,10 +1795,11 @@ async def on_startup():
     thread.start()
     storage_thread = threading.Thread(target=_init_storage, daemon=True)
     storage_thread.start()
-    # The unified engine owns its single scheduler. No competing harvest,
-    # autonomous generation, or serving-checkpoint writers start here.
-    # Content/audio warmers used anonymous unpinned cache identities. Do not
-    # autonomously generate content; only resource initialisation runs at boot.
+    # The unified engine owns live-awareness refresh. The admin loop generates
+    # only under that validated snapshot and feeds its outputs into the existing
+    # PDIM flywheel; it never mutates serving checkpoints.
+    from workers.admin_content_loop import start as start_admin_content_loop
+    start_admin_content_loop(lambda: _script_agent, lambda: _distribution_agent)
     subsys_thread = threading.Thread(target=_warm_start_subsystems, daemon=True)
     subsys_thread.start()
 

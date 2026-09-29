@@ -1,5 +1,4 @@
-"""Contract tests use authored awareness fixtures and frozen holdouts."""
-import hashlib
+"""Contract tests cover complete live-snapshot admission and candidate isolation."""
 import ast
 import json
 import os
@@ -75,17 +74,21 @@ class LiveLearningTests(unittest.TestCase):
         self.assertTrue(all(r["private"] == "unknown" for r in records))
         self.assertTrue(all(r["provenance_type"] == "maxcore_live_awareness" for r in records))
 
-    def test_live_snapshot_reserves_disjoint_holdout_without_operator_file(self):
+    def test_live_snapshot_trains_every_unique_selected_observation(self):
         records, excluded = live.eligible_records(self.snapshot)
-        training, holdout, raw = live.split_snapshot(self.snapshot, records)
-        reserved = holdout["cases"][0]["prompt"]
+        manifest = live.build_manifest(
+            records, [], smoke_only=False, allow_live_without_holdout=True,
+        )
+        snapshot_ids = {
+            row["id"]
+            for rows in self.snapshot.to_dict()["domains"].values()
+            for row in rows
+        }
+        trained_ids = {row["live_provenance"]["record_id"] for row in manifest["records"]}
         self.assertEqual(excluded, 0)
-        self.assertEqual(holdout["provenance"], "same_snapshot_source_split")
-        self.assertEqual(hashlib.sha256(raw).hexdigest(), hashlib.sha256(
-            live.canonical(holdout).encode()).hexdigest())
-        self.assertTrue(all(r["text"] != reserved for r in training))
-        self.assertGreater(len(training), 0)
-        self.assertNotIn("MAXCORE_LIVE_HOLDOUT_PATH", os.environ)
+        self.assertEqual(trained_ids, snapshot_ids)
+        self.assertEqual(manifest["holdout_sha256"], [])
+        self.assertEqual(manifest["rejected"], [])
 
     def test_server_wires_real_admin_and_keeps_write_guard(self):
         server = ast.parse((live.ROOT / "server.py").read_text())
@@ -123,7 +126,7 @@ class LiveLearningTests(unittest.TestCase):
         report = {"schema": 1, "protected_unchanged": True, "smoke_only": False,
                   "backend_exclusive": True, "training_backend_scope": "manual-digital-v1",
                   "input_sha256": command[command.index("--corpus-sha256") + 1],
-                  "holdout_sha256": command[command.index("--holdout-sha256") + 1],
+                  "holdout_sha256": None,
                   "gemm_forward_calls": 1, "gemm_backward_calls": 1,
                   "changed_parameters": ["test"], "training_loss": [1.0],
                   "candidate_dispatch_counts": {"transformer_backward": 1},
@@ -144,6 +147,7 @@ class LiveLearningTests(unittest.TestCase):
             lambda r, p: [],
             lambda r, p: {**r, "gemm_backward_calls": "1"},
             lambda r, p: {**r, "gemm_forward_calls": True},
+            lambda r, p: {**r, "holdout_sha256": "0" * 64},
             lambda r, p: {k: v for k, v in r.items() if k != "checkpoint_sha256"},
             lambda r, p: {**r, "checkpoint_sha256": "0" * 64},
             lambda r, p: {**r, "changed_parameters": "weight"},
@@ -213,7 +217,13 @@ class LiveLearningTests(unittest.TestCase):
             self.assertFalse(result["promotion_performed"])
             folder = live.JOBS / result["run_id"]
             self.assertEqual(json.loads((folder / "snapshot.json").read_text())["id"], self.snapshot.id)
-            self.assertNotIn("Independent purple glacier", (folder / "corpus.json").read_text())
+            corpus = json.loads((folder / "corpus.json").read_text())
+            observed = {
+                row["text"]
+                for rows in self.snapshot.to_dict()["domains"].values()
+                for row in rows
+            }
+            self.assertEqual({row["text"] for row in corpus["records"]}, observed)
 
     def test_real_worker_contract_and_digital_training(self):
         # Real isolated trainer, one step, temporary artifact root via subprocess

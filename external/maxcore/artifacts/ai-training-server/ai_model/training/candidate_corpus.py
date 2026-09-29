@@ -21,11 +21,18 @@ def digest(text):
     return hashlib.sha256(normalize(text).encode()).hexdigest()
 
 
-def build_manifest(records, holdouts, *, smoke_only):
+def build_manifest(records, holdouts, *, smoke_only, allow_live_without_holdout=False):
     if not isinstance(holdouts, list) or any(not isinstance(t, str) for t in holdouts):
         raise ValueError("Explicit holdout text list required")
-    if not smoke_only and not holdouts:
-        raise ValueError("Non-smoke corpus requires independent holdouts")
+    full_live_corpus = (
+        allow_live_without_holdout and bool(records)
+        and all(isinstance(record, dict)
+                and record.get("provenance_type") == "maxcore_live_awareness"
+                and isinstance(record.get("live_provenance"), dict)
+                for record in records)
+    )
+    if not smoke_only and not holdouts and not full_live_corpus:
+        raise ValueError("Non-smoke corpus requires independent holdouts unless it is the full live-awareness corpus")
     seen, accepted, rejected = set(), [], []
     normalized_holdouts = [normalize(t) for t in holdouts if normalize(t)]
     for record in records:

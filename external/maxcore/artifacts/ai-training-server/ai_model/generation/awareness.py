@@ -27,6 +27,9 @@ def generation_guard(method):
 
 def require_context(platform="general", modality="text"):
     snapshot = bound_snapshot()
+    from ai_model.quality_awareness import self_sufficiency
+    if self_sufficiency(modality)["retired"]:
+        return ""
     return conditioning(snapshot, platform, modality)
 
 

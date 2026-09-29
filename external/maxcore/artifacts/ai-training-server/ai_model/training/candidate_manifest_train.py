@@ -1,4 +1,4 @@
-"""Offline bounded transformer training from fingerprinted corpus + frozen holdouts.
+"""Offline bounded candidate training from fingerprinted corpus inputs.
 
 Corpus: {"schema":1,"records":[{"text":"...", "license":"CC0-1.0",
 "private":false,"source":"public source URL or authored provenance",
@@ -6,10 +6,10 @@ Corpus: {"schema":1,"records":[{"text":"...", "license":"CC0-1.0",
 Supported license identifiers are enforced by candidate_corpus. Metadata is a
 declaration, not a legal determination; signed independent rights review is
 required for quality selection. Runtime-validation/smoke records stay blocked.
-Holdout: {"schema":1,"frozen":true,"decoding":{"method":"greedy"},
-"cases":[{"id":"...", "prompt":"...", "max_new_tokens":16}]}.
-Supply both independently frozen raw-file hashes. Holdout text is never copied
-into the training run; only its fingerprint and exclusion hashes are retained.
+An optional frozen holdout is supported for authored corpora. A validated live
+awareness snapshot is trained whole; it does not claim quality or promotion.
+Later quality selection still requires a separately frozen evaluation protocol
+that is checked for overlap with every training record.
 """
 import argparse
 import hashlib
@@ -30,28 +30,33 @@ def read_pinned(path, expected, max_bytes=2_000_000):
     return json.loads(raw)
 
 
-def train_from_manifest(corpus, corpus_sha256, holdout, holdout_sha256,
-                        run_id, steps=4, seed=1729, lr=0.1, manual_backward=False):
+def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None,
+                        run_id=None, steps=4, seed=1729, lr=0.1, manual_backward=False):
     if not 1 <= steps <= 64 or not 0 < lr <= 0.2:
         raise ValueError("Bounded training requires steps 1..64 and learning rate (0,0.2]")
+    if not isinstance(run_id, str) or not run_id:
+        raise ValueError("Run ID required")
     data = read_pinned(corpus, corpus_sha256)
-    frozen = read_pinned(holdout, holdout_sha256)
-    if frozen.get("frozen") is not True or frozen.get("schema") != 1:
-        raise ValueError("Independent schema-1 frozen holdout required")
-    cases = frozen.get("cases", [])
-    if not cases or len(cases) > 64:
-        raise ValueError("Frozen holdout requires 1..64 cases")
     holdouts = []
-    ids = set()
-    for case in cases:
-        if not isinstance(case.get("id"), str) or case["id"] in ids:
-            raise ValueError("Unique holdout case IDs required")
-        ids.add(case["id"])
-        if not isinstance(case.get("prompt"), str) or not case["prompt"].strip():
-            raise ValueError("Holdout prompts required")
-        holdouts.append(case["prompt"])
-        if case.get("expected"):
-            holdouts.append(case["expected"])
+    if (holdout is None) != (holdout_sha256 is None):
+        raise ValueError("Holdout path and SHA256 must be supplied together")
+    if holdout is not None:
+        frozen = read_pinned(holdout, holdout_sha256)
+        if frozen.get("frozen") is not True or frozen.get("schema") != 1:
+            raise ValueError("Independent schema-1 frozen holdout required")
+        cases = frozen.get("cases", [])
+        if not cases or len(cases) > 64:
+            raise ValueError("Frozen holdout requires 1..64 cases")
+        ids = set()
+        for case in cases:
+            if not isinstance(case.get("id"), str) or case["id"] in ids:
+                raise ValueError("Unique holdout case IDs required")
+            ids.add(case["id"])
+            if not isinstance(case.get("prompt"), str) or not case["prompt"].strip():
+                raise ValueError("Holdout prompts required")
+            holdouts.append(case["prompt"])
+            if case.get("expected"):
+                holdouts.append(case["expected"])
     records = data.get("records")
     if data.get("schema") != 1 or not isinstance(records, list) or not records or len(records) > 10000:
         raise ValueError("Corpus schema-1 records required (1..10000)")
@@ -63,7 +68,12 @@ def train_from_manifest(corpus, corpus_sha256, holdout, holdout_sha256,
                 for r in records)
     # Runtime fixtures cannot be relabeled as quality-eligible.
     normalized_records = [dict(r, purpose="smoke-only") for r in records] if smoke else records
-    manifest = build_manifest(normalized_records, holdouts, smoke_only=smoke)
+    manifest = build_manifest(
+        normalized_records,
+        holdouts,
+        smoke_only=smoke,
+        allow_live_without_holdout=not smoke and not holdouts,
+    )
     if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
         raise ValueError("Corpus contains holdout overlap or secret/PII; training refused")
     result = train_validated(run_id, steps, seed, "transformer", manifest,
@@ -82,8 +92,10 @@ def train_from_manifest(corpus, corpus_sha256, holdout, holdout_sha256,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for flag in ("corpus", "corpus-sha256", "holdout", "holdout-sha256", "run-id"):
+    for flag in ("corpus", "corpus-sha256", "run-id"):
         parser.add_argument("--" + flag, required=True)
+    parser.add_argument("--holdout")
+    parser.add_argument("--holdout-sha256")
     parser.add_argument("--steps", type=int, default=4)
     parser.add_argument("--seed", type=int, default=1729)
     parser.add_argument("--lr", type=float, default=0.1)

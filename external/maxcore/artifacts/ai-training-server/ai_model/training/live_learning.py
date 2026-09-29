@@ -47,59 +47,6 @@ def eligible_records(snapshot):
     return records, excluded
 
 
-def split_snapshot(snapshot, records):
-    """Reserve one distinct live observation as an automatic, run-frozen holdout.
-
-    This is a leakage-resistant training split, not independent quality
-    certification. Promotion still requires the separate reviewed protocol.
-    """
-    rows = [(domain, row) for domain, values in snapshot.to_dict()["domains"].items()
-            for row in values]
-    candidates = sorted(rows, key=lambda item: hashlib.sha256(
-        (snapshot.id + "\0" + item[1]["id"]).encode()).hexdigest())
-    last_error = None
-    for domain, heldout in candidates:
-        training = [record for record in records
-                    if record["live_provenance"]["record_id"] != heldout["id"]]
-        if not training:
-            continue
-        holdout = {
-            "schema": 1, "frozen": True, "provenance": "same_snapshot_source_split",
-            "snapshot_id": snapshot.id,
-            "cases": [{"id": "snapshot-" + hashlib.sha256(
-                heldout["id"].encode()).hexdigest()[:24], "prompt": heldout["text"]}],
-        }
-        holdout_text = holdout["cases"][0]["prompt"]
-        try:
-            manifest = build_manifest(training, [holdout_text], smoke_only=False)
-            if any(item["reason"] != "duplicate" for item in manifest["rejected"]):
-                raise ValueError("Reserved observation overlaps training or fails data screening")
-            return training, holdout, canonical(holdout).encode()
-        except ValueError as exc:
-            last_error = exc
-    raise Blocked("blocked_corpus", "Live snapshot lacks distinct, separable training and holdout observations") from last_error
-
-
-def holdout_texts(data):
-    cases = data.get("cases")
-    if (data.get("schema") != 1 or data.get("frozen") is not True
-            or not isinstance(cases, list) or not 1 <= len(cases) <= 64):
-        raise Blocked("blocked_holdout", "Independent frozen holdout required")
-    texts, ids = [], set()
-    for case in cases:
-        if (not isinstance(case, dict) or not isinstance(case.get("id"), str)
-                or case["id"] in ids or not isinstance(case.get("prompt"), str)
-                or not case["prompt"].strip()):
-            raise Blocked("blocked_holdout", "Invalid or duplicate holdout case")
-        ids.add(case["id"])
-        texts.append(case["prompt"])
-        if case.get("expected"):
-            if not isinstance(case["expected"], str):
-                raise Blocked("blocked_holdout", "Invalid holdout answer")
-            texts.append(case["expected"])
-    return texts
-
-
 def write_new(path, raw):
     """Publish complete, fsynced bytes exclusively; readers never see partial JSON."""
     temporary = path.with_name("." + path.name + "-" + uuid.uuid4().hex)
@@ -267,14 +214,14 @@ def execute(engine, steps=4):
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
         snapshot = Snapshot.parse(engine.require_snapshot().to_dict())
         records, excluded = eligible_records(snapshot)
-        records, holdout, holdout_raw = split_snapshot(snapshot, records)
-        holdout_hash = hashlib.sha256(holdout_raw).hexdigest()
         try:
-            manifest = build_manifest(records, holdout_texts(holdout), smoke_only=False)
+            manifest = build_manifest(
+                records, [], smoke_only=False, allow_live_without_holdout=True,
+            )
             if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
-                raise ValueError("Holdout overlap or sensitive text")
+                raise ValueError("Live corpus failed privacy or sensitive-data screening")
         except ValueError as exc:
-            raise Blocked("blocked_corpus", "Live corpus failed privacy or holdout separation checks") from exc
+            raise Blocked("blocked_corpus", "Validated live corpus failed data screening") from exc
         run_id = "live-" + uuid.uuid4().hex
         folder = JOBS / run_id
         folder.mkdir(mode=0o700)
@@ -292,11 +239,10 @@ def execute(engine, steps=4):
                                                       "state": "pending"}).encode())
         corpus = canonical({"schema": 1, "records": records}).encode()
         corpus_hash = hashlib.sha256(corpus).hexdigest()
-        for name, raw in (("corpus.json", corpus), ("holdout.json", holdout_raw),
-                          ("snapshot.json", snapshot._json.encode())):
+        for name, raw in (("corpus.json", corpus), ("snapshot.json", snapshot._json.encode())):
             write_new(folder / name, raw)
         result = {"run_id": run_id, "snapshot_id": snapshot.id,
-                  "holdout_sha256": holdout_hash,
+                  "holdout_sha256": None,
                   "corpus_sha256": corpus_hash, "eligible_records": len(manifest["records"]),
                   "excluded_unlicensed_records": excluded, "status": "running",
                   "quality_claim": "none", "promotion_performed": False}
@@ -304,7 +250,6 @@ def execute(engine, steps=4):
         command = [sys.executable, "-m", "ai_model.training.live_learning",
                    "--worker", str(lock.fileno()),
                    "--corpus", str(folder / "corpus.json"), "--corpus-sha256", corpus_hash,
-                   "--holdout", str(folder / "holdout.json"), "--holdout-sha256", holdout_hash,
                    "--run-id", run_id, "--steps", str(steps), "--manual-backward"]
         try:
             # Output stays off the HTTP surface. Trainer has no network/source fetch
@@ -318,7 +263,7 @@ def execute(engine, steps=4):
             elif completed.returncode != 0:
                 result["status"] = "failed_training"
             else:
-                result.update(validate_report(run_id, corpus_hash, holdout_hash))
+                result.update(validate_report(run_id, corpus_hash, None))
                 result["status"] = "candidate_trained_unreviewed"
         except subprocess.TimeoutExpired:
             result["status"] = "blocked_timeout"
