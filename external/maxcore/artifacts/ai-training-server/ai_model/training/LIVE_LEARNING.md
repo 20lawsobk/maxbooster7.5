@@ -22,7 +22,7 @@ admin bearer credential). Ordinary generation/train-scoped keys are insufficient
 
 HTTP 201 / `candidate_trained_unreviewed` means measured isolated training and
 parent certification succeeded, **not** that generation quality is acceptable.
-Admission failures include `blocked_holdout`, `blocked_corpus`,
+Admission failures include `blocked_corpus`,
 `blocked_awareness`, `blocked_busy`, `blocked_capacity`, and `blocked_bounds`.
 Worker outcomes include `failed_training`, `failed_execution_evidence`,
 `blocked_timeout` and `failed_interrupted`. Consult JSON `status`; failed runs
@@ -43,28 +43,19 @@ Existing secret/personal-data screening and holdout-overlap checks still apply.
 They are data-quality safeguards, not rights checks. Independently review
 candidate provenance and applicable source constraints before release selection.
 
-## Independent frozen holdout
+## Automatic snapshot holdout
 
-Set `MAXCORE_LIVE_HOLDOUT_PATH` and `MAXCORE_LIVE_HOLDOUT_SHA256` similarly.
-The exact-byte pin must come from an independently frozen evaluation protocol:
+The endpoint deterministically reserves one non-overlapping observation from the
+current live snapshot and trains on the remaining observations. This split is
+created and hash-bound for each run; there is no rights-grant or holdout file to
+provision. If the snapshot has too little distinct content to make a valid split,
+the run returns `blocked_corpus`.
 
-```json
-{
-  "schema": 1,
-  "frozen": true,
-  "decoding": {"method": "greedy"},
-  "cases": [
-    {"id": "independent-case-id", "prompt": "<independent prompt>",
-     "expected": "<optional independent reference>", "max_new_tokens": 16}
-  ]
-}
-```
-
-Use 1–64 uniquely identified cases and nonempty prompts. Prompt/reference
-normalized overlap with selected live text blocks the entire run. Holdouts are
-archived separately and never packed into training tokens. Publishing a pin is
-an operator attestation of independence, not independent review by this service.
-No real rights file, frozen evaluation or quality certification is bundled.
+This same-snapshot holdout prevents direct training/evaluation leakage for the
+bounded candidate-training job. It is **not** an independent quality evaluation,
+does not certify useful generation, and is not sufficient for release promotion.
+Candidates still require the existing separate frozen, held-out quality protocol
+and review before selection.
 
 ## Isolation, certification, recovery and retention
 
@@ -97,7 +88,7 @@ Even a complete worker report or pre-certification success result cannot recover
 success automatically. The immutable `reconciled.json` overrides an earlier
 uncertified result without deleting historical evidence. Submit a new run to retry.
 
-Audit snapshots, corpus and holdouts live under
+Audit snapshots, corpus and automatically reserved holdouts live under
 `ai_model/training/live_learning_runs/{run_id}/`; candidate model artifacts remain
 under `candidate_runs/{run_id}/`. Keep admission/certification sidecars with
 candidate bundles during archival; missing sidecars fail closed. Operators must

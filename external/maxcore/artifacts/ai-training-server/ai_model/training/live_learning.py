@@ -55,7 +55,6 @@ def split_snapshot(snapshot, records):
     """
     rows = [(domain, row) for domain, values in snapshot.to_dict()["domains"].items()
             for row in values]
-    by_id = {row["id"]: (domain, row) for domain, row in rows}
     candidates = sorted(rows, key=lambda item: hashlib.sha256(
         (snapshot.id + "\0" + item[1]["id"]).encode()).hexdigest())
     last_error = None

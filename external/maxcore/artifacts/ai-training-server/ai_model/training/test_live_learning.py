@@ -35,8 +35,6 @@ class LiveLearningTests(unittest.TestCase):
         self.admission_patch.start()
         self.env = patch.dict(os.environ, {}, clear=False)
         self.env.start()
-        for suffix in ("PATH", "SHA256"):
-            os.environ.pop(f"MAXCORE_LIVE_HOLDOUT_{suffix}", None)
 
     def tearDown(self):
         self.assertEqual(self.snapshot._json, self.original)
@@ -46,16 +44,8 @@ class LiveLearningTests(unittest.TestCase):
         self.env.stop()
         self.temp.cleanup()
 
-    def pin_holdout(self, data):
-        raw = json.dumps(data).encode()
-        path = self.root / "HOLDOUT.json"
-        path.write_bytes(raw)
-        os.environ["MAXCORE_LIVE_HOLDOUT_PATH"] = str(path)
-        os.environ["MAXCORE_LIVE_HOLDOUT_SHA256"] = hashlib.sha256(raw).hexdigest()
-
     def inputs(self):
-        self.pin_holdout({"schema": 1, "frozen": True, "cases": [
-            {"id": "held", "prompt": "Independent purple glacier question"}]})
+        pass
 
     def client(self):
         def admin(x_admin_key: str = Header(None)):
@@ -71,9 +61,11 @@ class LiveLearningTests(unittest.TestCase):
             headers = {"x-admin-key": "test-admin"}
             for body in ({"steps": True}, {"steps": 65}, {"records": []}, {"steps": "1"}):
                 self.assertEqual(client.post("/api/training/candidates/live", json=body, headers=headers).status_code, 422)
-            response = client.post("/api/training/candidates/live", json={}, headers=headers)
+            with patch.object(live.subprocess, "run",
+                              return_value=subprocess.CompletedProcess([], 1)):
+                response = client.post("/api/training/candidates/live", json={"steps": 1}, headers=headers)
             self.assertEqual(response.status_code, 409)
-            self.assertEqual(response.json()["status"], "blocked_holdout")
+            self.assertEqual(response.json()["status"], "failed_training")
 
     def test_live_observations_need_no_rights_file_and_do_not_claim_license(self):
         records, excluded = live.eligible_records(self.snapshot)
@@ -83,21 +75,17 @@ class LiveLearningTests(unittest.TestCase):
         self.assertTrue(all(r["private"] == "unknown" for r in records))
         self.assertTrue(all(r["provenance_type"] == "maxcore_live_awareness" for r in records))
 
-    def test_holdout_overlap_never_launches_worker(self):
-        self.inputs()
-        text = self.snapshot.to_dict()["domains"]["music"][0]["text"]
-        self.pin_holdout({"schema": 1, "frozen": True, "cases": [{"id": "overlap", "prompt": text}]})
-        with patch.object(live.subprocess, "run") as worker, self.assertRaises(live.Blocked) as error:
-            live.execute(self.engine)
-        self.assertEqual(error.exception.code, "blocked_corpus")
-        worker.assert_not_called()
-
-    def test_pinned_input_tampering(self):
-        self.inputs()
-        (self.root / "HOLDOUT.json").write_text("{}")
-        with self.assertRaises(live.Blocked) as error:
-            live.execute(self.engine)
-        self.assertEqual(error.exception.code, "blocked_holdout")
+    def test_live_snapshot_reserves_disjoint_holdout_without_operator_file(self):
+        records, excluded = live.eligible_records(self.snapshot)
+        training, holdout, raw = live.split_snapshot(self.snapshot, records)
+        reserved = holdout["cases"][0]["prompt"]
+        self.assertEqual(excluded, 0)
+        self.assertEqual(holdout["provenance"], "same_snapshot_source_split")
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), hashlib.sha256(
+            live.canonical(holdout).encode()).hexdigest())
+        self.assertTrue(all(r["text"] != reserved for r in training))
+        self.assertGreater(len(training), 0)
+        self.assertNotIn("MAXCORE_LIVE_HOLDOUT_PATH", os.environ)
 
     def test_server_wires_real_admin_and_keeps_write_guard(self):
         server = ast.parse((live.ROOT / "server.py").read_text())
