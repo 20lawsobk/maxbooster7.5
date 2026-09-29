@@ -24,24 +24,6 @@ class Blocked(Exception):
         self.code, self.status = code, status
 
 
-def pinned_holdout():
-    path = os.environ.get("MAXCORE_LIVE_HOLDOUT_PATH")
-    expected = os.environ.get("MAXCORE_LIVE_HOLDOUT_SHA256", "")
-    if not path or len(expected) != 64:
-        raise Blocked("blocked_holdout", "Operator-pinned frozen holdout required")
-    try:
-        with Path(path).open("rb") as stream:
-            raw = stream.read(2_000_001)
-        if len(raw) > 2_000_000 or hashlib.sha256(raw).hexdigest() != expected:
-            raise ValueError("fingerprint mismatch or size exceeded")
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            raise ValueError("object required")
-        return data, raw, expected
-    except (OSError, ValueError) as exc:
-        raise Blocked("blocked_holdout", "Invalid pinned holdout") from exc
-
-
 def eligible_records(snapshot):
     """Use already-collected awareness observations, without claiming a license.
 
@@ -63,6 +45,40 @@ def eligible_records(snapshot):
     if not records:
         raise Blocked("blocked_awareness", "Fresh live awareness snapshot contains no observations")
     return records, excluded
+
+
+def split_snapshot(snapshot, records):
+    """Reserve one distinct live observation as an automatic, run-frozen holdout.
+
+    This is a leakage-resistant training split, not independent quality
+    certification. Promotion still requires the separate reviewed protocol.
+    """
+    rows = [(domain, row) for domain, values in snapshot.to_dict()["domains"].items()
+            for row in values]
+    by_id = {row["id"]: (domain, row) for domain, row in rows}
+    candidates = sorted(rows, key=lambda item: hashlib.sha256(
+        (snapshot.id + "\0" + item[1]["id"]).encode()).hexdigest())
+    last_error = None
+    for domain, heldout in candidates:
+        training = [record for record in records
+                    if record["live_provenance"]["record_id"] != heldout["id"]]
+        if not training:
+            continue
+        holdout = {
+            "schema": 1, "frozen": True, "provenance": "same_snapshot_source_split",
+            "snapshot_id": snapshot.id,
+            "cases": [{"id": "snapshot-" + hashlib.sha256(
+                heldout["id"].encode()).hexdigest()[:24], "prompt": heldout["text"]}],
+        }
+        holdout_text = holdout["cases"][0]["prompt"]
+        try:
+            manifest = build_manifest(training, [holdout_text], smoke_only=False)
+            if any(item["reason"] != "duplicate" for item in manifest["rejected"]):
+                raise ValueError("Reserved observation overlaps training or fails data screening")
+            return training, holdout, canonical(holdout).encode()
+        except ValueError as exc:
+            last_error = exc
+    raise Blocked("blocked_corpus", "Live snapshot lacks distinct, separable training and holdout observations") from last_error
 
 
 def holdout_texts(data):
@@ -251,8 +267,9 @@ def execute(engine, steps=4):
         if sum(p.is_dir() for p in JOBS.iterdir()) >= 100:
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
         snapshot = Snapshot.parse(engine.require_snapshot().to_dict())
-        holdout, holdout_raw, holdout_hash = pinned_holdout()
         records, excluded = eligible_records(snapshot)
+        records, holdout, holdout_raw = split_snapshot(snapshot, records)
+        holdout_hash = hashlib.sha256(holdout_raw).hexdigest()
         try:
             manifest = build_manifest(records, holdout_texts(holdout), smoke_only=False)
             if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
