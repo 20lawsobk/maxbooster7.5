@@ -20,6 +20,10 @@ with restoration evidence rather than assuming local persistence proves both.
 
 ### MaxCore authority
 
+MaxCore's awareness layers use the live social-media landscape as their source.
+Preserve that live-source design; do not replace it with a separate static
+dataset requirement. Distinguish live conditioning from verified model learning.
+
 MaxCore requires exclusive use of its digital GPU system for supported inference.
 Retests must also exercise its real awareness layers and systems applicable to
 the generation route; a direct model call alone does not test the full product.
