@@ -102,6 +102,47 @@ def verify_bundle(run):
     if report.get("input_sha256"):
         if sha256(run / "input.manifest.json") != report["input_sha256"]:
             raise ValueError("Original corpus input fingerprint mismatch")
+    if any(record.get("provenance_type") == "maxcore_live_awareness_observation"
+           for record in manifest.get("records", [])):
+        input_document = json.loads((run / "input.manifest.json").read_text())
+        input_records = input_document.get("records") if isinstance(input_document, dict) else None
+        if (not isinstance(input_records, list) or not input_records
+                or type(input_document.get("schema")) is not int
+                or input_document["schema"] != 1
+                or type(result.get("observation_count")) is not int
+                or result["observation_count"] != len(input_records)):
+            raise ValueError("Live observation-set evidence mismatch")
+        if any(not isinstance(record, dict)
+               or record.get("provenance_type") != "maxcore_live_awareness_observation"
+               for record in input_records):
+            raise ValueError("Mixed live observation-set provenance")
+        input_validation = build_manifest(
+            input_records, [], smoke_only=False, allow_live_without_holdout=True,
+        )
+        if any(item["reason"] != "duplicate" for item in input_validation["rejected"]):
+            raise ValueError("Live observation set failed corpus screening")
+        input_provenance = [record.get("live_provenance", {}) for record in input_records]
+        if any(not isinstance(item, dict) for item in input_provenance):
+            raise ValueError("Live observation provenance is incomplete")
+        set_ids = {item.get("observation_set_id") for item in input_provenance}
+        if len(set_ids) != 1 or result.get("observation_set_id") not in set_ids:
+            raise ValueError("Live observation-set certification mismatch")
+        identity = {
+            "schema": 1,
+            "records": [
+                {"id": item["record_id"], "source": item["source"],
+                 "domain": item["domain"], "observed_at": item["observed_at"]}
+                for item in sorted(
+                    input_provenance,
+                    key=lambda value: (value["domain"], value["record_id"]),
+                )
+            ],
+        }
+        observed_set_id = hashlib.sha256(json.dumps(
+            identity, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+        ).encode()).hexdigest()
+        if observed_set_id != result["observation_set_id"]:
+            raise ValueError("Live observation-set fingerprint mismatch")
     if not manifest["smoke_only"]:
         known_smoke = {digest(r["text"]) for r in smoke_records()}
         if any(r.get("purpose") != "training" or digest(r["text"]) in known_smoke
@@ -117,13 +158,16 @@ def verify_bundle(run):
             checked = build_manifest(manifest["records"], ["__registry-validation-only__"],
                                      smoke_only=False)
         else:
-            # Full live-awareness snapshots are trained intact. A future,
-            # separately frozen evaluation protocol must still be non-overlapping
-            # before independent quality review can select the candidate.
+            # Complete live observation sets are trained intact. A separately
+            # frozen evaluation protocol must still be non-overlapping before
+            # independent quality review can select the candidate.
             if (report.get("holdout_sha256") is not None
-                    or not all(r.get("provenance_type") == "maxcore_live_awareness"
+                    or not all(r.get("provenance_type") in {
+                                   "maxcore_live_awareness",
+                                   "maxcore_live_awareness_observation",
+                               }
                                for r in manifest["records"])):
-                raise ValueError("Only full live-awareness corpora may omit a training holdout")
+                raise ValueError("Only complete live-awareness corpora may omit a training holdout")
             checked = build_manifest(manifest["records"], [], smoke_only=False,
                                      allow_live_without_holdout=True)
     if checked["rejected"] or len(checked["records"]) != len(manifest["records"]):

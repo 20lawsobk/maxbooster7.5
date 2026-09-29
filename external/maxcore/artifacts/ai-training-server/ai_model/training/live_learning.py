@@ -34,17 +34,24 @@ def eligible_records(observation_set):
     set_id = observation_set.get("id") if isinstance(observation_set, dict) else None
     if not isinstance(rows, list) or not rows:
         raise Blocked("blocked_observations", "No recent validated source observations are available")
+    row_keys = {"id", "source", "domain", "observed_at", "text", "citation",
+                "value", "metric", "score"}
+    if any(not isinstance(row, dict) or set(row) != row_keys for row in rows):
+        raise Blocked("blocked_observations", "Source observation set failed integrity validation")
     identity = {
         "schema": 1,
         "records": [{key: row[key] for key in
-                     ("id", "source", "domain", "observed_at")}
-                    for row in rows if isinstance(row, dict)
-                    and all(key in row for key in ("id", "source", "domain", "observed_at"))],
+                     ("id", "source", "domain", "observed_at")} for row in rows],
     }
-    if (len(identity["records"]) != len(rows)
-            or not isinstance(set_id, str)
+    sources = sorted({row["source"] for row in rows})
+    domains = sorted({row["domain"] for row in rows})
+    if (not isinstance(set_id, str)
             or not re.fullmatch(r"[0-9a-f]{64}", set_id)
-            or hashlib.sha256(canonical(identity).encode()).hexdigest() != set_id):
+            or hashlib.sha256(canonical(identity).encode()).hexdigest() != set_id
+            or observation_set.get("sources") != sources
+            or observation_set.get("domains") != domains
+            or type(observation_set.get("collected_at")) not in (int, float)
+            or not math.isfinite(observation_set["collected_at"])):
         raise Blocked("blocked_observations", "Source observation set failed integrity validation")
     records, excluded = [], 0
     for row in rows:
@@ -350,9 +357,12 @@ def create_router(authorize, engine_factory):
         except Blocked as exc:
             return JSONResponse({"status": exc.code, "detail": str(exc),
                                  "promotion_performed": False}, status_code=exc.status)
-        except AwarenessUnavailable:
-            return JSONResponse({"status": "blocked_awareness",
-                                 "detail": "Validated fresh live snapshot unavailable"}, status_code=503)
+        except AwarenessUnavailable as exc:
+            return JSONResponse({
+                "status": "blocked_observations",
+                "detail": "Validated recent observations from configured sources are unavailable",
+                "reason": getattr(exc, "code", "observation_cache_unavailable"),
+            }, status_code=503)
 
     return router
 

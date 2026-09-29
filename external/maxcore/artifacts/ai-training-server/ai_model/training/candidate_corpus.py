@@ -1,10 +1,15 @@
 """Offline-only corpus controls. Hashes are of normalized text, not filenames."""
 import hashlib
 import json
+import math
 import re
 import unicodedata
 
 LICENSES = {"CC0-1.0", "CC-BY-4.0", "MIT", "Apache-2.0"}
+LIVE_AWARENESS_TYPES = {
+    "maxcore_live_awareness",
+    "maxcore_live_awareness_observation",
+}
 SECRET = re.compile(
     r"-----BEGIN .*PRIVATE KEY-----|(?:api[_ -]?key|password|secret|token)\s*[:=]"
     r"|(?:sk-|ghp_|github_pat_|AKIA)[A-Za-z0-9]{12,}"
@@ -21,16 +26,49 @@ def digest(text):
     return hashlib.sha256(normalize(text).encode()).hexdigest()
 
 
+def _valid_live_awareness_record(record):
+    if (not isinstance(record, dict)
+            or record.get("provenance_type") not in LIVE_AWARENESS_TYPES
+            or not isinstance(record.get("live_provenance"), dict)
+            or record.get("license") != "NOASSERTION"
+            or record.get("private") != "unknown"
+            or record.get("author") != "unattributed live observation"
+            or not isinstance(record.get("text"), str)):
+        return False
+    provenance = record["live_provenance"]
+    if record["provenance_type"] == "maxcore_live_awareness":
+        return True
+    observed_at = provenance.get("observed_at")
+    return (
+        re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("observation_set_id", ""))) is not None
+        and re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("record_id", ""))) is not None
+        and re.fullmatch(r"[0-9a-f]{64}", str(provenance.get("text_sha256", ""))) is not None
+        and provenance.get("domain") in {"music", "social", "advertising", "culture"}
+        and isinstance(provenance.get("source"), str)
+        and re.fullmatch(r"[A-Za-z0-9_-]{1,80}", provenance["source"]) is not None
+        and type(observed_at) in (int, float)
+        and math.isfinite(observed_at)
+        and provenance["text_sha256"] == hashlib.sha256(record["text"].encode()).hexdigest()
+        and provenance["record_id"] == hashlib.sha256(
+            json.dumps([provenance["source"], record.get("source"), record["text"]],
+                       separators=(",", ":"), ensure_ascii=True).encode()
+        ).hexdigest()
+    )
+
+
 def build_manifest(records, holdouts, *, smoke_only, allow_live_without_holdout=False):
     if not isinstance(holdouts, list) or any(not isinstance(t, str) for t in holdouts):
         raise ValueError("Explicit holdout text list required")
     full_live_corpus = (
         allow_live_without_holdout and bool(records)
-        and all(isinstance(record, dict)
-                and record.get("provenance_type") == "maxcore_live_awareness"
-                and isinstance(record.get("live_provenance"), dict)
-                for record in records)
+        and all(_valid_live_awareness_record(record) for record in records)
+        and len({record["provenance_type"] for record in records}) == 1
     )
+    if (full_live_corpus
+            and records[0]["provenance_type"] == "maxcore_live_awareness_observation"
+            and len({record["live_provenance"]["observation_set_id"]
+                     for record in records}) != 1):
+        full_live_corpus = False
     if not smoke_only and not holdouts and not full_live_corpus:
         raise ValueError("Non-smoke corpus requires independent holdouts unless it is the full live-awareness corpus")
     seen, accepted, rejected = set(), [], []
@@ -39,13 +77,7 @@ def build_manifest(records, holdouts, *, smoke_only, allow_live_without_holdout=
         text = record.get("text", "")
         if not isinstance(text, str) or not text.strip():
             raise ValueError("Empty or invalid corpus text")
-        live_observation = (
-            record.get("provenance_type") == "maxcore_live_awareness"
-            and isinstance(record.get("live_provenance"), dict)
-            and record.get("license") == "NOASSERTION"
-            and record.get("private") == "unknown"
-            and record.get("author") == "unattributed live observation"
-        )
+        live_observation = _valid_live_awareness_record(record)
         licensed_record = (
             record.get("license") in LICENSES
             and record.get("private") is False

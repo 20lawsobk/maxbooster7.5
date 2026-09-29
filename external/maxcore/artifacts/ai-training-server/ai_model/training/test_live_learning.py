@@ -1,4 +1,4 @@
-"""Contract tests cover complete live-snapshot admission and candidate isolation."""
+"""Contract tests cover rolling live-source admission and candidate isolation."""
 import ast
 import json
 import os
@@ -55,6 +55,9 @@ class LiveLearningTests(unittest.TestCase):
         return TestClient(app)
 
     def test_actual_router_auth_and_validation(self):
+        # Training reads the shared source-observation ledger, not the currently
+        # published snapshot envelope.
+        self.engine._snapshot = None
         with self.client() as client:
             self.assertEqual(client.post("/api/training/candidates/live", json={}).status_code, 403)
             headers = {"x-admin-key": "test-admin"}
@@ -67,28 +70,38 @@ class LiveLearningTests(unittest.TestCase):
             self.assertEqual(response.json()["status"], "failed_training")
 
     def test_live_observations_need_no_rights_file_and_do_not_claim_license(self):
-        records, excluded = live.eligible_records(self.snapshot)
+        records, excluded = live.eligible_records(self.engine.training_observations())
         self.assertGreater(len(records), 0)
         self.assertEqual(excluded, 0)
         self.assertTrue(all(r["license"] == "NOASSERTION" for r in records))
         self.assertTrue(all(r["private"] == "unknown" for r in records))
-        self.assertTrue(all(r["provenance_type"] == "maxcore_live_awareness" for r in records))
+        self.assertTrue(all(
+            r["provenance_type"] == "maxcore_live_awareness_observation"
+            for r in records
+        ))
 
-    def test_live_snapshot_trains_every_unique_selected_observation(self):
-        records, excluded = live.eligible_records(self.snapshot)
+    def test_live_observation_set_trains_every_selected_record(self):
+        observation_set = self.engine.training_observations()
+        records, excluded = live.eligible_records(observation_set)
         manifest = live.build_manifest(
             records, [], smoke_only=False, allow_live_without_holdout=True,
         )
-        snapshot_ids = {
-            row["id"]
-            for rows in self.snapshot.to_dict()["domains"].values()
-            for row in rows
-        }
+        observation_ids = {row["id"] for row in observation_set["records"]}
         trained_ids = {row["live_provenance"]["record_id"] for row in manifest["records"]}
         self.assertEqual(excluded, 0)
-        self.assertEqual(trained_ids, snapshot_ids)
+        self.assertEqual(trained_ids, observation_ids)
         self.assertEqual(manifest["holdout_sha256"], [])
         self.assertEqual(manifest["rejected"], [])
+        self.assertEqual(
+            {row["live_provenance"]["observation_set_id"] for row in manifest["records"]},
+            {observation_set["id"]},
+        )
+
+    def test_empty_observation_cache_blocks_without_starting_training(self):
+        empty_engine = Engine(sources=sources(), store=MemoryStore(), timeout=1)
+        with self.assertRaises(live.Blocked) as error:
+            live.execute(empty_engine, 1)
+        self.assertEqual(error.exception.code, "blocked_observations")
 
     def test_server_wires_real_admin_and_keeps_write_guard(self):
         server = ast.parse((live.ROOT / "server.py").read_text())
@@ -216,13 +229,11 @@ class LiveLearningTests(unittest.TestCase):
             self.assertEqual(result["status"], expected)
             self.assertFalse(result["promotion_performed"])
             folder = live.JOBS / result["run_id"]
-            self.assertEqual(json.loads((folder / "snapshot.json").read_text())["id"], self.snapshot.id)
+            observation_set = self.engine.training_observations()
+            audit = json.loads((folder / "observation_set.json").read_text())
+            self.assertEqual(audit["id"], observation_set["id"])
             corpus = json.loads((folder / "corpus.json").read_text())
-            observed = {
-                row["text"]
-                for rows in self.snapshot.to_dict()["domains"].values()
-                for row in rows
-            }
+            observed = {row["text"] for row in observation_set["records"]}
             self.assertEqual({row["text"] for row in corpus["records"]}, observed)
 
     def test_real_worker_contract_and_digital_training(self):

@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from ai_model.awareness.engine import (
-    AwarenessUnavailable, BLOB, DOMAINS, Engine, PDIM, POINTER, Snapshot,
+    AwarenessUnavailable, BLOB, DOMAINS, Engine, OBSERVATIONS_PREFIX, PDIM, POINTER, Snapshot,
     bind, bound_snapshot, canonical, clean, conditioning,
 )
 from ai_model import quality_awareness as facade
@@ -23,6 +23,9 @@ class MemoryStore:
     def publish(self, snapshot):
         self.data[BLOB + snapshot.id] = snapshot.to_dict()
         self.data[POINTER] = {"id": snapshot.id}
+
+    def write_source_observations(self, source, document, owner=None):
+        self.data[OBSERVATIONS_PREFIX + source] = copy.deepcopy(document)
 
     def secondary(self):
         return {"phrases": {"hook": ["Listen to {idea} by {artist}"]}}
@@ -42,6 +45,42 @@ def resign(doc):
 
 
 class AwarenessTests(unittest.TestCase):
+    def test_source_observation_writes_are_fenced_by_ingest_ownership(self):
+        from .lease import PUBLISH_SOURCE_OBSERVATIONS
+
+        class Namespace:
+            @staticmethod
+            def _ns(key):
+                return "test:" + key
+
+        pdim = PDIM()
+        document = {"schema": 1, "source": "mastodon_trending"}
+        with patch("storage_client.get_storage", return_value=Namespace()):
+            with patch.object(pdim, "_command", return_value=1) as command:
+                pdim.write_source_observations("mastodon_trending", document, "owner")
+            self.assertEqual(command.call_args.args[0], "EVAL")
+            self.assertEqual(command.call_args.args[1], PUBLISH_SOURCE_OBSERVATIONS)
+            self.assertEqual(command.call_args.args[5], "owner")
+            with patch.object(pdim, "_command", return_value=0):
+                with self.assertRaises(AwarenessUnavailable) as error:
+                    pdim.write_source_observations("mastodon_trending", document, "stale-owner")
+        self.assertEqual(error.exception.code, "observation_write_fenced")
+
+    def test_partial_source_observations_survive_incomplete_snapshot(self):
+        store = MemoryStore()
+        engine = Engine(
+            sources={"social": sources()["social"]},
+            store=store,
+            timeout=1,
+        )
+        with self.assertRaises(AwarenessUnavailable):
+            engine.refresh()
+        self.assertIsNone(engine.current_snapshot())
+        observations = engine.training_observations()
+        self.assertEqual(observations["domains"], ["social"])
+        self.assertEqual([row["source"] for row in observations["records"]], ["social"])
+        self.assertEqual(len(observations["records"]), 1)
+
     def test_invalid_snapshot_reports_safe_failure_category(self):
         with self.assertRaises(AwarenessUnavailable) as raised:
             Snapshot.parse({"id": "invalid", "private_field": "never expose"})

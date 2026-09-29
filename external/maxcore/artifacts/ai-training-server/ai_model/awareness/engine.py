@@ -403,7 +403,7 @@ class PDIM:
             from storage_client import get_storage
             from .lease import LEASE_KEY, PUBLISH_SOURCE_OBSERVATIONS
             if (not owner or not isinstance(source, str)
-                    or not re.fullmatch(r"[a-z0-9_-]{1,80}", source)):
+                    or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", source)):
                 raise AwarenessUnavailable(
                     "Source observation ownership required",
                     code="observation_write_fenced",
@@ -608,7 +608,7 @@ class Engine:
                     "source_health": published.get("source_health", json.loads(canonical(self._health))),
                     "latest_scan_health": json.loads(canonical(self._health)),
                     "observation_cache_error": self._observation_cache_error,
-                    "recent_observation_count": self._observation_record_count,
+                    "last_scan_observation_write_count": self._observation_record_count,
                      "validation_diagnostic": self._validation_diagnostic,
                      "phase": self._phase,
                     "error": self._last_error}
