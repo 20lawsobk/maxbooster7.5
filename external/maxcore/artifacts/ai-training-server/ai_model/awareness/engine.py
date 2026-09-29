@@ -18,7 +18,10 @@ from urllib.parse import urlsplit, urlunsplit
 DOMAINS = frozenset(("music", "social", "advertising", "culture"))
 POINTER = "awareness:v1:current"
 BLOB = "awareness:v1:snapshot:"
+OBSERVATIONS_PREFIX = "awareness:v1:source-observations:"
 TTL = 3600
+MAX_SOURCE_OBSERVATIONS = 240
+MAX_DOMAIN_TRAINING_OBSERVATIONS = 60
 _bound = contextvars.ContextVar("maxcore_awareness", default=None)
 
 
@@ -73,6 +76,9 @@ _SAFE_FAILURE_CODES = frozenset({
     *_SNAPSHOT_FAILURE_CODES.values(),
     "secondary_storage_unavailable",
     "secondary_legacy_read_unavailable",
+    "observation_cache_unavailable",
+    "observation_cache_invalid",
+    "observation_write_fenced",
     *(f"secondary_phrase_{kind}_unavailable"
       for kind in ("hook", "body", "cta", "image_headline")),
 })
@@ -163,6 +169,53 @@ def citation(value):
         return urlunsplit(("https", u.netloc, u.path, query, ""))[:600]
     except ValueError:
         return ""
+
+
+def validate_source_observation_document(document, source, domain, now):
+    """Validate one bounded PDIM source ledger and return its fresh records."""
+    failure = AwarenessUnavailable("Source observation cache is invalid",
+                                   code="observation_cache_invalid")
+    try:
+        if (not isinstance(document, dict)
+                or type(document.get("schema")) is not int or document["schema"] != 1
+                or document.get("source") != source or document.get("domain") != domain
+                or type(document.get("updated_at")) not in (int, float)
+                or not math.isfinite(document["updated_at"])
+                or not isinstance(document.get("records"), list)
+                or len(document["records"]) > MAX_SOURCE_OBSERVATIONS):
+            raise failure
+        payload = {key: value for key, value in document.items() if key != "id"}
+        if document.get("id") != hashlib.sha256(canonical(payload).encode()).hexdigest():
+            raise failure
+        records = []
+        expected_keys = {"id", "source", "text", "citation", "value",
+                         "metric", "observed_at", "score"}
+        for row in document["records"]:
+            if not isinstance(row, dict) or set(row) != expected_keys:
+                raise failure
+            text, url, metric = row["text"], row["citation"], row["metric"]
+            if (row["source"] != source or not isinstance(text, str) or not text
+                    or clean(text) != text or not isinstance(url, str)
+                    or citation(url) != url or not isinstance(metric, str)
+                    or not metric or clean(metric, 80) != metric):
+                raise failure
+            value, score, observed_at = row["value"], row["score"], row["observed_at"]
+            if (type(value) not in (int, float) or not math.isfinite(value) or value < 0
+                    or type(score) not in (int, float) or not math.isfinite(score)
+                    or not 0 <= score <= 1
+                    or type(observed_at) not in (int, float)
+                    or not math.isfinite(observed_at) or observed_at > now + 5):
+                raise failure
+            expected_id = hashlib.sha256(canonical([source, url, text]).encode()).hexdigest()
+            if row["id"] != expected_id:
+                raise failure
+            if observed_at > now - TTL:
+                records.append(dict(row))
+        return records
+    except AwarenessUnavailable:
+        raise
+    except Exception as exc:
+        raise failure from exc
 
 
 @dataclass(frozen=True)
@@ -344,6 +397,36 @@ class PDIM:
         raw = self._command("GET", get_storage()._ns(key))
         return json.loads(raw) if isinstance(raw, str) else raw
 
+    def write_source_observations(self, source, document, owner):
+        """Write one bounded source ledger only while this process owns ingestion."""
+        try:
+            from storage_client import get_storage
+            from .lease import LEASE_KEY, PUBLISH_SOURCE_OBSERVATIONS
+            if (not owner or not isinstance(source, str)
+                    or not re.fullmatch(r"[a-z0-9_-]{1,80}", source)):
+                raise AwarenessUnavailable(
+                    "Source observation ownership required",
+                    code="observation_write_fenced",
+                )
+            store = get_storage()
+            result = self._command(
+                "EVAL", PUBLISH_SOURCE_OBSERVATIONS, 2,
+                store._ns(LEASE_KEY), store._ns(OBSERVATIONS_PREFIX + source),
+                owner, canonical(document), TTL,
+            )
+            if result != 1:
+                raise AwarenessUnavailable(
+                    "Fenced source observation write rejected",
+                    code="observation_write_fenced",
+                )
+        except AwarenessUnavailable:
+            raise
+        except Exception as exc:
+            raise AwarenessUnavailable(
+                "Canonical source observation storage unavailable",
+                code="observation_cache_unavailable",
+            ) from exc
+
     def acquire(self, owner):
         from storage_client import get_storage
         from .lease import LEASE_KEY, LEASE_SECONDS
@@ -458,6 +541,8 @@ class Engine:
         self._backoff = {}
         self._health = {}
         self._last_error = None
+        self._observation_cache_error = None
+        self._observation_record_count = 0
         self._validation_diagnostic = None
         self._phase = "idle"
         self._refresh_lock = threading.Lock()
@@ -522,6 +607,8 @@ class Engine:
                     "snapshot_gpu": published.get("gpu"),
                     "source_health": published.get("source_health", json.loads(canonical(self._health))),
                     "latest_scan_health": json.loads(canonical(self._health)),
+                    "observation_cache_error": self._observation_cache_error,
+                    "recent_observation_count": self._observation_record_count,
                      "validation_diagnostic": self._validation_diagnostic,
                      "phase": self._phase,
                     "error": self._last_error}
@@ -534,6 +621,122 @@ class Engine:
                 raise AwarenessUnavailable("Pointer hash mismatch")
             with self._lock:
                 self._snapshot = snap
+
+    def _normalize_source_records(self, name, rows, observed_at, rank_signals):
+        normalized = []
+        for raw in rows[:60]:
+            if not isinstance(raw, dict):
+                continue
+            text, cite = clean(raw.get("text")), citation(raw.get("citation"))
+            value = raw.get("value")
+            if (not text or not cite or type(value) not in (float, int)
+                    or not math.isfinite(value) or value < 0):
+                continue
+            metric = clean(raw.get("metric"), 80)
+            if not metric:
+                continue
+            normalized.append({
+                "id": hashlib.sha256(canonical([name, cite, text]).encode()).hexdigest(),
+                "source": name, "text": text, "citation": cite,
+                "value": value, "metric": metric, "observed_at": observed_at,
+            })
+        normalized.sort(key=lambda row: row["id"])
+        if not normalized:
+            return []
+        scores, order = rank_signals(
+            [row["value"] for row in normalized],
+            inverse=all(row["metric"] == "chart_position" for row in normalized),
+        )
+        self._health[name]["gpu"] = {
+            "backend": "digital_gpu_awareness_software",
+            "operation": "rank", "completed": 1, "records": len(normalized),
+        }
+        for index in order:
+            normalized[index]["score"] = scores[index]
+        return normalized
+
+    def _store_source_observations(self, source, domain, rows):
+        now = self.clock()
+        key = OBSERVATIONS_PREFIX + source
+        previous = self.store.get(key)
+        existing = []
+        if previous is not None:
+            try:
+                existing = validate_source_observation_document(
+                    previous, source, domain, now,
+                )
+            except AwarenessUnavailable:
+                # Never train on a corrupt ledger; the next validated scan replaces it.
+                existing = []
+        merged = {row["id"]: row for row in existing}
+        for row in rows:
+            old = merged.get(row["id"])
+            if old is None or row["observed_at"] >= old["observed_at"]:
+                merged[row["id"]] = dict(row)
+        retained = sorted(merged.values(),
+                          key=lambda row: (row["observed_at"], row["id"]))
+        retained = retained[-MAX_SOURCE_OBSERVATIONS:]
+        retained.sort(key=lambda row: row["id"])
+        document = {
+            "schema": 1, "source": source, "domain": domain,
+            "updated_at": now, "records": retained,
+        }
+        document["id"] = hashlib.sha256(canonical(document).encode()).hexdigest()
+        writer = getattr(self.store, "write_source_observations", None)
+        if not callable(writer):
+            raise AwarenessUnavailable(
+                "Source observation storage unavailable",
+                code="observation_cache_unavailable",
+            )
+        writer(source, document, self._owner)
+        self._observation_record_count += len(rows)
+
+    def training_observations(self):
+        """Read the fresh rolling source corpus without requiring a full snapshot."""
+        now = self.clock()
+        by_domain = {domain: [] for domain in DOMAINS}
+        for source, (domain, _url, _fetch) in sorted(self.sources.items()):
+            try:
+                document = self.store.get(OBSERVATIONS_PREFIX + source)
+            except Exception as exc:
+                raise AwarenessUnavailable(
+                    "Source observation cache unavailable",
+                    code="observation_cache_unavailable",
+                ) from exc
+            if document is None:
+                continue
+            if isinstance(document, str):
+                try:
+                    document = json.loads(document)
+                except (TypeError, ValueError) as exc:
+                    raise AwarenessUnavailable(
+                        "Source observation cache is invalid",
+                        code="observation_cache_invalid",
+                    ) from exc
+            rows = validate_source_observation_document(document, source, domain, now)
+            by_domain[domain].extend({**row, "domain": domain} for row in rows)
+        from ai_model.gpu.awareness_kernels import rank_signals
+        selected = []
+        for domain in sorted(by_domain):
+            rows = sorted(by_domain[domain], key=lambda row: row["id"])
+            if not rows:
+                continue
+            _, order = rank_signals([row["score"] for row in rows])
+            selected.extend(rows[index] for index in order[:MAX_DOMAIN_TRAINING_OBSERVATIONS])
+        selected.sort(key=lambda row: (row["domain"], row["id"]))
+        identity = {
+            "schema": 1,
+            "records": [{key: row[key] for key in
+                         ("id", "source", "domain", "observed_at")}
+                        for row in selected],
+        }
+        set_id = hashlib.sha256(canonical(identity).encode()).hexdigest()
+        return {
+            "schema": 1, "id": set_id, "collected_at": now,
+            "sources": sorted({row["source"] for row in selected}),
+            "domains": sorted({row["domain"] for row in selected}),
+            "records": selected,
+        }
 
     def _loop(self):
         try:
@@ -629,6 +832,8 @@ class Engine:
         another: concurrency stays bounded even across stop/start cycles.
         """
         self._validation_diagnostic = None
+        self._observation_cache_error = None
+        self._observation_record_count = 0
         self._phase = "collecting_sources"
         from ai_model.gpu.awareness_kernels import rank_signals
         now = self.clock()
@@ -649,15 +854,34 @@ class Engine:
                     if mono - started > self.timeout:
                         rows, error = [], "source_timeout"
                     if rows and not error:
-                        results[name] = rows
-                        self._backoff.pop(name, None)
+                        observed_at = self.clock()
+                        self._health[name] = {
+                            "ok": True, "domain": self.sources[name][0],
+                            "url": citation(self.sources[name][1]),
+                            "error": None, "observed_at": observed_at,
+                        }
+                        normalized = self._normalize_source_records(
+                            name, rows, observed_at, rank_signals,
+                        )
+                        if normalized:
+                            results[name] = normalized
+                            self._backoff.pop(name, None)
+                            try:
+                                self._store_source_observations(
+                                    name, self.sources[name][0], normalized,
+                                )
+                            except Exception as exc:
+                                self._observation_cache_error = _safe_failure_code(exc)
+                        else:
+                            self._health[name].update(ok=False, error="no_valid_records")
                     else:
                         failures = self._backoff.get(name, (0, 0))[0] + 1
                         self._backoff[name] = (failures, now + min(3600, 30 * 2 ** min(failures, 7)))
-                    self._health[name] = {"ok": bool(rows and not error),
-                                          "domain": self.sources[name][0],
-                                          "url": citation(self.sources[name][1]),
-                                          "error": error, "observed_at": self.clock()}
+                        self._health[name] = {
+                            "ok": False, "domain": self.sources[name][0],
+                            "url": citation(self.sources[name][1]),
+                            "error": error, "observed_at": self.clock(),
+                        }
                 elif mono - started > self.timeout:
                     self._health[name] = {"ok": False, "domain": self.sources[name][0],
                                           "error": "source_timeout"}
@@ -678,40 +902,13 @@ class Engine:
             self._stop.wait(.02)
         if self._stop.is_set() or self._lease_lost.is_set():
             raise AwarenessUnavailable("Awareness stopped")
-        self._phase = "normalizing_source_records"
+        self._phase = "ranking_domain_records"
         domains = {domain: [] for domain in sorted(DOMAINS)}
         for name, rows in sorted(results.items()):
-            domain, url, _ = self.sources[name]
-            normalized = []
-            for raw in rows[:60]:
-                text, cite = clean(raw.get("text")), citation(raw.get("citation"))
-                value = raw.get("value")
-                if not text or not cite or not isinstance(value, (float, int)) or not math.isfinite(value) or value < 0:
-                    continue
-                metric = clean(raw.get("metric"), 80)
-                if not metric:
-                    continue
-                normalized.append({"id": hashlib.sha256(canonical([name, cite, text]).encode()).hexdigest(),
-                                   "source": name, "text": text, "citation": cite,
-                                   "value": value, "metric": metric,
-                                   "observed_at": self._health[name]["observed_at"]})
-            normalized.sort(key=lambda r: r["id"])
-            if not normalized:
-                self._health[name]["ok"] = False
-                self._health[name]["error"] = "no_valid_records"
-                continue
-            scores, order = rank_signals([r["value"] for r in normalized],
-                                        inverse=all(r["metric"] == "chart_position" for r in normalized))
-            self._health[name]["gpu"] = {
-                "backend": "digital_gpu_awareness_software",
-                "operation": "rank", "completed": 1, "records": len(normalized)}
-            for i in order:
-                normalized[i]["score"] = scores[i]
-                domains[domain].append(normalized[i])
+            domains[self.sources[name][0]].extend(rows)
         self._phase = "validating_domain_coverage"
         if not all(domains.values()):
             raise AwarenessUnavailable("A fresh source is required in every awareness domain")
-        self._phase = "ranking_domain_records"
         for domain in domains:
             rows = sorted(domains[domain], key=lambda r: r["id"])
             _, order = rank_signals([r["score"] for r in rows])
