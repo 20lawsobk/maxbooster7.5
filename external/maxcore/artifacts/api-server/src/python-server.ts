@@ -512,7 +512,7 @@ function startHealthMonitor() {
           // specifically so we don't hit any other Python processes.
           const { execFile } = await import("child_process");
           execFile("pkill", ["-9", "-f", "server\\.py"], (err) => {
-            if (err && (err as NodeJS.ErrnoException).code !== 1) {
+            if (err && !("code" in err && err.code === 1)) {
               // exit code 1 = no matching process (already dead); any other error is real
               console.warn(`[Python] pkill failed: ${err.message}`);
             } else {

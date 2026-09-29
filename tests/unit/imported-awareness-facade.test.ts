@@ -15,6 +15,34 @@ describe("imported application awareness integration", () => {
     expect(result).not.toHaveProperty("confidence");
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ modality: "social", platform: "instagram" });
   });
+  it("preserves structured awareness and its context string", async () => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    const receipt = {
+      snapshot_id: "sha-structured",
+      awareness: { contextString: "grounded context", sources: ["core"] },
+      expires_at: 99999,
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(receipt))));
+    expect(await contentAwarenessService.getContextForMode("music")).toEqual({
+      ...receipt,
+      contextString: "grounded context",
+    });
+  });
+  it.each([
+    null,
+    [],
+    { snapshot_id: "sha-invalid", awareness: null },
+    { snapshot_id: "sha-invalid", awareness: "" },
+    { snapshot_id: "sha-invalid", awareness: [] },
+    { snapshot_id: "sha-invalid", awareness: { contextString: 123 } },
+  ])("rejects malformed awareness receipts rather than treating them as context (%j)", async (receipt) => {
+    vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(receipt))));
+    await expect(contentAwarenessService.getContextForMode("music")).rejects.toMatchObject({
+      status: 503,
+      cause: expect.objectContaining({ message: "Invalid awareness receipt" }),
+    });
+  });
   it("never turns a Core 503 into empty enrichment or synthetic trends", async () => {
     vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "test-private-channel");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })));

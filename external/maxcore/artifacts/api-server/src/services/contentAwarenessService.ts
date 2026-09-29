@@ -1,4 +1,8 @@
 /** Read-only compatibility facade for Core's mandatory immutable snapshot. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export type ContentGenerationMode = "social" | "ad_copy" | "video_script" | "email" |
   "press_release" | "blog" | "melody" | "music" | "songwriting" | "content" | "advertising";
 export interface ContentAwarenessContext {
@@ -20,14 +24,24 @@ export class ContentGenerationAwarenessService {
         redirect: "error",
       });
       if (!response.ok) throw new Error(`Unified awareness HTTP ${response.status}`);
-      const receipt = await response.json();
-      if (typeof receipt.snapshot_id !== "string" || !receipt.snapshot_id ||
-          !receipt.awareness || !["string", "object"].includes(typeof receipt.awareness) ||
-          Array.isArray(receipt.awareness)) throw new Error("Invalid awareness receipt");
+      const receipt: unknown = await response.json();
+      if (typeof receipt !== "object" || receipt === null || Array.isArray(receipt) ||
+          !("snapshot_id" in receipt) || typeof receipt.snapshot_id !== "string" || !receipt.snapshot_id ||
+          !("awareness" in receipt)) throw new Error("Invalid awareness receipt");
+      const awareness = receipt.awareness;
+      if (!(typeof awareness === "string" ? awareness.length > 0 : isRecord(awareness))) {
+        throw new Error("Invalid awareness receipt");
+      }
+      const contextString = typeof awareness === "string" ? awareness
+        : "contextString" in awareness ? awareness.contextString : undefined;
+      if (contextString !== undefined && typeof contextString !== "string") {
+        throw new Error("Invalid awareness receipt");
+      }
       return {
         ...receipt,
-        contextString: typeof receipt.awareness === "string"
-          ? receipt.awareness : receipt.awareness.contextString,
+        snapshot_id: receipt.snapshot_id,
+        awareness,
+        contextString,
       };
     } catch (cause) {
       throw Object.assign(new Error("Required MaxCore awareness snapshot unavailable", { cause }), { status: 503 });

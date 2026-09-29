@@ -2,6 +2,35 @@
 
 Date: 2026-09-29 UTC
 
+## Follow-on verification (2026-09-29)
+
+- Fixed all 12 reported API-server TypeScript diagnostics. The bounded
+  API-server `tsc --noEmit` passed; this is not a whole-project typecheck claim.
+  Focused tests passed (13 initially); after preserving empty-awareness rejection,
+  the affected awareness test file passed 10/10.
+- Historical KV unpacking failure does not reproduce on current code. Added
+  actual HyperGPU full-prefix versus cached-decode parity coverage, including
+  list and static caches; focused generation regressions passed 12/12.
+- Read-only original-checkpoint inference strict-loaded 71 tensors. Prefill and
+  cached decode produced finite logits using the real serving class/HyperGPU.
+  Checkpoint and release hashes were unchanged. This is numerical execution,
+  not evidence of coherent language, exclusive backend execution or media quality.
+- Added and ran `scripts/maxcore-isolated-recovery-acceptance.py`. Disposable
+  processes demonstrated delivery-outage retention, interrupted-render recovery,
+  copied-state restoration after isolated state deletion, and no second delivery
+  after another restart. 96 loopback GETs at concurrency up to 8 returned no
+  unexpected statuses. See `reports/maxcore-acceptance/isolated-recovery-load.md`
+  for measured latency and explicit fixture limitations.
+- Local inventory found only smoke candidate runs, no selected non-smoke
+  candidate manifest, no trained audio/video checkpoints, and no non-smoke
+  rights-validated training corpus. A fresh training/review cycle is still
+  required; changing vocabulary without training does not fix learned coverage.
+
+The observations below describe the preceding hardening pass. Its statement
+about remaining API-server TypeScript errors is superseded by this follow-on.
+Live production throughput and off-host disaster recovery remain unverified;
+the isolated acceptance harness does not establish either.
+
 ## Decision
 
 **Operational fixes verified; overall production acceptance NOT established.**

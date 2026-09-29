@@ -1786,7 +1786,7 @@ router.get("/files/stems/:jobId/:filename", _audioLimiter, async (req, res) => {
   await proxyBinaryStream(
     req,
     res,
-    `/api/files/stems/${encodeURIComponent(req.params.jobId)}/${encodeURIComponent(req.params.filename)}`,
+    `/api/files/stems/${encodeURIComponent(String(req.params.jobId))}/${encodeURIComponent(String(req.params.filename))}`,
   );
 });
 

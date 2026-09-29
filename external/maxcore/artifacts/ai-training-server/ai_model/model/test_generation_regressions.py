@@ -7,13 +7,18 @@ import torch
 from torch import nn
 
 from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
-from ai_model.gpu.hyper_creative_transformer import HyperRoPESelfAttention
+from ai_model.gpu.hyper_core import HyperGPU
+from ai_model.gpu.hyper_creative_transformer import (
+    HyperCreativeTransformerLM,
+    HyperRoPESelfAttention,
+    get_gpu_attn_calls,
+)
 from ai_model.model.creative_model import (
     CreativeModel,
     select_representable_probe_prompt,
 )
 from ai_model.model.tokenizer import BPETokenizer, SimpleTokenizer
-from ai_model.model.transformer import precompute_rope_freqs
+from ai_model.model.transformer import KVCache, precompute_rope_freqs
 
 
 class TinyGPU:
@@ -66,6 +71,41 @@ def valid_awareness_snapshot():
 
 
 class AttentionShapeTests(unittest.TestCase):
+    def test_real_hypergpu_prefix_and_kv_logits_agree(self):
+        # Exercise the actual GPU-backed prefill, decode and full-prefix paths,
+        # including both list and preallocated KV representations. A shape-only
+        # stub would not catch a diverging attention result.
+        torch.manual_seed(17)
+        gpu = HyperGPU(lanes=2, tensor_cores=1)
+        model = HyperCreativeTransformerLM(
+            vocab_size=24, dim=8, n_layers=2, n_heads=2, max_len=12,
+            dropout=0, gpu=gpu,
+        ).eval()
+        prefix = torch.tensor([[2, 3, 4, 5], [6, 7, 8, 9]])
+        suffix = torch.tensor([[10, 11], [12, 13]])
+        with torch.inference_mode():
+            calls_before = get_gpu_attn_calls()
+            prefill_logits, pairs = model.prefill(prefix)
+            self.assertEqual(len(pairs), 2)
+            self.assertEqual(tuple(pairs[0][0].shape), (2, 2, 4, 4))
+            list_cache = pairs
+            static_cache = KVCache.from_prefill(pairs, max_new_tokens=2)
+            for step in range(suffix.shape[1]):
+                token = suffix[:, step:step + 1]
+                list_logits, list_cache = model.decode_one(token, list_cache)
+                static_logits, static_cache = model.decode_one(token, static_cache)
+                full_logits = model(torch.cat([prefix, suffix[:, :step + 1]], dim=1))
+                torch.testing.assert_close(prefill_logits[:, -1], model(prefix)[:, -1],
+                                           rtol=1e-3, atol=1e-3)
+                torch.testing.assert_close(list_logits[:, -1], full_logits[:, -1],
+                                           rtol=1e-3, atol=1e-3)
+                torch.testing.assert_close(static_logits, list_logits,
+                                           rtol=1e-3, atol=1e-3)
+                self.assertEqual(tuple(list_cache[0][0].shape),
+                                 (2, 2, 5 + step, 4))
+            self.assertGreater(get_gpu_attn_calls() - calls_before, 0)
+            self.assertGreater(gpu.core._total_ops, 0)
+
     def test_batched_prefill_and_decode_use_per_head_gpu_gemm(self):
         gpu = TinyGPU()
         attn = HyperRoPESelfAttention(8, 2, gpu, dropout=0).eval()
