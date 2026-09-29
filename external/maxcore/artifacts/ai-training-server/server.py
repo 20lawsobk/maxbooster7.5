@@ -1504,8 +1504,7 @@ def _merged_awareness_for(req: Any) -> str:
 
 def _generation_plan_hash():
     from ai_model.generation.plan import active_plan
-    from ai_model.awareness import bound_snapshot, AwarenessUnavailable
-    bound_snapshot()
+    from ai_model.awareness import AwarenessUnavailable
     plan = active_plan.get()
     if plan is None:
         raise AwarenessUnavailable("Generation cache requires an immutable request plan")
@@ -1868,11 +1867,8 @@ def _warm_start_subsystems() -> None:
 
     def _warm_awareness():
         # Primes the platform quality-awareness buffer read path.
-        from ai_model.awareness import bind, get_engine
         from ai_model import quality_awareness
-        snapshot = get_engine().require_snapshot()
-        with bind(snapshot):
-            quality_awareness.platform_awareness_string("tiktok")
+        quality_awareness.platform_awareness_string("tiktok")
 
     def _warm_request_intelligence():
         from ai_model import request_intelligence as ri
@@ -2521,17 +2517,17 @@ app.include_router(_media_learning_router(verify_admin))
 
 @app.post("/api/awareness/unified/context")
 async def unified_awareness_context(request: Request, _key=Depends(require_scope("generate"))):
-    from ai_model.awareness import get_engine, conditioning, AwarenessUnavailable
+    from ai_model.awareness import current_snapshot, conditioning
     data = await request.json()
     if not isinstance(data, dict):
         raise HTTPException(status_code=422, detail="Context request must be an object")
-    try:
-        snapshot = get_engine().require_snapshot()
-        context = conditioning(snapshot, data.get("platform", "general"), data.get("modality", "text"))
-        return {"snapshot_id": snapshot.id, "expires_at": snapshot.expires_at,
-                "awareness": context, "context": context}
-    except AwarenessUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    snapshot = current_snapshot()
+    if snapshot is None:
+        return {"snapshot_id": None, "expires_at": None, "ready": False,
+                "awareness": "", "context": ""}
+    context = conditioning(snapshot, data.get("platform", "general"), data.get("modality", "text"))
+    return {"snapshot_id": snapshot.id, "expires_at": snapshot.expires_at,
+            "ready": True, "awareness": context, "context": context}
 
 
 @app.get("/ready")
@@ -2540,7 +2536,7 @@ async def generation_readiness():
     from ai_model.awareness import get_engine
     from fastapi.responses import JSONResponse
     awareness = get_engine().status()
-    ready = bool(_model_ready and awareness.get("ready"))
+    ready = bool(_model_ready)
     return JSONResponse(status_code=200 if ready else 503, content={
         "ready": ready, "model_loaded": _model_ready, "awareness": awareness})
 
@@ -4272,16 +4268,21 @@ def _planned_generation(modality, *, specification=False):
         signature = inspect.signature(handler, eval_str=True)
         @functools.wraps(handler)
         async def wrapped(*args, **kwargs):
-            from ai_model.awareness import get_engine, bind, bound_snapshot, AwarenessUnavailable
+            from ai_model.awareness import bind, current_snapshot, AwarenessUnavailable
             from contextlib import ExitStack
+            from ai_model.generation.awareness import sampling_snapshot
             scope = ExitStack()
             bound = signature.bind(*args, **kwargs)
             req = bound.arguments.get("req", bound.arguments.get("body", bound.arguments.get("request")))
             try:
                 plan_input = (await req.json() if isinstance(req, Request) else
                               {"operation": handler.__name__} if req is None else req)
-                snapshot = bound_snapshot() if active_plan.get() else get_engine().require_snapshot()
-                scope.enter_context(bind(snapshot))
+                snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
+                if snapshot is not None:
+                    try:
+                        scope.enter_context(bind(snapshot))
+                    except AwarenessUnavailable:
+                        snapshot = None
                 if not _model_ready:
                     raise HTTPException(status_code=503, detail="Selected model unavailable")
                 plan = GenerationPlan.from_request(plan_input, modality,
@@ -4379,7 +4380,6 @@ def _planned_generation(modality, *, specification=False):
                     size = 0
                     try:
                         async for chunk in result.body_iterator:
-                            bound_snapshot()
                             chunk = chunk.encode(result.charset) if isinstance(chunk, str) else bytes(chunk)
                             size += len(chunk)
                             if size > 16 * 1024 * 1024:
@@ -4396,8 +4396,9 @@ def _planned_generation(modality, *, specification=False):
                             await result.body_iterator.aclose()
                     headers = {k: v for k, v in result.headers.items()
                                if k.lower() not in {"content-length", "transfer-encoding"}}
-                    headers.update({"x-awareness-snapshot-id": snapshot.id,
-                                    "x-generation-plan-hash": plan.plan_hash})
+                    headers["x-generation-plan-hash"] = plan.plan_hash
+                    if plan.snapshot_hash is not None:
+                        headers["x-awareness-snapshot-id"] = plan.snapshot_hash
                     return Response(content=b"".join(chunks), status_code=result.status_code,
                                     headers=headers, media_type=result.media_type,
                                     background=result.background)
@@ -4414,7 +4415,10 @@ def _planned_generation(modality, *, specification=False):
                         raise HTTPException(status_code=503, detail=str(exc)) from exc
                     result = dict(result)
                     result["generation_plan"] = plan.to_dict()
-                    result["snapshot_id"] = snapshot.id
+                    if plan.snapshot_hash is not None:
+                        result["snapshot_id"] = plan.snapshot_hash
+                    else:
+                        result.pop("snapshot_id", None)
                     result["seed"] = plan.seed
                     result["validation"] = validation
                     result["capability_status"] = {
@@ -7228,9 +7232,12 @@ def _job_write(job_id: str, data: dict) -> None:
     from ai_model.generation.plan import active_plan
     plan = active_plan.get()
     if plan:
-        data = {**data, "snapshot_id": plan.to_dict()["snapshot_id"],
-                "generation_plan": plan.to_dict(),
-                "snapshot_expiry_policy": "fail_before_work_if_expired"}
+        data = {**data, "generation_plan": plan.to_dict(),
+                "snapshot_expiry_policy": "optional_context_only"}
+        if plan.snapshot_hash is not None:
+            data["snapshot_id"] = plan.snapshot_hash
+        else:
+            data.pop("snapshot_id", None)
     owner = _request_job_owner.get()
     if owner and not data.get("owner_ids"):
         data = {**data, "owner_ids": [owner]}
@@ -7250,14 +7257,24 @@ def _job_write(job_id: str, data: dict) -> None:
 def _run_gpu_job(job_id: str, worker) -> None:
     """Own a render GPU in the worker, never in the submitting HTTP lifetime."""
     try:
-        from ai_model.awareness import Snapshot, bind
+        from contextlib import ExitStack
+        from dataclasses import replace
+        from ai_model.awareness import Snapshot, bind, AwarenessUnavailable
         from ai_model.generation.plan import active_plan, GenerationPlan
         saved = (_job_read(job_id) or {}).get("generation_plan")
         if not saved:
-            raise RuntimeError("Job has no pinned generation plan")
-        snapshot = Snapshot.parse(saved["snapshot"])
-        with bind(snapshot), _get_gpu_pool().spawn_sync(f"render:{job_id}"):
+            raise RuntimeError("Job has no generation plan")
+        scope = ExitStack()
+        if isinstance(saved.get("snapshot"), dict):
+            try:
+                scope.enter_context(bind(Snapshot.parse(saved["snapshot"])))
+            except AwarenessUnavailable:
+                pass
+        with scope, _get_gpu_pool().spawn_sync(f"render:{job_id}"):
             plan = GenerationPlan.from_request(saved["request"], saved["modality"], saved["checkpoint"])
+            saved_seed = saved.get("seed")
+            if isinstance(saved_seed, int) and not isinstance(saved_seed, bool) and 0 <= saved_seed < 2**32:
+                plan = replace(plan, seed=saved_seed)
             token = active_plan.set(plan)
             try:
                 worker()

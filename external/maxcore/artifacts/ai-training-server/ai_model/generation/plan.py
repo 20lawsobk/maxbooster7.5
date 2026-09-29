@@ -34,8 +34,9 @@ class GenerationPlan:
 
     @classmethod
     def from_request(cls, req: Any, modality: Modality, checkpoint: str = "") -> "GenerationPlan":
-        from ai_model.awareness import bound_snapshot
-        snapshot = bound_snapshot()
+        from ai_model.awareness import current_snapshot
+        snapshot = current_snapshot()
+        snapshot_data = snapshot.to_dict() if snapshot is not None else None
         if modality not in {"text", "content", "image", "audio", "video", "campaign"}:
             raise ValueError("Unsupported generation modality")
         data = (req.model_dump(mode="json") if hasattr(req, "model_dump")
@@ -54,19 +55,20 @@ class GenerationPlan:
                 raise ValueError("Conflicting request and dedicated seed controls")
             seed = controls["seed"]
         if seed is None:
-            seed = int(sha256(canonical([data, snapshot.to_dict(), checkpoint]).encode()).hexdigest()[:8], 16)
+            seed = int(sha256(canonical([data, snapshot_data, checkpoint]).encode()).hexdigest()[:8], 16)
         if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
             raise ValueError("seed must be an integer in [0, 2**32)")
-        return cls("generation-plan-v2", modality, topic, canonical(data),
+        return cls("generation-plan-v3", modality, topic, canonical(data),
                    canonical(data.get("facts")), canonical({
                        k: data.get(k) for k in ("artist_context", "artist", "artistProfileId",
                                                "brand_voice", "beat_context", "context")}),
                    canonical(data.get("provenance")), canonical(data.get("constraints")),
-                   tuple(requested), canonical(snapshot.to_dict()), checkpoint, seed)
+                   tuple(requested), canonical(snapshot_data), checkpoint, seed)
 
     @property
-    def snapshot_hash(self) -> str:
-        return json.loads(self.snapshot_json)["id"]
+    def snapshot_hash(self) -> str | None:
+        snapshot = json.loads(self.snapshot_json)
+        return snapshot.get("id") if isinstance(snapshot, dict) else None
 
     @property
     def plan_hash(self) -> str:
@@ -79,11 +81,12 @@ class GenerationPlan:
             "artist_context": json.loads(self.artist_context_json),
             "provenance": json.loads(self.provenance_json),
             "constraints": json.loads(self.constraints_json), "modalities": list(self.modalities),
-            "snapshot": json.loads(self.snapshot_json),
-            "snapshot_id": json.loads(self.snapshot_json)["id"],
-            "snapshot_hash": self.snapshot_hash,
             "checkpoint": self.checkpoint, "seed": self.seed,
         }
+        snapshot = json.loads(self.snapshot_json)
+        if snapshot is not None:
+            result.update({"snapshot": snapshot, "snapshot_id": snapshot["id"],
+                           "snapshot_hash": self.snapshot_hash})
         if include_hash:
             result["plan_hash"] = self.plan_hash
         return result

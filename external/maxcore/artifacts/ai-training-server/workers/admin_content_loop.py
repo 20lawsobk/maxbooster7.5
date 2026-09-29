@@ -25,6 +25,7 @@ DigitalGPU backend. This file contains no direct numpy/torch calls.
 """
 from __future__ import annotations
 
+from contextlib import ExitStack
 import logging
 import os
 import threading
@@ -53,11 +54,9 @@ _started_lock = threading.Lock()
 
 
 def _build_awareness(genre: str, platform: str) -> str:
-    """Build awareness from the already validated request-bound snapshot."""
+    """Use current live awareness when available; generation does not wait for it."""
     parts: list[str] = []
-    from ai_model.awareness import bound_snapshot
     from ai_model.quality_awareness import platform_awareness_string, music_targets
-    bound_snapshot()  # fail this cycle rather than generate without its pinned source
     plat_aw = platform_awareness_string(platform)
     if plat_aw:
         parts.append(plat_aw)
@@ -73,10 +72,8 @@ def _build_awareness(genre: str, platform: str) -> str:
 
 
 def _run_with_plan(script_agent: Any, request: Any) -> Any:
-    """Run autonomous admin generation under the same pinned-plan contract as APIs."""
-    from ai_model.awareness import bound_snapshot
+    """Run autonomous admin generation with an optional captured scan."""
     from ai_model.generation.plan import GenerationPlan, active_plan
-    snapshot = bound_snapshot()
     plan = GenerationPlan.from_request(request, "text", checkpoint="admin-flywheel")
     token = active_plan.set(plan)
     try:
@@ -167,12 +164,18 @@ def _generate_daw(
 
 
 def _run_cycle(get_script_agent_fn, counters: list[int]) -> str:
-    """Generate one pinned admin cycle and feed all successful outputs to PDIM."""
-    from ai_model.awareness import bind, get_engine
+    """Generate one admin cycle and feed all successful outputs to PDIM."""
+    from ai_model.awareness import AwarenessUnavailable, bind, current_snapshot
     from ai_model.quality_awareness import self_sufficiency, music_targets
 
-    snapshot = get_engine().require_snapshot()
-    with bind(snapshot):
+    snapshot = current_snapshot()
+    scope = ExitStack()
+    if snapshot is not None:
+        try:
+            scope.enter_context(bind(snapshot))
+        except AwarenessUnavailable:
+            snapshot = None
+    with scope:
         suff = self_sufficiency()
         if suff["retired"]:
             _log.info(
@@ -190,8 +193,6 @@ def _run_cycle(get_script_agent_fn, counters: list[int]) -> str:
         counters[1] += 1
 
         awareness = _build_awareness(genre, platform)
-        if not awareness:
-            raise RuntimeError("Validated live awareness produced no admin conditioning")
 
         script_agent = get_script_agent_fn()
         if script_agent is None:
@@ -206,9 +207,10 @@ def _run_cycle(get_script_agent_fn, counters: list[int]) -> str:
             "platform": platform,
             "buffer_weight": suff["buffer_weight"],
             "own_corpus": suff["own_corpus"],
-            "snapshot_id": snapshot.id,
             "loop_cycle": "autonomous",
         }
+        if snapshot is not None:
+            admin_meta["snapshot_id"] = snapshot.id
 
         script = _generate_script(genre, platform, awareness, script_agent)
         if script:

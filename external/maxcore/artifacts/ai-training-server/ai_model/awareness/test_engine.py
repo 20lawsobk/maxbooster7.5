@@ -101,9 +101,8 @@ class AwarenessTests(unittest.TestCase):
         with self.assertRaises(AwarenessUnavailable):
             self.engine.require_snapshot()
 
-    def test_binding_required_and_revalidated(self):
-        with self.assertRaises(AwarenessUnavailable):
-            facade.platform_awareness_string("tiktok")
+    def test_optional_facade_context_and_bound_snapshot_revalidation(self):
+        self.assertEqual(facade.platform_awareness_string("tiktok"), "")
         with bind(self.snapshot):
             self.assertEqual(self.engine.bound_snapshot().id, self.snapshot.id)
             first = facade.platform_awareness_string("tiktok")

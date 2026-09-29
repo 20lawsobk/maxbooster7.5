@@ -268,6 +268,20 @@ def bound_snapshot():
     return validate_snapshot(snap)
 
 
+def current_snapshot():
+    """Return current valid awareness when available; generation may proceed without it."""
+    snap = _bound.get()
+    if snap is not None:
+        try:
+            return validate_snapshot(snap)
+        except AwarenessUnavailable:
+            return None
+    try:
+        return get_engine().current_snapshot()
+    except Exception:
+        return None
+
+
 @contextmanager
 def bind(snapshot):
     snapshot = validate_snapshot(snapshot)
@@ -476,6 +490,17 @@ class Engine:
         if snapshot is None:
             raise AwarenessUnavailable("Awareness is warming or unavailable")
         return validate_snapshot(snapshot, self.clock())
+
+    def current_snapshot(self):
+        """Expose fresh scan results opportunistically without gating callers."""
+        with self._lock:
+            snapshot = self._snapshot
+        if snapshot is None:
+            return None
+        try:
+            return validate_snapshot(snapshot, self.clock())
+        except AwarenessUnavailable:
+            return None
 
     conditioning = staticmethod(conditioning)
     bind = staticmethod(bind)

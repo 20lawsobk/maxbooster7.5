@@ -1,5 +1,5 @@
-"""Fail-closed generation bindings. Expired jobs fail; they never refresh."""
-from ai_model.awareness import bound_snapshot, conditioning
+"""Generation plans are mandatory; fresh awareness is an optional context."""
+import json
 from functools import wraps
 
 
@@ -8,13 +8,10 @@ def generation_guard(method):
     @wraps(method)
     def checked(*args, **kwargs):
         try:
-            snapshot = bound_snapshot()
             from .plan import active_plan
-            from ai_model.awareness import AwarenessUnavailable
             plan = active_plan.get()
-            if plan is None or plan.snapshot_hash != snapshot.id:
-                raise AwarenessUnavailable(
-                    "Direct agent generation requires a matching immutable GenerationPlan")
+            if plan is None:
+                raise ValueError("Direct agent generation requires an immutable GenerationPlan")
             return method(*args, **kwargs)
         except Exception as exc:
             from .release import candidate_errors
@@ -26,10 +23,13 @@ def generation_guard(method):
 
 
 def require_context(platform="general", modality="text"):
-    snapshot = bound_snapshot()
     from ai_model.quality_awareness import self_sufficiency
     if self_sufficiency(modality)["retired"]:
         return ""
+    snapshot = sampling_snapshot()
+    if snapshot is None:
+        return ""
+    from ai_model.awareness import conditioning
     return conditioning(snapshot, platform, modality)
 
 
@@ -49,10 +49,26 @@ def sampling_seed():
     from .plan import active_plan
     plan = active_plan.get()
     if plan is None:
-        from hashlib import sha256
-        return int(sha256(bound_snapshot().id.encode()).hexdigest()[:8], 16)
+        raise ValueError("Generation sampling requires an immutable GenerationPlan")
     return plan.seed
 
 
 def snapshot_hash():
-    return bound_snapshot().id
+    snapshot = sampling_snapshot()
+    return snapshot.id if snapshot is not None else None
+
+
+def sampling_snapshot():
+    """Use the plan's captured scan when present; never make its absence a gate."""
+    from .plan import active_plan
+    from ai_model.awareness import Snapshot, current_snapshot
+    plan = active_plan.get()
+    if plan is None:
+        return current_snapshot()
+    snapshot_data = json.loads(plan.snapshot_json)
+    if snapshot_data is None:
+        return None
+    try:
+        return Snapshot.parse(snapshot_data)
+    except Exception:
+        return None

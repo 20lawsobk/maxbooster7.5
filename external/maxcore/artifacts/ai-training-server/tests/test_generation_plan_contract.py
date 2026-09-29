@@ -30,6 +30,7 @@ def handler_tools():
     async def in_thread(fn):
         return fn()
     scope = {"HTTPException": HTTPError, "_in_thread": in_thread, "Request": type("Request", (), {}),
+             "_model_ready": True,
              "_UPLOADS_PATH": ROOT / "uploads", "hashlib": hashlib, "json": json,
              "_request_job_owner": SimpleNamespace(get=lambda: "signed-owner"),
              "_serving_release_status": {"active": "legacy-explicit-release"},
@@ -93,7 +94,7 @@ class GenerationPlanTests(unittest.TestCase):
         decorated = handler_tools()["_planned_generation"]("text")(handler)
         with self.assertRaises(HTTPError) as raised:
             asyncio.run(decorated(SimpleNamespace(topic="Topic")))
-        self.assertEqual(raised.exception.status_code, 502)
+        self.assertEqual(raised.exception.status_code, 503)
         self.assertEqual(len(calls), 1)
         self.assertIsNone(active_plan.get())
 

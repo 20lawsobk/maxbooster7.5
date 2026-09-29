@@ -57,8 +57,9 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.ns = production_gates()
         self.snap = snapshot()
-        self.engine = SimpleNamespace(require_snapshot=Mock(return_value=self.snap))
-        self.patch = patch("ai_model.awareness.get_engine", return_value=self.engine)
+        self.engine = SimpleNamespace(current_snapshot=Mock(return_value=self.snap),
+                                      require_snapshot=Mock(return_value=self.snap))
+        self.patch = patch("ai_model.awareness.engine.get_engine", return_value=self.engine)
         self.patch.start()
         self.addCleanup(self.patch.stop)
 
@@ -74,40 +75,42 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
         result = await alias({"topic": "release", "seed": 7, "facts": "z" * 20000})
         self.assertEqual(result["snapshot_id"], self.snap.id)
         self.assertEqual(result["seed"], 7)
-        self.engine.require_snapshot.assert_called_once()
+        self.engine.current_snapshot.assert_called_once()
         self.assertIsNone(active_plan.get())
         with self.assertRaises(AwarenessUnavailable):
             bound_snapshot()
 
-    async def test_http_request_body_media_fails_before_handler(self):
+    async def test_http_request_body_media_runs_without_snapshot_gate(self):
         body = json.dumps({"prompt": "learned image"}).encode()
         async def receive():
             return {"type": "http.request", "body": body}
         request = Request({"type": "http", "method": "POST", "path": "/api/video/generate-ai",
                            "headers": []}, receive)
         called = []
-        @self.ns["_planned_generation"]("video")
+        @self.ns["_planned_generation"]("text")
         async def raw(request: Request):
             called.append(True)
-            return {"url": "not-real"}
-        with self.assertRaises(HTTPException) as error:
-            await raw(request)
-        self.assertEqual(error.exception.status_code, 503)
-        self.assertEqual(called, [])
+            return {"text": "generated"}
+        result = await raw(request)
+        self.assertEqual(result["text"], "generated")
+        self.assertEqual(called, [True])
         self.assertIsNone(active_plan.get())
 
-    async def test_unavailable_and_bad_request_do_not_reach_worker(self):
+    async def test_missing_snapshot_does_not_gate_generation_but_bad_request_does(self):
+        called = []
         @self.ns["_planned_generation"]("text")
         async def handler(req):
-            raise AssertionError("must not execute")
-        self.engine.require_snapshot.side_effect = AwarenessUnavailable("offline")
-        with self.assertRaises(HTTPException) as error:
-            await handler({})
-        self.assertEqual(error.exception.status_code, 503)
-        self.engine.require_snapshot.side_effect = None
+            called.append(True)
+            return {"text": "generated without a scan"}
+        self.engine.current_snapshot.return_value = None
+        result = await handler({})
+        self.assertEqual(result["text"], "generated without a scan")
+        self.assertNotIn("snapshot_id", result)
+        self.assertEqual(called, [True])
         with self.assertRaises(HTTPException) as error:
             await handler({"seed": -1})
         self.assertEqual(error.exception.status_code, 422)
+        self.assertEqual(called, [True])
         self.assertIsNone(active_plan.get())
 
     async def test_stream_and_thread_keep_snapshot_and_fail_before_headers(self):
@@ -124,7 +127,7 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.body, b"firstsecond")
         self.assertEqual(seen, [self.snap.id, self.snap.id])
         self.assertEqual(result.headers["x-awareness-snapshot-id"], self.snap.id)
-        self.engine.require_snapshot.assert_called_once()
+        self.engine.current_snapshot.assert_called_once()
         @self.ns["_planned_generation"]("text")
         async def broken(req):
             async def chunks():
@@ -136,7 +139,7 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(error.exception.status_code, 503)
         self.assertIsNone(active_plan.get())
 
-    async def test_async_job_uses_saved_snapshot_not_current_engine(self):
+    async def test_async_job_uses_fresh_saved_scan_and_continues_after_expiry(self):
         with bind(self.snap):
             plan = GenerationPlan.from_request({"seed": 55}, "video", "release")
         saved = {"generation_plan": plan.to_dict()}
@@ -151,9 +154,10 @@ class RouteBindings(unittest.IsolatedAsyncioTestCase):
         self.engine.require_snapshot.assert_not_called()
         old = snapshot(now=time.time() - 1000)
         saved["generation_plan"]["snapshot"] = old.to_dict()
-        self.ns["_run_gpu_job"]("job", lambda: observed.append("must not run"))
-        self.assertEqual(len(observed), 1)
-        self.assertEqual(updates[-1]["status"], "error")
+        self.ns["_run_gpu_job"]("job", lambda: observed.append(
+            (active_plan.get().snapshot_hash, active_plan.get().seed)))
+        self.assertEqual(observed[-1], (self.snap.id, 55))
+        self.assertEqual(updates, [])
         self.assertIsNone(active_plan.get())
 
 
@@ -199,7 +203,7 @@ class DirectContracts(unittest.TestCase):
         self.assertIs(seen[0]["_plan"], plan)
         self.assertEqual(seen[0]["_snapshot"].id, snap.id)
         self.assertEqual(seen[0]["prompt"], "full prompt")
-        with self.assertRaises(AwarenessUnavailable):
+        with self.assertRaises(ValueError):
             model.generate("unbound prompt")
 
     def test_actual_batch_worker_preserves_each_row_and_partitions_snapshots(self):
@@ -225,21 +229,27 @@ class DirectContracts(unittest.TestCase):
         rows[0]["_snapshot"] = old
         rows[0]["snapshot_hash"] = old.id
         model = Mock()
-        with self.assertRaises(AwarenessUnavailable):
-            execute_rows(model, rows)
-        model.generate_batch_rows.assert_not_called()
+        model.generate_batch_rows.side_effect = lambda clean: [row["prompt"] for row in clean]
+        self.assertEqual(execute_rows(model, rows), ["0", "1", "2"])
+        self.assertEqual(model.generate_batch_rows.call_count, 3)
 
-    def test_selected_adapter_single_batch_stream_require_binding(self):
+    def test_selected_adapter_generates_without_awareness_snapshot(self):
         underlying = Mock()
+        underlying.generate_stream.return_value = iter(["generated"])
         adapter = FailClosedCandidateAdapter(underlying)
-        for invoke in (lambda: adapter.generate("prompt"),
-                       lambda: adapter.generate_batch(["one", "two"]),
-                       lambda: adapter.generate_batch_rows([{"prompt": "one"}]),
-                       lambda: adapter.generate_stream("prompt")):
-            with self.assertRaises(AwarenessUnavailable):
-                invoke()
-        underlying.generate.assert_not_called()
-        underlying.generate_batch.assert_not_called()
+        with patch("ai_model.awareness.current_snapshot", return_value=None):
+            plan = GenerationPlan.from_request({"seed": 9}, "text", "release")
+            token = active_plan.set(plan)
+            try:
+                adapter.generate("prompt")
+                adapter.generate_batch(["one", "two"])
+                adapter.generate_batch_rows([{"prompt": "one"}])
+                self.assertEqual(list(adapter.generate_stream("prompt")), ["generated"])
+            finally:
+                active_plan.reset(token)
+        underlying.generate.assert_called_once()
+        underlying.generate_batch.assert_called_once()
+        underlying.generate_batch_rows.assert_called_once()
 
     def test_stream_adapter_retains_snapshot_when_consumed_later(self):
         snap = snapshot()
@@ -249,22 +259,44 @@ class DirectContracts(unittest.TestCase):
             yield "learned output"
         adapter = FailClosedCandidateAdapter(SimpleNamespace(generate_stream=chunks))
         with bind(snap):
-            stream = adapter.generate_stream("prompt", seed=22)
+            plan = GenerationPlan.from_request({"seed": 22}, "text", "release")
+            token = active_plan.set(plan)
+            try:
+                stream = adapter.generate_stream("prompt", seed=22)
+            finally:
+                active_plan.reset(token)
         self.assertEqual(list(stream), ["learned output"])
         self.assertEqual(seen, [(snap.id, snap.id)])
         with self.assertRaises(AwarenessUnavailable):
             bound_snapshot()
 
-    def test_agents_require_binding_before_model_use(self):
+    def test_agents_require_generation_plan_but_not_snapshot_before_model_use(self):
         from ai_model.agents.script_agent import ScriptAgent
         from ai_model.agents.distribution_agent import DistributionAgent
         from ai_model.agents.visual_spec_agent import VisualSpecAgent
         from ai_model.agents.optimization_agent import OptimizationAgent
         for agent_type in (ScriptAgent, DistributionAgent, VisualSpecAgent, OptimizationAgent):
             model = Mock()
-            with self.assertRaises(AwarenessUnavailable):
+            with self.assertRaises(ValueError):
                 agent_type(model).run(SimpleNamespace())
             model.generate.assert_not_called()
+
+    def test_agent_runs_with_plan_when_scan_is_unavailable(self):
+        from ai_model.agents.visual_spec_agent import VisualSpecAgent, VisualSpecRequest
+        model = Mock()
+        model.generate.return_value = "A detailed stage composition"
+        agent = VisualSpecAgent(model)
+        request = VisualSpecRequest(idea="release", platform="instagram", tone="warm")
+        with patch("ai_model.awareness.current_snapshot", return_value=None):
+            plan = GenerationPlan.from_request(vars(request), "image", "release")
+            token = active_plan.set(plan)
+            try:
+                output = agent.run(request)
+            finally:
+                active_plan.reset(token)
+        self.assertTrue(output)
+        self.assertEqual(model.generate.call_args.kwargs["seed"], plan.seed)
+        self.assertIsNone(model.generate.call_args.kwargs["snapshot_hash"])
 
     def test_agent_sampling_and_full_context_reach_actual_model_call(self):
         from ai_model.agents.visual_spec_agent import VisualSpecAgent, VisualSpecRequest
@@ -275,7 +307,7 @@ class DirectContracts(unittest.TestCase):
         req = VisualSpecRequest(idea="record release", platform="instagram",
                                 tone="warm", awareness="caller context " + "z" * 20000)
         with bind(snap):
-            with self.assertRaises(AwarenessUnavailable):
+            with self.assertRaises(ValueError):
                 agent.run(req)
             plan = GenerationPlan.from_request(vars(req), "image", "release")
             token = active_plan.set(plan)

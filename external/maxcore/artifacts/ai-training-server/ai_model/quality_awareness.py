@@ -1,8 +1,8 @@
-"""Compatibility facade for mandatory pinned awareness.
+"""Compatibility facade for continuously refreshed, optional scan context.
 
-Live knowledge never retires. The learned phrase vault and its graduation
-mechanism remain secondary creative material, not evidence of current trends.
-The engine is the only refresh scheduler; requests never fetch or train.
+Admin-generated phrases may retire external awareness only after an authoritative
+corpus measurement. The engine is the only refresh scheduler; requests never
+fetch or train, and generation does not wait for a scan.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import os
 import threading
 import time
 from typing import Any, Dict, List, Optional
-from ai_model.awareness import bound_snapshot, conditioning, get_engine
+from ai_model.awareness import conditioning, current_snapshot, get_engine
 
 DOC_KEY = "awareness:quality:doc"  # legacy document retained, never overwritten
 _lock = threading.Lock()
@@ -32,13 +32,18 @@ _SCENE_MAP = {
 
 
 def get_doc(trigger_harvest: bool = True) -> Dict[str, Any]:
-    """Never lazily harvest or substitute the old unvalidated quality document."""
-    doc = bound_snapshot().to_dict()
+    """Return current scan data, or an explicitly empty not-ready view."""
+    snapshot = current_snapshot()
+    if snapshot is None:
+        return {"ready": False, "snapshot_id": None, "domains": {},
+                "templates": {}, "music_features": {}, "exemplars": [],
+                "sources": {}}
+    doc = snapshot.to_dict()
     secondary = doc.get("secondary", {})
     return {**doc, "templates": secondary.get("phrases", {}),
             "music_features": secondary.get("music_features", {}),
             "exemplars": [r for rows in doc["domains"].values() for r in rows],
-            "sources": doc["source_health"]}
+            "sources": doc["source_health"], "ready": True}
 
 
 def start_scheduler() -> bool:
@@ -174,7 +179,6 @@ def image_headline_candidates(topic: str, artist: str) -> List[str]:
 
 
 def _graduate(recent, winner, corpus_key):
-    bound_snapshot()
     with _lock:
         template = recent.get(winner)
     if not template:
@@ -197,29 +201,34 @@ def graduate_image_headline(winner: str) -> bool:
 
 
 def platform_awareness_string(platform: str) -> str:
-    snapshot = bound_snapshot()
     if self_sufficiency()["retired"]:
+        return ""
+    snapshot = current_snapshot()
+    if snapshot is None:
         return ""
     return conditioning(snapshot, platform, "text")
 
 
 def veo_dna(platform: str = "") -> str:
-    snapshot = bound_snapshot()
     if self_sufficiency("video")["retired"]:
+        return ""
+    snapshot = current_snapshot()
+    if snapshot is None:
         return ""
     return conditioning(snapshot, platform, "video")
 
 
 def brief_enrichment() -> Dict[str, str]:
-    snapshot = bound_snapshot()
     if self_sufficiency()["retired"]:
         return {"directive": "", "note": "Admin corpus reached its configured self-sufficiency threshold"}
+    snapshot = current_snapshot()
+    if snapshot is None:
+        return {"directive": "", "note": "Live awareness is not currently available"}
     return {"directive": conditioning(snapshot, "", "brief"),
             "note": "Live awareness snapshot " + snapshot.id}
 
 
 def editing_pattern(seed_key: str, modality: str = "video") -> Optional[Dict[str, Any]]:
-    bound_snapshot()
     # Chart genres do not measure camera motion or transition performance.
     return None
 

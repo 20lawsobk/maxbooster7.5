@@ -2,7 +2,7 @@
 import os
 import unittest
 from unittest.mock import patch
-from ai_model.awareness.engine import AwarenessUnavailable, Engine, bind
+from ai_model.awareness.engine import Engine, bind
 from ai_model.awareness.test_engine import MemoryStore, sources
 from ai_model import quality_awareness as qa
 
@@ -29,15 +29,23 @@ class FacadeTests(unittest.TestCase):
         self.storage_patch.start()
         self.addCleanup(self.storage_patch.stop)
 
-    def test_missing_binding_never_silently_falls_back(self):
+    def test_missing_snapshot_returns_empty_context_without_blocking(self):
         for fn, args in (
             (qa.get_doc, ()), (qa.scene_phrases, ("hook",)),
             (qa.editing_pattern, ("seed",)), (qa.music_targets, ("trap",)),
             (qa.platform_awareness_string, ("tiktok",)), (qa.veo_dna, ()),
             (qa.brief_enrichment, ()), (qa.audio_seeding_targets, ()),
         ):
-            with self.subTest(fn=fn.__name__), self.assertRaises(AwarenessUnavailable):
-                fn(*args)
+            with self.subTest(fn=fn.__name__):
+                result = fn(*args)
+                if fn is qa.get_doc:
+                    self.assertFalse(result["ready"])
+                elif fn is qa.brief_enrichment:
+                    self.assertEqual(result["directive"], "")
+                elif fn is qa.editing_pattern:
+                    self.assertIsNone(result)
+                else:
+                    self.assertFalse(result)
         self.assertFalse(qa.self_sufficiency("video")["retired"])
 
     def test_bound_knowledge_does_not_retire_and_secondary_is_preserved(self):

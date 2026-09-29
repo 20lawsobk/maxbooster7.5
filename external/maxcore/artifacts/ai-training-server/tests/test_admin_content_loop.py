@@ -12,13 +12,13 @@ from workers import admin_content_loop
 class GuardedScriptAgent:
     def __init__(self):
         self.requests = []
+        self.snapshot_hashes = []
 
     @generation_guard
     def run(self, request):
-        from ai_model.awareness import bound_snapshot
         plan = active_plan.get()
         assert plan is not None
-        assert plan.snapshot_hash == bound_snapshot().id
+        self.snapshot_hashes.append(plan.snapshot_hash)
         self.requests.append(request)
         return SimpleNamespace(
             hook=f"Original {request.idea} hook",
@@ -41,7 +41,7 @@ class AdminContentLoopTests(unittest.TestCase):
         self.engine = Engine(sources=sources(), store=MemoryStore())
         self.engine.refresh()
 
-    def test_cycle_binds_snapshot_and_plan_then_feeds_admin_flywheel(self):
+    def test_cycle_uses_available_snapshot_and_feeds_admin_flywheel(self):
         agent = GuardedScriptAgent()
         flywheel = Flywheel()
         sufficiency = {
@@ -51,7 +51,7 @@ class AdminContentLoopTests(unittest.TestCase):
             "buffer_weight": 0.976,
         }
         with (
-            patch("ai_model.awareness.get_engine", return_value=self.engine),
+            patch("ai_model.awareness.engine.get_engine", return_value=self.engine),
             patch("ai_model.quality_awareness.self_sufficiency", return_value=sufficiency),
             patch("ai_model.quality_awareness.music_targets", return_value={}),
             patch("workers.admin_flywheel.get_flywheel", return_value=flywheel),
@@ -64,7 +64,28 @@ class AdminContentLoopTests(unittest.TestCase):
         self.assertTrue(all(row[3] == "admin" for row in flywheel.rows))
         self.assertTrue(all(row[2]["snapshot_id"] == self.engine.require_snapshot().id
                             for row in flywheel.rows))
+        self.assertEqual(agent.snapshot_hashes, [self.engine.require_snapshot().id] * 3)
         self.assertTrue(all(row[2]["own_corpus"] == 12 for row in flywheel.rows))
+        self.assertIsNone(active_plan.get())
+
+    def test_cycle_generates_and_feeds_flywheel_without_any_snapshot(self):
+        engine = Engine(sources=sources(), store=MemoryStore())
+        agent = GuardedScriptAgent()
+        flywheel = Flywheel()
+        sufficiency = {"retired": False, "own_corpus": 0, "retire_threshold": 500,
+                       "buffer_weight": 1.0}
+        with (
+            patch("ai_model.awareness.engine.get_engine", return_value=engine),
+            patch("ai_model.quality_awareness.self_sufficiency", return_value=sufficiency),
+            patch("ai_model.quality_awareness.music_targets", return_value={}),
+            patch("workers.admin_flywheel.get_flywheel", return_value=flywheel),
+        ):
+            outcome = admin_content_loop._run_cycle(lambda: agent, [0, 0])
+
+        self.assertEqual(outcome, "generated")
+        self.assertEqual(len(flywheel.rows), 3)
+        self.assertEqual(agent.snapshot_hashes, [None, None, None])
+        self.assertTrue(all("snapshot_id" not in row[2] for row in flywheel.rows))
         self.assertIsNone(active_plan.get())
 
     def test_retired_corpus_skips_external_awareness_generation(self):
@@ -75,7 +96,7 @@ class AdminContentLoopTests(unittest.TestCase):
             "buffer_weight": 0.0,
         }
         with (
-            patch("ai_model.awareness.get_engine", return_value=self.engine),
+            patch("ai_model.awareness.engine.get_engine", return_value=self.engine),
             patch("ai_model.quality_awareness.self_sufficiency", return_value=sufficiency),
             patch("workers.admin_flywheel.get_flywheel") as get_flywheel,
         ):

@@ -24,9 +24,12 @@ class FakeSnapshot:
 
 
 class SnapshotContractTests(unittest.TestCase):
-    def test_direct_plan_requires_binding(self):
-        with self.assertRaises(AwarenessUnavailable):
-            GenerationPlan.from_request({"topic": "music"}, "text")
+    def test_direct_plan_is_valid_without_awareness_snapshot(self):
+        with patch("ai_model.awareness.current_snapshot", return_value=None):
+            plan = GenerationPlan.from_request({"topic": "music"}, "text")
+        self.assertIsNone(plan.snapshot_hash)
+        self.assertNotIn("snapshot", plan.to_dict())
+        self.assertEqual(plan.to_dict()["version"], "generation-plan-v3")
 
     def test_invalid_and_empty_snapshots_rejected(self):
         for payload in ({}, {"id": "x"}, {"id": "x", "expires_at": 0}):
@@ -35,11 +38,11 @@ class SnapshotContractTests(unittest.TestCase):
 
     def test_snapshot_checkpoint_and_facts_change_identity(self):
         data = {"topic": "music", "facts": ["a" * 20000], "direction": "b" * 20000}
-        with patch("ai_model.awareness.bound_snapshot", return_value=FakeSnapshot("one")):
+        with patch("ai_model.awareness.current_snapshot", return_value=FakeSnapshot("one")):
             a = GenerationPlan.from_request(data, "text", "checkpoint-a")
             again = GenerationPlan.from_request(data, "text", "checkpoint-a")
             other_checkpoint = GenerationPlan.from_request(data, "text", "checkpoint-b")
-        with patch("ai_model.awareness.bound_snapshot", return_value=FakeSnapshot("two")):
+        with patch("ai_model.awareness.current_snapshot", return_value=FakeSnapshot("two")):
             b = GenerationPlan.from_request(data, "text", "checkpoint-a")
         self.assertEqual(a.seed, again.seed)
         self.assertEqual(a.plan_hash, again.plan_hash)
@@ -50,7 +53,7 @@ class SnapshotContractTests(unittest.TestCase):
         self.assertEqual(len(a.to_dict()["facts"]), 1)
 
     def test_explicit_seed_and_invalid_seed(self):
-        with patch("ai_model.awareness.bound_snapshot", return_value=FakeSnapshot("one")):
+        with patch("ai_model.awareness.current_snapshot", return_value=FakeSnapshot("one")):
             self.assertEqual(GenerationPlan.from_request({"seed": 42}, "text").seed, 42)
             for value in (True, -1, 2**32, "1"):
                 with self.assertRaises(ValueError):

@@ -1,6 +1,7 @@
 """Explicit serving selection only; never trains, selects, or edits weights."""
 import json
 import inspect
+from contextlib import ExitStack
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -23,10 +24,13 @@ class FailClosedCandidateAdapter:
             from .awareness import sampling_seed, snapshot_hash
             identity = snapshot_hash()
             if kwargs.get("snapshot_hash") not in (None, identity):
-                raise ValueError("Sampling snapshot does not match bound awareness")
+                raise ValueError("Sampling identity does not match the generation plan")
             if name != "generate_batch_rows":
                 kwargs.setdefault("seed", sampling_seed())
-                kwargs.setdefault("snapshot_hash", identity)
+                if identity is not None:
+                    kwargs.setdefault("snapshot_hash", identity)
+                else:
+                    kwargs.pop("snapshot_hash", None)
             return getattr(self._adapter, name)(*args, **kwargs)
         except Exception as exc:
             if failures is not None:
@@ -46,22 +50,32 @@ class FailClosedCandidateAdapter:
         pinned = []
         for row in rows:
             if row.get("snapshot_hash") not in (None, identity):
-                raise ValueError("Batch row snapshot does not match bound awareness")
-            pinned.append({**row, "seed": row.get("seed", sampling_seed()),
-                           "snapshot_hash": identity})
+                raise ValueError("Batch row identity does not match the generation plan")
+            item = {**row, "seed": row.get("seed", sampling_seed())}
+            if identity is not None:
+                item["snapshot_hash"] = identity
+            else:
+                item.pop("snapshot_hash", None)
+            pinned.append(item)
         if args:
             return self._call("generate_batch_rows", pinned, *args[1:], **kwargs)
         return self._call("generate_batch_rows", **{**kwargs, "rows": pinned})
 
     def generate_stream(self, *args, **kwargs):
-        from ai_model.awareness import bind, bound_snapshot
-        snapshot = bound_snapshot()
+        from ai_model.awareness import AwarenessUnavailable, bind
+        from .awareness import sampling_snapshot
+        snapshot = sampling_snapshot()
         stream = self._call("generate_stream", *args, **kwargs)
         def pinned():
             try:
-                with bind(snapshot):
+                scope = ExitStack()
+                if snapshot is not None:
+                    try:
+                        scope.enter_context(bind(snapshot))
+                    except AwarenessUnavailable:
+                        pass
+                with scope:
                     for chunk in stream:
-                        bound_snapshot()
                         yield chunk
             except Exception as exc:
                 failures = candidate_errors.get()

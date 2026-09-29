@@ -2,13 +2,12 @@
 import unittest
 from unittest.mock import patch
 
-from ai_model.awareness import AwarenessUnavailable
 from ai_model.generation.campaign import build_campaign
 
 
 class CampaignFailClosedTests(unittest.TestCase):
-    def test_unbound_campaign_rejected(self):
-        with self.assertRaises(AwarenessUnavailable):
+    def test_campaign_reports_unavailable_backend_without_snapshot_gate(self):
+        with self.assertRaisesRegex(RuntimeError, "Learned campaign generation unavailable"):
             build_campaign(artist="Artist", title="Release")
 
     def test_bound_campaign_explicitly_reports_missing_learned_backend(self):

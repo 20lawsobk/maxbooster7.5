@@ -146,4 +146,4 @@
 - [Training corpus rights](training-corpus-rights.md) — a dataset/package license alone does not clear underlying text; verify source-level rights before model training.
 - [Path-scoped Git history scrubbing](git-filter-repo-path-scrub.md) — use filename-aware filtering; preserve prior rewrite mappings and inspect other refs before assuming a scrub covers them.
 - [Fsync-aware BullMQ lock tests](bullmq-fsync-lock-testing.md) — use realistic lease windows and assert actual renewal/reclaim behavior over real AOF-backed PDIM.
-- [Admin awareness flywheel](admin-awareness-flywheel.md) — consume every validated live observation; grow the PDIM phrase corpus and retire external awareness only on authoritative threshold evidence.
+- [Admin awareness flywheel](admin-awareness-flywheel.md) — use valid snapshots as optional context; keep generation live and retire external awareness only on authoritative corpus evidence.

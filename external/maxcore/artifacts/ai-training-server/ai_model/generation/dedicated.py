@@ -7,9 +7,11 @@ from uuid import uuid4
 
 def conditioned_controls(modality, controls):
     """Only measured, compatible absent controls get snapshot defaults."""
-    from ai_model.awareness import bound_snapshot
-    snapshot = bound_snapshot()
     result = dict(controls)
+    from .awareness import sampling_snapshot
+    snapshot = sampling_snapshot()
+    if snapshot is None:
+        return result
     if modality == "audio" and "bpm" not in result:
         features = snapshot.to_dict().get("secondary", {}).get("music_features", {})
         genre = str(result.get("genre") or "").strip().lower()
@@ -34,10 +36,12 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
     if not owner_id:
         raise ValueError("An authenticated private owner is required")
     job_id = job_id or uuid4().hex
+    generation_plan = plan.to_dict()
     record = {"job_id": job_id, "owner_id": owner_id, "owner_ids": [owner_id],
               "type": modality, "dedicated": True, "status": "running",
-              "snapshot_id": plan.to_dict()["snapshot_id"],
-              "generation_plan": plan.to_dict()}
+              "generation_plan": generation_plan}
+    if plan.snapshot_hash is not None:
+        record["snapshot_id"] = plan.snapshot_hash
     persist_job(job_id, record)
     stage = "rendering"
     try:
@@ -87,12 +91,14 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
             shutil.copyfile(source, artifact_path)
         from ai_model.capabilities import capabilities
         import mimetypes
+        delivery_metadata = {"capability": capabilities(modality),
+                             "effective_controls": dict(controls),
+                             "generation_plan": generation_plan}
+        if plan.snapshot_hash is not None:
+            delivery_metadata["snapshot_id"] = plan.snapshot_hash
         committing = {**record, "status": "committing",
                       "content_type": mimetypes.guess_type(str(artifact_path))[0] or "application/octet-stream",
-                      "delivery_metadata": {"capability": capabilities(modality),
-                                            "snapshot_id": plan.to_dict()["snapshot_id"],
-                                            "effective_controls": dict(controls),
-                                            "generation_plan": plan.to_dict()}}
+                      "delivery_metadata": delivery_metadata}
         persist_job(job_id, committing)
         record = committing
         stage = "committing"
