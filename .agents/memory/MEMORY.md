@@ -148,3 +148,4 @@
 - [Fsync-aware BullMQ lock tests](bullmq-fsync-lock-testing.md) — use realistic lease windows and assert actual renewal/reclaim behavior over real AOF-backed PDIM.
 - [Admin awareness flywheel](admin-awareness-flywheel.md) — use valid snapshots as optional context; keep generation live and retire external awareness only on authoritative corpus evidence.
 - [MaxCore URL guard and Replit dev hosts](maxcore-ssrf-reserved-dev-host.md) — shell-fetchable Replit dev URLs can resolve as reserved inside MaxCore; keep SSRF checks intact and test with publicly resolvable sources.
+- [Conflicting PDIM AOF sequences](local-pdim-aof-conflicting-sequences.md) — different mutations at one sequence are ambiguous; never dedupe or renumber without authoritative recovery evidence.
