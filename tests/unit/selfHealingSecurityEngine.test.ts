@@ -603,4 +603,44 @@ describe("actual middleware address and enforcement boundaries", () => {
     expect(blockedNext).not.toHaveBeenCalled();
     engine.stop();
   });
+
+  it("does not escalate browser transport headers as XSS input", async () => {
+    const { engine, writes } = await newEngine();
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+
+    for (let requestIndex = 0; requestIndex < 6; requestIndex++) {
+      const request = requestDouble(XSS_IP, XSS_IP, {
+        referer: "https://example.test/article?snippet=<script>alert(1)</script>",
+        accept: "text/html,application/xhtml+xml",
+        "sec-fetch-mode": "navigate",
+      });
+      request.path = "/";
+      request.method = "GET";
+      request.query = {};
+      middleware(request, responseDouble(), vi.fn());
+    }
+
+    await settle();
+    expect(engine.getMetrics().threatsDetected).toBe(0);
+    expect(engine.isIpRateLimited(XSS_IP)).toBe(false);
+    expect(engine.isIpBlocked(XSS_IP)).toBe(false);
+    expect(writes).toHaveLength(0);
+    engine.stop();
+  });
+
+  it("continues inspecting URL query input for XSS", async () => {
+    const { engine } = await newEngine();
+    const middleware = createSelfHealingSecurityMiddleware(engine);
+    const request = requestDouble(XSS_IP, XSS_IP);
+    request.path = "/search";
+    request.query = { q: "<img src=x onerror=alert(1)>" };
+
+    middleware(request, responseDouble(), vi.fn());
+    await settle();
+
+    expect(engine.getMetrics().threatsDetected).toBe(1);
+    expect(engine.isIpRateLimited(XSS_IP)).toBe(true);
+    expect(engine.isIpBlocked(XSS_IP)).toBe(false);
+    engine.stop();
+  });
 });

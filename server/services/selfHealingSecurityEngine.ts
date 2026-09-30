@@ -34,14 +34,27 @@ interface SecurityEvent {
   payload: {
     path?: string;
     method?: string;
+    query?: unknown;
     body?: Record<string, unknown>;
-    headers?: Record<string, string>;
   };
   metrics: {
     requestCount?: number;
     errorCount?: number;
     latency?: number;
   };
+}
+
+function threatInspectionContent(payload: SecurityEvent["payload"]): string {
+  // Inspect application input, not transport metadata such as Accept or
+  // Referer. Treating all headers as one executable-content blob can trigger
+  // false positives and blacklist every browser behind a shared client IP.
+  return (
+    JSON.stringify({
+      path: payload.path,
+      query: payload.query,
+      body: payload.body,
+    }) ?? ""
+  );
 }
 
 interface ThreatAssessment {
@@ -443,7 +456,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   private isCriticalThreat(event: SecurityEvent): boolean {
     const { payload, source } = event;
-    const content = JSON.stringify(payload);
+    const content = threatInspectionContent(payload);
 
     // Reset lastIndex for global regex patterns before testing
     this.threatPatterns.sqlInjection.lastIndex = 0;
@@ -498,7 +511,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 
   private async detectThreat(event: SecurityEvent): Promise<ThreatAssessment> {
-    const content = JSON.stringify(event?.payload);
+    const content = threatInspectionContent(event?.payload);
     const indicators: string[] = [];
     let threatLevel = 0;
     let threatType = "unknown";

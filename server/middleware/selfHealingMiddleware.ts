@@ -98,8 +98,8 @@ export function createSelfHealingSecurityMiddleware(
     payload: {
       path: req.path,
       method: req.method,
+      query: req.query,
       body: sanitizeBody(req.body),
-      headers: sanitizeHeaders(req.headers),
     },
     metrics: {
       latency: 0,
@@ -172,26 +172,6 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   for (const field of sensitiveFields) {
     if (field in sanitized) {
       sanitized[field] = "[REDACTED]";
-    }
-  }
-
-  return sanitized;
-}
-
-function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
-  const sensitiveHeaders = [
-    "authorization",
-    "cookie",
-    "x-api-key",
-    "stripe-signature",
-  ];
-  const sanitized: Record<string, string> = {};
-
-  for (const [key, value] of Object.entries(headers)) {
-    if (sensitiveHeaders?.includes(key?.toLowerCase())) {
-      sanitized[key] = "[REDACTED]";
-    } else if (typeof value === "string") {
-      sanitized[key] = value;
     }
   }
 
