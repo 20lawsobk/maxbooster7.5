@@ -285,7 +285,8 @@ class PromotionalToolsService {
         aiGeneratedText =
           mcCopy?.headline ?? mcCopy?.caption ?? mcCopy?.body ?? null;
       } catch (error) {
-        throw error;
+        // Best-effort only — log and continue with null (falls back to template).
+        logger.warn({ err: error }, "AI promo copy generation failed, using fallback");
       }
     }
 

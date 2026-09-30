@@ -117,10 +117,15 @@ class PocketDimension:
 
     def __init__(self, path: str = "default",
                  orchestrator: Optional[PDIMOrchestrator] = None,
-                 gpu: Any = None):
+                 gpu: Any = None,
+                 dedup_namespace: Optional[str] = None):
         self.path = _pocket_path(path)
         self._orch = orchestrator or _default_orchestrator()
         self._gpu = gpu
+        # When set, matmul dedups under this shared namespace instead of the
+        # per-pocket one, so sibling replicas share one dedup domain while
+        # keeping distinct paths for identity/observability.
+        self._dedup_namespace = dedup_namespace
 
     # ── nesting ────────────────────────────────────────────────────────────
     def pocket(self, name: str) -> "PocketDimension":
@@ -174,7 +179,8 @@ class PocketDimension:
             METRICS.incr("pdim.pocket_matmul")
             return _encode(out_np)
 
-        envelope = self._orch.compute(request, _compute, namespace=self.namespace)
+        envelope = self._orch.compute(request, _compute,
+                                        namespace=self._dedup_namespace or self.namespace)
         payload = envelope["result"]
         return {
             "result": _decode(payload),

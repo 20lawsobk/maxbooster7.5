@@ -15,8 +15,6 @@ import { analyzeUrl } from "../services/mediaAnalyzerService";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import {
   getAwarenessContext,
-  normalizeSocialAwarenessPlatform,
-  platformAwarenessOptimization,
 } from "../services/awarenessContext.js";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
@@ -1404,8 +1402,6 @@ router.post(
       // These measurements are optional enrichment. Content generation remains
       // successful when a prediction request fails, but no local estimate is
       // substituted or represented as a measured prediction.
-      const genre = detectedGenre;
-
       // Predictions must see the same awareness context (genre, live trend
       // signals, platform profile) the content itself was generated with —
       // previously these calls sent bare {platform, content} with nothing

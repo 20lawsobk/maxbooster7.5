@@ -2,6 +2,19 @@ import { describe, it, expect, afterAll } from "vitest";
 import fs from "fs/promises";
 import path from "path";
 import { createHash, randomBytes } from "crypto";
+import { execSync } from "child_process";
+// The round-trip tests shell out to the real `zstd` binary. In environments
+// where it is not installed (minimal containers, some CI images) they skip
+// cleanly instead of failing — the codec-selection unit test below still runs.
+const hasZstd = (() => {
+  try {
+    execSync("command -v zstd", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const itRequiresZstd = it.skipIf(!hasZstd);
 import {
   packCapsule,
   packCapsuleMembers,
@@ -94,7 +107,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     return out;
   }
 
-  it("packs a real directory with zstd and restores it byte-identical", async () => {
+  itRequiresZstd("packs a real directory with zstd and restores it byte-identical", async () => {
     const dirRelative = `${ROOT_RELATIVE}/src`;
     const capsuleRelative = `${ROOT_RELATIVE}/fixture.pdim`;
     const manifestRelative = `${ROOT_RELATIVE}/fixture.manifest.json`;
@@ -177,7 +190,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     expect(second).toBe(true);
   }, 60000);
 
-  it("fails closed on a corrupted capsule instead of silently restoring bad content", async () => {
+  itRequiresZstd("fails closed on a corrupted capsule instead of silently restoring bad content", async () => {
     const dirRelative = `${ROOT_RELATIVE}/src-tamper`;
     const capsuleRelative = `${ROOT_RELATIVE}/tamper.pdim`;
     const manifestRelative = `${ROOT_RELATIVE}/tamper.manifest.json`;
@@ -226,7 +239,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     expect(leftoverScratch).toEqual([]);
   }, 30000);
 
-  it("packs a scattered file list (app remainder) and restores it byte-identical, leaving untouched siblings alone", async () => {
+  itRequiresZstd("packs a scattered file list (app remainder) and restores it byte-identical, leaving untouched siblings alone", async () => {
     // Mirrors the real app-remainder shape: files to pack are scattered
     // across several directories, and some of those directories ALSO
     // contain a file that must be left alone (like dist/pdim-restore.mjs

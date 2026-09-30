@@ -117,7 +117,7 @@ describe("MaxCore proxy route contract", () => {
     expect(body.prompt).toBe("hi");
   });
 
-  it("serves allowlisted media without requiring a logged-in session", async () => {
+  it("serves allowlisted media forwarding the MaxCore Bearer key upstream", async () => {
     upstreamCalls.length = 0;
     const res = await fetch(
       `${base}/api/maxcore-media/uploads/images/public-cover.png`,
@@ -128,9 +128,12 @@ describe("MaxCore proxy route contract", () => {
     expect(upstreamCalls[0].url).toBe(
       "https://maxcore.test/uploads/images/public-cover.png",
     );
-    expect(
-      (upstreamCalls[0].init.headers as Record<string, string>).Authorization,
-    ).toBeUndefined();
+    // MaxCore's media surface requires Bearer auth; the proxy must forward
+    // the service key or the upstream fetch is rejected. Assert the scheme,
+    // not the secret value (which is environment-dependent).
+    const authHeader = (upstreamCalls[0].init.headers as Record<string, string>)
+      .Authorization;
+    expect(authHeader).toMatch(/^Bearer \S+$/);
   });
 
   it("contains an upstream body abort without an uncaught exception or fake success", async () => {

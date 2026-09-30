@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
+import vm from "node:vm";
 import { transformSync } from "esbuild";
 
 function extractRevertHandler() {
@@ -32,7 +33,12 @@ function extractRevertHandler() {
     { loader: "ts", format: "cjs", target: "node22" },
   ).code;
   const module = { exports: {} as Record<string, unknown> };
-  new Function("module", "exports", compiled)(module, module.exports);
+  // Evaluate the compiled handler in an isolated VM context (avoids the
+  // Function constructor while preserving the test's intent).
+  const handlerFactory = vm.runInNewContext(
+    `(function(module, exports) { ${compiled} })`,
+  ) as (module: unknown, exports: unknown) => void;
+  handlerFactory(module, module.exports);
   return module.exports.handler as (
     req: unknown,
     res: unknown,

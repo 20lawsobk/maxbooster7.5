@@ -130,11 +130,13 @@ describe("social OAuth provider contracts", () => {
     expect(routeSource).toContain("TIKTOK_SANDBOX_REDIRECT_URI ||");
   });
 
-  it("does not encrypt callback tokens in place before publishers support decryption", () => {
+  it("encrypts callback tokens with the per-user per-platform context", () => {
+    // Publishers (socialOAuthService, socialService, socialSyncService) all
+    // decrypt via decryptSocialCredential, so the callback stores encrypted
+    // tokens — never the raw effectiveToken.
     expect(routeSource).toContain(
-      "Keep the callback's dedicated token columns in their current",
+      "encryptSocialCredential(effectiveToken, `${stateData.userId}:${p.name}:access`)",
     );
-    expect(routeSource).toContain("publisher-compatible representation");
-    expect(routeSource).toContain("accessToken: effectiveToken");
+    expect(routeSource).not.toContain("accessToken: effectiveToken");
   });
 });

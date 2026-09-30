@@ -1,12 +1,11 @@
-type ToolostEnvironment = Pick<
-  NodeJS.ProcessEnv,
-  | "TOOLOST_ENVIRONMENT"
-  | "TOOLOST_REDIRECT_URI"
-  | "TOOLOST_SANDBOX_REDIRECT_URI"
->;
+interface ToolostEnvironment {
+  TOOLOST_ENVIRONMENT?: string;
+  TOOLOST_REDIRECT_URI?: string;
+  TOOLOST_SANDBOX_REDIRECT_URI?: string;
+}
 
 export function getToolostRedirectUri(
-  env: ToolostEnvironment = process.env,
+  env: ToolostEnvironment = process.env as ToolostEnvironment,
 ): string {
   const configured =
     env.TOOLOST_ENVIRONMENT === "sandbox"

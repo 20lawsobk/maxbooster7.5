@@ -8,8 +8,7 @@ import {
 } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
-import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { IntelligentMasteringEngine } from "../../shared/ml/audio/IntelligentMasteringEngine.js";
 import { getMaxCoreMixingRecommendation } from "./maxcoreMixingService.js";
 import { getMaxCoreMasteringRecommendation } from "./maxcoreMasteringService.js";
@@ -243,8 +242,8 @@ export class AIService {
    * Uses input data to calculate optimal campaigns
    */
   async generateSuperiorAdCampaign(
-    config: AIAdvertisingConfig,
-    musicData: unknown,
+    _config: AIAdvertisingConfig,
+    _musicData: unknown,
   ): Promise<{
     performanceBoost: string;
     costReduction: string;
@@ -260,71 +259,6 @@ export class AIService {
     throw new AIUnavailableError(
       "ad campaign generation requires an authenticated MaxCore user id",
     );
-    try {
-      // ── MaxCore ad campaign generation (fail-explicit, no local fallback) ─
-      const mcRaw = await MaxCoreAIClient.generate<{
-        primary?: string;
-        variations?: string[];
-        caption?: string;
-        hook?: string;
-        body?: string;
-        cta?: string;
-      }>("/api/generate/content", {
-        topic: "music artist ad campaign",
-        platform: "instagram",
-        tone: "promotional",
-        objective: config.campaignType ?? "engagement",
-        target_audience: config.targetAudience,
-        budget: config.budget,
-      });
-      const mcCampaign = requireMaxCore(mcRaw, "ad campaign generation");
-      // MaxCore /api/generate/content returns caption/hook/body/cta — normalize
-      // into the campaign shape. A response with no usable generated copy is a
-      // contract failure, not a cue to substitute local template copy.
-      const mcPrimary =
-        mcCampaign.primary ??
-        mcCampaign.caption ??
-        [mcCampaign.hook, mcCampaign.body].filter(Boolean).join(" ") ??
-        undefined;
-      const mcVariations =
-        mcCampaign.variations ??
-        [mcCampaign.hook, mcCampaign.caption, mcCampaign.cta].filter(
-          (v): v is string => typeof v === "string" && v.length > 0,
-        );
-      if (!mcPrimary || mcPrimary.trim().length === 0) {
-        throw new AIUnavailableError("ad campaign generation (empty MaxCore content)");
-      }
-
-      // Calculate metrics based on actual input data
-      const audienceScore = this.calculateAudienceScore(config?.targetAudience);
-      const campaignEfficiency = this.calculateCampaignEfficiency(
-        config?.campaignType,
-        musicData,
-      );
-      const viralityScore = this.calculateViralityPotential(config, musicData);
-
-      // Generate campaign content using input data
-      const adContent = this.generateTargetedAdContent(config, musicData);
-      const targeting = this.calculatePrecisionTargeting(config?.targetAudience);
-      const distribution = this.optimizeDistributionPlan(config, musicData);
-
-      return {
-        performanceBoost: `${Math.round(audienceScore * 500)}% performance increase`,
-        costReduction: `${Math.round(campaignEfficiency * 100)}% cost optimization`,
-        viralityScore: viralityScore,
-        algorithmicAdvantage: `${Math.round(viralityScore * 1000)}x platform advantage`,
-        adContent: {
-          primary: mcPrimary,
-          variations: mcVariations.length > 0 ? mcVariations : adContent.variations,
-          targetingStrategy: targeting,
-          distributionPlan: distribution,
-        },
-      };
-    } catch (error: unknown) {
-      if (error instanceof AIUnavailableError) throw error;
-      logger.warn({ err: error }, "AI advertising error:");
-      throw new Error("Failed to generate zero-cost ad campaign");
-    }
   }
 
   /**
@@ -411,151 +345,6 @@ export class AIService {
     throw new AIUnavailableError(
       "audio analysis: a MaxCore-safe upload URL is required; raw buffer transport is unavailable",
     );
-  }
-
-  // Advanced advertising calculation methods
-  private calculateAudienceScore(
-    audience: AIAdvertisingConfig["targetAudience"],
-  ): number {
-    // Calculate score based on audience specificity and interests
-    const ageSpecificity = audience?.age?.includes("-") ? 1.5 : 1.0;
-    const interestDiversity = Math.min(audience?.interests?.length / 5, 2.0);
-    const locationSpecificity = audience?.location?.length > 10 ? 1.3 : 1.0;
-
-    return ageSpecificity * interestDiversity * locationSpecificity;
-  }
-
-  private calculateCampaignEfficiency(
-    campaignType: string,
-    _musicData: unknown,
-  ): number {
-    const typeMultipliers = {
-      viral: 0.95,
-      engagement: 0.8,
-      awareness: 0.7,
-      conversion: 0.85,
-    };
-
-    return typeMultipliers[campaignType as keyof typeof typeMultipliers] || 0.7;
-  }
-
-  private calculateViralityPotential(
-    config: AIAdvertisingConfig,
-    musicData: unknown,
-  ): number {
-    // Calculate based on genre, target audience, and campaign type
-    const genreMultipliers: Record<string, number> = {
-      electronic: 0.8,
-      "hip-hop": 0.9,
-      pop: 0.95,
-      rock: 0.6,
-    };
-
-    const campaignMultipliers = {
-      viral: 0.9,
-      engagement: 0.7,
-      awareness: 0.5,
-      conversion: 0.6,
-    };
-
-    const genreScore = genreMultipliers[(musicData as any)?.genre?.toLowerCase()] || 0.7;
-    const campaignScore = campaignMultipliers[config?.campaignType] || 0.6;
-    const audienceScore =
-      config?.targetAudience?.interests?.length > 3 ? 0.8 : 0.6;
-
-    return Math.min(genreScore * campaignScore * audienceScore, 0.95);
-  }
-
-  private generateTargetedAdContent(
-    config: AIAdvertisingConfig,
-    musicData: unknown,
-  ): { primary: string; variations: string[] } {
-    // Generate ads based on campaign type and target audience
-    const ageSegment = config?.targetAudience?.age;
-    const primaryInterest = config?.targetAudience?.interests[0] || "music";
-
-    let primary = "";
-    let variations: string[] = [];
-
-    switch (config?.campaignType) {
-      case "viral":
-        primary = `🔥 Everyone's talking about ${(musicData as any).title} by ${(musicData as any).artist} - Join the movement that's taking ${config?.targetAudience?.location} by storm!`;
-        variations = [
-          `💯 ${config?.targetAudience?.location} can't stop playing ${(musicData as any).title} - See what the hype is about`,
-          `🎵 The track ${primaryInterest} fans have been waiting for: ${(musicData as any).title} is HERE`,
-          `⚡ ${(musicData as any).artist} drops ${(musicData as any).title} and it's everything ${ageSegment} music lovers needed`,
-        ];
-        break;
-      case "engagement":
-        primary = `🎧 ${primaryInterest} meets perfection in ${(musicData as any)?.title} by ${(musicData as any)?.artist} - What's your favorite moment?`;
-        variations = [
-          `💬 Tell us: How does ${(musicData as any).title} make you feel? ${(musicData as any).artist} wants to know!`,
-          `🔄 Share your ${(musicData as any).title} moment - ${config.targetAudience.location} is listening`,
-          `❤️ React if ${(musicData as any).title} by ${(musicData as any).artist} hits different for ${ageSegment} listeners`,
-        ];
-        break;
-      case "awareness":
-        primary = `✨ Discover ${(musicData as any).artist}, the ${(musicData as any).genre} artist ${config.targetAudience.location} is talking about. Start with ${(musicData as any).title}`;
-        variations = [
-          `🎵 New to ${(musicData as any).artist}? ${(musicData as any).title} is the perfect introduction to their sound`,
-          `📻 ${config.targetAudience.location} radio is playing ${(musicData as any).title} - Meet the artist behind the music`,
-          `🌟 ${(musicData as any).artist} brings fresh ${(musicData as any).genre} to ${ageSegment} audiences with ${(musicData as any).title}`,
-        ];
-        break;
-      case "conversion":
-        primary = `🎯 Stream ${(musicData as any).title} by ${(musicData as any).artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
-        variations = [
-          `⬇️ Download ${(musicData as any).title} today - ${(musicData as any).artist} delivers exactly what ${ageSegment} listeners want`,
-          `🔗 Add ${(musicData as any).title} to your library - ${config.targetAudience.location} fans are already streaming`,
-          `💾 Save ${(musicData as any).title} by ${(musicData as any).artist} - The ${(musicData as any).genre} hit that's changing playlists`,
-        ];
-        break;
-    }
-
-    return { primary, variations };
-  }
-
-  private calculatePrecisionTargeting(
-    audience: AIAdvertisingConfig["targetAudience"],
-  ): Record<string, unknown> {
-    return {
-      demographic_precision: `${audience?.age} ${audience?.demographics}`,
-      geographic_focus: audience.location,
-      interest_alignment: audience.interests.join(", "),
-      engagement_optimization:
-        audience?.interests?.length > 2 ? "high-precision" : "broad-reach",
-      conversion_likelihood: audience.interests.includes("music") ? 0.85 : 0.65,
-      organic_amplification: audience.location.includes("City") ? 1.4 : 1.2,
-    };
-  }
-
-  private optimizeDistributionPlan(
-    config: AIAdvertisingConfig,
-    _musicData: unknown,
-  ): Record<string, unknown> {
-    // Create distribution plan based on campaign type and audience
-    const platforms =
-      config?.campaignType === "viral"
-        ? ["tiktok", "instagram", "twitter", "youtube"]
-        : ["instagram", "facebook", "youtube", "twitter"];
-
-    return {
-      primary_platforms: platforms.slice(0, 2),
-      secondary_platforms: platforms.slice(2),
-      timing_strategy: config.targetAudience.age?.includes("18-")
-        ? "evening_peak"
-        : "afternoon_drive",
-      content_seeding:
-        config?.campaignType === "viral"
-          ? "influencer_network"
-          : "organic_growth",
-      budget_allocation: {
-        content_creation: "0%", // Zero cost system
-        distribution: "0%",
-        amplification: "0%",
-        optimization: "100% automated",
-      },
-    };
   }
 
 }

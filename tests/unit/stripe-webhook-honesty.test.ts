@@ -25,6 +25,49 @@ const valuesMock = vi.fn();
 const returningMock = vi.fn();
 const marketplaceProcessPayment = vi.hoisted(() => vi.fn());
 
+// Stateful pool stand-in simulating the commerce webhook inbox lifecycle:
+// lease claim -> handler -> mark completed + record receipt. Tracks
+// "processed" event ids so idempotency short-circuit tests behave.
+// `frozenOrder` supplies the row for `SELECT * FROM orders WHERE id=$1`
+// used by consumeMarketplaceCheckout.
+const poolState = vi.hoisted(() => ({
+  processed: new Set<string>(),
+  frozenOrder: null as Record<string, any> | null,
+  reset() { this.processed.clear(); this.frozenOrder = null; },
+}));
+const poolQueryMock = vi.hoisted(() =>
+  vi.fn(async (sql: string, params: any[] = []) => {
+    const s = String(sql);
+    if (s.includes("FROM orders WHERE id=$1")) {
+      return { rows: poolState.frozenOrder ? [poolState.frozenOrder] : [] };
+    }
+    if (s.includes("commerce_webhook_receipts") && s.includes("SELECT")) {
+      const id = params[0];
+      return { rows: poolState.processed.has(id) ? [{ event_id: id }] : [] };
+    }
+    if (s.includes("commerce_webhook_inbox") && s.includes("RETURNING")) {
+      return { rows: [{ event_id: params[0] }] }; // lease claim succeeds
+    }
+    return { rows: [] };
+  }),
+);
+const poolConnectMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    query: vi.fn(async (sql: string, params: any[] = []) => {
+      const s = String(sql);
+      if (s.includes("commerce_webhook_receipts") && s.includes("INSERT")) {
+        poolState.processed.add(params[0]);
+        return { rows: [] };
+      }
+      if (s.includes("commerce_webhook_inbox") && s.includes("RETURNING")) {
+        return { rows: [{ event_id: params[0] }] };
+      }
+      return { rows: [] };
+    }),
+    release: vi.fn(),
+  })),
+);
+
 const chain: any = {
   from: vi.fn(() => chain),
   where: vi.fn(() => chain),
@@ -39,6 +82,10 @@ vi.mock("../../server/db", () => ({
     select: vi.fn(() => chain),
     insert: vi.fn(() => chain),
     update: vi.fn(() => chain),
+  },
+  pool: {
+    query: poolQueryMock,
+    connect: poolConnectMock,
   },
 }));
 
@@ -64,6 +111,12 @@ vi.mock("../../server/services/instantPayoutService.js", () => ({
     handleTransferWebhook: vi.fn(),
     handlePayoutWebhook: vi.fn(),
   },
+}));
+
+// currentSubscription resolves live Stripe state; the honesty tests focus on
+// the handler's DB reporting, so return the event payload as current.
+vi.mock("../../server/services/commerce/entitlements", () => ({
+  currentSubscription: vi.fn(async (event: any) => event.data.object),
 }));
 
 vi.mock("../../server/services/marketplaceService.js", () => ({
@@ -122,6 +175,7 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
     limitMock.mockReset();
     valuesMock.mockReset();
     returningMock.mockReset();
+    poolState.reset();
     marketplaceProcessPayment.mockReset().mockResolvedValue(undefined);
     (dunningService.startSequence as any).mockReset();
     (dunningService.resolveSequence as any).mockReset();
@@ -151,115 +205,105 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
   });
 
   describe("checkout.session.completed", () => {
-    it("reports failure when the order insert throws", async () => {
-      limitMock.mockResolvedValueOnce([]); // no existing order
-      valuesMock.mockRejectedValueOnce(new Error("connection terminated"));
+    // Current implementation: marketplace checkouts go through
+    // consumeMarketplaceCheckout, which requires a frozen order
+    // (commerceKind/commerceVersion/orderId) and validates it against the
+    // session via pool.query("SELECT * FROM orders WHERE id=$1").
+    const frozenOrder = {
+      id: "order-frozen-1",
+      metadata: { settlementTerms: { split: "70/30" }, amountCents: 2500, sessionId: "cs_test_market" },
+      currency: "usd",
+      user_id: "buyer-1",
+      seller_id: "seller-1",
+      listing_id: "beat-1",
+      license_type: "basic",
+      stripe_payment_intent_id: "pi_test_market",
+    };
+    const marketplaceSession = (overrides: Record<string, unknown> = {}) => ({
+      id: "cs_test_market",
+      payment_status: "paid",
+      amount_total: 2500,
+      currency: "usd",
+      payment_intent: "pi_test_market",
+      metadata: {
+        commerceKind: "marketplace",
+        commerceVersion: "1",
+        orderId: "order-frozen-1",
+        beatId: "beat-1",
+        buyerId: "buyer-1",
+        sellerId: "seller-1",
+        licenseType: "basic",
+      },
+      ...overrides,
+    });
+
+    it("reports success when the frozen order matches and fulfillment runs", async () => {
+      poolState.frozenOrder = frozenOrder;
 
       const result = await handleWebhookEvent(
-        makeEvent("checkout.session.completed", {
-          id: "cs_test_1",
-          amount_total: 2500,
-          currency: "usd",
-          payment_intent: "pi_test_1",
-          metadata: {
-            beatId: "beat-1",
-            buyerId: "buyer-1",
-            sellerId: "seller-1",
-            licenseType: "basic",
-          },
-        }),
+        makeEvent("checkout.session.completed", marketplaceSession()),
+      );
+
+      expect(result.success).toBe(true);
+      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
+        "order-frozen-1",
+        "pi_test_market",
+      );
+      expect(marketplaceProcessPayment).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports failure when the order lookup throws so Stripe can retry", async () => {
+      poolQueryMock.mockRejectedValueOnce(new Error("connection terminated"));
+
+      const result = await handleWebhookEvent(
+        makeEvent("checkout.session.completed", marketplaceSession()),
       );
 
       expect(result.success).toBe(false);
     });
 
-    it("reports success without re-inserting when the order already exists", async () => {
-      limitMock.mockResolvedValueOnce([{ id: "order-existing" }]);
+    it("reports failure when the frozen order does not match the session", async () => {
+      poolState.frozenOrder = {
+        ...frozenOrder,
+        metadata: { ...frozenOrder.metadata, amountCents: 9999 },
+      };
 
       const result = await handleWebhookEvent(
-        makeEvent("checkout.session.completed", {
-          id: "cs_test_2",
-          amount_total: 2500,
-          currency: "usd",
-          payment_intent: "pi_test_2",
-          metadata: {
-            beatId: "beat-1",
-            buyerId: "buyer-1",
-            sellerId: "seller-1",
-            licenseType: "basic",
-          },
-        }),
+        makeEvent("checkout.session.completed", marketplaceSession()),
       );
 
-      expect(result.success).toBe(true);
-      expect(valuesMock).not.toHaveBeenCalled();
-      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
-        "order-existing",
-        "pi_test_2",
-      );
-      expect(marketplaceProcessPayment).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(false);
+      expect(marketplaceProcessPayment).not.toHaveBeenCalled();
     });
 
-    it("reports success only after a pending order is created and earnings booking runs", async () => {
-      limitMock.mockResolvedValueOnce([]);
-      valuesMock.mockReturnValueOnce(chain);
-      returningMock.mockResolvedValueOnce([{ id: "order-created" }]);
+    it("reports failure for a historical checkout with no frozen order", async () => {
+      poolState.frozenOrder = null;
 
       const result = await handleWebhookEvent(
-        makeEvent("checkout.session.completed", {
-          id: "cs_test_3",
-          amount_total: 2500,
-          currency: "usd",
-          payment_intent: "pi_test_3",
-          metadata: {
-            beatId: "beat-1",
-            buyerId: "buyer-1",
-            sellerId: "seller-1",
-            licenseType: "basic",
-          },
-        }),
+        makeEvent(
+          "checkout.session.completed",
+          marketplaceSession({ metadata: { beatId: "beat-1" } }),
+        ),
       );
 
-      expect(result.success).toBe(true);
-      expect(valuesMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: "pending",
-          stripePaymentIntentId: "pi_test_3",
-        }),
-      );
-      expect(marketplaceProcessPayment).toHaveBeenCalledWith(
-        "order-created",
-        "pi_test_3",
-      );
-      expect(marketplaceProcessPayment).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(false);
+      expect(marketplaceProcessPayment).not.toHaveBeenCalled();
     });
 
-    it("reports failure when seller earnings booking fails so Stripe can retry", async () => {
-      limitMock.mockResolvedValueOnce([{ id: "order-retry" }]);
+    it("reports failure when fulfillment throws so Stripe can retry", async () => {
+      poolState.frozenOrder = frozenOrder;
       marketplaceProcessPayment.mockRejectedValueOnce(
         new Error("revenue event insert failed"),
       );
 
       const result = await handleWebhookEvent(
-        makeEvent("checkout.session.completed", {
-          id: "cs_test_booking_retry",
-          amount_total: 2500,
-          currency: "usd",
-          payment_intent: "pi_test_booking_retry",
-          metadata: {
-            beatId: "beat-1",
-            buyerId: "buyer-1",
-            sellerId: "seller-1",
-            licenseType: "basic",
-          },
-        }),
+        makeEvent("checkout.session.completed", marketplaceSession()),
       );
 
       expect(result.success).toBe(false);
-      expect(valuesMock).not.toHaveBeenCalled();
       expect(marketplaceProcessPayment).toHaveBeenCalledWith(
-        "order-retry",
-        "pi_test_booking_retry",
+        "order-frozen-1",
+        "pi_test_market",
       );
     });
 
@@ -269,6 +313,7 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
       const result = await handleWebhookEvent(
         makeEvent("checkout.session.completed", {
           id: "cs_test_4",
+          payment_status: "paid",
           amount_total: 1000,
           currency: "usd",
           metadata: { storefrontId: "storefront-1" },
@@ -284,6 +329,7 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
       const result = await handleWebhookEvent(
         makeEvent("checkout.session.completed", {
           id: "cs_test_5",
+          payment_status: "paid",
           amount_total: 1000,
           currency: "usd",
           metadata: { storefrontId: "storefront-1" },
@@ -333,7 +379,7 @@ describe("Stripe webhook handler honesty (Task #109)", () => {
           id: "sub_test_3",
           status: "active",
           customer: "cus_1",
-          metadata: {},
+          metadata: { planId: "monthly" },
         }),
       );
 

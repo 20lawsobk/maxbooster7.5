@@ -38,8 +38,8 @@ describe("Distribution tracker tabs", () => {
     expect(source).toContain('value: statsLoading');
     expect(source).toContain('statsError\n                ? "Error"');
     expect(source).toContain('"—"');
-    expect(source).toContain("Unable to load A&R submission stats");
-    expect(source).toContain("Unable to load A&R submissions");
+    expect(source).toContain("Unable to load A&amp;R submission stats");
+    expect(source).toContain("Unable to load A&amp;R submissions");
     expect(source).not.toMatch(/stats\?\.[A-Za-z]+ \?\? 0/);
     expect(source).not.toMatch(/stats\.(total|pending|accepted)\b/);
   });

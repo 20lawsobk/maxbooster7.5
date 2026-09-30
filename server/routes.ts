@@ -4940,8 +4940,8 @@ export async function registerRoutes(
               .map((row) => Number(row[metricType as "streams" | "revenue"]))
               .filter((value) => Number.isFinite(value));
             if (history.length < 7) return [];
-            const mean = history.reduce((sum, value) => sum + value, 0) / history.length;
-            const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / history.length;
+            const mean = history.reduce((sum, value) => sum + value, 0) / (history.length || 1);
+            const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (history.length || 1);
             const standardDeviation = Math.sqrt(variance);
             const current = Number(point[metricType as "streams" | "revenue"]);
             if (standardDeviation === 0 || Math.abs((current - mean) / standardDeviation) < 2) return [];
@@ -5009,8 +5009,8 @@ export async function registerRoutes(
       for (const metric of ["streams", "revenue"] as const) {
         for (let index = 7; index < metricsData.length; index++) {
           const history = metricsData.slice(index - 7, index).map((row) => Number(row[metric]));
-          const mean = history.reduce((sum, value) => sum + value, 0) / history.length;
-          const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / history.length;
+          const mean = history.reduce((sum, value) => sum + value, 0) / (history.length || 1);
+          const variance = history.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (history.length || 1);
           const standardDeviation = Math.sqrt(variance);
           const current = Number(metricsData[index][metric]);
           if (standardDeviation === 0) continue;

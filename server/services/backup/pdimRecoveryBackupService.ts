@@ -102,9 +102,8 @@ async function runActualClassVerifier(root: string): Promise<VerificationEvidenc
     }, 120_000);
     child.once("close", code => {
       clearTimeout(timeout);
-      code === 0
-        ? accept()
-        : reject(new Error("Isolated actual-class verifier rejected the PDIM snapshot"));
+      if (code === 0) accept();
+      else reject(new Error("Isolated actual-class verifier rejected the PDIM snapshot"));
     });
   });
   const line = stdout.split("\n").find(value =>

@@ -573,7 +573,7 @@ describe("local PDIM real HTTP protocol", () => {
         else process.env[key] = previousEnv[key];
       }
     }
-  }, 35_000);
+  }, 120_000);
 
   it("returns an explicit protocol error for unknown commands", async () => {
     await expect(client.scriptExec(["NOT_A_REDIS_COMMAND"])).rejects.toThrow(

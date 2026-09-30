@@ -72,7 +72,7 @@ async function renderAudio(job: DurableExportJob, dir: string, signal: AbortSign
       if (!intermediate && format === "flac") command.outputOptions("-sample_fmt", bitDepth === 16 ? "s16" : "s32", "-bits_per_raw_sample", String(bitDepth));
       if (!intermediate && ["mp3", "aac", "ogg"].includes(format)) command.audioBitrate(job.settings.bitrate ?? 320);
       command.on("error", (err) => { cleanup(); reject(err); })
-        .on("end", () => { cleanup(); signal.aborted ? reject(new Error("Export cancelled")) : resolve(); }).save(output);
+        .on("end", () => { cleanup(); if (signal.aborted) reject(new Error("Export cancelled")); else resolve(); }).save(output);
     });
   }
   for (const track of tracks) {

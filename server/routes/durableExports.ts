@@ -91,7 +91,7 @@ router.get(["/jobs", "/history"], requireAuth, handler(async (req, res) => {
     if (req.query.type && req.query.type !== "all") jobs = jobs.filter((job) => (job.type === "data" ? "analytics" : job.type) === req.query.type);
     if (req.query.status && req.query.status !== "all") jobs = jobs.filter((job) => (job.status === "complete" ? "completed" : job.status) === req.query.status);
   }
-  const offset = Math.max(0, Number(req.query.offset) || 0);
+  const offset = Math.min(100_000, Math.max(0, Number(req.query.offset) || 0));
   const limit = Math.min(1000, Math.max(1, Number(req.query.limit) || 50));
   res.json(jobs.slice(offset, offset + limit).map((job) => view(job, history)));
 }));

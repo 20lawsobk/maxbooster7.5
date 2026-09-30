@@ -100,7 +100,7 @@ class LuaPool {
       pw.active = 0;
     });
 
-    worker.on("exit", (code) => {
+    worker.on("exit", () => {
       // Respawn crashed workers
       const idx = this.workers.indexOf(pw);
       if (idx !== -1) {

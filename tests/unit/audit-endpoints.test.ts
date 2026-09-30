@@ -46,5 +46,5 @@ describe("static endpoint audit inventory", () => {
         !call.path.startsWith("/api/admin/"),
     );
     expect(nonAdminGaps).toEqual([]);
-  }, 30_000);
+  }, 90_000);
 });

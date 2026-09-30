@@ -36,7 +36,7 @@ class ReadReplicaPool {
       connectionTimeoutMillis: config.connectionTimeout,
     });
 
-    this.primaryPool.on("error", (err) => {
+    this.primaryPool.on("error", (err: Error) => {
       logger.warn({ err: err }, "Primary pool error:");
     });
 
@@ -53,7 +53,7 @@ class ReadReplicaPool {
         connectionTimeoutMillis: config.connectionTimeout,
       });
 
-      pool?.on("error", (err) => {
+      pool?.on("error", (err: Error) => {
         logger.warn({ err: err }, `Replica ${i} pool error:`);
         this.healthyReplicas.delete(i);
       });

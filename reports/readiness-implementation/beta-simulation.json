@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-09-22T02:11:23.430Z",
+  "startedAt": "2026-09-29T22:30:49.037Z",
   "kind": "isolated-platform-beta-contract-cycle",
   "acceptance": "BLOCKED: passing isolated contracts do not establish full-platform or production acceptance",
   "isolation": "Sequential allowlisted commands; fresh temporary HOME; cleared environment; no secrets/DB URLs inherited; bounded process-group timeout; Node TCP guard permits only same-process loopback fixtures. Not an OS sandbox.",
@@ -19,16 +19,16 @@
     {
       "id": "authority",
       "domain": "security",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/services/securityAuthority.test.ts",
+      "command": "/usr/bin/node --import tsx --test --test-concurrency=1 server/services/securityAuthority.test.ts",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 3023,
-      "stdout": "✔ authority rejects legacy epochs without I/O and propagates unavailable authority (1.405967ms)\n✔ generation revoke is durable, monotonic, parameterized, and distinguishes new login (0.305011ms)\n✔ webhook policy excludes internal, reserved, mapped and transition addresses (5.253163ms)\n✔ MFA cannot borrow assurance from other identity or bearer request (0.786018ms)\n✔ real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch (4.051385ms)\n✔ erasure request atomically queues with revocation and reports pending, not erased (0.91965ms)\n✔ factor promotion compares the proved active factor and bumps epoch in one statement (0.646492ms)\n✔ real TOTP proof is consumed once across concurrent consumers and entrypoints (1.683607ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2810.087334\n",
+      "durationMs": 546,
+      "stdout": "✔ authority rejects legacy epochs without I/O and propagates unavailable authority (2.102115ms)\n✔ generation revoke is durable, monotonic, parameterized, and distinguishes new login (0.56643ms)\n✔ webhook policy excludes internal, reserved, mapped and transition addresses (7.377071ms)\n✔ MFA cannot borrow assurance from other identity or bearer request (0.510146ms)\n✔ real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch (5.102757ms)\n✔ erasure request atomically queues with revocation and reports pending, not erased (1.428564ms)\n✔ factor promotion compares the proved active factor and bumps epoch in one statement (0.6529ms)\n✔ real TOTP proof is consumed once across concurrent consumers and entrypoints (2.383026ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 462.027006\n",
       "stderr": "",
       "hashes": {
-        "server/services/securityAuthority.test.ts": "85ed8ce44936f4d85cf8d5533276dec49af7705001fbc2dc4c88905a74dcfd60"
+        "server/services/securityAuthority.test.ts": "f997ae711dd4c25acb5fe2e450da7b44429ee614a3a52c86b2021a169775365e"
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
@@ -36,13 +36,13 @@
     {
       "id": "jwt-chain",
       "domain": "security",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/securityJwtChain.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 server/services/securityJwtChain.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 919,
-      "stdout": "✔ real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs (482.994481ms)\n✔ shared auth integration keeps atomic password epoch changes and mandatory hydration guard (193.150776ms)\n✔ webhook dispatch pins DNS, refuses mixed/internal results and never follows redirects (9.950273ms)\n✔ maintenance permits exact recovery and verified webhooks, not header spoofing or prefix lookalikes (94.067045ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 866.322471\n",
+      "durationMs": 366,
+      "stdout": "✔ real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs (154.126589ms)\n✔ shared auth integration keeps atomic password epoch changes and mandatory hydration guard (5.43072ms)\n✔ webhook dispatch pins DNS, refuses mixed/internal results and never follows redirects (16.94498ms)\n✔ maintenance permits exact recovery and verified webhooks, not header spoofing or prefix lookalikes (13.267701ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 314.581945\n",
       "stderr": "",
       "hashes": {
         "server/services/securityJwtChain.test.mjs": "3825a1f0c9b545fe09054ff9c1846e21ece98d0e8611e33f450337242dc7746d"
@@ -53,13 +53,13 @@
     {
       "id": "security-consumers",
       "domain": "security",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/logSanitizer.test.ts script/security-readiness.test.mjs script/security-consumers.test.cjs",
-      "status": "PASS",
-      "exitCode": 0,
+      "command": "/usr/bin/node --import tsx --test --test-concurrency=1 server/logSanitizer.test.ts script/security-readiness.test.mjs script/security-consumers.test.cjs",
+      "status": "FAIL",
+      "exitCode": 1,
       "signal": null,
       "timedOut": false,
-      "durationMs": 4433,
-      "stdout": "✔ actual royalties CSV parser retains quoting, trimming, mapping and malformed-input semantics on v7 (296.790052ms)\n✔ actual upload middleware accepts real multipart, rejects SVG, size overflow and malformed framing (472.91812ms)\n✔ installed sharp decodes and transcodes genuine image bytes (857.005954ms)\n✔ all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work (967.970752ms)\n✔ xcode UUID consumer remains compatible with patched UUID v11 (418.751072ms)\n✔ duplicate occurrences stay separate and root matches do not invent shipped provenance (1.229325ms)\n✔ empty incomplete SAST fails; completion also requires revision and coverage (0.684495ms)\n✔ actual scanner input retains all 206 occurrences and blocks false clean attestation (247.668531ms)\n✔ nested provider secrets and PII are redacted without mutating source (0.875692ms)\n✔ cycles, accessors, binary and errors remain bounded and diagnostic (2.173263ms)\n✔ production JSON emission covers interpolated messages, errors and child bindings (2.490609ms)\n✔ text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics (4.424893ms)\n✔ typed event runtime boundary rejects raw personal fields and unknown provider errors (0.640308ms)\n✔ valid typed events use the real logger consumer and retain opaque correlation (0.823555ms)\nℹ tests 14\nℹ suites 0\nℹ pass 14\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 4382.066172\n",
+      "durationMs": 1831,
+      "stdout": "✔ actual royalties CSV parser retains quoting, trimming, mapping and malformed-input semantics on v7 (119.562238ms)\n✔ actual upload middleware accepts real multipart, rejects SVG, size overflow and malformed framing (216.481945ms)\n✔ installed sharp decodes and transcodes genuine image bytes (102.031519ms)\n✖ all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work (82.132827ms)\n✖ xcode UUID consumer remains compatible with patched UUID v11 (0.644897ms)\n✔ duplicate occurrences stay separate and root matches do not invent shipped provenance (1.738179ms)\n✔ empty incomplete SAST fails; completion also requires revision and coverage (2.046741ms)\n✖ actual scanner input retains all 206 occurrences and blocks false clean attestation (0.531477ms)\n✔ nested provider secrets and PII are redacted without mutating source (1.359981ms)\n✔ cycles, accessors, binary and errors remain bounded and diagnostic (3.193773ms)\n✔ production JSON emission covers interpolated messages, errors and child bindings (3.346001ms)\n✔ text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics (6.097851ms)\n✔ typed event runtime boundary rejects raw personal fields and unknown provider errors (0.934803ms)\n✔ valid typed events use the real logger consumer and retain opaque correlation (1.231248ms)\nℹ tests 14\nℹ suites 0\nℹ pass 11\nℹ fail 3\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1773.197397\n\n✖ failing tests:\n\ntest at script/security-consumers.test.cjs:113:1\n✖ all installed tar parents resolve real patched code; archive roundtrip and traversal rejection work (82.132827ms)\n  Error: Cannot find module 'app-builder-lib/package.json'\n  Require stack:\n  - /home/hatch/workspace/maxbooster7.5/script/security-consumers.test.cjs\n      at node:internal/modules/cjs/loader:1564:15\n      at j._resolveFilename (file:///home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C4vWVmug.mjs:2:17957)\n      at nextResolveSimple (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:1006)\n      at /home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:9:4959\n      at /home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:9:4261\n      at resolveTsPaths (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:759)\n      at Module._resolveFilename (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:1199)\n      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n      at defaultResolve (node:internal/modules/cjs/loader:1199:20)\n      at nextStep (node:internal/modules/customization_hooks:189:26) {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: [ '/home/hatch/workspace/maxbooster7.5/script/security-consumers.test.cjs' ]\n  }\n\ntest at script/security-consumers.test.cjs:164:1\n✖ xcode UUID consumer remains compatible with patched UUID v11 (0.644897ms)\n  Error: Cannot find module 'xcode/package.json'\n  Require stack:\n  - /home/hatch/workspace/maxbooster7.5/script/security-consumers.test.cjs\n      at node:internal/modules/cjs/loader:1564:15\n      at j._resolveFilename (file:///home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C4vWVmug.mjs:2:17957)\n      at nextResolveSimple (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:1006)\n      at /home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:9:4959\n      at /home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:9:4261\n      at resolveTsPaths (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:759)\n      at Module._resolveFilename (/home/hatch/workspace/maxbooster7.5/node_modules/.pnpm/tsx@4.23.12/node_modules/tsx/dist/register-C557imBs.cjs:10:1199)\n      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)\n      at defaultResolve (node:internal/modules/cjs/loader:1199:20)\n      at nextStep (node:internal/modules/customization_hooks:189:26) {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: [ '/home/hatch/workspace/maxbooster7.5/script/security-consumers.test.cjs' ]\n  }\n\ntest at script/security-readiness.test.mjs:23:1\n✖ actual scanner input retains all 206 occurrences and blocks false clean attestation (0.531477ms)\n  Error: ENOENT: no such file or directory, open '/home/hatch/workspace/maxbooster7.5/reports/readiness-audit/scanner-dependencies.json'\n      at Object.openSync (node:fs:622:18)\n      at readFileSync (node:fs:488:35)\n      at read (file:///home/hatch/workspace/maxbooster7.5/script/security-readiness.mjs:46:19)\n      at inspectReadiness (file:///home/hatch/workspace/maxbooster7.5/script/security-readiness.mjs:50:40)\n      at TestContext.<anonymous> (file:///home/hatch/workspace/maxbooster7.5/script/security-readiness.test.mjs:24:18)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1397:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)\n      at Test.postRun (node:internal/test_runner/test:1537:19)\n      at Test.run (node:internal/test_runner/test:1462:12) {\n    errno: -2,\n    code: 'ENOENT',\n    syscall: 'open',\n    path: '/home/hatch/workspace/maxbooster7.5/reports/readiness-audit/scanner-dependencies.json'\n  }\n",
       "stderr": "",
       "hashes": {
         "server/logSanitizer.test.ts": "c25ea202352e08d3ab069aada0c92810ad6e9d8342d5cc420ed43caaaa307a89",
@@ -72,13 +72,13 @@
     {
       "id": "commerce",
       "domain": "commerce",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 server/services/commerce.isolated.test.mjs server/services/commerce/orchestrator.isolated.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 server/services/commerce.isolated.test.mjs server/services/commerce/orchestrator.isolated.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 565,
-      "stdout": "✔ simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals (47.512978ms)\n✔ simulated beta: frozen checkout allocations survive later split changes; missing terms require review (18.395785ms)\n✔ simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing (6.261359ms)\n✔ simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order (57.411784ms)\n✔ simulated beta: payout command survives lost response/reload and fences account switches (13.525146ms)\n✔ actual StripeService rejects another buyer and invalid refund values before money or writes (16.177498ms)\n✔ actual receipt repository commits only successful handlers and releases on failure (97.699395ms)\n✔ plan policy accepts real legacy producers, rejects invented/default tiers (5.06813ms)\n✔ actual marketplace service rejects a succeeded payment belonging to a different order (14.146652ms)\n✔ actual payment verification books provider fees and only succeeded refund totals (6.536864ms)\n✔ cancellation reason is written in the same release transaction without replacing other metadata (1.940386ms)\n✔ actual engine preserves reservations through pending bank payout, completes only on paid (0.914493ms)\n✔ actual engine keeps ambiguous provider failures reserved under the same operation ID (0.698955ms)\n✔ actual engine reverses a failed bank transfer before releasing reservations (0.478243ms)\n✔ actual engine does not fund a new withdrawal after source refund hold (0.186545ms)\n✔ actual engine reconciles refund totals and retries failed recovery without imaginary cash (0.526306ms)\n✔ actual allocation contract conserves all cents and rejects invalid contracts (8.020935ms)\n✔ actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys (0.686249ms)\n✔ actual repository books conserved fee/net journals and order fulfillment in one transaction (7.467715ms)\n✔ actual repository rolls back ledger booking when fulfillment persistence fails (0.722153ms)\n✔ actual engine resolves an ambiguous bank request before acting on a later refund (0.387093ms)\n✔ actual repository reopens returned bank funds, but holds overlapping refund recoveries (0.509115ms)\nℹ tests 22\nℹ suites 0\nℹ pass 22\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 518.941863\n",
+      "durationMs": 551,
+      "stdout": "✔ simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals (47.614735ms)\n✔ simulated beta: frozen checkout allocations survive later split changes; missing terms require review (17.954986ms)\n✔ simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing (3.822527ms)\n✔ simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order (65.571313ms)\n✔ simulated beta: payout command survives lost response/reload and fences account switches (14.785058ms)\n✔ actual StripeService rejects another buyer and invalid refund values before money or writes (20.568327ms)\n✔ actual receipt repository commits only successful handlers and releases on failure (8.564904ms)\n✔ plan policy accepts real legacy producers, rejects invented/default tiers (8.97567ms)\n✔ actual marketplace service rejects a succeeded payment belonging to a different order (25.682912ms)\n✔ actual payment verification books provider fees and only succeeded refund totals (6.860716ms)\n✔ cancellation reason is written in the same release transaction without replacing other metadata (2.777078ms)\n✔ actual engine preserves reservations through pending bank payout, completes only on paid (1.081092ms)\n✔ actual engine keeps ambiguous provider failures reserved under the same operation ID (0.847803ms)\n✔ actual engine reverses a failed bank transfer before releasing reservations (0.571778ms)\n✔ actual engine does not fund a new withdrawal after source refund hold (3.568486ms)\n✔ actual engine reconciles refund totals and retries failed recovery without imaginary cash (1.522635ms)\n✔ actual allocation contract conserves all cents and rejects invalid contracts (10.856102ms)\n✔ actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys (0.832679ms)\n✔ actual repository books conserved fee/net journals and order fulfillment in one transaction (10.806517ms)\n✔ actual repository rolls back ledger booking when fulfillment persistence fails (1.202584ms)\n✔ actual engine resolves an ambiguous bank request before acting on a later refund (0.411668ms)\n✔ actual repository reopens returned bank funds, but holds overlapping refund recoveries (0.855764ms)\nℹ tests 22\nℹ suites 0\nℹ pass 22\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 492.260899\n",
       "stderr": "",
       "hashes": {
         "server/services/commerce.isolated.test.mjs": "317e5d4b0992eb96f9d4e694eb1ba517b4fb37d0da24fb5dc3d2b60883fd451d",
@@ -90,12 +90,12 @@
     {
       "id": "integrations-readiness",
       "domain": "integrations",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integrations-readiness.cjs",
+      "command": "/usr/bin/node tests/integrations-readiness.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 526,
+      "durationMs": 646,
       "stdout": "Integration readiness: isolated policy, scanner, email, encryption, submission, posting, SMS and LabelGrid status tests passed\n",
       "stderr": "",
       "hashes": {
@@ -107,12 +107,12 @@
     {
       "id": "integration-webhooks",
       "domain": "integrations",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node tests/integration-webhooks.cjs",
+      "command": "/usr/bin/node tests/integration-webhooks.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 339,
+      "durationMs": 502,
       "stdout": "Provider exact-byte signatures, verified fan dispatcher, and storage decryption tests passed\n",
       "stderr": "",
       "hashes": {
@@ -124,17 +124,18 @@
     {
       "id": "closure-integrations",
       "domain": "integrations",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/closure-integrations.cjs tests/closure-integrations-shared.cjs",
-      "status": "PASS",
-      "exitCode": 0,
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/closure-integrations.cjs tests/closure-integrations-shared.cjs tests/scheduled-post-receipt-compatibility.cjs",
+      "status": "FAIL",
+      "exitCode": 1,
       "signal": null,
       "timedOut": false,
-      "durationMs": 834,
-      "stdout": "✔ shared scheduled-post updates merge metadata and protect ambiguous/confirmed receipts (64.171174ms)\n✔ compatibility status method delegates to the same atomic merge; status-only retains engagement (11.473859ms)\n✔ raw engagement replacement and malformed result arrays fail before writing (10.519999ms)\n✔ digest is schema-gated and registered with the real draining lifecycle (0.575238ms)\n✔ catalog follows every track page and retains zero-duration tracks (1.134945ms)\n✔ catalog rejects missing exhaustion, failed pages, loops and hostile credential cursors (1.009065ms)\n✔ actual Spotify scanner enriches albums beyond ten and preserves authoritative empty/failure (18.903182ms)\n✔ submission stops at a lost durable checkpoint without executing the next provider step (16.681407ms)\n✔ digest queues independently of in-app and rechecks mute/category preferences (13.50962ms)\n✔ unknown digest acceptance is durable and never retried (12.469785ms)\n✔ muted digests are suppressed; quiet hours defer without sending (32.372351ms)\n✔ posting claims quarantine unknown receipts; immediate reads use normalized results (0.542669ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 792.424667\n",
+      "durationMs": 1806,
+      "stdout": "✔ shared scheduled-post updates merge metadata and protect ambiguous/confirmed receipts (101.722395ms)\n✔ compatibility status method delegates to the same atomic merge; status-only retains engagement (25.932417ms)\n✔ raw engagement replacement and malformed result arrays fail before writing (33.109217ms)\n✔ digest is schema-gated and registered with the real draining lifecycle (0.804777ms)\n✔ catalog follows every track page and retains zero-duration tracks (1.691058ms)\n✔ catalog rejects missing exhaustion, failed pages, loops and hostile credential cursors (1.288483ms)\n✔ actual Spotify scanner enriches albums beyond ten and preserves authoritative empty/failure (30.019531ms)\n✔ submission stops at a lost durable checkpoint without executing the next provider step (37.726817ms)\n✔ digest queues independently of in-app and rechecks mute/category preferences (16.168404ms)\n✔ unknown digest acceptance is durable and never retried (20.165162ms)\n✔ muted digests are suppressed; quiet hours defer without sending (95.32213ms)\n✔ posting claims quarantine unknown receipts; immediate reads use normalized results (0.767612ms)\n✔ scheduled-post reads accept root arrays, legacy results, current results, and mixed metadata (138.447348ms)\n✔ scheduled-post SQL atomically canonicalizes every receipt shape without metadata loss (35.887958ms)\n✖ real PostgreSQL merge progresses only the same operation and never downgrades confirmation (11.0813ms)\nℹ tests 15\nℹ suites 0\nℹ pass 14\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1744.940101\n\n✖ failing tests:\n\ntest at tests/scheduled-post-receipt-compatibility.cjs:115:1\n✖ real PostgreSQL merge progresses only the same operation and never downgrades confirmation (11.0813ms)\n  Error: Command failed: bash -c command -v postgres\n      at genericNodeError (node:internal/errors:986:15)\n      at wrappedFn (node:internal/errors:540:14)\n      at checkExecSyncError (node:child_process:942:11)\n      at Object.execFileSync (node:child_process:978:15)\n      at postgresBinary (/home/hatch/workspace/maxbooster7.5/tests/scheduled-post-receipt-compatibility.cjs:94:33)\n      at TestContext.<anonymous> (/home/hatch/workspace/maxbooster7.5/tests/scheduled-post-receipt-compatibility.cjs:120:18)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1397:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)\n      at Test.postRun (node:internal/test_runner/test:1537:19) {\n    status: 1,\n    signal: null,\n    output: [ null, '', '' ],\n    pid: 7607,\n    stdout: '',\n    stderr: ''\n  }\n",
       "stderr": "",
       "hashes": {
         "tests/closure-integrations.cjs": "259084920a46f578f407ef35f5d693b1736a50935eb7f962ffed839899a5df6c",
-        "tests/closure-integrations-shared.cjs": "65afeda13c068924bf45849c13f0ecbf6acdaa98ab4dee0ff4ca6ae234059847"
+        "tests/closure-integrations-shared.cjs": "d84da5e5b6d7fd0dc7f68e63ed2bfc0436fe8cdda0c362bf62f98aae3a889a66",
+        "tests/scheduled-post-receipt-compatibility.cjs": "e593e52c48c75fec03010093491632430a88555f458c276c6ea2e07598fc95f5"
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
@@ -142,13 +143,13 @@
     {
       "id": "growth-rights",
       "domain": "growth",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/growth-rights.vitest.config.ts --maxWorkers=1 --no-file-parallelism",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config tests/growth-rights.vitest.config.ts --maxWorkers=1 --no-file-parallelism",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 3806,
-      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/growth-rights.test.ts (23 tests) 17ms\n ✓ tests/unit/growth-rights-splits.test.ts (5 tests) 12ms\n ✓ tests/unit/growth-rights-fan-ledger.test.ts (4 tests) 9ms\n\n Test Files  3 passed (3)\n      Tests  32 passed (32)\n   Start at  02:11:35\n   Duration  2.03s (transform 425ms, setup 0ms, import 1.32s, tests 38ms, environment 0ms)\n\n",
+      "durationMs": 1676,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/growth-rights.test.ts (23 tests) 21ms\n ✓ tests/unit/growth-rights-fan-ledger.test.ts (4 tests) 12ms\n ✓ tests/unit/growth-rights-splits.test.ts (5 tests) 15ms\n\n Test Files  3 passed (3)\n      Tests  32 passed (32)\n   Start at  22:30:55\n   Duration  1.26s (transform 283ms, setup 0ms, import 692ms, tests 48ms, environment 0ms)\n\n",
       "stderr": "",
       "hashes": {
         "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
@@ -160,13 +161,13 @@
     {
       "id": "client-contracts",
       "domain": "client",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-offline-readiness.test.mjs tests/unit/client-account-boundary.test.mjs tests/unit/client-sync-receipts.test.mjs tests/unit/client-worker-handoff.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/unit/client-offline-readiness.test.mjs tests/unit/client-account-boundary.test.mjs tests/unit/client-sync-receipts.test.mjs tests/unit/client-worker-handoff.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 1136,
-      "stdout": "✔ all-tab account barrier waits for real cleanup acknowledgments and excludes active background locks (35.638773ms)\n✔ account persister cancels old throttled snapshots, restores rightful owner and never restores auth (14.318777ms)\n✔ studio browser persistence isolates owners and resets memory without overwriting another owner's work (4.301935ms)\n✔ worker never intercepts private GETs; legacy replay and uncoordinated upgrade stay blocked (160.379792ms)\n✔ theme boot agrees with provider default and handles unavailable localStorage (4.863767ms)\n✔ real draft and queue algorithms with an isolated in-memory IDB boundary (26.647642ms)\n✔ preference writes serialize failures and reject a queued write after account change (7.285986ms)\n✔ changed domain TS/TSX sources parse in isolation (367.283096ms)\n✔ transactional receipt repository deduplicates, binds payload/owner and rolls back uncertain commits (39.866403ms)\n✔ worker acknowledges only durable owner-bound handoffs; mixed terminal receipts are not false applied results (40.031707ms)\n✔ worker retains handoffs on malformed receipts and never acknowledges a quota failure (12.060338ms)\n✔ waiting worker activates only after every live client explicitly acknowledges (6.283421ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1085.101671\n",
+      "durationMs": 697,
+      "stdout": "✔ all-tab account barrier waits for real cleanup acknowledgments and excludes active background locks (29.314822ms)\n✔ account persister cancels old throttled snapshots, restores rightful owner and never restores auth (13.603424ms)\n✔ studio browser persistence isolates owners and resets memory without overwriting another owner's work (6.035507ms)\n✔ worker never intercepts private GETs; legacy replay and uncoordinated upgrade stay blocked (12.305367ms)\n✔ theme boot agrees with provider default and handles unavailable localStorage (6.159864ms)\n✔ real draft and queue algorithms with an isolated in-memory IDB boundary (31.519502ms)\n✔ preference writes serialize failures and reject a queued write after account change (11.497935ms)\n✔ changed domain TS/TSX sources parse in isolation (84.212909ms)\n✔ transactional receipt repository deduplicates, binds payload/owner and rolls back uncertain commits (39.762832ms)\n✔ worker acknowledges only durable owner-bound handoffs; mixed terminal receipts are not false applied results (46.796027ms)\n✔ worker retains handoffs on malformed receipts and never acknowledges a quota failure (10.14881ms)\n✔ waiting worker activates only after every live client explicitly acknowledges (4.990679ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 637.796134\n",
       "stderr": "",
       "hashes": {
         "tests/unit/client-offline-readiness.test.mjs": "5d68dd635676b98a77773356cc6a66a29225b8783d26370e3e6b265bce496353",
@@ -180,16 +181,16 @@
     {
       "id": "admin-governance",
       "domain": "admin",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/admin-governance-isolated.cjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/admin-governance-isolated.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 1650,
-      "stdout": "✔ KYC missing documents remain an actionable checklist (332.042781ms)\n✔ verified identity cannot be edited by its owner (149.754999ms)\n✔ approval requires current reviewed evidence inside a transaction (119.355532ms)\n✔ API token issuance stores only its verifier and audit metadata; owner revocation disables it (15.712843ms)\n✔ support metadata mutations are server-side JSONB expressions, not stale snapshots (2.579678ms)\n✔ existing bearer verifier accepts a matching token, then rejects revocation and expiry (40.232961ms)\n✔ moderation removal persists local effect, recipient warning and actor audit (21.768511ms)\n✔ all changed domain modules parse without loading external boundaries (332.341693ms)\n✔ KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock (105.432812ms)\n✔ runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed (57.543293ms)\n✔ governance policy differentiates disabled registration from unavailable or malformed policy (11.876542ms)\n✔ support routes reject Express 5 array or empty ticket parameters before database access (54.045802ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1600.097154\n",
+      "durationMs": 1446,
+      "stdout": "✔ KYC missing documents remain an actionable checklist (240.838979ms)\n✔ verified identity cannot be edited by its owner (116.155635ms)\n✔ approval requires current reviewed evidence inside a transaction (141.618188ms)\n✔ API token issuance stores only its verifier and audit metadata; owner revocation disables it (35.092193ms)\n✔ support metadata mutations are server-side JSONB expressions, not stale snapshots (0.458608ms)\n✔ existing bearer verifier accepts a matching token, then rejects revocation and expiry (41.629254ms)\n✔ moderation removal persists local effect, recipient warning and actor audit (16.740984ms)\n✔ all changed domain modules parse without loading external boundaries (204.121827ms)\n✔ KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock (134.204752ms)\n✔ runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed (45.124108ms)\n✔ governance policy differentiates disabled registration from unavailable or malformed policy (13.360089ms)\n✔ support routes reject Express 5 array or empty ticket parameters before database access (51.42233ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1392.260653\n",
       "stderr": "",
       "hashes": {
-        "tests/admin-governance-isolated.cjs": "59ae464dc44d000084eb9ba96ee204e390abfa8b6294362ffec659e3b4f78904"
+        "tests/admin-governance-isolated.cjs": "6b89addb4104a7a81e458237e22efde6af174f00256333e808e004fe02b53bf0"
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
@@ -197,13 +198,13 @@
     {
       "id": "resumed-webhook-topology",
       "domain": "integrations",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/resume-integration-contracts.cjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/resume-integration-contracts.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 1697,
-      "stdout": "✔ provider CSRF exceptions are exact POST-only paths, not prefixes or aliases (88.199161ms)\n✔ Twilio verifier uses real HMAC, canonical HTTPS URL and flat form values (9.24005ms)\n✔ governance requires verified Resend raw bytes and Twilio signatures before bypass (30.501198ms)\n✔ mount order and raw-body capture preserve the actual callback topology (7.822372ms)\n✔ both SMS consumers reject unsigned writes and accept authentic provider receipts (14.532746ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1506.868852\n",
+      "durationMs": 897,
+      "stdout": "✔ provider CSRF exceptions are exact POST-only paths, not prefixes or aliases (115.903397ms)\n✔ Twilio verifier uses real HMAC, canonical HTTPS URL and flat form values (14.32665ms)\n✔ governance requires verified Resend raw bytes and Twilio signatures before bypass (48.508086ms)\n✔ mount order and raw-body capture preserve the actual callback topology (3.177959ms)\n✔ both SMS consumers reject unsigned writes and accept authentic provider receipts (35.275278ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 836.441803\n",
       "stderr": "",
       "hashes": {
         "tests/resume-integration-contracts.cjs": "ad18d7f917482e3ecc9c797556624347a081e20d24635bdfaffb44c48a61d009"
@@ -214,13 +215,13 @@
     {
       "id": "client-auth-contracts",
       "domain": "client",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/client-auth-beta-contracts.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/unit/client-auth-beta-contracts.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 339,
-      "stdout": "✔ beta MFA enrollment/replacement and disable use exact proof fields (24.326142ms)\n✔ beta reauthentication/replayed-code failures stay explicit, no automatic replay (0.451947ms)\n✔ beta erasure requires 202 accepted/not-erased; OAuth may omit password (2.407813ms)\n✔ beta status/cancel contracts distinguish missing, queued, unavailable and rejected (1.213855ms)\n✔ owned consumers parse and retain Settings wiring, expiry and account fences (46.355433ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 227.53239\n",
+      "durationMs": 247,
+      "stdout": "✔ beta MFA enrollment/replacement and disable use exact proof fields (31.481184ms)\n✔ beta reauthentication/replayed-code failures stay explicit, no automatic replay (2.746953ms)\n✔ beta erasure requires 202 accepted/not-erased; OAuth may omit password (2.437108ms)\n✔ beta status/cancel contracts distinguish missing, queued, unavailable and rejected (2.586832ms)\n✔ owned consumers parse and retain Settings wiring, expiry and account fences (34.697571ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 194.916382\n",
       "stderr": "",
       "hashes": {
         "tests/unit/client-auth-beta-contracts.test.mjs": "6b716c351d838a43bc9e4e3c1809597feb71c5614d6463cc7041557cce13ec16"
@@ -231,16 +232,16 @@
     {
       "id": "data-runtime",
       "domain": "data",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-data-runtime.mjs",
-      "status": "PASS",
-      "exitCode": 0,
+      "command": "/usr/bin/node scripts/test-data-runtime.mjs",
+      "status": "FAIL",
+      "exitCode": 1,
       "signal": null,
       "timedOut": false,
-      "durationMs": 243,
-      "stdout": "PASS D6: set/touch/destroy await commit, propagate failures; read failure explicit; touch UPDATE-only\nPASS D6 auth integration: uncached generation validation, authority errors explicit, durable revoke waits and confirms\nPASS D7: eleven malformed records retained as failed; valid processor runs; no startup sweep\nPASS D4: checksum corruption, storage outage, sequence gap rejected; stream snapshot preserves generated ID\nPASS D4 legacy conversion: real loader accepts generation + stream pending metadata; originals retained; overwrite/tamper/unfolded-tail/unknown-type rejected\nPASS D1-D3: concurrent unique verified keys, checksum mismatch pending, catalog errors explicit, preferred target, isolated fail-stop restore\nPASS D2 shutdown: catch-up/cron tracked; dispatch fenced; upload and renewal drained; bounded timeout preserves ownership; failed run stays recoverable\n",
-      "stderr": "",
+      "durationMs": 144,
+      "stdout": "PASS D6: set/touch/destroy await commit, propagate failures; read failure explicit; touch UPDATE-only\nPASS D6 auth integration: uncached generation validation, authority errors explicit, durable revoke waits and confirms\nPASS D7: eleven malformed records retained as failed; valid processor runs; no startup sweep\n",
+      "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: The input did not match the regular expression /snapshot recovery failed/. Input:\n\n'Error: PDIM fabric persistence was not supplied by the owner'\n\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///home/hatch/workspace/maxbooster7.5/scripts/test-data-runtime.mjs:152:3 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: Error: PDIM fabric persistence was not supplied by the owner\n      at _RedisStore.getPersistence (file:///tmp/readiness-beta-NgJjra/runtime-tests-YtTj7z/0.38974791365282135.mjs:261:34)\n      at _RedisStore.load (file:///tmp/readiness-beta-NgJjra/runtime-tests-YtTj7z/0.38974791365282135.mjs:403:32)\n      at file:///home/hatch/workspace/maxbooster7.5/scripts/test-data-runtime.mjs:152:30\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5),\n  expected: /snapshot recovery failed/,\n  operator: 'rejects',\n  diff: 'simple'\n}\n\nNode.js v24.20.0\n",
       "hashes": {
-        "scripts/test-data-runtime.mjs": "20a5c5fe3794b1e302007260290c5e5580b2d9f279534b368b773d2167b097ce"
+        "scripts/test-data-runtime.mjs": "8c94fe2bd4811d02f6ca9904c6c64cba4e8fcd1e14bf6290a5a651b62efc5001"
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
@@ -248,12 +249,12 @@
     {
       "id": "fabric-deletion",
       "domain": "privacy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node scripts/test-fabric-deletion.mjs",
+      "command": "/usr/bin/node scripts/test-fabric-deletion.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 121,
+      "durationMs": 90,
       "stdout": "PASS D5: durable claim; node failure retains usage/progress; retry accounts once; shared reference preserved\n",
       "stderr": "",
       "hashes": {
@@ -265,13 +266,13 @@
     {
       "id": "closure-erasure-workflow",
       "domain": "privacy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --import tsx --test --test-concurrency=1 server/services/accountErasureWorkflow.test.ts",
+      "command": "/usr/bin/node --import tsx --test --test-concurrency=1 server/services/accountErasureWorkflow.test.ts",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 298,
-      "stdout": "✔ approval gate rejects missing authority, expiry, holds, retention, incomplete inventory and unfenced writes (1.703291ms)\n✔ all adapters required, unknown systems denied, authority outage fails closed (1.502314ms)\n✔ claimed step rechecks authority, verifies receipt and never marks request completed (0.868513ms)\n✔ hold introduced during claim prevents adapter execution (0.444935ms)\n✔ ambiguous provider outcome retries with same key; unverifiable receipt is not acknowledged (0.596434ms)\n✔ lost claim does not execute; lost ACK and retry persistence failure surface errors (1.241819ms)\n✔ real SQL repository binds subjects, snapshot, leases and receipts; zero-row ACK/retry rejected (1.226211ms)\n✔ real request repository atomically revokes, creates new cycle only after cancellation, propagates outages (0.680314ms)\n✔ real handlers require principal and local proof, ignore attacker subject, acknowledge only after revocation/destroy (1.355479ms)\n✔ real passwordless handler requires owner-bound recent nonfuture OAuth stamp (0.6926ms)\n✔ status/cancellation only access caller; started/noncancellable requests return conflict (0.340261ms)\nℹ tests 11\nℹ suites 0\nℹ pass 11\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 252.614914\n",
+      "durationMs": 335,
+      "stdout": "✔ approval gate rejects missing authority, expiry, holds, retention, incomplete inventory and unfenced writes (2.289025ms)\n✔ all adapters required, unknown systems denied, authority outage fails closed (1.848834ms)\n✔ claimed step rechecks authority, verifies receipt and never marks request completed (0.910506ms)\n✔ hold introduced during claim prevents adapter execution (1.88545ms)\n✔ ambiguous provider outcome retries with same key; unverifiable receipt is not acknowledged (0.837287ms)\n✔ lost claim does not execute; lost ACK and retry persistence failure surface errors (0.637838ms)\n✔ real SQL repository binds subjects, snapshot, leases and receipts; zero-row ACK/retry rejected (1.224698ms)\n✔ real request repository atomically revokes, creates new cycle only after cancellation, propagates outages (0.621343ms)\n✔ real handlers require principal and local proof, ignore attacker subject, acknowledge only after revocation/destroy (1.127512ms)\n✔ real passwordless handler requires owner-bound recent nonfuture OAuth stamp (0.61286ms)\n✔ status/cancellation only access caller; started/noncancellable requests return conflict (0.443265ms)\nℹ tests 11\nℹ suites 0\nℹ pass 11\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 285.160702\n",
       "stderr": "",
       "hashes": {
         "server/services/accountErasureWorkflow.test.ts": "61ca47c3404e20c38fa5895eed3a5be1f486d2a5a4465cc96eba21362be82aa9"
@@ -282,18 +283,19 @@
     {
       "id": "closure-backup-postgres-tools",
       "domain": "data",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/backup.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/backup.config.mjs --maxWorkers=1 --no-file-parallelism",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 703,
-      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ server/services/backup/__tests__/postgresTools.test.ts (6 tests) 39ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  02:11:43\n   Duration  381ms (transform 123ms, setup 0ms, import 167ms, tests 39ms, environment 0ms)\n\n",
+      "durationMs": 1111,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ server/services/backup/__tests__/databaseDump.test.ts (7 tests) 58ms\n ✓ server/services/backup/__tests__/postgresTools.test.ts (11 tests) 27ms\n\n Test Files  2 passed (2)\n      Tests  18 passed (18)\n   Start at  22:31:01\n   Duration  666ms (transform 148ms, setup 0ms, import 210ms, tests 85ms, environment 0ms)\n\n",
       "stderr": "",
       "hashes": {
         "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
-        "<temporary-backup.config.mjs>": "ab5d96901751b153a7b2c906f3a3bd638105a4daa295e5680f9210b3c13de258",
-        "server/services/backup/__tests__/postgresTools.test.ts": "cd82ba3fcfed5053ed4d54fc8ea4cafe6c888e1932f898a5c9e05451ccab79ee"
+        "<temporary-backup.config.mjs>": "11310a4089c3404ac482200a7189a6640ab0ff97bd61f1c31fbad72bfec53013",
+        "server/services/backup/__tests__/postgresTools.test.ts": "6b9120b497a9d9b39457197dd814b5d6774f6e4099c804b1866ea381ae5f8123",
+        "server/services/backup/__tests__/databaseDump.test.ts": "a0eb9b2cf6a0e776eb6551208264ecd5455b67135616b24fb6864ca629c87997"
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
@@ -301,47 +303,49 @@
     {
       "id": "test_media_delivery_contract",
       "domain": "media",
-      "command": "/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
-      "status": "PASS",
-      "exitCode": 0,
+      "command": "/home/hatch/workspace/maxbooster7.5/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+      "status": "BLOCKED",
+      "exitCode": null,
       "signal": null,
       "timedOut": false,
-      "durationMs": 5954,
+      "durationMs": 0,
       "stdout": "",
-      "stderr": "...............\n----------------------------------------------------------------------\nRan 15 tests in 5.078s\n\nOK\n",
+      "stderr": "",
       "hashes": {
-        "external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py": "40256d2bf56aadcb3460dd072331ec2f0f86b3c81a044b312c2772a7ad339da0"
+        "external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py": "4858dc6369eca0bade2451b4a616aa13f01dc84035468e7994ed6ffd0c938804"
       },
       "stdoutTruncated": false,
-      "stderrTruncated": false
+      "stderrTruncated": false,
+      "reason": "Required files unavailable: /home/hatch/workspace/maxbooster7.5/.pythonlibs/bin/python3"
     },
     {
       "id": "test_isolated_audio",
       "domain": "media",
-      "command": "/home/runner/workspace/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
-      "status": "PASS",
-      "exitCode": 0,
+      "command": "/home/hatch/workspace/maxbooster7.5/.pythonlibs/bin/python3 -B external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+      "status": "BLOCKED",
+      "exitCode": null,
       "signal": null,
       "timedOut": false,
-      "durationMs": 1757,
+      "durationMs": 0,
       "stdout": "",
-      "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 1.669s\n\nOK\n",
+      "stderr": "",
       "hashes": {
         "external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py": "dc743f208b3608fdc9c0cc02b5330f8bccf0263bd60924ca5d4ca6bf26ccfdfd"
       },
       "stdoutTruncated": false,
-      "stderrTruncated": false
+      "stderrTruncated": false,
+      "reason": "Required files unavailable: /home/hatch/workspace/maxbooster7.5/.pythonlibs/bin/python3"
     },
     {
       "id": "media-resources",
       "domain": "media",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/unit/aiMediaResourceContracts.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/unit/aiMediaResourceContracts.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 571,
-      "stdout": "✔ nested Node allocation includes primary/launcher and removes inherited heap override (186.750403ms)\n✔ all child BLAS/OpenMP and nested libuv pools are capped (0.216622ms)\n✔ insufficient nested-process memory fails explicitly (0.455266ms)\n✔ actual nested primary setup supplies allocated worker heap without changing lifecycle (4.764369ms)\n✔ A/B variant method contains no local transforms, fabricated scores or dead alternate result (2.730085ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 528.148292\n",
+      "durationMs": 233,
+      "stdout": "✔ nested Node allocation includes primary/launcher and removes inherited heap override (4.526463ms)\n✔ all child BLAS/OpenMP and nested libuv pools are capped (0.332809ms)\n✔ insufficient nested-process memory fails explicitly (0.557967ms)\n✔ actual nested primary setup supplies allocated worker heap without changing lifecycle (5.05798ms)\n✔ A/B variant method contains no local transforms, fabricated scores or dead alternate result (0.652299ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 179.323391\n",
       "stderr": "",
       "hashes": {
         "tests/unit/aiMediaResourceContracts.test.mjs": "181ab80809db12f2ea9d7622d611d5b9402d43adfe7d5b899b6e0dcf02a4cf49"
@@ -352,18 +356,18 @@
     {
       "id": "autonomous-contracts",
       "domain": "autonomous",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/autonomous.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/autonomous.config.mjs --maxWorkers=1 --no-file-parallelism",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 3606,
-      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/evolution-registry.test.ts (17 tests) 591ms\n     ✓ a generated posting_optimization optimalHours override changes the real autopilot getOptimalTimesForPlatform result when no learned timing exists  567ms\n ✓ tests/unit/selfHealingSecurityEngine.test.ts (27 tests) 114ms\n ✓ tests/unit/self-evolution-simulation.test.ts (10 tests) 44ms\n ✓ tests/unit/security-containment.test.ts (5 tests) 10ms\n\n Test Files  4 passed (4)\n      Tests  59 passed (59)\n   Start at  02:11:52\n   Duration  3.20s (transform 831ms, setup 0ms, import 1.90s, tests 759ms, environment 0ms)\n\n",
+      "durationMs": 3669,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/evolution-registry.test.ts (17 tests) 322ms\n ✓ tests/unit/selfHealingSecurityEngine.test.ts (27 tests) 171ms\n ✓ tests/unit/self-evolution-simulation.test.ts (10 tests) 61ms\n ✓ tests/unit/security-containment.test.ts (5 tests) 15ms\n\n Test Files  4 passed (4)\n      Tests  59 passed (59)\n   Start at  22:31:02\n   Duration  3.24s (transform 924ms, setup 0ms, import 1.94s, tests 568ms, environment 0ms)\n\n",
       "stderr": "",
       "hashes": {
         "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
-        "<temporary-autonomous.config.mjs>": "0d8bbf0305aa5ddaa9966d6089b87773bf067e568de01c536c2c126d7a95e922",
-        "tests/unit/self-evolution-simulation.test.ts": "b2a869cc30c514b403ed0458d87eaf857594e745ad094e016241c137f40c949d",
+        "<temporary-autonomous.config.mjs>": "0625cd81599e224f3ddd47f38d04480a2a40f8aadd19b8ef08e952eb435f2652",
+        "tests/unit/self-evolution-simulation.test.ts": "2e009aa3598fc74da965d20ec61ba50c3774dc343bfadb4b3071c2c862f47a0f",
         "tests/unit/evolution-registry.test.ts": "f7ea7bba9dbd26b4d6205b5c9122efc3a337a7724a5e6bd6c8d79c1c4021291f",
         "tests/unit/security-containment.test.ts": "86242fed7ac66208f33df031a7485cb9fda5d0c0655ae027abaae6b7e5d47997",
         "tests/unit/selfHealingSecurityEngine.test.ts": "d3ee26b87d5aa1bb3e81f835d767cfac8481afd6c3eda170340aa9eac5e01d85"
@@ -374,13 +378,13 @@
     {
       "id": "deployment-contracts",
       "domain": "deploy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/deployment-contracts.cjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/deployment-contracts.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 749,
-      "stdout": "✔ cgroup quotas bound physical CPU/RAM and override cannot bypass bounds (50.73902ms)\n✔ disjoint pools fit under capacity; invalid overrides and impossible machines reject (11.656778ms)\n✔ 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap (3.029197ms)\n✔ role-specific minima are validated and small feasible CPU shares time-share (8.656039ms)\n✔ readiness publishes atomically, single-flights refreshes, expires and recovers (7.876298ms)\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-m5Q4wi/deployment-contract-hHuJ8e/.pdim-scratch-fixture-23925/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n✔ Sentry repeated never-successful sends cross 24h; success resets silence age (10.191152ms)\n✔ Python respects the interpreter selected at the critical restore barrier (5.230128ms)\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-m5Q4wi/deployment-contract-hHuJ8e/.pdim-scratch-fixture-23925/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-m5Q4wi/deployment-contract-hHuJ8e/.pdim-scratch-fixture-23925/ (staging for fixture/) ...\n[pdim-restore] Using bsdtar (libarchive, atomic extraction) for fixture.pdim\n[pdim-restore] ERROR: checksum mismatch for fixture.pdim\n  expected 0000000000000000000000000000000000000000000000000000000000000000\n  actual   bd314b58330d0987dc3cdd09bb530c69565570a901d46ef0d7e534dfb00f1483\n✔ capsule restoration reuses only the matching generation and rejects corruption (543.248042ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 706.102754\n",
+      "durationMs": 440,
+      "stdout": "✔ cgroup quotas bound physical CPU/RAM and override cannot bypass bounds (83.977906ms)\n✔ disjoint pools fit under capacity; invalid overrides and impossible machines reject (13.007069ms)\n✔ 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap (5.691842ms)\n✔ role-specific minima are validated and small feasible CPU shares time-share (12.532227ms)\n✔ readiness publishes atomically, single-flights refreshes, expires and recovers (40.7673ms)\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-NgJjra/deployment-contract-80BZbN/.pdim-scratch-fixture-7935/ (staging for fixture/) ...\n[pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim\n✔ Sentry repeated never-successful sends cross 24h; success resets silence age (42.267521ms)\n✔ Python respects the interpreter selected at the critical restore barrier (11.088971ms)\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-NgJjra/deployment-contract-80BZbN/.pdim-scratch-fixture-7935/ (staging for fixture/) ...\n[pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim\n[pdim-restore] ✅ fixture/ restored from fixture.pdim\n[pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/readiness-beta-NgJjra/deployment-contract-80BZbN/.pdim-scratch-fixture-7935/ (staging for fixture/) ...\n[pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim\n[pdim-restore] ERROR: checksum mismatch for fixture.pdim\n  expected 0000000000000000000000000000000000000000000000000000000000000000\n  actual   08d3e49e376da041f1fa55dbe80255687c7760e9f124155b61dd5db9d0356e21\n✔ capsule restoration reuses only the matching generation and rejects corruption (67.045986ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 384.143225\n",
       "stderr": "",
       "hashes": {
         "tests/deployment-contracts.cjs": "53e5e7eb4a3d5894fdfb70a38ff79af593f0613b3c26c4cc1cfe9df7a5ea0f79"
@@ -391,13 +395,13 @@
     {
       "id": "worker-composition",
       "domain": "deploy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/readiness-worker-composition.cjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/readiness-worker-composition.cjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 182,
-      "stdout": "✔ schema failure prevents startup and probes are read only (1.407128ms)\n✔ scheduler serializes work, stops future ticks, and drains active work (23.889205ms)\n✔ rejected work is reported rather than an unhandled timer rejection (1.464774ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 143.97787\n",
+      "durationMs": 254,
+      "stdout": "✔ schema failure prevents startup and probes are read only (4.257039ms)\n✔ scheduler serializes work, stops future ticks, and drains active work (24.19571ms)\n✔ rejected work is reported rather than an unhandled timer rejection (2.813642ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 202.083207\n",
       "stderr": "",
       "hashes": {
         "tests/readiness-worker-composition.cjs": "75576b850c37efa9cb1c44c9e352d889ab030b64ab8f0c2214508871acf6d77a"
@@ -408,13 +412,13 @@
     {
       "id": "beta-evidence-history",
       "domain": "deploy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/readiness-beta-history.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/readiness-beta-history.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 108,
-      "stdout": "✔ beta progress replacement preserves immutable previous report bytes and checksums (5.00604ms)\n✔ closure suite inputs exist and incomplete latest cycles are explicitly described (0.379646ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 69.218434\n",
+      "durationMs": 156,
+      "stdout": "✔ beta progress replacement preserves immutable previous report bytes and checksums (6.489769ms)\n✔ closure suite inputs exist and incomplete latest cycles are explicitly described (0.472719ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 98.226889\n",
       "stderr": "",
       "hashes": {
         "tests/readiness-beta-history.test.mjs": "6e47999769dc287dc29e64e26b7e675ba02aea2a7710a659b79544563de37e4e"
@@ -425,13 +429,13 @@
     {
       "id": "closure-runtime-artifacts",
       "domain": "deploy",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node --test --test-concurrency=1 tests/runtime-artifact-gates.test.mjs tests/nested-reconciliation.test.mjs",
+      "command": "/usr/bin/node --test --test-concurrency=1 tests/runtime-artifact-gates.test.mjs tests/nested-reconciliation.test.mjs",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 408,
-      "stdout": "✔ successful clean install replaces stale generated tree without modifying source/locks (41.362038ms)\n✔ failed frozen install preserves existing runtime (30.339801ms)\n✔ unexpected lock mutation is rejected before promotion (30.976576ms)\n✔ offline diagnostic never replaces installed files (29.136108ms)\n✔ stale newly installed dependency is rejected before promotion (33.842303ms)\n✔ installed stale nested copy fails despite patched top-level package and lock (6.219829ms)\n✔ missing workspace, prerelease version and escaping installed symlink fail closed (2.983114ms)\n✔ fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x (2.662476ms)\n✔ capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules (10.04191ms)\n✔ restored output gate rejects absent artifacts and invalid JS without executing it (57.027635ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 363.998169\n",
+      "durationMs": 561,
+      "stdout": "✔ successful clean install replaces stale generated tree without modifying source/locks (59.764328ms)\n✔ failed frozen install preserves existing runtime (42.249825ms)\n✔ unexpected lock mutation is rejected before promotion (43.867852ms)\n✔ offline diagnostic never replaces installed files (39.456473ms)\n✔ stale newly installed dependency is rejected before promotion (47.195237ms)\n✔ installed stale nested copy fails despite patched top-level package and lock (7.344192ms)\n✔ missing workspace, prerelease version and escaping installed symlink fail closed (3.589447ms)\n✔ fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x (3.79161ms)\n✔ capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules (11.598546ms)\n✔ restored output gate rejects absent artifacts and invalid JS without executing it (76.920194ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 511.114833\n",
       "stderr": "",
       "hashes": {
         "tests/runtime-artifact-gates.test.mjs": "02345ecdb2a21720626cdac872a66dd8fea08cb0da607237490c48f8ea76e6b6",
@@ -443,13 +447,13 @@
     {
       "id": "exports-sync",
       "domain": "exports/sync",
-      "command": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node node_modules/vitest/vitest.mjs run --config tests/coverage-gaps.config.ts --maxWorkers=1 --no-file-parallelism",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config tests/coverage-gaps.config.ts --maxWorkers=1 --no-file-parallelism",
       "status": "PASS",
       "exitCode": 0,
       "signal": null,
       "timedOut": false,
-      "durationMs": 4978,
-      "stdout": "\n RUN  v4.1.11 /home/runner/workspace\n\n ✓ tests/unit/coverage-gaps.test.ts (19 tests) 2306ms\n     ✓ renders real WAV bytes from an authorized PDIM clip using local FFmpeg  2259ms\n\n Test Files  1 passed (1)\n      Tests  19 passed (19)\n   Start at  02:11:57\n   Duration  4.65s (transform 347ms, setup 0ms, import 2.20s, tests 2.31s, environment 0ms)\n\n",
+      "durationMs": 3030,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/coverage-gaps.test.ts (19 tests) 364ms\n\n Test Files  1 passed (1)\n      Tests  19 passed (19)\n   Start at  22:31:07\n   Duration  2.58s (transform 679ms, setup 0ms, import 2.01s, tests 364ms, environment 0ms)\n\n",
       "stderr": "",
       "hashes": {
         "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
@@ -458,32 +462,149 @@
       },
       "stdoutTruncated": false,
       "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-commerce",
+      "domain": "commerce",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 30251,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 19554ms\n     ✓ produces matched, exact unresolved, and dynamic sections  19548ms\n[22:31:31.497] \u001b[33mWARN\u001b[39m (8168): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:31:31.537] \u001b[33mWARN\u001b[39m (8168): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3548ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1618ms\n     ✓ returns Spotify when it is the connected provider  1608ms\n[22:31:36.371] \u001b[32mINFO\u001b[39m (8186): \u001b[36m🔐 Token refresh monitor started (checking every minute)\u001b[39m\n[22:31:36.372] \u001b[33mWARN\u001b[39m (8186): \u001b[36m[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.\u001b[39m\n[22:31:36.952] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:31:36.953] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:31:36.954] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:31:36.954] \u001b[32mINFO\u001b[39m (8195): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 27ms\n[22:31:36.964] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096962_ac5139c for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.966] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:31:36.966] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096962_ac5139c: 1 imported, 0 failed\u001b[39m\n[22:31:36.966] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096966_e2ba727 for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.968] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:31:36.968] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096966_e2ba727: 1 imported, 0 failed\u001b[39m\n[22:31:36.973] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096973_6feef8f for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.974] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:31:36.974] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096973_6feef8f: 1 imported, 0 failed\u001b[39m\n[22:31:36.974] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096974_819353e for user user-1 from apple_music_profile_scan\u001b[39m\n[22:31:36.974] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:31:36.974] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096974_819353e: 1 imported, 0 failed\u001b[39m\n[22:31:36.976] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096976_1e627c3 for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.976] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096976_1e627c3 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:31:36.976] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:31:36.977] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096976_1e627c3: 1 imported, 0 failed\u001b[39m\n[22:31:36.977] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:31:36.978] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096976_1e627c3: 1 imported, 0 failed\u001b[39m\n[22:31:36.978] \u001b[33mWARN\u001b[39m (8195): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:31:36.978] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096978_19d96ea for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.978] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096978_19d96ea: 0 imported, 0 failed\u001b[39m\n[22:31:36.980] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096980_eecf46d for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.980] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:31:36.980] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096980_eecf46d: 1 imported, 0 failed\u001b[39m\n[22:31:36.981] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Created import job transfer_1790721096981_e678e7e for user user-1 from spotify_profile_scan\u001b[39m\n[22:31:36.982] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:31:36.982] \u001b[32mINFO\u001b[39m (8195): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721096981_e678e7e: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 29ms\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 22ms\n ✓ tests/unit/security-config.test.ts (15 tests) 16ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 15ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 10ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:31:10\n   Duration  29.81s (transform 1.34s, setup 87ms, import 3.15s, tests 24.84s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/stripe-webhook-honesty.test.ts": "dcd5841c34a0f949f10cd2cd52e9ecd78248cdf2f8081fc3c53f747296f31311",
+        "tests/unit/instant-payout-webhook-honesty.test.ts": "34cc651440231c8836ec4e5ff5c34550bdb28c675bd50cd132b94e00472af599"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-integrations",
+      "domain": "integrations",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 30671,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 19597ms\n     ✓ produces matched, exact unresolved, and dynamic sections  19591ms\n[22:32:01.756] \u001b[33mWARN\u001b[39m (8300): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:32:01.797] \u001b[33mWARN\u001b[39m (8300): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3562ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1527ms\n     ✓ returns Spotify when it is the connected provider  1518ms\n[22:32:06.538] \u001b[32mINFO\u001b[39m (8316): \u001b[36m🔐 Token refresh monitor started (checking every minute)\u001b[39m\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 30ms\n[22:32:08.850] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:32:08.851] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:32:08.851] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:32:08.852] \u001b[32mINFO\u001b[39m (8337): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 28ms\n[22:32:08.866] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128863_5d86e90 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.868] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:08.868] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128863_5d86e90: 1 imported, 0 failed\u001b[39m\n[22:32:08.868] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128868_54d81b1 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.869] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:32:08.869] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128868_54d81b1: 1 imported, 0 failed\u001b[39m\n[22:32:08.873] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128873_c86d39a for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.873] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:08.874] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128873_c86d39a: 1 imported, 0 failed\u001b[39m\n[22:32:08.874] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128874_11d3863 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:32:08.874] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:32:08.874] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128874_11d3863: 1 imported, 0 failed\u001b[39m\n[22:32:08.876] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128876_0a3940f for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.876] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128876_0a3940f for user user-1 from apple_music_profile_scan\u001b[39m\n[22:32:08.877] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:08.877] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128876_0a3940f: 1 imported, 0 failed\u001b[39m\n[22:32:08.877] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:32:08.878] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128876_0a3940f: 1 imported, 0 failed\u001b[39m\n[22:32:08.878] \u001b[33mWARN\u001b[39m (8337): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:32:08.878] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128878_55b6bd8 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.878] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128878_55b6bd8: 0 imported, 0 failed\u001b[39m\n[22:32:08.880] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128880_bf2ee91 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.881] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:32:08.881] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128880_bf2ee91: 1 imported, 0 failed\u001b[39m\n[22:32:08.884] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Created import job transfer_1790721128882_cf4d7bb for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:08.884] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:08.884] \u001b[32mINFO\u001b[39m (8337): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721128882_cf4d7bb: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 84ms\n ✓ tests/unit/security-config.test.ts (15 tests) 18ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 25ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 17ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:31:41\n   Duration  30.22s (transform 1.39s, setup 99ms, import 3.37s, tests 24.89s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/social-oauth-contract.test.ts": "0ac800d84613f6dadf092e8eb24add3300a688738efb5df4a1f15bc48153786a",
+        "tests/unit/maxcore-proxy-contract.test.ts": "47e68b045f74e1a03fdea521d78cd341beb155a20fb8a695dcc53327555a98df"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-security",
+      "domain": "security",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 30466,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 19829ms\n     ✓ produces matched, exact unresolved, and dynamic sections  19824ms\n[22:32:32.608] \u001b[33mWARN\u001b[39m (8430): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:32:32.646] \u001b[33mWARN\u001b[39m (8430): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3512ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1463ms\n     ✓ returns Spotify when it is the connected provider  1454ms\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 25ms\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 25ms\n[22:32:40.977] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:32:40.978] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:32:40.978] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:32:40.978] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:32:40.979] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:32:40.979] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:32:40.979] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:32:40.979] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:32:40.979] \u001b[32mINFO\u001b[39m (8475): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n[22:32:40.996] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721160995_8194b3f for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:40.999] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:41.000] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721160995_8194b3f: 1 imported, 0 failed\u001b[39m\n[22:32:41.000] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161000_5566e99 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.001] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:32:41.001] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161000_5566e99: 1 imported, 0 failed\u001b[39m\n[22:32:41.004] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161004_ea5ea1e for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.005] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:41.005] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161004_ea5ea1e: 1 imported, 0 failed\u001b[39m\n[22:32:41.005] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161005_920eae0 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:32:41.006] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:32:41.006] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161005_920eae0: 1 imported, 0 failed\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161007_0e6c144 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161008_ea5fb9f for user user-1 from apple_music_profile_scan\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161007_0e6c144: 1 imported, 0 failed\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:32:41.008] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161008_ea5fb9f: 1 imported, 0 failed\u001b[39m\n[22:32:41.009] \u001b[33mWARN\u001b[39m (8475): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:32:41.009] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161009_b656f97 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.009] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161009_b656f97: 0 imported, 0 failed\u001b[39m\n[22:32:41.011] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161011_2b59331 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.011] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:32:41.011] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161011_2b59331: 1 imported, 0 failed\u001b[39m\n[22:32:41.013] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Created import job transfer_1790721161012_196c6e7 for user user-1 from spotify_profile_scan\u001b[39m\n[22:32:41.013] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:32:41.013] \u001b[32mINFO\u001b[39m (8475): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721161012_196c6e7: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 25ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 8ms\n ✓ tests/unit/security-config.test.ts (15 tests) 16ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 6ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:32:11\n   Duration  30.04s (transform 1.30s, setup 96ms, import 3.24s, tests 24.91s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/security-config.test.ts": "981d65cee743c860726df50f3c3d6ab946f34ceb396b37506d3f4e94f559ae7a"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-client",
+      "domain": "client",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 31061,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 20292ms\n     ✓ produces matched, exact unresolved, and dynamic sections  20287ms\n[22:33:03.680] \u001b[33mWARN\u001b[39m (8565): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:33:03.718] \u001b[33mWARN\u001b[39m (8565): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3708ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1474ms\n     ✓ returns Spotify when it is the connected provider  1464ms\n[22:33:08.431] \u001b[32mINFO\u001b[39m (8590): \u001b[36m🔐 Token refresh monitor started (checking every minute)\u001b[39m\n[22:33:09.101] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:33:09.102] \u001b[32mINFO\u001b[39m (8599): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n[22:33:09.112] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189111_811cb72 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.114] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:09.114] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189111_811cb72: 1 imported, 0 failed\u001b[39m\n[22:33:09.114] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189114_6eedf38 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.115] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:33:09.115] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189114_6eedf38: 1 imported, 0 failed\u001b[39m\n[22:33:09.119] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189119_3fa8571 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.120] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:09.120] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189119_3fa8571: 1 imported, 0 failed\u001b[39m\n[22:33:09.120] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189120_98ce777 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:33:09.121] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:33:09.121] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189120_98ce777: 1 imported, 0 failed\u001b[39m\n[22:33:09.123] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189123_4fa7c3a for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.123] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189123_4fa7c3a for user user-1 from apple_music_profile_scan\u001b[39m\n[22:33:09.123] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:09.123] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189123_4fa7c3a: 1 imported, 0 failed\u001b[39m\n[22:33:09.123] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:33:09.124] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189123_4fa7c3a: 1 imported, 0 failed\u001b[39m\n[22:33:09.124] \u001b[33mWARN\u001b[39m (8599): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:33:09.124] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189124_aac920c for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.124] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189124_aac920c: 0 imported, 0 failed\u001b[39m\n[22:33:09.126] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189126_13b8f4d for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.127] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:33:09.127] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189126_13b8f4d: 1 imported, 0 failed\u001b[39m\n[22:33:09.128] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Created import job transfer_1790721189128_41c6fe2 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:09.128] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:09.128] \u001b[32mINFO\u001b[39m (8599): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721189128_41c6fe2: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 24ms\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 27ms\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 22ms\n ✓ tests/unit/security-config.test.ts (15 tests) 17ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 8ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 6ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:32:42\n   Duration  30.65s (transform 1.27s, setup 100ms, import 3.19s, tests 25.58s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/distribution-tabs.test.ts": "de37a6d95724792a8382cdd426eb71753590bce2268b1691feecc979b6a525f7"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-data",
+      "domain": "data",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 30634,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 19920ms\n     ✓ produces matched, exact unresolved, and dynamic sections  19915ms\n[22:33:34.394] \u001b[33mWARN\u001b[39m (8717): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:33:34.433] \u001b[33mWARN\u001b[39m (8717): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3617ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1635ms\n     ✓ returns Spotify when it is the connected provider  1627ms\n[22:33:39.279] \u001b[32mINFO\u001b[39m (8734): \u001b[36m🔐 Token refresh monitor started (checking every minute)\u001b[39m\n[22:33:39.280] \u001b[33mWARN\u001b[39m (8734): \u001b[36m[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.\u001b[39m\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 25ms\n[22:33:41.371] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:33:41.373] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:33:41.374] \u001b[32mINFO\u001b[39m (8758): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 29ms\n[22:33:41.389] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221387_1546c99 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.391] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:41.391] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221387_1546c99: 1 imported, 0 failed\u001b[39m\n[22:33:41.391] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221391_64e4cd7 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.392] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:33:41.392] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221391_64e4cd7: 1 imported, 0 failed\u001b[39m\n[22:33:41.396] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221396_4924451 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.396] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:41.396] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221396_4924451: 1 imported, 0 failed\u001b[39m\n[22:33:41.397] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221397_9bad4e5 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:33:41.397] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:33:41.397] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221397_9bad4e5: 1 imported, 0 failed\u001b[39m\n[22:33:41.399] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221399_4822dad for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.399] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221399_4822dad for user user-1 from apple_music_profile_scan\u001b[39m\n[22:33:41.399] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:41.400] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221399_4822dad: 1 imported, 0 failed\u001b[39m\n[22:33:41.400] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:33:41.400] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221399_4822dad: 1 imported, 0 failed\u001b[39m\n[22:33:41.400] \u001b[33mWARN\u001b[39m (8758): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:33:41.400] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221400_58c75c3 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.400] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221400_58c75c3: 0 imported, 0 failed\u001b[39m\n[22:33:41.403] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221402_66c03d7 for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.405] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:33:41.405] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221402_66c03d7: 1 imported, 0 failed\u001b[39m\n[22:33:41.407] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Created import job transfer_1790721221407_b64878c for user user-1 from spotify_profile_scan\u001b[39m\n[22:33:41.407] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:33:41.407] \u001b[32mINFO\u001b[39m (8758): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721221407_b64878c: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 29ms\n ✓ tests/unit/security-config.test.ts (15 tests) 18ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 14ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 7ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:33:13\n   Duration  30.17s (transform 1.27s, setup 101ms, import 3.11s, tests 25.29s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/catalog-import-dedup.test.ts": "b334f3d0b7b81904afc21b6158ccd54bda117b6f431404826e29b857db2f3e4a",
+        "tests/unit/capsule-pack-restore-roundtrip.test.ts": "15be1d2c27e5a863a8e112b5780b8a1790b34211f4b376c8625a95c3c8818f54"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
+    },
+    {
+      "id": "fixed-contracts-deploy",
+      "domain": "deploy",
+      "command": "/usr/bin/node node_modules/vitest/vitest.mjs run --config <temporary>/fixed-contracts.config.mjs --maxWorkers=1 --no-file-parallelism",
+      "status": "PASS",
+      "exitCode": 0,
+      "signal": null,
+      "timedOut": false,
+      "durationMs": 30628,
+      "stdout": "\n RUN  v4.1.11 /home/hatch/workspace/maxbooster7.5\n\n ✓ tests/unit/audit-endpoints.test.ts (2 tests) 19864ms\n     ✓ produces matched, exact unresolved, and dynamic sections  19858ms\n[22:34:04.828] \u001b[33mWARN\u001b[39m (8854): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout\u001b[39m\n[22:34:04.868] \u001b[33mWARN\u001b[39m (8854): \u001b[36m[MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close\u001b[39m\n ✓ tests/unit/maxcore-proxy-contract.test.ts (6 tests) 3503ms\n ✓ tests/unit/social-oauth-contract.test.ts (9 tests) 1697ms\n     ✓ returns Spotify when it is the connected provider  1688ms\n[22:34:09.790] \u001b[32mINFO\u001b[39m (8867): \u001b[36m🔐 Token refresh monitor started (checking every minute)\u001b[39m\n[22:34:09.791] \u001b[33mWARN\u001b[39m (8867): \u001b[36m[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.\u001b[39m\n[22:34:10.300] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Distribution data transfer service initialized\u001b[39m\n[22:34:10.301] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-spotify\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-apple_music\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-youtube_music\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-deezer\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-soundcloud\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-tidal\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-bandcamp\u001b[39m\n[22:34:10.302] \u001b[32mINFO\u001b[39m (8884): \u001b[36m🔌 Circuit breaker initialized: streaming-audiomack\u001b[39m\n[22:34:10.311] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250311_a5d4c55 for user user-1 from spotify_profile_scan\u001b[39m\n ✓ tests/unit/catalog-import-dedup.test.ts (7 tests) 24ms\n[22:34:10.314] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:34:10.314] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250311_a5d4c55: 1 imported, 0 failed\u001b[39m\n[22:34:10.315] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250314_9493a23 for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.316] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Merged existing release from spotify: First Light\u001b[39m\n[22:34:10.316] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250314_9493a23: 1 imported, 0 failed\u001b[39m\n[22:34:10.320] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250320_45f2f44 for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.320] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:34:10.320] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250320_45f2f44: 1 imported, 0 failed\u001b[39m\n[22:34:10.320] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250320_45f2f44 for user user-1 from apple_music_profile_scan\u001b[39m\n[22:34:10.321] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:34:10.321] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250320_45f2f44: 1 imported, 0 failed\u001b[39m\n[22:34:10.323] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250323_b3fd77c for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.323] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250323_b3fd77c for user user-1 from apple_music_profile_scan\u001b[39m\n[22:34:10.323] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:34:10.323] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250323_b3fd77c: 1 imported, 0 failed\u001b[39m\n[22:34:10.323] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Merged existing release from apple_music: First Light\u001b[39m\n[22:34:10.324] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250323_b3fd77c: 1 imported, 0 failed\u001b[39m\n[22:34:10.324] \u001b[33mWARN\u001b[39m (8884): \u001b[36m[DataTransfer] Skipping release \"First Light\" from non-canonical artist \"Different Artist\"\u001b[39m\n[22:34:10.324] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250324_da4b6c4 for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.324] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250324_da4b6c4: 0 imported, 0 failed\u001b[39m\n[22:34:10.326] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250326_e77eb9c for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.326] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] \"First Light\" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data\u001b[39m\n[22:34:10.326] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250326_e77eb9c: 1 imported, 0 failed\u001b[39m\n[22:34:10.328] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Created import job transfer_1790721250327_32c353b for user user-1 from spotify_profile_scan\u001b[39m\n[22:34:10.328] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Imported release from spotify profile: First Light\u001b[39m\n[22:34:10.328] \u001b[32mINFO\u001b[39m (8884): \u001b[36m[DataTransfer] Profile catalog import transfer_1790721250327_32c353b: 1 imported, 0 failed\u001b[39m\n ✓ tests/unit/instant-payout-webhook-honesty.test.ts (21 tests) 22ms\n ✓ tests/unit/stripe-webhook-honesty.test.ts (31 tests) 24ms\n ✓ tests/unit/security-config.test.ts (15 tests) 19ms\n ✓ tests/unit/capsule-pack-restore-roundtrip.test.ts (4 tests | 3 skipped) 16ms\n ✓ tests/unit/distribution-tabs.test.ts (3 tests) 6ms\n\n Test Files  9 passed (9)\n      Tests  95 passed | 3 skipped (98)\n   Start at  22:33:43\n   Duration  30.16s (transform 1.37s, setup 90ms, import 3.25s, tests 25.17s, environment 1ms)\n\n",
+      "stderr": "",
+      "hashes": {
+        "node_modules/vitest/vitest.mjs": "39db22f579acf5639bbb17a261408debbde03f4692c0c439e77e7f13aeba74d6",
+        "<temporary-fixed-contracts.config.mjs>": "ee0342b4f6e956b4b1101899008d443fddeae158f105ea440479e1d2ff02caac",
+        "tests/unit/audit-endpoints.test.ts": "987ec881fdb065da930ab4eb3b51c8f8ad7c29b4b3e31f4985d8cd900edac34a"
+      },
+      "stdoutTruncated": false,
+      "stderrTruncated": false
     }
   ],
   "domains": [
     {
       "domain": "security",
-      "status": "PASS",
-      "commands": 3,
-      "planned": 3,
+      "status": "FAIL",
+      "commands": 4,
+      "planned": 4,
       "acceptance": "BLOCKED",
       "limitations": "No deployed cookies/proxy, browser auth, real session SQL contention, TLS egress or credential rotation acceptance."
     },
     {
       "domain": "commerce",
       "status": "PASS",
-      "commands": 1,
-      "planned": 1,
+      "commands": 2,
+      "planned": 2,
       "acceptance": "BLOCKED",
       "limitations": "Mocked SQL/provider contracts only; no real charge, refund, payout, settlement or cross-process durable replay."
     },
     {
       "domain": "integrations",
-      "status": "PASS",
-      "commands": 4,
-      "planned": 4,
+      "status": "FAIL",
+      "commands": 5,
+      "planned": 5,
       "acceptance": "BLOCKED",
-      "limitations": "Synthetic signatures/credentials and mocked providers; no actual webhook delivery, catalog scale or provider receipt."
+      "limitations": "Synthetic signatures/credentials, mocked providers and minimal isolated PostgreSQL receipt-merge behavior; no actual webhook delivery, catalog scale, live SQL contention or provider receipt."
     },
     {
       "domain": "growth",
@@ -496,8 +617,8 @@
     {
       "domain": "client",
       "status": "PASS",
-      "commands": 2,
-      "planned": 2,
+      "commands": 3,
+      "planned": 3,
       "acceptance": "BLOCKED",
       "limitations": "Node/source/browser-API fixtures only; no browser, service-worker lifecycle, device or offline end-to-end acceptance."
     },
@@ -511,15 +632,15 @@
     },
     {
       "domain": "data",
-      "status": "PASS",
-      "commands": 2,
-      "planned": 2,
+      "status": "FAIL",
+      "commands": 3,
+      "planned": 3,
       "acceptance": "BLOCKED",
       "limitations": "Mocked catalog/storage/dump/restore; no actual remote backup restore, SQL leases or crash durability acceptance. Migration harness excluded (schema worker owns it)."
     },
     {
       "domain": "media",
-      "status": "PASS",
+      "status": "BLOCKED",
       "commands": 3,
       "planned": 3,
       "acceptance": "BLOCKED",
@@ -536,8 +657,8 @@
     {
       "domain": "deploy",
       "status": "PASS",
-      "commands": 4,
-      "planned": 4,
+      "commands": 5,
+      "planned": 5,
       "acceptance": "BLOCKED",
       "limitations": "Resource sizing/source contracts and tiny temporary capsules only; no deployment, real capsule recovery, migration or load acceptance."
     },
@@ -560,17 +681,17 @@
   ],
   "latestSemantics": "beta-simulation.json/.md describe the latest started cycle, including partial progress, not necessarily the latest completed or passing cycle. Previous evidence is snapshotted before replacement.",
   "previousReport": {
-    "directory": "reports/readiness-implementation/beta-simulation-history/2026-09-22T02-11-23.449Z-7bef87c6-246a-4d1f-b4b0-d11e85c1f34e",
+    "directory": "reports/readiness-implementation/beta-simulation-history/2026-09-29T22-30-49.038Z-d53fb7ca-6d7a-49e0-ab7d-ac45c43aa313",
     "files": [
       {
-        "path": "reports/readiness-implementation/beta-simulation-history/2026-09-22T02-11-23.449Z-7bef87c6-246a-4d1f-b4b0-d11e85c1f34e/beta-simulation.json",
-        "sha256": "46cfc4117bea298831fcbc0b449df9d92b629b5f8597b37816a14800bc416314"
+        "path": "reports/readiness-implementation/beta-simulation-history/2026-09-29T22-30-49.038Z-d53fb7ca-6d7a-49e0-ab7d-ac45c43aa313/beta-simulation.json",
+        "sha256": "1d8be5adc26087eff94619df193b5611e1123e72f7db79781331faadd5b88066"
       },
       {
-        "path": "reports/readiness-implementation/beta-simulation-history/2026-09-22T02-11-23.449Z-7bef87c6-246a-4d1f-b4b0-d11e85c1f34e/beta-simulation.md",
-        "sha256": "3f93f992f094d968ea36333278c3cc1357585b47fe9c99faafc9b32abb4bc468"
+        "path": "reports/readiness-implementation/beta-simulation-history/2026-09-29T22-30-49.038Z-d53fb7ca-6d7a-49e0-ab7d-ac45c43aa313/beta-simulation.md",
+        "sha256": "7e449124801d0cbd15e1c0a057d0b123f912605216b4e013dd1b8a0bb0017019"
       }
     ]
   },
-  "finishedAt": "2026-09-22T02:12:02.433Z"
+  "finishedAt": "2026-09-29T22:34:14.104Z"
 }

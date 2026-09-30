@@ -35,6 +35,9 @@ vi.mock("../../server/db", () => ({
     insert: vi.fn(() => chain),
     update: vi.fn(() => chain),
   },
+  pool: {
+    query: vi.fn().mockResolvedValue({ rows: [] }),
+  },
 }));
 
 vi.mock("../../server/logger.js", () => ({

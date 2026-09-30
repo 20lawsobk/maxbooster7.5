@@ -147,7 +147,12 @@ vi.mock("../../server/services/catalogImportLock.js", () => ({
   withCatalogImportLock: transaction.withLock,
 }));
 vi.mock("../../server/storage.js", () => ({ storage: {} }));
-vi.mock("../../server/db.js", () => ({ db: {} }));
+vi.mock("../../server/db.js", () => ({
+  db: {},
+  pool: {
+    query: vi.fn().mockResolvedValue({ rows: [] }),
+  },
+}));
 vi.mock("../../server/seed/distributionPlatforms.js", () => ({
   DISTRIBUTION_PLATFORMS: [
     { slug: "spotify", name: "Spotify", metadata: {} },

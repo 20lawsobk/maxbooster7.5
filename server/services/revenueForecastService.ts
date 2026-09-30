@@ -321,7 +321,7 @@ class RevenueForecastService {
       status: recentForecasts.length ? "measured" : "insufficient_data",
       // MAE is defined for zero actuals; MAPE deliberately excludes zero denominators.
       meanAbsoluteError: forecasts.reduce((sum, f) =>
-        sum + Math.abs(Number(f.projectedRevenue ?? f.predictedRevenue ?? 0) - Number(f.actualRevenue)), 0) / forecasts.length,
+        sum + Math.abs(Number(f.projectedRevenue ?? f.predictedRevenue ?? 0) - Number(f.actualRevenue)), 0) / (forecasts.length || 1),
       recentForecasts,
       trend,
     };
@@ -373,9 +373,9 @@ class RevenueForecastService {
     const secondHalf = data?.slice(Math.floor(data?.length / 2));
 
     const firstAvg =
-      firstHalf.reduce((s, d) => s + d.revenue, 0) / firstHalf.length;
+      firstHalf.reduce((s, d) => s + d.revenue, 0) / (firstHalf.length || 1);
     const secondAvg =
-      secondHalf.reduce((s, d) => s + d.revenue, 0) / secondHalf.length;
+      secondHalf.reduce((s, d) => s + d.revenue, 0) / (secondHalf.length || 1);
 
     if (firstAvg === 0) return 0; // Relative growth from zero is undefined; flat scenario.
     const growthRate = (secondAvg - firstAvg) / firstAvg;

@@ -46,7 +46,7 @@ function isRecord(value: unknown): value is RedisAofRecord {
   const record = value as Partial<RedisAofRecord>;
   return Number.isSafeInteger(record.s) && (record.s ?? 0) > 0 &&
     typeof record.c === "string" && Array.isArray(record.a) &&
-    record.a.every((arg) => typeof arg === "string");
+    record.a.every((arg: unknown) => typeof arg === "string");
 }
 
 function encode(records: readonly RedisAofRecord[]): string {
@@ -159,6 +159,7 @@ export class LocalPdimAofJournal {
       const existed = fs.existsSync(this.file);
       const file = await fs.promises.open(this.file, "a+", 0o600);
       const size = (await file.stat()).size;
+      let closeError: unknown = null;
       try {
         await file.writeFile(encode(records) + "\n", "utf8");
         await file.sync();
@@ -180,9 +181,12 @@ export class LocalPdimAofJournal {
           await file.close();
         } catch (error) {
           this.poisoned = true;
-          throw error;
+          // Do not throw from finally (would mask the original error).
+          // Report the close failure after the try/catch completes.
+          closeError = error;
         }
       }
+      if (closeError) throw closeError;
       this.publishedSeq = records.at(-1)!.s;
     });
     this.tail = operation.catch(() => {});

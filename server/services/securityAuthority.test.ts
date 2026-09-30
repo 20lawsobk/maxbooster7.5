@@ -142,6 +142,12 @@ test("real TOTP proof is consumed once across concurrent consumers and entrypoin
   assert.equal(results.filter(Boolean).length, 1);
   assert.equal(await podB("u", secret, token), false);
   assert.equal(await podA("u", secret, "bad"), false);
-  await assert.rejects(createTotpConsumer({ query: async () => { throw new Error("offline"); } })
-    ("u", secret, token), /offline/);
+  await assert.rejects(
+    createTotpConsumer({ query: async () => { throw new Error("offline"); } })(
+      "u",
+      secret,
+      token,
+    ),
+    /offline/,
+  );
 });

@@ -293,7 +293,9 @@ describe("isolated real self-evolution simulation", () => {
 
   it("changes the autonomous autopilot posting-window decision and reverts it", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-01T03:00:00.000Z"));
+    // Use 3 AM *local* time: the autopilot reads getHours() (local), so a
+    // fixed UTC instant resolves to different local hours per TZ.
+    vi.setSystemTime(new Date(2026, 0, 1, 3, 0, 0, 0));
     try {
       const autonomous = new AutonomousAutopilot(
         "autonomous-simulation-user",

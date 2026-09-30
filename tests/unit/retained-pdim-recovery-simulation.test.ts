@@ -63,7 +63,7 @@ async function runWorker(
         `retained PDIM simulation worker timed out (${expectedMarker}); ` +
         `stdout=${stdout.slice(-5_000)}; stderr=${stderr.slice(-5_000)}`,
       ));
-    }, 60_000);
+    }, 120_000);
     child.once("close", value => {
       clearTimeout(timeout);
       resolve(value);

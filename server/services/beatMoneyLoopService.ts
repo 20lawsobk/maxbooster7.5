@@ -48,10 +48,6 @@ import {
 } from "@shared/schema";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
-import {
-  musicIndustryContextFilter,
-  type MusicIndustryContext,
-} from "./musicIndustryContextFilter.js";
 import { storageService } from "./storageService.js";
 import { distributedCache } from "../infrastructure/distributedCache.js";
 import {
@@ -62,7 +58,7 @@ import {
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { getAwarenessContext, buildMaxCoreAwarenessPayload } from "./awarenessContext.js";
 import { beatAudioInputs, beatAudioObservation, type BeatAudioContext } from "./beatAudioContext.js";
-import { isRecentlyUsed, recordGeneration } from "./adaptiveGenerationEngine.js";
+import { recordGeneration } from "./adaptiveGenerationEngine.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
@@ -500,6 +496,15 @@ class BeatMoneyLoopService {
       // 1. SCAN
       // No awareness-to-production planner: Core audio chooses unspecified fields.
       const scan = beatAudioInputs(overrides);
+      // Downstream stages (pricing, record creation, campaigns) require concrete
+      // genre/mood/tempo. MaxCore decides unspecified fields at generation time;
+      // use the documented fallbacks for business logic.
+      const concreteScan = {
+        ...scan,
+        genre: scan.genre ?? TRENDING_GENRE_FALLBACK,
+        mood: scan.mood ?? TRENDING_MOOD_FALLBACK,
+        tempo: scan.tempo ?? 120,
+      };
       await db
         .update(beatMoneyLoopCycles)
         .set({ status: "generating", scanContext: scan })
@@ -559,11 +564,11 @@ class BeatMoneyLoopService {
         .where(eq(beatMoneyLoopCycles.id, cycleId));
 
       // 3. PRICE
-      const price = await this._competitivePrice(scan.genre);
+      const price = await this._competitivePrice(concreteScan.genre);
 
       // 4. UPLOAD (persist beat record + upload bytes to hybrid storage)
       const { beatId, audioUrl, socialPostId } = await this._createBeatRecord({
-        scan,
+        scan: concreteScan,
         price,
         audioAbsPath,
         previewAbsPath,
@@ -600,7 +605,7 @@ class BeatMoneyLoopService {
       // 5. ADVERTISE (organic, MaxCore/PDIM-driven — budget=0)
       const ad = await this._launchCampaign({
         beatId,
-        scan,
+        scan: concreteScan,
         price,
         title,
         audioUrl,
@@ -738,160 +743,6 @@ class BeatMoneyLoopService {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
-  /** Pick the strongest trending genre/mood/tempo from the live industry context.
-   *  When `overrides` are supplied (e.g. from a manual /run-now call), they
-   *  short-circuit the random pool for that field so the caller can target a
-   *  specific genre/mood/key without changing the scheduler logic. */
-  private async _distillScan(
-    ctx: MusicIndustryContext,
-    overrides?: { genre?: string; mood?: string; key?: string },
-  ): Promise<{
-    genre: string;
-    mood: string;
-    tempo: number;
-    confidence: number;
-    hooks: string[];
-    productionStyles: string[];
-    requestedKey?: string;
-  }> {
-    // Core alone decides the production brief. No local weighted genre pools,
-    // tempo jitter, cached awareness hints, or synthetic confidence fallback.
-    // This legacy loop requires a structured production brief. Do not parse
-    // observational prose into decisions or run a second prompt-planner here.
-    const brief = (ctx as unknown as { production_brief?: any }).production_brief;
-    if (!brief || typeof brief.genre !== "string" || typeof brief.mood !== "string" ||
-        !Number.isFinite(brief.tempo) || !Number.isFinite(brief.confidence) ||
-        !Array.isArray(brief.hooks) || !Array.isArray(brief.productionStyles)) {
-      throw Object.assign(new Error("Invalid MaxCore production brief"), { status: 503 });
-    }
-    return {
-      ...brief,
-      ...(overrides?.genre !== undefined ? { genre: overrides.genre } : {}),
-      ...(overrides?.mood !== undefined ? { mood: overrides.mood } : {}),
-      ...(overrides?.key !== undefined ? { requestedKey: overrides.key } : {}),
-    };
-
-    // Short-circuit: if both genre AND mood are overridden, skip pool entirely.
-    if (overrides?.genre && overrides?.mood) {
-      const baseTemp = 120;
-      const tempoJitter = Math.floor(Math.random() * 11) - 5;
-      return {
-        genre: overrides.genre,
-        mood: overrides.mood,
-        tempo: baseTemp + tempoJitter,
-        confidence: 1,
-        hooks: (ctx.viralHookPatterns ?? []).slice(0, 5),
-        productionStyles: (ctx.productionStyles ?? []).slice(0, 5),
-        requestedKey: overrides.key,
-      };
-    }
-
-    const pickRandom = (items: string[], fallback: string): string => {
-      const pool = items.filter(Boolean);
-      if (pool.length === 0) return fallback;
-      return pool[Math.floor(Math.random() * pool.length)];
-    };
-
-    // Full 12-genre baseline (equal weight) — context signals add 2× bias
-    // without monopolising. Indie removed from the auto-schedule baseline
-    // so overrepresented cycles steer toward the remaining 11 genres.
-    const GENRE_BASELINE = [
-      "trap", "hiphop", "r&b", "drill", "lofi", "pop",
-      "electronic", "afrobeats", "dancehall", "lo_fi", "jazz",
-    ];
-    const MOOD_BASELINE = [
-      "dark", "empowering", "chill", "aggressive", "melancholic",
-      "energetic", "nostalgic", "euphoric",
-    ];
-
-    // If genre override supplied, use it directly; otherwise pick from pool.
-    const genrePool: string[] = overrides?.genre
-      ? [overrides.genre]
-      : [
-          ...GENRE_BASELINE,
-          ...(ctx.generationHints.suggestedGenre
-            ? [ctx.generationHints.suggestedGenre, ctx.generationHints.suggestedGenre]
-            : []),
-          ...(ctx.trendingGenres?.slice(0, 4) ?? []),
-        ];
-
-    const moodPool: string[] = overrides?.mood
-      ? [overrides.mood]
-      : [
-          ...MOOD_BASELINE,
-          ...(ctx.generationHints.suggestedMood
-            ? [ctx.generationHints.suggestedMood, ctx.generationHints.suggestedMood]
-            : []),
-          ...(ctx.trendingMoods?.slice(0, 4) ?? []),
-        ];
-
-    // ── Self-optimization: weight genre selection by real revenue outcomes ──
-    // Recent cycles' plays/downloads/revenue (backfilled by analyseRecentCycles)
-    // bias the pick toward genres that actually earn, while untried genres get
-    // a forced-exploration bonus so the loop never locks onto one arm.
-    let genre: string;
-    try {
-      const perf = await this._genrePerformance();
-      genre = this._weightedGenrePick(genrePool, perf, TRENDING_GENRE_FALLBACK);
-    } catch (e) {
-      logger.warn(
-        `[BeatMoneyLoop] genre performance lookup failed — falling back to uniform pick: ${(e as Error).message}`,
-      );
-      genre = pickRandom(genrePool, TRENDING_GENRE_FALLBACK);
-    }
-    const mood = pickRandom(moodPool, TRENDING_MOOD_FALLBACK);
-
-    // Anti-repetition: _weightedGenrePick already biases toward genres that
-    // earn, but it is still a probabilistic draw and can hand back the same
-    // genre+mood combo as a recent cycle by chance. Only rotate mood (never
-    // override an explicit operator request) and only when a real
-    // alternative exists — this must never block generation.
-    let finalMood = mood;
-    if (!overrides?.mood) {
-      try {
-        const repeatCheck = await isRecentlyUsed({
-          userId: null,
-          domain: "beat_generation",
-          attributes: { genre, mood: finalMood },
-        });
-        if (repeatCheck.isRecentlyUsed) {
-          const altMood = pickRandom(
-            moodPool.filter((m) => m !== finalMood),
-            finalMood,
-          );
-          if (altMood !== finalMood) {
-            logger.info(
-              `[BeatMoneyLoop] Anti-repetition: genre+mood "${genre}+${finalMood}" matched a recent cycle — rotating mood to "${altMood}"`,
-            );
-            finalMood = altMood;
-          }
-        }
-      } catch (e) {
-        logger.warn(
-          `[BeatMoneyLoop] Anti-repetition lookup failed (non-fatal): ${(e as Error).message}`,
-        );
-      }
-    }
-
-    // Tempo: bias from hint + ±5 BPM jitter so consecutive cycles differ.
-    const baseTemp =
-      ctx.generationHints.tempoBias === "up"
-        ? 150
-        : ctx.generationHints.tempoBias === "down"
-          ? 85
-          : 120;
-    const tempoJitter = Math.floor(Math.random() * 11) - 5; // −5 … +5
-    const tempo = baseTemp + tempoJitter;
-    return {
-      genre,
-      mood: finalMood,
-      tempo,
-      confidence: ctx.confidence,
-      hooks: ctx.viralHookPatterns.slice(0, 5),
-      productionStyles: ctx.productionStyles.slice(0, 5),
-      requestedKey: overrides?.key,
-    };
-  }
 
   /**
    * Call MaxCore /generate/audio directly.
@@ -1195,16 +1046,6 @@ class BeatMoneyLoopService {
    * The industry scan (genre / mood / tempo / production styles / viral hooks)
    * is forwarded to MaxCore so generation is biased toward what's trending.
    */
-  // Chromatic key pool — 24 keys ensures catalog variety cycle over cycle.
-  private static readonly MUSICAL_KEYS = [
-    "C Major", "C Minor", "C# Minor", "Db Major",
-    "D Major", "D Minor", "Eb Major", "Eb Minor",
-    "E Major", "E Minor", "F Major", "F Minor",
-    "F# Minor", "G Major", "G Minor",
-    "Ab Major", "Ab Minor", "A Major", "A Minor",
-    "Bb Major", "Bb Minor", "B Major", "B Minor",
-  ];
-
   private async _generateBeat(scan: BeatAudioContext): Promise<{
     audioAbsPath: string;
     previewAbsPath: string;
@@ -1335,7 +1176,7 @@ class BeatMoneyLoopService {
           scratchDir: outputDir,
           title,
           audioGenBackend: mc.backend,
-          musicalKey: musicalKey || requestedKey,
+          musicalKey: musicalKey || scan.requestedKey,
         };
       } catch (err) {
         const msg = (err as Error).message;
@@ -1526,40 +1367,6 @@ class BeatMoneyLoopService {
     return map;
   }
 
-  /**
-   * Revenue-weighted genre pick with forced exploration.
-   * - Every candidate keeps a base weight of 1 (never fully excluded).
-   * - Earning genres gain up to +4 weight from revenue/downloads/plays.
-   * - Untried genres get +1.5 exploration bonus so the loop keeps sampling
-   *   the full space and never locks onto a single arm.
-   */
-  private _weightedGenrePick(
-    pool: string[],
-    perf: Map<
-      string,
-      { cycles: number; plays: number; downloads: number; revenueCents: number }
-    >,
-    fallback: string,
-  ): string {
-    const candidates = pool.filter(Boolean);
-    if (candidates.length === 0) return fallback;
-
-    const weights = candidates.map((g) => {
-      const stats = perf.get(this._genreKey(g));
-      if (!stats || stats.cycles === 0) return 1 + 1.5; // force-explore untried
-      const earned =
-        stats.revenueCents / 100 + stats.downloads * 2 + stats.plays * 0.05;
-      return 1 + Math.min(4, earned / Math.max(1, stats.cycles));
-    });
-
-    const total = weights.reduce((a, b) => a + b, 0);
-    let roll = Math.random() * total;
-    for (let i = 0; i < candidates.length; i++) {
-      roll -= weights[i];
-      if (roll <= 0) return candidates[i];
-    }
-    return candidates[candidates.length - 1];
-  }
 
   /** Upload WAV bytes to hybrid storage + insert beats row. Returns beat id. */
   private async _createBeatRecord(args: {
@@ -2268,16 +2075,17 @@ class BeatMoneyLoopService {
    * Clamped to [MIN_CADENCE_MS, MAX_CADENCE_MS].
    */
   private _computeNextCadenceMs(
-    scan: { confidence: number } | null,
+    scan: BeatAudioContext | null,
     failed: boolean,
     _state: BeatMoneyLoopState | null,
   ): number {
     if (failed) return FAILURE_BACKOFF_CADENCE_MS;
     if (!scan) return DEFAULT_CADENCE_MS;
+    const confidence = scan.confidence ?? 0;
     let ms: number;
-    if (scan.confidence >= 0.7) ms = 2 * 60 * 60 * 1000;
-    else if (scan.confidence >= 0.5) ms = 4 * 60 * 60 * 1000;
-    else if (scan.confidence >= 0.3) ms = 6 * 60 * 60 * 1000;
+    if (confidence >= 0.7) ms = 2 * 60 * 60 * 1000;
+    else if (confidence >= 0.5) ms = 4 * 60 * 60 * 1000;
+    else if (confidence >= 0.3) ms = 6 * 60 * 60 * 1000;
     else ms = 12 * 60 * 60 * 1000;
     return Math.max(MIN_CADENCE_MS, Math.min(MAX_CADENCE_MS, ms));
   }

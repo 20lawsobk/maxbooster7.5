@@ -5803,53 +5803,6 @@ router.post(
         logger.info({ jobId }, "[MusicVideo] Generation completed");
         return;
 
-        // ── Persist rendered video to PDIM as primary storage ────────────────
-        const legacyUser = req.user as UserWithLegacyId | undefined;
-        const userId =
-          legacyUser?.id?.toString() ||
-          legacyUser?.userId?.toString() ||
-          "anonymous";
-        const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
-        let pdimVideoMeta: import("../services/pdimMediaStorageService.js").StoredMusicVideo | null = null;
-        try {
-          const { storeMusicVideo } = await import(
-            "../services/pdimMediaStorageService.js"
-          );
-          pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
-          if (!pdimVideoMeta) throw new Error("PDIM did not return video metadata");
-          (result as any).pdim = {
-            key: pdimVideoMeta.pdimKey,
-            compressedSize: pdimVideoMeta.compressedSize,
-            tier: (pdimVideoMeta as any).tier,
-          };
-          (result as any).url = pdimVideoMeta.publicUrl;
-          (result as any).video_url = pdimVideoMeta.publicUrl;
-          // Best-effort mobile poster — extracted from the scratch file
-          // below before it's deleted, then persisted to PDIM itself.
-          (result as any).thumbnail_url = await generateAndStorePosterThumbnail(
-            videoFilePath,
-            userId,
-          );
-        } catch (e) {
-          musicVideoJobs.set(jobId, {
-            status: "error",
-            error: "Video storage failed",
-            createdAt: Date.now(),
-          });
-          return;
-        } finally {
-          await fsPromises.unlink(videoFilePath).catch(() => undefined);
-        }
-
-        musicVideoJobs.set(jobId, {
-          status: "done",
-          result: result as unknown as Record<string, unknown>,
-          createdAt: Date.now(),
-        });
-        logger.info(
-          { jobId },
-          "[MusicVideo] Generation completed",
-        );
       } catch (e) {
         logger.warn(
           { jobId, errorType: e instanceof Error ? e.name : typeof e },

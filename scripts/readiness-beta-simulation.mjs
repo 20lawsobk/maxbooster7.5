@@ -127,6 +127,34 @@ nodeTests("closure-runtime-artifacts", "deploy", [
   "tests/runtime-artifact-gates.test.mjs", "tests/nested-reconciliation.test.mjs",
 ]);
 vitest("exports-sync", "exports/sync", "tests/coverage-gaps.config.ts", ["tests/unit/coverage-gaps.test.ts"]);
+// Contract/honesty tests repaired in the 2026-09-29 remediation pass
+// (all were failing; fixes verified in the unit suite). Grouped by domain.
+const fixedContracts = {
+  commerce: [
+    "tests/unit/stripe-webhook-honesty.test.ts",
+    "tests/unit/instant-payout-webhook-honesty.test.ts",
+  ],
+  integrations: [
+    "tests/unit/social-oauth-contract.test.ts",
+    "tests/unit/maxcore-proxy-contract.test.ts",
+  ],
+  security: ["tests/unit/security-config.test.ts"],
+  client: ["tests/unit/distribution-tabs.test.ts"],
+  data: [
+    "tests/unit/catalog-import-dedup.test.ts",
+    "tests/unit/capsule-pack-restore-roundtrip.test.ts",
+  ],
+  deploy: ["tests/unit/audit-endpoints.test.ts"],
+};
+const fixedContractFiles = Object.values(fixedContracts).flat();
+const fixedContractConfig = join(scratch, "fixed-contracts.config.mjs");
+writeFileSync(fixedContractConfig, `export default ${JSON.stringify({
+  root, test: { include: fixedContractFiles, environment: "node", globals: true,
+    setupFiles: [join(root, "tests/setup.ts")], fileParallelism: false, maxWorkers: 1, testTimeout: 60000, hookTimeout: 60000 },
+  resolve: { alias: { "@shared": join(root, "shared"), "@": join(root, "client/src") } },
+})};`);
+for (const [domain, files] of Object.entries(fixedContracts))
+  vitest(`fixed-contracts-${domain}`, domain, fixedContractConfig, files);
 
 const gaps = {
   security: "No deployed cookies/proxy, browser auth, real session SQL contention, TLS egress or credential rotation acceptance.",

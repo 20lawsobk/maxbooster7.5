@@ -2351,7 +2351,7 @@ class MusicWorkflowAutomationService {
     const successCount = Number(executionStats?.successCount ?? 0);
     const failedCount = Number(executionStats?.failedCount ?? 0);
     const successRate =
-      totalRuns > 0 ? Math.round((successCount / totalRuns) * 100) : 100;
+      totalRuns > 0 ? Math.round((successCount / (totalRuns || 1)) * 100) : 100;
     const lastRunAt = executionStats?.lastRunAt
       ? new Date(executionStats.lastRunAt).toISOString()
       : null;

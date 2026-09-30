@@ -31,7 +31,9 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "@workspace/db": ["./external/pdim/lib/db/src/index.ts"],
+      "@workspace/db/schema": ["./external/pdim/lib/db/src/schema/index.ts"]
     }
   }
 }

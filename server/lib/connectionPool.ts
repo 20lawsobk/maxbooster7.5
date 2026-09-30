@@ -84,7 +84,7 @@ class OptimizedConnectionPool {
 
     this.pool.on("release", () => {});
 
-    this.pool.on("error", (err) => {
+    this.pool.on("error", (err: Error) => {
       this.errorCount++;
       logger.warn({ value: err?.message }, "Pool error:");
     });

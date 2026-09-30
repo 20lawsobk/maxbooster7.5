@@ -27,7 +27,7 @@ import os
 import threading
 import time
 from collections import deque
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -77,9 +77,11 @@ class ReplicaPool:
     """
 
     def __init__(self, n_replicas: int = _DEFAULT_REPLICAS,
-                 namespace: str = _REPLICA_NAMESPACE):
+                 namespace: str = _REPLICA_NAMESPACE,
+                 gpu: Any = None):
         self._orch      = _default_orchestrator()
         self._namespace = namespace
+        self._gpu       = gpu
         self._lock      = threading.Lock()
         self._replicas: list[PocketDimension] = []
         self._rr        = 0            # round-robin index
@@ -96,7 +98,12 @@ class ReplicaPool:
 
     def _new_replica(self, idx: int) -> PocketDimension:
         path = f"{self._namespace}/{idx}"
-        return PocketDimension(path, orchestrator=self._orch)
+        # Shared dedup namespace: identical work in any replica dedups once
+        # across the whole pool. Per-replica path is kept for identity.
+        # gpu (a Backend) is injected so miss-compute uses the caller's
+        # backend instead of spawning a default DigitalGPU.
+        return PocketDimension(path, orchestrator=self._orch, gpu=self._gpu,
+                               dedup_namespace=self._namespace)
 
     # ── public API ─────────────────────────────────────────────────────────
 

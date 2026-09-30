@@ -10,6 +10,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
+import numpy as np
+
 from .backend.base import Backend
 from .backend.registry import available, available_runtime, get_backend
 from .compiler.pipeline import CompiledGraph, Compiler
@@ -26,11 +28,18 @@ from .tensor import Tensor
 # explicitly) to fall back to the legacy NumPy/SIMD engine.
 _DEFAULT_BACKEND = "silicon_simt"
 
+# Replica-pool dispatch for eager gemm: N PocketDimension replicas sharing one
+# orchestrator, so identical GEMMs dedup once across every replica and
+# concurrent calls fan out instead of contending. Enabled by default; set
+# MAXCORE_REPLICA_POOL=0 to force direct backend dispatch.
+_ENV_REPLICA_POOL = "MAXCORE_REPLICA_POOL"
+
 
 class DigitalGPU:
     def __init__(self, backend: str | Backend | None = None, deterministic: bool = False,
                  compiler: Compiler | None = None, num_streams: int | None = None,
-                 vram_capacity_bytes: int | None = None, **backend_kwargs):
+                 vram_capacity_bytes: int | None = None,
+                 replica_pool: bool | None = None, **backend_kwargs):
         if backend is None:
             backend = os.environ.get("MAXCORE_BACKEND", _DEFAULT_BACKEND)
         if isinstance(backend, Backend):
@@ -44,6 +53,10 @@ class DigitalGPU:
                                 vram_capacity_bytes=vram_capacity_bytes,
                                 backend_kwargs=resolved_backend_kwargs)
         self.deterministic = deterministic
+        if replica_pool is None:
+            replica_pool = os.environ.get(_ENV_REPLICA_POOL, "1") not in ("0", "false", "False")
+        self._replica_pool_enabled = bool(replica_pool)
+        self._replica_pool = None  # lazy: built on first pooled gemm
 
     # ── tensors / graph construction ─────────────────────────────────────────
     def tensor(self, data: Any, dtype: str = "float32", device: str = "digital_gpu") -> Tensor:
@@ -53,7 +66,29 @@ class DigitalGPU:
         return GraphBuilder()
 
     # ── eager primitives ─────────────────────────────────────────────────────
+    def _pool(self):
+        """Process-lazy ReplicaPool for this GPU's backend.
+
+        The pool's replicas inject ``self.backend`` directly as their compute
+        target, so a cache miss runs the caller's own backend kernel — never a
+        fresh default DigitalGPU, and never back through this facade (no
+        recursion). Import is lazy to keep ``api`` import-cycle free.
+        """
+        if self._replica_pool is None:
+            from .pdim.replica_scaler import ReplicaPool
+            self._replica_pool = ReplicaPool(gpu=self.backend)
+        return self._replica_pool
+
     def gemm(self, a, b, bias=None, activation=None):
+        # Fast path: plain float32-ndarray GEMM dispatches through the replica
+        # pool (shared cross-replica dedup + lock-free fan-out). Anything else
+        # — bias/activation, non-float32 or non-ndarray operands — takes the
+        # exact historical direct-backend path.
+        if (self._replica_pool_enabled and bias is None and activation is None
+                and isinstance(a, np.ndarray) and isinstance(b, np.ndarray)
+                and a.dtype == np.float32 and b.dtype == np.float32):
+            result = self._pool().matmul(a, b)
+            return self.backend.create_tensor(result, dtype="float32")
         return self.backend.gemm(a, b, bias=bias, activation=activation)
 
     def attention(self, q, k, v, mask=None, causal=False):

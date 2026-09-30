@@ -1,4 +1,3 @@
-import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 
 export interface TranslatedContent {
@@ -349,35 +348,11 @@ const MUSIC_TERMS: Record<string, Record<string, string>> = {
 
 class AITranslationService {
   async translateContent(
-    request: TranslationRequest,
+    _request: TranslationRequest,
   ): Promise<TranslatedContent[]> {
     throw new AIUnavailableError(
       "translation: MaxCore does not expose a dedicated translation contract",
     );
-    const results: TranslatedContent[] = [];
-
-    for (const targetLang of request?.targetLanguages ?? []) {
-      try {
-        const translated = await this.translateToLanguage(
-          request?.content,
-          request?.headline,
-          request?.hashtags || [],
-          request?.sourceLanguage || "en",
-          targetLang,
-          request?.preserveTone ?? true,
-          request?.adaptForPlatform,
-        );
-        results?.push(translated);
-      } catch (error) {
-        const msg = (error as Error)?.message ?? String(error);
-        logger.warn(
-          `[Translation] Failed to translate to ${targetLang}: ${msg}`,
-        );
-        throw error;
-      }
-    }
-
-    return results;
   }
 
   private async translateToLanguage(

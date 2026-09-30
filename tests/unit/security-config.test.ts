@@ -147,7 +147,8 @@ describe("Backup safety", () => {
       src.includes("MAX_BACKUP_SIZE") ||
       src.includes("HARD_CAP_BYTES") ||
       src.includes("1024 * 1024 * 1024") ||
-      src.includes("1073741824");
+      src.includes("1073741824") ||
+      src.includes("256 * 1024 * 1024");
     expect(hasCap).toBe(true);
   });
 });

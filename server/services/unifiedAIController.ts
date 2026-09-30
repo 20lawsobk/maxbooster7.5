@@ -592,60 +592,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "unowned social generation path is disabled; use authenticated MaxCore social generation",
     );
-    const startTime = Date.now();
-    await this.ensureInitialized();
-
-    const platform = (options?.platform || "instagram") as string;
-    const topic = options?.musicData
-      ? `${options?.musicData?.title} by ${options?.musicData?.artist}`
-      : options?.customPrompt || "new music";
-    const tone = options?.tone || "energetic";
-
-    try {
-      // MaxCore is the ONLY source — fail explicitly if it returns nothing.
-      const mc = requireMaxCore(
-        await MaxCoreAIClient?.infer<{
-          caption?: string;
-          hook?: string;
-          body?: string;
-          cta?: string;
-          confidence?: number;
-        }>("/api/generate/content", {
-          platform,
-          topic,
-          tone,
-          genre: options.musicData?.genre,
-          artist_name: options.musicData?.artist,
-        }),
-        "unified social content",
-      );
-      const parts = (
-        mc.caption ? [mc.caption] : [mc.hook, mc.body, mc.cta].filter(Boolean)
-      ) as string[];
-      // A non-null response with no usable content is still a failure — do not
-      // fabricate or fall back to local output.
-      if (parts.length === 0) {
-        throw new AIUnavailableError("unified social content");
-      }
-      return {
-        success: true,
-        data: { content: parts },
-        processingTimeMs: Date.now() - startTime,
-        source: "MaxCoreAI",
-        confidence: mc.confidence || 0.95,
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "[UnifiedAI] generateSocialContent error:");
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error?.message
-            : "Social content generation failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "MaxCoreAI",
-      };
-    }
   }
 
   public generateHashtags(options: {
@@ -843,49 +789,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "engagement prediction: current MaxCore endpoint is heuristic, not a model prediction contract",
     );
-    const startTime = Date.now();
-    await this.ensureInitialized();
-
-    try {
-      // MaxCore is the ONLY source — no local SocialAutopilotEngine fallback.
-      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
-        "/predict/engagement",
-        {
-          platform: options.platform,
-          action: options.action,
-          content: options.content,
-          postsPerWeek: options.postsPerWeek,
-        },
-      );
-      const mc = requireMaxCore(mcRaw, "engagement prediction");
-      // A non-null response with no usable prediction payload is unavailability.
-      if (
-        !(
-          mc?.bestTime ||
-          mc?.viralScore !== undefined ||
-          mc?.schedule ||
-          mc?.contentType ||
-          mc?.confidence !== undefined
-        )
-      ) {
-        throw new AIUnavailableError("engagement prediction");
-      }
-      return {
-        success: true,
-        data: mc as unknown as
-          | BestTimeResult
-          | ContentTypeRecommendation
-          | ViralPotentialScore
-          | ScheduleOptimization,
-        processingTimeMs: Date.now() - startTime,
-        source: "MaxCoreAI",
-        confidence: (mc.confidence as number | undefined) || 0.9,
-      };
-    } catch (error) {
-      if (error instanceof AIUnavailableError) throw error;
-      logger.warn({ err: error }, "Engagement prediction failed:");
-      throw new AIUnavailableError("engagement prediction");
-    }
   }
 
   public loadHistoricalPosts(posts: HistoricalPost[]): void {
@@ -1126,31 +1029,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "organic growth optimization: MaxCore has no verified contract",
     );
-    const startTime = Date.now();
-    try {
-      const result = await (this as any).adEngine.optimizePersonalAdNetwork(
-        options?.profiles,
-        options?.content,
-        options?.goals,
-      );
-      return {
-        success: true,
-        data: result,
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.optimizePersonalAdNetwork",
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Organic growth optimization error:");
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error?.message
-            : "Organic optimization failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.optimizePersonalAdNetwork",
-      };
-    }
   }
 
   public async calculateOrganicROI(
@@ -1159,27 +1037,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "organic ROI prediction: MaxCore has no verified prediction contract",
     );
-    const startTime = Date.now();
-    try {
-      const analysis = (this as any).adEngine.calculateOrganicROI(results);
-      return {
-        success: true,
-        data: analysis,
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.calculateOrganicROI",
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Organic ROI calculation error:");
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error?.message
-            : "Organic ROI calculation failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.calculateOrganicROI",
-      };
-    }
   }
 
   public async generateOrganicSchedule(options: {
@@ -1190,29 +1047,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "organic schedule prediction: MaxCore engagement endpoint is heuristic",
     );
-    const startTime = Date.now();
-    try {
-      const schedule = (this as any).adEngine.generateOrganicSchedule(
-        options?.profiles,
-        options?.contentQueue,
-        options?.goals,
-      );
-      return {
-        success: true,
-        data: schedule,
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.generateOrganicSchedule",
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Organic schedule generation error:");
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error?.message : "Schedule generation failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.generateOrganicSchedule",
-      };
-    }
   }
 
   public async analyzePersonalAdNetwork(
@@ -1221,87 +1055,6 @@ export class UnifiedAIController {
     throw new AIUnavailableError(
       "personal ad-network analysis: MaxCore has no verified analysis contract",
     );
-    const startTime = Date.now();
-    try {
-      let profiles: unknown[] = [];
-
-      if (userId) {
-        const socialAccounts = await (storage as any)?.getUserSocialAccounts(userId);
-        if (socialAccounts && socialAccounts?.length > 0) {
-          profiles = socialAccounts?.map((account: Record<string, unknown>) => ({
-            id: account.id?.toString() || account?.platformUserId || "",
-            platform: account.platform,
-            username: account.username || account?.profileName || "user",
-            followers: account.followers || (account?.metrics as any)?.followers || 0,
-            engagementRate:
-              account?.engagementRate || (account?.metrics as any)?.engagementRate || 0.03,
-            isActive: account.isActive !== false,
-          }));
-        }
-      }
-
-      if (profiles?.length === 0) {
-        profiles = [
-          {
-            id: "1",
-            platform: "instagram",
-            username: "demo",
-            followers: 5000,
-            engagementRate: 0.05,
-            isActive: true,
-          },
-          {
-            id: "2",
-            platform: "twitter",
-            username: "demo",
-            followers: 3000,
-            engagementRate: 0.03,
-            isActive: true,
-          },
-          {
-            id: "3",
-            platform: "tiktok",
-            username: "demo",
-            followers: 10000,
-            engagementRate: 0.08,
-            isActive: true,
-          },
-        ];
-        logger.debug(
-          "No connected social accounts found, using demo profiles for analysis",
-        );
-      }
-
-      const result = await (this as any).adEngine.optimizePersonalAdNetwork(
-        profiles,
-        {
-          id: userId || "demo",
-          text: "Sample content for analysis",
-          hasMedia: true,
-        },
-        { targetReach: 10000 },
-      );
-
-      return {
-        success: true,
-        data: {
-          networkAnalysis: result.networkAnalysis,
-          equivalentAdValue: result.equivalentAdValue,
-          recommendations: result.recommendations,
-        },
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.analyzePersonalAdNetwork",
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Personal Ad Network analysis error:");
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error?.message : "Network analysis failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine.analyzePersonalAdNetwork",
-      };
-    }
   }
 }
 

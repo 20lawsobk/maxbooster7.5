@@ -82,7 +82,7 @@ export function formatPerThousandStreams(
     return "—";
   }
 
-  return `$${((amount / count) * 1000).toFixed(3)}`;
+  return `$${((amount / (count || 1)) * 1000).toFixed(3)}`;
 }
 
 export function formatPerStreamRate(
@@ -95,5 +95,5 @@ export function formatPerStreamRate(
     return "—";
   }
 
-  return `$${(amount / count).toFixed(4)}`;
+  return `$${(amount / (count || 1)).toFixed(4)}`;
 }

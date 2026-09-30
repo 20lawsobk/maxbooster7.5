@@ -312,7 +312,7 @@ router.get("/stats", async (req: Request, res: Response) => {
       totalSpent: Number(stats?.totalSpent || 0),
       avgSpend:
         totalFans > 0
-          ? Number(stats?.totalSpent || 0) / totalFans
+          ? Number(stats?.totalSpent || 0) / (totalFans || 1)
           : 0,
       newFansLast30Days,
       emailOpenRate:

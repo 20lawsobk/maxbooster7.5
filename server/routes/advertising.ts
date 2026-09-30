@@ -1604,7 +1604,7 @@ router.get(
           linear: 0,
           timeDecay: 0,
           positionBased: 0,
-          share: total > 0 ? revenue / total : 0,
+          share: total > 0 ? revenue / (total || 1) : 0,
         }),
       );
 

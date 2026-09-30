@@ -390,6 +390,26 @@ function extractRoutesFromFile(file) {
     });
   }
 
+  // Helper-registered routes: functions like registerToolostPlatformSubmission
+  // wrap router.post(route, ...) internally. Their call sites carry the
+  // literal path as the first argument; without this the audit reports them
+  // as unmatched frontend call sites.
+  const helperRouteRe =
+    /\bregisterToolostPlatformSubmission\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
+  for (const m of src.matchAll(helperRouteRe)) {
+    const line = lineAt(src, m.index);
+    routes.push({
+      method: "POST",
+      rawPath: m[2],
+      file: rel,
+      line,
+      resolvedVia: "helper:registerToolostPlatformSubmission",
+      registeredOn: "router",
+      hasAuthMarker: true, // helper applies requireAuth internally
+      callsNext: false,
+    });
+  }
+
   // stub-marker scan: look at ~35 lines following each route registration line
   const srcLines = src.split("\n");
   for (const r of routes) {
