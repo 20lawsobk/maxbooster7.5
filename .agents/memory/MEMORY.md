@@ -41,7 +41,7 @@
 - [Embedded-string ?. debris](embedded-string-oc-debris.md) — `?.` in string literals is a bug only when the embedded language isn't JS (GLSL/shell/SQL/URLs/paths); scan with scripts/_scan_oc.cjs; the SQL fixer can append a stray trailing backtick
 - [PDIM startup exec-chain probe flood](pdim-startup-probe-flood.md) — startup-probes/maxcoreSync/sessionConfig all called getPdimClient().ping() via exec() chain; replace with native fetch(); also workers need consecutiveOk≥2 before starting to avoid HSET burst on a still-warming PDIM
 - [Beat loop orphan-recovery guard](beat-loop-orphan-guard.md) — scheduler calls recoverOrphanedCycles ~75s after boot; it must exclude cycles started in the current process (startedAt < process-start cutoff) or it kills live cycles
-- [CSRF pattern for curl tests](csrf-curl-pattern.md) — /api/auth/csrf 404s (token IS the csrf-token cookie value); demo/login/register are CSRF-exempt, everything else needs GET /api/csrf-token first
+- [CSRF pattern for curl tests](csrf-curl-pattern.md) — bootstrap with `/api/csrf-token` before authenticated POSTs, including login; send the cookie value as the header token
 - [Replit install quirks](replit-install-quirks.md) — pnpm postinstall exits 1 in Replit sandbox; tar npm blocked by firewall; pnpm.overrides cannot have object values
 - [Beat loop self-optimization](beat-loop-self-optimization.md) — genre pick, price factor, and batch size now revenue-weighted from cycle history; optimizers must return applied:boolean so claims stay honest
 - [TypeScript cleanup hazards](ts6133-autofix-hazards.md) — prefixing is safe only for params/array destructures; [unused-parameter masking](unused-param-missing-impl.md) can hide missing implementations
