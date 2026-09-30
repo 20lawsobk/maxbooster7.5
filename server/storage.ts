@@ -628,7 +628,8 @@ export class DatabaseStorage implements IStorage {
       content,
       scheduledTime,
       viralPrediction,
-      createdBy
+      createdBy,
+      reviewRequired,
     } = post;
     const [newPost] = await db
       .insert(posts)
@@ -648,7 +649,8 @@ export class DatabaseStorage implements IStorage {
           _autopilotMeta: true,
           platforms: platforms || [],
           viralPrediction: viralPrediction || null,
-          createdBy: createdBy || "social_autopilot",
+          createdBy: createdBy || "manual",
+          ...(reviewRequired === true ? { reviewRequired: true } : {}),
           ...(typeof content !== "string" ? { content } : {}),
         },
       })

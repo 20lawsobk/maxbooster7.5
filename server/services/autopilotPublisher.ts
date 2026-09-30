@@ -20,6 +20,38 @@ import { advancedSocialAIService } from "./advancedSocialAIService.js";
 import { contentQualityGate } from "./contentQualityGate.js";
 import { autopilotLearningService } from "./autopilotLearningService.js";
 
+type SocialAutopilotObjective =
+  | "awareness"
+  | "engagement"
+  | "conversions"
+  | "viral";
+
+const BUSINESS_GOAL_OBJECTIVE: Record<string, SocialAutopilotObjective> = {
+  engagement: "engagement",
+  followers: "engagement",
+  "brand-awareness": "awareness",
+  traffic: "conversions",
+  sales: "conversions",
+  community: "engagement",
+};
+
+function resolveBusinessGoals(config: Record<string, unknown>): {
+  objective: SocialAutopilotObjective;
+  goals: string[];
+} {
+  const configured = Array.isArray(config.businessGoals)
+    ? config.businessGoals.filter(
+        (goal): goal is string => typeof goal === "string" && goal.length > 0,
+      )
+    : [];
+  const goals = configured.length > 0 ? [...new Set(configured)] : ["engagement"];
+  const unsupported = goals.find((goal) => !BUSINESS_GOAL_OBJECTIVE[goal]);
+  if (unsupported) {
+    throw new Error(`Unsupported social autopilot business goal: ${unsupported}`);
+  }
+  return { objective: BUSINESS_GOAL_OBJECTIVE[goals[0]], goals };
+}
+
 /**
  * Automated Autopilot Publisher
  *
@@ -194,13 +226,9 @@ class AutopilotPublisher {
     };
 
     try {
-      // Check if auto-publish is enabled for this user
-      if (!config.autoPublish) {
-        logger.info(
-          `[Autopilot] User ${config.userId}: autoPublish=false — skipping (user must enable auto-publish in settings)`,
-        );
-        return result;
-      }
+      // autoPublish=false still generates a durable review draft. It must not
+      // enter the external posting queue; only an explicitly saved true value
+      // is allowed to enqueue provider work.
 
       // Check posting frequency to determine if we should post now
       // (shouldPostNow logs its own INFO message with next-attempt time)
@@ -229,22 +257,9 @@ class AutopilotPublisher {
         }
       }
 
-      // Advertising Autopilot - errors propagate upward, not silently logged
-      // CRITICAL: Media generation failures must abort campaign creation
-      const adResult = await this.publishAdvertisingCampaigns(config);
-      result.adCampaigns = adResult.campaigns;
-      if (adResult.error) {
-        // Non-critical errors (like low confidence) are recorded but not thrown
-        if (
-          !adResult.error.includes("below threshold") &&
-          !adResult.error.includes("not trained")
-        ) {
-          throw new Error(
-            `Advertising campaign creation failed: ${adResult.error}`,
-          );
-        }
-        result.errors.push(`Advertising: ${adResult.error}`);
-      }
+      // Social autopilot is deliberately isolated from the paid-ad runner.
+      // Advertising campaigns are owned by advertisingAutopilotRunner and are
+      // never created from this scheduler.
     } catch (error) {
       result.errors.push(`General: ${(error as Error).message}`);
       logger.warn({ err: error }, `Error processing user ${config.userId}:`);
@@ -282,6 +297,51 @@ class AutopilotPublisher {
       const minuteIndex = Math.floor(Date.now() / 60000) % platforms.length;
       return platforms[minuteIndex];
     }
+  }
+
+  private autopilotIdempotencyKey(
+    userId: string,
+    platforms: string[],
+    scheduledTime: Date,
+  ): string {
+    const slot = Math.floor(scheduledTime.getTime() / (15 * 60 * 1000));
+    return `social-${userId}-${platforms.slice().sort().join(",")}-${slot}`;
+  }
+
+  private async persistSocialPost(
+    config: Record<string, unknown>,
+    platforms: string[],
+    content: PostContent,
+    scheduledTime: Date,
+  ): Promise<Record<string, unknown>> {
+    const userId = config.userId as string;
+    const idempotencyKey = this.autopilotIdempotencyKey(
+      userId,
+      platforms,
+      scheduledTime,
+    );
+    if (config.autoPublish === true) {
+      return autoPostingServiceV2.schedulePost(
+        userId,
+        platforms,
+        content,
+        scheduledTime,
+        "social_autopilot",
+        undefined,
+        idempotencyKey,
+      );
+    }
+    // A draft is durable and reviewable, but deliberately bypasses the queue.
+    return storage.createScheduledPost({
+      id: `post_${idempotencyKey}`,
+      userId,
+      platforms,
+      content,
+      scheduledTime,
+      status: "pending",
+      createdBy: "social_autopilot",
+      reviewRequired: true,
+    });
   }
 
   /**
@@ -444,11 +504,27 @@ class AutopilotPublisher {
       logger.info(
         `[Autopilot] User ${userId}: targeting platform "${targetPlatform}" this cycle`,
       );
+      const targetPlatforms =
+        config.crossPostingEnabled === true
+          ? [...new Set(platforms)]
+          : [targetPlatform];
 
       // Get the user's trained social media AI model
       const socialAI = await aiModelManager.getSocialAutopilot((userId as string));
+      const { objective: businessObjective, goals: businessGoals } =
+        resolveBusinessGoals(config);
 
       if (!socialAI.getIsTrained()) {
+        const allowedMediaTypes = Array.isArray(config.mediaTypes)
+          ? (config.mediaTypes as string[])
+          : ["text"];
+        if (!allowedMediaTypes.includes("text")) {
+          return {
+            posts: 0,
+            error:
+              "The untrained quality-gated path can create text only. Enable text or wait until the MaxCore social model is trained.",
+          };
+        }
         // Model not trained yet — route through the A/B quality gate (up to 10 rounds × 7
         // variants each) so every post still meets ≥ 90% of Veo quality before scheduling.
         logger.info(
@@ -456,13 +532,20 @@ class AutopilotPublisher {
         );
 
         // Enrich the quality gate topic with real beat data when available
+        const configuredTopics = Array.isArray(config.topics)
+          ? (config.topics as string[]).filter(Boolean)
+          : [];
+        const configuredTopic =
+          configuredTopics.length > 0
+            ? configuredTopics[Math.floor(Date.now() / (15 * 60 * 1000)) % configuredTopics.length]
+            : (config.topic as string) || "new music";
         const enrichedTopic = sfContext.beatContext
-          ? `${config.topic || "new music"} — ${sfContext.beatContext}`
-          : config.topic || "new music";
+          ? `${configuredTopic} — ${sfContext.beatContext}`
+          : configuredTopic;
 
         const gateResult = await contentQualityGate.run((userId as string), {
           topic: enrichedTopic,
-          objective: "engagement",
+          objective: businessObjective,
           platform: targetPlatform,
           tone: config.brandVoice as string | undefined,
           genre: config.genre as string | undefined,
@@ -495,18 +578,13 @@ class AutopilotPublisher {
           mediaType: "text",
         };
 
-        const nextOptimalTime = await this.calculateNextOptimalPostingTime(
-          targetPlatform,
-          ((config.postingFrequency as string) || "daily"),
-          userId,
-        );
+        const nextOptimalTime = await this.nextPostingTime(config, targetPlatform, userId);
 
-        const scheduledPost = await autoPostingServiceV2.schedulePost(
-          (userId as string),
-          [targetPlatform],
+        const scheduledPost = await this.persistSocialPost(
+          config,
+          targetPlatforms,
           postContent,
           nextOptimalTime,
-          "social_autopilot",
         );
 
         logger.info(
@@ -521,7 +599,10 @@ class AutopilotPublisher {
       // Trained model path — MaxCore is the ONLY content source ────────────────
       // Pick content type deterministically, rotating per 15-min window so that
       // back-to-back cycles vary without being random.
-      const contentTypes = config.contentTypes || ["tips", "insights"];
+      const contentTypes =
+        Array.isArray(config.contentTypes) && config.contentTypes.length > 0
+          ? config.contentTypes
+          : ["tips", "insights"];
       const ctSeed = `${userId}:${(contentTypes as any).join(",")}:${Math.floor(Date.now() / (15 * 60 * 1000))}`;
       const ctIdx = (() => {
         let h = 2166136261;
@@ -543,6 +624,7 @@ class AutopilotPublisher {
         | "storytelling"
       > = {
         tips: "behind_scenes",
+        "behind-the-scenes": "behind_scenes",
         insights: "storytelling",
         questions: "engagement",
         announcements: "announcement",
@@ -578,8 +660,13 @@ class AutopilotPublisher {
         announcements: `${genre} music release`,
         promotions: `${genre} music promotion`,
       };
+      const configuredTopics = Array.isArray(config.topics)
+        ? (config.topics as string[]).filter(Boolean)
+        : [];
       const baseTopic =
-        topicByContentType[selectedContentType] || `${genre} music`;
+        configuredTopics.length > 0
+          ? configuredTopics[Math.floor(Date.now() / (15 * 60 * 1000)) % configuredTopics.length]
+          : topicByContentType[selectedContentType] || `${genre} music`;
 
       // For promotions, embed active promo details directly into the topic
       const mcTopic =
@@ -596,10 +683,11 @@ class AutopilotPublisher {
           tone: toneMap[((config.brandVoice || "") as any).toLowerCase()] || "energetic",
           genre: config.genre as string | undefined,
           targetAudience: config.targetAudience as string | undefined,
-          objective: "engagement",
+          objective: businessObjective,
           contentType: contentTypeMap[selectedContentType] || "engagement",
           includeHashtags: true,
           includeEmojis: true,
+          context: { businessGoals },
           storefrontUrl: sfContext.storefrontUrl,
           beatContext: sfContext.beatContext,
           promotionContext: sfContext.promotionContext,
@@ -618,7 +706,10 @@ class AutopilotPublisher {
         };
       }
       const confidence = overallScore / 100;
-      const minThreshold = (config.minConfidenceThreshold as number) || 0.7;
+      const minThreshold =
+        typeof config.minConfidenceThreshold === "number"
+          ? config.minConfidenceThreshold
+          : 0.7;
 
       if (confidence < minThreshold) {
         logger.info(
@@ -679,8 +770,19 @@ class AutopilotPublisher {
       // Media type: use MaxCore's recommendation but only if it's a supported format.
       // 'carousel' and 'live' are not real asset formats — fall back to 'text'.
       const mcMediaRec = advancedContent.mediaGuidance.recommendedType;
-      const resolvedMediaType: "text" | "image" | "video" | "audio" =
-        mcMediaRec === "image" || mcMediaRec === "video" ? mcMediaRec : "text";
+      const configuredMedia = Array.isArray(config.mediaTypes)
+        ? (config.mediaTypes as string[])
+        : [];
+      if (
+        !["text", "image", "video", "audio"].includes(mcMediaRec) ||
+        !configuredMedia.includes(mcMediaRec)
+      ) {
+        return {
+          posts: 0,
+          error: `MaxCore recommended media type "${String(mcMediaRec)}", which is not enabled in the selected media types.`,
+        };
+      }
+      const resolvedMediaType = mcMediaRec as "text" | "image" | "video" | "audio";
 
       // Generate actual media asset using in-house AI Content Service
       // CRITICAL: No silent fallbacks - if media generation fails, we must propagate the error
@@ -717,19 +819,14 @@ class AutopilotPublisher {
       };
 
       // Calculate next optimal posting time for this platform
-      const nextOptimalTime = await this.calculateNextOptimalPostingTime(
-        targetPlatform,
-        ((config.postingFrequency as string) || "daily"),
-        userId,
-      );
+      const nextOptimalTime = await this.nextPostingTime(config, targetPlatform, userId);
 
       // Schedule post for optimal time (not immediate)
-      const scheduledPost = await autoPostingServiceV2.schedulePost(
-        (userId as string),
-        [targetPlatform],
+      const scheduledPost = await this.persistSocialPost(
+        config,
+        targetPlatforms,
         postContent,
         nextOptimalTime,
-        "social_autopilot",
       );
 
       logger.info(
@@ -816,7 +913,10 @@ class AutopilotPublisher {
         typeof bestCampaign?.confidence === "number"
           ? bestCampaign.confidence
           : null;
-      const minThreshold = (config?.minConfidenceThreshold as number) || 0.7;
+      const minThreshold =
+        typeof config?.minConfidenceThreshold === "number"
+          ? config.minConfidenceThreshold
+          : 0.7;
 
       if (confidence === null) {
         return {
@@ -1041,6 +1141,21 @@ class AutopilotPublisher {
     const scheduledTime = new Date(now);
     scheduledTime?.setHours(nextOptimalHour, 0, 0, 0);
     return scheduledTime;
+  }
+
+  private async nextPostingTime(
+    config: Record<string, unknown>,
+    platform: string,
+    userId: string,
+  ): Promise<Date> {
+    if (config.optimalTimesOnly === false) {
+      return new Date(Date.now() + 5 * 60 * 1000);
+    }
+    return this.calculateNextOptimalPostingTime(
+      platform,
+      (config.postingFrequency as string) || "daily",
+      userId,
+    );
   }
 
   /**

@@ -243,7 +243,14 @@ export function AutopilotDashboard() {
   };
 
   const handleSaveConfig = () => {
-    saveConfigMutation.mutate(localConfig);
+    const persistedConfig = Object.fromEntries(
+      Object.entries(localConfig).filter(
+        ([key]) =>
+          key !== "engagementThreshold" &&
+          key !== "autoAnalyzeBeforePosting",
+      ),
+    );
+    saveConfigMutation.mutate(persistedConfig as AutopilotConfig);
   };
 
   const handleResetConfig = () => {
@@ -344,7 +351,7 @@ export function AutopilotDashboard() {
                   {status.totalPublished || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Successfully posted
+                  Confirmed provider receipts
                 </p>
               </CardContent>
             </Card>
@@ -795,11 +802,13 @@ export function AutopilotDashboard() {
                         }
                         min={1}
                         max={10}
-                        step={0.5}
+                         step={0.5}
+                         disabled
                         className="w-full"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Minimum expected engagement rate to publish content
+                         MaxCore engagement prediction is currently unavailable
+                         (503); this control is disabled rather than estimating.
                       </p>
                     </div>
 
@@ -826,20 +835,14 @@ export function AutopilotDashboard() {
 
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                       <div>
-                        <Label htmlFor="auto-analyze" className="font-medium">
-                          Auto-Analyze Content
+                        <Label className="font-medium">
+                          Pre-publish quality review
                         </Label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Automatically analyze content quality before posting
+                          The quality gate runs for every post and is not
+                          optional. No unverified engagement prediction is used.
                         </p>
                       </div>
-                      <Switch
-                        id="auto-analyze"
-                        checked={localConfig.autoAnalyzeBeforePosting}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ autoAnalyzeBeforePosting: checked })
-                        }
-                      />
                     </div>
 
                     <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">

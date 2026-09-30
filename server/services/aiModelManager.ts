@@ -124,7 +124,7 @@ class MaxCoreSocialAutopilot {
       content: variant.caption ?? variant.body ?? "",
       text: variant.caption ?? variant.body ?? "",
       hashtags: variant.hashtags ?? [],
-      confidence: variant.source === "model" ? 1 : null,
+      confidence: null,
       predictedEngagement: null,
       platformOptimizations: {
         hook: variant.hook,
@@ -186,12 +186,22 @@ class MaxCoreAdvertisingAutopilot {
     multimodalFeatures?: Record<string, unknown> | null,
   ): Promise<Array<Record<string, unknown>>> {
     const platform = String(multimodalFeatures?.platform ?? "meta");
+    const requestedAdType = multimodalFeatures?.mediaType;
+    const adType =
+      requestedAdType === undefined
+        ? "video"
+        : typeof requestedAdType === "string" &&
+            ["text", "image", "video", "audio"].includes(requestedAdType)
+          ? requestedAdType
+          : (() => {
+              throw new Error("Unsupported MaxCore advertising media type");
+            })();
     const response = await maxCorePost<AdsGenerateResponse>(
       "/platform/ads/generate",
       {
         user_id: this.userId,
         platform,
-        ad_type: "video",
+        ad_type: adType,
         product: String(
           multimodalFeatures?.beatContext ??
             multimodalFeatures?.product ??
@@ -224,8 +234,10 @@ class MaxCoreAdvertisingAutopilot {
           ?.daily_budget ?? null,
       expectedReach: null,
       expectedEngagement: null,
-      predictedROI: response.peak_replication?.avg_roas_of_peaks ?? null,
-      confidence: creative.source === "model" ? 1 : null,
+      predictedROI: null,
+      historicalPeakAvgRoas:
+        response.peak_replication?.avg_roas_of_peaks ?? null,
+      confidence: null,
       platformOptimizations: creative.creative_brief ?? {},
     }));
   }

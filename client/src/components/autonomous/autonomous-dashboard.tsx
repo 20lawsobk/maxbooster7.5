@@ -13,9 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -27,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Sparkles, Play, Pause, Activity, Brain, Settings as SettingsIcon, Clock, CheckCircle, AlertCircle, Image, Video, Music, FileText, Globe, RefreshCw, Save, RotateCcw, Megaphone } from "lucide-react";
+import { Sparkles, Play, Pause, Brain, Settings as SettingsIcon, Clock, CheckCircle, AlertCircle, Image, Video, Music, FileText, Globe, RefreshCw, Save, RotateCcw, Megaphone } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -46,25 +44,14 @@ interface AdvertisingAutopilotConfig {
     | "conversions"
     | "traffic"
     | "viral";
-  campaignFrequency: "hourly" | "daily" | "twice-daily" | "weekly";
+  campaignFrequency: "hourly" | "twice-daily" | "daily" | "every-2-days" | "weekly";
   brandVoice: "professional" | "casual" | "energetic" | "informative";
   contentTypes: string[];
   mediaTypes: string[];
-  targetAudience: string;
-  ageMin: number;
-  ageMax: number;
-  interests: string[];
-  locations: string[];
-  budgetOptimization: boolean;
-  dailyBudgetLimit: number;
-  viralOptimization: boolean;
-  algorithmicTargeting: boolean;
+  dailyPostLimit: number;
   autoPublish: boolean;
   optimalTimesOnly: boolean;
   crossPlatformCampaigns: boolean;
-  engagementThreshold: number;
-  minConfidenceThreshold: number;
-  autoAnalyzeBeforePosting: boolean;
 }
 
 const PLATFORMS = [
@@ -104,61 +91,56 @@ const PLATFORMS = [
 
 const CONTENT_TYPES = [
   {
-    id: "brand-awareness",
-    label: "Brand Awareness",
-    description: "Increase visibility and recognition",
+    id: "beat",
+    label: "Beats",
+    description: "Promote owned beat listings",
   },
   {
-    id: "product-promotion",
-    label: "Product Promotion",
-    description: "Promote your music and releases",
+    id: "release",
+    label: "Releases",
+    description: "Promote owned releases",
   },
   {
-    id: "engagement-boost",
-    label: "Engagement Boost",
-    description: "Drive likes, comments, and shares",
+    id: "storefront",
+    label: "Storefront",
+    description: "Promote your owned storefront",
   },
   {
-    id: "traffic-drive",
-    label: "Traffic Driver",
-    description: "Drive traffic to your website or store",
+    id: "social_post",
+    label: "Owned social posts",
+    description: "Redistribute your published posts",
   },
   {
-    id: "viral-content",
-    label: "Viral Content",
-    description: "AI-optimized viral campaigns",
-  },
-  {
-    id: "retargeting",
-    label: "Retargeting",
-    description: "Re-engage past visitors",
+    id: "epk",
+    label: "Artist EPK",
+    description: "Promote your artist profile",
   },
 ];
 
 const MEDIA_TYPES = [
   {
     id: "text",
-    label: "Text Ads",
+    label: "Text Posts",
     icon: FileText,
-    description: "Text-only ad copy",
+    description: "Text-only social copy",
   },
   {
     id: "image",
-    label: "Image Ads",
+    label: "Image Posts",
     icon: Image,
-    description: "AI-generated graphics",
+    description: "Use existing artwork or generate an image",
   },
   {
     id: "audio",
-    label: "Audio Ads",
+    label: "Audio Posts",
     icon: Music,
-    description: "AI-generated audio clips",
+    description: "Generate an audio asset",
   },
   {
     id: "video",
-    label: "Video Ads",
+    label: "Video Posts",
     icon: Video,
-    description: "AI-generated video content",
+    description: "Generate a video asset",
   },
 ];
 
@@ -192,23 +174,12 @@ const DEFAULT_CONFIG: AdvertisingAutopilotConfig = {
   campaignObjective: "awareness",
   campaignFrequency: "daily",
   brandVoice: "professional",
-  contentTypes: ["brand-awareness", "engagement-boost"],
+  contentTypes: ["release", "social_post"],
   mediaTypes: ["text", "image"],
-  targetAudience: "",
-  ageMin: 18,
-  ageMax: 65,
-  interests: [],
-  locations: [],
-  budgetOptimization: true,
-  dailyBudgetLimit: 0,
-  viralOptimization: true,
-  algorithmicTargeting: true,
+  dailyPostLimit: 0,
   autoPublish: false,
-  optimalTimesOnly: true,
+  optimalTimesOnly: false,
   crossPlatformCampaigns: false,
-  engagementThreshold: 0.02,
-  minConfidenceThreshold: 0.7,
-  autoAnalyzeBeforePosting: true,
 };
 
 export function AutonomousDashboard() {
@@ -235,10 +206,15 @@ export function AutonomousDashboard() {
       setLocalConfig({
         ...DEFAULT_CONFIG,
         ...serverConfig,
-        mediaTypes: serverConfig.mediaTypes || DEFAULT_CONFIG.mediaTypes,
-        contentTypes: serverConfig.contentTypes || DEFAULT_CONFIG.contentTypes,
-        interests: serverConfig.interests || DEFAULT_CONFIG.interests,
-        locations: serverConfig.locations || DEFAULT_CONFIG.locations,
+        platforms: Array.isArray(serverConfig.platforms)
+          ? serverConfig.platforms
+          : DEFAULT_CONFIG.platforms,
+        mediaTypes: Array.isArray(serverConfig.mediaTypes)
+          ? serverConfig.mediaTypes
+          : DEFAULT_CONFIG.mediaTypes,
+        contentTypes: Array.isArray(serverConfig.contentTypes)
+          ? serverConfig.contentTypes
+          : DEFAULT_CONFIG.contentTypes,
       });
       setHasUnsavedChanges(false);
     }
@@ -304,7 +280,16 @@ export function AutonomousDashboard() {
   };
 
   const handleSaveConfig = () => {
-    saveConfigMutation.mutate(localConfig);
+    const {
+      enabled, platforms, campaignObjective, campaignFrequency, brandVoice,
+      contentTypes, mediaTypes, dailyPostLimit, autoPublish,
+      optimalTimesOnly, crossPlatformCampaigns,
+    } = localConfig;
+    saveConfigMutation.mutate({
+      enabled, platforms, campaignObjective, campaignFrequency, brandVoice,
+      contentTypes, mediaTypes, dailyPostLimit, autoPublish,
+      optimalTimesOnly, crossPlatformCampaigns,
+    } as AdvertisingAutopilotConfig);
   };
 
   const handleResetConfig = () => {
@@ -312,6 +297,15 @@ export function AutonomousDashboard() {
       setLocalConfig({
         ...DEFAULT_CONFIG,
         ...autopilotData.config,
+        platforms: Array.isArray(autopilotData.config.platforms)
+          ? autopilotData.config.platforms
+          : DEFAULT_CONFIG.platforms,
+        mediaTypes: Array.isArray(autopilotData.config.mediaTypes)
+          ? autopilotData.config.mediaTypes
+          : DEFAULT_CONFIG.mediaTypes,
+        contentTypes: Array.isArray(autopilotData.config.contentTypes)
+          ? autopilotData.config.contentTypes
+          : DEFAULT_CONFIG.contentTypes,
       });
     } else {
       setLocalConfig(DEFAULT_CONFIG);
@@ -329,6 +323,26 @@ export function AutonomousDashboard() {
   const isRunning = autopilotData?.isRunning || false;
   const status = autopilotData?.status || {};
   const modelStatus = autopilotData?.modelStatus || {};
+  const canStart =
+    !hasUnsavedChanges &&
+    !saveConfigMutation.isPending &&
+    localConfig.platforms.length > 0 &&
+    localConfig.contentTypes.length > 0 &&
+    localConfig.mediaTypes.length > 0 &&
+    ["hourly", "twice-daily", "daily", "every-2-days", "weekly"].includes(
+      localConfig.campaignFrequency,
+    ) &&
+    ["awareness", "engagement", "conversions", "traffic", "viral"].includes(
+      localConfig.campaignObjective,
+    ) &&
+    ["professional", "casual", "energetic", "informative"].includes(
+      localConfig.brandVoice,
+    ) &&
+    Number.isInteger(localConfig.dailyPostLimit) &&
+    localConfig.dailyPostLimit >= 0 &&
+    typeof localConfig.autoPublish === "boolean" &&
+    typeof localConfig.optimalTimesOnly === "boolean" &&
+    typeof localConfig.crossPlatformCampaigns === "boolean";
 
   if (statusError) {
     return (
@@ -357,8 +371,9 @@ export function AutonomousDashboard() {
                 Advertising Autopilot
               </CardTitle>
               <CardDescription>
-                AI generates optimized content via MaxCore and distributes it
-                through your connected social profiles — zero ad spend required
+                MaxCore generates organic promotions for content you own and
+                distributes them through connected social profiles. No ad spend.
+                Save at least one platform before starting.
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
@@ -371,7 +386,11 @@ export function AutonomousDashboard() {
               <Button
                 onClick={() => toggleAutopilotMutation.mutate(!isRunning)}
                 variant={isRunning ? "destructive" : "default"}
-                disabled={toggleAutopilotMutation.isPending || statusLoading}
+                disabled={
+                  toggleAutopilotMutation.isPending ||
+                  statusLoading ||
+                  (!isRunning && !canStart)
+                }
                 className={
                   !isRunning ? "bg-orange-600 hover:bg-orange-700" : ""
                 }
@@ -530,6 +549,7 @@ export function AutonomousDashboard() {
                             Twice Daily
                           </SelectItem>
                           <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="every-2-days">Every 2 days</SelectItem>
                           <SelectItem value="weekly">Weekly</SelectItem>
                         </SelectContent>
                       </Select>
@@ -573,71 +593,22 @@ export function AutonomousDashboard() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Target Audience Description</Label>
-                    <Textarea
-                      value={localConfig.targetAudience}
-                      onChange={(e) =>
-                        updateConfig({ targetAudience: e.target.value })
-                      }
-                      placeholder={"Describe your ideal audience (e.g., Music lovers aged 18-35, interested in hip-hop and R&B, located in major US cities)"}
-                      className="min-h-[80px]"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      AI will use this to target your ads effectively
-                    </p>
-                  </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>
-                        Age Range: {localConfig.ageMin} - {localConfig.ageMax}
-                      </Label>
-                      <div className="flex items-center gap-4">
-                        <Input
-                          type="number"
-                          min={13}
-                          max={65}
-                          value={localConfig.ageMin}
-                          onChange={(e) =>
-                            updateConfig({
-                              ageMin: parseInt(e.target.value) || 18,
-                            })
-                          }
-                          className="w-20"
-                        />
-                        <span className="text-muted-foreground">to</span>
-                        <Input
-                          type="number"
-                          min={18}
-                          max={100}
-                          value={localConfig.ageMax}
-                          onChange={(e) =>
-                            updateConfig({
-                              ageMax: parseInt(e.target.value) || 65,
-                            })
-                          }
-                          className="w-20"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Daily Post Limit</Label>
+                      <Label>Daily Promotion Limit</Label>
                       <Input
                         type="number"
                         min={0}
-                        value={localConfig.dailyBudgetLimit}
+                       value={localConfig.dailyPostLimit}
                         onChange={(e) =>
                           updateConfig({
-                            dailyBudgetLimit: parseInt(e.target.value) || 0,
+                             dailyPostLimit: parseInt(e.target.value) || 0,
                           })
                         }
-                        placeholder="0 = No limit"
+                         placeholder="0 = unlimited"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Max AI-generated posts per day across all platforms (0 =
-                        unlimited)
+                         Maximum new organic promotions per day; 0 means unlimited
                       </p>
                     </div>
                   </div>
@@ -856,8 +827,9 @@ export function AutonomousDashboard() {
                         Optimal Times Only
                       </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Only launch campaigns during peak engagement hours for
-                        each platform
+                        When auto-publish is on, use your top measured day and
+                        hour for the lead platform. Without history, publishing
+                        waits; review drafts are still generated.
                       </p>
                     </div>
                     <Switch
@@ -871,151 +843,17 @@ export function AutonomousDashboard() {
                 </TabsContent>
 
                 <TabsContent value="advanced" className="space-y-4">
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="mb-2 block">
-                        Engagement Threshold:{" "}
-                        {(localConfig.engagementThreshold * 100).toFixed(0)}%
-                      </Label>
-                      <Slider
-                        value={[localConfig.engagementThreshold * 100]}
-                        onValueChange={([value]) =>
-                          updateConfig({ engagementThreshold: value / 100 })
-                        }
-                        min={1}
-                        max={10}
-                        step={0.5}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Minimum expected engagement rate to publish campaign
-                      </p>
-                    </div>
-
-                    <div>
-                      <Label className="mb-2 block">
-                        AI Confidence Threshold:{" "}
-                        {(localConfig.minConfidenceThreshold * 100).toFixed(0)}%
-                      </Label>
-                      <Slider
-                        value={[localConfig.minConfidenceThreshold * 100]}
-                        onValueChange={([value]) =>
-                          updateConfig({ minConfidenceThreshold: value / 100 })
-                        }
-                        min={50}
-                        max={95}
-                        step={5}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Minimum AI confidence score required before
-                        auto-publishing
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div>
-                        <Label htmlFor="auto-analyze" className="font-medium">
-                          Auto-Analyze Content
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Automatically analyze ad content quality before
-                          publishing
-                        </p>
-                      </div>
-                      <Switch
-                        id="auto-analyze"
-                        checked={localConfig.autoAnalyzeBeforePosting}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ autoAnalyzeBeforePosting: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div>
-                        <Label
-                          htmlFor="budget-optimization"
-                          className="font-medium"
-                        >
-                          AI Budget Optimization
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          AI automatically allocates budget to best-performing
-                          campaigns
-                        </p>
-                      </div>
-                      <Switch
-                        id="budget-optimization"
-                        checked={localConfig.budgetOptimization}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ budgetOptimization: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div>
-                        <Label
-                          htmlFor="viral-optimization"
-                          className="font-medium"
-                        >
-                          Viral Optimization
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Optimize campaigns for maximum organic sharing and
-                          viral potential
-                        </p>
-                      </div>
-                      <Switch
-                        id="viral-optimization"
-                        checked={localConfig.viralOptimization}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ viralOptimization: checked })
-                        }
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                      <div>
-                        <Label
-                          htmlFor="algorithmic-targeting"
-                          className="font-medium"
-                        >
-                          Algorithmic Targeting
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Use AI to exploit platform algorithms for organic
-                          reach boost
-                        </p>
-                      </div>
-                      <Switch
-                        id="algorithmic-targeting"
-                        checked={localConfig.algorithmicTargeting}
-                        onCheckedChange={(checked) =>
-                          updateConfig({ algorithmicTargeting: checked })
-                        }
-                      />
-                    </div>
-
-                    <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-                      <CardContent className="pt-4">
-                        <div className="flex items-start gap-3">
-                          <Brain className="h-5 w-5 text-orange-600 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium text-orange-900 dark:text-orange-100">
-                              AI Learning
-                            </h4>
-                            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                              The advertising autopilot continuously learns from
-                              your campaign performance to improve future
-                              targeting and content. High-performing ad formats
-                              and audiences will be prioritized automatically.
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">
+                      Organic promotion only
+                    </p>
+                    <p className="mt-1">
+                      This autopilot creates zero-budget social promotions for
+                      content you own. Paid audience targeting, viral scores,
+                      and engagement predictions are not available here.
+                      MaxCore-generated creative is used without inventing
+                      performance estimates.
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1025,48 +863,25 @@ export function AutonomousDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                AI Learning &amp; Performance
+                <Brain className="h-5 w-5" />
+                MaxCore Model Status
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>Campaign Quality Score</span>
-                    <span className="font-medium">
-                      {modelStatus.trained ? "87%" : "0%"}
-                    </span>
-                  </div>
-                  <Progress
-                    value={modelStatus.trained ? 87 : 0}
-                    className="h-2"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>Audience Targeting Accuracy</span>
-                    <span className="font-medium">
-                      {modelStatus.trained ? "92%" : "0%"}
-                    </span>
-                  </div>
-                  <Progress
-                    value={modelStatus.trained ? 92 : 0}
-                    className="h-2"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>Viral Prediction Accuracy</span>
-                    <span className="font-medium">
-                      {modelStatus.trained ? "78%" : "0%"}
-                    </span>
-                  </div>
-                  <Progress
-                    value={modelStatus.trained ? 78 : 0}
-                    className="h-2"
-                  />
-                </div>
+              <div className="space-y-3">
+                <Badge variant={modelStatus.trained ? "default" : "secondary"}>
+                  {modelStatus.trained ? "Model ready" : "Model not trained"}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Authority: {modelStatus.authority || "MaxCore"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Version: {modelStatus.version || "Not reported"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  No quality, reach, or viral-prediction percentages are shown
+                  unless MaxCore provides measured results.
+                </p>
               </div>
             </CardContent>
           </Card>

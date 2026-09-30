@@ -12,8 +12,8 @@ import {
 } from "../services/maxcoreControlTransport.js";
 import { promotionalToolsService } from "../services/promotionalToolsService.js";
 import { db } from "../db";
-import { socialAutopilotContent } from "@shared/schema";
-import { eq, count, lt, gte, gt, min, desc, and, isNotNull } from "drizzle-orm";
+import { posts, socialAutopilotContent } from "@shared/schema";
+import { eq, count, lt, gte, gt, min, desc, and, isNotNull, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -21,7 +21,7 @@ const router = Router();
 const autopilotConfigSchema = z.object({
   enabled: z.boolean(),
   platforms: z.array(z.string()).optional(),
-  postingFrequency: z.enum(["hourly", "daily", "weekly"]).optional(),
+  postingFrequency: z.enum(["hourly", "twice-daily", "daily", "weekly"]).optional(),
   brandVoice: z.string().optional(),
   contentTypes: z.array(z.string()).optional(),
   autoPublish: z.boolean().optional(),
@@ -123,12 +123,8 @@ router.get("/status", requireAuth, async (req, res) => {
     const config = await storage.getAutopilotConfig(userId).catch(() => null);
 
     let socialModel;
-    let advertisingModel;
     try {
-      [socialModel, advertisingModel] = await Promise.all([
-        aiModelManager.getSocialAutopilot(userId),
-        aiModelManager.getAdvertisingAutopilot(userId),
-      ]);
+      socialModel = await aiModelManager.getSocialAutopilot(userId);
     } catch (error) {
       logger.warn({ err: error }, "Failed to read MaxCore autopilot status:");
       sendMaxCoreFailure(
@@ -139,46 +135,59 @@ router.get("/status", requireAuth, async (req, res) => {
       return;
     }
 
-    // Real activity stats from socialAutopilotContent table
+    const autopilotPosts = and(
+      eq(posts.userId, userId),
+      sql`${posts.engagement}->>'createdBy' = 'social_autopilot'`,
+    );
+    const confirmedReceipt = sql`(
+      jsonb_path_exists(
+        COALESCE(${posts.engagement}, '{}'::jsonb),
+        '$.postingResults[*] ? (@.outcome == "confirmed" && @.success == true)'
+      )
+      OR jsonb_path_exists(
+        COALESCE(${posts.engagement}, '{}'::jsonb),
+        '$.results[*] ? (@.outcome == "confirmed" && @.success == true)'
+      )
+      OR jsonb_path_exists(
+        COALESCE(${posts.engagement}, '[]'::jsonb),
+        '$[*] ? (@.outcome == "confirmed" && @.success == true)'
+      )
+    )`;
     const [totalGenRow, publishedRow, pendingRow, nextJobRow, recentRows] =
       await Promise.all([
         db
           .select({ value: count() })
-          .from(socialAutopilotContent)
-          .where(eq(socialAutopilotContent.userId, userId)),
+          .from(posts)
+          .where(autopilotPosts),
         db
           .select({ value: count() })
-          .from(socialAutopilotContent)
+          .from(posts)
+          .where(and(autopilotPosts, confirmedReceipt)),
+        db
+          .select({ value: count() })
+          .from(posts)
           .where(
             and(
-              eq(socialAutopilotContent.userId, userId),
-              isNotNull(socialAutopilotContent.postingTime),
-              lt(socialAutopilotContent.postingTime, now),
+              autopilotPosts,
+              sql`${posts.status} IN ('pending', 'scheduled')`,
             ),
           ),
         db
-          .select({ value: count() })
-          .from(socialAutopilotContent)
+          .select({ value: min(posts.scheduledAt) })
+          .from(posts)
           .where(
             and(
-              eq(socialAutopilotContent.userId, userId),
-              gte(socialAutopilotContent.postingTime, now),
-            ),
-          ),
-        db
-          .select({ value: min(socialAutopilotContent.postingTime) })
-          .from(socialAutopilotContent)
-          .where(
-            and(
-              eq(socialAutopilotContent.userId, userId),
-              gt(socialAutopilotContent.postingTime, now),
+              autopilotPosts,
+              sql`${posts.status} IN ('pending', 'scheduled')`,
+              sql`${posts.engagement}->>'reviewRequired' IS DISTINCT FROM 'true'`,
+              gt(posts.scheduledAt, now),
             ),
           ),
         db
           .select()
-          .from(socialAutopilotContent)
-          .where(eq(socialAutopilotContent.userId, userId))
-          .orderBy(desc(socialAutopilotContent.createdAt))
+          .from(posts)
+          .where(autopilotPosts)
+          .orderBy(desc(posts.createdAt))
           .limit(10),
       ]);
 
@@ -189,16 +198,44 @@ router.get("/status", requireAuth, async (req, res) => {
 
     const recentActivity = (recentRows as unknown[]).map(
       (row: Record<string, unknown>) => {
-        const isPast = row?.postingTime && new Date(row?.postingTime as any) < now;
-        const isFuture = row?.postingTime && new Date(row?.postingTime as any) >= now;
+        const engagement =
+          row.engagement && typeof row.engagement === "object"
+            ? row.engagement as Record<string, unknown>
+            : {};
+        const content =
+          engagement.content && typeof engagement.content === "object"
+            ? engagement.content as Record<string, unknown>
+            : typeof row.content === "string"
+              ? (() => {
+                  try {
+                    const parsed = JSON.parse(row.content as string);
+                    return parsed && typeof parsed === "object"
+                      ? parsed as Record<string, unknown>
+                      : {};
+                  } catch {
+                    return { text: row.content };
+                  }
+                })()
+              : {};
+        const platforms = Array.isArray(engagement.platforms)
+          ? engagement.platforms.filter((platform): platform is string => typeof platform === "string")
+          : [String(row.platform || "social media")];
+        const reviewRequired = engagement.reviewRequired === true;
+        const receipts = [
+          ...(Array.isArray(engagement.postingResults) ? engagement.postingResults : []),
+          ...(Array.isArray(engagement.results) ? engagement.results : []),
+          ...(Array.isArray(row.engagement) ? row.engagement : []),
+        ] as Array<Record<string, unknown>>;
+        const confirmed = receipts.some(
+          (receipt) =>
+            receipt?.outcome === "confirmed" && receipt?.success === true,
+        );
+        const text = String(content.text ?? content.body ?? content.caption ?? "");
         return {
-          status: isPast ? "completed" : isFuture ? "scheduled" : "pending",
-          title: `${row?.type ? (row?.type as any).charAt(0).toUpperCase() + (row?.type as any).slice(1) : "Content"} on ${row?.platform || "social media"}`,
-          description:
-            `${row?.format || "text"} • ${row?.hookType || ""} hook • ${row?.tone || ""} tone`
-              .replace(/• {2,}/g, "• ")
-              .replace(/^• |• $/g, ""),
-          time: row.postingTime || row?.createdAt,
+          status: reviewRequired ? "pending" : confirmed ? "completed" : row.status,
+          title: `${reviewRequired ? "Review draft" : "Autopilot post"} on ${platforms.join(", ")}`,
+          description: text.length > 180 ? `${text.slice(0, 177)}...` : text,
+          time: row.scheduledAt || row.createdAt,
         };
       },
     );
@@ -240,10 +277,6 @@ router.get("/status", requireAuth, async (req, res) => {
         social: {
           trained: socialModel.getIsTrained(),
           version: socialModel.getVersion(),
-        },
-        advertising: {
-          trained: advertisingModel.getIsTrained(),
-          version: advertisingModel.getVersion(),
         },
       },
     });

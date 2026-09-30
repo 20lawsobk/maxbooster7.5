@@ -1213,22 +1213,12 @@ router.post(
   },
 );
 
-// Platform CPM benchmarks (industry paid-ad rates) — used to compute organic ad-equivalent value
-const PLATFORM_CPM: Record<string, number> = {
-  instagram: 8.5, tiktok: 6.2, youtube: 11.4, twitter: 7.8,
-  facebook: 9.1, linkedin: 14.0, threads: 6.5, spotify: 12.0,
-};
-function adEquivalentValue(platform: string, organicReach: number): number {
-  const cpm = PLATFORM_CPM[platform] ?? 8.0;
-  return (organicReach / 1000) * cpm;
-}
-
 // Advertising autopilot status — returns isRunning, config, modelStatus + campaign organic metrics
 router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
 
-    const [campaigns, autopilotConfig] = await Promise.all([
+    const [campaigns, autopilotConfig, advertisingModel] = await Promise.all([
       db
         .select({
           platform: adCampaigns.platform,
@@ -1239,6 +1229,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
         .where(eq(adCampaigns.userId, userId))
         .limit(100),
       storage.getAdvertisingAutopilotConfig(userId),
+      aiModelManager.getAdvertisingAutopilot(userId),
     ]);
 
     const activeCampaigns = campaigns?.filter((c) => c?.status === "active");
@@ -1249,12 +1240,6 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
       const metrics = (c?.organicMetrics || {}) as Record<string, unknown>;
       return sum + Number(metrics.totalReach ?? 0);
     }, 0);
-    const estimatedAdEquivalent = campaigns?.reduce((sum, c) => {
-      const metrics = (c?.organicMetrics || {}) as Record<string, unknown>;
-      const reach = Number(metrics.totalReach ?? 0);
-      return sum + adEquivalentValue(c?.platform, reach);
-    }, 0);
-
     res.json({
       // A real dedicated advertising-autopilot worker exists
       // (advertisingAutopilotRunner.ts, ticked every 30 min by
@@ -1272,11 +1257,12 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
         connectedPlatforms,
         activeCampaigns: activeCampaigns.length,
         totalOrganicReach,
-        estimatedAdEquivalent: Math.round(estimatedAdEquivalent * 100) / 100,
         adSpend: 0,
       },
       modelStatus: {
-        advertising: { trained: false, version: "1.0.0" },
+        trained: advertisingModel.getIsTrained(),
+        version: advertisingModel.getVersion(),
+        authority: "MaxCore",
       },
     });
   } catch (error) {
@@ -1294,7 +1280,37 @@ router.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
     // acts on users whose persisted config has enabled+isRunning true. Flip
     // that real switch instead of claiming no worker exists.
     const existing = await storage.getAdvertisingAutopilotConfig(userId);
-    const config = { ...(existing || {}), enabled: true, isRunning: true };
+    const requiredFields = [
+      "platforms",
+      "campaignObjective",
+      "campaignFrequency",
+      "brandVoice",
+      "contentTypes",
+      "mediaTypes",
+      "dailyPostLimit",
+      "autoPublish",
+      "optimalTimesOnly",
+      "crossPlatformCampaigns",
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => existing?.[field] === undefined,
+    );
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: "Save a complete autopilot configuration before starting",
+        missingFields,
+      });
+    }
+    const organicConfig = Object.fromEntries(
+      [...ORGANIC_CONFIG_FIELDS]
+        .filter((field) => existing?.[field] !== undefined)
+        .map((field) => [field, existing[field]]),
+    );
+    const validationError = validateOrganicConfig(organicConfig);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+    const config = { ...existing, enabled: true, isRunning: true };
     await storage.saveAdvertisingAutopilotConfig(userId, config);
     logger.info(`▶️ Advertising autopilot started for user ${userId}`);
     res.json({
@@ -1323,6 +1339,43 @@ router.post("/stop", requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+const ORGANIC_PLATFORMS = new Set(["facebook", "instagram", "twitter", "tiktok", "youtube", "linkedin", "threads"]);
+const ORGANIC_OBJECTIVES = new Set(["awareness", "engagement", "conversions", "traffic", "viral"]);
+const ORGANIC_FREQUENCIES = new Set(["hourly", "twice-daily", "daily", "every-2-days", "weekly"]);
+const ORGANIC_CONTENT_TYPES = new Set(PROMOTABLE_CONTENT_TYPES);
+const ORGANIC_MEDIA_TYPES = new Set(["text", "image", "audio", "video"]);
+const ORGANIC_BRAND_VOICES = new Set(["professional", "casual", "energetic", "informative"]);
+const ORGANIC_CONFIG_FIELDS = new Set([
+  "enabled",
+  "platforms",
+  "campaignObjective",
+  "campaignFrequency",
+  "brandVoice",
+  "contentTypes",
+  "mediaTypes",
+  "dailyPostLimit",
+  "autoPublish",
+  "optimalTimesOnly",
+  "crossPlatformCampaigns",
+]);
+function validateOrganicConfig(body: any): string | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return "Configuration must be an object";
+  const unsupportedField = Object.keys(body).find((key) => !ORGANIC_CONFIG_FIELDS.has(key));
+  if (unsupportedField) return `Unsupported advertising autopilot setting: ${unsupportedField}`;
+  if (body.platforms !== undefined && (!Array.isArray(body.platforms) || body.platforms.length === 0 ||
+      body.platforms.some((p: unknown) => typeof p !== "string" || !ORGANIC_PLATFORMS.has(p)))) return "platforms must contain supported connected-platform identifiers";
+  if (body.contentTypes !== undefined && (!Array.isArray(body.contentTypes) || body.contentTypes.length === 0 || body.contentTypes.some((t: unknown) => typeof t !== "string" || !ORGANIC_CONTENT_TYPES.has(t)))) return "contentTypes must include at least one supported promotable content type";
+  if (body.mediaTypes !== undefined && (!Array.isArray(body.mediaTypes) || body.mediaTypes.length === 0 || body.mediaTypes.some((t: unknown) => typeof t !== "string" || !ORGANIC_MEDIA_TYPES.has(t)))) return "mediaTypes contains an unsupported media type";
+  if (body.campaignObjective !== undefined && !ORGANIC_OBJECTIVES.has(body.campaignObjective)) return "Unsupported organic objective";
+  if (body.campaignFrequency !== undefined && !ORGANIC_FREQUENCIES.has(body.campaignFrequency)) return "Unsupported campaign frequency";
+  if (body.brandVoice !== undefined && !ORGANIC_BRAND_VOICES.has(body.brandVoice)) return "Unsupported brand voice";
+  if (body.dailyPostLimit !== undefined && (!Number.isInteger(body.dailyPostLimit) || body.dailyPostLimit < 0)) return "dailyPostLimit must be a non-negative integer";
+  for (const key of ["enabled", "autoPublish", "optimalTimesOnly", "crossPlatformCampaigns"]) {
+    if (body[key] !== undefined && typeof body[key] !== "boolean") return `${key} must be boolean`;
+  }
+  return null;
+}
+
 // Configure advertising autopilot
 router.post(
   "/configure",
@@ -1330,6 +1383,8 @@ router.post(
   async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
+      const validationError = validateOrganicConfig(req.body);
+      if (validationError) return res.status(400).json({ error: validationError });
       const existing = await storage.getAdvertisingAutopilotConfig(userId);
       // Extract only known autopilot config fields — never spread the entire body.
       const {
@@ -1340,21 +1395,10 @@ router.post(
         brandVoice,
         contentTypes,
         mediaTypes,
-        targetAudience,
-        ageMin,
-        ageMax,
-        interests,
-        locations,
-        budgetOptimization,
-        dailyBudgetLimit,
-        viralOptimization,
-        algorithmicTargeting,
+        dailyPostLimit,
         autoPublish,
         optimalTimesOnly,
         crossPlatformCampaigns,
-        engagementThreshold,
-        minConfidenceThreshold,
-        autoAnalyzeBeforePosting,
       } = req.body;
       const patch = Object.fromEntries(
         Object.entries({
@@ -1365,24 +1409,28 @@ router.post(
           brandVoice,
           contentTypes,
           mediaTypes,
-          targetAudience,
-          ageMin,
-          ageMax,
-          interests,
-          locations,
-          budgetOptimization,
-          dailyBudgetLimit,
-          viralOptimization,
-          algorithmicTargeting,
+          dailyPostLimit,
           autoPublish,
           optimalTimesOnly,
           crossPlatformCampaigns,
-          engagementThreshold,
-          minConfidenceThreshold,
-          autoAnalyzeBeforePosting,
         }).filter(([, v]) => v !== undefined),
       );
       const config = { ...(existing || {}), ...patch };
+      for (const legacyField of [
+        "dailyBudgetLimit",
+        "budgetOptimization",
+        "ageMin",
+        "ageMax",
+        "interests",
+        "locations",
+        "algorithmicTargeting",
+        "engagementThreshold",
+        "minConfidenceThreshold",
+        "viralOptimization",
+        "autoAnalyzeBeforePosting",
+      ]) {
+        delete (config as Record<string, unknown>)[legacyField];
+      }
       await storage.saveAdvertisingAutopilotConfig(userId, config);
       logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
       res.json({

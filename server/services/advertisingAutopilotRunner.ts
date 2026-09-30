@@ -10,9 +10,12 @@
  */
 import { db } from "./../db.js";
 import { adCampaigns, adCreatives } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count, gte, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
+import { aiContentService } from "./aiContentService.js";
+import { aiModelManager } from "./aiModelManager.js";
+import { autopilotLearningService } from "./autopilotLearningService.js";
 import {
   listPromotableContent,
   resolvePromotableContent,
@@ -31,14 +34,6 @@ const CALL_TO_ACTION: Record<PromotableContentType, string> = {
   epk: "Follow the Artist",
 };
 
-const DEFAULT_PLATFORMS = [
-  "instagram",
-  "facebook",
-  "tiktok",
-  "twitter",
-  "threads",
-] as const;
-
 const FREQUENCY_MS: Record<string, number> = {
   hourly: 3_600_000,
   "twice-daily": 43_200_000,
@@ -46,6 +41,29 @@ const FREQUENCY_MS: Record<string, number> = {
   "every-2-days": 172_800_000,
   weekly: 604_800_000,
 };
+
+const SUPPORTED_PLATFORMS = new Set([
+  "facebook",
+  "instagram",
+  "twitter",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+]);
+const SUPPORTED_OBJECTIVES = new Set([
+  "awareness",
+  "engagement",
+  "conversions",
+  "traffic",
+  "viral",
+]);
+const SUPPORTED_BRAND_VOICES = new Set([
+  "professional",
+  "casual",
+  "energetic",
+  "informative",
+]);
 
 export interface AutopilotTickResult {
   ran: boolean;
@@ -57,20 +75,74 @@ export interface AutopilotTickResult {
 }
 
 function dueForRun(config: Record<string, any>): boolean {
-  const frequency = FREQUENCY_MS[config?.campaignFrequency] ?? FREQUENCY_MS.daily;
+  const frequency = FREQUENCY_MS[config?.campaignFrequency];
+  if (!frequency) {
+    throw new Error("Choose and save a supported campaign frequency before starting");
+  }
   const lastRunAt = config?.lastRunAt ? new Date(config.lastRunAt).getTime() : 0;
   return Date.now() - lastRunAt >= frequency;
 }
 
 function enabledContentTypes(config: Record<string, any>): PromotableContentType[] {
-  const configured = Array.isArray(config?.contentTypes)
-    ? (config.contentTypes as unknown[]).filter((t): t is PromotableContentType =>
-        PROMOTABLE_CONTENT_TYPES.includes(t as PromotableContentType),
-      )
-    : [];
-  // No real content-type restriction configured — open promotion to every
-  // content type on the platform rather than silently doing nothing.
-  return configured.length > 0 ? configured : [...PROMOTABLE_CONTENT_TYPES];
+  if (!Array.isArray(config.contentTypes) || config.contentTypes.length === 0) {
+    throw new Error("Choose and save at least one supported content type before starting");
+  }
+  const unsupported = config.contentTypes.filter(
+    (type: unknown) =>
+      typeof type !== "string" ||
+      !PROMOTABLE_CONTENT_TYPES.includes(type as PromotableContentType),
+  );
+  if (unsupported.length > 0) {
+    throw new Error(`Unsupported promotable content type: ${String(unsupported[0])}`);
+  }
+  return [...new Set(config.contentTypes as PromotableContentType[])];
+}
+
+function enabledMediaTypes(
+  config: Record<string, any>,
+): Array<"text" | "image" | "video" | "audio"> {
+  const supported = ["text", "image", "video", "audio"] as const;
+  if (!Array.isArray(config.mediaTypes) || config.mediaTypes.length === 0) {
+    throw new Error("Choose and save at least one supported media type before starting");
+  }
+  const unsupported = config.mediaTypes.find(
+    (type: unknown) =>
+      typeof type !== "string" ||
+      !supported.includes(type as (typeof supported)[number]),
+  );
+  if (unsupported !== undefined) {
+    throw new Error(`Unsupported advertising media type: ${String(unsupported)}`);
+  }
+  return [...new Set(config.mediaTypes as Array<(typeof supported)[number]>)];
+}
+
+function validateActiveConfig(config: Record<string, any>): void {
+  if (
+    !Array.isArray(config.platforms) ||
+    config.platforms.length === 0 ||
+    config.platforms.some(
+      (platform: unknown) =>
+        typeof platform !== "string" || !SUPPORTED_PLATFORMS.has(platform),
+    )
+  ) {
+    throw new Error("Choose and save at least one supported platform before starting");
+  }
+  if (!SUPPORTED_OBJECTIVES.has(config.campaignObjective)) {
+    throw new Error("Choose and save a supported organic promotion objective before starting");
+  }
+  if (!SUPPORTED_BRAND_VOICES.has(config.brandVoice)) {
+    throw new Error("Choose and save a supported brand voice before starting");
+  }
+  if (!Number.isInteger(config.dailyPostLimit) || config.dailyPostLimit < 0) {
+    throw new Error("Save a non-negative daily promotion limit before starting");
+  }
+  for (const key of ["autoPublish", "optimalTimesOnly", "crossPlatformCampaigns"]) {
+    if (typeof config[key] !== "boolean") {
+      throw new Error(`Save the ${key} setting before starting`);
+    }
+  }
+  enabledContentTypes(config);
+  enabledMediaTypes(config);
 }
 
 /** Content already promoted by the autopilot, keyed "type:id", across all of the user's campaigns. */
@@ -112,14 +184,81 @@ async function launch(
   userId: string,
   source: ResolvedPromotableContent,
   platforms: string[],
+  config: Record<string, any>,
+  mediaType: "text" | "image" | "video" | "audio",
 ): Promise<{ campaignId: string; posted: boolean; reason?: string }> {
+  const model = await aiModelManager.getAdvertisingAutopilot(userId);
+  const mediaTypes = enabledMediaTypes(config);
+  const recommendations = await model.generateCampaignRecommendations(
+    config.campaignObjective,
+    { platform: platforms[0], contentType: source.contentType, product: source.title,
+      brandVoice: config.brandVoice, contentContext: source.description,
+      sourceUrl: source.sourceUrl, mediaTypes, mediaType },
+  );
+  const recommendation = recommendations[0];
+  if (
+    !recommendation ||
+    typeof recommendation.content !== "string" ||
+    recommendation.content.trim().length === 0
+  ) {
+    throw new Error("MaxCore advertising generation returned no usable creative");
+  }
+  const generated = Array.isArray(recommendation.creatives)
+    ? recommendation.creatives[0] as Record<string, unknown> | undefined : undefined;
+  if (generated?.content_type !== mediaType) {
+    throw new Error(
+      `MaxCore returned ${String(generated?.content_type)} but the selected media type is ${mediaType}`,
+    );
+  }
+  let mediaUrl: string | null = null;
+  if (mediaType === "image" && source.artworkUrl) {
+    mediaUrl = source.artworkUrl;
+  } else if (mediaType !== "text") {
+    const mediaGenerationPlatforms = [
+      "twitter",
+      "facebook",
+      "instagram",
+      "linkedin",
+      "tiktok",
+      "youtube",
+    ];
+    if (!mediaGenerationPlatforms.includes(platforms[0])) {
+      throw new Error(
+        `MaxCore media generation does not support the ${platforms[0]} platform`,
+      );
+    }
+    const mediaToneByBrandVoice: Record<
+      string,
+      "professional" | "casual" | "energetic" | "creative" | "promotional"
+    > = {
+      professional: "professional",
+      casual: "casual",
+      energetic: "energetic",
+      informative: "professional",
+    };
+    const mediaTone = mediaToneByBrandVoice[config.brandVoice];
+    if (!mediaTone) {
+      throw new Error(`Unsupported media-generation brand voice: ${String(config.brandVoice)}`);
+    }
+    const asset = await aiContentService.generateContent({
+      prompt: `${String(recommendation.name || source.title)}\n${recommendation.content}`,
+      platform: platforms[0] as "twitter" | "facebook" | "instagram" | "linkedin" | "tiktok" | "youtube",
+      format: mediaType as "text" | "image" | "video" | "audio",
+      tone: mediaTone,
+      length: "medium",
+    });
+    if (!asset.url) {
+      throw new Error(`MaxCore media generation returned no ${mediaType} asset URL`);
+    }
+    mediaUrl = asset.url;
+  }
   const [campaign] = await db
     .insert(adCampaigns)
     .values({
       userId,
       name: `[Autopilot] ${source.title}`,
       platform: platforms[0],
-      objective: "content_promotion",
+      objective: config.campaignObjective,
       budget: 0,
       status: "draft",
       targetAudience: { category: source.category },
@@ -128,6 +267,11 @@ async function launch(
         contentType: source.contentType,
         contentId: source.contentId,
         fanOutPlatforms: platforms,
+        objective: config.campaignObjective,
+        brandVoice: config.brandVoice,
+        mediaTypes,
+        organicOnly: true,
+        createdAt: new Date().toISOString(),
       },
     })
     .returning({ id: adCampaigns.id });
@@ -139,12 +283,12 @@ async function launch(
       campaignId: campaign.id,
       name: `[Autopilot] ${source.title}`,
       type: "social_post",
-      headline: source.title,
-      description: source.description,
-      mediaUrl: source.artworkUrl || null,
+       headline: typeof generated?.headline === "string" ? generated.headline : source.title,
+       description: recommendation.content,
+      mediaUrl,
       callToAction: CALL_TO_ACTION[source.contentType],
       landingUrl: source.sourceUrl,
-      status: "active",
+      status: "draft",
     })
     .returning({ id: adCreatives.id });
 
@@ -153,12 +297,16 @@ async function launch(
     .set({ creativeIds: [creative.id] })
     .where(eq(adCampaigns.id, campaign.id));
 
-  const result = await advertisingDispatchService.activateCampaign(
-    campaign.id,
-    userId,
-  );
+  if (config.autoPublish !== true) {
+    return { campaignId: campaign.id, posted: false, reason: "Draft saved for review" };
+  }
+  const result = await advertisingDispatchService.activateCampaign(campaign.id, userId);
   const postsCreated = result.results?.postsCreated ?? 0;
   if (result.success && postsCreated > 0) {
+    await db
+      .update(adCreatives)
+      .set({ status: "active" })
+      .where(eq(adCreatives.id, creative.id));
     return { campaignId: campaign.id, posted: true };
   }
   const platformErrors = result.results?.errors ?? [];
@@ -180,11 +328,72 @@ export async function runAdvertisingAutopilotTick(
   if (!config?.enabled || !config?.isRunning) {
     return { ran: false, reason: "Autopilot not enabled" };
   }
+  validateActiveConfig(config);
   if (!dueForRun(config)) {
     return { ran: false, reason: "Not due yet" };
   }
+  const dailyLimit = config.dailyPostLimit as number;
+  if (dailyLimit > 0) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const [dailyCount] = await db
+      .select({ value: count() })
+      .from(adCampaigns)
+      .where(
+        and(
+          eq(adCampaigns.userId, userId),
+          gte(adCampaigns.createdAt, startOfDay),
+          sql`${adCampaigns.metadata}->>'source' = ${AUTOPILOT_SOURCE}`,
+        ),
+      );
+    const postsToday = Number(dailyCount?.value ?? 0);
+    if (postsToday >= dailyLimit) {
+      return { ran: false, reason: "Daily post limit reached" };
+    }
+  }
 
   const types = enabledContentTypes(config);
+  const configuredPlatforms = [...new Set(config.platforms as string[])];
+  const mediaTypes = enabledMediaTypes(config);
+  const nextPlatformIndex =
+    ((Number.isInteger(config?.lastPlatformIndex)
+      ? (config.lastPlatformIndex as number)
+      : -1) +
+      1) %
+    configuredPlatforms.length;
+  const singlePlatform = configuredPlatforms[nextPlatformIndex];
+  const nextMediaTypeIndex =
+    ((Number.isInteger(config?.lastMediaTypeIndex)
+      ? (config.lastMediaTypeIndex as number)
+      : -1) +
+      1) %
+    mediaTypes.length;
+  const selectedMediaType = mediaTypes[nextMediaTypeIndex];
+  if (config.optimalTimesOnly === true && config.autoPublish === true) {
+    const timingPlatform =
+      config.crossPlatformCampaigns === true
+        ? configuredPlatforms[0]
+        : singlePlatform;
+    const learnedTimes =
+      await autopilotLearningService.getOptimalPostingTimes(
+        userId,
+        timingPlatform,
+      );
+    const bestTime = learnedTimes[0];
+    const now = new Date();
+    if (
+      !bestTime ||
+      bestTime.dayOfWeek !== now.getDay() ||
+      bestTime.hour !== now.getHours()
+    ) {
+      return {
+        ran: false,
+        reason: bestTime
+          ? "Outside the measured optimal posting window"
+          : "No measured posting-time history is available",
+      };
+    }
+  }
   const startIndex = Number.isInteger(config?.lastContentTypeIndex)
     ? (config.lastContentTypeIndex as number) + 1
     : 0;
@@ -197,19 +406,30 @@ export async function runAdvertisingAutopilotTick(
     lastContentTypeIndex: pick
       ? types.indexOf(pick.type)
       : (config?.lastContentTypeIndex ?? -1),
+    ...(config.crossPlatformCampaigns === true || !pick
+      ? {}
+      : { lastPlatformIndex: nextPlatformIndex % configuredPlatforms.length }),
+    ...(pick ? { lastMediaTypeIndex: nextMediaTypeIndex } : {}),
   });
 
   if (!pick) {
     return { ran: false, reason: "Nothing new to promote" };
   }
 
-  const platforms = Array.isArray(config?.platforms) && config.platforms.length > 0
-    ? config.platforms
-    : [...DEFAULT_PLATFORMS];
+  const platforms =
+    config.crossPlatformCampaigns === true
+      ? configuredPlatforms
+      : [singlePlatform];
 
   try {
     const source = await resolvePromotableContent(userId, pick.type, pick.id);
-    const { campaignId, posted, reason } = await launch(userId, source, platforms);
+    const { campaignId, posted, reason } = await launch(
+      userId,
+      source,
+      platforms,
+      config,
+      selectedMediaType,
+    );
     if (posted) {
       logger.info(
         `[AdvertisingAutopilot] user ${userId} promoted ${pick.type}:${pick.id} via campaign ${campaignId}`,
