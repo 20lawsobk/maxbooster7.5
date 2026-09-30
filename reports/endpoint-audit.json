@@ -54,7 +54,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-09-29T23:54:19.139Z",
+  "generatedAt": "2026-09-30T01:12:06.682Z",
   "baseUrl": null,
   "backendRoutes": [
     {
