@@ -13,6 +13,7 @@ import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
 } from "./maxcoreConnector.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { assertPublicHttpUrl, safeFetchText } from "./safeUrlFetch.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { storageService } from "./storageService.js";
@@ -54,40 +55,20 @@ const SPOTIFY_URI_RE =
 
 async function maxcorePost(
   path: string,
-  body: unknown,
+  body: Record<string, unknown>,
   timeoutMs = 90_000,
   trustedUserId?: string,
 ): Promise<unknown> {
-  const { trustedMaxcoreOwner, bindMaxcoreOwner } = await import("../lib/maxcoreOwnerContext.js");
-  trustedUserId = trustedMaxcoreOwner(trustedUserId);
-  if (body && typeof body === "object" && !Array.isArray(body)) {
-    body = bindMaxcoreOwner(body as Record<string, unknown>, trustedUserId);
+  const result = await MaxCoreAIClient.generate<unknown>(
+    path,
+    body,
+    trustedUserId,
+    timeoutMs,
+  );
+  if (result === null) {
+    throw new AIUnavailableError("MaxCore returned no generation response");
   }
-  const res = await fetch(`${MAXCORE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // MaxCore auth is Bearer-ONLY — sending X-API-Key/X-Admin-Key alongside
-      // makes MaxCore validate those schemes first and 401 every call.
-      ...(MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {}),
-      ...(trustedUserId
-        ? { "X-MaxCore-User-Id": trustedUserId }
-        : {}),
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!res.ok) {
-    const status = res.status;
-    await res.body?.cancel().catch(() => undefined);
-    throw new Error(`MaxCore request failed (${status})`);
-  }
-  const ct = res.headers.get("content-type") ?? "";
-  if (!ct?.includes("application/json")) {
-    await res.body?.cancel().catch(() => undefined);
-    throw new Error("MaxCore returned a non-JSON response");
-  }
-  return res.json();
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -3283,11 +3264,15 @@ const audioWorker = {
                 : undefined,
               signal: AbortSignal.timeout(15_000),
             });
+            if ([401, 403, 404].includes(pollRes.status)) {
+              throw new AIUnavailableError("MaxCore audio job is unavailable");
+            }
             if (!pollRes.ok) continue;
             const ct = pollRes.headers.get("content-type") ?? "";
             if (!ct.includes("application/json")) continue;
             jobStatus = (await pollRes.json()) as Record<string, unknown>;
-          } catch {
+          } catch (pollError) {
+            if (pollError instanceof AIUnavailableError) throw pollError;
             continue; // transient poll failure — retry
           }
           const st = String(jobStatus?.status ?? "");

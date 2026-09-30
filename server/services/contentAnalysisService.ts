@@ -4,11 +4,9 @@
  * MaxCore; this service deliberately contains no local scoring or heuristics.
  */
 import { AIUnavailableError } from "../lib/aiSource.js";
-import {
-  getMaxcoreGenerationHeaders,
-  getMaxcoreOrigin,
-  maxcoreUrl,
-} from "./maxcoreConnector.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { MaxCoreControlError } from "./maxcoreControlTransport.js";
+import { getMaxcoreOrigin } from "./maxcoreConnector.js";
 import type {
   AnalysisEnvelope,
   AnalysisKind,
@@ -74,47 +72,32 @@ export const maxcoreAnalysisTransport: ContentAnalysisTransport = async (
   body,
   actorId,
 ) => {
-  let response: Response;
   try {
-    response = await fetch(maxcoreUrl(`/api/analysis/${kind}`), {
-      method: "POST",
-      headers: {
-        ...getMaxcoreGenerationHeaders(),
-        "X-MaxCore-User-Id": actorId,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(600_000),
-      redirect: "manual",
-    });
-  } catch {
+    const response = await MaxCoreAIClient.generate<unknown>(
+      `/api/analysis/${kind}`,
+      body,
+      actorId,
+      600_000,
+      false,
+    );
+    if (response === null) {
+      throw new AIUnavailableError(`MaxCore ${kind} analysis unavailable`);
+    }
+    return response;
+  } catch (error) {
+    if (error instanceof MaxCoreControlError) {
+      const status = SAFE_UPSTREAM_STATUSES.has(error.status)
+        ? error.status
+        : 503;
+      throw new ContentAnalysisUpstreamError(
+        status === 503
+          ? `MaxCore ${kind} analysis unavailable`
+          : `MaxCore rejected the ${kind} analysis request`,
+        status,
+      );
+    }
+    if (error instanceof AIUnavailableError) throw error;
     throw new AIUnavailableError(`MaxCore ${kind} analysis unavailable`);
-  }
-
-  if (!response.ok) {
-    const status = SAFE_UPSTREAM_STATUSES.has(response.status)
-      ? response.status
-      : 503;
-    throw new ContentAnalysisUpstreamError(
-      status === 503
-        ? `MaxCore ${kind} analysis unavailable`
-        : `MaxCore rejected the ${kind} analysis request`,
-      status,
-    );
-  }
-
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
-    throw new AIUnavailableError(
-      `MaxCore ${kind} analysis returned an invalid response`,
-    );
-  }
-  try {
-    return await response.json();
-  } catch {
-    throw new AIUnavailableError(
-      `MaxCore ${kind} analysis returned an invalid response`,
-    );
   }
 };
 

@@ -2387,9 +2387,10 @@ router.get(
 // AI CONTENT GENERATION
 // =========================================
 
-// Generate AI content for multiple platforms
+// Retained legacy response contract. Current clients use the direct-MaxCore
+// contract below; keep the old shape available without shadowing that route.
 router.post(
-  "/generate-content",
+  "/generate-content-legacy",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -2830,7 +2831,7 @@ router.post(
     }
 
     try {
-      const assets = await Promise.all(
+      const results = await Promise.allSettled(
         requestedPlatforms.map(async (platform, index) => {
           const result = await generateSocialDirect({
             userId,
@@ -2874,7 +2875,51 @@ router.post(
           };
         }),
       );
-      return res.json({ success: true, assets, source: "MaxCoreAI" });
+      const assets: Array<Record<string, any>> = [];
+      const failedPlatforms: string[] = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          assets.push(result.value);
+          return;
+        }
+        const platform = requestedPlatforms[index];
+        failedPlatforms.push(platform);
+        logger.warn(
+          {
+            platform,
+            errorType:
+              result.reason instanceof Error
+                ? result.reason.name
+                : typeof result.reason,
+          },
+          "[ManualSocial] platform generation failed",
+        );
+      });
+
+      if (assets.length === 0) {
+        return res.status(503).json({
+          success: false,
+          code: "AI_UNAVAILABLE",
+          error: "MaxCore social content generation is temporarily unavailable",
+          failedPlatforms,
+        });
+      }
+
+      const generatedContent = assets.map((asset) => ({
+        platform: asset.platform,
+        caption: asset.payload,
+        content: asset.payload,
+        ...asset.metadata,
+        source: "MaxCoreAI",
+      }));
+      return res.json({
+        success: failedPlatforms.length === 0,
+        assets,
+        generatedContent,
+        failedPlatforms,
+        platforms: requestedPlatforms,
+        source: "MaxCoreAI",
+      });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({

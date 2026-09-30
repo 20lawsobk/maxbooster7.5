@@ -35,6 +35,9 @@ import { db } from "../db.js";
 import {
   beats,
   listings,
+  orders,
+  commerceSources,
+  commerceAllocations,
   beatMoneyLoopState,
   beatMoneyLoopCycles,
   adCampaigns,
@@ -2121,71 +2124,173 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Backfill performance metrics on recent cycles from the beats table.
-   * Called opportunistically from the scheduler heartbeat so dashboards stay fresh.
+   * Refresh beat engagement and marketplace-settled seller earnings.
+   * Revenue is USD seller allocation net of current refund/dispute
+   * compensation; cash payouts are not subtracted. Downloads and asking price
+   * are not evidence of a paid sale.
    */
   async analyseRecentCycles(): Promise<{ updated: number }> {
-    // Both 'completed' (beat listed + ads posted) and 'listed' (beat listed,
-    // ads not posted) have a LIVE beat that accrues plays/downloads/revenue,
-    // so backfill metrics for both — filtering to 'completed' only would
-    // undercount revenue on every cycle where ads weren't posted.
-    const recent = await db
+    const cycles = await db
       .select()
-      .from(beatMoneyLoopCycles)
-      .where(
-        and(
-          inArray(beatMoneyLoopCycles.status, ["completed", "listed"]),
-          gte(
-            beatMoneyLoopCycles.startedAt,
-            new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000),
-          ),
-        ),
-      )
-      .limit(100);
-    let updated = 0;
-    for (const cycle of recent) {
-      if (!cycle?.beatId) continue;
-      const [beat] = await db
-        .select({
-          plays: beats.plays,
-          downloads: beats.downloads,
-          price: beats.price,
-        })
-        .from(beats)
-        .where(eq(beats.id, cycle?.beatId))
-        .limit(1);
-      if (!beat) continue;
-      const revenueCents = Math.round(
-        (beat?.downloads ?? 0) * (beat?.price ?? 0) * 100,
-      );
+      .from(beatMoneyLoopCycles);
+
+    // A generated beat can be counted by more than one recovered cycle row.
+    // Attribute its engagement and earnings once, to the earliest cycle.
+    cycles.sort((a, b) => {
+      const startedAtDelta =
+        (a.startedAt?.getTime() ?? 0) - (b.startedAt?.getTime() ?? 0);
+      return startedAtDelta || String(a.id).localeCompare(String(b.id));
+    });
+    const cycleByBeatId = new Map<string, string>();
+    for (const cycle of cycles) {
+      if (!cycle.beatId) continue;
+      const firstCycleId = cycleByBeatId.get(cycle.beatId);
+      if (firstCycleId) {
+        logger.warn(
+          { beatId: cycle.beatId, firstCycleId, duplicateCycleId: cycle.id },
+          "Multiple Beat Money Loop cycles reference one beat; duplicate metrics are excluded",
+        );
+        continue;
+      }
+      cycleByBeatId.set(cycle.beatId, cycle.id);
+    }
+
+    const beatIds = [...cycleByBeatId.keys()];
+    const beatRows = beatIds.length
+      ? await db
+          .select({
+            id: beats.id,
+            plays: beats.plays,
+            downloads: beats.downloads,
+          })
+          .from(beats)
+          .where(inArray(beats.id, beatIds))
+      : [];
+    const beatsById = new Map(beatRows.map((beat) => [beat.id, beat]));
+
+    const beatIdExpression = sql<string>`${listings.metadata}->>'beatId'`;
+    const sellerEarnings = beatIds.length
+      ? await db
+          .select({
+            beatId: beatIdExpression,
+            orderCurrency: orders.currency,
+            sourceCurrency: commerceSources.currency,
+            allocationCurrency: commerceAllocations.currency,
+            cents: sql<number>`COALESCE(SUM(GREATEST(
+              ${commerceAllocations.amountCents} - ${commerceAllocations.reversedCents},
+              0
+            )), 0)`,
+          })
+          .from(listings)
+          .innerJoin(orders, eq(orders.listingId, listings.id))
+          .innerJoin(
+            commerceSources,
+            and(
+              eq(commerceSources.id, orders.id),
+              eq(commerceSources.kind, "marketplace"),
+            ),
+          )
+          .innerJoin(
+            commerceAllocations,
+            and(
+              eq(commerceAllocations.sourceId, commerceSources.id),
+              eq(commerceAllocations.userId, orders.sellerId),
+            ),
+          )
+          .where(
+            and(
+              sql`${listings.metadata}->>'source' = 'beat-money-loop'`,
+              inArray(beatIdExpression, beatIds),
+              eq(orders.status, "completed"),
+            ),
+          )
+          .groupBy(
+            beatIdExpression,
+            orders.currency,
+            commerceSources.currency,
+            commerceAllocations.currency,
+          )
+      : [];
+    const earningsByBeatId = new Map<string, number>();
+    const excludedCurrencyByBeatId = new Map<string, Set<string>>();
+    for (const row of sellerEarnings) {
+      const orderCurrency = String(row.orderCurrency).toLowerCase();
+      const sourceCurrency = String(row.sourceCurrency).toLowerCase();
+      const allocationCurrency = String(row.allocationCurrency).toLowerCase();
       if (
-        (beat?.plays ?? 0) !== cycle?.plays ||
-        (beat?.downloads ?? 0) !== cycle?.downloads ||
+        orderCurrency === "usd" &&
+        sourceCurrency === orderCurrency &&
+        allocationCurrency === orderCurrency
+      ) {
+        earningsByBeatId.set(
+          row.beatId,
+          (earningsByBeatId.get(row.beatId) ?? 0) +
+            Math.max(0, Number(row.cents) || 0),
+        );
+        continue;
+      }
+      const currencies = excludedCurrencyByBeatId.get(row.beatId) ?? new Set();
+      currencies.add(
+        `${orderCurrency}/${sourceCurrency}/${allocationCurrency}`,
+      );
+      excludedCurrencyByBeatId.set(row.beatId, currencies);
+    }
+    if (excludedCurrencyByBeatId.size > 0) {
+      logger.warn(
+        {
+          beats: excludedCurrencyByBeatId.size,
+          currencyTriples: [
+            ...new Set(
+              [...excludedCurrencyByBeatId.values()].flatMap((values) => [
+                ...values,
+              ]),
+            ),
+          ],
+        },
+        "Non-USD or inconsistent commerce earnings were excluded from Beat Money Loop USD revenue",
+      );
+    }
+
+    let updated = 0;
+    for (const cycle of cycles) {
+      const isPrimaryCycle =
+        Boolean(cycle.beatId) &&
+        cycleByBeatId.get(cycle.beatId!) === cycle.id;
+      const beat = cycle.beatId ? beatsById.get(cycle.beatId) : undefined;
+      const plays = isPrimaryCycle ? (beat?.plays ?? 0) : 0;
+      const downloads = isPrimaryCycle ? (beat?.downloads ?? 0) : 0;
+      const revenueCents =
+        isPrimaryCycle && cycle.beatId
+          ? earningsByBeatId.get(cycle.beatId) ?? 0
+          : 0;
+      if (
+        plays !== cycle.plays ||
+        downloads !== cycle.downloads ||
         revenueCents !== cycle?.revenueCents
       ) {
         await db
           .update(beatMoneyLoopCycles)
           .set({
-            plays: beat.plays ?? 0,
-            downloads: beat.downloads ?? 0,
+            plays,
+            downloads,
             revenueCents,
           })
-          .where(eq(beatMoneyLoopCycles.id, cycle?.id));
+          .where(eq(beatMoneyLoopCycles.id, cycle.id));
         updated++;
       }
     }
-    if (updated > 0) {
-      // Refresh totalRevenueCents on state
-      const total = await db
-        .select({
-          sum: sql<number>`COALESCE(SUM(${beatMoneyLoopCycles.revenueCents}), 0)`,
-        })
-        .from(beatMoneyLoopCycles);
-      await db
-        .update(beatMoneyLoopState)
-        .set({ totalRevenueCents: total[0]?.sum ?? 0, updatedAt: new Date() })
-        .where(eq(beatMoneyLoopState.id, STATE_ROW_ID));
-    }
+    const total = await db
+      .select({
+        sum: sql<number>`COALESCE(SUM(${beatMoneyLoopCycles.revenueCents}), 0)`,
+      })
+      .from(beatMoneyLoopCycles);
+    await db
+      .update(beatMoneyLoopState)
+      .set({
+        totalRevenueCents: Math.max(0, Number(total[0]?.sum) || 0),
+        updatedAt: new Date(),
+      })
+      .where(eq(beatMoneyLoopState.id, STATE_ROW_ID));
     return { updated };
   }
 }

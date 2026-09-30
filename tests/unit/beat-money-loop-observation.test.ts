@@ -11,6 +11,7 @@
  * MaxCore had observed a different one.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFile } from "node:fs/promises";
 
 // ── Mock the DB layer (chainable drizzle stub) ─────────────────────────────
 vi.mock("../../server/db.js", () => {
@@ -141,5 +142,26 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     // Tempo was never specified nor observed → documented fallback still applies.
     expect(recordScan.tempo).toBe(120);
     expect(campaignScan.tempo).toBe(120);
+  });
+});
+
+describe("Beat Money Loop — settled revenue attribution", () => {
+  it("uses completed commerce seller allocations, not downloads times asking price", async () => {
+    const source = await readFile(
+      "server/services/beatMoneyLoopService.ts",
+      "utf8",
+    );
+    const start = source.indexOf("async analyseRecentCycles()");
+    const end = source.indexOf("return { updated };", start);
+    const analyzer = source.slice(start, end);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(analyzer).toContain("commerceSources.kind");
+    expect(analyzer).toContain("commerceAllocations.amountCents");
+    expect(analyzer).toContain("commerceAllocations.reversedCents");
+    expect(analyzer).toContain('eq(orders.status, "completed")');
+    expect(analyzer).not.toContain("beats.price");
+    expect(analyzer).not.toContain("downloads ?? 0) *");
   });
 });

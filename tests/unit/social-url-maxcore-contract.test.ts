@@ -202,25 +202,24 @@ describe("authenticated async video generation contract", () => {
 });
 
 describe("explicit social generation inputs and private failures", () => {
-  it("rejects missing or unsupported social-generation inputs and incomplete output", async () => {
+  it("keeps one active manual social route on the dedicated MaxCore adapter", async () => {
     const source = await import("node:fs/promises").then((fs) =>
       fs.readFile("server/routes/socialMedia.ts", "utf8"),
     );
+    const routeRegistrations =
+      source.match(/router\.post\(\s*["']\/generate-content["']/g) ?? [];
     const start = source.indexOf('"/generate-content"');
-    const end = source.indexOf("function getOptimalPostTime", start);
+    const end = source.indexOf('"/generate-from-url"', start);
     const handler = source.slice(start, end);
 
+    expect(routeRegistrations).toHaveLength(1);
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
-    expect(handler).toContain("At least one target platform is required");
-    expect(handler).toContain("Each target platform must be supported and unique");
-    expect(handler).toContain("A non-empty topic of at most 4000 characters is required");
-    expect(handler).toContain("typeof result?.data?.caption === \"string\"");
-    expect(handler).toContain("success: completeSuccess");
-    expect(handler).toContain('"partial"');
-    expect(handler).not.toContain('topic = "new music"');
-    expect(handler).not.toContain('topic: topic || "music"');
-    expect(handler).not.toContain(".filter((p: string)");
+    expect(handler).toContain("manualSocialGenerationSchema.safeParse");
+    expect(handler).toContain("generateSocialDirect");
+    expect(handler).toContain("Promise.allSettled");
+    expect(handler).toContain("failedPlatforms");
+    expect(handler).not.toContain("getUnifiedAI()");
   });
 
   it("requires explicit direction in music-video studio and redacts its failures", async () => {
@@ -268,5 +267,21 @@ describe("explicit social generation inputs and private failures", () => {
     expect(source).not.toContain("still ${status.status}");
     expect(source).not.toContain("Job ${jobId} timed out");
     expect(source).not.toContain("error: status.error");
+  });
+
+  it("uses shared MaxCore transport for video submission and owner-bound polling", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("server/services/advancedVideoRendererService.ts", "utf8"),
+    );
+    const start = source.indexOf("async function maxCoreOwnedRequest");
+    const end = source.indexOf("// ── MaxCore video URL cache", start);
+    const transport = source.slice(start, end);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(transport).toContain("MaxCoreAIClient.generate<T>");
+    expect(transport).toContain("MaxCoreAIClient.poll<T>");
+    expect(transport).toContain("45_000");
+    expect(transport).not.toContain("await fetch(");
   });
 });

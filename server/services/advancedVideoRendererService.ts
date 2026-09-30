@@ -45,32 +45,44 @@ async function maxCoreOwnedRequest<T>(
   if (!MAXCORE_ORIGIN || !MC_AI_KEY) {
     throw new AIUnavailableError("video generation");
   }
-  let response: Response;
   try {
-    response = await fetch(`${MAXCORE_ORIGIN}/api${pathName}`, {
-      ...init,
-      headers: {
-        ...(init.headers ?? {}),
-        Authorization: `Bearer ${MC_AI_KEY}`,
-        "X-MaxCore-User-Id": owner,
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
-      },
-      signal: AbortSignal.timeout(45_000),
-    });
-  } catch {
-    throw new AIUnavailableError("video generation request failed");
-  }
-  if (!response.ok) {
-    await response.body?.cancel().catch(() => undefined);
-    throw new AIUnavailableError("video generation");
-  }
-  if (!(response.headers.get("content-type") ?? "").includes("application/json")) {
-    await response.body?.cancel().catch(() => undefined);
-    throw new AIUnavailableError("video generation");
-  }
-  try {
-    return (await response.json()) as T;
-  } catch {
+    const method = (init.method ?? "GET").toUpperCase();
+    if (method === "POST") {
+      if (typeof init.body !== "string") {
+        throw new AIUnavailableError("video generation request is invalid");
+      }
+      let body: unknown;
+      try {
+        body = JSON.parse(init.body);
+      } catch {
+        throw new AIUnavailableError("video generation request is invalid");
+      }
+      if (!body || typeof body !== "object" || Array.isArray(body)) {
+        throw new AIUnavailableError("video generation request is invalid");
+      }
+      const result = await MaxCoreAIClient.generate<T>(
+        pathName,
+        body as Record<string, unknown>,
+        owner,
+        45_000,
+        false,
+      );
+      if (result === null) throw new AIUnavailableError("video generation");
+      return result;
+    }
+    if (method === "GET") {
+      const result = await MaxCoreAIClient.poll<T>(
+        pathName,
+        owner,
+        45_000,
+        true,
+      );
+      if (result === null) throw new AIUnavailableError("video generation");
+      return result;
+    }
+    throw new AIUnavailableError("video generation request method is unsupported");
+  } catch (error) {
+    if (error instanceof AIUnavailableError) throw error;
     throw new AIUnavailableError("video generation");
   }
 }

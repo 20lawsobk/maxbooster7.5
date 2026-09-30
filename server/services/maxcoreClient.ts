@@ -288,24 +288,40 @@ export class MaxCoreAIClient {
    * Use for video-job/<jobId> and any other unique-path polling loops.
    * Returns null on any network/HTTP error so the caller can simply continue.
    */
-  static async poll<T = any>(endpoint: string, ownerId?: string): Promise<T | null> {
+  static async poll<T = any>(
+    endpoint: string,
+    ownerId?: string,
+    timeoutMs = 30_000,
+    throwOnError = false,
+  ): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
     const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
     try {
       const r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
         headers: MaxCoreAIClient.authHeaders(ownerId),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(timeoutMs),
         redirect: "manual",
       });
       if (!r?.ok || !MaxCoreAIClient.isJson(r)) {
+        await r?.body?.cancel().catch(() => undefined);
         logger.debug(
-          `[MaxCoreAI] poll ${path} → HTTP ${r?.status} (continuing)`,
+          `[MaxCoreAI] poll ${path} → HTTP ${r?.status} (${throwOnError ? "failing" : "continuing"})`,
         );
+        if (throwOnError) {
+          throw new MaxCoreControlError(
+            "MaxCore job polling failed",
+            r?.ok ? 503 : (r?.status ?? 503),
+          );
+        }
         return null;
       }
       return (await r?.json()) as T;
     } catch (e) {
+      if (e instanceof MaxCoreControlError) throw e;
+      if (throwOnError) {
+        throw new MaxCoreControlError("MaxCore job polling unavailable", 503);
+      }
       logger.debug(
         `[MaxCoreAI] poll ${path} network error (continuing): ${(e as Error).message}`,
       );
@@ -326,9 +342,11 @@ export class MaxCoreAIClient {
     endpoint: string,
     body: Record<string, unknown>,
     ownerId?: string,
+    timeoutMs = MaxCoreAIClient.GENERATE_TIMEOUT_MS,
+    bindOwnerToBody = true,
   ): Promise<T | null> {
     const owner = trustedMaxcoreOwner(ownerId);
-    body = bindMaxcoreOwner(body, owner);
+    if (bindOwnerToBody) body = bindMaxcoreOwner(body, owner);
     if (!MC_AI_URL || !MC_AI_KEY) throw new MaxCoreControlError("MaxCore generation is not configured", 503);
 
     const path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
@@ -379,7 +397,7 @@ export class MaxCoreAIClient {
               ...MaxCoreAIClient.authHeaders(owner),
             },
             body: JSON.stringify(body),
-            signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+            signal: AbortSignal.timeout(timeoutMs),
             redirect: "manual",
           });
           const text = await r.text();

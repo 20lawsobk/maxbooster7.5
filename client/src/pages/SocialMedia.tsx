@@ -947,11 +947,25 @@ export default function SocialMedia() {
       const hasHashtags = generatedContent.some(
         (c) => c.hashtags && c.hashtags.length > 0,
       );
-      handleContentGenerated(
-        generatedContent.length,
-        hasHashtags,
-        undefined,
-      );
+      const failedPlatforms = Array.isArray(data.failedPlatforms)
+        ? data.failedPlatforms.filter(
+            (platform: unknown): platform is string =>
+              typeof platform === "string",
+          )
+        : [];
+      if (failedPlatforms.length > 0) {
+        toast({
+          title: "Some platform content was unavailable",
+          description: `MaxCore created content for ${generatedContent.length} platform(s), but not: ${failedPlatforms.join(", ")}.`,
+          variant: "destructive",
+        });
+      } else {
+        handleContentGenerated(
+          generatedContent.length,
+          hasHashtags,
+          undefined,
+        );
+      }
       setIsGeneratingContent(false);
     },
     onError: (error: Error) => {

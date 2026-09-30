@@ -4,6 +4,7 @@
  * shape consumed after MaxCore /analyze.
  */
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
 import {
   normalizeMaxcoreAnalyzeResponse,
   normalizeMultimodalUrl,
@@ -63,6 +64,22 @@ describe("MaxCore /analyze response contract", () => {
     expect(() => normalizeMaxcoreAnalyzeResponse([])).toThrow(
       /invalid response/i,
     );
+  });
+});
+
+describe("multimodal MaxCore transport contract", () => {
+  it("uses the shared client for POSTs and fails fast on terminal audio-job statuses", async () => {
+    const source = await readFile(
+      "server/services/multimodalGenerationService.ts",
+      "utf8",
+    );
+
+    expect(source).toMatch(/MaxCoreAIClient\.generate<unknown>\s*\(/);
+    expect(source).toContain("timeoutMs,");
+    expect(source).not.toMatch(
+      /fetch\(`\$\{MAXCORE_URL\}\$\{path\}`/,
+    );
+    expect(source).toContain("[401, 403, 404].includes(pollRes.status)");
   });
 });
 
