@@ -3,7 +3,10 @@ import { autopilotLearningData, autopilotInsights } from "@shared/schema";
 import { eq, and, desc, gte, sql, avg, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { pushTrainingFeedback } from "./maxcoreSync.js";
-import { maxCoreControlTransport } from "./maxcoreControlTransport.js";
+import {
+  MaxCoreControlError,
+  maxCoreControlTransport,
+} from "./maxcoreControlTransport.js";
 
 const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
@@ -75,9 +78,16 @@ interface MaxCoreAutopilotResult {
   };
 }
 
+interface MaxCoreAutopilotOptions {
+  platform?: string;
+  contentType?: string;
+  extraContext?: unknown;
+}
+
 class AutopilotLearningService {
   private async requestMaxCoreAutopilot(
     userId: string,
+    options: MaxCoreAutopilotOptions = {},
   ): Promise<MaxCoreAutopilotResult> {
     const recent = await db
       .select()
@@ -85,7 +95,7 @@ class AutopilotLearningService {
       .where(eq(autopilotLearningData.userId, userId))
       .orderBy(desc(autopilotLearningData.createdAt))
       .limit(50);
-    const platform = recent[0]?.platform || "instagram";
+    const platform = options.platform || recent[0]?.platform || "instagram";
     const result = await maxCoreControlTransport.request<MaxCoreAutopilotResult>(
       "/platform/social/autopilot",
       {
@@ -103,6 +113,12 @@ class AutopilotLearningService {
             engagement_rate: row.engagementRate ?? 0,
             posted_at: row.createdAt,
           })),
+          ...(options.contentType
+            ? { content_themes: [options.contentType] }
+            : {}),
+          ...(options.extraContext !== undefined
+            ? { extra_context: JSON.stringify(options.extraContext) }
+            : {}),
         },
       },
     );
@@ -111,10 +127,35 @@ class AutopilotLearningService {
       !result.analysis ||
       !result.recommendations ||
       !Array.isArray(result.recommendations.next_topics) ||
+      result.recommendations.next_topics.length === 0 ||
       !Array.isArray(result.recommendations.best_posting_times)
     ) {
-      throw new Error(
+      throw new MaxCoreControlError(
         "MaxCore social autopilot returned an invalid response contract",
+        502,
+        result,
+      );
+    }
+    if (result.model_powered !== true) {
+      throw new MaxCoreControlError(
+        "MaxCore social autopilot did not return model-powered recommendations",
+        503,
+        result,
+      );
+    }
+    if (
+      result.recommendations.next_topics.some((topic) => {
+        const source =
+          topic && typeof topic === "object"
+            ? String(topic.source ?? "")
+            : "";
+        return !source || /template|fallback|heuristic/i.test(source);
+      })
+    ) {
+      throw new MaxCoreControlError(
+        "MaxCore social autopilot returned non-model recommendations",
+        503,
+        result,
       );
     }
     return result;
@@ -337,8 +378,11 @@ class AutopilotLearningService {
     }
   }
 
-  async getRecommendations(userId: string): Promise<Recommendation[]> {
-    const result = await this.requestMaxCoreAutopilot(userId);
+  async getRecommendations(
+    userId: string,
+    options: MaxCoreAutopilotOptions = {},
+  ): Promise<Recommendation[]> {
+    const result = await this.requestMaxCoreAutopilot(userId, options);
     const recommendations: Recommendation[] = [];
     const bestTimes = result.recommendations.best_posting_times ?? [];
     if (bestTimes.length) {

@@ -1,10 +1,15 @@
 // @ts-nocheck
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { aiModelManager } from "../services/aiModelManager.js";
+import { autopilotLearningService } from "../services/autopilotLearningService.js";
+import {
+  MaxCoreControlError,
+  maxCoreControlTransport,
+} from "../services/maxcoreControlTransport.js";
 import { promotionalToolsService } from "../services/promotionalToolsService.js";
 import { db } from "../db";
 import { socialAutopilotContent } from "@shared/schema";
@@ -32,6 +37,83 @@ const autopilotConfigSchema = z.object({
   engagementThreshold: z.number().min(0).max(1).optional(),
 });
 
+const recommendationRequestSchema = z.object({
+  platform: z.string().trim().min(1).max(64).optional(),
+  contentType: z.string().trim().min(1).max(80).optional(),
+  includeMultimodal: z.boolean().optional().default(true),
+});
+
+const engagementPredictionRequestSchema = z.object({
+  platform: z.string().trim().min(1).max(64),
+  content: z.string().min(1).max(20_000),
+  multimodalFeatures: z.unknown().optional(),
+});
+
+const storageTrainingRequestSchema = z
+  .object({
+    epochs: z.coerce.number().int().min(1).max(20).optional(),
+    batch_size: z.coerce.number().int().min(8).max(512).optional(),
+    learning_rate: z.coerce.number().positive().optional(),
+    max_batches: z.coerce.number().int().min(1).optional(),
+    save_checkpoint: z.boolean().optional(),
+  })
+  .strict();
+
+function sendMaxCoreFailure(
+  res: Response,
+  error: unknown,
+  message: string,
+  fallbackStatus = 502,
+): void {
+  const controlError =
+    error instanceof MaxCoreControlError ? error : undefined;
+  const details = controlError?.details;
+  const body =
+    details && typeof details === "object"
+      ? details
+      : {
+          error: message,
+          detail: error instanceof Error ? error.message : String(error),
+        };
+  res.status(controlError?.status ?? fallbackStatus).json(body);
+}
+
+function validateStorageTrainingResponse(
+  value: unknown,
+): Record<string, unknown> {
+  const invalidResponse = () =>
+    new MaxCoreControlError(
+      "MaxCore returned an invalid storage-training response",
+      502,
+      {
+        error: "Invalid MaxCore training response",
+        response: value,
+      },
+    );
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw invalidResponse();
+  }
+
+  const response = value as Record<string, unknown>;
+  if (
+    response.status === "started" &&
+    typeof response.job_id === "string" &&
+    response.job_id.length > 0
+  ) {
+    return response;
+  }
+  if (
+    response.status === "already_running" &&
+    response.training_state !== null &&
+    typeof response.training_state === "object" &&
+    !Array.isArray(response.training_state)
+  ) {
+    return response;
+  }
+  throw invalidResponse();
+}
+
 // Get autopilot status
 router.get("/status", requireAuth, async (req, res) => {
   try {
@@ -40,30 +122,21 @@ router.get("/status", requireAuth, async (req, res) => {
 
     const config = await storage.getAutopilotConfig(userId).catch(() => null);
 
-    let socialTrained = false,
-      socialVersion = "1.0.0";
-    let advertisingTrained = false,
-      advertisingVersion = "1.0.0";
+    let socialModel;
+    let advertisingModel;
     try {
-      const socialModel = await aiModelManager?.getSocialAutopilot(userId);
-      socialTrained = socialModel?.getIsTrained();
-      socialVersion = socialModel?.getVersion();
-    } catch (e) {
-      logger.warn(
-        { err: e },
-        "getSocialAutopilot unavailable, using defaults:",
+      [socialModel, advertisingModel] = await Promise.all([
+        aiModelManager.getSocialAutopilot(userId),
+        aiModelManager.getAdvertisingAutopilot(userId),
+      ]);
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to read MaxCore autopilot status:");
+      sendMaxCoreFailure(
+        res,
+        error,
+        "MaxCore autopilot status is unavailable",
       );
-    }
-    try {
-      const advertisingModel =
-        await aiModelManager?.getAdvertisingAutopilot(userId);
-      advertisingTrained = advertisingModel?.getIsTrained();
-      advertisingVersion = advertisingModel?.getVersion();
-    } catch (e) {
-      logger.warn(
-        { err: e },
-        "getAdvertisingAutopilot unavailable, using defaults:",
-      );
+      return;
     }
 
     // Real activity stats from socialAutopilotContent table
@@ -164,10 +237,13 @@ router.get("/status", requireAuth, async (req, res) => {
         recentActivity,
       },
       modelStatus: {
-        social: { trained: socialTrained, version: socialVersion },
+        social: {
+          trained: socialModel.getIsTrained(),
+          version: socialModel.getVersion(),
+        },
         advertising: {
-          trained: advertisingTrained,
-          version: advertisingVersion,
+          trained: advertisingModel.getIsTrained(),
+          version: advertisingModel.getVersion(),
         },
       },
     });
@@ -334,12 +410,18 @@ router.post("/configure", requireAuth, async (req, res) => {
 router.post("/recommend", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { contentType, includeMultimodal } = req.body;
-
-    const socialModel = await aiModelManager?.getSocialAutopilot(userId);
+    const parsed = recommendationRequestSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid recommendation request",
+        details: parsed.error.issues,
+      });
+      return;
+    }
+    const { contentType, includeMultimodal, platform } = parsed.data;
 
     let multimodalFeatures = null;
-    if (includeMultimodal !== false) {
+    if (includeMultimodal) {
       const recentAnalyzedContent = await storage.getRecentAnalyzedContent(
         userId,
         10,
@@ -349,9 +431,15 @@ router.post("/recommend", requireAuth, async (req, res) => {
       }
     }
 
-    const recommendations = await socialModel?.generateContentRecommendations(
-      contentType || "general",
-      multimodalFeatures,
+    const recommendations = await autopilotLearningService.getRecommendations(
+      userId,
+      {
+        platform,
+        contentType: contentType ?? "general",
+        ...(multimodalFeatures !== null
+          ? { extraContext: multimodalFeatures }
+          : {}),
+      },
     );
 
     res.json({
@@ -361,6 +449,14 @@ router.post("/recommend", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to generate recommendations:");
+    if (error instanceof MaxCoreControlError) {
+      sendMaxCoreFailure(
+        res,
+        error,
+        "MaxCore recommendations are unavailable",
+      );
+      return;
+    }
     res.status(500).json({ error: "Failed to generate recommendations" });
   }
 });
@@ -369,35 +465,49 @@ router.post("/recommend", requireAuth, async (req, res) => {
 router.post("/predict-engagement", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { platform, content, multimodalFeatures } = req.body;
-
-    if (!platform || !content) {
-      res.status(400).json({ error: "Platform and content are required" });
+    const parsed = engagementPredictionRequestSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Platform and content are required",
+        details: parsed.error.issues,
+      });
       return;
     }
-
-    const socialModel = await aiModelManager?.getSocialAutopilot(userId);
+    const { platform, content, multimodalFeatures } = parsed.data;
 
     const emojiRegex =
       /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-    const features = {
-      platform,
-      contentLength: content.length,
-      hasHashtags: content.includes("#"),
-      hasEmojis: emojiRegex.test(content),
-      hasLinks: content.includes("http"),
-      ...multimodalFeatures,
+    const extraContext = {
+      contentFeatures: {
+        contentLength: content.length,
+        hasHashtags: content.includes("#"),
+        hasEmojis: emojiRegex.test(content),
+        hasLinks: content.includes("http"),
+      },
+      ...(multimodalFeatures !== undefined ? { multimodalFeatures } : {}),
     };
-
-    const prediction = await socialModel?.predictEngagement(features);
+    const prediction = await aiModelManager.predictEngagement(userId, {
+      platform,
+      content,
+      extraContext,
+    });
 
     res.json({
       success: true,
       prediction,
-      usedMultimodal: !!multimodalFeatures,
+      usedMultimodal:
+        multimodalFeatures !== undefined && multimodalFeatures !== null,
     });
   } catch (error) {
     logger.warn({ err: error }, "Failed to predict engagement:");
+    if (error instanceof MaxCoreControlError) {
+      sendMaxCoreFailure(
+        res,
+        error,
+        "MaxCore engagement prediction is unavailable",
+      );
+      return;
+    }
     res.status(500).json({ error: "Failed to predict engagement" });
   }
 });
@@ -465,22 +575,40 @@ router.post("/save-features", requireAuth, async (req, res) => {
   }
 });
 
-// Train autopilot AI with user's historical data + analyzed multimodal features
-router.post("/train", requireAuth, async (req, res) => {
+// MaxCore training is global and storage-backed, so only administrators may
+// start it. User-specific measured outcomes are submitted through the learning
+// feedback pipeline rather than training a local per-user model.
+router.post("/train", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    return res.status(409).json({
-      success: false,
-      error:
-        "Per-user local autopilot training was removed. MaxCore training is centrally administered from stored measured outcomes.",
-      trainingAuthority: "maxcore",
-      userId,
-    });
+    const parsed = storageTrainingRequestSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid MaxCore training request",
+        details: parsed.error.issues,
+      });
+      return;
+    }
 
-    // Endpoint intentionally disabled above (HTTP 409): per-user local
-    // autopilot training was removed; training is centrally administered.
+    const trainingResponse = await maxCoreControlTransport.request<unknown>(
+      "/training/start-from-storage",
+      {
+        method: "POST",
+        authScope: "admin",
+        body: parsed.data,
+      },
+    );
+    const training = validateStorageTrainingResponse(trainingResponse);
+
+    res.status(training.status === "started" ? 202 : 200).json({
+      ...training,
+      trainingAuthority: "maxcore",
+    });
   } catch (error) {
     logger.warn({ err: error }, "Failed to train autopilot:");
+    if (error instanceof MaxCoreControlError) {
+      sendMaxCoreFailure(res, error, "MaxCore training could not be started");
+      return;
+    }
     res.status(500).json({ error: "Failed to train autopilot AI" });
   }
 });

@@ -134,14 +134,6 @@ class MaxCoreSocialAutopilot {
     }));
   }
 
-  async predictEngagement(
-    _features: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      "MaxCore engagement prediction is currently unavailable (upstream /api/predict/engagement returns 503); local prediction is disabled",
-    );
-  }
-
   enrichPostsWithAnalyzedFeatures(
     posts: Array<Record<string, unknown>>,
     analyzedFeatures: Array<Record<string, unknown>>,
@@ -279,6 +271,33 @@ class AIModelManager {
     );
     this.advertisingLoads++;
     return new MaxCoreAdvertisingAutopilot(userId, state);
+  }
+
+  async predictEngagement(
+    userId: string,
+    input: {
+      platform: string;
+      content: string;
+      extraContext?: unknown;
+    },
+  ): Promise<Record<string, unknown>> {
+    return maxCoreControlTransport.request<Record<string, unknown>>(
+      "/predict/engagement",
+      {
+        method: "POST",
+        authScope: "generation",
+        userId,
+        timeoutMs: 60_000,
+        body: {
+          platform: input.platform,
+          action: "predict_engagement",
+          content: input.content,
+          ...(input.extraContext !== undefined
+            ? { extra_context: JSON.stringify(input.extraContext) }
+            : {}),
+        },
+      },
+    );
   }
 
   async saveSocialModel(): Promise<never> {
