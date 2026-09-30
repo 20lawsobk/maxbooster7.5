@@ -361,11 +361,27 @@ async function main() {
 
   await test("ads", "POST /api/advertising/generate-content", async () => {
     const r = await api("POST", "/api/advertising/generate-content", {
-      body: { contentType: "promotional", platform: "instagram", topic: "new single release", tone: "energetic" },
+      body: {
+        contentType: "promotional",
+        platform: "instagram",
+        topic: "new single release",
+        tone: "energetic",
+        targetAudience: "independent music listeners",
+        numCreatives: 3,
+      },
     });
     if (!r.ok) return { status: "FAIL", detail: `${r.status} ${snippet(r.json, r.text)}` };
-    const ok = r.json?.success && deepText(r.json?.content, 12);
-    return { status: ok ? "PASS" : "FAIL", detail: ok ? `ad copy generated` : `no copy: ${snippet(r.json, r.text)}`, source: detectSource(r.json) };
+    const creatives = r.json?.creatives;
+    const ok =
+      r.json?.success &&
+      r.json?.requestedCount === 3 &&
+      Array.isArray(creatives) &&
+      creatives.length === 3 &&
+      creatives.every(
+        (creative: any) =>
+          creative.content_type === "text" && deepText(creative, 12),
+      );
+    return { status: ok ? "PASS" : "FAIL", detail: ok ? `${creatives.length} text creatives generated` : `no usable creatives: ${snippet(r.json, r.text)}`, source: detectSource(r.json) };
   });
 
   await test("ads", "POST /api/ai/ads/optimize", async () => {

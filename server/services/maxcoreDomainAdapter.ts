@@ -15,6 +15,10 @@ export interface SocialGenerationRequest {
   styleTags?: string[];
   includeHashtags?: boolean;
   numVariants?: number;
+  targetAudience?: string;
+  hashtagStrategy?: string;
+  captionLength?: string;
+  callToActionStrength?: string;
   instruction?: string;
   extraContext?: string;
   contentThemes?: string[];
@@ -376,6 +380,18 @@ export async function generateSocialDirect(
       style_tags: request.styleTags ?? [],
       include_hashtags: request.includeHashtags ?? true,
       num_variants: Math.max(1, Math.min(5, request.numVariants ?? 1)),
+      ...(request.targetAudience
+        ? { target_audience: request.targetAudience }
+        : {}),
+      ...(request.hashtagStrategy
+        ? { hashtag_strategy: request.hashtagStrategy }
+        : {}),
+      ...(request.captionLength
+        ? { caption_length: request.captionLength }
+        : {}),
+      ...(request.callToActionStrength
+        ? { call_to_action_strength: request.callToActionStrength }
+        : {}),
       instruction: request.instruction,
       extra_context: request.extraContext,
       content_themes: request.contentThemes,

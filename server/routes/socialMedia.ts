@@ -32,6 +32,7 @@ import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
+import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
 import {
   getAwarenessContext,
   normalizeSocialAwarenessPlatform,
@@ -2750,6 +2751,148 @@ const socialUrlGenerationSchema = z.object({
   context: z.unknown().optional(),
   awareness: z.unknown().optional(),
 });
+
+const manualSocialGenerationSchema = z.object({
+  platforms: z.array(z.string().trim().min(1).max(50)).min(1).max(8),
+  topic: z.string().trim().min(1).max(1000),
+  tone: z
+    .enum([
+      "professional",
+      "casual",
+      "energetic",
+      "promotional",
+      "funny",
+      "inspirational",
+    ])
+    .default("professional"),
+  targetAudience: z.string().trim().max(500).optional(),
+  hashtagStrategy: z
+    .enum(["balanced", "niche", "trending", "branded"])
+    .optional(),
+  captionLength: z.enum(["short", "optimal", "long"]).optional(),
+  callToActionStrength: z.enum(["low", "medium", "high"]).optional(),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
+});
+
+const MANUAL_SOCIAL_PLATFORMS = new Set([
+  "instagram",
+  "twitter",
+  "facebook",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+  "googlebusiness",
+  "google_business",
+]);
+
+function maxCoreSocialPlatform(platform: string): string {
+  if (platform === "threads") return "instagram";
+  if (platform === "googlebusiness" || platform === "google_business") {
+    return "facebook";
+  }
+  return platform;
+}
+
+router.post(
+  "/generate-content",
+  requireAuthOnly,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = manualSocialGenerationSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid social content generation request",
+        details: parsed.error.issues,
+      });
+    }
+    const userId = req.user?.id;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
+    }
+
+    const requestedPlatforms = [
+      ...new Set(parsed.data.platforms.map((platform) => platform.toLowerCase())),
+    ];
+    const invalidPlatforms = requestedPlatforms.filter(
+      (platform) => !MANUAL_SOCIAL_PLATFORMS.has(platform),
+    );
+    if (invalidPlatforms.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Unsupported social platform(s): ${invalidPlatforms.join(", ")}`,
+      });
+    }
+
+    try {
+      const assets = await Promise.all(
+        requestedPlatforms.map(async (platform, index) => {
+          const result = await generateSocialDirect({
+            userId,
+            platform: maxCoreSocialPlatform(platform),
+            topic: parsed.data.topic,
+            tone: parsed.data.tone,
+            targetAudience: parsed.data.targetAudience,
+            hashtagStrategy: parsed.data.hashtagStrategy,
+            captionLength: parsed.data.captionLength,
+            callToActionStrength: parsed.data.callToActionStrength,
+            includeHashtags: true,
+            numVariants: 1,
+            intent: parsed.data.intent,
+            direction: parsed.data.direction,
+            context: parsed.data.context,
+            awareness: parsed.data.awareness,
+          });
+          const variant = result.variants[0];
+          const caption =
+            variant.caption ||
+            [variant.hook, variant.body, variant.cta]
+              .filter(Boolean)
+              .join("\n\n");
+          if (!caption.trim()) {
+            throw new AIUnavailableError("MaxCore returned empty social copy");
+          }
+          return {
+            id: `manual-social-${index + 1}`,
+            modality: "text",
+            platform,
+            payload: caption,
+            metadata: {
+              hook: variant.hook,
+              body: variant.body,
+              cta: variant.cta,
+              hashtags: variant.hashtags,
+              source: "MaxCoreAI",
+              topic: parsed.data.topic,
+              targetAudience: parsed.data.targetAudience,
+            },
+          };
+        }),
+      );
+      return res.json({ success: true, assets, source: "MaxCoreAI" });
+    } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          error: "MaxCore social content generation is temporarily unavailable",
+        });
+      }
+      logger.warn(
+        { errorType: error instanceof Error ? error.name : typeof error },
+        "Failed to generate manual social content",
+      );
+      return res
+        .status(500)
+        .json({ success: false, error: "Social content generation failed" });
+    }
+  },
+);
 
 // Helper function to fetch and extract metadata from any URL
 

@@ -834,7 +834,7 @@ export default function SocialMedia() {
           hashtags:
             m.hashtags ??
             (extractedTags.length > 0 ? extractedTags : undefined),
-          source: "python_ai_model",
+          source: "MaxCoreAI",
           optimalPostTime: m.optimalPostTime,
           charCount: m.charCount ?? rawText.length,
           charLimit: m.charLimit ?? m.platformRules?.maxCharCount,
@@ -877,14 +877,39 @@ export default function SocialMedia() {
       if (!["text", "image", "audio", "video"].includes(outputModality)) {
         throw new Error("Select a supported output format.");
       }
+      const topic =
+        data.topic?.trim() || `Generate ${data.tone} social media content`;
+      if (outputModality === "text") {
+        const socialPlatforms = mappedPlatforms.map((platform) =>
+          platform === "google_business" ? "googlebusiness" : platform,
+        );
+        const response = await apiRequest(
+          "POST",
+          "/api/social/generate-content",
+          {
+            platforms: socialPlatforms,
+            topic,
+            tone: data.tone,
+            targetAudience: targetAudience.trim() || undefined,
+            hashtagStrategy,
+            captionLength,
+            callToActionStrength: ctaStrength,
+            intent: data.intent,
+            direction: data.direction,
+            context: data.context,
+            awareness: data.awareness,
+          },
+        );
+        return response.json();
+      }
       const response = await apiRequest("POST", "/api/multimodal/generate", {
         input: {
           modality: "text",
-          payload:
-            data.topic?.trim() || `Generate ${data.tone} social media content`,
+          payload: topic,
         },
         platforms: mappedPlatforms,
-        intent: data.tone,
+        intent: data.intent,
+        targetAudience: targetAudience.trim() || undefined,
         direction: data.direction,
         context: data.context,
         awareness: data.awareness,

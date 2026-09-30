@@ -199,6 +199,7 @@ export interface GenerationRequest {
   platforms: Platform[];
   packId?: PackId;
   intent?: string;
+  targetAudience?: string;
   /** Caller-authored conditioning. Application transports preserve these
    * verbatim; MaxCore alone decides how they affect generation. */
   direction?: unknown;

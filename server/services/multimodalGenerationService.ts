@@ -2629,6 +2629,9 @@ const textWorker = {
         semantic.brand_voice ??
         undefined;
       const resolvedTargetAudience =
+        (typeof req.targetAudience === "string" && req.targetAudience.trim()
+          ? req.targetAudience.trim()
+          : undefined) ??
         userCtx.targetAudience ??
         (normalized as any).targetAudience ??
         semantic.target_audience ??

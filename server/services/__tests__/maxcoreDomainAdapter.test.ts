@@ -35,6 +35,10 @@ describe("MaxCore domain adapter contracts", () => {
         platform: "instagram",
         topic: "release",
         numVariants: 1,
+        targetAudience: "independent music fans",
+        hashtagStrategy: "niche",
+        captionLength: "short",
+        callToActionStrength: "medium",
         intent: "announce",
         direction: { pacing: "slow" },
         context: { releaseId: "r1" },
@@ -45,6 +49,12 @@ describe("MaxCore domain adapter contracts", () => {
     expect(sentPath).toBe("/api/platform/social/generate");
     expect(sentBody).toMatchObject({ user_id: "u1", num_variants: 1 });
     expect(sentBody).toMatchObject({
+      target_audience: "independent music fans",
+      hashtag_strategy: "niche",
+      caption_length: "short",
+      call_to_action_strength: "medium",
+    });
+    expect(sentBody).toMatchObject({
       intent: "announce",
       direction: { pacing: "slow" },
       context: { releaseId: "r1" },
@@ -54,8 +64,10 @@ describe("MaxCore domain adapter contracts", () => {
   });
 
   it("sends the current ads schema and rejects empty output", async () => {
+    let sentPath = "";
     let sentBody: Record<string, unknown> = {};
-    const transport: MaxCoreTransport = async (_path, body) => {
+    const transport: MaxCoreTransport = async (path, body) => {
+      sentPath = path;
       sentBody = body;
       return {
         success: true,
@@ -83,6 +95,7 @@ describe("MaxCore domain adapter contracts", () => {
       },
       transport,
     );
+    expect(sentPath).toBe("/api/platform/ads/generate");
     expect(sentBody).toMatchObject({ user_id: "u2", budget_daily: 25 });
     expect(sentBody).toMatchObject({
       intent: "pre-save",
@@ -97,6 +110,61 @@ describe("MaxCore domain adapter contracts", () => {
         async () => ({ success: true, creatives: [] }) as never,
       ),
     ).rejects.toThrow(/ad generation/i);
+  });
+
+  it("supports organic promotion copy without a spend or audience-targeting payload", async () => {
+    let sentPath = "";
+    let sentBody: Record<string, unknown> = {};
+    const creatives = Array.from({ length: 5 }, (_, index) => ({
+      variant: index + 1,
+      content_type: "text",
+      hook: `Hook ${index + 1}`,
+      headline: `Headline ${index + 1}`,
+      body: `Body ${index + 1}`,
+      cta: `CTA ${index + 1}`,
+      source: "model",
+    }));
+    const result = await generateAdsDirect(
+      {
+        userId: "u4",
+        platform: "instagram",
+        product: "single release",
+        adType: "text",
+        numCreatives: 5,
+        replicatePeak: false,
+        varySubtypes: false,
+        targetSubtypes: ["text"],
+        instruction:
+          "Use the audience only as wording context, not as targeting.",
+      },
+      async (path, body) => {
+        sentPath = path;
+        sentBody = body;
+        return {
+          success: true,
+          user_id: "u4",
+          platform: "instagram",
+          ad_type: "text",
+          product: "single release",
+          goal: "streams",
+          creatives,
+        } as never;
+      },
+    );
+
+    expect(sentPath).toBe("/api/platform/ads/generate");
+    expect(sentBody).toMatchObject({
+      ad_type: "text",
+      num_creatives: 5,
+      replicate_peak: false,
+      vary_subtypes: false,
+      target_subtypes: ["text"],
+    });
+    expect(sentBody.budget_daily).toBeUndefined();
+    expect(sentBody.target_audience).toBeUndefined();
+    expect(result.creatives).toHaveLength(5);
+    expect(result.creatives.every((creative) => creative.content_type === "text"))
+      .toBe(true);
   });
 
   it("preserves social autopilot recommendations", async () => {

@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   ChartContainer,
   ChartTooltip,
@@ -61,6 +60,16 @@ interface ABTest {
   statisticalSignificance: number;
   sampleSize: number;
   targetSampleSize: number;
+}
+
+interface GeneratedAdCreative {
+  variant?: number;
+  content_type?: string;
+  hook?: string;
+  headline?: string;
+  body?: string;
+  cta?: string;
+  creative_brief?: Record<string, unknown>;
 }
 
 const HEADLINE_SUGGESTIONS = [
@@ -118,17 +127,13 @@ export function CreativeVariantGenerator() {
   ];
 
   const [activeTest, _setActiveTest] = useState<ABTest | null>(null);
-  const [autoOptimize, setAutoOptimize] = useState(true);
   const [bulkCount, setBulkCount] = useState(5);
+  const [bulkPlatform, setBulkPlatform] = useState("instagram");
   const [bulkTopic, setBulkTopic] = useState("");
   const [bulkAudience, setBulkAudience] = useState("");
-  const [generatedContent, setGeneratedContent] = useState<{
-    hook?: string;
-    body?: string;
-    cta?: string;
-    caption?: string;
-    hashtags?: string[];
-  } | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<
+    GeneratedAdCreative[]
+  >([]);
   const [newVariant, setNewVariant] = useState({
     headline: "",
     description: "",
@@ -137,43 +142,46 @@ export function CreativeVariantGenerator() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const topic = bulkTopic.trim() || "music distribution and promotion";
+      const topic = bulkTopic.trim();
+      if (!topic) {
+        throw new Error("Enter a theme or release title before generating.");
+      }
       const res = await apiRequest("POST", "/api/advertising/generate-content", {
         contentType: "promotional",
-        platform: "instagram",
+        platform: bulkPlatform,
         topic,
         tone: "energetic",
         targetAudience: bulkAudience.trim() || undefined,
+        numCreatives: bulkCount,
       });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      const content =
-        typeof data.content === "string"
-          ? { caption: data.content, body: data.content }
-          : data.content?.data || data.content;
+      const data = await res.json();
       if (
-        content &&
-        ["hook", "body", "cta", "caption"].some(
-          (field) =>
-            typeof content[field] === "string" && content[field].trim(),
+        data?.success !== true ||
+        !Array.isArray(data.creatives) ||
+        data.creatives.length !== bulkCount ||
+        data.creatives.some(
+          (creative: GeneratedAdCreative) =>
+            creative.content_type !== "text" ||
+            ![creative.hook, creative.headline, creative.body, creative.cta].some(
+              (part) => typeof part === "string" && part.trim(),
+            ),
         )
       ) {
-        setGeneratedContent({
-          hook: content.hook || "",
-          body: content.body || "",
-          cta: content.cta || "",
-          caption: content.caption || "",
-          hashtags: Array.isArray(content.hashtags) ? content.hashtags : [],
-        });
-        toast({
-          title: "Variants Generated",
-          description:
-            "AI copy is ready to review. Attach the resulting creative to a campaign to test it.",
-        });
-      } else {
-        throw new Error("MaxCore returned no usable advertising copy");
+        throw new Error(
+          "MaxCore did not return the requested number of usable text variants.",
+        );
       }
+      return data as {
+        creatives: GeneratedAdCreative[];
+        requestedCount: number;
+      };
+    },
+    onSuccess: (data) => {
+      setGeneratedContent(data.creatives);
+      toast({
+        title: "Variants Generated",
+        description: `${data.creatives.length} MaxCore text variants are ready to review.`,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -228,23 +236,13 @@ export function CreativeVariantGenerator() {
             AI Creative Variant Generator
           </h2>
           <p className="text-muted-foreground">
-            Generate, test, and auto-optimize ad creatives with AI
+            Generate organic promotion copy with MaxCore and review each variant.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={autoOptimize}
-              onCheckedChange={setAutoOptimize}
-              id="auto-optimize"
-            />
-            <Label htmlFor="auto-optimize" className="text-sm">
-              Auto-Optimize Winners
-            </Label>
-          </div>
+        <div>
           <Button
             onClick={handleGenerateVariants}
-            disabled={isGenerating}
+            disabled={isGenerating || !bulkTopic.trim()}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
             {isGenerating ? (
@@ -620,10 +618,35 @@ export function CreativeVariantGenerator() {
                   Bulk AI Generation
                 </CardTitle>
                 <CardDescription>
-                  Generate multiple creative variants automatically
+                  Generate organic text variants through MaxCore
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Platform</Label>
+                  <Select
+                    value={bulkPlatform}
+                    onValueChange={setBulkPlatform}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        ["instagram", "Instagram"],
+                        ["twitter", "X / Twitter"],
+                        ["facebook", "Facebook"],
+                        ["tiktok", "TikTok"],
+                        ["youtube", "YouTube"],
+                        ["linkedin", "LinkedIn"],
+                      ].map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label>Number of Variants</Label>
                   <Select
@@ -634,7 +657,7 @@ export function CreativeVariantGenerator() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[3, 5, 10, 15, 20].map((num) => (
+                      {[3, 5, 10].map((num) => (
                         <SelectItem key={num} value={num.toString()}>
                           {num} variants
                         </SelectItem>
@@ -653,7 +676,7 @@ export function CreativeVariantGenerator() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Target Audience</Label>
+                  <Label>Audience Context</Label>
                   <Input
                     placeholder="e.g., Independent musicians, ages 18-35"
                     value={bulkAudience}
@@ -662,18 +685,17 @@ export function CreativeVariantGenerator() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Dynamic Elements to Vary</Label>
+                  <Label>Copy Fields Returned</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
+                      { label: "Hooks", icon: Sparkles },
                       { label: "Headlines", icon: Type },
-                      { label: "Descriptions", icon: Layers },
+                      { label: "Body copy", icon: Layers },
                       { label: "CTAs", icon: MousePointerClick },
-                      { label: "Images", icon: Image },
                     ].map(({ label, icon: Icon }) => (
                       <Badge
                         key={label}
                         variant="outline"
-                        className="cursor-pointer hover:bg-primary/10"
                       >
                         <Icon className="w-3 h-3 mr-1" />
                         {label}
@@ -682,23 +704,10 @@ export function CreativeVariantGenerator() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Brain className="w-5 h-5 text-purple-500" />
-                    <span className="font-medium">AI Prediction</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Based on your inputs, AI predicts an average performance
-                    score of{" "}
-                    <span className="text-green-500 font-bold">78/100</span> for
-                    generated variants.
-                  </p>
-                </div>
-
                 <Button
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                   onClick={handleGenerateVariants}
-                  disabled={isGenerating}
+                  disabled={isGenerating || !bulkTopic.trim()}
                 >
                   {isGenerating ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -708,71 +717,75 @@ export function CreativeVariantGenerator() {
                   Generate {bulkCount} Variants
                 </Button>
 
-                {generatedContent && (
+                {generatedContent.length > 0 && (
                   <div className="mt-4 space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-green-500">
                       <CheckCircle className="w-4 h-4" />
-                      AI Generated Content
+                      {generatedContent.length} MaxCore-Generated Variants
                     </div>
-                    {generatedContent.hook && (
-                      <div className="p-3 rounded-lg bg-muted/50 border">
-                        <p className="text-xs text-muted-foreground mb-1 font-medium">
-                          Hook
+                    {generatedContent.map((creative, index) => (
+                      <div
+                        key={creative.variant ?? index}
+                        className="space-y-3 rounded-lg border p-3"
+                      >
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Variant {creative.variant ?? index + 1}
                         </p>
-                        <p className="text-sm">{generatedContent.hook}</p>
+                        {creative.hook && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1 font-medium">
+                              Hook
+                            </p>
+                            <p className="text-sm">{creative.hook}</p>
+                          </div>
+                        )}
+                        {creative.headline && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1 font-medium">
+                              Headline
+                            </p>
+                            <p className="text-sm font-medium">
+                              {creative.headline}
+                            </p>
+                          </div>
+                        )}
+                        {creative.body && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1 font-medium">
+                              Body copy
+                            </p>
+                            <p className="text-sm whitespace-pre-wrap">
+                              {creative.body}
+                            </p>
+                          </div>
+                        )}
+                        {creative.cta && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1 font-medium">
+                              CTA
+                            </p>
+                            <p className="text-sm font-medium">
+                              {creative.cta}
+                            </p>
+                          </div>
+                        )}
+                        {creative.creative_brief && (
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-muted-foreground">
+                              Creative brief
+                            </summary>
+                            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-muted p-2">
+                              {JSON.stringify(creative.creative_brief, null, 2)}
+                            </pre>
+                          </details>
+                        )}
                       </div>
-                    )}
-                    {generatedContent.body && (
-                      <div className="p-3 rounded-lg bg-muted/50 border">
-                        <p className="text-xs text-muted-foreground mb-1 font-medium">
-                          Body Copy
-                        </p>
-                        <p className="text-sm">{generatedContent.body}</p>
-                      </div>
-                    )}
-                    {generatedContent.cta && (
-                      <div className="p-3 rounded-lg bg-muted/50 border">
-                        <p className="text-xs text-muted-foreground mb-1 font-medium">
-                          Call to Action
-                        </p>
-                        <p className="text-sm font-medium">
-                          {generatedContent.cta}
-                        </p>
-                      </div>
-                    )}
-                    {!generatedContent.hook &&
-                      !generatedContent.body &&
-                      generatedContent.caption && (
-                        <div className="p-3 rounded-lg bg-muted/50 border">
-                          <p className="text-xs text-muted-foreground mb-1 font-medium">
-                            Generated Copy
-                          </p>
-                          <p className="text-sm whitespace-pre-wrap">
-                            {generatedContent.caption}
-                          </p>
-                        </div>
-                      )}
-                    {generatedContent.hashtags &&
-                      generatedContent.hashtags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {generatedContent.hashtags
-                            .slice(0, 6)
-                            .map((tag: string) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag.startsWith("#") ? tag : `#${tag}`}
-                              </Badge>
-                            ))}
-                        </div>
-                      )}
+                    ))}
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => setGeneratedContent(null)}
+                      onClick={() => setGeneratedContent([])}
                     >
                       Clear Results
                     </Button>

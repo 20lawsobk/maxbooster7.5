@@ -188,8 +188,10 @@ export class FeatureValidators {
           "/api/advertising/generate-content",
           {
             platform: "twitter",
-            tone: "engaging",
-            includeHashtags: true,
+            tone: "energetic",
+            topic: "new single release",
+            targetAudience: "independent music listeners",
+            numCreatives: 3,
           },
         );
         if (response.status !== 200 && response.status !== 403) {

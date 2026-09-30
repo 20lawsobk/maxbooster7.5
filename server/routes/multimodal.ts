@@ -81,6 +81,15 @@ router.post(
       ) {
         return res.status(400).json({ error: "constraints must be an object" });
       }
+      if (
+        body.targetAudience !== undefined &&
+        (typeof body.targetAudience !== "string" ||
+          body.targetAudience.length > 500)
+      ) {
+        return res
+          .status(400)
+          .json({ error: "targetAudience must be a string of at most 500 characters" });
+      }
       const requestedOutputModality = body.constraints?.outputModality;
       if (
         requestedOutputModality !== undefined &&
@@ -158,6 +167,7 @@ router.post(
         platforms,
         packId,
         intent: body.intent,
+        targetAudience: body.targetAudience,
         direction: body.direction,
         context: body.context,
         awareness: body.awareness,

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Router, Request, Response } from "express";
+import { z } from "zod";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
@@ -7,6 +8,7 @@ import { storage } from "../storage.js";
 import { notificationService } from "../services/notificationService.js";
 import { pythonAIService } from "../services/pythonAIService.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { generateAdsDirect } from "../services/maxcoreDomainAdapter.js";
 import { storageService } from "../services/storageService.js";
 import {
   getMaxcoreGenerationHeaders,
@@ -2006,83 +2008,126 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
 });
 
 // AI-powered content generation for ads
+const manualAdGenerationSchema = z.object({
+  campaignId: z.string().max(128).optional(),
+  contentType: z.string().trim().min(1).max(80).default("promotional"),
+  platform: z
+    .enum(["instagram", "twitter", "facebook", "tiktok", "youtube", "linkedin"])
+    .default("instagram"),
+  topic: z.string().trim().max(500).optional(),
+  tone: z
+    .enum(["professional", "casual", "energetic", "promotional"])
+    .default("energetic"),
+  targetAudience: z
+    .union([z.string().trim().max(500), z.record(z.unknown())])
+    .optional(),
+  musicData: z.record(z.unknown()).optional(),
+  numCreatives: z.number().int().min(1).max(10).default(5),
+  goal: z
+    .enum(["streams", "merch", "fanbase", "tickets", "downloads", "conversions"])
+    .default("streams"),
+  intent: z.unknown().optional(),
+  direction: z.unknown().optional(),
+  context: z.unknown().optional(),
+  awareness: z.unknown().optional(),
+});
+
 router.post("/generate-content", requireAuthOnly, async (req, res) => {
   try {
-    const {
-      campaignId,
-      contentType = "promotional",
-      platform = "instagram",
-      topic = "new music release",
-      tone = "energetic",
-      musicData,
-      targetAudience,
-      intent,
-      direction,
-      context,
-      awareness,
-    } = req.body;
+    const parsed = manualAdGenerationSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid advertising content generation request",
+        details: parsed.error.issues,
+      });
+    }
+    const userId = req.user?.id;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, error: "Authentication required" });
+    }
 
-    const validPlatforms = [
-      "instagram",
-      "twitter",
-      "facebook",
-      "tiktok",
-      "youtube",
-      "linkedin",
-    ];
-    const validTones = ["professional", "casual", "energetic", "promotional"];
+    const { musicData = {} } = parsed.data;
+    const readMusicText = (...keys: string[]) => {
+      for (const key of keys) {
+        const value = musicData[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+      return "";
+    };
+    const product =
+      parsed.data.topic?.trim() ||
+      readMusicText("title", "trackTitle", "releaseTitle", "name");
+    if (!product) {
+      return res.status(400).json({
+        success: false,
+        error: "A theme or music title is required",
+      });
+    }
 
-    if (!validPlatforms.includes(platform)) {
-      return res.status(400).json({ error: "Unsupported advertising platform" });
-    }
-    if (!validTones.includes(tone)) {
-      return res.status(400).json({ error: "Unsupported advertising tone" });
-    }
-    if (typeof topic !== "string" || !topic.trim()) {
-      return res.status(400).json({ error: "A non-empty topic is required" });
-    }
-    const resolvedPlatform = platform;
-    const resolvedTone = tone;
     const audienceContext =
-      typeof targetAudience === "string"
-        ? targetAudience.trim()
-        : targetAudience && typeof targetAudience === "object"
-          ? JSON.stringify(targetAudience)
+      typeof parsed.data.targetAudience === "string"
+        ? parsed.data.targetAudience.trim()
+        : parsed.data.targetAudience
+          ? JSON.stringify(parsed.data.targetAudience)
           : "";
-    const musicContext =
-      musicData && typeof musicData === "object"
-        ? JSON.stringify(musicData)
-        : "";
-    const generated = normalizeAdContent(
-      await MaxCoreAIClient.infer<Record<string, unknown>>(
-        "/api/generate/content",
-        {
-          topic: topic.trim(),
-          platform: resolvedPlatform,
-          tone: resolvedTone,
-          content_type: contentType === "ad_copy" ? "promotional" : contentType,
-          include_hashtags: true,
-          include_emojis: true,
-          extra_context: [
-            "Create advertising copy for the artist's music promotion.",
-            audienceContext && `Target audience: ${audienceContext}`,
-            musicContext && `Music context: ${musicContext}`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-          intent,
-          direction,
-          context,
-          awareness,
-        },
-      ),
-    );
-    const content = requireMaxCore(generated, "advertising content generation");
+    const musicContext = [
+      readMusicText("artistName", "artist"),
+      readMusicText("genre"),
+      readMusicText("mood"),
+      readMusicText("description"),
+    ]
+      .filter(Boolean)
+      .join("; ");
+    const instruction = [
+      "Create copy for organic music promotion. Do not describe paid spend, paid targeting, or guaranteed performance.",
+      `Requested tone: ${parsed.data.tone}.`,
+      `Content type: ${parsed.data.contentType}.`,
+      audienceContext &&
+        `Audience context for wording only, not targeting: ${audienceContext}`,
+      musicContext && `Music context: ${musicContext}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-    res.json({
+    const generated = await generateAdsDirect({
+      userId,
+      platform: parsed.data.platform,
+      product,
+      adType: "text",
+      goal: parsed.data.goal,
+      numCreatives: parsed.data.numCreatives,
+      replicatePeak: false,
+      varySubtypes: false,
+      targetSubtypes: ["text"],
+      artistName: readMusicText("artistName", "artist") || undefined,
+      genre: readMusicText("genre") || undefined,
+      instruction,
+      contentThemes: [product, parsed.data.contentType],
+      intent: parsed.data.intent,
+      direction: parsed.data.direction,
+      context: parsed.data.context,
+      awareness: parsed.data.awareness,
+    });
+    if (
+      generated.creatives.length !== parsed.data.numCreatives ||
+      generated.creatives.some((creative) => creative.content_type !== "text")
+    ) {
+      throw new AIUnavailableError(
+        "MaxCore did not return the requested number of text creatives",
+      );
+    }
+
+    return res.json({
       success: true,
-      campaignId,
-      content,
+      ...(parsed.data.campaignId
+        ? { campaignId: parsed.data.campaignId }
+        : {}),
+      platform: parsed.data.platform,
+      requestedCount: parsed.data.numCreatives,
+      creatives: generated.creatives,
       source: "MaxCoreAI",
     });
   } catch (error) {
@@ -2090,14 +2135,17 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       return res.status(error.statusCode).json({
         success: false,
         code: error.code,
-        error: "Advertising content generation is temporarily unavailable",
+        error: "MaxCore advertising content generation is temporarily unavailable",
       });
     }
     logger.warn(
       { errorType: error instanceof Error ? error.name : typeof error },
       "Failed to generate ad content",
     );
-    res.status(500).json({ error: "Failed to generate content" });
+    res.status(500).json({
+      success: false,
+      error: "Advertising content generation failed",
+    });
   }
 });
 
