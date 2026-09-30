@@ -106,5 +106,7 @@ execute. The gaps below are all "cannot run here," none are "known broken."
 - `scripts/deploy.ts` (referenced by the `deploy` npm script) does not exist
   — the `deploy` script is broken upstream of this work; intentionally not
   reconstructed here.
-- Nothing in this tree has been committed or pushed; all changes are local
-  and awaiting review.
+- Commit `26d1fbc` ("Production readiness + efficiency wiring pass (2026-09-29)")
+  was pushed to `origin/main` on 2026-09-30 (fast-forward from `d1e4ac9`,
+  verified via `git ls-remote`). The tree state below describes the pre-push
+  working tree that became that commit.

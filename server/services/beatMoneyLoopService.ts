@@ -495,16 +495,11 @@ class BeatMoneyLoopService {
     try {
       // 1. SCAN
       // No awareness-to-production planner: Core audio chooses unspecified fields.
+      // Concrete genre/mood/tempo are resolved AFTER generation (step 2b), once
+      // MaxCore's observations have landed on `scan` — pricing, record creation
+      // and campaigns must reflect what was actually produced, not pre-generation
+      // fallbacks.
       const scan = beatAudioInputs(overrides);
-      // Downstream stages (pricing, record creation, campaigns) require concrete
-      // genre/mood/tempo. MaxCore decides unspecified fields at generation time;
-      // use the documented fallbacks for business logic.
-      const concreteScan = {
-        ...scan,
-        genre: scan.genre ?? TRENDING_GENRE_FALLBACK,
-        mood: scan.mood ?? TRENDING_MOOD_FALLBACK,
-        tempo: scan.tempo ?? 120,
-      };
       await db
         .update(beatMoneyLoopCycles)
         .set({ status: "generating", scanContext: scan })
@@ -545,6 +540,16 @@ class BeatMoneyLoopService {
       // 2b. GENERATE
       const generated = await this._generateBeat(scan);
       Object.assign(scan, generated.observation);
+      // Resolve concrete values now that MaxCore's observations are in: any
+      // field the caller left unspecified was decided at generation time, so
+      // downstream stages (pricing, record creation, campaigns) use the
+      // observed values — not the pre-generation fallbacks.
+      const concreteScan = {
+        ...scan,
+        genre: scan.genre ?? TRENDING_GENRE_FALLBACK,
+        mood: scan.mood ?? TRENDING_MOOD_FALLBACK,
+        tempo: scan.tempo ?? 120,
+      };
       const {
         audioAbsPath,
         previewAbsPath,

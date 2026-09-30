@@ -1,13 +1,31 @@
 # Production Readiness Report — maxbooster7.5
 
 **Date:** 2026-09-29
-**Commit:** d1e4ac9 (plus local fixes, uncommitted)
+**Commit:** 26d1fbc — "Production readiness + efficiency wiring pass (2026-09-29)",
+pushed to `origin/main` on 2026-09-30 (fast-forward from d1e4ac9, verified on
+the remote). Figures below describe the d1e4ac9 → 26d1fbc diff unless noted.
 **Verdict: CONDITIONAL GO** — code is statically clean and builds; unit suite
 is now 134/135 files green (1066 passed, 3 skipped, 1 load-flaky). Full
 production confidence still requires the complete (non-sparse) checkout,
 Node 22, `npm ci`, Docker, and staging verification (see §4).
 
 This report supersedes the stale `PRODUCTION_READINESS.md` (NO-GO) and
+
+## Addendum — 2026-09-30 (post-push)
+
+- **Beat Money Loop observation fix (follow-up commit, 2026-09-30):**
+  `concreteScan` was snapshotted *before* audio generation, so pricing
+  (`_competitivePrice`), beat-record creation and campaign launch used the
+  pre-generation fallbacks (trap/dark/120) even when MaxCore's observations
+  supplied a different genre/mood/tempo for caller-unspecified fields. The
+  concrete scan is now built *after* `Object.assign(scan,
+  generated.observation)`. Covered by
+  `tests/unit/beat-money-loop-observation.test.ts` (2 tests: observed values
+  propagate; caller-specified fields still honored, fallback only for
+  truly-unspecified tempo). Test fails on the pre-fix code, passes after.
+- The efficiency-wiring notes for this commit (shared PDIM dedup namespace,
+  ReplicaPool in `DigitalGPU.gemm`, `capsule:build`) live in
+  `ENVIRONMENT_VERIFICATION_NOTES.md` §5.
 `FIXES_SUMMARY.md` (premature READY claim).
 
 ---
@@ -120,7 +138,9 @@ API signatures intact. Final server typecheck: 0 errors.
   `localPdimAofJournal.ts`, `localPdimServer.ts`.
 - Fixed `toolostRuntimeConfig.ts` environment typing (was `Pick<ProcessEnv>` which
   is unassignable; now explicit optional-property interface).
-- **Removed ~1,300 lines of dead code** from `beatMoneyLoopService.ts`:
+- **Removed 211 lines of dead code** from `beatMoneyLoopService.ts` (19 insertions,
+  per the d1e4ac9 → 26d1fbc diff — an earlier draft of this report overstated
+  this as ~1,300):
   - Unreachable `_distillScan` legacy method (154 lines, shadowed by early return)
   - Unreachable `_weightedGenrePick` method
   - Unused `MUSICAL_KEYS` constant, unused imports
@@ -128,7 +148,8 @@ API signatures intact. Final server typecheck: 0 errors.
   - Normalized optional `BeatAudioContext` fields with documented fallbacks
     (`TRENDING_GENRE_FALLBACK`, `TRENDING_MOOD_FALLBACK`) instead of pretending
     they are always present.
-- **Removed ~1,150 lines of dead code** from `localPdimServer.ts`:
+- **Removed ~1,150 lines of dead code** from `server/lib/localPdimServer.ts`
+  (5 insertions, 1,169 deletions per the d1e4ac9 → 26d1fbc diff):
   - Unused local `exec()` command implementation (runtime uses
     `canonicalStore.exec()` / `capsuleStore.exec()`)
   - 11 helper functions only used by the deleted `exec()`
