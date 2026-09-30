@@ -32,6 +32,7 @@ import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
+import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
 import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
 import {
   getAwarenessContext,
@@ -2969,32 +2970,78 @@ router.post(
         awareness,
       } = parsedRequest.data;
 
-      // SSRF guard — block private/internal targets before fetching the URL
-      try {
-        assertSafeExternalUrl(url?.trim());
-      } catch (ssrfErr) {
-        return res
-          .status(400)
-          .json({ error: (ssrfErr as Error).message || "Invalid URL" });
-      }
+      const normalizedUrl = url.trim();
+      const firstPartySource = resolveFirstPartySocialSource(normalizedUrl);
 
-      // Content must be based on a successfully retrieved and analyzed source.
-      // Do not fabricate URL metadata when fetching or parsing fails: doing so
-      // produces plausible-looking posts that make unsupported claims.
-      let analysis: import("../services/mediaAnalyzerService.js").UrlAnalysis;
-      try {
-        analysis = await analyzeUrl(url?.trim());
-      } catch (analyzeErr) {
-        logger.warn(
-          "[generate-from-url] URL analysis failed:",
-          (analyzeErr as any)?.message,
-        );
+      // The plan-page draft path must stay ephemeral. Non-text formats enter
+      // the multimodal worker, which durably stores generated media assets.
+      if (firstPartySource && format !== "text") {
         return res.status(422).json({
-          error: "Unable to retrieve analyzable content from this URL",
+          error:
+            "This first-party source supports text drafts only; media generation stores generated assets.",
         });
       }
 
-      const seed = urlToContentSeed(analysis);
+      // The narrowly-resolved first-party route uses internal checkout data and
+      // never fetches the submitted URL. Every other URL keeps the existing
+      // SSRF guard and safe parser path.
+      if (!firstPartySource) {
+        try {
+          assertSafeExternalUrl(normalizedUrl);
+        } catch (ssrfErr) {
+          return res
+            .status(400)
+            .json({ error: (ssrfErr as Error).message || "Invalid URL" });
+        }
+      }
+
+      type SocialUrlSeed = Pick<
+        ReturnType<typeof urlToContentSeed>,
+        | "genre"
+        | "artist"
+        | "track"
+        | "content_type"
+        | "platform_category"
+        | "og_image"
+        | "thumbnail_url"
+      >;
+      let seed: SocialUrlSeed;
+      let sourceTitle: string;
+      let sourceDescription: string;
+      let sourcePlatform: string;
+
+      if (firstPartySource) {
+        seed = {
+          genre: "default",
+          artist: "",
+          track: "",
+          content_type: firstPartySource.contentType,
+          platform_category: "web",
+          og_image: "",
+          thumbnail_url: "",
+        };
+        sourceTitle = firstPartySource.title;
+        sourceDescription = firstPartySource.description;
+        sourcePlatform = "web";
+      } else {
+        // Content must be based on a successfully retrieved and analyzed
+        // external source. Structure-only metadata is not sufficient.
+        try {
+          const analysis = await analyzeUrl(normalizedUrl);
+          seed = urlToContentSeed(analysis);
+          sourceTitle = analysis.title;
+          sourceDescription = analysis.description;
+          sourcePlatform = analysis.platform;
+        } catch (analyzeErr) {
+          logger.warn(
+            "[generate-from-url] URL analysis failed:",
+            (analyzeErr as any)?.message,
+          );
+          return res.status(422).json({
+            error: "Unable to retrieve analyzable content from this URL",
+          });
+        }
+      }
 
       // Derive the content_type for better CTA selection
       const contentType =
@@ -3024,14 +3071,16 @@ router.post(
       }
       const generatedContent: Record<string, unknown>[] = [];
 
-      // Use MaxCore's dedicated social URL pipeline. The exact URL remains the
-      // topic so MaxCore's internal URL resolver is invoked; local analysis
-      // above verifies the source is retrievable and supplies response metadata.
+      // External URLs remain the topic for MaxCore's guarded resolver. The
+      // narrowly-resolved first-party page instead uses its non-URL topic and
+      // server-verified context, without fetching the submitted URL.
       const platformResults = await Promise.allSettled(
         requestedPlatforms
           .map(async (platform: string) => {
             const result = await generateSocialUrlWithMaxCore({
-              url: url.trim(),
+              url: normalizedUrl,
+              topic: firstPartySource?.topic,
+              extraContext: firstPartySource?.extraContext,
               platform,
               userId: req.user!.id,
               tone,
@@ -3087,12 +3136,14 @@ router.post(
           genre:
             seed.genre && seed.genre !== "default" ? seed.genre : "",
           thumbnail_url: seed.og_image || seed?.thumbnail_url || "",
-          sourceUrl: url,
-          extractedTitle: analysis.title,
+          sourceUrl: normalizedUrl,
+          extractedTitle: sourceTitle,
           contentType,
           format,
           targetAudience: targetAudience || undefined,
           source: "MaxCoreAI",
+          sourceProvenance:
+            firstPartySource?.provenance ?? "maxcore_fetched_url",
         });
       }
 
@@ -3118,17 +3169,19 @@ router.post(
         success: true,
         generatedContent,
         failedPlatforms,
-        url,
+        url: normalizedUrl,
         platforms: requestedPlatforms,
         metadata: {
-          title: analysis.title,
-          description: analysis.description?.substring(0, 200),
+          title: sourceTitle,
+          description: sourceDescription?.substring(0, 200),
           type: contentType,
           artist: seed.artist || "",
           track: seed.track || "",
           genre: seed.genre || "",
           thumbnail: seed.og_image || seed?.thumbnail_url || "",
-          platform: analysis.platform,
+          platform: sourcePlatform,
+          sourceProvenance:
+            firstPartySource?.provenance ?? "maxcore_fetched_url",
         },
       });
     } catch (error) {

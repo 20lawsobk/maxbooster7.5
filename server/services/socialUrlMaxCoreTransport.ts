@@ -4,6 +4,8 @@ export const SOCIAL_URL_MAXCORE_ENDPOINT = "/api/platform/social/generate";
 
 export interface SocialUrlGenerationOptions {
   url: string;
+  topic?: string;
+  extraContext?: string;
   platform: string;
   userId: string;
   tone: string;
@@ -46,9 +48,9 @@ const PLATFORM_ALIASES: Record<string, string> = {
 /**
  * Build the dedicated MaxCore social-generation request.
  *
- * `topic` intentionally remains the exact URL. MaxCore's content resolver only
- * invokes its URL parser when topic itself is a URL; replacing it with locally
- * extracted title text silently bypasses that internal pipeline.
+ * External URLs remain the topic so MaxCore's guarded URL resolver handles
+ * them. A first-party page with an internal authoritative source can instead
+ * provide a non-URL topic and verified context, avoiding a second network fetch.
  */
 export function buildSocialUrlMaxCoreRequest(
   options: SocialUrlGenerationOptions,
@@ -57,7 +59,7 @@ export function buildSocialUrlMaxCoreRequest(
     PLATFORM_ALIASES[options.platform] ?? options.platform;
   const body: Record<string, unknown> = {
     user_id: options.userId,
-    topic: options.url.trim(),
+    topic: options.topic?.trim() || options.url.trim(),
     platform,
     tone: options.tone,
     output_format: options.format,
@@ -81,6 +83,9 @@ export function buildSocialUrlMaxCoreRequest(
   }
   if (options.contentType) {
     body.content_type = options.contentType;
+  }
+  if (options.extraContext?.trim()) {
+    body.extra_context = options.extraContext.trim();
   }
   if (options.intent !== undefined) body.intent = options.intent;
   if (options.direction !== undefined) body.direction = options.direction;

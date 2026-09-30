@@ -65,6 +65,25 @@ def test_platform_endpoint_schema_inherits_the_real_control_contract() -> None:
     }.issubset(endpoint_fields)
 
 
+def test_verified_first_party_context_enters_native_social_awareness() -> None:
+    from server import PlatformSocialRequest, _merged_awareness_for
+
+    source_context = (
+        "Verified facts from the active checkout catalog:\n"
+        "- Monthly plan billed monthly."
+    )
+    request = PlatformSocialRequest(
+        user_id="artist-1",
+        topic="Max Booster pricing plans",
+        extra_context=source_context,
+    )
+
+    merged_awareness = _merged_awareness_for(request)
+    assert "Verified facts from the active checkout catalog" in merged_awareness
+    assert "Monthly plan billed monthly" in merged_awareness
+    assert not url_core.is_url(request.topic)
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -144,7 +163,7 @@ def test_native_script_agent_consumes_audience_format_length_and_cta() -> None:
                 "<STAGE_CTA>Listen when it feels right."
             )
 
-    response = ScriptAgent(NativeModelProbe()).run(ScriptRequest(
+    request = ScriptRequest(
         idea="Night Drive",
         platform="instagram",
         goal="growth",
@@ -153,13 +172,22 @@ def test_native_script_agent_consumes_audience_format_length_and_cta() -> None:
         output_format="video",
         caption_length="short",
         cta_strength="low",
-    ))
+    )
+    from ai_model.generation.plan import GenerationPlan, active_plan
+
+    plan = GenerationPlan.from_request(vars(request), "text")
+    token = active_plan.set(plan)
+    try:
+        response = ScriptAgent(NativeModelProbe()).run(request)
+    finally:
+        active_plan.reset(token)
+
     assert response.source == "ai_model"
     assert prompts
-    assert "<FORMAT_VIDEO>" in prompts[0]
-    assert "<LENGTH_SHORT>" in prompts[0]
-    assert "<CTA_LOW>" in prompts[0]
-    assert "Target audience: late-night electronic fans." in prompts[0]
+    assert "Format: video" in prompts[0]
+    assert "Length: short" in prompts[0]
+    assert "CTA: low" in prompts[0]
+    assert "Target: late-night electronic fans" in prompts[0]
 
 
 def test_url_parser_fetches_public_url_and_extracts_real_title(

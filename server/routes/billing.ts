@@ -36,6 +36,11 @@ import { requireAuth } from "../middleware/auth.js";
 import { notificationService } from "../services/notificationService.js";
 import { stripeService } from "../services/stripeService.js";
 import { instantPayoutService } from "../services/instantPayoutService.js";
+import {
+  CHECKOUT_CURRENCY,
+  CHECKOUT_PRICING,
+  type CheckoutPlanId,
+} from "../services/checkoutPricing.js";
 import { env } from "../config/env.js";
 
 const router = Router();
@@ -367,20 +372,7 @@ router.post(
       const appUrl =
         process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
 
-      const priceMap: Record<
-        string,
-        {
-          amount: number;
-          mode: "subscription" | "payment";
-          interval?: "month" | "year";
-        }
-      > = {
-        monthly: { amount: 4900, mode: "subscription", interval: "month" },
-        yearly: { amount: 46800, mode: "subscription", interval: "year" },
-        lifetime: { amount: 69900, mode: "payment" },
-      };
-
-      const plan = priceMap[planId];
+      const plan = CHECKOUT_PRICING[planId as CheckoutPlanId];
 
       const sessionParams: Record<string, unknown> = {
         customer: customerId,
@@ -388,7 +380,7 @@ router.post(
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency: CHECKOUT_CURRENCY,
               product_data: {
                 name: `Max Booster ${planId?.charAt(0).toUpperCase() + planId?.slice(1)}`,
                 description:
@@ -396,7 +388,7 @@ router.post(
                     ? "Lifetime access to all Max Booster features"
                     : `${planId?.charAt(0).toUpperCase() + planId?.slice(1)} subscription to Max Booster`,
               },
-              unit_amount: plan.amount,
+              unit_amount: plan.amountCents,
               ...(plan?.interval
                 ? { recurring: { interval: plan.interval } }
                 : {}),
