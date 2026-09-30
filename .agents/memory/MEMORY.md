@@ -147,5 +147,5 @@
 - [Path-scoped Git history scrubbing](git-filter-repo-path-scrub.md) — use filename-aware filtering; preserve prior rewrite mappings and inspect other refs before assuming a scrub covers them.
 - [Fsync-aware BullMQ lock tests](bullmq-fsync-lock-testing.md) — use realistic lease windows and assert actual renewal/reclaim behavior over real AOF-backed PDIM.
 - [Admin awareness flywheel](admin-awareness-flywheel.md) — use valid snapshots as optional context; keep generation live and retire external awareness only on authoritative corpus evidence.
-- [MaxCore URL guard and Replit dev hosts](maxcore-ssrf-reserved-dev-host.md) — shell-fetchable Replit dev URLs can resolve as reserved inside MaxCore; keep SSRF checks intact and test with publicly resolvable sources.
+- [MaxCore URL guard and Replit hosts](maxcore-ssrf-reserved-dev-host.md) — Replit `.dev` and `.app` URLs may resolve to reserved IPs inside MaxCore; never weaken URL SSRF guards.
 - [Conflicting PDIM AOF sequences](local-pdim-aof-conflicting-sequences.md) — different mutations at one sequence are ambiguous; never dedupe or renumber without authoritative recovery evidence.
