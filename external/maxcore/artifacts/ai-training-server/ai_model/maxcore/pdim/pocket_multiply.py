@@ -141,7 +141,13 @@ class PocketDimension:
     def _backend(self):
         if self._gpu is None:
             from ..api import DigitalGPU
-            self._gpu = DigitalGPU()
+            # Fallback compute backend for standalone pockets/pools. The pool
+            # MUST stay disabled here: a default DigitalGPU routes plain
+            # float32 GEMMs back through a ReplicaPool, and a standalone
+            # ReplicaPool shares the default replica namespace — the nested
+            # call would single-flight on the outer call's own in-flight slot
+            # and deadlock. A non-pooling GPU computes directly instead.
+            self._gpu = DigitalGPU(replica_pool=False)
         return self._gpu
 
     # ── multiplication inside this pocket ──────────────────────────────────

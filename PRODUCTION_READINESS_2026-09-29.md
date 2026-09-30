@@ -363,3 +363,68 @@ It is NOT yet "100% flawless" — the remaining prerequisites in §5 (full
 checkout suite run, `npm audit`, Replit dev-deploy verification with live
 Neon/Redis/PDIM, production smoke tests) must complete first. Anyone
 claiming otherwise is selling, not engineering.
+
+---
+
+## Addendum — 2026-09-30 (platform-wide functionality verification)
+
+Run on 2026-09-30 UTC in this container (Node v24.20.0; no live Neon/PDIM/Redis).
+
+**Unit suite (full): 136/136 files, 1069 passed, 3 skipped, 0 failed.**
+Improvement over the 26d1fbc baseline (134/135, 1066 passed, 1 failed):
+the previously load-flaky `retained-pdim-recovery-simulation` passed this
+run, and the 2 new beat-money-loop observation regression tests are green.
+The 3 skips remain zstd-absent only.
+
+**Typecheck + lint:** server tsc 0 errors, client tsc 0 errors, ESLint
+(server + client + shared) 0 errors. Scope still limited by `// @ts-nocheck`
+(248 server / 359 client files) as previously noted.
+
+**Production build (`npx tsx script/build.ts`): exit 0.** Vite client build
+plus all esbuild server bundles (`dist/index.mjs`, `dist/cluster.mjs`,
+`dist/gateway.mjs`, `dist/compute-sizing.mjs`,
+`dist/retained-pdim-recovery-worker.mjs`) produced. Deploy-only capsule
+packing (`DEPLOY_PACK=1`, needs zstd/portable-node download) not exercised.
+
+**Server boot smoke test:**
+- Missing `SESSION_SECRET` → clean crash with descriptive error (env
+  validation works; secret requires ≥32 chars).
+- Without `DATABASE_URL` → clean crash at `server/db.ts` import
+  ("DATABASE_URL must be set").
+- With dummy `DATABASE_URL` → env validation passes, server reaches early
+  listen ("serving on port … (early listen — full init in progress)"),
+  then fails fast on the session-table query and exits 1. Correct behavior:
+  Postgres is a hard startup dependency; the process does not linger half-up.
+- Live DB routes, auth, webhooks, and distribution remain unverifiable here
+  (no Neon/Redis/PDIM in this container).
+
+**Digital GPU / PDIM (Python, system python3 + numpy):**
+- **Found and fixed a real deadlock:** a standalone `ReplicaPool`
+  (no `gpu` backend, as its own docstring suggests) deadlocked
+  deterministically on the first cache miss — the pocket's fallback
+  `DigitalGPU()` routes GEMMs back through a `ReplicaPool` sharing the
+  default replica namespace, so the nested call single-flights on the outer
+  call's own in-flight slot and waits forever (confirmed via faulthandler
+  stack dump). Fix: the fallback backend is now
+  `DigitalGPU(replica_pool=False)` (`pocket_multiply.py` `_backend()`).
+  After the fix: replica0 `compute` 4.4 ms, replica1 `cache` 0.3 ms,
+  bit-exact vs NumPy, no hang. The intended path
+  (`DigitalGPU().gemm` → injected backend) is unchanged and verified
+  (3.1 ms cold / 0.2 ms warm, bit-exact).
+- Only in-repo consumer of `ReplicaPool` is `DigitalGPU._pool()`
+  (passes `gpu=self.backend`), so no production path changes behavior.
+
+**Capsule pipeline (`scripts/package-capsule.ts`):** the real
+`packagePlatform()` flow verified end-to-end with an in-memory storage
+backend injected (the PDIM HTTP service is unavailable here):
+5,719 files collected, manifest built, 248,917,236 → 129,713,396 bytes,
+manifest sha256 computed, exit 0. The PDIM HTTP transport itself remains
+untested in this container (owner's domain).
+
+**Still not verifiable in this container (unchanged):** live Neon Postgres,
+Redis/PDIM HTTP, `npm ci` from clean, Node 22 runtime, Docker image build,
+Python torch paths, auth/distribution/webhook round-trips, Replit VM
+startup and health-check path.
+
+Verdict remains **CONDITIONAL GO** — everything verifiable here now passes,
+including the full 136-file suite and the production build.
