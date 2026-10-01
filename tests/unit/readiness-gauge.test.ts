@@ -12,7 +12,7 @@ import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_CHECKS } from "../../scripts/readiness-gauge/lib/checks.js";
+import { ALL_CHECKS, collectSecretHits } from "../../scripts/readiness-gauge/lib/checks.js";
 import {
   buildGaugeReport,
   decideVerdict,
@@ -303,8 +303,11 @@ describe("report rendering", () => {
 
 describe("real checks against temp git repos", () => {
   it("secrets-scan fails on a committed key, passes when clean", async () => {
+    // Assembled at runtime so this tracked test file never contains a
+    // flaggable secret literal — the gauge must not flag its own fixtures.
+    const fakeKey = "sk_live_" + "a1".repeat(12);
     const dirty = makeRepo({
-      "config.js": 'const key = "sk_live_abc123DEF456ghi789jkl";\n',
+      "config.js": `const key = "${fakeKey}";\n`,
     });
     const clean = makeRepo({ "index.js": "console.log('hi');\n" });
     const dirtyRes: CheckResult = await getCheck("secrets-scan").run({ cwd: dirty }, {});
@@ -312,7 +315,7 @@ describe("real checks against temp git repos", () => {
     expect(dirtyRes.summary).toMatch(/potential secret/);
     expect(dirtyRes.remediation).toBeTruthy();
     // The secret value itself must not leak into evidence.
-    expect(dirtyRes.evidence.join("\n")).not.toContain("sk_live_abc123");
+    expect(dirtyRes.evidence.join("\n")).not.toContain("a1a1a1");
     const cleanRes: CheckResult = await getCheck("secrets-scan").run({ cwd: clean }, {});
     expect(cleanRes.status).toBe("pass");
   });
@@ -332,6 +335,32 @@ describe("real checks against temp git repos", () => {
     expect(kRes.evidence.join("\n")).toContain("keys/id_rsa");
     // Key material must not leak into evidence.
     expect(kRes.evidence.join("\n")).not.toContain("MIIEpAIBAAKCAQEA");
+  });
+
+  it("secrets-scan honors exclude globs for fixture paths", async () => {
+    const fakeKey = "sk_live_" + "b2".repeat(12);
+    const dir = makeRepo({
+      "tests/fixtures/seed.js": `const key = "${fakeKey}";\n`,
+      "src/app.js": "console.log('clean');\n",
+    });
+    const excluded: CheckResult = await getCheck("secrets-scan").run(
+      { cwd: dir },
+      { exclude: ["tests/fixtures/**"] },
+    );
+    expect(excluded.status).toBe("pass");
+    const included: CheckResult = await getCheck("secrets-scan").run({ cwd: dir }, {});
+    expect(included.status).toBe("fail");
+    expect(included.evidence.join("\n")).toContain("tests/fixtures/seed.js");
+  });
+
+  it("secrets-scan finds nothing in the gauge's own tracked files", async () => {
+    // Regression test: the gauge once flagged a synthetic credential living in
+    // its own tracked test fixture. Its own source must always scan clean.
+    const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const hits = collectSecretHits(repoRoot, {
+      paths: ["scripts/readiness-gauge", "tests/unit/readiness-gauge.test.ts"],
+    });
+    expect(hits?.size ?? 0).toBe(0);
   });
 
   it("env-config warns on undocumented vars, passes when documented", async () => {

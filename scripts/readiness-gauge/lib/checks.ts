@@ -77,6 +77,13 @@ function cfgNum(config: Record<string, unknown>, key: string, def: number): numb
   return typeof v === "number" && Number.isFinite(v) ? v : def;
 }
 
+function cfgStrArr(config: Record<string, unknown>, key: string): string[] {
+  const v = config[key];
+  return Array.isArray(v)
+    ? v.filter((s): s is string => typeof s === "string")
+    : [];
+}
+
 /* ── security ─────────────────────────────────────────────────────────── */
 
 /**
@@ -132,31 +139,55 @@ function filterContextHits(output: string): string[] {
   return hits;
 }
 
+export interface SecretScanOptions {
+  /** Git pathspec globs to skip, e.g. ["tests/fixtures/**"]. */
+  exclude?: string[];
+  /** Pathspecs to scan; defaults to ["."] (the whole repo). */
+  paths?: string[];
+}
+
+/**
+ * Run the secret patterns over tracked files via `git grep`. Returns the
+ * redacted hit set, or null when the scan timed out.
+ *
+ * Exported so tests can probe the gauge's own tracked files — the gauge must
+ * never flag its own test fixtures as committed secrets.
+ */
+export function collectSecretHits(
+  cwd: string,
+  opts: SecretScanOptions = {},
+): Set<string> | null {
+  const paths = opts.paths?.length ? opts.paths : ["."];
+  const exclusions = (opts.exclude ?? []).map((g) => `:!${g}`);
+  const hits = new Set<string>();
+  for (const [pat, , needsContext] of SECRET_PATTERNS) {
+    const base = needsContext ? ["-n", "-E", "-A2"] : ["-n", "-E"];
+    const out = gitGrep(cwd, [...base, "-e", pat, "--", ...paths, ...exclusions], 55_000);
+    if (out.timedOut) return null;
+    // git grep exits 1 when nothing matches — the passing case.
+    if (needsContext) {
+      for (const h of filterContextHits(out.stdout)) hits.add(`${h}:<redacted match>`);
+    } else {
+      const lines = out.stdout.split("\n").map((l) => l.trim()).filter(Boolean);
+      for (const l of lines) hits.add(l.replace(/:.*$/, "") + ":<redacted match>");
+    }
+  }
+  return hits;
+}
+
 const secretsScan: Check = {
   id: "secrets-scan",
   name: "Secrets scan",
   category: "security",
   description:
-    "Scans tracked files for committed secrets (API keys, tokens, private keys).",
+    "Scans tracked files for committed secrets (API keys, tokens, private keys). " +
+    "Config `exclude` takes git pathspec globs to skip (e.g. test fixtures).",
   timeoutMs: 60_000,
-  async run(ctx) {
+  async run(ctx, config) {
     const t0 = Date.now();
-    const hits = new Set<string>();
-    for (const [pat, , needsContext] of SECRET_PATTERNS) {
-      const args = needsContext
-        ? ["-n", "-E", "-A2", "-e", pat, "--", "."]
-        : ["-n", "-E", "-e", pat, "--", "."];
-      const out = gitGrep(ctx.cwd, args, 55_000);
-      if (out.timedOut) {
-        return { ...blocked("secrets scan timed out"), durationMs: Date.now() - t0 };
-      }
-      // git grep exits 1 when nothing matches — the passing case.
-      const lines = out.stdout.split("\n").map((l) => l.trim()).filter(Boolean);
-      if (needsContext) {
-        for (const h of filterContextHits(out.stdout)) hits.add(`${h}:<redacted match>`);
-      } else {
-        for (const l of lines) hits.add(l.replace(/:.*$/, "") + ":<redacted match>");
-      }
+    const hits = collectSecretHits(ctx.cwd, { exclude: cfgStrArr(config, "exclude") });
+    if (hits === null) {
+      return { ...blocked("secrets scan timed out"), durationMs: Date.now() - t0 };
     }
     const uniq = [...hits].slice(0, 20);
     if (hits.size > 0) {

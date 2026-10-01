@@ -74,6 +74,8 @@ Field reference:
   verdict at `CONDITIONAL GO` (it means "couldn't verify", not "passed").
 - `enabled: false`: skip the check entirely (e.g. `production-build` in a docs repo).
 - `config`: per-check knobs. Supported keys:
+  - `secrets-scan`: `exclude` — git pathspec globs to skip (e.g. `["tests/fixtures/**"]`
+    for repos whose own test fixtures contain synthetic secrets)
   - `dependency-audit`: `maxHigh`, `maxCritical`
   - `todo-scan`: `warnAt`, `failAt`
   - `large-files`: `maxBytes`
