@@ -3,6 +3,9 @@
     "health-endpoint": {
       "weight": 2
     },
+    "env-config": {
+      "required": true
+    },
     "port-contract": {
       "weight": 2
     },

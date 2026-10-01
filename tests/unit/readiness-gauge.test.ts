@@ -147,6 +147,11 @@ describe("profile loading", () => {
     expect(p.thresholds.go).toBeGreaterThan(p.thresholds.conditionalGo);
   });
 
+  it("requires env-config in the generic profile", () => {
+    const p = loadProfile(dir, "generic");
+    expect(p.checks["env-config"].required).toBe(true);
+  });
+
   it("throws a helpful error for unknown profiles", () => {
     expect(() => loadProfile(dir, "aerospace")).toThrow(/Known profiles/);
   });
