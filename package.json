@@ -20,6 +20,7 @@
     "build:deploy": "npm ci --omit=dev --ignore-scripts && node scripts/postinstall.mjs",
     "build:prod": "npx tsx script/build.ts && npm run prune:deploy",
     "capsule:build": "npx tsx scripts/package-capsule.ts",
+    "change-compare": "npx tsx scripts/change-compare/cli.ts",
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
     "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash start.sh",
