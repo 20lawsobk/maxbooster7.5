@@ -9,6 +9,8 @@ Payment verification must isolate both Stripe and application persistence. Use t
 
 **How to apply:** Before any remote test writes, verify test-key formats, Stripe's authoritative `livemode: false`, and the complete enabled-webhook inventory. Block if events could reach shared data; do not disable existing endpoints without approval. Execute production code against disposable local SQL or isolated repositories. Separate real-provider acceptance, production contract tests, SQL accounting tests, and browser confirmation evidence in reports.
 
+The project owner confirms that separate sandbox/development and production credentials are configured for both Stripe and Too Lost. Treat provider-environment separation as present; do not describe missing sandbox credentials or a need to switch live credentials as a readiness blocker. This does not by itself establish application-database or webhook isolation.
+
 Successful card confirmation can precede availability of the charge's balance transaction.
 
 **Why:** Real Stripe test payments demonstrated this timing gap. Immediate accounting verification correctly refused to invent settled provider fees.
