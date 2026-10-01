@@ -32,6 +32,7 @@
  */
 
 import { db, pool } from "../db.js";
+import type { PoolClient } from "@neondatabase/serverless";
 import {
   beats,
   listings,
@@ -492,7 +493,7 @@ class BeatMoneyLoopService {
     const startedAt = Date.now();
     let scratchDir: string | null = null;
     let cycleId = "";
-    let lockClient: Awaited<ReturnType<typeof pool.connect>> | null = null;
+    let lockClient: PoolClient | null = null;
     let databaseLockAcquired = false;
     let databaseLockHealthy = true;
     let lockHeartbeat: ReturnType<typeof setInterval> | null = null;
@@ -510,8 +511,9 @@ class BeatMoneyLoopService {
       // Session advisory lock is shared by every app replica. Keep this
       // connection alive for the full generation cycle; PostgreSQL releases
       // the lock automatically if the process or connection dies.
-      lockClient = await pool.connect();
-      const lockResult = await lockClient.query<{ acquired: boolean }>(
+      const client = await pool.connect();
+      lockClient = client;
+      const lockResult = await client.query<{ acquired: boolean }>(
         "SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS acquired",
         ["beat-money-loop:cycle"],
       );
