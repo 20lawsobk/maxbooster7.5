@@ -12,6 +12,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import Stripe from "stripe";
 
 import { logger } from "../logger.js";
+import { getDistinctBeatMoneyLoopPreviewUrl } from "./beatMoneyLoopAudioAccess.js";
 import { getStorefrontPathUrl } from "../config/storefrontUrls.js";
 
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
@@ -1358,10 +1359,19 @@ export class StorefrontService {
 
       return storefrontListings.map((listing: Record<string, unknown>) => {
         const meta = (listing.metadata as Record<string, unknown>) || {};
+        const safePreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+          meta.source,
+          listing.audioUrl as string | null | undefined,
+          listing.previewUrl as string | null | undefined,
+        );
         return {
           ...listing,
           coverArtUrl: listing.artworkUrl || "",
-          audioUrl: listing.audioUrl || listing.previewUrl || "",
+          audioUrl:
+            meta.source === "beat-money-loop"
+              ? safePreviewUrl || ""
+              : listing.audioUrl || listing.previewUrl || "",
+          previewUrl: safePreviewUrl,
           bpm: meta.bpm || null,
           key: meta.key || null,
           genre: listing.category || meta.genre || "",

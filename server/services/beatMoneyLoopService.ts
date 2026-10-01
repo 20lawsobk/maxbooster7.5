@@ -31,7 +31,7 @@
  * Paused by default — operator flips `enabled=true` via POST /api/admin/beat-money-loop/enable.
  */
 
-import { db } from "../db.js";
+import { db, pool } from "../db.js";
 import {
   beats,
   listings,
@@ -45,7 +45,6 @@ import {
   users,
   royaltySplits,
   releases,
-  posts,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
@@ -90,11 +89,8 @@ const TRENDING_MOOD_FALLBACK = "dark";
 // filtered out at the storage layer (getUserSocialToken), so this list is
 // safe to include broadly — platforms without valid tokens skip gracefully.
 // Single source of truth for the buyer-facing beat link every ad/caption
-// generator embeds. Must match the client route in App.tsx
-// (/marketplace/beat/:beatId) and the server detail endpoint
-// (GET /api/marketplace/beats/:beatId) so the link an ad ships with — on
-// whichever connected social account it's dispatched through — always
-// resolves to that beat's real buy flow instead of the generic homepage.
+// generator embeds. The client route accepts a listing ID at
+// /marketplace/beat/:listingId; it is not the source beat's database ID.
 function getPublicAppOrigin(): string {
   const origin =
     process.env.PUBLIC_BASE_URL ||
@@ -110,8 +106,8 @@ function getPublicAppOrigin(): string {
   return origin.replace(/\/$/, "");
 }
 
-function getBeatLandingUrl(beatId: string): string {
-  return `${getPublicAppOrigin()}/marketplace/beat/${beatId}`;
+function getBeatLandingUrl(listingId: string): string {
+  return `${getPublicAppOrigin()}/marketplace/beat/${listingId}`;
 }
 
 const PLATFORMS_FOR_CAMPAIGN = [
@@ -359,11 +355,16 @@ class BeatMoneyLoopService {
         nextRunAt.toISOString(),
     );
 
-    // When MaxCore comes back online after being down, the loop's nextRunAt
-    // may be many hours away (adaptive backoff from the failed cycle).
-    // Register a one-shot reconnect callback that reschedules to MIN_CADENCE
-    // from now so the loop resumes promptly rather than waiting out the full
-    // backoff window.
+    this.registerReconnectHandler();
+
+    return this.getStatus();
+  }
+
+  /**
+   * Register after every process start, not only when an operator enables the
+   * loop. The enabled flag and backoff are persisted, while this callback is not.
+   */
+  registerReconnectHandler(): void {
     MaxCoreAIClient.onReconnect = async () => {
       try {
         const st = await this._ensureStateRow();
@@ -389,8 +390,6 @@ class BeatMoneyLoopService {
         );
       }
     };
-
-    return this.getStatus();
   }
 
   async disable(): Promise<BeatMoneyLoopStatus> {
@@ -418,7 +417,19 @@ class BeatMoneyLoopService {
         reason: `not-yet-due (next=${state.nextRunAt.toISOString()})`,
       };
     }
-    const result = await this.runCycle("schedule");
+    let result: RunCycleResult;
+    try {
+      result = await this.runCycle("schedule");
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        err.message ===
+          "A Beat Money Loop cycle is already in-flight on another worker"
+      ) {
+        return { ran: false, reason: "cycle-already-in-flight" };
+      }
+      throw err;
+    }
 
     // ── Self-optimization: adaptive batch size ────────────────────────────
     // When demand is proven (recent downloads/revenue) and the loop is healthy,
@@ -481,21 +492,67 @@ class BeatMoneyLoopService {
     this._runningCycle = true;
     const startedAt = Date.now();
     let scratchDir: string | null = null;
+    let cycleId = "";
+    let lockClient: Awaited<ReturnType<typeof pool.connect>> | null = null;
+    let databaseLockAcquired = false;
+    let databaseLockHealthy = true;
+    let lockHeartbeat: ReturnType<typeof setInterval> | null = null;
+    let heartbeatInFlight: Promise<unknown> | null = null;
 
-    // Create the cycle row first so failures anywhere have a row to attach to.
-    const [cycleRow] = await db
-      .insert(beatMoneyLoopCycles)
-      .values({
-        triggeredBy,
-        status: "pending",
-      })
-      .returning();
-    const cycleId = cycleRow.id;
-    logger.info(
-      `[BeatMoneyLoop] ▶ Cycle ${cycleId} started (trigger=${triggeredBy})${overrides ? ` overrides=${JSON.stringify(overrides)}` : ""}`,
-    );
+    const assertCycleLock = () => {
+      if (!databaseLockAcquired || !databaseLockHealthy) {
+        throw new Error(
+          "Beat Money Loop lost its database cycle lock; refusing further side effects",
+        );
+      }
+    };
 
     try {
+      // Session advisory lock is shared by every app replica. Keep this
+      // connection alive for the full generation cycle; PostgreSQL releases
+      // the lock automatically if the process or connection dies.
+      lockClient = await pool.connect();
+      const lockResult = await lockClient.query<{ acquired: boolean }>(
+        "SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS acquired",
+        ["beat-money-loop:cycle"],
+      );
+      if (!lockResult.rows[0]?.acquired) {
+        throw new Error(
+          "A Beat Money Loop cycle is already in-flight on another worker",
+        );
+      }
+      databaseLockAcquired = true;
+      lockHeartbeat = setInterval(() => {
+        if (!lockClient || !databaseLockAcquired || heartbeatInFlight) return;
+        const client = lockClient;
+        heartbeatInFlight = client
+          .query("SELECT 1")
+          .catch((err: unknown) => {
+            databaseLockHealthy = false;
+            logger.error(
+              { err },
+              "[BeatMoneyLoop] Database cycle-lock heartbeat failed",
+            );
+          })
+          .finally(() => {
+            heartbeatInFlight = null;
+          });
+      }, 15_000);
+
+      // Create the cycle row inside the guarded try so even an insert failure
+      // releases both the process-local and cluster-wide locks.
+      const [cycleRow] = await db
+        .insert(beatMoneyLoopCycles)
+        .values({
+          triggeredBy,
+          status: "pending",
+        })
+        .returning();
+      cycleId = cycleRow.id;
+      logger.info(
+        `[BeatMoneyLoop] ▶ Cycle ${cycleId} started (trigger=${triggeredBy})${overrides ? ` overrides=${JSON.stringify(overrides)}` : ""}`,
+      );
+
       // 1. SCAN
       // No awareness-to-production planner: Core audio chooses unspecified fields.
       // Concrete genre/mood/tempo are resolved AFTER generation (step 2b), once
@@ -575,7 +632,8 @@ class BeatMoneyLoopService {
       const price = await this._competitivePrice(concreteScan.genre);
 
       // 4. UPLOAD (persist beat record + upload bytes to hybrid storage)
-      const { beatId, audioUrl, socialPostId } = await this._createBeatRecord({
+      assertCycleLock();
+      const { beatId, listingId, audioUrl } = await this._createBeatRecord({
         scan: concreteScan,
         price,
         audioAbsPath,
@@ -611,14 +669,15 @@ class BeatMoneyLoopService {
       }
 
       // 5. ADVERTISE (organic, MaxCore/PDIM-driven — budget=0)
+      assertCycleLock();
       const ad = await this._launchCampaign({
         beatId,
+        listingId,
         scan: concreteScan,
         price,
         title,
         audioUrl,
         audioAbsPath,
-        socialPostId,
       });
 
       // 6. RECORD outcome + schedule next.
@@ -674,6 +733,10 @@ class BeatMoneyLoopService {
       };
     } catch (err) {
       const msg = (err as Error).message ?? String(err);
+      // No durable cycle exists to update when lock acquisition or the initial
+      // row insert failed. Propagate that infrastructure error after finally
+      // releases the locks instead of inventing a cycle result.
+      if (!cycleId) throw err;
       const durationMs = Date.now() - startedAt;
       logger.warn(
         { err },
@@ -719,6 +782,24 @@ class BeatMoneyLoopService {
             "[BeatMoneyLoop] Failed to remove local generation scratch directory",
           );
         }
+      }
+      if (lockHeartbeat) clearInterval(lockHeartbeat);
+      if (heartbeatInFlight) await heartbeatInFlight;
+      if (lockClient) {
+        if (databaseLockAcquired) {
+          try {
+            await lockClient.query(
+              "SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+              ["beat-money-loop:cycle"],
+            );
+          } catch (unlockErr) {
+            logger.warn(
+              { err: unlockErr },
+              "[BeatMoneyLoop] Database cycle-lock release failed; connection release will relinquish it",
+            );
+          }
+        }
+        lockClient.release();
       }
       this._runningCycle = false;
       // Auto-chain: if someone enqueued more overrides while this cycle ran,
@@ -1092,26 +1173,54 @@ class BeatMoneyLoopService {
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
 
         // Trim a 30 s preview from the full-length WAV using ffmpeg so buyers
-        // can audition the beat before purchasing. This is non-blocking — if
-        // the trim fails we fall back to using the full-length URL as preview.
+        // can audition the beat before purchasing. A failed or empty preview
+        // must stop publication; using the source WAV here would expose it.
         let previewAbsPath = audioAbsPath;
-        try {
-          const { execFile } = await import("child_process");
-          const { promisify } = await import("util");
-          const runFf = promisify(execFile);
-          const previewFilename = `preview_30s_${Date.now()}_${randomBytes(6).toString("hex")}.wav`;
-          const previewAbs = path.join(outputDir, previewFilename);
-          await runFf("ffmpeg", [
-            "-y", "-i", audioAbsPath,
-            "-t", "30",
-            "-c", "copy",
-            previewAbs,
-          ], { timeout: 30_000 });
-          previewAbsPath = previewAbs;
-          logger.info(`[BeatMoneyLoop] 30 s preview trimmed → ${previewFilename}`);
-        } catch (previewErr) {
-          logger.warn(`[BeatMoneyLoop] Preview trim failed (non-fatal) — using full URL as preview: ${(previewErr as Error).message}`);
+        const { execFile } = await import("child_process");
+        const { promisify } = await import("util");
+        const runFf = promisify(execFile);
+        const probe = await runFf(
+          "ffprobe",
+          [
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            audioAbsPath,
+          ],
+          { timeout: 15_000 },
+        );
+        const sourceDurationSeconds = Number(probe.stdout.trim());
+        if (!Number.isFinite(sourceDurationSeconds) || sourceDurationSeconds < 2) {
+          throw new Error(
+            `generated audio duration is invalid (${probe.stdout.trim() || "missing"})`,
+          );
         }
+        // Keep the audition clip at or below 30 seconds and strictly shorter
+        // than short source beats; a 30-second trim of a 16-second source would
+        // otherwise copy the entire paid asset.
+        const previewDurationSeconds = Math.min(30, sourceDurationSeconds / 2);
+        const previewFilename = `preview_30s_${Date.now()}_${randomBytes(6).toString("hex")}.wav`;
+        const previewAbs = path.join(outputDir, previewFilename);
+        await runFf("ffmpeg", [
+          "-y", "-i", audioAbsPath,
+          "-t", previewDurationSeconds.toFixed(3),
+          "-c", "copy",
+          previewAbs,
+        ], { timeout: 30_000 });
+        const [sourceStat, previewStat] = await Promise.all([
+          fsPromises.stat(audioAbsPath),
+          fsPromises.stat(previewAbs),
+        ]);
+        if (previewStat.size < 1_024 || previewStat.size >= sourceStat.size) {
+          throw new Error(
+            `trimmed preview is invalid (preview=${previewStat.size} bytes, source=${sourceStat.size} bytes)`,
+          );
+        }
+        previewAbsPath = previewAbs;
+        logger.info(`[BeatMoneyLoop] 30 s preview trimmed → ${previewFilename}`);
 
         // Use requestedKey as canonical — MaxCore always returns "C Minor" for
         // mcMusicalKey/mcKey, so accepting its value would lock every beat.
@@ -1384,7 +1493,12 @@ class BeatMoneyLoopService {
     previewAbsPath?: string;
     title: string;
     musicalKey?: string;
-  }): Promise<{ beatId: string; audioUrl: string; previewUrl: string; socialPostId: string | null }> {
+  }): Promise<{
+    beatId: string;
+    listingId: string;
+    audioUrl: string;
+    previewUrl: string;
+  }> {
     const adminId = await this._requireAdminId();
     const keyDisplay = args.musicalKey || "C Minor";
 
@@ -1401,14 +1515,15 @@ class BeatMoneyLoopService {
     );
     const audioUrl = `/api/marketplace/audio/${storageKey}`;
 
-    // Upload the 30 s preview clip (trimmed in _generateBeat).
-    // Falls back to the full-length URL when no separate preview was produced.
-    let previewUrl = audioUrl;
+    // Upload the 30 s preview clip. Never expose a full-length source file as
+    // an audition asset; a preview failure must fail the listing cycle.
+    let previewUrl = "";
+    let previewKey: string | null = null;
     if (args.previewAbsPath && args.previewAbsPath !== args.audioAbsPath) {
       try {
         const previewBuf = await fsPromises.readFile(args.previewAbsPath);
         const previewFilename = path.basename(args.previewAbsPath);
-        const previewKey = await storageService.uploadFile(
+        previewKey = await storageService.uploadFile(
           previewBuf,
           "beats",
           previewFilename,
@@ -1416,13 +1531,32 @@ class BeatMoneyLoopService {
         );
         previewUrl = `/api/marketplace/audio/${previewKey}`;
       } catch (previewUploadErr) {
-        logger.warn(`[BeatMoneyLoop] Preview upload failed (non-fatal) — using full URL as preview: ${(previewUploadErr as Error).message}`);
+        await storageService.deleteFile(storageKey).catch((cleanupErr) =>
+          logger.warn(
+            { err: cleanupErr },
+            "[BeatMoneyLoop] Could not remove full audio after preview upload failed",
+          ),
+        );
+        throw new Error(
+          `Beat preview upload failed; listing was not created: ${(previewUploadErr as Error).message}`,
+        );
       }
+    } else {
+      await storageService.deleteFile(storageKey).catch((cleanupErr) =>
+        logger.warn(
+          { err: cleanupErr },
+          "[BeatMoneyLoop] Could not remove full audio after preview was missing",
+        ),
+      );
+      throw new Error(
+        "Beat preview is missing; refusing to publish a full-length file as the audition clip",
+      );
     }
 
     // Generate cover artwork via MaxCore image endpoint — fire-and-forget if it
     // fails, so a slow image render never aborts the upload step.
     let artworkUrl: string | null = null;
+    let createdArtworkKey: string | null = null;
     try {
       const base = getMaxcoreOriginOrDefault();
       const aiKey = getMaxcoreGenerationKey();
@@ -1471,17 +1605,26 @@ class BeatMoneyLoopService {
           if (!contentType.startsWith("image/")) {
             throw new Error(`MaxCore artwork returned unexpected content type: ${contentType || "missing"}`);
           }
-          const artworkKey = await storageService.uploadFile(
+          createdArtworkKey = await storageService.uploadFile(
             Buffer.from(await download.arrayBuffer()),
             "beat-artwork",
             `beat-artwork-${randomBytes(8).toString("hex")}.${contentType.split("/")[1].split(";")[0]}`,
             contentType,
           );
-          artworkUrl = await storageService.getDownloadUrl(artworkKey);
+          artworkUrl = await storageService.getDownloadUrl(createdArtworkKey);
         }
       }
     } catch (_artErr) {
       // Non-fatal — beat still gets listed without artwork
+      if (createdArtworkKey) {
+        await storageService.deleteFile(createdArtworkKey).catch((cleanupErr) =>
+          logger.warn(
+            { err: cleanupErr },
+            "[BeatMoneyLoop] Could not remove artwork whose public URL could not be created",
+          ),
+        );
+        createdArtworkKey = null;
+      }
       logger.warn("[BeatMoneyLoop] Artwork generation skipped (non-fatal)");
     }
 
@@ -1500,146 +1643,124 @@ class BeatMoneyLoopService {
     // the buyer-facing listing, and its royalty ownership. Keep those database
     // writes atomic; a failed split/listing must fail the cycle rather than
     // leave an invisible beat or a chargeable listing with no booked owner.
-    const beatId = await db.transaction(async (tx) => {
-      const [created] = await tx
-        .insert(beats)
-        .values({
+    try {
+      const created = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(beats)
+          .values({
+            userId: adminId,
+            title: args.title,
+            description: this._buildBeatDescription(args.scan, args.price),
+            price: args.price,
+            genre: args.scan.genre,
+            bpm: args.scan.tempo,
+            key: keyDisplay,
+            audioUrl,
+            artworkUrl,
+            licenseType: "basic",
+            tags,
+            isPublished: true,
+          })
+          .returning({ id: beats.id });
+
+        await tx.insert(royaltySplits).values({
+          releaseId: created.id,
           userId: adminId,
-          title: args.title,
-          description: this._buildBeatDescription(args.scan, args.price),
-          price: args.price,
-          genre: args.scan.genre,
-          bpm: args.scan.tempo,
-          key: keyDisplay,
-          audioUrl,
-          artworkUrl,
-          licenseType: "basic",
-          tags,
-          isPublished: true,
-        })
-        .returning({ id: beats.id });
-
-      await tx.insert(royaltySplits).values({
-        releaseId: created.id,
-        userId: adminId,
-        collaboratorName: "Platform Admin",
-        // _requireAdminId() above only resolves an admin matching this required
-        // environment value, so the non-null assertion is a real invariant.
-        collaboratorEmail: process.env.ADMIN_EMAIL!,
-        role: "producer",
-        percentage: 100,
-        status: "active",
-        metadata: {
-          source: "beat-money-loop",
-          beatId: created.id,
-          genre: args.scan.genre,
-          mood: args.scan.mood,
-          listingDate: new Date().toISOString(),
-        } as Record<string, unknown>,
-      });
-
-      await tx.insert(listings).values({
-        userId: adminId,
-        title: args.title,
-        description: this._buildBeatDescription(args.scan, args.price),
-        priceCents: Math.round(args.price * 100),
-        category: args.scan.genre,
-        audioUrl,
-        artworkUrl,
-        previewUrl,
-        isPublished: true,
-        metadata: {
-          source: "beat-money-loop",
-          genre: args.scan.genre,
-          mood: args.scan.mood,
-          bpm: args.scan.tempo,
-          key: keyDisplay,
-          tempo: args.scan.tempo,
-          licenseType: "basic",
-          tags,
-          // `beatId` is the payment flow's royalty lookup key; retain
-          // sourceBeatId for existing marketplace queries/backfills.
-          beatId: created.id,
-          sourceBeatId: created.id,
-        },
-      });
-      return created.id;
-    });
-    distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
-    logger.info(`[BeatMoneyLoop] Marketplace listing and 100% royalty split created for beat ${beatId}`);
-
-    // ── Auto-distribution queue entry ─────────────────────────────────────
-    // When BEAT_AUTO_DISTRIBUTION=true, create a draft `releases` row so the
-    // distribution system can pick it up without manual creator intervention.
-    // Non-fatal: a distribution failure must never abort or fail the listing.
-    if (process.env.BEAT_AUTO_DISTRIBUTION === "true") {
-      try {
-        await db.insert(releases).values({
-          userId: adminId,
-          title: args.title,
-          status: "draft",
-          artworkUrl: artworkUrl ?? null,
+          collaboratorName: "Platform Admin",
+          // _requireAdminId() above only resolves an admin matching this required
+          // environment value, so the non-null assertion is a real invariant.
+          collaboratorEmail: process.env.ADMIN_EMAIL!,
+          role: "producer",
+          percentage: 100,
+          status: "active",
           metadata: {
             source: "beat-money-loop",
-            beatId,
+            beatId: created.id,
             genre: args.scan.genre,
             mood: args.scan.mood,
-            bpm: args.scan.tempo,
-            audioUrl,
             listingDate: new Date().toISOString(),
-          },
-        });
-        logger.info(
-          `[BeatMoneyLoop] Draft release queued for beat ${beatId} (BEAT_AUTO_DISTRIBUTION=true)`,
-        );
-      } catch (distroErr) {
-        logger.warn(
-          { err: distroErr, beatId },
-          "[BeatMoneyLoop] Auto-distribution release insert failed (non-fatal)",
-        );
-      }
-    }
-
-    // ── Content-dispatch social post ───────────────────────────────────────
-    // Create a scheduled social post so the `content-dispatch` job (60 s tick)
-    // can pick it up and publish via socialQueueService.  We schedule it 90 s
-    // out so the immediate activateCampaign dispatch in _launchCampaign fires
-    // first; if that succeeds _launchCampaign will mark this post `published`
-    // so content-dispatch skips it (no double-post).
-    // Non-fatal: ad delivery is the primary path; this is belt-and-suspenders.
-    let _socialPostId: string | null = null;
-    try {
-      const caption = this._buildBeatDescription(args.scan, args.price).slice(0, 280);
-      const [sp] = await db
-        .insert(posts)
-        .values({
-          userId: adminId,
-          platform: "instagram",
-          content: caption,
-          scheduledAt: new Date(Date.now() + 90_000),
-          status: "scheduled",
-          approvalStatus: "auto-approved",
-          engagement: {
-            _beatMoneyLoop: true,
-            beatId,
-            genre: args.scan.genre,
-            platforms: ["instagram", "tiktok"],
-            source: "beat-money-loop",
           } as Record<string, unknown>,
-        })
-        .returning({ id: posts.id });
-      _socialPostId = sp.id;
-      logger.info(
-        `[BeatMoneyLoop] Content-dispatch social post ${sp.id} scheduled for beat ${beatId}`,
-      );
-    } catch (spErr) {
-      logger.warn(
-        { err: spErr, beatId },
-        "[BeatMoneyLoop] Social post scheduling failed (non-fatal)",
-      );
-    }
+        });
 
-    return { beatId, audioUrl, previewUrl, socialPostId: _socialPostId };
+        const [listing] = await tx
+          .insert(listings)
+          .values({
+            userId: adminId,
+            title: args.title,
+            description: this._buildBeatDescription(args.scan, args.price),
+            priceCents: Math.round(args.price * 100),
+            category: args.scan.genre,
+            audioUrl,
+            artworkUrl,
+            previewUrl,
+            isPublished: true,
+            metadata: {
+              source: "beat-money-loop",
+              genre: args.scan.genre,
+              mood: args.scan.mood,
+              bpm: args.scan.tempo,
+              key: keyDisplay,
+              tempo: args.scan.tempo,
+              licenseType: "basic",
+              tags,
+              // `beatId` is the payment flow's royalty lookup key; retain
+              // sourceBeatId for existing marketplace queries/backfills.
+              beatId: created.id,
+              sourceBeatId: created.id,
+            },
+          })
+          .returning({ id: listings.id });
+        return { beatId: created.id, listingId: listing.id };
+      });
+      const { beatId, listingId } = created;
+      distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
+      logger.info(
+        `[BeatMoneyLoop] Marketplace listing ${listingId} and 100% royalty split created for beat ${beatId}`,
+      );
+
+      // ── Auto-distribution queue entry ─────────────────────────────────────
+      // The existing distribution workflow consumes a draft release; actual
+      // DSP submission remains an explicit creator/admin action.
+      if (process.env.BEAT_AUTO_DISTRIBUTION === "true") {
+        try {
+          await db.insert(releases).values({
+            userId: adminId,
+            title: args.title,
+            status: "draft",
+            artworkUrl: artworkUrl ?? null,
+            metadata: {
+              source: "beat-money-loop",
+              beatId,
+              listingId,
+              genre: args.scan.genre,
+              mood: args.scan.mood,
+              bpm: args.scan.tempo,
+              audioUrl,
+              listingDate: new Date().toISOString(),
+            },
+          });
+          logger.info(
+            `[BeatMoneyLoop] Draft release queued for beat ${beatId} (BEAT_AUTO_DISTRIBUTION=true)`,
+          );
+        } catch (distroErr) {
+          logger.warn(
+            { err: distroErr, beatId },
+            "[BeatMoneyLoop] Auto-distribution release insert failed (non-fatal)",
+          );
+        }
+      }
+
+      return { beatId, listingId, audioUrl, previewUrl };
+    } catch (createErr) {
+      await Promise.allSettled([
+        storageService.deleteFile(storageKey),
+        ...(previewKey ? [storageService.deleteFile(previewKey)] : []),
+        ...(createdArtworkKey
+          ? [storageService.deleteFile(createdArtworkKey)]
+          : []),
+      ]);
+      throw createErr;
+    }
   }
 
   /**
@@ -1653,35 +1774,20 @@ class BeatMoneyLoopService {
    */
   private async _launchCampaign(args: {
     beatId: string;
+    listingId: string;
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
     price: number;
     title: string;
     audioUrl: string;
     audioAbsPath?: string;
-    socialPostId?: string | null;
   }): Promise<AdvertiseOutcome> {
     const adminId = await this._requireAdminId();
     let campaignId: string | null = null;
     try {
-      // Build the ad copy — try MaxCore content generation first so the caption
-      // benefits from goal=drive_purchase + beat_context. Fall back to local
-      // _buildAdCaption when MaxCore is unavailable.
+      // MaxCore is the only ad-copy source. If it cannot produce a usable
+      // caption, leave the beat listed and report the advertising failure.
       const hashtags = normalizeHashtags([], args.scan.genre, "instagram");
-      const caption = await this._generateMaxCoreCaption(args, hashtags).catch(
-        (err) => {
-          logger.warn(
-            { err },
-            "[BeatMoneyLoop] MaxCore caption generation failed — using local fallback",
-          );
-          return this._buildAdCaption({
-            beatId: args.beatId,
-            title: args.title,
-            scan: args.scan,
-            price: args.price,
-            hashtags,
-          });
-        },
-      );
+      const caption = await this._generateMaxCoreCaption(args, hashtags);
 
       // 1. Create the campaign first so the creative can reference its id.
       //    budget=0: organic distribution only (no paid spend). metadata carries
@@ -1706,6 +1812,7 @@ class BeatMoneyLoopService {
           metadata: {
             source: "beat-money-loop",
             beatId: args.beatId,
+            listingId: args.listingId,
             price: args.price,
             fanOutPlatforms: [...PLATFORMS_FOR_CAMPAIGN],
           },
@@ -1752,7 +1859,7 @@ class BeatMoneyLoopService {
           description: caption,
           mediaUrl,
           callToAction: "License This Beat",
-          landingUrl: getBeatLandingUrl(args.beatId),
+          landingUrl: getBeatLandingUrl(args.listingId),
           status: "active",
           ...(mediaLocalPath
             ? { variants: { localMediaPath: mediaLocalPath, kind: "beat-audio-video" } }
@@ -1805,19 +1912,6 @@ class BeatMoneyLoopService {
         logger.info(
           `[BeatMoneyLoop] campaign ${campaign.id} posted to ${result.results!.platformsUsed.join(", ")} (${postsCreated} posts)`,
         );
-        // Mark the content-dispatch social post as published so the 60s cron
-        // doesn't pick it up again and double-post.  Non-fatal.
-        if (args.socialPostId) {
-          db.update(posts)
-            .set({ status: "published", publishedAt: new Date() })
-            .where(eq(posts.id, args.socialPostId))
-            .catch((e: Error) =>
-              logger.warn(
-                { err: e },
-                "[BeatMoneyLoop] Could not mark social post published (non-fatal)",
-              ),
-            );
-        }
         return {
           campaignId: campaign.id,
           posted: true,
@@ -1926,11 +2020,12 @@ class BeatMoneyLoopService {
    * Call MaxCore /api/generate/content with beat_context + goal=drive_purchase
    * and run our post-processor over the result to produce a clean, conversion-
    * optimised caption. Throws when MaxCore returns no usable content so the
-   * caller can fall back to _buildAdCaption.
+   * caller records an advertising failure if no usable copy is returned.
    */
   private async _generateMaxCoreCaption(
     args: {
       beatId: string;
+      listingId: string;
       scan: { genre: string; mood: string; tempo: number; hooks: string[] };
       price: number;
       title: string;
@@ -1938,7 +2033,7 @@ class BeatMoneyLoopService {
     },
     hashtags: string[],
   ): Promise<string> {
-    const listenUrl = getBeatLandingUrl(args.beatId);
+    const listenUrl = getBeatLandingUrl(args.listingId);
 
     // Live trend/industry awareness — CTA library, emotional triggers, and
     // trending hooks feed the caption so beat drops read like current market
@@ -2030,49 +2125,6 @@ class BeatMoneyLoopService {
       .trim();
   }
 
-  private _buildAdCaption(args: {
-    beatId: string;
-    title: string;
-    scan: { genre: string; mood: string; tempo: number; hooks: string[] };
-    price: number;
-    hashtags: string[];
-  }): string {
-    // Map hook category labels → first-person marketing sentences
-    const hookCopySentences: Record<string, string> = {
-      "creative process reveal": "Made this from scratch — the process was wild.",
-      "storytelling narrative": "Every layer tells a story. Yours might be next.",
-      "comeback / return story": "The type of beat that marks a comeback era.",
-      "behind-the-scenes": "Took this one from idea to final mix in one session.",
-      "collaboration reveal": "The kind of sound that brings producers and artists together.",
-      "challenge / call-to-action": "Who can write to this? Drop your verse in the comments.",
-      "fan appreciation": "Made this one for the real ones who support independent music.",
-      "milestone celebration": "A new chapter. A new sound. Let's go.",
-    };
-    // Find the first hook label that has a matching sentence, or skip
-    const hookSentence = args.scan.hooks
-      .slice(0, 3)
-      .filter((h): h is string => typeof h === "string")
-      .map((h) => hookCopySentences[h.toLowerCase().trim()])
-      .find(Boolean);
-
-    const cleanPrice = Math.round(args.price);
-    const genrePart = `${args.scan.mood} ${args.scan.genre}`.toLowerCase();
-    const tagStr = args.hashtags.join(" ");
-
-    // Fix 7: inject price anchor, scarcity signal, and a direct link to this
-    // specific beat's buy page (not just the marketplace homepage) so the
-    // post does conversion work, not just awareness.
-    const beatUrl = getBeatLandingUrl(args.beatId);
-
-    const lines = [
-      `🔥 "${args.title}" — ${args.scan.tempo} BPM ${genrePart} type beat.`,
-      hookSentence ?? `Professional-grade production built for artists who take their craft seriously.`,
-      `Non-exclusive lease from $${cleanPrice} · Limited slots · Stream + license 🎧 ${beatUrl}`,
-      tagStr,
-    ];
-    return lines.join("\n").trim();
-  }
-
   /**
    * Compute next cadence based on industry confidence + outcome history.
    * - failed cycle and consecutiveFailures will be ≥2  → 12 h backoff
@@ -2089,7 +2141,13 @@ class BeatMoneyLoopService {
   ): number {
     if (failed) return FAILURE_BACKOFF_CADENCE_MS;
     if (!scan) return DEFAULT_CADENCE_MS;
-    const confidence = scan.confidence ?? 0;
+    const confidence =
+      typeof scan.confidence === "number" && Number.isFinite(scan.confidence)
+        ? scan.confidence
+        : null;
+    // Missing confidence is not evidence of a low-confidence trend scan. Use
+    // the documented normal cadence until a numeric awareness signal exists.
+    if (confidence === null) return DEFAULT_CADENCE_MS;
     let ms: number;
     if (confidence >= 0.7) ms = 2 * 60 * 60 * 1000;
     else if (confidence >= 0.5) ms = 4 * 60 * 60 * 1000;

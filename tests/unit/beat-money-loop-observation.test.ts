@@ -25,6 +25,12 @@ vi.mock("../../server/db.js", () => {
       insert: vi.fn(() => chain),
       update: vi.fn(() => chain),
     },
+    pool: {
+      connect: vi.fn(async () => ({
+        query: vi.fn(async () => ({ rows: [{ acquired: true }] })),
+        release: vi.fn(),
+      })),
+    },
   };
 });
 
@@ -72,12 +78,14 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
 
   let priceGenre: string | undefined;
   let recordScan: any;
+  let campaignArgs: any;
   let campaignScan: any;
 
   beforeEach(() => {
     for (const m of PRIVATES) orig[m] = svc[m];
     priceGenre = undefined;
     recordScan = undefined;
+    campaignArgs = undefined;
     campaignScan = undefined;
 
     // MaxCore pre-warm: pretend it is already awake.
@@ -100,9 +108,15 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     });
     svc._createBeatRecord = vi.fn(async (args: any) => {
       recordScan = args.scan;
-      return { beatId: "beat-1", audioUrl: "https://x/y.wav", socialPostId: null };
+      return {
+        beatId: "beat-1",
+        listingId: "listing-1",
+        audioUrl: "https://x/y.wav",
+        previewUrl: "https://x/preview.wav",
+      };
     });
     svc._launchCampaign = vi.fn(async (args: any) => {
+      campaignArgs = args;
       campaignScan = args.scan;
       return { posted: true, campaignId: "camp-1" };
     });
@@ -126,6 +140,7 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     expect(recordScan.genre).toBe("drill");
     expect(recordScan.mood).toBe("aggressive");
     expect(recordScan.tempo).toBe(140);
+    expect(campaignArgs.listingId).toBe("listing-1");
     expect(campaignScan.genre).toBe("drill");
     expect(campaignScan.mood).toBe("aggressive");
     expect(campaignScan.tempo).toBe(140);
@@ -142,6 +157,24 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     // Tempo was never specified nor observed → documented fallback still applies.
     expect(recordScan.tempo).toBe(120);
     expect(campaignScan.tempo).toBe(120);
+  });
+
+  it("uses the normal cadence when no numeric trend confidence was observed", () => {
+    const computeNextCadenceMs = orig._computeNextCadenceMs.bind(svc);
+    expect(
+      computeNextCadenceMs(
+        { hooks: [], productionStyles: [] },
+        false,
+        null,
+      ),
+    ).toBe(4 * 60 * 60 * 1000);
+    expect(
+      computeNextCadenceMs(
+        { confidence: 0.75, hooks: [], productionStyles: [] },
+        false,
+        null,
+      ),
+    ).toBe(2 * 60 * 60 * 1000);
   });
 });
 

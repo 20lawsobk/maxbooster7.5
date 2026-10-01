@@ -9,6 +9,7 @@
  * Advertising page, the advertising autopilot, and any automation pipeline.
  */
 import { db } from "../db";
+import { getDistinctBeatMoneyLoopPreviewUrl } from "./beatMoneyLoopAudioAccess.js";
 import { eq, and, desc } from "drizzle-orm";
 import {
   listings,
@@ -214,6 +215,15 @@ export async function resolvePromotableContent(
       }
 
       const metadata = (listing.metadata || {}) as Record<string, any>;
+      const safePreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+        metadata.source,
+        listing.audioUrl,
+        listing.previewUrl,
+      );
+      const safeAudioUrl =
+        metadata.source === "beat-money-loop"
+          ? safePreviewUrl || undefined
+          : listing.audioUrl || undefined;
       const category = listing.category || metadata?.genre || "";
       const priceDisplay = listing.priceCents
         ? `$${(Number(listing.priceCents) / 100).toFixed(2)}`
@@ -237,7 +247,7 @@ export async function resolvePromotableContent(
         sourceUrl: `${appUrl()}/marketplace/beat/${listing.id}`,
         sourcePlatform: "maxbooster",
         veoContentType: "music",
-        audioUrl: listing.audioUrl || undefined,
+        audioUrl: safeAudioUrl,
         summary: {
           id: listing.id,
           title: listing.title,

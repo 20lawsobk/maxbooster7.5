@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { Router, Request, Response } from "express";
+import {
+  canAccessBeatMoneyLoopSourceAudio,
+  getDistinctBeatMoneyLoopPreviewUrl,
+} from "../services/beatMoneyLoopAudioAccess.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
 import crypto from "crypto";
@@ -1964,6 +1968,89 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
     res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 
+    // Beat Money Loop listings keep the full WAV private until purchase. The
+    // separately stored preview remains public; equality is deliberately not
+    // enough to make a URL public because older rows may have used the source
+    // URL as a preview after a failed trim/upload.
+    const [protectedBeatAsset] = await db
+      .select({
+        id: listings.id,
+        userId: listings.userId,
+        audioUrl: listings.audioUrl,
+        previewUrl: listings.previewUrl,
+      })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.audioUrl, `/api/marketplace/audio/${fileKey}`),
+          sql`${listings.metadata}->>'source' = 'beat-money-loop'`,
+        ),
+      )
+      .limit(1);
+
+    if (protectedBeatAsset) {
+      let previewKey: string | null = null;
+      if (protectedBeatAsset.previewUrl) {
+        try {
+          const previewPath = new URL(
+            protectedBeatAsset.previewUrl,
+            "https://marketplace.invalid",
+          ).pathname;
+          const previewPrefix = "/api/marketplace/audio/";
+          if (previewPath.startsWith(previewPrefix)) {
+            previewKey = previewPath.slice(previewPrefix.length);
+          }
+        } catch {
+          previewKey = null;
+        }
+      }
+      const publicPreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+        "beat-money-loop",
+        protectedBeatAsset.audioUrl,
+        protectedBeatAsset.previewUrl,
+      );
+      const isPublicPreview =
+        publicPreviewUrl !== null && previewKey === fileKey;
+
+      if (!isPublicPreview) {
+        const viewerId = req.user?.id;
+        let hasCompletedPurchase = false;
+        if (
+          viewerId &&
+          !canAccessBeatMoneyLoopSourceAudio({
+            ownerId: protectedBeatAsset.userId,
+            viewerId,
+            viewerRole: req.user?.role,
+          })
+        ) {
+          const [purchase] = await db
+            .select({ id: orders.id })
+            .from(orders)
+            .where(
+              and(
+                eq(orders.listingId, protectedBeatAsset.id),
+                eq(orders.userId, viewerId),
+                eq(orders.status, "completed"),
+              ),
+            )
+            .limit(1);
+          hasCompletedPurchase = Boolean(purchase);
+        }
+        if (
+          !canAccessBeatMoneyLoopSourceAudio({
+            ownerId: protectedBeatAsset.userId,
+            viewerId,
+            viewerRole: req.user?.role,
+            hasCompletedPurchase,
+          })
+        ) {
+          return res.status(viewerId ? 403 : 401).json({
+            error: "Purchase required to access the full beat audio",
+          });
+        }
+      }
+    }
+
     // Load the file from PDIM-backed storage — the sole storage source.
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
@@ -2560,7 +2647,12 @@ router.post("/unfollow/:producerId", async (req: Request, res: Response) => {
 router.get("/beats/:beatId", async (req: Request, res: Response) => {
   try {
     const { beatId } = req.params as { beatId: string };
-    const beat = await storage.getBeatListingDetail(beatId);
+    const beat = await storage.getBeatListingDetail(
+      beatId,
+      req.user
+        ? { id: req.user.id, role: req.user.role }
+        : undefined,
+    );
     if (!beat) {
       return res.status(404).json({ error: "Beat not found" });
     }

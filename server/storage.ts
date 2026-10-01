@@ -4,6 +4,10 @@ import { decryptSocialCredential } from "./services/socialCredentialCodec.js";
 import { randomBytes } from "crypto";
 import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, artistProfiles, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
 import { db, dbRead } from "./db";
+import {
+  canAccessBeatMoneyLoopSourceAudio,
+  getDistinctBeatMoneyLoopPreviewUrl,
+} from "./services/beatMoneyLoopAudioAccess.js";
 import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
@@ -3181,6 +3185,11 @@ export class DatabaseStorage implements IStorage {
 
       return results?.map((listing) => {
         const meta = (listing?.metadata as Record<string, unknown>) || {};
+        const publicPreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+          meta.source,
+          listing.audioUrl,
+          listing.previewUrl,
+        );
         const owner = userMap?.get(listing?.userId);
         const producerName =
           owner?.username ||
@@ -3202,10 +3211,16 @@ export class DatabaseStorage implements IStorage {
           bpm: meta.bpm || 0,
           key: meta.key || "",
           duration: meta.duration || 0,
-          audioUrl: listing.audioUrl,
+          // Public listing results use only the audition clip for Beat Money
+          // Loop inventory. Full audio is revealed by detail only to an owner
+          // or buyer with a completed order.
+          audioUrl:
+            meta.source === "beat-money-loop"
+              ? publicPreviewUrl
+              : listing.audioUrl,
           artworkUrl: listing.artworkUrl,
           coverArt: listing.artworkUrl,
-          previewUrl: listing.previewUrl,
+          previewUrl: publicPreviewUrl,
           isPublished: listing.isPublished,
           status: listing.isPublished ? "active" : "inactive",
           isExclusive: meta.isExclusive || false,
@@ -3306,7 +3321,10 @@ export class DatabaseStorage implements IStorage {
    * always renders with a complete, working buy flow even when it isn't in
    * the caller's paginated/filtered browse feed.
    */
-  async getBeatListingDetail(id: string): Promise<any | null> {
+  async getBeatListingDetail(
+    id: string,
+    viewer?: { id: string; role?: string },
+  ): Promise<any | null> {
     try {
       const [listing] = await db
         .select()
@@ -3331,6 +3349,41 @@ export class DatabaseStorage implements IStorage {
         "Producer";
 
       const meta = (listing?.metadata as Record<string, unknown>) || {};
+      const safePreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+        meta.source,
+        listing.audioUrl,
+        listing.previewUrl,
+      );
+      let canAccessFullAudio =
+        meta.source !== "beat-money-loop" ||
+        canAccessBeatMoneyLoopSourceAudio({
+          ownerId: listing.userId,
+          viewerId: viewer?.id,
+          viewerRole: viewer?.role,
+        });
+      if (
+        meta.source === "beat-money-loop" &&
+        viewer?.id &&
+        !canAccessFullAudio
+      ) {
+        const [purchase] = await db
+          .select({ id: orders.id })
+          .from(orders)
+          .where(
+            and(
+              eq(orders.listingId, listing.id),
+              eq(orders.userId, viewer.id),
+              eq(orders.status, "completed"),
+            ),
+          )
+          .limit(1);
+        canAccessFullAudio = canAccessBeatMoneyLoopSourceAudio({
+          ownerId: listing.userId,
+          viewerId: viewer.id,
+          viewerRole: viewer.role,
+          hasCompletedPurchase: Boolean(purchase),
+        });
+      }
 
       const tiers = await db
         .select()
@@ -3376,10 +3429,13 @@ export class DatabaseStorage implements IStorage {
         bpm: meta.bpm || 0,
         key: meta.key || "",
         duration: meta.duration || 0,
-        audioUrl: listing.audioUrl,
+        audioUrl:
+          meta.source === "beat-money-loop" && !canAccessFullAudio
+            ? safePreviewUrl
+            : listing.audioUrl,
         artworkUrl: listing.artworkUrl,
         coverArt: listing.artworkUrl,
-        previewUrl: listing.previewUrl,
+        previewUrl: safePreviewUrl,
         isPublished: listing.isPublished,
         status: listing.isPublished ? "active" : "inactive",
         isExclusive: meta.isExclusive || false,

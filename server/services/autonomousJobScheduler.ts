@@ -490,6 +490,7 @@ export async function setupRepeatableJobs(): Promise<void> {
     const { beatMoneyLoopService } = await import("./beatMoneyLoopService.js");
     await beatMoneyLoopService.recoverOrphanedCycles();
     await beatMoneyLoopService.resolveAdminId();
+    beatMoneyLoopService.registerReconnectHandler();
   } catch {
     // Non-fatal; the loop will still schedule normally.
   }

@@ -35,6 +35,22 @@ export function beatAudioObservation(data: Record<string, unknown>, submission: 
     observed.tempo = field("bpm") as number;
   }
   if (typeof field("key") === "string" && field("key")) observed.musicalKey = field("key") as string;
+  const awareness =
+    submission.awareness && typeof submission.awareness === "object"
+      ? submission.awareness as Record<string, unknown>
+      : {};
+  const confidence =
+    field("confidence") ??
+    submission.confidence ??
+    awareness.confidence;
+  if (
+    typeof confidence === "number" &&
+    Number.isFinite(confidence) &&
+    confidence >= 0 &&
+    confidence <= 1
+  ) {
+    observed.confidence = confidence;
+  }
   // Never promote echoed requested mc_bpm/mc_key to measured metadata.
   const receipt = {
     ...submission,

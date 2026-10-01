@@ -3,6 +3,7 @@ import { db } from "../db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userTasteProfiles, beatInteractions, listings, users, storefronts, storefrontFollows } from "@shared/schema";
 import { logger } from "../logger.js";
+import { getDistinctBeatMoneyLoopPreviewUrl } from "./beatMoneyLoopAudioAccess.js";
 
 const GENRE_LIST = [
   "Hip-Hop",
@@ -485,6 +486,11 @@ export class DiscoveryAlgorithmService {
 
       return paginatedResults?.map(({ beat, discoveryScore }) => {
         const metadata = (beat?.metadata as Record<string, any>) || {};
+        const safePreviewUrl = getDistinctBeatMoneyLoopPreviewUrl(
+          metadata.source,
+          (beat as any).audioUrl,
+          (beat as any).previewUrl,
+        );
         return {
           id: (beat as any).id,
           title: (beat as any).title,
@@ -497,8 +503,11 @@ export class DiscoveryAlgorithmService {
           tempo: metadata.bpm || metadata?.tempo || 120,
           key: metadata.key || "C Major",
           duration: metadata.duration || 180,
-          audioUrl: (beat as any).audioUrl,
-          previewUrl: (beat as any).previewUrl,
+          audioUrl:
+            metadata.source === "beat-money-loop"
+              ? safePreviewUrl
+              : (beat as any).audioUrl,
+          previewUrl: safePreviewUrl,
           artworkUrl: (beat as any).artworkUrl,
           coverArt: (beat as any).artworkUrl,
           plays: metadata.plays || 0,
