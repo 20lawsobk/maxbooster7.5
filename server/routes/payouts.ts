@@ -154,13 +154,23 @@ router.post("/instant", async (req, res) => {
 
     // Convert amountCents to dollars for the service
     const amountDollars = majorUnits(validatedData.amountCents,validatedData.currency);
+    const idempotencyKey = req.get("Idempotency-Key")?.trim();
+    if (
+      !idempotencyKey ||
+      idempotencyKey.length > 180 ||
+      /[\u0000-\u001f\u007f]/.test(idempotencyKey)
+    ) {
+      return res.status(400).json({
+        error: "A valid Idempotency-Key header is required for payouts",
+      });
+    }
 
     // Request instant payout
     const result = await instantPayoutService.requestInstantPayout(
       req.user.id,
       amountDollars,
       validatedData.currency,
-      req.get("Idempotency-Key"),
+      idempotencyKey,
     );
 
     if (!result.success) {

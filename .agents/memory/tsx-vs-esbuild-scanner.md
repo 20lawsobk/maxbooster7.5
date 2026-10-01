@@ -4,10 +4,10 @@ description: esbuild --bundle=false misses syntax errors in generic type args; u
 ---
 
 ## Rule
-When scanning TypeScript files for syntax errors, use tsx's own bundled esbuild (via `require('./node_modules/tsx/node_modules/esbuild').transform(code, {loader:'ts', target:'node18'})`) — NOT the standalone `npx esbuild --bundle=false --loader=tsx` CLI.
+When scanning TypeScript files for syntax errors, use the same esbuild package that tsx resolves and call its `transform` API — NOT the standalone `npx esbuild --bundle=false --loader=tsx` CLI. Do not assume esbuild is nested under `node_modules/tsx`.
 
 ## Why
-The standalone esbuild CLI with `--bundle=false --loader=tsx` processes files in a different mode and MISSES syntax errors that occur inside TypeScript generic type arguments. For example:
+The standalone esbuild CLI with `--bundle=false --loader=tsx` processes files in a different mode and MISSES syntax errors that occur inside TypeScript generic type arguments. The package layout also varies: this workspace's tsx imports top-level `esbuild`, so a hard-coded `node_modules/tsx/node_modules/esbuild` path does not exist. For example:
 - `Promise<session?.Store>` — esbuild CLI reports no error; tsx reports "Expected > but found ?."
 - `ReturnType<typeof this?.analyzeMetrics>` — same miss
 - `typeof X?.Y` inside `keyof typeof [...]` — same miss
@@ -15,9 +15,10 @@ The standalone esbuild CLI with `--bundle=false --loader=tsx` processes files in
 These errors are caught by tsx's own transform API because it uses the same esbuild invocation mode that tsx uses at runtime when actually loading the file.
 
 ## How to apply
-Use this node snippet as the scanner:
+Resolve esbuild from tsx's module context, then use its transform API:
 ```javascript
-const esbuild = require('./node_modules/tsx/node_modules/esbuild');
+const { createRequire } = require('node:module');
+const esbuild = createRequire(require.resolve('tsx'))('esbuild');
 const result = await esbuild.transform(code, {loader: 'ts', target: 'node18'});
 // Errors thrown as TransformError with .errors array
 ```

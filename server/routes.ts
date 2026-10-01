@@ -2502,10 +2502,14 @@ export async function registerRoutes(
           newReleasesThisPeriodResult,
           prevReleaseCountResult,
           socialReachResult,
+          socialReachDataResult,
           activeSocialAccountsResult,
           revenueResult,
+          revenueDataResult,
           prevRevenueResult,
+          prevRevenueDataResult,
           prevSocialReachResult,
+          prevSocialReachDataResult,
           currentPlatformPerformance,
           previousPlatformPerformance,
           recentNotifications,
@@ -2581,6 +2585,15 @@ export async function registerRoutes(
               ),
             ),
           db
+            .select({ count: count(socialAccounts.followerCount) })
+            .from(socialAccounts)
+            .where(
+              and(
+                eq(socialAccounts.userId, userId),
+                eq(socialAccounts.isActive, true),
+              ),
+            ),
+          db
             .select({ count: count() })
             .from(socialAccounts)
             .where(
@@ -2599,7 +2612,26 @@ export async function registerRoutes(
               ),
             ),
           db
+            .select({ count: count(analytics.revenue) })
+            .from(analytics)
+            .where(
+              and(
+                eq(analytics.userId, userId),
+                gte(analytics.date, thirtyDaysAgo),
+              ),
+            ),
+          db
             .select({ total: sum(analytics.revenue) })
+            .from(analytics)
+            .where(
+              and(
+                eq(analytics.userId, userId),
+                gte(analytics.date, sixtyDaysAgo),
+                sql`${analytics.date} < ${thirtyDaysAgo}`,
+              ),
+            ),
+          db
+            .select({ count: count(analytics.revenue) })
             .from(analytics)
             .where(
               and(
@@ -2613,6 +2645,16 @@ export async function registerRoutes(
             .select({
               followers: sql<number>`COALESCE(MAX(${analytics.followers}), 0)`,
             })
+            .from(analytics)
+            .where(
+              and(
+                eq(analytics.userId, userId),
+                gte(analytics.date, sixtyDaysAgo),
+                sql`${analytics.date} < ${thirtyDaysAgo}`,
+              ),
+            ),
+          db
+            .select({ count: count(analytics.followers) })
             .from(analytics)
             .where(
               and(
@@ -2710,13 +2752,21 @@ export async function registerRoutes(
           newReleasesThisPeriodResult[0]?.count ?? 0;
         const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
         const socialReach = Number(socialReachResult[0]?.total ?? 0);
+        const socialReachDataAvailable =
+          Number(socialReachDataResult[0]?.count ?? 0) > 0;
         const activeSocialAccounts =
           activeSocialAccountsResult[0]?.count ?? 0;
         const totalRevenue = Number(revenueResult[0]?.total ?? 0);
         const prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
+        const revenueDataAvailable =
+          Number(revenueDataResult[0]?.count ?? 0) > 0;
+        const prevRevenueDataAvailable =
+          Number(prevRevenueDataResult[0]?.count ?? 0) > 0;
         const prevSocialReach = Number(
           prevSocialReachResult[0]?.followers ?? 0,
         );
+        const prevSocialReachDataAvailable =
+          Number(prevSocialReachDataResult[0]?.count ?? 0) > 0;
         const growthPct = (curr: number, prev: number) =>
           prev === 0
             ? curr > 0
@@ -2741,8 +2791,6 @@ export async function registerRoutes(
             ),
           };
         });
-        const revenueDataAvailable = currentPlatformPerformance.length > 0;
-        const socialReachDataAvailable = Number(activeSocialAccounts) > 0;
 
         // Build real recent activity feed from DB data
         const activityItems: Array<{
@@ -2805,10 +2853,11 @@ export async function registerRoutes(
                 newReleasesThisPeriod,
                 prevDistributions,
               ),
-              revenue: revenueDataAvailable
+              revenue: revenueDataAvailable && prevRevenueDataAvailable
                 ? growthPct(totalRevenue, prevRevenue)
                 : null,
-              socialReach: socialReachDataAvailable
+              socialReach:
+                socialReachDataAvailable && prevSocialReachDataAvailable
                 ? growthPct(socialReach, prevSocialReach)
                 : null,
             },

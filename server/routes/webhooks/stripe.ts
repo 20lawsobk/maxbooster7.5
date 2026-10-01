@@ -56,10 +56,14 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
   ) {
     await settleMerchantCheckout(session);
     try {
+      const paymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id;
       await auditPayment?.charge(
         session.metadata?.buyerId || "unknown",
         session.amount_total || 0,
-        (session.payment_intent as string) || session.id,
+        paymentIntentId || session.id,
         true,
       );
     } catch (auditError) {
@@ -534,6 +538,12 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
 
 registerWebhookHandler("payment_intent.succeeded", async (event) => {
   const paymentIntent = event?.data.object as Stripe.PaymentIntent;
+  if (paymentIntent.metadata?.commerceKind === "merchant") {
+    return {
+      success: true,
+      message: "Merchant settlement is reconciled from its Checkout Session",
+    };
+  }
   if(paymentIntent.metadata?.commerceKind==="marketplace") {
     if(!paymentIntent.metadata.orderId) throw new Error("Marketplace payment needs canonical-order reconciliation");
     const { marketplaceService } = await import("../../services/marketplaceService.js");

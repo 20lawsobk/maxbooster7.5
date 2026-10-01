@@ -1108,6 +1108,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   );
   app.use((await import("./lib/maxcoreOwnerContext.js")).maxcoreOwnerContext);
   await registerRoutes(httpServer, app);
+  // Resume persisted scheduled posts after every process start. Route-triggered
+  // lazy initialization alone leaves already-queued work idle after a restart.
+  const { autoPostingServiceV2 } = await import(
+    "./services/autoPostingServiceV2.js"
+  );
+  readinessWorkerStops.push(() => autoPostingServiceV2.close());
+  await autoPostingServiceV2.initialize();
   if (backupsEnabled) {
     const { databaseBackupService } = await import("./services/backup/databaseBackupService.js");
     await databaseBackupService.initialize();

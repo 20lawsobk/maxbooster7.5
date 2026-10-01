@@ -1365,7 +1365,7 @@ export default function Storefront() {
                         {order.licenseType} license ·{" "}
                         {new Intl.NumberFormat(undefined, {
                           style: "currency",
-                          currency: order.currency || "USD",
+                          currency: (order.currency || "USD").toUpperCase(),
                         }).format(Number(order.amountCents || 0) / 100)}
                       </p>
                     </div>
