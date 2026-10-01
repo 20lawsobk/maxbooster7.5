@@ -10,7 +10,14 @@ description: Admin-only autonomous beat generation/listing loop — MaxCore audi
 - Generation is external-MaxCore-ONLY (user directive 2026-07-16): the Tier-3 local TS-synth fallback was REMOVED from `_generateBeat`; after Mode C and Mode B both fail, the cycle throws explicitly and is recorded as `failed`. Never re-add a local synth path without user sign-off. (Historical "ts-native" backend values in old cycle rows predate this.)
 
 - Ad campaigns now embed the beat itself: `_renderAdVideo` (local ffmpeg, execFile arg-array) turns the beat WAV into a 45s waveform MP4; creative gets `mediaUrl` = absolute public URL (PUBLIC_BASE_URL || REPLIT_DEV_DOMAIN) + `variants.localMediaPath`; dispatcher passes `mediaLocalPath` (Twitter uploads bytes) and NULLS mediaUrl unless it's an absolute non-audio URL (never send WAV/relative paths to IG/FB/TikTok). Set PUBLIC_BASE_URL in production or URL-fetch platforms get text-only posts.
-
 **Why:** MaxCore flaps (health 000 ↔ 200 within minutes) and its ffmpeg audio render times out server-side; the loop must degrade honestly rather than hang or fake success. A long gap in `next_run_at` just means the server wasn't running — the scheduler tick fires the overdue cycle on next startup.
 
 **How to apply:** verify with the admin `run-now` endpoint (blocks 30–150s) and inspect the cycles history table for status progression or `error_message`.
+
+## Distribution boundary
+
+Beat Money Loop is a social-driven marketplace sales loop only; it must not enqueue DSP releases or distribute beats through Too Lost. Creator-controlled DSP distribution is a separate feature.
+
+**Why:** The product owner clarified on 2026-10-01 that generated beats are meant to sell through social promotion to the marketplace, not through DSP distribution.
+
+**How to apply:** Keep BML generation/listing/campaign code independent from release creation and Too Lost submission; do not let a distribution setting create release drafts for BML.
