@@ -198,3 +198,15 @@ describe("Beat Money Loop — settled revenue attribution", () => {
     expect(analyzer).not.toContain("downloads ?? 0) *");
   });
 });
+
+describe("Beat Money Loop — sales channel boundary", () => {
+  it("does not enqueue DSP distribution releases", async () => {
+    const source = await readFile(
+      "server/services/beatMoneyLoopService.ts",
+      "utf8",
+    );
+
+    expect(source).not.toContain("BEAT_AUTO_DISTRIBUTION");
+    expect(source).not.toContain("db.insert(releases)");
+  });
+});

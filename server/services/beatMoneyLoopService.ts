@@ -44,7 +44,6 @@ import {
   adCreatives,
   users,
   royaltySplits,
-  releases,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
@@ -1717,38 +1716,6 @@ class BeatMoneyLoopService {
       logger.info(
         `[BeatMoneyLoop] Marketplace listing ${listingId} and 100% royalty split created for beat ${beatId}`,
       );
-
-      // ── Auto-distribution queue entry ─────────────────────────────────────
-      // The existing distribution workflow consumes a draft release; actual
-      // DSP submission remains an explicit creator/admin action.
-      if (process.env.BEAT_AUTO_DISTRIBUTION === "true") {
-        try {
-          await db.insert(releases).values({
-            userId: adminId,
-            title: args.title,
-            status: "draft",
-            artworkUrl: artworkUrl ?? null,
-            metadata: {
-              source: "beat-money-loop",
-              beatId,
-              listingId,
-              genre: args.scan.genre,
-              mood: args.scan.mood,
-              bpm: args.scan.tempo,
-              audioUrl,
-              listingDate: new Date().toISOString(),
-            },
-          });
-          logger.info(
-            `[BeatMoneyLoop] Draft release queued for beat ${beatId} (BEAT_AUTO_DISTRIBUTION=true)`,
-          );
-        } catch (distroErr) {
-          logger.warn(
-            { err: distroErr, beatId },
-            "[BeatMoneyLoop] Auto-distribution release insert failed (non-fatal)",
-          );
-        }
-      }
 
       return { beatId, listingId, audioUrl, previewUrl };
     } catch (createErr) {
