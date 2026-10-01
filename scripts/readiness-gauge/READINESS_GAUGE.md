@@ -34,7 +34,7 @@ Exit code is `1` on `NO GO`, `0` otherwise.
 | `todo-scan` | maintainability | Counts TODO/FIXME markers; warn/fail thresholds |
 | `production-build` | deployability | Runs the production build script end-to-end |
 | `large-files` | deployability | Fails on tracked files over the size budget |
-| `env-config` | operations | Every `process.env.*` in server code documented in `.env.example` |
+| `env-config` | operations | Every `process.env.NAME` in server code documented in `.env.example`; explicit commented declarations are accepted for platform-managed names |
 | `health-endpoint` | operations | A `/health` route exists for orchestrator probes |
 | `port-contract` | operations | Server honors `process.env.PORT` |
 | `node-version` | operations | Running Node satisfies `engines.node` |
@@ -79,8 +79,16 @@ Field reference:
   - `dependency-audit`: `maxHigh`, `maxCritical`
   - `todo-scan`: `warnAt`, `failAt`
   - `large-files`: `maxBytes`
-  - `env-config`: `maxUndocumented`
+  - `env-config`: `maxUndocumented`, `excludeVars` (exact variable names only; use sparingly for OS/runtime metadata or test-only controls)
 - `thresholds.go` / `thresholds.conditionalGo`: score cutoffs.
+
+For `env-config`, a line such as `# REPLIT_DEPLOYMENT=` documents a platform-managed
+variable without suggesting that a developer should set it locally. The shipped
+Generic and Media profiles exclude only `CLUSTER_WORKER_ID`, `NODE_OPTIONS`,
+`PATH`, `npm_package_version`, `READINESS_EGRESS_GUARD`, and
+`READINESS_ISOLATED_PG`: the first four are launcher/OS/Node metadata, and the
+last two are guarded switches for the isolated readiness acceptance runner.
+Keep those exclusions aligned with the code and tests; do not use broad prefixes.
 
 Shipped profiles:
 

@@ -3,7 +3,7 @@
 import "./config/index.js";
 
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
-// BEFORE any other module reads process.env.PDIM_* — must stay first.
+// BEFORE any other module reads PDIM-related environment settings — must stay first.
 import "./lib/pdimEnvFix.js";
 // Start the internal PDIM subsystem (:5556) BEFORE any client's first call —
 // pdimEnvFix above has already pointed every PDIM/storage URL at it.

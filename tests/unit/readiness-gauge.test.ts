@@ -381,6 +381,61 @@ describe("real checks against temp git repos", () => {
     expect(res2.status).toBe("pass");
   });
 
+  it("env-config accepts commented declarations and only exact reviewed exclusions", async () => {
+    const config = {
+      maxUndocumented: 0,
+      excludeVars: ["CLUSTER_WORKER_ID", "READINESS_ISOLATED_PG"],
+    };
+    const documented = makeRepo({
+      "server/app.ts": [
+        "const origin = process.env.PLATFORM_ORIGIN;",
+        "const worker = process.env.CLUSTER_WORKER_ID;",
+        "const isolated = process.env.READINESS_ISOLATED_PG;",
+      ].join("\n"),
+      ".env.example":
+        "# Platform-provided; leave unset manually.\n# PLATFORM_ORIGIN=\n",
+    });
+    const passing = await getCheck("env-config").run(
+      { cwd: documented },
+      config,
+    );
+    expect(passing.status).toBe("pass");
+    expect(passing.summary).toContain("2 reviewed internal/test variable(s) excluded");
+
+    const nearMatch = makeRepo({
+      "server/app.ts": [
+        "const origin = process.env.PLATFORM_ORIGIN;",
+        "const worker = process.env.CLUSTER_WORKER_ID;",
+        "const isolated = process.env.READINESS_ISOLATED_PG;",
+        "const other = process.env.READINESS_ISOLATED_PG_FALLBACK;",
+      ].join("\n"),
+      ".env.example":
+        "# Platform-provided; leave unset manually.\n# PLATFORM_ORIGIN=\n",
+    });
+    const failing = await getCheck("env-config").run(
+      { cwd: nearMatch },
+      config,
+    );
+    expect(failing.status).toBe("fail");
+    expect(failing.evidence).toContain("READINESS_ISOLATED_PG_FALLBACK");
+    expect(failing.evidence).not.toContain("CLUSTER_WORKER_ID");
+  });
+
+  it.each(["generic", "media"])(
+    "env-config passes for the current repository under the %s profile",
+    async (profileName) => {
+      const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+      const profile = loadProfile(resolveProfilesDir(), profileName);
+      const envConfig = profile.checks["env-config"];
+      if (!envConfig) throw new Error(`${profileName} profile lacks env-config`);
+      const res = await getCheck("env-config").run(
+        { cwd: repoRoot },
+        envConfig.config ?? {},
+      );
+      expect(res.status).toBe("pass");
+    },
+  );
+
   it("health-endpoint and port-contract detect their signals", async () => {
     const dir = makeRepo({
       "server/index.ts": "app.get('/health', (req, res) => res.send('ok'));\napp.listen(process.env.PORT || 3000);\n",

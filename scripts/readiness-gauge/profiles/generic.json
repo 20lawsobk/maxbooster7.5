@@ -4,6 +4,16 @@
       "weight": 2
     },
     "env-config": {
+      "config": {
+        "excludeVars": [
+          "CLUSTER_WORKER_ID",
+          "NODE_OPTIONS",
+          "PATH",
+          "npm_package_version",
+          "READINESS_EGRESS_GUARD",
+          "READINESS_ISOLATED_PG"
+        ]
+      },
       "required": true
     },
     "port-contract": {
@@ -30,7 +40,8 @@
   "displayName": "Generic",
   "name": "generic",
   "notes": [
-    "Start here, then copy this file and re-weight for your industry."
+    "Start here, then copy this file and re-weight for your industry.",
+    "env-config excludes only OS/Node metadata, the launcher-assigned cluster worker ID, and the two guarded isolated-readiness test switches."
   ],
   "thresholds": {
     "conditionalGo": 65,

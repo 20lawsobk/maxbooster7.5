@@ -1,6 +1,16 @@
 {
   "checks": {
     "env-config": {
+      "config": {
+        "excludeVars": [
+          "CLUSTER_WORKER_ID",
+          "NODE_OPTIONS",
+          "PATH",
+          "npm_package_version",
+          "READINESS_EGRESS_GUARD",
+          "READINESS_ISOLATED_PG"
+        ]
+      },
       "required": true,
       "weight": 3
     },
@@ -43,7 +53,8 @@
   "name": "media",
   "notes": [
     "large-files budget is 15 MB here (tighter than the 25 MB default): media repos accumulate assets fast.",
-    "Add media-pipeline (transcode/render) and CDN-invalidation checks for launch readiness."
+    "Add media-pipeline (transcode/render) and CDN-invalidation checks for launch readiness.",
+    "env-config excludes only OS/Node metadata, the launcher-assigned cluster worker ID, and the two guarded isolated-readiness test switches."
   ],
   "thresholds": {
     "conditionalGo": 68,

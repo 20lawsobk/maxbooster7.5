@@ -580,21 +580,34 @@ const envConfig: Check = {
           .filter(Boolean),
       ),
     ].sort();
+    const excludedVars = new Set(cfgStrArr(config, "excludeVars"));
+    const documentedCandidates = used.filter((name) => !excludedVars.has(name));
+    const excludedCount = used.length - documentedCandidates.length;
     const examplePath = join(ctx.cwd, ".env.example");
     if (!existsSync(examplePath)) {
       return {
         ...result(
           "warn",
-          `.env.example missing; ${used.length} env var(s) used in server code`,
-          used.slice(0, 15),
+          `.env.example missing; ${documentedCandidates.length} env var(s) used in server code`,
+          documentedCandidates.slice(0, 15),
           "Add a .env.example documenting every required variable.",
         ),
         durationMs: Date.now() - t0,
       };
     }
     const example = readFileSync(examplePath, "utf8");
-    const undocumented = used.filter(
-      (v) => !new RegExp(`^\\s*${v}\\s*=`, "m").test(example),
+    const documentedVars = new Set(
+      example
+        .split(/\r?\n/)
+        .flatMap((line) => {
+          const match = line.match(
+            /^\s*(?:#\s*)?([A-Za-z_][A-Za-z0-9_]*)\s*=/,
+          );
+          return match ? [match[1]] : [];
+        }),
+    );
+    const undocumented = documentedCandidates.filter(
+      (name) => !documentedVars.has(name),
     );
     if (undocumented.length > maxUndocumented) {
       return {
@@ -619,7 +632,10 @@ const envConfig: Check = {
       };
     }
     return {
-      ...result("pass", `all ${used.length} env var(s) documented in .env.example`),
+      ...result(
+        "pass",
+        `all ${documentedCandidates.length} env var(s) documented in .env.example; ${excludedCount} reviewed internal/test variable(s) excluded`,
+      ),
       durationMs: Date.now() - t0,
     };
   },
