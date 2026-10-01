@@ -150,3 +150,4 @@
 - [MaxCore URL guard and Replit hosts](maxcore-ssrf-reserved-dev-host.md) — Replit `.dev` and `.app` URLs may resolve to reserved IPs inside MaxCore; never weaken URL SSRF guards.
 - [Conflicting PDIM AOF sequences](local-pdim-aof-conflicting-sequences.md) — different mutations at one sequence are ambiguous; never dedupe or renumber without authoritative recovery evidence.
 - [Payment test isolation](payment-test-isolation.md) — test keys do not isolate webhook/database effects; confirmed cards can precede provider accounting readiness.
+- [App workflow database side effects](app-workflow-database-side-effects.md) — startup seeds/syncs and preview web-vitals can write to the shared app database; avoid workflow/preview checks in no-write tasks.

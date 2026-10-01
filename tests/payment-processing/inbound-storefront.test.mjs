@@ -4,6 +4,7 @@ import {
   loadIsolated,
   routeHarness,
   responseHarness,
+  memoryCommercePool,
   loggerStub,
   schemaStub,
   drizzleStub,
@@ -19,6 +20,8 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
     { id: "beat-extra", title: "Unrequested", genre: "Pop", priceCents: 9000, isPublished: true },
   ];
   const inserts = [];
+  const orderWrites = [];
+  const pool = memoryCommercePool(orderWrites);
   let selectArg;
   const db = {
     select(arg) {
@@ -44,7 +47,7 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
     insert(table) { return { values: async value => { inserts.push({ table, value }); return []; } }; },
   };
   const schema = { storefronts: {}, listings: {}, bogoPromotions: {}, storefrontOrders: {}, membershipTiers: {}, customerMemberships: {}, users: {} };
-  globalThis.__inboundStore = { ...harness, router: harness.router, schema, db, storefront, listings: [listings[0]], memberships: [], tier: null };
+  globalThis.__inboundStore = { ...harness, router: harness.router, schema, db, pool, storefront, listings: [listings[0]], memberships: [], tier: null };
   const stripeCalls = { customers: [], prices: [], sessions: [] };
   globalThis.__inboundStore.stripe = {
     customers: { create: async payload => { stripeCalls.customers.push(payload); return { id: "cus_store" }; } },
@@ -52,7 +55,7 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
     checkout: { sessions: { create: async (...args) => {
       const [payload] = args;
       stripeCalls.sessions.push({ payload, args });
-      return { id: "cs_store", url: "https://checkout.invalid/store" };
+      return { id: `cs_store_${stripeCalls.sessions.length}`, url: "https://checkout.invalid/store" };
     } } },
   };
   const stripeStub = "export default class Stripe {constructor(){return globalThis.__inboundStore.stripe;}}";
@@ -64,7 +67,7 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
     "@shared/schema": "export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={};",
     stripe: stripeStub,
     "../config/defaults": "export const getBaseUrl=()=> 'https://app.invalid';",
-    "../db": "export const db=globalThis.__inboundStore.db;",
+    "../db": "export const db=globalThis.__inboundStore.db,pool=globalThis.__inboundStore.pool;",
     "drizzle-orm": drizzleStub,
     zod: "export class ZodError extends Error{};export const z={};",
     "../logger.js": loggerStub,
@@ -80,14 +83,20 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
   assert.equal(typeof membership, "function");
   const invoke = async (handler, request) => {
     const res = responseHarness();
-    await handler(request, res);
+    await handler({
+      ...request,
+      get: request.get ?? (name =>
+        name === "Idempotency-Key"
+          ? `storefront-route-command-${request.user?.id ?? "anonymous"}`
+          : undefined),
+    }, res);
     return res;
   };
   assert.equal((await invoke(checkout, { isAuthenticated: () => false, params: { id: "store-1" }, body: {} })).statusCode, 401);
   assert.equal((await invoke(checkout, { isAuthenticated: () => true, user: { id: "seller-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1"] } })).statusCode, 400);
   const badCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer" }, params: { id: "store-1" }, body: { listingIds: new Array(21).fill("beat-1") } });
   assert.equal(badCart.statusCode, 400);
-  const goodCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" } });
+  const goodCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-1" : undefined });
   assert.equal(goodCart.statusCode, 200);
   assert.equal(stripeCalls.sessions.length, 1);
   const { payload: session } = stripeCalls.sessions[0];
@@ -95,14 +104,14 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
   assert.equal(session.line_items[0].price_data.unit_amount, 2000);
   assert.equal(session.metadata.buyerId, "buyer-1");
   assert.deepEqual(JSON.parse(session.metadata.listingIds), ["beat-1"]);
-  assert.equal(inserts.length, 1);
-  assert.equal(inserts[0].value.amountCents, 2000);
-  assert.equal(inserts[0].value.stripeSessionId, "cs_store");
+  assert.equal(orderWrites.length, 1);
+  assert.equal(orderWrites[0].params[5], 2000);
+  assert.equal(orderWrites[0].params[6], "cs_store_1");
   globalThis.__inboundStore.listings[0].discountExpiresAt = "2000-01-01";
-  await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-2" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" } });
+  await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-2" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-2" : undefined });
   assert.equal(stripeCalls.sessions.length, 2, "distinct buyers receive independent provider sessions");
   assert.equal(stripeCalls.sessions[1].payload.line_items[0].price_data.unit_amount, 2500, "expired promotional price must not be applied");
-  assert.equal(inserts.length, 2);
+  assert.equal(orderWrites.length, 2);
 
   const deniedMembership = await invoke(membership, { isAuthenticated: () => false, params: { tierId: "tier-1" }, user: {} });
   assert.equal(deniedMembership.statusCode, 401);

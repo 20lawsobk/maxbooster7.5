@@ -128,6 +128,106 @@ export function responseHarness() {
   };
 }
 
+export function memoryCommercePool(orderWrites = []) {
+  const operations = new Map();
+  let lockTail = Promise.resolve();
+  const acquireLock = async () => {
+    let unlock;
+    const turn = new Promise(resolve => { unlock = resolve; });
+    const previous = lockTail;
+    lockTail = previous.then(() => turn);
+    await previous;
+    return unlock;
+  };
+  const readOperation = id => {
+    const row = operations.get(id);
+    return row ? [{ ...row, payload: structuredClone(row.payload) }] : [];
+  };
+  const pool = {
+    async query(sql, params = []) {
+      if (/SELECT .*FROM commerce_operations WHERE id=\$1/.test(sql)) {
+        return { rows: readOperation(params[0]) };
+      }
+      throw new Error(`Unexpected pool query in test: ${sql}`);
+    },
+    async connect() {
+      let releaseLock;
+      let operationSnapshot;
+      let orderWriteCount = 0;
+      return {
+        async query(sql, params = []) {
+          if (sql === "BEGIN") {
+            releaseLock = await acquireLock();
+            operationSnapshot = structuredClone([...operations.entries()]);
+            orderWriteCount = orderWrites.length;
+            return { rows: [] };
+          }
+          if (sql === "COMMIT") {
+            operationSnapshot = undefined;
+            releaseLock?.();
+            releaseLock = undefined;
+            return { rows: [] };
+          }
+          if (sql === "ROLLBACK") {
+            if (operationSnapshot) {
+              operations.clear();
+              for (const [id, row] of operationSnapshot) operations.set(id, row);
+            }
+            orderWrites.splice(orderWriteCount);
+            operationSnapshot = undefined;
+            releaseLock?.();
+            releaseLock = undefined;
+            return { rows: [] };
+          }
+          if (sql.startsWith("SELECT pg_advisory_xact_lock")) {
+            return { rows: [] };
+          }
+          if (/SELECT .*FROM commerce_operations WHERE id=\$1/.test(sql)) {
+            return { rows: readOperation(params[0]) };
+          }
+          if (sql.includes("INSERT INTO commerce_operations")) {
+            const [id, kind, userId, currency, amountCents, payload] = params;
+            operations.set(id, {
+              id,
+              kind,
+              user_id: userId,
+              currency,
+              amount_cents: amountCents,
+              state: "checkout_creating",
+              payload: JSON.parse(payload),
+              created_at: new Date(),
+              provider_id: null,
+            });
+            return { rows: [] };
+          }
+          if (sql.includes("UPDATE commerce_operations")) {
+            const [id, providerId, result, kind, userId] = params;
+            const row = operations.get(id);
+            if (row?.kind === kind && row.user_id === userId && row.state === "checkout_creating") {
+              row.state = "checkout_ready";
+              row.provider_id = providerId;
+              row.payload = { ...row.payload, ...JSON.parse(result) };
+              return { rows: [{ id }] };
+            }
+            return { rows: [] };
+          }
+          if (sql.includes("INSERT INTO storefront_orders")) {
+            if (pool.failNextOrderInsert) {
+              pool.failNextOrderInsert = false;
+              throw new Error("simulated order persistence failure");
+            }
+            orderWrites.push({ sql, params });
+            return { rows: [] };
+          }
+          throw new Error(`Unexpected client query in test: ${sql}`);
+        },
+        release() {},
+      };
+    },
+  };
+  return pool;
+}
+
 export const loggerStub = `
 export const logger = { info(){}, warn(){}, error(){}, debug(){} };
 `;
@@ -168,7 +268,7 @@ export async function loadBillingRoutes(state) {
   return loadIsolated("server/routes/billing.ts", {
     express: routerStub,
     stripe: stripeModule,
-    "../db": "export const db=globalThis.__inboundBilling.db;",
+    "../db": "export const db=globalThis.__inboundBilling.db,pool=globalThis.__inboundBilling.pool;",
     "@shared/schema": schemaStub,
     "drizzle-orm": drizzleStub,
     "../logger": loggerStub,

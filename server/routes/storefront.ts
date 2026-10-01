@@ -25,13 +25,19 @@ import {
 } from "@shared/schema";
 import Stripe from "stripe";
 import { getBaseUrl } from "../config/defaults";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { eq, and, count, avg, lte, gte, or, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import dns from "dns";
 import { validateDomain } from "../modules/domains/dnsValidators.js";
 import { env } from "../config/env.js";
+import {
+  checkoutIntentHash,
+  completeCheckoutOperation,
+  findCheckoutOperation,
+  reserveCheckoutOperation,
+} from "../services/stripeCheckoutOperations.js";
 import {
   getStorefrontPathUrl,
   STOREFRONT_APP_ORIGIN,
@@ -53,6 +59,60 @@ const router = Router();
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error?.message;
   return String(error);
+}
+
+async function finishStorefrontCheckout(
+  stripe: Stripe,
+  reservation: {
+    id: string;
+    snapshot: any;
+  },
+  userId: string,
+) {
+  const scope = "storefront_checkout";
+  const storedSnapshot = reservation.snapshot;
+  const session = await stripe.checkout.sessions.create(
+    {
+      ...storedSnapshot.checkoutParams,
+      metadata: {
+        ...storedSnapshot.checkoutParams.metadata,
+        checkoutOperationId: reservation.id,
+      },
+    },
+    { idempotencyKey: `commerce-checkout:${reservation.id}` },
+  );
+  if (!session.url) {
+    throw new Error("Stripe checkout session did not include a redirect URL");
+  }
+  return completeCheckoutOperation(pool, {
+    id: reservation.id,
+    scope,
+    userId,
+    result: { sessionId: session.id, url: session.url },
+    beforeCommit: async (client) => {
+      for (const order of storedSnapshot.orderRows) {
+        await client.query(
+          `INSERT INTO storefront_orders
+            (buyer_id,storefront_id,seller_id,listing_id,license_type,
+             amount_cents,status,stripe_session_id,applied_promotion_id,
+             discount_cents,is_free_item)
+           VALUES($1,$2,$3,$4,$5,$6,'pending',$7,$8,$9,$10)`,
+          [
+            order.buyerId,
+            order.storefrontId,
+            order.sellerId,
+            order.listingId,
+            order.licenseType,
+            order.amountCents,
+            session.id,
+            order.appliedPromotionId,
+            order.discountCents,
+            order.isFreeItem,
+          ],
+        );
+      }
+    },
+  });
 }
 
 /**
@@ -1437,8 +1497,8 @@ router.post("/:id/checkout", async (req, res) => {
     if (!req.isAuthenticated())
       return res.status(401).json({ error: "Login required to purchase" });
 
-    const storefrontId = (req.params.id as string);
-    const { listingIds, licenseType = "basic" } = req.body;
+    const storefrontId = req.params.id as string;
+    const { listingIds, licenseType = "basic" } = req.body ?? {};
 
     if (!listingIds || !Array.isArray(listingIds) || listingIds?.length === 0) {
       return res
@@ -1448,6 +1508,35 @@ router.post("/:id/checkout", async (req, res) => {
 
     if (listingIds?.length > 20) {
       return res.status(400).json({ error: "Maximum 20 items per checkout" });
+    }
+
+    if (
+      listingIds.some((id: unknown) => typeof id !== "string" || !id) ||
+      new Set(listingIds).size !== listingIds.length
+    ) {
+      return res.status(400).json({
+        error: "Cart contains invalid or duplicate listings",
+      });
+    }
+    if (typeof licenseType !== "string" || !licenseType) {
+      return res.status(400).json({ error: "A valid license type is required" });
+    }
+    const userId = req.user!.id;
+    const scope = "storefront_checkout";
+    const requestKey = req.get("Idempotency-Key") ?? "";
+    const intentHash = checkoutIntentHash({
+      storefrontId,
+      listingIds,
+      licenseType,
+    });
+    let reservation = await findCheckoutOperation(pool, {
+      scope,
+      userId,
+      requestKey,
+      intentHash,
+    });
+    if (reservation?.result) {
+      return res.json({ checkoutUrl: reservation.result.url });
     }
 
     const stripeKey = env?.STRIPE_SECRET_KEY;
@@ -1460,6 +1549,14 @@ router.post("/:id/checkout", async (req, res) => {
         });
     }
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
+    if (reservation) {
+      const resumed = await finishStorefrontCheckout(
+        stripe,
+        reservation,
+        userId,
+      );
+      return res.json({ checkoutUrl: resumed.url });
+    }
 
     const [storefront] = await db
       .select()
@@ -1565,9 +1662,11 @@ router.post("/:id/checkout", async (req, res) => {
             (d) => d?.index === index,
           );
           if (discountInfo) {
-            unitAmount = Math.round(
-              (item?.priceCents * (100 - discountInfo?.discountPercent)) / 100,
-            );
+            unitAmount =
+              item?.priceCents -
+              Math.round(
+                (item?.priceCents * discountInfo?.discountPercent) / 100,
+              );
             desc += ` (${discountInfo?.discountPercent}% off - BOGO Deal)`;
           }
         }
@@ -1586,7 +1685,7 @@ router.post("/:id/checkout", async (req, res) => {
       })
       .filter((item) => item?.price_data.unit_amount > 0);
 
-    const session = await stripe.checkout.sessions.create({
+    const checkoutParams = {
       payment_method_types: ["card"],
       line_items: lineItems as any,
       mode: "payment",
@@ -1602,8 +1701,9 @@ router.post("/:id/checkout", async (req, res) => {
         promotionId: bogoResult.appliedPromotion?.id || "",
         promotionSummary: bogoResult.summary || "",
       },
-    });
+    };
 
+    const orderRows = [];
     for (let i = 0; i < validListings?.length; i++) {
       const item = cartItems[i];
       const isFree = bogoResult?.freeItemIndices.includes(i);
@@ -1627,24 +1727,62 @@ router.post("/:id/checkout", async (req, res) => {
         (isFree || discountInfo) && bogoLicenseType
           ? bogoLicenseType
           : licenseType;
-      await db.insert(storefrontOrders).values({
+      orderRows.push({
         buyerId: req.user!.id,
         storefrontId,
         sellerId: storefront.userId,
         listingId: validListings[i].id,
         licenseType: orderLicenseType ?? licenseType,
         amountCents: finalAmount,
-        status: "pending",
-        stripeSessionId: session.id,
         appliedPromotionId: bogoResult.appliedPromotion?.id || null,
         discountCents,
         isFreeItem: isFree,
       });
     }
 
-    res.json({ checkoutUrl: session.url });
+    const amountCents = orderRows.reduce(
+      (sum, order) => sum + order.amountCents,
+      0,
+    );
+    if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+      return res.status(400).json({ error: "Cart has no payable items" });
+    }
+    const checkoutSnapshot = { checkoutParams, orderRows, amountCents };
+    reservation =
+      reservation ??
+      (await reserveCheckoutOperation(pool, {
+        scope,
+        userId,
+        requestKey,
+        intentHash,
+        amountCents,
+        currency: "usd",
+        snapshot: checkoutSnapshot,
+      }));
+    if (reservation.result) {
+      return res.json({ checkoutUrl: reservation.result.url });
+    }
+
+    const result = await finishStorefrontCheckout(
+      stripe,
+      reservation,
+      userId,
+    );
+    res.json({ checkoutUrl: result.url });
   } catch (error) {
     logger.warn({ err: error }, "Error creating storefront checkout:");
+    const checkoutError = error as Error & {
+      statusCode?: number;
+      code?: string;
+      retryable?: boolean;
+    };
+    if (checkoutError.statusCode) {
+      return res.status(checkoutError.statusCode).json({
+        error: checkoutError.message,
+        code: checkoutError.code,
+        retryable: checkoutError.retryable ?? false,
+      });
+    }
     res.status(500).json({ error: "Failed to create checkout session" });
   }
 });

@@ -152,6 +152,7 @@ export class StripeService {
     buyerId: string,
     licenseType: "standard" | "exclusive",
     price: number,
+    sellerId?: string,
   ) {
     try {
       const result = await executeStripeOperation(() =>
@@ -162,6 +163,8 @@ export class StripeService {
             beatId,
             buyerId,
             licenseType,
+            amountCents: String(Math.round(price * 100)),
+            ...(sellerId ? { sellerId } : {}),
           },
         }),
       );
@@ -171,6 +174,39 @@ export class StripeService {
       logger.warn({ err: error }, "Beat purchase intent error:");
       throw error;
     }
+  }
+
+  async verifyBeatPurchaseIntent(input: {
+    paymentIntentId: string;
+    beatId: string;
+    buyerId: string;
+    sellerId: string;
+    licenseType: "standard" | "exclusive";
+    amountCents: number;
+  }) {
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      input.paymentIntentId,
+    );
+    const metadata = paymentIntent.metadata;
+    if (
+      paymentIntent.status !== "succeeded" ||
+      paymentIntent.amount_received !== input.amountCents ||
+      paymentIntent.currency !== "usd" ||
+      metadata?.beatId !== input.beatId ||
+      metadata?.buyerId !== input.buyerId ||
+      (metadata?.sellerId != null && metadata.sellerId !== input.sellerId) ||
+      metadata?.licenseType !== input.licenseType ||
+      (metadata?.amountCents != null &&
+        metadata.amountCents !== String(input.amountCents))
+    ) {
+      throw new Error(
+        "PaymentIntent is unpaid or does not match this beat purchase",
+      );
+    }
+    return {
+      paymentIntentId: paymentIntent.id,
+      amountCents: paymentIntent.amount_received,
+    };
   }
 
   private getPriceId(tier: "monthly" | "yearly" | "lifetime"): string {

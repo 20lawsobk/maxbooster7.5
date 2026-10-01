@@ -209,7 +209,7 @@ test("legacy marketplace service delegates frozen checkout and creates/reuses Co
 });
 
 test("legacy StripeService and BeatService execute subscription/payment-intent purchase functions", async () => {
-  const records = { calls: [], users: [], beatSales: [], beat: { id: "beat-old", standardPrice: 18.5, exclusivePrice: 75, isExclusiveSold: false } };
+  const records = { calls: [], users: [], beatSales: [], beat: { id: "beat-old", userId: "seller-old", standardPrice: 18.5, exclusivePrice: 75, isExclusiveSold: false } };
   const storage = {
     async getUser(id) { return records.users.find(user => user.id === id) || { id, email: "artist@example.invalid", stripeCustomerId: "cus_artist" }; },
     async updateUserStripeInfo(id, customerId, subscriptionId) { records.calls.push(["updateUserStripeInfo", id, customerId, subscriptionId]); },
@@ -261,7 +261,12 @@ test("legacy StripeService and BeatService execute subscription/payment-intent p
     assert.equal(beatIntent.client_secret, "pi_beat_secret");
     assert.deepEqual(records.calls.find(call => call[0] === "paymentIntents.create")[1], {
       amount: 1850, currency: "usd",
-      metadata: { beatId: "beat-old", buyerId: "fan", licenseType: "standard" },
+      metadata: {
+        beatId: "beat-old",
+        buyerId: "fan",
+        licenseType: "standard",
+        amountCents: "1850",
+      },
     });
     assert.deepEqual(await stripeService.createRefund({
       orderId: "order-refund", userId: "buyer", amountCents: 1000, idempotencyKey: "refund-command",
@@ -278,7 +283,7 @@ test("legacy StripeService and BeatService execute subscription/payment-intent p
     const result = await beat.beatService.purchaseBeat("beat-old", "fan-old", "standard");
     assert.equal(result.success, true);
     assert.equal(result.paymentIntent, "beat_service_secret");
-    assert.deepEqual(records.calls.at(-1), ["beatPurchaseIntent", "beat-old", "fan-old", "standard", 18.5]);
+    assert.deepEqual(records.calls.at(-1), ["beatPurchaseIntent", "beat-old", "fan-old", "standard", 18.5, "seller-old"]);
   } finally {
     if (previousKey === undefined) delete process.env.STRIPE_SECRET_KEY;
     else process.env.STRIPE_SECRET_KEY = previousKey;

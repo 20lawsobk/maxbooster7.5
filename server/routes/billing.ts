@@ -26,7 +26,7 @@
 
 import { Router, Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../logger";
@@ -42,6 +42,12 @@ import {
   type CheckoutPlanId,
 } from "../services/checkoutPricing.js";
 import { env } from "../config/env.js";
+import {
+  checkoutIntentHash,
+  completeCheckoutOperation,
+  findCheckoutOperation,
+  reserveCheckoutOperation,
+} from "../services/stripeCheckoutOperations.js";
 
 const router = Router();
 
@@ -368,49 +374,105 @@ router.post(
       }
 
       const userId = req.user!.id;
-      const customerId = await getOrCreateStripeCustomer(req.user);
-      const appUrl =
-        process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
-
       const plan = CHECKOUT_PRICING[planId as CheckoutPlanId];
+      const scope = "billing_checkout";
+      const requestKey = req.get("Idempotency-Key") ?? "";
+      const intentHash = checkoutIntentHash({ planId });
+      let reservation = await findCheckoutOperation(pool, {
+        scope,
+        userId,
+        requestKey,
+        intentHash,
+      });
 
-      const sessionParams: Record<string, unknown> = {
-        customer: customerId,
-        mode: plan.mode,
-        line_items: [
-          {
-            price_data: {
-              currency: CHECKOUT_CURRENCY,
-              product_data: {
-                name: `Max Booster ${planId?.charAt(0).toUpperCase() + planId?.slice(1)}`,
-                description:
-                  planId === "lifetime"
-                    ? "Lifetime access to all Max Booster features"
-                    : `${planId?.charAt(0).toUpperCase() + planId?.slice(1)} subscription to Max Booster`,
+      if (reservation?.result) {
+        return res.json({
+          url: reservation.result.url,
+          sessionId: reservation.result.sessionId,
+        });
+      }
+
+      if (!reservation) {
+        const customerId = await getOrCreateStripeCustomer(req.user);
+        const appUrl =
+          process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
+        const sessionParams: Record<string, unknown> = {
+          customer: customerId,
+          mode: plan.mode,
+          line_items: [
+            {
+              price_data: {
+                currency: CHECKOUT_CURRENCY,
+                product_data: {
+                  name: `Max Booster ${planId?.charAt(0).toUpperCase() + planId?.slice(1)}`,
+                  description:
+                    planId === "lifetime"
+                      ? "Lifetime access to all Max Booster features"
+                      : `${planId?.charAt(0).toUpperCase() + planId?.slice(1)} subscription to Max Booster`,
+                },
+                unit_amount: plan.amountCents,
+                ...(plan?.interval
+                  ? { recurring: { interval: plan.interval } }
+                  : {}),
               },
-              unit_amount: plan.amountCents,
-              ...(plan?.interval
-                ? { recurring: { interval: plan.interval } }
-                : {}),
+              quantity: 1,
             },
-            quantity: 1,
-          },
-        ],
-        success_url: `${appUrl}/settings?checkout=success&plan=${planId}`,
-        cancel_url: `${appUrl}/pricing?checkout=canceled`,
-        metadata: { userId, planId },
-        ...(plan.mode === "subscription"
-          ? { subscription_data: { metadata: { userId, planId } } }
-          : { payment_intent_data: { metadata: { userId, planId } } }),
-      };
+          ],
+          success_url: `${appUrl}/settings?checkout=success&plan=${planId}`,
+          cancel_url: `${appUrl}/pricing?checkout=canceled`,
+          metadata: { userId, planId },
+          ...(plan.mode === "subscription"
+            ? { subscription_data: { metadata: { userId, planId } } }
+            : { payment_intent_data: { metadata: { userId, planId } } }),
+        };
+        reservation = await reserveCheckoutOperation(pool, {
+          scope,
+          userId,
+          requestKey,
+          intentHash,
+          amountCents: plan.amountCents,
+          currency: CHECKOUT_CURRENCY,
+          snapshot: { sessionParams },
+        });
+        if (reservation.result) {
+          return res.json({
+            url: reservation.result.url,
+            sessionId: reservation.result.sessionId,
+          });
+        }
+      }
 
-      const session = await stripe?.checkout?.sessions?.create(sessionParams);
-      res.json({ url: session.url, sessionId: session.id });
+      const session = await stripe.checkout.sessions.create(
+        reservation.snapshot.sessionParams,
+        { idempotencyKey: `commerce-checkout:${reservation.id}` },
+      );
+      if (!session.url) {
+        throw new Error("Stripe checkout session did not include a redirect URL");
+      }
+      const result = await completeCheckoutOperation(pool, {
+        id: reservation.id,
+        scope,
+        userId,
+        result: { sessionId: session.id, url: session.url },
+      });
+      res.json({ url: result.url, sessionId: result.sessionId });
     } catch (error) {
       logger.warn(
         { err: error },
         "[Billing] Failed to create checkout session:",
       );
+      const checkoutError = error as Error & {
+        statusCode?: number;
+        code?: string;
+        retryable?: boolean;
+      };
+      if (checkoutError.statusCode) {
+        return res.status(checkoutError.statusCode).json({
+          error: checkoutError.message,
+          code: checkoutError.code,
+          retryable: checkoutError.retryable ?? false,
+        });
+      }
       res
         .status(500)
         .json({

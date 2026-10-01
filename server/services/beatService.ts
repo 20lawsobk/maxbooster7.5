@@ -13,6 +13,10 @@ export class BeatService {
       if (!beat) {
         throw new Error("Beat not found");
       }
+      const sellerId = beat?.userId;
+      if (typeof sellerId !== "string" || !sellerId) {
+        throw new Error("Beat seller could not be verified");
+      }
 
       if (licenseType === "exclusive" && beat?.isExclusiveSold) {
         throw new Error("Exclusive license already sold");
@@ -30,6 +34,7 @@ export class BeatService {
         buyerId,
         licenseType,
         Number(price),
+        sellerId,
       );
 
       return {
@@ -53,15 +58,44 @@ export class BeatService {
     price: number,
   ) {
     try {
-      // Create sale record
+      if (!paymentIntentId || !Number.isFinite(price) || price <= 0) {
+        throw new Error("A valid paid beat purchase is required");
+      }
+      const beat = await (storage as any)?.getBeat(beatId);
+      if (!beat) {
+        throw new Error("Beat not found");
+      }
+      if (beat.userId !== sellerId) {
+        throw new Error("Seller does not own this beat");
+      }
+      if (licenseType === "exclusive" && beat.isExclusiveSold) {
+        throw new Error("Exclusive license already sold");
+      }
+      const amountCents = Math.round(price * 100);
+      if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
+        throw new Error("Beat purchase amount is invalid");
+      }
+      const verified = await stripeService.verifyBeatPurchaseIntent({
+        paymentIntentId,
+        beatId,
+        buyerId,
+        sellerId,
+        licenseType,
+        amountCents,
+      });
+
+      // Fulfillment is allowed only after Stripe confirms the exact purchase.
       const sale = await (storage as any)?.createBeatSale({
         beatId,
         buyerId,
         sellerId,
         licenseType,
-        price: price.toString(),
+        price: (verified.amountCents / 100).toFixed(2),
         stripePaymentIntentId: paymentIntentId,
       });
+      if (!sale) {
+        throw new Error("Paid beat sale could not be durably recorded");
+      }
 
       // If exclusive license, mark beat as sold
       if (licenseType === "exclusive") {

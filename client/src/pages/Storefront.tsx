@@ -492,6 +492,29 @@ export default function Storefront() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
+      const intentStorageKey = `storefront-checkout:${storefront!.id}`;
+      const checkoutOutcome = new URLSearchParams(window.location.search).get(
+        "checkout",
+      );
+      if (checkoutOutcome === "success" || checkoutOutcome === "canceled") {
+        sessionStorage.removeItem(intentStorageKey);
+      }
+      const cartSignature = JSON.stringify({
+        storefrontId: storefront!.id,
+        listingIds: [...cart],
+        licenseType: "basic",
+      });
+      let intent: { cartSignature: string; key: string } | null = null;
+      try {
+        const savedIntent = sessionStorage.getItem(intentStorageKey);
+        intent = savedIntent ? JSON.parse(savedIntent) : null;
+      } catch {
+        sessionStorage.removeItem(intentStorageKey);
+      }
+      if (!intent || intent.cartSignature !== cartSignature) {
+        intent = { cartSignature, key: crypto.randomUUID() };
+        sessionStorage.setItem(intentStorageKey, JSON.stringify(intent));
+      }
       const response = await apiRequest(
         "POST",
         `/api/storefront/${storefront!.id}/checkout`,
@@ -499,6 +522,7 @@ export default function Storefront() {
           listingIds: cart,
           licenseType: "basic",
         },
+        { headers: { "Idempotency-Key": intent.key } },
       );
       return response.json();
     },

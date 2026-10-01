@@ -4,6 +4,7 @@ import {
   loadIsolated,
   routeHarness,
   responseHarness,
+  memoryCommercePool,
   loggerStub,
   schemaStub,
   drizzleStub,
@@ -363,11 +364,12 @@ test("billing create-checkout route executes canonical price catalog and rejects
   const db = {
     select: () => ({ from: () => ({ where: () => ({ limit: async () => [{ stripeCustomerId: "cus_user" }] }) }) }),
   };
-  globalThis.__inboundBilling = { routes, calls, db };
+  const pool = memoryCommercePool();
+  globalThis.__inboundBilling = { routes, calls, db, pool };
   const mockModules = {
     express: "export const Router=()=>{const r={get:(p,...h)=>{globalThis.__inboundBilling.routes.set('GET '+p,h.at(-1));return r},post:(p,...h)=>{globalThis.__inboundBilling.routes.set('POST '+p,h.at(-1));return r},put:(p,...h)=>{globalThis.__inboundBilling.routes.set('PUT '+p,h.at(-1));return r},patch:(p,...h)=>{globalThis.__inboundBilling.routes.set('PATCH '+p,h.at(-1));return r},delete:(p,...h)=>{globalThis.__inboundBilling.routes.set('DELETE '+p,h.at(-1));return r},use(){return r}};return r;};",
     stripe: "export default class Stripe {constructor(){return {customers:{create:async(...x)=>{globalThis.__inboundBilling.calls.customer.push(x);return {id:'cus_new'};}},checkout:{sessions:{create:async(...x)=>{globalThis.__inboundBilling.calls.checkout.push(x);return {id:'cs_bill',url:'https://checkout.invalid/billing'};}}}}}}",
-    "../db": "export const db=globalThis.__inboundBilling.db;",
+    "../db": "export const db=globalThis.__inboundBilling.db,pool=globalThis.__inboundBilling.pool;",
     "@shared/schema": schemaStub,
     "drizzle-orm": drizzleStub,
     "../logger": loggerStub,
@@ -384,9 +386,15 @@ test("billing create-checkout route executes canonical price catalog and rejects
   assert.ok(routeModule.default);
   const handler = routes.get("POST /create-checkout-session");
   assert.equal(typeof handler, "function");
+  let commandNumber = 0;
   const invoke = async (body) => {
     const res = responseHarness();
-    await handler({ body, user: { id: "user-1", email: "buyer@example.invalid" } }, res);
+    const requestKey = `billing-route-command-${++commandNumber}`;
+    await handler({
+      body,
+      user: { id: "user-1", email: "buyer@example.invalid" },
+      get: name => name === "Idempotency-Key" ? requestKey : undefined,
+    }, res);
     return res;
   };
   const monthly = await invoke({ planId: "monthly" });
