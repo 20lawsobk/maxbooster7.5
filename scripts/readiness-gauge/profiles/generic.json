@@ -1,0 +1,37 @@
+{
+  "checks": {
+    "health-endpoint": {
+      "weight": 2
+    },
+    "port-contract": {
+      "weight": 2
+    },
+    "production-build": {
+      "required": true,
+      "weight": 3
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 3
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 2
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 3
+    }
+  },
+  "description": "Balanced baseline for any production service. No industry-specific weighting.",
+  "displayName": "Generic",
+  "name": "generic",
+  "notes": [
+    "Start here, then copy this file and re-weight for your industry."
+  ],
+  "thresholds": {
+    "conditionalGo": 65,
+    "go": 85
+  },
+  "version": "1.0.0"
+}

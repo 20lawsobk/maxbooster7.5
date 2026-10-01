@@ -1,0 +1,58 @@
+{
+  "checks": {
+    "ci-config": {
+      "required": true,
+      "weight": 2
+    },
+    "dependency-audit": {
+      "config": {
+        "maxCritical": 0,
+        "maxHigh": 0
+      },
+      "required": true,
+      "weight": 4
+    },
+    "env-config": {
+      "config": {
+        "maxUndocumented": 0
+      },
+      "required": true,
+      "weight": 3
+    },
+    "migrations": {
+      "required": true,
+      "weight": 3
+    },
+    "production-build": {
+      "required": true,
+      "weight": 2
+    },
+    "readme": {
+      "weight": 2
+    },
+    "secrets-scan": {
+      "required": true,
+      "weight": 5
+    },
+    "typecheck": {
+      "required": true,
+      "weight": 3
+    },
+    "unit-tests": {
+      "required": true,
+      "weight": 4
+    }
+  },
+  "description": "For money-movement systems. Security and auditability dominate; a single leaked secret or unaudited dependency is a NO GO.",
+  "displayName": "FinTech / Payments",
+  "name": "fintech",
+  "notes": [
+    "Tolerates zero high/critical vulnerabilities and zero undocumented env vars.",
+    "Consider adding penetration-test and secrets-rotation evidence as manual checks."
+  ],
+  "thresholds": {
+    "conditionalGo": 78,
+    "go": 92
+  },
+  "version": "1.0.0"
+}
