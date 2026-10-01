@@ -102,6 +102,8 @@ const STUDIO_SCALES = [
 ];
 
 type GeneratedMidiNote = {
+  pitch: number;
+  startTime: number;
   note: number;
   octave: number;
   duration: number;
@@ -118,60 +120,93 @@ function readVarLen(bytes: Uint8Array, cursor: { value: number }): number {
   return value;
 }
 
-/** Parse MaxCore's standard MIDI output into the route's legacy note DTO. */
+/** Parse MaxCore's standard MIDI output into beat-positioned piano-roll notes. */
 export function parseMaxCoreMidiNotes(buffer: ArrayBuffer): GeneratedMidiNote[] {
   const bytes = new Uint8Array(buffer);
-  const view = new DataView(buffer);
-  if (String.fromCharCode(...bytes.slice(0, 4)) !== "MThd") {
+  if (bytes.length < 14 || String.fromCharCode(...bytes.slice(0, 4)) !== "MThd") {
     throw new AIUnavailableError("studio MIDI generation (invalid MIDI header)");
   }
+  const view = new DataView(buffer);
+  const headerLength = view.getUint32(4);
+  const trackCount = view.getUint16(10);
   const division = view.getUint16(12) || 480;
-  const trackOffset = 14;
-  if (String.fromCharCode(...bytes.slice(trackOffset, trackOffset + 4)) !== "MTrk") {
-    throw new AIUnavailableError("studio MIDI generation (missing MIDI track)");
+  if (headerLength < 6 || (division & 0x8000) !== 0) {
+    throw new AIUnavailableError("studio MIDI generation (unsupported MIDI timing)");
   }
-  const cursor = { value: trackOffset + 8 };
-  const end = Math.min(bytes.length, cursor.value + view.getUint32(trackOffset + 4));
-  const active = new Map<number, Array<{ tick: number; velocity: number }>>();
   const notes: GeneratedMidiNote[] = [];
-  let tick = 0;
-  let runningStatus = 0;
-  while (cursor.value < end) {
-    tick += readVarLen(bytes, cursor);
-    let status = bytes[cursor.value++];
-    if (status < 0x80) {
-      cursor.value--;
-      status = runningStatus;
-    } else {
-      runningStatus = status;
+  let trackOffset = 8 + headerLength;
+
+  for (let trackIndex = 0; trackIndex < trackCount; trackIndex++) {
+    if (
+      trackOffset + 8 > bytes.length ||
+      String.fromCharCode(...bytes.slice(trackOffset, trackOffset + 4)) !== "MTrk"
+    ) {
+      throw new AIUnavailableError("studio MIDI generation (missing MIDI track)");
     }
-    if (status === 0xff) {
-      cursor.value++;
-      cursor.value += readVarLen(bytes, cursor);
-      continue;
+
+    const trackEnd = trackOffset + 8 + view.getUint32(trackOffset + 4);
+    if (trackEnd > bytes.length) {
+      throw new AIUnavailableError("studio MIDI generation (truncated MIDI track)");
     }
-    if (status === 0xf0 || status === 0xf7) {
-      cursor.value += readVarLen(bytes, cursor);
-      continue;
-    }
-    const command = status & 0xf0;
-    const midi = bytes[cursor.value++];
-    const value = bytes[cursor.value++];
-    if (command === 0x90 && value > 0) {
-      const stack = active.get(midi) ?? [];
-      stack.push({ tick, velocity: value });
-      active.set(midi, stack);
-    } else if (command === 0x80 || (command === 0x90 && value === 0)) {
-      const start = active.get(midi)?.shift();
-      if (start) {
-        notes.push({
-          note: midi % 12,
-          octave: Math.floor(midi / 12) - 1,
-          duration: Math.max(0.0625, (tick - start.tick) / division),
-          velocity: start.velocity,
-        });
+    const cursor = { value: trackOffset + 8 };
+    const active = new Map<string, Array<{ tick: number; velocity: number }>>();
+    let tick = 0;
+    let runningStatus = 0;
+
+    while (cursor.value < trackEnd) {
+      tick += readVarLen(bytes, cursor);
+      if (cursor.value >= trackEnd) {
+        throw new AIUnavailableError("studio MIDI generation (truncated MIDI event)");
+      }
+      let status = bytes[cursor.value++];
+      if (status < 0x80) {
+        cursor.value--;
+        status = runningStatus;
+      } else if (status < 0xf0) {
+        runningStatus = status;
+      }
+      if (status === 0xff) {
+        if (cursor.value >= trackEnd) {
+          throw new AIUnavailableError("studio MIDI generation (truncated meta event)");
+        }
+        cursor.value++;
+        cursor.value += readVarLen(bytes, cursor);
+        continue;
+      }
+      if (status === 0xf0 || status === 0xf7) {
+        cursor.value += readVarLen(bytes, cursor);
+        continue;
+      }
+
+      const command = status & 0xf0;
+      const channel = status & 0x0f;
+      const dataLength = command === 0xc0 || command === 0xd0 ? 1 : 2;
+      if (cursor.value + dataLength > trackEnd) {
+        throw new AIUnavailableError("studio MIDI generation (truncated channel event)");
+      }
+      const midi = bytes[cursor.value++];
+      const value = dataLength === 2 ? bytes[cursor.value++] : 0;
+      const key = `${channel}:${midi}`;
+
+      if (command === 0x90 && value > 0) {
+        const stack = active.get(key) ?? [];
+        stack.push({ tick, velocity: value });
+        active.set(key, stack);
+      } else if (command === 0x80 || (command === 0x90 && value === 0)) {
+        const start = active.get(key)?.shift();
+        if (start) {
+          notes.push({
+            pitch: midi,
+            startTime: start.tick / division,
+            note: midi % 12,
+            octave: Math.floor(midi / 12) - 1,
+            duration: Math.max(0.0625, (tick - start.tick) / division),
+            velocity: start.velocity,
+          });
+        }
       }
     }
+    trackOffset = trackEnd;
   }
   if (!notes.length) {
     throw new AIUnavailableError("studio MIDI generation (MaxCore returned no notes)");
@@ -461,6 +496,7 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
       status: "processing",
       message: `Audio job submitted. Poll GET /api/audio-job/${jobId} for completion.`,
       pollUrl: `/api/audio-job/${jobId}`,
+      midiUrl: `/api/audio/${jobId}/midi`,
       sourceType: "MaxCoreAI",
     });
   } catch (error) {

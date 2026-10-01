@@ -2741,6 +2741,8 @@ export async function registerRoutes(
             ),
           };
         });
+        const revenueDataAvailable = currentPlatformPerformance.length > 0;
+        const socialReachDataAvailable = Number(activeSocialAccounts) > 0;
 
         // Build real recent activity feed from DB data
         const activityItems: Array<{
@@ -2803,9 +2805,17 @@ export async function registerRoutes(
                 newReleasesThisPeriod,
                 prevDistributions,
               ),
-              revenue: growthPct(totalRevenue, prevRevenue),
-              socialReach: growthPct(socialReach, prevSocialReach),
+              revenue: revenueDataAvailable
+                ? growthPct(totalRevenue, prevRevenue)
+                : null,
+              socialReach: socialReachDataAvailable
+                ? growthPct(socialReach, prevSocialReach)
+                : null,
             },
+          },
+          dataAvailability: {
+            revenue: revenueDataAvailable,
+            socialReach: socialReachDataAvailable,
           },
           topPlatforms,
           recentActivity,
@@ -4566,18 +4576,18 @@ export async function registerRoutes(
             totalRevenue: parseFloat(String(stats.totalRevenue)) || 0,
             totalListeners: Number(stats.totalListeners) || 0,
             totalPlays: Number(stats.totalStreams) || 0,
-            avgListenTime: 0,
-            completionRate: 0,
-            skipRate: 0,
-            shareRate: 0,
-            likeRate: 0,
+            avgListenTime: null,
+            completionRate: null,
+            skipRate: null,
+            shareRate: null,
+            likeRate: null,
             growthRate:
-              dailyData.length > 1
+              dailyData.length > 1 && Number(dailyData[0].streams) > 0
                 ? ((Number(dailyData[dailyData.length - 1].streams) -
                     Number(dailyData[0].streams)) /
-                    (Number(dailyData[0].streams) || 1)) *
+                    Number(dailyData[0].streams)) *
                   100
-                : 0,
+                : null,
           },
           streams: {
             daily: dailyData.map((d) => ({
@@ -4602,7 +4612,7 @@ export async function registerRoutes(
               platform: p.platform || "Unknown",
               streams: Number(p.streams),
               revenue: parseFloat(String(p.revenue)) || 0,
-              growth: 0,
+              growth: null,
             })),
             byTrack,
             byGenre: [],
@@ -4630,12 +4640,12 @@ export async function registerRoutes(
           },
           audience: {
             totalListeners: Number(stats.totalListeners) || 0,
-            newListeners: 0,
-            returningListeners: 0,
-            listenerRetention: 0,
-            avgSessionDuration: 0,
-            sessionsPerListener: 0,
-            listenerGrowth: 0,
+            newListeners: null,
+            returningListeners: null,
+            listenerRetention: null,
+            avgSessionDuration: null,
+            sessionsPerListener: null,
+            listenerGrowth: null,
             topListeners: [],
             listenerSegments: [],
             listenerJourney: [],
@@ -4646,12 +4656,7 @@ export async function registerRoutes(
             listenerSocial: [],
             listenerInfluence: [],
             listenerValue: [],
-            listenerPredictions: {
-              nextMonthListeners: 0,
-              nextMonthRevenue: 0,
-              churnRisk: 0,
-              growthPotential: 0,
-            },
+            listenerPredictions: null,
           },
           revenue: {
             totalRevenue: parseFloat(String(stats.totalRevenue)) || 0,
@@ -4660,13 +4665,13 @@ export async function registerRoutes(
             revenueGrowth:
               yearlyRev > 0 && monthlyRev > 0
                 ? (monthlyRev / (yearlyRev / 12) - 1) * 100
-                : 0,
+                : null,
             revenuePerStream:
               Number(stats.totalStreams) > 0
                 ? parseFloat(String(stats.totalRevenue)) /
                   Number(stats.totalStreams)
-                : 0,
-            revenuePerListener: 0,
+                : null,
+            revenuePerListener: null,
             revenueByPlatform: platformData.map((p) => ({
               platform: p.platform || "Unknown",
               revenue: parseFloat(String(p.revenue)) || 0,
@@ -4682,76 +4687,15 @@ export async function registerRoutes(
             revenueBySource: [],
             revenueByTime: [],
             revenueByDemographics: [],
-            revenuePredictions: {
-              nextMonth: 0,
-              nextQuarter: 0,
-              nextYear: 0,
-              growthRate: 0,
-            },
+            revenuePredictions: null,
             revenueOptimization: [],
             revenueStreams: [],
             revenueForecasting: [],
           },
-          fanJourney: {
-            stages: [
-              {
-                stage: "Awareness",
-                count: 0,
-                percentage: 0,
-                conversionRate: 0,
-                dropOffRate: 0,
-              },
-              {
-                stage: "Discovery",
-                count: 0,
-                percentage: 0,
-                conversionRate: 0,
-                dropOffRate: 0,
-              },
-              {
-                stage: "Engagement",
-                count: 0,
-                percentage: 0,
-                conversionRate: 0,
-                dropOffRate: 0,
-              },
-              {
-                stage: "Conversion",
-                count: 0,
-                percentage: 0,
-                conversionRate: 0,
-                dropOffRate: 0,
-              },
-              {
-                stage: "Advocacy",
-                count: 0,
-                percentage: 0,
-                conversionRate: 0,
-                dropOffRate: 0,
-              },
-            ],
-            funnelMetrics: {
-              awarenessToEngagement: 0,
-              engagementToConversion: 0,
-              conversionToAdvocacy: 0,
-              overallConversion: 0,
-            },
-            journeyInsights: [],
-          },
+          fanJourney: null,
           cohorts: [],
           churn: [],
-          playlists: {
-            current: [],
-            historical: [],
-            metrics: {
-              totalPlaylists: 0,
-              totalReach: 0,
-              estimatedMonthlyStreams: 0,
-              avgPlaylistPosition: 0,
-              additionsThisMonth: 0,
-              removalsThisMonth: 0,
-            },
-          },
+          playlists: null,
           revenueAttribution: platformData.map((p) => ({
             source: p.platform || "Unknown",
             revenue: parseFloat(String(p.revenue)) || 0,
@@ -4762,11 +4706,11 @@ export async function registerRoutes(
                   100
                 : 0,
             streams: Number(p.streams),
-            growth: 0,
+            growth: null,
             avgPerStream:
               Number(p.streams) > 0
                 ? parseFloat(String(p.revenue)) / Number(p.streams)
-                : 0,
+                : null,
           })),
           geographic: [],
           demographics: [],
@@ -6399,6 +6343,16 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
+        const idempotencyKey = req.get("Idempotency-Key")?.trim();
+        if (
+          !idempotencyKey ||
+          idempotencyKey.length > 180 ||
+          /[\u0000-\u001f\u007f]/.test(idempotencyKey)
+        ) {
+          return res.status(400).json({
+            message: "A valid Idempotency-Key header is required for payouts",
+          });
+        }
         const { instantPayoutService } = await import(
           "./services/instantPayoutService"
         );
@@ -6414,6 +6368,8 @@ export async function registerRoutes(
         const result = await instantPayoutService.requestInstantPayout(
           req.user.id,
           availableAmount,
+          balance.currency,
+          idempotencyKey,
         );
         if (!result.success || !result.payoutId) {
           return res.status(400).json({

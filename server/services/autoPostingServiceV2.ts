@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { randomBytes } from "crypto";
+import { Worker } from "bullmq";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
 import { BoosterQueue } from "./queueService.js";
 import { storage } from "../storage.js";
 import { logger } from "../logger.js";
@@ -30,6 +31,7 @@ export interface PostContent {
   hashtags?: string[];
   mentions?: string[];
   mediaUrl?: string;
+  mediaUrls?: string[];
   mediaType?: "text" | "audio" | "image" | "photo" | "video" | "carousel";
   link?: string;
 }
@@ -57,27 +59,130 @@ export interface PostResult {
   postUrl?: string;
   error?: string;
   postedAt: Date;
-  outcome?: "started" | "confirmed" | "unknown";
+  outcome?: "started" | "confirmed" | "unknown" | "cancelled";
+}
+
+const PUBLISHING_PLATFORMS = new Set([
+  "instagram",
+  "facebook",
+  "twitter",
+  "tiktok",
+  "youtube",
+  "linkedin",
+  "threads",
+  "google_business",
+]);
+
+export function normalizePublishingPlatform(platform: string): string {
+  const normalized = platform.trim().toLowerCase();
+  if (normalized === "x") return "twitter";
+  if (normalized === "googlebusiness") return "google_business";
+  return normalized;
+}
+
+export function normalizePostContent(
+  rawContent: unknown,
+  mediaUrls: string[] = [],
+): PostContent {
+  let source: Record<string, unknown> = {};
+
+  if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
+    source = rawContent as Record<string, unknown>;
+  } else if (typeof rawContent === "string") {
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        source = parsed as Record<string, unknown>;
+      } else {
+        source = { text: rawContent };
+      }
+    } catch {
+      source = { text: rawContent };
+    }
+  }
+
+  const storedUrls = Array.isArray(source.mediaUrls)
+    ? source.mediaUrls.filter((url): url is string => typeof url === "string")
+    : [];
+  const resolvedMediaUrls = mediaUrls.length > 0 ? mediaUrls : storedUrls;
+  const mediaUrl =
+    (typeof source.mediaUrl === "string" && source.mediaUrl) ||
+    resolvedMediaUrls[0];
+  const explicitMediaType = source.mediaType;
+  const inferredVideo =
+    typeof mediaUrl === "string" &&
+    /\.(mp4|mov|m4v|webm|avi|mkv)(?:$|[?#])/i.test(mediaUrl);
+  const mediaType =
+    explicitMediaType === "video" ||
+    explicitMediaType === "image" ||
+    explicitMediaType === "photo" ||
+    explicitMediaType === "audio" ||
+    explicitMediaType === "carousel" ||
+    explicitMediaType === "text"
+      ? explicitMediaType
+      : inferredVideo
+        ? "video"
+        : mediaUrl
+          ? "image"
+          : undefined;
+
+  return {
+    text:
+      (typeof source.text === "string" && source.text) ||
+      (typeof source.caption === "string" && source.caption) ||
+      "",
+    ...(typeof source.headline === "string" ? { headline: source.headline } : {}),
+    ...(Array.isArray(source.hashtags) ? { hashtags: source.hashtags as string[] } : {}),
+    ...(Array.isArray(source.mentions) ? { mentions: source.mentions as string[] } : {}),
+    ...(mediaUrl ? { mediaUrl } : {}),
+    ...(resolvedMediaUrls.length > 0 ? { mediaUrls: resolvedMediaUrls } : {}),
+    ...(mediaType ? { mediaType } : {}),
+    ...(typeof source.link === "string" ? { link: source.link } : {}),
+  };
+}
+
+export function hasAutoPublishConsent(
+  createdBy: ScheduledPost["createdBy"],
+  config: Record<string, unknown> | null | undefined,
+  systemApproved = false,
+): boolean {
+  if (createdBy === "social_autopilot" || systemApproved) {
+    return config?.enabled === true && config?.autoPublish === true;
+  }
+  if (createdBy === "advertising_autopilot") {
+    return config?.isRunning === true && config?.autoPublish === true;
+  }
+  return createdBy === "manual";
 }
 
 class AutoPostingServiceV2 {
   private postQueue: BoosterQueue;
-  private workerInterval: NodeJS.Timeout | null = null;
+  private worker: Worker | null = null;
+  private recoveryInterval: NodeJS.Timeout | null = null;
   private isInitialized: boolean = false;
-  private lastRecoveryAt = 0;
+  private isPaused: boolean = false;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor() {
     this.postQueue = new BoosterQueue("scheduled-posts");
   }
 
   async initialize() {
-    if (this.isInitialized) return;
-
-    this.startWorker();
-    await this.reloadPendingJobs();
-
-    this.isInitialized = true;
-    logger.info("✅ Auto-posting service initialized (boosterstate-backed)");
+    if (this.isPaused) {
+      throw new Error("Auto-posting is paused and cannot accept scheduled posts");
+    }
+    if (this.isInitialized && this.worker) return;
+    if (!this.initializationPromise) {
+      this.initializationPromise = (async () => {
+        if (!this.worker) this.startWorker();
+        await this.reloadPendingJobs();
+        this.isInitialized = true;
+        logger.info("✅ Auto-posting service initialized (boosterstate-backed)");
+      })().finally(() => {
+        this.initializationPromise = null;
+      });
+    }
+    await this.initializationPromise;
   }
 
   private async reloadPendingJobs() {
@@ -117,6 +222,19 @@ class AutoPostingServiceV2 {
     }
   }
 
+  private async hasCurrentPublishConsent(post: ScheduledPost): Promise<boolean> {
+    const systemApproved =
+      post.approvedBy === "autonomous-system" &&
+      post.approvalStatus === "auto-approved";
+    const createdBy = post.createdBy || "manual";
+    if (createdBy === "manual" && !systemApproved) return true;
+    const config =
+      createdBy === "advertising_autopilot"
+        ? await storage.getAdvertisingAutopilotConfig?.(post.userId)
+        : await storage.getAutopilotConfig?.(post.userId);
+    return hasAutoPublishConsent(createdBy, config, systemApproved);
+  }
+
   private async processSinglePost(post: ScheduledPost): Promise<void> {
     logger.info(
       `🚀 Processing auto-post job ${post?.id} for user ${post?.userId}`,
@@ -125,6 +243,19 @@ class AutoPostingServiceV2 {
       const claimed = await claimSocialPost(post.id);
       if (!claimed) return; // Duplicate queue deliveries must not repeat external side effects.
       post = await storage.getScheduledPostById(post.id);
+      if (!post) throw new Error("Scheduled post disappeared before dispatch");
+      if (!(await this.hasCurrentPublishConsent(post))) {
+        const cancelledResults = (post.platforms || []).map((platform) => ({
+          platform,
+          success: false,
+          outcome: "cancelled" as const,
+          error: "Automated publishing permission was withdrawn before dispatch",
+          postedAt: new Date(),
+        }));
+        await checkpointSocialPost(post.id, cancelledResults, "failed");
+        return;
+      }
+
       const results = await this.executePost(post);
 
       await checkpointSocialPost(post.id, results,
@@ -206,53 +337,30 @@ class AutoPostingServiceV2 {
   }
 
   private startWorker() {
-    this.workerInterval = setInterval(async () => {
-      if (Date.now() - this.lastRecoveryAt > 60_000) {
-        this.lastRecoveryAt = Date.now();
-        await this.reloadPendingJobs();
-      }
-      try {
-        const client = await getBoosterStateClient();
-
-        // Drain up to AUTO_POST_BATCH_SIZE items per tick and process them
-        // concurrently. Each post targets different social platforms for a
-        // different user, so parallel execution is fully safe.
-        const pops = await Promise?.allSettled(
-          Array.from({ length: AUTO_POST_BATCH_SIZE }, () =>
-            client?.queuePop("scheduled-posts"),
-          ),
-        );
-
-        const items = pops
-          .filter(
-            (
-              r,
-            ): r is {
-              status: "fulfilled";
-              value: NonNullable<Awaited<ReturnType<typeof client.queuePop>>>;
-            } => r?.status === "fulfilled" && r?.value !== null,
-          )
-          .map((r) => r?.value);
-
-        if (items?.length === 0) return;
-
-        await Promise?.allSettled(
-          items?.map((item) => {
-            const parsed = JSON.parse(item?.data as unknown as string);
-            const post: ScheduledPost = parsed?.data || parsed;
-            return this.processSinglePost(post);
-          }),
-        );
-      } catch (error) {
-        logger.warn(
-          "⚠️  Auto-posting worker poll error:",
-          (error as Error)?.message || error,
-        );
-      }
-    }, 2000);
-
+    if (this.worker) return;
+    this.worker = new Worker(
+      "scheduled-posts",
+      async (job) => this.processSinglePost(job.data as ScheduledPost),
+      {
+        connection: newBullMQRedisConnection(),
+        concurrency: AUTO_POST_BATCH_SIZE,
+      },
+    );
+    this.worker.on("failed", (job, error) => {
+      logger.warn(
+        { err: error, jobId: job?.id },
+        "Auto-post BullMQ job failed:",
+      );
+    });
+    this.worker.on("error", (error) => {
+      logger.warn({ err: error }, "Auto-post BullMQ worker error:");
+    });
+    this.recoveryInterval = setInterval(() => {
+      void this.reloadPendingJobs();
+    }, 60_000);
+    this.recoveryInterval.unref?.();
     logger.info(
-      `✅ Auto-posting worker started (poll interval: 2s, batch: ${AUTO_POST_BATCH_SIZE})`,
+      `✅ Auto-posting BullMQ worker started (concurrency: ${AUTO_POST_BATCH_SIZE})`,
     );
   }
 
@@ -268,6 +376,36 @@ class AutoPostingServiceV2 {
     viralPrediction?: Record<string, unknown>,
     idempotencyKey?: string,
   ): Promise<ScheduledPost> {
+    if (idempotencyKey?.includes(":")) {
+      throw new Error("The idempotency key contains characters unsupported by the queue");
+    }
+    content = normalizePostContent(content, content.mediaUrls || []);
+    const normalizedPlatforms = [
+      ...new Set(platforms.map(normalizePublishingPlatform)),
+    ];
+    if (normalizedPlatforms.length === 0) {
+      throw new Error("At least one publishing platform is required");
+    }
+    const unsupported = normalizedPlatforms.filter(
+      (platform) => !PUBLISHING_PLATFORMS.has(platform),
+    );
+    if (unsupported.length > 0) {
+      throw new Error(`Unsupported publishing platform: ${unsupported.join(", ")}`);
+    }
+    if (!(scheduledTime instanceof Date) || !Number.isFinite(scheduledTime.getTime())) {
+      throw new Error("A valid scheduled publishing time is required");
+    }
+    if (createdBy !== "manual") {
+      const config =
+        createdBy === "advertising_autopilot"
+          ? await storage.getAdvertisingAutopilotConfig?.(userId)
+          : await storage.getAutopilotConfig?.(userId);
+      if (!hasAutoPublishConsent(createdBy, config)) {
+        throw new Error("Automated publishing requires explicit auto-publish consent");
+      }
+    }
+    await this.initialize();
+
     const postId = idempotencyKey
       ? `post_${idempotencyKey}`
       : `post_${Date?.now()}_${randomBytes(4).toString("hex")}`;
@@ -275,6 +413,19 @@ class AutoPostingServiceV2 {
     if (idempotencyKey) {
       const existingPost = await storage.getScheduledPostById(postId);
       if (existingPost) {
+        const samePlatforms =
+          JSON.stringify([...(existingPost.platforms || [])].sort()) ===
+          JSON.stringify([...normalizedPlatforms].sort());
+        const sameContent =
+          JSON.stringify(existingPost.content) === JSON.stringify(content);
+        if (
+          existingPost.userId !== userId ||
+          !samePlatforms ||
+          !sameContent ||
+          new Date(existingPost.scheduledTime).getTime() !== scheduledTime.getTime()
+        ) {
+          throw new Error("Idempotency key is already bound to a different scheduled post");
+        }
         logger.info(
           `📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`,
         );
@@ -285,7 +436,7 @@ class AutoPostingServiceV2 {
     const scheduledPost: ScheduledPost = {
       id: postId,
       userId,
-      platforms,
+      platforms: normalizedPlatforms,
       content,
       scheduledTime,
       status: "pending",
@@ -305,6 +456,106 @@ class AutoPostingServiceV2 {
       `📅 Scheduled post ${postId} for ${scheduledTime?.toISOString()} (${delay}ms delay)`,
     );
 
+    return scheduledPost;
+  }
+
+  async scheduleExistingPost(
+    postId: string,
+    updates: {
+      platform?: string;
+      platforms?: string[];
+      content?: unknown;
+      mediaUrls?: string[];
+      scheduledAt?: Date;
+    } = {},
+  ): Promise<ScheduledPost> {
+    await this.initialize();
+
+    const existingPost = await storage.getScheduledPostById(postId);
+    if (!existingPost) throw new Error("Scheduled post not found");
+    if (["posting", "completed", "published"].includes(existingPost.status)) {
+      throw new Error("This post can no longer be queued because delivery has started or completed");
+    }
+    if (
+      Array.isArray(existingPost.results) &&
+      existingPost.results.some((result: PostResult) =>
+        ["started", "unknown", "confirmed"].includes(result.outcome || "") ||
+        result.success === true
+      )
+    ) {
+      throw new Error("This post has a provider receipt or an uncertain delivery; reconcile it before retrying");
+    }
+
+    const platforms = [
+      ...new Set(
+        (updates.platforms?.length
+          ? updates.platforms
+          : updates.platform
+            ? [updates.platform]
+            : existingPost.platforms?.length
+              ? existingPost.platforms
+              : [existingPost.platform]
+        ).map(normalizePublishingPlatform),
+      ),
+    ].filter(Boolean);
+    const unsupported = platforms.filter(
+      (platform) => !PUBLISHING_PLATFORMS.has(platform),
+    );
+    if (platforms.length === 0 || unsupported.length > 0) {
+      throw new Error(
+        unsupported.length > 0
+          ? `Unsupported publishing platform: ${unsupported.join(", ")}`
+          : "At least one publishing platform is required",
+      );
+    }
+
+    const mediaUrls = updates.mediaUrls ?? existingPost.mediaUrls ?? [];
+    const content = normalizePostContent(
+      updates.content !== undefined ? updates.content : existingPost.content,
+      mediaUrls,
+    );
+    const scheduledTime = updates.scheduledAt
+      ?? existingPost.scheduledTime
+      ?? existingPost.scheduledAt
+      ?? new Date();
+    if (!(scheduledTime instanceof Date) || !Number.isFinite(scheduledTime.getTime())) {
+      throw new Error("A valid scheduled publishing time is required");
+    }
+
+    const createdBy = existingPost.createdBy || "manual";
+    const permissionConfig =
+      createdBy === "advertising_autopilot"
+        ? await storage.getAdvertisingAutopilotConfig?.(existingPost.userId)
+        : await storage.getAutopilotConfig?.(existingPost.userId);
+    const systemApproved =
+      existingPost.approvedBy === "autonomous-system" &&
+      existingPost.approvalStatus === "auto-approved";
+    if (!hasAutoPublishConsent(createdBy, permissionConfig, systemApproved)) {
+      throw new Error("Automated publishing requires explicit auto-publish consent");
+    }
+
+    const scheduledPost: ScheduledPost = {
+      id: postId,
+      userId: existingPost.userId,
+      platforms,
+      content,
+      scheduledTime,
+      status: "pending",
+      createdBy,
+    };
+    await storage.updateScheduledPost(postId, {
+      platforms,
+      content,
+      mediaUrls,
+      scheduledTime,
+      status: "pending",
+      createdBy,
+    });
+    const delay = Math.max(0, scheduledTime.getTime() - Date.now());
+    await this.postQueue.add("auto-post", scheduledPost, {
+      jobId: postId,
+      delay,
+    });
     return scheduledPost;
   }
 
@@ -358,6 +609,17 @@ class AutoPostingServiceV2 {
         results.push(prior);
         continue;
       }
+      if (!(await this.hasCurrentPublishConsent(post))) {
+        results.push({
+          platform,
+          success: false,
+          outcome: "cancelled",
+          error: "Automated publishing permission was withdrawn before dispatch",
+          postedAt: new Date(),
+        });
+        await checkpointSocialPost(post.id, results);
+        continue;
+      }
       const pending: PostResult = { platform, success: false, outcome: "started",
         error: "External action started; reconcile provider receipt before retrying", postedAt: new Date() };
       results.push(pending);
@@ -388,10 +650,18 @@ class AutoPostingServiceV2 {
     platform: string,
     content: PostContent,
   ): Promise<PostResult> {
-    const accessToken = await socialOAuth.getValidAccessToken(user.id, platform);
-    const tokens = { [platform]: accessToken };
+    const publishingPlatform = normalizePublishingPlatform(platform);
+    const oauthPlatform =
+      publishingPlatform === "google_business"
+        ? "googlebusiness"
+        : publishingPlatform;
+    const accessToken = await socialOAuth.getValidAccessToken(
+      user.id,
+      oauthPlatform,
+    );
+    const tokens = { [publishingPlatform]: accessToken };
 
-    switch (platform) {
+    switch (publishingPlatform) {
       case "instagram":
         return await this.postToInstagram(user, tokens?.instagram, content);
       case "facebook":
@@ -413,7 +683,7 @@ class AutoPostingServiceV2 {
           content,
         );
       default:
-        throw new Error(`Platform ${platform} not supported`);
+        throw new Error(`Platform ${publishingPlatform} not supported`);
     }
   }
 
@@ -980,27 +1250,38 @@ class AutoPostingServiceV2 {
   }
 
   pause(): void {
-    if (this.workerInterval) {
-      clearInterval(this.workerInterval);
-      this.workerInterval = null;
-    }
+    this.isPaused = true;
+    if (this.recoveryInterval) clearInterval(this.recoveryInterval);
+    this.recoveryInterval = null;
+    void this.worker?.pause();
     logger.info("[AutoPostingService V2] Paused by kill switch");
   }
 
   resume(): void {
-    if (!this.workerInterval) {
+    this.isPaused = false;
+    if (!this.worker) {
       this.startWorker();
+    } else {
+      void this.worker.resume();
     }
+    if (!this.recoveryInterval) {
+      this.recoveryInterval = setInterval(() => {
+        void this.reloadPendingJobs();
+      }, 60_000);
+      this.recoveryInterval.unref?.();
+    }
+    void this.reloadPendingJobs();
     logger.info("[AutoPostingService V2] Resumed");
   }
 
   async shutdown() {
     logger.info("Shutting down auto-posting service...");
 
-    if (this.workerInterval) {
-      clearInterval(this.workerInterval);
-      this.workerInterval = null;
-    }
+    if (this.recoveryInterval) clearInterval(this.recoveryInterval);
+    this.recoveryInterval = null;
+    await this.worker?.close();
+    this.worker = null;
+    this.isInitialized = false;
     await this.postQueue.close();
 
     logger.info("✅ Auto-posting service shut down gracefully");

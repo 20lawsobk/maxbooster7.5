@@ -23,6 +23,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { triggerStudioDownload } from "./studioAudioDelivery";
 
 interface ExportSettings {
   filename: string;
@@ -205,6 +206,10 @@ export function FlowStateExport({
         );
       }
 
+      triggerStudioDownload(
+        data.downloadUrl,
+        `${settings.filename}.${settings.format}`,
+      );
       setExportPhase("complete");
       onExportComplete?.(data.downloadUrl);
       toast({

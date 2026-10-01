@@ -11,6 +11,78 @@ export async function getDistributionSubmissions(userId: string, releaseId: stri
   );
   return result.rows;
 }
+
+export async function claimToolostRetry(
+  userId: string,
+  releaseId: string,
+  platform: string,
+  retryCount: number,
+): Promise<string> {
+  const platformKey = platform.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  if (!platformKey) throw new Error("A valid platform is required for a retry");
+  const attemptId = randomUUID();
+  const result = await pool.query(
+    `UPDATE integration_distribution_submissions
+     SET checkpoint = jsonb_set(
+       COALESCE(checkpoint, '{}'::jsonb),
+       ARRAY['retryAttempts', $3],
+       jsonb_build_object(
+         'attemptId', $4,
+         'retryCount', $5,
+         'state', 'started',
+         'startedAt', now()
+       ),
+       true
+     ), updated_at=now()
+     WHERE provider='toolost' AND user_id=$1 AND release_id=$2 AND state='completed'
+       AND COALESCE(checkpoint #>> ARRAY['retryAttempts', $3, 'state'], '') <> 'started'
+     RETURNING owner`,
+    [userId, releaseId, platformKey, attemptId, retryCount],
+  );
+  if (result.rows.length !== 1) {
+    throw new Error(
+      "A safe Too Lost retry cannot be claimed. The original submission checkpoint is missing or another retry is in progress.",
+    );
+  }
+  return attemptId;
+}
+
+export async function completeToolostRetry(
+  userId: string,
+  releaseId: string,
+  platform: string,
+  attemptId: string,
+  retryCount: number,
+  state: "confirmed" | "failed" | "unknown",
+  result: Record<string, unknown>,
+): Promise<void> {
+  const platformKey = platform.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  const saved = await pool.query(
+    `UPDATE integration_distribution_submissions
+     SET checkpoint = jsonb_set(
+       COALESCE(checkpoint, '{}'::jsonb),
+       ARRAY['retryAttempts', $3],
+       jsonb_build_object(
+         'attemptId', $4,
+         'retryCount', $5,
+         'state', $6,
+         'result', $7::jsonb,
+         'updatedAt', now()
+       ),
+       true
+     ), updated_at=now()
+     WHERE provider='toolost' AND user_id=$1 AND release_id=$2 AND state='completed'
+       AND checkpoint #>> ARRAY['retryAttempts', $3, 'attemptId'] = $4
+     RETURNING owner`,
+    [userId, releaseId, platformKey, attemptId, retryCount, state, JSON.stringify(result)],
+  );
+  if (saved.rows.length !== 1) {
+    throw new Error(
+      "Too Lost retry outcome could not be persisted; refresh provider status before retrying again.",
+    );
+  }
+}
+
 /** Serialize a local release submission and retain ambiguous attempts for reconciliation.
  * This does not pretend providers support an idempotency header or remote lookup.
  */

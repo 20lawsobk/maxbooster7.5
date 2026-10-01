@@ -18,6 +18,38 @@ import { enqueueFanDelivery, processFanDelivery } from "../services/fanDeliveryS
 const router = Router();
 const CACHE_TTL = 60;
 
+export function resolveFanCampaignDeliveryState(delivery: Record<string, unknown>) {
+  const accepted = Number(delivery.acceptedCount || 0);
+  const delivered = Number(delivery.deliveredCount || 0);
+  const pending = Number(delivery.pendingCount || 0);
+  const unknown = Number(delivery.unknownCount || 0);
+  const suppressed = Number(delivery.suppressedCount || 0);
+  const bounced = Number(delivery.bouncedCount || 0);
+  const complained = Number(delivery.complainedCount || 0);
+
+  if (unknown > 0) {
+    return {
+      status: "needs_reconciliation",
+      recipientCount: accepted + delivered + pending + unknown + suppressed + bounced + complained,
+      sentAt: null,
+    };
+  }
+  if (pending > 0) {
+    return {
+      status: "sending",
+      recipientCount: accepted + delivered + pending + suppressed + bounced + complained,
+      sentAt: null,
+    };
+  }
+  const recipientCount = accepted + delivered + suppressed + bounced + complained;
+  const hadProviderAcceptance = accepted + delivered + bounced + complained > 0;
+  return {
+    status: hadProviderAcceptance ? "sent" : "failed",
+    recipientCount,
+    sentAt: hadProviderAcceptance ? new Date() : null,
+  };
+}
+
 const updateCampaignSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   subject: z.string().min(1).max(500).optional(),
@@ -216,9 +248,48 @@ router.post("/:id/send", requireAuth, async (req, res) => {
     if (segment && Object.keys(segment).length)
       return res.status(400).json({ error: "Only the all-consented audience is supported" });
     const commandId = await enqueueFanDelivery(userId, `campaign:${id}`, existing[0].subject, existing[0].body);
-    const delivery = await processFanDelivery(commandId, userId);
+    await db
+      .update(fanCampaigns)
+      .set({ status: "sending", sentAt: null, updatedAt: new Date() })
+      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)));
+    let delivery;
+    try {
+      delivery = await processFanDelivery(commandId, userId);
+    } catch (deliveryError) {
+      logger.warn(
+        { err: deliveryError, campaignId: id, commandId },
+        "[FanCampaigns] Delivery requires reconciliation:",
+      );
+      await db
+        .update(fanCampaigns)
+        .set({ status: "needs_reconciliation", updatedAt: new Date() })
+        .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)));
+      await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
+      return res.status(202).json({
+        success: false,
+        status: "needs_reconciliation",
+        commandId,
+        error:
+          "Delivery state is uncertain. Do not create a duplicate campaign; reconcile the delivery ledger before retrying.",
+      });
+    }
+    const state = resolveFanCampaignDeliveryState(delivery);
+    await db
+      .update(fanCampaigns)
+      .set({
+        status: state.status,
+        recipientCount: state.recipientCount,
+        sentAt: state.sentAt || existing[0].sentAt,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)));
     await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res.json({ success: true, ...delivery });
+    res.status(state.status === "sent" || state.status === "failed" ? 200 : 202).json({
+      success: state.status === "sent",
+      status: state.status,
+      ...delivery,
+      recipientCount: state.recipientCount,
+    });
   } catch (error) {
     logger.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
     res.status(500).json({ error: "Failed to send campaign" });

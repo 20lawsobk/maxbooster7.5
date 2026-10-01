@@ -18,12 +18,10 @@ import { auditPayment } from "../../safety/auditLogger";
 import { db } from "../../db";
 import {
   orders,
-  storefrontOrders,
-  bogoPromotions,
   customerMemberships,
   users,
 } from "@shared/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { notificationService } from "../../services/notificationService.js";
 import { dunningService } from "../../services/dunningService.js";
 import { instantPayoutService } from "../../services/instantPayoutService.js";
@@ -52,9 +50,25 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
   if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
     return { success: true, message: "Checkout awaiting payment" };
   }
-  if(session.metadata?.commerceKind==="merchant") {
+  if(
+    session.metadata?.commerceKind==="merchant" ||
+    session.metadata?.type==="storefront_purchase"
+  ) {
     await settleMerchantCheckout(session);
-    return {success:true,message:"Merchant settlement and entitlement booked"};
+    try {
+      await auditPayment?.charge(
+        session.metadata?.buyerId || "unknown",
+        session.amount_total || 0,
+        (session.payment_intent as string) || session.id,
+        true,
+      );
+    } catch (auditError) {
+      logger.warn(
+        { err: auditError, sessionId: session.id },
+        "[Stripe] Payment audit failed after merchant settlement",
+      );
+    }
+    return {success:true,message:"Merchant settlement and entitlements booked"};
   }
   if(session.metadata?.commerceKind==="merch") {
     await handleGrowthMerchCheckout(event.id,session);
@@ -62,65 +76,33 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
   }
   logger.info(`[Stripe] Checkout completed: ${session?.id}`);
 
+  const failures: string[] = [];
+
+  if (session.metadata?.commerceKind==="marketplace" || session.metadata?.beatId) {
+    const { marketplaceService } = await import("../../services/marketplaceService.js");
+    await consumeMarketplaceCheckout(session,(id,payment)=>marketplaceService.processPayment(id,payment));
+    try {
+      await auditPayment?.charge(
+        session?.metadata?.userId || session?.metadata?.buyerId || "unknown",
+        session?.amount_total || 0,
+        (session?.payment_intent as string) || session?.id,
+        true,
+      );
+    } catch (auditError) {
+      logger.warn(
+        { err: auditError, sessionId: session?.id },
+        "[Stripe] Payment audit failed after marketplace settlement",
+      );
+    }
+    return {success:true,message:"Frozen marketplace order fulfilled"};
+  }
+
   await auditPayment?.charge(
     session?.metadata?.userId || session?.metadata?.buyerId || "unknown",
     session?.amount_total || 0,
     (session?.payment_intent as string) || session?.id,
     true,
   );
-
-  const failures: string[] = [];
-
-  if (session.metadata?.commerceKind==="marketplace" || session.metadata?.beatId) {
-    const { marketplaceService } = await import("../../services/marketplaceService.js");
-    await consumeMarketplaceCheckout(session,(id,payment)=>marketplaceService.processPayment(id,payment));
-    return {success:true,message:"Frozen marketplace order fulfilled"};
-  }
-
-  const { storefrontId, promotionId } = session?.metadata || {};
-  if (storefrontId) {
-    try {
-      const updatedStorefrontOrders = await db
-        .update(storefrontOrders)
-        .set({ status: "completed" })
-        .where(eq(storefrontOrders.stripeSessionId, session?.id))
-        .returning({ id: storefrontOrders.id });
-
-      if (updatedStorefrontOrders?.length > 0) {
-        logger.info(
-          `[Stripe] Storefront orders marked completed for session ${session?.id}`,
-        );
-      } else {
-        logger.warn(
-          `[Stripe] No storefront order found for session ${session?.id}`,
-        );
-        failures.push(`storefront order update for session ${session?.id}`);
-      }
-
-      if (promotionId) {
-        const updatedPromotions = await db
-          .update(bogoPromotions)
-          .set({ redemptionCount: sql`${bogoPromotions.redemptionCount} + 1` })
-          .where(eq(bogoPromotions.id, promotionId))
-          .returning({ id: bogoPromotions.id });
-
-        if (updatedPromotions?.length > 0) {
-          logger.info(
-            `[Stripe] BOGO promotion ${promotionId} redemption count incremented`,
-          );
-        } else {
-          logger.warn(
-            `[Stripe] BOGO promotion ${promotionId} not found for redemption increment`,
-          );
-          failures.push(`BOGO promotion redemption for ${promotionId}`);
-        }
-      }
-    } catch (storefrontError) {
-      logger.warn({ detail: storefrontError }, "[Stripe] Failed to update storefront orders:",
-      );
-      failures.push(`storefront order update for session ${session?.id}`);
-    }
-  }
 
   const {
     type: sessionType,

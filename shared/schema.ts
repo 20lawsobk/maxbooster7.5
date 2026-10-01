@@ -5658,6 +5658,9 @@ export const socialInboxMessages = pgTable("social_inbox_messages", {
   // message is marked "replied".
   replyContent: text("reply_content"),
   replyDelivered: boolean("reply_delivered").default(false),
+  replyDeliveryState: text("reply_delivery_state").notNull().default("draft"),
+  providerReplyId: text("provider_reply_id"),
+  replyDeliveryError: text("reply_delivery_error"),
   readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });

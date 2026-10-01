@@ -13,12 +13,13 @@ import path from "path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { Router, Request, Response, NextFunction } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../logger";
 import { db } from "../db";
-import { socialInboxMessages, socialReplyTemplates, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar, users } from "@shared/schema";
-import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
+import { socialInboxMessages, socialReplyTemplates, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar, users, workspaceMembers } from "@shared/schema";
+import { eq, and, desc, gte, inArray, isNull, or } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import {
   listPromotableContent,
@@ -40,6 +41,15 @@ import {
   platformAwarenessOptimization,
 } from "../services/awarenessContext.js";
 import { notificationService } from "../services/notificationService.js";
+import {
+  deliverInboxReply,
+  SocialInboxProviderError,
+  syncSocialInbox,
+} from "../services/socialInboxProviderService.js";
+import {
+  autoPostingServiceV2,
+  normalizePublishingPlatform,
+} from "../services/autoPostingServiceV2.js";
 import {
   audioUpload,
   artworkUpload,
@@ -239,7 +249,59 @@ router.get(
     try {
       const userId = req.user!.id;
       const posts = (await storage.getSocialPosts?.(userId)) || [];
-      res.json(posts);
+      res.json(posts.map((post) => {
+        const engagement =
+          post?.engagement && typeof post.engagement === "object"
+            ? post.engagement as Record<string, unknown>
+            : {};
+        let parsedContent: Record<string, unknown> = {};
+        try {
+          const rawContent =
+            typeof post?.content === "string"
+              ? JSON.parse(post.content)
+              : post?.content;
+          if (rawContent && typeof rawContent === "object") {
+            parsedContent = rawContent as Record<string, unknown>;
+          }
+        } catch {
+          parsedContent = {};
+        }
+        const content =
+          engagement?._autopilotMeta === true &&
+          engagement.content &&
+          typeof engagement.content === "object"
+            ? engagement.content as Record<string, unknown>
+            : parsedContent;
+        const rawText =
+          (typeof content?.text === "string" && content.text) ||
+          (typeof content?.caption === "string" && content.caption) ||
+          (typeof post?.content === "string" ? post.content : "");
+        const status =
+          post?.status === "completed"
+            ? "published"
+            : post?.status === "pending" || post?.status === "scheduled"
+              ? "scheduled"
+              : post?.status === "posting"
+                ? "publishing"
+                : post?.status;
+        const storedMediaUrls = Array.isArray(post?.mediaUrls)
+          ? post.mediaUrls
+          : [];
+        const contentMediaUrls = Array.isArray(content?.mediaUrls)
+          ? content.mediaUrls
+          : typeof content?.mediaUrl === "string"
+            ? [content.mediaUrl]
+            : [];
+        return {
+          ...post,
+          content: rawText,
+          status,
+          mediaUrls: storedMediaUrls.length ? storedMediaUrls : contentMediaUrls,
+          platforms: Array.isArray(engagement.platforms)
+            ? engagement.platforms
+            : [post?.platform].filter(Boolean),
+        };
+      }));
     } catch (error) {
       logger.warn({ err: error }, "Failed to get social posts:");
       res.status(500).json({ error: "Failed to get social posts:" });
@@ -254,12 +316,33 @@ router.delete(
     try {
       const userId = req.user!.id;
       const { postId } = req.params as Record<string, string>;
+      const [existing] = await db
+        .select({ status: posts.status })
+        .from(posts)
+        .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+        .limit(1);
+      if (!existing) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      if (!["draft", "scheduled", "pending"].includes(existing.status)) {
+        return res.status(409).json({
+          error: "Posts that are publishing, delivered, or require reconciliation cannot be deleted.",
+        });
+      }
       const [deleted] = await db
         .delete(posts)
-        .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+        .where(
+          and(
+            eq(posts.id, postId),
+            eq(posts.userId, userId),
+            inArray(posts.status, ["draft", "scheduled", "pending"]),
+          ),
+        )
         .returning({ id: posts.id });
       if (!deleted) {
-        return res.status(404).json({ error: "Post not found" });
+        return res.status(409).json({
+          error: "Post delivery started while the delete was being processed.",
+        });
       }
       res.json({ success: true, id: deleted.id });
     } catch (error) {
@@ -272,12 +355,14 @@ router.delete(
 const VALID_PLATFORMS = [
   "instagram",
   "twitter",
+  "x",
   "facebook",
   "tiktok",
   "youtube",
   "linkedin",
   "threads",
   "googlebusiness",
+  "google_business",
 ] as const;
 
 const schedulePostSchema = z.object({
@@ -285,8 +370,13 @@ const schedulePostSchema = z.object({
   platforms: z.array(z.enum(VALID_PLATFORMS)).min(1).max(8).optional(),
   content: z.string().min(1).max(10000),
   mediaUrls: z.array(z.string().url()).max(10).optional(),
+  mediaType: z.enum(["text", "image", "photo", "video", "audio", "carousel"]).optional(),
+  hashtags: z.array(z.string().max(100)).max(50).optional(),
+  mentions: z.array(z.string().max(100)).max(50).optional(),
+  headline: z.string().max(500).optional(),
   scheduledAt: z.string().optional().nullable(),
   scheduledTime: z.string().optional().nullable(),
+  idempotencyKey: z.string().min(1).max(128).regex(/^[^:]+$/).optional(),
 }).superRefine((value, ctx) => {
   if (!value.platform && !value.platforms?.length) {
     ctx.addIssue({
@@ -317,33 +407,68 @@ router.post(
           .status(400)
           .json({ error: "Invalid request", details: parsed.error.issues });
       }
-      const { platform, platforms, content, mediaUrls, scheduledAt, scheduledTime } =
-        parsed.data;
+      const {
+        platform,
+        platforms,
+        content,
+        mediaUrls,
+        mediaType,
+        hashtags,
+        mentions,
+        headline,
+        scheduledAt,
+        scheduledTime,
+        idempotencyKey,
+      } = parsed.data;
       const requestedSchedule = scheduledAt ?? scheduledTime;
       const scheduledDate = requestedSchedule ? new Date(requestedSchedule) : null;
       if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
         return res.status(400).json({ error: "scheduledAt must be a valid date" });
       }
 
-      const targetPlatforms = platforms ?? [platform!];
-      const createdPosts = await db
-        .insert(posts)
-        .values(
-          targetPlatforms.map((targetPlatform) => ({
-            userId,
-            platform: targetPlatform,
-            content,
-            mediaUrls: mediaUrls || [],
-            status: scheduledDate ? "scheduled" : "draft",
-            scheduledAt: scheduledDate,
-          })),
-        )
-        .returning();
+      const targetPlatforms = [...new Set(
+        (platforms ?? [platform!]).map(normalizePublishingPlatform),
+      )];
+      let createdPosts;
+      if (scheduledDate) {
+        const queuedPost = await autoPostingServiceV2.schedulePost(
+          userId,
+          targetPlatforms,
+          {
+            text: content,
+            ...(headline ? { headline } : {}),
+            ...(hashtags?.length ? { hashtags } : {}),
+            ...(mentions?.length ? { mentions } : {}),
+            ...(mediaUrls?.length ? { mediaUrl: mediaUrls[0], mediaUrls } : {}),
+            ...(mediaType ? { mediaType } : {}),
+          },
+          scheduledDate,
+          "manual",
+          undefined,
+          idempotencyKey || randomUUID(),
+        );
+        createdPosts = [queuedPost];
+      } else {
+        createdPosts = await db
+          .insert(posts)
+          .values(
+            targetPlatforms.map((targetPlatform) => ({
+              userId,
+              platform: targetPlatform,
+              content,
+              mediaUrls: mediaUrls || [],
+              status: "draft",
+              scheduledAt: null,
+            })),
+          )
+          .returning();
+      }
 
-      res.json({
+      res.status(scheduledDate ? 201 : 200).json({
         success: true,
         posts: createdPosts,
         post: createdPosts[0],
+        queued: Boolean(scheduledDate),
       });
 
       if (scheduledDate) {
@@ -497,41 +622,117 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
-
-      if (!platform || !content) {
-        return res
-          .status(400)
-          .json({ error: "Platform and content are required" });
-      }
-      if (status === "published") {
+      const calendarPostSchema = z.object({
+        platform: z.enum(VALID_PLATFORMS).optional(),
+        platforms: z.array(z.enum(VALID_PLATFORMS)).min(1).max(8).optional(),
+        content: z.string().min(1).max(10000),
+        mediaUrls: z.array(z.string().url()).max(10).optional(),
+        mediaType: z.enum(["text", "image", "photo", "video", "audio", "carousel"]).optional(),
+        hashtags: z.array(z.string().max(100)).max(50).optional(),
+        mentions: z.array(z.string().max(100)).max(50).optional(),
+        title: z.string().max(500).optional(),
+        scheduledAt: z.string().optional().nullable(),
+        scheduledFor: z.string().optional().nullable(),
+        status: z.enum(["draft", "scheduled"]).optional(),
+        idempotencyKey: z.string().min(1).max(128).regex(/^[^:]+$/).optional(),
+      }).superRefine((value, ctx) => {
+        if (!value.platform && !value.platforms?.length) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "At least one platform is required",
+            path: ["platforms"],
+          });
+        }
+        if (value.platform && value.platforms?.length) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Provide platform or platforms, not both",
+            path: ["platforms"],
+          });
+        }
+      }).safeParse(req.body);
+      if (!calendarPostSchema.success) {
         return res.status(400).json({
-          error:
-            "Posts cannot be created as published before platform delivery is verified",
+          error: "Invalid request",
+          details: calendarPostSchema.error.issues,
         });
       }
 
-      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+      const {
+        platform,
+        platforms,
+        content,
+        mediaUrls,
+        mediaType,
+        hashtags,
+        mentions,
+        title,
+        scheduledAt,
+        scheduledFor,
+        idempotencyKey,
+        status,
+      } = calendarPostSchema.data;
+      const requestedSchedule = scheduledAt ?? scheduledFor;
+      const scheduledDate = requestedSchedule ? new Date(requestedSchedule) : null;
+      if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "scheduledAt must be a valid date" });
+      }
+      const targetPlatforms = [...new Set(
+        (platforms ?? [platform!]).map(normalizePublishingPlatform),
+      )];
       const postStatus = status || (scheduledDate ? "scheduled" : "draft");
+      if (postStatus === "scheduled" && !scheduledDate) {
+        return res.status(400).json({
+          error: "scheduledAt is required for a scheduled post",
+        });
+      }
+      const postContent = {
+        text: content,
+        ...(title ? { headline: title } : {}),
+        ...(hashtags?.length ? { hashtags } : {}),
+        ...(mentions?.length ? { mentions } : {}),
+        ...(mediaUrls?.length ? { mediaUrl: mediaUrls[0], mediaUrls } : {}),
+        ...(mediaType
+          ? { mediaType }
+          : mediaUrls?.length
+            ? { mediaType: "image" as const }
+            : {}),
+      };
 
-      const [post] = await db
-        .insert(posts)
-        .values({
+      let post;
+      if (postStatus === "scheduled") {
+        post = await autoPostingServiceV2.schedulePost(
           userId,
-          platform,
-          content,
-          mediaUrls: mediaUrls || [],
-          status: postStatus,
-          scheduledAt: scheduledDate,
-        })
-        .returning();
+          targetPlatforms,
+          postContent,
+          scheduledDate!,
+          "manual",
+          undefined,
+          idempotencyKey || randomUUID(),
+        );
+      } else {
+        const drafts = await db
+          .insert(posts)
+          .values(
+            targetPlatforms.map((targetPlatform) => ({
+              userId,
+              platform: targetPlatform,
+              content: JSON.stringify(postContent),
+              mediaUrls: mediaUrls || [],
+              status: "draft",
+              scheduledAt: scheduledDate,
+            })),
+          )
+          .returning();
+        post = drafts[0];
+      }
 
       if (scheduledDate && postStatus === "scheduled") {
         setImmediate(async () => {
           try {
             await notificationService?.sendSocialPostScheduledNotification(
               userId,
-              platform,
+              targetPlatforms[0],
               content,
               scheduledDate,
             );
@@ -541,7 +742,10 @@ router.post(
         });
       }
 
-      res.status(201).json(post);
+      res.status(201).json({
+        ...(post as Record<string, unknown>),
+        ...(postStatus === "scheduled" ? { queued: true } : {}),
+      });
     } catch (error) {
       logger.warn({ err: error }, "Failed to create calendar post:");
       res.status(500).json({ error: "Failed to create calendar post" });
@@ -557,7 +761,23 @@ router.put(
     try {
       const userId = req.user!.id;
       const { postId } = req.params as Record<string, string>;
-      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
+      const {
+        platform,
+        platforms,
+        content,
+        mediaUrls,
+        mediaType,
+        hashtags,
+        mentions,
+        title,
+        scheduledAt: rawScheduledAt,
+        scheduledFor,
+        status,
+      } = req.body || {};
+      const requestedSchedule = rawScheduledAt ?? scheduledFor;
+      const scheduledDate = requestedSchedule
+        ? new Date(requestedSchedule)
+        : null;
 
       const existing = await db
         .select()
@@ -568,6 +788,7 @@ router.put(
       if (!existing?.length) {
         return res.status(404).json({ error: "Post not found" });
       }
+      const currentPost = existing[0];
       if (status === "published") {
         return res.status(400).json({
           error:
@@ -575,13 +796,69 @@ router.put(
         });
       }
 
+      if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+        return res.status(400).json({ error: "scheduledAt must be a valid date" });
+      }
+      if (
+        ["pending", "scheduled", "posting", "completed", "published"].includes(
+          currentPost.status,
+        )
+      ) {
+        return res.status(409).json({
+          error:
+            "Queued or delivered posts cannot be edited in place. Delete the queued post and create a replacement.",
+        });
+      }
+
+      const targetPlatforms = [...new Set(
+        (Array.isArray(platforms) ? platforms : platform ? [platform] : [])
+          .map(normalizePublishingPlatform),
+      )];
+      const postContent = {
+        text: typeof content === "string" ? content : "",
+        ...(typeof title === "string" && title ? { headline: title } : {}),
+        ...(Array.isArray(hashtags) && hashtags.length ? { hashtags } : {}),
+        ...(Array.isArray(mentions) && mentions.length ? { mentions } : {}),
+        ...(Array.isArray(mediaUrls) && mediaUrls.length
+          ? { mediaUrl: mediaUrls[0], mediaUrls }
+          : {}),
+        ...(mediaType
+          ? { mediaType }
+          : Array.isArray(mediaUrls) && mediaUrls.length
+            ? { mediaType: "image" as const }
+            : {}),
+      };
+      const requestedStatus = status || "draft";
+      if (requestedStatus === "scheduled") {
+        if (!scheduledDate) {
+          return res.status(400).json({
+            error: "scheduledAt is required for a scheduled post",
+          });
+        }
+        if (targetPlatforms.length === 0) {
+          return res.status(400).json({ error: "At least one platform is required" });
+        }
+        const queued = await autoPostingServiceV2.scheduleExistingPost(postId, {
+          platforms: targetPlatforms,
+          content: postContent,
+          mediaUrls: Array.isArray(mediaUrls) ? mediaUrls : [],
+          scheduledAt: scheduledDate,
+        });
+        return res.status(200).json({ ...queued, queued: true });
+      }
+
+      if (targetPlatforms.length > 1) {
+        return res.status(400).json({
+          error: "A draft calendar row can target only one platform; schedule it to publish across platforms.",
+        });
+      }
       const updates: Record<string, unknown> = {};
-      if (platform !== undefined) updates.platform = platform;
-      if (content !== undefined) updates.content = content;
+      if (targetPlatforms.length === 1) updates.platform = targetPlatforms[0];
+      if (content !== undefined) updates.content = JSON.stringify(postContent);
       if (mediaUrls !== undefined) updates.mediaUrls = mediaUrls;
-      if (status !== undefined) updates.status = status;
-      if (scheduledAt !== undefined)
-        updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+      if (status !== undefined) updates.status = requestedStatus;
+      if (requestedSchedule !== undefined)
+        updates.scheduledAt = scheduledDate;
 
       const [updated] = await db
         .update(posts)
@@ -634,16 +911,28 @@ router.patch(
             "Posts cannot be marked published before platform delivery is verified",
         });
       }
+      if (updates.status === "scheduled") {
+        return res.status(409).json({
+          error:
+            "Bulk status changes cannot create provider queue jobs. Schedule drafts individually from the calendar.",
+        });
+      }
 
       // Verify all posts belong to this user
       const existing = await db
-        .select({ id: posts.id })
+        .select({ id: posts.id, status: posts.status })
         .from(posts)
         .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
 
       const validIds = existing?.map((r) => r?.id);
       if (validIds?.length === 0) {
         return res.status(404).json({ error: "No matching posts found" });
+      }
+      if (existing.some((post) => ["pending", "scheduled", "posting", "completed", "published"].includes(post.status))) {
+        return res.status(409).json({
+          error:
+            "Queued or delivered posts cannot be batch-edited. Delete a queued post and create a replacement instead.",
+        });
       }
 
       const dbUpdates: Record<string, unknown> = {};
@@ -730,7 +1019,7 @@ router.delete(
       }
 
       const existing = await db
-        .select({ id: posts.id })
+        .select({ id: posts.id, status: posts.status })
         .from(posts)
         .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
 
@@ -739,11 +1028,29 @@ router.delete(
         return res.status(404).json({ error: "No matching posts found" });
       }
 
-      await db
+      const deletableIds = existing
+        .filter((post) => ["draft", "scheduled", "pending"].includes(post.status))
+        .map((post) => post.id);
+      const deleted = deletableIds.length
+        ? await db
         .delete(posts)
-        .where(and(inArray(posts.id, validIds), eq(posts.userId, userId)));
+        .where(
+          and(
+            inArray(posts.id, deletableIds),
+            eq(posts.userId, userId),
+            inArray(posts.status, ["draft", "scheduled", "pending"]),
+          ),
+        )
+        .returning({ id: posts.id })
+        : [];
 
-      res.json({ deleted: validIds.length, ids: validIds });
+      const deletedIds = deleted.map((post) => post.id);
+      const skippedIds = validIds.filter((id) => !deletedIds.includes(id));
+      res.status(skippedIds.length ? 207 : 200).json({
+        deleted: deletedIds.length,
+        ids: deletedIds,
+        skippedIds,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Batch delete error");
       res.status(500).json({ error: "Failed to batch delete posts" });
@@ -770,9 +1077,26 @@ router.delete(
         return res.status(404).json({ error: "Post not found" });
       }
 
-      await db
+      if (!["draft", "scheduled", "pending"].includes(existing[0].status)) {
+        return res.status(409).json({
+          error: "Posts that are publishing, delivered, or require reconciliation cannot be deleted.",
+        });
+      }
+      const [deleted] = await db
         .delete(posts)
-        .where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+        .where(
+          and(
+            eq(posts.id, postId),
+            eq(posts.userId, userId),
+            inArray(posts.status, ["draft", "scheduled", "pending"]),
+          ),
+        )
+        .returning({ id: posts.id });
+      if (!deleted) {
+        return res.status(409).json({
+          error: "Post delivery started while the delete was being processed.",
+        });
+      }
 
       res.json({ success: true, id: postId });
     } catch (error) {
@@ -1464,8 +1788,29 @@ router.get(
 );
 
 // =========================================
-// UNIFIED INBOX ROUTES - Returns empty data until real messages exist
+// UNIFIED INBOX ROUTES - Provider-synced messages and receipt-backed replies
 // =========================================
+
+function inboxAccessCondition(userId: string) {
+  return or(
+    eq(socialInboxMessages.userId, userId),
+    eq(socialInboxMessages.assignedTo, userId),
+  );
+}
+
+async function getActiveWorkspaceIds(userId: string): Promise<string[]> {
+  const memberships = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.status, "active"),
+      ),
+    )
+    .limit(100);
+  return [...new Set(memberships.map((membership) => membership.workspaceId))];
+}
 
 // Get inbox messages - returns messages from database with filtering
 router.get(
@@ -1486,7 +1831,7 @@ router.get(
       let query = db
         .select()
         .from(socialInboxMessages)
-        .where(eq(socialInboxMessages.userId, userId))
+        .where(inboxAccessCondition(userId))
         .orderBy(desc(socialInboxMessages.createdAt))
         .limit(Math.max(1, Math.min(200, Number(limit) || 50)))
         .offset(Math.min(Math.max(0, Number(offset) || 0), 100_000));
@@ -1531,12 +1876,49 @@ router.get(
           repliedAt: m.repliedAt,
           replyContent: m.replyContent,
           replyDelivered: m.replyDelivered,
+          replyDeliveryState: m.replyDeliveryState,
+          providerReplyId: m.providerReplyId,
+          replyDeliveryError: m.replyDeliveryError,
         })),
         total: filteredMessages.length,
       });
     } catch (error) {
       logger.warn({ err: error }, "Failed to get inbox messages:");
       res.status(500).json({ error: "Failed to load inbox messages" });
+    }
+  },
+);
+
+// Fetch current provider mentions/comments and persist only records returned
+// by the connected provider APIs. Unsupported platforms are reported rather
+// than represented as a successfully empty inbox.
+router.post(
+  "/inbox/sync",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = z
+      .object({
+        platforms: z.array(z.string().min(1).max(40)).max(12).optional(),
+      })
+      .safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid inbox sync request",
+        details: parsed.error.flatten(),
+      });
+    }
+    try {
+      const result = await syncSocialInbox(
+        req.user!.id,
+        parsed.data.platforms,
+      );
+      res.status(result.success ? 200 : 207).json(result);
+    } catch (error) {
+      logger.warn({ err: error }, "[SocialInbox] Provider sync failed:");
+      res.status(502).json({
+        success: false,
+        error: "Inbox sync could not be completed.",
+      });
     }
   },
 );
@@ -1551,7 +1933,7 @@ router.get(
       const messages = await db
         .select()
         .from(socialInboxMessages)
-        .where(eq(socialInboxMessages.userId, userId))
+        .where(inboxAccessCondition(userId))
         .limit(200);
 
       const stats = {
@@ -1615,7 +1997,7 @@ router.post(
         .where(
           and(
             inArray(socialInboxMessages.id, messageIds),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -1647,7 +2029,7 @@ router.post(
         .where(
           and(
             inArray(socialInboxMessages.id, messageIds),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -1679,7 +2061,7 @@ router.post(
         .where(
           and(
             inArray(socialInboxMessages.id, messageIds),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -1710,7 +2092,7 @@ router.post(
         .where(
           and(
             inArray(socialInboxMessages.id, messageIds),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -1740,7 +2122,7 @@ router.post(
         .where(
           and(
             eq(socialInboxMessages.id, id),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -1760,16 +2142,17 @@ router.post(
     try {
       const userId = req.user!.id;
       const { id } = req.params as Record<string, string>;
-      const { content } = req.body;
+      const content =
+        typeof req.body?.content === "string" ? req.body.content.trim() : "";
 
-      if (!content) {
+      if (!content || content.length > 5000) {
         return res.status(400).json({
-          error: "Reply content is required",
+          error: "Reply content is required and must be 5000 characters or fewer",
           outcome: {
             status: "error",
             category: "inbox",
             title: "Reply Failed",
-            message: "Please enter a reply message.",
+            message: "Enter a reply of 5000 characters or fewer.",
           },
         });
       }
@@ -1780,7 +2163,7 @@ router.post(
         .where(
           and(
             eq(socialInboxMessages.id, id),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         )
         .limit(1);
@@ -1797,43 +2180,218 @@ router.post(
         });
       }
 
-      // NOTE: there is no platform-side comment/DM reply delivery wired up
-      // yet (that requires a per-platform "reply to comment/message" API
-      // call using the connected account's OAuth token, which does not
-      // exist in this codebase). We persist the reply text itself (not just
-      // a status flag) so it is never silently discarded, and the response
-      // echoes it back so the client can keep it visible for the user to
-      // copy and send manually.
-      // Do NOT flip status to "replied" — that would misleadingly remove an
-      // undelivered draft from the actionable/unread work queue as if it
-      // were actually handled. Persist the draft text and a savedAt
-      // timestamp only; status changes only happen via explicit read/
-      // archive actions or (in the future) real delivery.
-      await db
+      if (!["comment", "mention"].includes(message.messageType)) {
+        return res.status(409).json({
+          error: "Automatic delivery is available only for provider comments and mentions.",
+          outcome: {
+            status: "error",
+            category: "inbox",
+            title: "Reply Not Supported",
+            message:
+              "This item is not a provider comment or mention with a supported reply endpoint.",
+          },
+        });
+      }
+      if (!["twitter", "facebook", "instagram"].includes(message.platform)) {
+        return res.status(409).json({
+          error: `Provider reply delivery is not configured for ${message.platform}.`,
+          outcome: {
+            status: "error",
+            category: "inbox",
+            title: "Reply Not Supported",
+            message: `Replies to ${message.platform} inbox items are not available.`,
+          },
+        });
+      }
+      if (
+        message.platform === "twitter" &&
+        Array.from(content).length > 280
+      ) {
+        return res.status(400).json({
+          error: "X replies must be 280 characters or fewer.",
+        });
+      }
+
+      const currentDeliveryState =
+        message.replyDeliveryState ||
+        (message.replyDelivered ? "delivered" : "draft");
+      if (currentDeliveryState === "delivered" && message.providerReplyId) {
+        if (message.replyContent !== content) {
+          return res.status(409).json({
+            error: "A provider-confirmed reply already exists for this message.",
+            delivered: true,
+            providerReplyId: message.providerReplyId,
+          });
+        }
+        return res.json({
+          success: true,
+          delivered: true,
+          duplicate: true,
+          status: "delivered",
+          providerReplyId: message.providerReplyId,
+          replyContent: message.replyContent,
+          outcome: {
+            status: "success",
+            category: "inbox",
+            title: "Reply Already Delivered",
+            message: "The provider receipt for this reply is already saved.",
+            delivered: true,
+          },
+        });
+      }
+      if (["sending", "unknown"].includes(currentDeliveryState)) {
+        return res.status(409).json({
+          success: false,
+          delivered: false,
+          status: currentDeliveryState,
+          error:
+            "Reply delivery may already have reached the provider. Reconcile it before attempting another send.",
+          outcome: {
+            status: "warning",
+            category: "inbox",
+            title: "Reply Requires Reconciliation",
+            message:
+              "The provider may have accepted this reply. Do not send another copy until its delivery is reconciled.",
+          },
+        });
+      }
+
+      const [claimed] = await db
         .update(socialInboxMessages)
         .set({
           replyContent: content,
           replyDelivered: false,
+          replyDeliveryState: "sending",
+          providerReplyId: null,
+          replyDeliveryError: null,
         })
         .where(
           and(
             eq(socialInboxMessages.id, id),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
+            eq(socialInboxMessages.replyDeliveryState, currentDeliveryState),
+            eq(socialInboxMessages.replyDelivered, false),
           ),
-        );
+        )
+        .returning({ id: socialInboxMessages.id });
+      if (!claimed) {
+        return res.status(409).json({
+          success: false,
+          delivered: false,
+          status: "sending",
+          error:
+            "Another reply attempt has already claimed this message. Reconcile its provider status before retrying.",
+        });
+      }
 
+      let receipt;
+      try {
+        receipt = await deliverInboxReply(message, content);
+      } catch (deliveryError) {
+        const providerError =
+          deliveryError instanceof SocialInboxProviderError
+            ? deliveryError
+            : new SocialInboxProviderError(
+                "Provider reply delivery failed; reconcile before retrying.",
+                undefined,
+                "unknown",
+              );
+        await db
+          .update(socialInboxMessages)
+          .set({
+            replyDeliveryState: providerError.outcome,
+            replyDeliveryError: providerError.message,
+            replyDelivered: false,
+          })
+          .where(
+            and(
+              eq(socialInboxMessages.id, id),
+              eq(socialInboxMessages.userId, message.userId),
+            ),
+          );
+        const uncertain = providerError.outcome === "unknown";
+        return res.status(uncertain ? 202 : 422).json({
+          success: false,
+          delivered: false,
+          status: providerError.outcome,
+          replyContent: content,
+          error: providerError.message,
+          outcome: {
+            status: uncertain ? "warning" : "error",
+            category: "inbox",
+            title: uncertain
+              ? "Reply Requires Reconciliation"
+              : "Reply Delivery Failed",
+            message: uncertain
+              ? "The provider's acceptance could not be confirmed. Do not retry until the delivery is reconciled."
+              : providerError.message,
+            delivered: false,
+          },
+        });
+      }
+
+      try {
+        const [saved] = await db
+          .update(socialInboxMessages)
+          .set({
+            replyContent: content,
+            replyDelivered: true,
+            replyDeliveryState: "delivered",
+            providerReplyId: receipt.providerReplyId,
+            replyDeliveryError: null,
+            status: "replied",
+            repliedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(socialInboxMessages.id, id),
+              eq(socialInboxMessages.userId, message.userId),
+              eq(socialInboxMessages.replyDeliveryState, "sending"),
+            ),
+          )
+          .returning({ id: socialInboxMessages.id });
+        if (!saved) throw new Error("Reply row changed before receipt persistence");
+      } catch (receiptError) {
+        logger.warn(
+          { err: receiptError, messageId: id, platform: message.platform },
+          "[SocialInbox] Provider reply receipt could not be persisted",
+        );
+        return res.status(202).json({
+          success: false,
+          delivered: false,
+          status: "unknown",
+          providerReplyId: receipt.providerReplyId,
+          error:
+            "The provider returned a reply receipt, but it could not be saved. Reconcile before retrying.",
+          outcome: {
+            status: "warning",
+            category: "inbox",
+            title: "Reply Receipt Requires Reconciliation",
+            message:
+              "The provider confirmed a reply, but local receipt persistence failed. Do not retry this reply.",
+            delivered: false,
+          },
+        });
+      }
+
+      await queryCache?.invalidate(
+        createCacheKey("socialInbox", message.userId),
+      );
       res.json({
         success: true,
-        delivered: false,
+        delivered: true,
+        status: "delivered",
+        providerReplyId: receipt.providerReplyId,
+        providerUrl: receipt.providerUrl,
         replyContent: content,
         outcome: {
           status: "success",
           category: "inbox",
-          title: "Reply Saved (Not Sent to Platform)",
-          message: `Your reply to @${message?.authorHandle} was saved, but automatic delivery to ${message?.platform} is not available yet. Copy it below and send it manually from the ${message?.platform} app.`,
+          title: "Reply Delivered",
+          message: `The ${message.platform} provider returned a delivery receipt.`,
           platform: message.platform,
           author: message.authorHandle,
-          delivered: false,
+          delivered: true,
         },
       });
     } catch (error) {
@@ -1844,7 +2402,7 @@ router.post(
           status: "error",
           category: "inbox",
           title: "Reply Failed",
-          message: "Failed to save your reply. Please try again.",
+          message: "Failed to process your reply. Check its delivery status before retrying.",
           retryable: true,
         },
       });
@@ -1852,25 +2410,80 @@ router.post(
   },
 );
 
-// Assign message to team member — team collaboration is not implemented
-// (see GET /inbox/team, which truthfully reports enabled:false). This
-// endpoint must not accept a caller-supplied assignee and fake a
-// successful assignment; it explicitly refuses instead.
 router.post(
   "/inbox/:id/assign",
   requireAuth,
-  async (_req: AuthenticatedRequest, res: Response) => {
-    res.status(501).json({
-      error: "Team assignment is not available",
-      outcome: {
-        status: "error",
-        category: "inbox",
-        title: "Assignment Not Available",
-        message:
-          "Team collaboration is not available on this account yet, so messages cannot be assigned to a team member.",
-        retryable: false,
-      },
-    });
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params as Record<string, string>;
+      const assigneeId = req.body?.assigneeId;
+      if (typeof assigneeId !== "string" || !assigneeId) {
+        return res.status(400).json({ error: "A valid team member is required" });
+      }
+
+      const workspaceIds = await getActiveWorkspaceIds(userId);
+      if (!workspaceIds.length) {
+        return res.status(409).json({
+          error: "Join an active workspace with team members before assigning inbox messages.",
+        });
+      }
+      const [member] = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        })
+        .from(workspaceMembers)
+        .innerJoin(users, eq(users.id, workspaceMembers.userId))
+        .where(
+          and(
+            inArray(workspaceMembers.workspaceId, workspaceIds),
+            eq(workspaceMembers.userId, assigneeId),
+            eq(workspaceMembers.status, "active"),
+          ),
+        )
+        .limit(1);
+      if (!member) {
+        return res.status(403).json({
+          error: "The selected assignee is not an active member of your workspace.",
+        });
+      }
+
+      const [updated] = await db
+        .update(socialInboxMessages)
+        .set({ assignedTo: member.id })
+        .where(
+          and(
+            eq(socialInboxMessages.id, id),
+            inboxAccessCondition(userId),
+          ),
+        )
+        .returning({ id: socialInboxMessages.id });
+      if (!updated) return res.status(404).json({ error: "Message not found" });
+
+      await queryCache?.invalidate(
+        createCacheKey("socialInbox", req.user!.id),
+      );
+      const name =
+        [member.firstName, member.lastName].filter(Boolean).join(" ") ||
+        member.email;
+      res.json({
+        success: true,
+        assignedTo: member.id,
+        assigneeName: name,
+        outcome: {
+          status: "success",
+          category: "inbox",
+          title: "Message Assigned",
+          message: `Message assigned to ${name}.`,
+        },
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to assign inbox message:");
+      res.status(500).json({ error: "Failed to assign inbox message" });
+    }
   },
 );
 
@@ -1889,7 +2502,7 @@ router.post(
         .where(
           and(
             eq(socialInboxMessages.id, id),
-            eq(socialInboxMessages.userId, userId),
+            inboxAccessCondition(userId),
           ),
         );
 
@@ -2062,19 +2675,62 @@ router.delete(
   },
 );
 
-// Get team members for assignment. This product has no multi-seat team
-// infrastructure (no team/member tables, invites, or roles) — rather than
-// fake a team feature or silently 500, tell the client the truth so the UI
-// can show an honest "not available" state instead of an empty picker.
 router.get(
   "/inbox/team",
   requireAuth,
-  async (_req: AuthenticatedRequest, res: Response) => {
-    res.json({
-      enabled: false,
-      members: [],
-      reason: "Team collaboration is not available on this account yet.",
-    });
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const workspaceIds = await getActiveWorkspaceIds(req.user!.id);
+      if (!workspaceIds.length) {
+        return res.json({
+          enabled: false,
+          members: [],
+          reason: "Join an active workspace to assign inbox messages to teammates.",
+        });
+      }
+      const rows = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          avatar: users.profileImageUrl,
+        })
+        .from(workspaceMembers)
+        .innerJoin(users, eq(users.id, workspaceMembers.userId))
+        .where(
+          and(
+            inArray(workspaceMembers.workspaceId, workspaceIds),
+            eq(workspaceMembers.status, "active"),
+          ),
+        )
+        .limit(100);
+      const members = [
+        ...new Map(
+          rows.map((member) => [
+            member.id,
+            {
+              id: member.id,
+              name:
+                [member.firstName, member.lastName].filter(Boolean).join(" ") ||
+                member.email,
+              email: member.email,
+              avatar: member.avatar || undefined,
+            },
+          ]),
+        ).values(),
+      ];
+      res.json({
+        enabled: members.length > 1,
+        members,
+        ...(members.length <= 1
+          ? { reason: "Add another active workspace member to enable assignment." }
+          : {}),
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to load inbox team members:");
+      res.status(500).json({ error: "Failed to load inbox team members" });
+    }
   },
 );
 
@@ -2162,6 +2818,8 @@ router.get(
               "scheduled",
               "pending",
               "published",
+              "completed",
+              "posting",
               "failed",
             ]),
           ),
@@ -2188,7 +2846,13 @@ router.get(
             const meta = (eng?._autopilotMeta ? eng : {}) as Record<string, any>;
             let parsedContent: Record<string, unknown> = {};
             try {
-              parsedContent = JSON.parse(p?.content ?? "{}");
+              const rawContent =
+                typeof p?.content === "string"
+                  ? JSON.parse(p.content)
+                  : p?.content;
+              if (rawContent && typeof rawContent === "object") {
+                parsedContent = rawContent as Record<string, unknown>;
+              }
             } catch {
               parsedContent = {};
             }
@@ -2196,10 +2860,17 @@ router.get(
             const titleText =
               (contentObj as any)?.text ||
               (contentObj as any)?.caption ||
-              p?.content?.slice(0, 80) ||
+              (typeof p?.content === "string" ? p.content.slice(0, 80) : "") ||
               "(no caption)";
             const resolvedStatus =
-              p?.status === "pending" ? "scheduled" : (p?.status ?? "scheduled");
+              p?.status === "pending" || p?.status === "scheduled"
+                ? "scheduled"
+                : p?.status === "completed"
+                  ? "published"
+                  : p?.status === "posting"
+                    ? "publishing"
+                    : (p?.status ?? "scheduled");
+            const createdBy = meta.createdBy || "manual";
             return {
               id: p.id,
               title: String(titleText).slice(0, 80),
@@ -2209,9 +2880,13 @@ router.get(
               scheduledAt: p.scheduledAt,
               publishedAt: p.publishedAt,
               content: contentObj,
-              mediaUrls: p.mediaUrls ?? [],
-              source: "autopilot" as const,
-              createdBy: meta.createdBy || "social_autopilot",
+              mediaUrls:
+                p.mediaUrls?.length
+                  ? p.mediaUrls
+                  : (contentObj as any)?.mediaUrls ||
+                    ((contentObj as any)?.mediaUrl ? [(contentObj as any).mediaUrl] : []),
+              source: createdBy === "manual" ? "social" as const : "autopilot" as const,
+              createdBy,
             };
           }),
         ...(calendarEntries?.map((c) => ({

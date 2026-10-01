@@ -1,5 +1,10 @@
 import crypto from "crypto";
-import express, { Router, type Request, type Response } from "express";
+import express, {
+  Router,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import { randomUUID } from "crypto";
 import { db } from "../db.js";
 import { env } from "../config/env.js";
@@ -130,11 +135,107 @@ function verifyUploadToken(rawToken: string): UploadTokenPayload | null {
     ) {
       return null;
     }
-    if (Date.now() > payload.exp) return null;
+    if (
+      !payload.u ||
+      !payload.k ||
+      !payload.n ||
+      !Number.isSafeInteger(payload.s) ||
+      payload.s <= 0 ||
+      payload.s > MAX_FILE_SIZE ||
+      !Number.isSafeInteger(payload.exp) ||
+      payload.exp <= Date.now() ||
+      !ALLOWED_CATEGORIES.has(payload.c) ||
+      !ALLOWED_MIME_TYPES.has(payload.ct) ||
+      payload.n !== sanitizeFileName(payload.n)
+    ) {
+      return null;
+    }
+
+    const keySegments = payload.k.split("/");
+    if (
+      keySegments.length !== 5 ||
+      keySegments[0] !== "users" ||
+      keySegments[1] !== payload.u ||
+      keySegments[2] !== payload.c ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        keySegments[3],
+      ) ||
+      keySegments[4] !== payload.n
+    ) {
+      return null;
+    }
+
     return payload as UploadTokenPayload;
   } catch {
     return null;
   }
+}
+
+function validateDirectUploadRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const token = Array.isArray(req.params.token)
+    ? req.params.token[0]
+    : req.params.token;
+  const payload = token ? verifyUploadToken(token) : null;
+  if (!payload) {
+    res.status(404).json({ error: "Upload URL is invalid or expired" });
+    return;
+  }
+
+  const contentType = normalizeContentType(
+    req.headers["content-type"] ?? payload.ct,
+  );
+  if (contentType !== payload.ct) {
+    res
+      .status(400)
+      .json({ error: "Uploaded file type does not match the reserved upload type" });
+    return;
+  }
+
+  const contentLengthHeader = req.headers["content-length"];
+  if (contentLengthHeader !== undefined) {
+    const contentLength = Number(contentLengthHeader);
+    if (!Number.isSafeInteger(contentLength) || contentLength < 0) {
+      res.status(400).json({ error: "Invalid Content-Length" });
+      return;
+    }
+    if (contentLength > payload.s) {
+      res.status(413).json({
+        error: "Uploaded file exceeds the reserved upload size",
+      });
+      return;
+    }
+    if (contentLength < payload.s) {
+      res.status(400).json({
+        error: "Uploaded file size does not match the reserved upload size",
+      });
+      return;
+    }
+  }
+
+  res.locals.directUploadPayload = payload;
+  next();
+}
+
+function parseDirectUploadBody(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const payload = res.locals.directUploadPayload as
+    | UploadTokenPayload
+    | undefined;
+  if (!payload) {
+    res.status(404).json({ error: "Upload URL is invalid or expired" });
+    return;
+  }
+
+  // The signed reservation, not only the global ceiling, bounds the bytes
+  // buffered in memory. This also caps chunked uploads without Content-Length.
+  express.raw({ type: () => true, limit: payload.s })(req, res, next);
 }
 
 async function ensureUserStorageRow(userId: string): Promise<string | null> {
@@ -214,15 +315,12 @@ router.post("/request-url", requireAuth, async (req: Request, res: Response) => 
 
 router.put(
   "/direct/:token",
-  express.raw({ type: () => true, limit: MAX_FILE_SIZE }),
+  validateDirectUploadRequest,
+  parseDirectUploadBody,
   async (req: Request, res: Response) => {
-    const token = Array.isArray(req.params.token)
-      ? req.params.token[0]
-      : req.params.token;
-    if (!token) {
-      return res.status(404).json({ error: "Upload URL is invalid or expired" });
-    }
-    const payload = verifyUploadToken(token);
+    const payload = res.locals.directUploadPayload as
+      | UploadTokenPayload
+      | undefined;
     if (!payload) {
       return res.status(404).json({ error: "Upload URL is invalid or expired" });
     }
@@ -233,11 +331,6 @@ router.put(
       return res.status(400).json({
         error: "Uploaded file size does not match the reserved upload size",
       });
-    }
-
-    const contentType = normalizeContentType(req.headers["content-type"] ?? payload.ct);
-    if (contentType !== payload.ct) {
-      return res.status(400).json({ error: "Uploaded file type does not match the reserved upload type" });
     }
 
     try {

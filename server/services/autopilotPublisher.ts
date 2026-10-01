@@ -198,8 +198,8 @@ class AutopilotPublisher {
       const totalCampaigns = results.reduce((sum, r) => sum + r.adCampaigns, 0);
       const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0);
 
-      logger.info(`✅ Autopilot publishing cycle completed:`);
-      logger.info(`   - Social posts published: ${totalPosts}`);
+      logger.info(`✅ Autopilot content preparation cycle completed:`);
+      logger.info(`   - Social posts prepared (queued or review drafts): ${totalPosts}`);
       logger.info(`   - Ad campaigns created: ${totalCampaigns}`);
       logger.info(`   - Errors: ${totalErrors}`);
 
@@ -320,7 +320,7 @@ class AutopilotPublisher {
       platforms,
       scheduledTime,
     );
-    if (config.autoPublish === true) {
+    if (config.enabled === true && config.autoPublish === true) {
       return autoPostingServiceV2.schedulePost(
         userId,
         platforms,

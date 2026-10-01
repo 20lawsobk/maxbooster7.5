@@ -1502,6 +1502,30 @@ class ToolostService {
     };
   }
 
+  async retryReleaseSubmission(
+    releaseId: string,
+    confirmations: {
+      acceptTerms: true;
+      confirmRights: true;
+      confirmYoutubeRights?: true;
+    },
+  ): Promise<ToolostReleaseResponse> {
+    const endpoint = `/releases/${encodeURIComponent(releaseId)}/submit`;
+    this.logApiCall("POST", endpoint);
+    const result = await this.callWithRetry(
+      () =>
+        this.raw<unknown>("POST", endpoint, {
+          body: confirmations,
+        }),
+      0,
+    );
+    this.unwrap(`[Too Lost] retryReleaseSubmission failed for ${releaseId}`, result);
+
+    // The POST response only confirms receipt. Return success only after a
+    // subsequent provider read confirms the release's actual current status.
+    return this.getReleaseStatus(releaseId);
+  }
+
   /** No ISRC-generation endpoint on Too Lost (only validation) — parity with LabelGrid's own honest gap. */
   async generateISRC(_artist: string, _title: string): Promise<ToolostCodeResponse> {
     throw new Error(

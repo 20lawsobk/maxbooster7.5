@@ -201,6 +201,29 @@ describe("shared Too Lost route submission", () => {
     });
   });
 
+  it("permits a release-level retry only when every selected destination is confirmed failed", async () => {
+    const { canRetryToolostRelease } = await import(
+      "../../server/routes/distribution-toolost-submission"
+    );
+
+    expect(canRetryToolostRelease([])).toBe(false);
+    expect(
+      canRetryToolostRelease(
+        [{ status: "failed" }, { status: "processing" }],
+        2,
+      ),
+    ).toBe(false);
+    expect(
+      canRetryToolostRelease([{ status: "failed" }], 2),
+    ).toBe(false);
+    expect(
+      canRetryToolostRelease(
+        [{ status: "failed" }, { status: "rejected" }],
+        2,
+      ),
+    ).toBe(true);
+  });
+
   it("keeps an accepted remote submission pending when every local dispatch write fails", async () => {
     const { deriveToolostSubmissionPersistence } = await import(
       "../../server/routes/distribution-toolost-submission"

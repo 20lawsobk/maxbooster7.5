@@ -15,6 +15,7 @@ import {
   storefrontRatings,
   storefrontOrders,
   listings,
+  userStorageFiles,
   listingLicenseTiers,
   storefronts,
   storefrontDomains,
@@ -25,6 +26,7 @@ import {
 } from "@shared/schema";
 import Stripe from "stripe";
 import { getBaseUrl } from "../config/defaults";
+import { storageService } from "../services/storageService.js";
 import { db, pool } from "../db";
 import { eq, and, count, avg, lte, gte, or, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
@@ -59,6 +61,33 @@ const router = Router();
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error?.message;
   return String(error);
+}
+
+function getMarketplaceAudioStorageKey(audioUrl: unknown): string | null {
+  if (typeof audioUrl !== "string" || !audioUrl) return null;
+  let pathname: string;
+  try {
+    pathname = new URL(audioUrl, getBaseUrl()).pathname;
+  } catch {
+    return null;
+  }
+  const prefix = "/api/marketplace/audio/";
+  if (!pathname.startsWith(prefix)) return null;
+  let key: string;
+  try {
+    key = decodeURIComponent(pathname.slice(prefix.length));
+  } catch {
+    return null;
+  }
+  if (
+    !key ||
+    key.startsWith("/") ||
+    key.includes("\0") ||
+    key.split("/").some((segment) => segment === "." || segment === "..")
+  ) {
+    return null;
+  }
+  return key.startsWith("uploads/") ? key.slice("uploads/".length) : key;
 }
 
 async function finishStorefrontCheckout(
@@ -1583,8 +1612,10 @@ router.post("/:id/checkout", async (req, res) => {
         ),
       )
       .limit(50);
-    if (validListings?.length === 0) {
-      return res.status(400).json({ error: "No valid listings found" });
+    if (validListings.length !== listingIds.length) {
+      return res.status(400).json({
+        error: "One or more cart listings are unavailable in this storefront",
+      });
     }
 
     const cartItems = validListings?.map((listing) => {
@@ -1747,6 +1778,40 @@ router.post("/:id/checkout", async (req, res) => {
     if (!Number.isSafeInteger(amountCents) || amountCents <= 0) {
       return res.status(400).json({ error: "Cart has no payable items" });
     }
+    const feePercentage = Number(process.env.PLATFORM_FEE_PERCENTAGE ?? 10);
+    if (!Number.isFinite(feePercentage) || feePercentage < 0 || feePercentage >= 100) {
+      logger.error({ feePercentage }, "Invalid platform fee configuration for storefront checkout");
+      return res.status(503).json({ error: "Checkout pricing is temporarily unavailable" });
+    }
+    const platformFeeCents = Math.round((amountCents * feePercentage) / 100);
+    if (platformFeeCents < 0 || platformFeeCents >= amountCents) {
+      logger.error({ amountCents, platformFeeCents }, "Invalid platform fee for storefront checkout");
+      return res.status(503).json({ error: "Checkout pricing is temporarily unavailable" });
+    }
+    const checkoutMetadata = {
+      type: "storefront_purchase",
+      commerceVersion: "2",
+      commerceKind: "merchant",
+      buyerId: req.user!.id,
+      sellerId: storefront.userId,
+      storefrontId,
+      licenseType,
+      platformFeeCents: String(platformFeeCents),
+      promotionId: bogoResult.appliedPromotion?.id || "",
+    };
+    checkoutParams.metadata = checkoutMetadata;
+    checkoutParams.payment_intent_data = {
+      metadata: {
+        commerceVersion: checkoutMetadata.commerceVersion,
+        commerceKind: checkoutMetadata.commerceKind,
+        type: checkoutMetadata.type,
+        buyerId: checkoutMetadata.buyerId,
+        sellerId: checkoutMetadata.sellerId,
+        storefrontId: checkoutMetadata.storefrontId,
+        platformFeeCents: checkoutMetadata.platformFeeCents,
+        promotionId: checkoutMetadata.promotionId,
+      },
+    };
     const checkoutSnapshot = { checkoutParams, orderRows, amountCents };
     reservation =
       reservation ??
@@ -1787,6 +1852,96 @@ router.post("/:id/checkout", async (req, res) => {
   }
 });
 
+router.get("/orders/:orderId/download", async (req, res) => {
+  const orderId = req.params.orderId as string;
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const [order] = await db
+      .select({
+        id: storefrontOrders.id,
+        buyerId: storefrontOrders.buyerId,
+        sellerId: storefrontOrders.sellerId,
+        listingId: storefrontOrders.listingId,
+        status: storefrontOrders.status,
+        title: listings.title,
+        audioUrl: listings.audioUrl,
+      })
+      .from(storefrontOrders)
+      .innerJoin(listings, eq(listings.id, storefrontOrders.listingId))
+      .where(
+        and(
+          eq(storefrontOrders.id, orderId),
+          eq(storefrontOrders.buyerId, req.user!.id),
+          eq(storefrontOrders.status, "completed"),
+          eq(listings.userId, storefrontOrders.sellerId),
+        ),
+      )
+      .limit(1);
+    if (!order) {
+      return res.status(404).json({ error: "Completed purchase not found" });
+    }
+    const fileKey = getMarketplaceAudioStorageKey(order.audioUrl);
+    if (!fileKey) {
+      return res.status(409).json({
+        error: "This purchase does not have a downloadable marketplace audio asset",
+      });
+    }
+    const [ownedFile] = await db
+      .select({ fileKey: userStorageFiles.fileKey })
+      .from(userStorageFiles)
+      .where(
+        and(
+          eq(userStorageFiles.userId, order.sellerId),
+          eq(userStorageFiles.fileKey, fileKey),
+          isNull(userStorageFiles.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!ownedFile || !(await storageService.fileExists(fileKey))) {
+      return res.status(404).json({ error: "Purchased audio is no longer available" });
+    }
+    const audio = await storageService.downloadFile(fileKey);
+    if (!Buffer.isBuffer(audio) || audio.length === 0) {
+      return res.status(502).json({ error: "Purchased audio could not be retrieved" });
+    }
+    const rawExtension = path.extname(fileKey).toLowerCase();
+    const extension = /^\.[a-z0-9]{1,8}$/.test(rawExtension)
+      ? rawExtension
+      : "";
+    const mimeTypeByExtension: Record<string, string> = {
+      ".mp3": "audio/mpeg",
+      ".wav": "audio/wav",
+      ".flac": "audio/flac",
+      ".aiff": "audio/aiff",
+      ".m4a": "audio/mp4",
+      ".ogg": "audio/ogg",
+      ".aac": "audio/aac",
+    };
+    const safeTitle =
+      String(order.title || "beat")
+        .normalize("NFKD")
+        .replace(/[^a-zA-Z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80) || "beat";
+    res.setHeader(
+      "Content-Type",
+      mimeTypeByExtension[extension] || "application/octet-stream",
+    );
+    res.setHeader("Content-Length", String(audio.length));
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeTitle}${extension}"`,
+    );
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(audio);
+  } catch (error) {
+    logger.warn({ err: error, orderId }, "Error downloading storefront purchase:");
+    return res.status(500).json({ error: "Failed to download purchased audio" });
+  }
+});
+
 router.get("/:id/orders", async (req, res) => {
   try {
     if (!req.isAuthenticated())
@@ -1797,8 +1952,23 @@ router.get("/:id/orders", async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = Math.min((page - 1) * limit, 100_000);
     const orders = await db
-      .select()
+      .select({
+        id: storefrontOrders.id,
+        buyerId: storefrontOrders.buyerId,
+        storefrontId: storefrontOrders.storefrontId,
+        sellerId: storefrontOrders.sellerId,
+        listingId: storefrontOrders.listingId,
+        licenseType: storefrontOrders.licenseType,
+        amountCents: storefrontOrders.amountCents,
+        currency: storefrontOrders.currency,
+        status: storefrontOrders.status,
+        appliedPromotionId: storefrontOrders.appliedPromotionId,
+        createdAt: storefrontOrders.createdAt,
+        title: listings.title,
+        audioUrl: listings.audioUrl,
+      })
       .from(storefrontOrders)
+      .leftJoin(listings, eq(listings.id, storefrontOrders.listingId))
       .where(
         and(
           eq(storefrontOrders.storefrontId, storefrontId),
@@ -1808,7 +1978,46 @@ router.get("/:id/orders", async (req, res) => {
       .limit(limit)
       .offset(offset);
 
-    res.json(orders);
+    const audioKeys = [
+      ...new Set(
+        orders
+          .filter((order) => order.status === "completed")
+          .map((order) => getMarketplaceAudioStorageKey(order.audioUrl))
+          .filter((key): key is string => Boolean(key)),
+      ),
+    ];
+    const trackedFiles = audioKeys.length
+      ? await db
+          .select({
+            userId: userStorageFiles.userId,
+            fileKey: userStorageFiles.fileKey,
+          })
+          .from(userStorageFiles)
+          .where(
+            and(
+              inArray(userStorageFiles.fileKey, audioKeys),
+              isNull(userStorageFiles.deletedAt),
+            ),
+          )
+      : [];
+    const trackedFileKeys = new Set(
+      trackedFiles.map((file) => `${file.userId}\0${file.fileKey}`),
+    );
+    return res.json(
+      orders.map((order) => {
+        const fileKey = getMarketplaceAudioStorageKey(order.audioUrl);
+        const canDownload =
+          order.status === "completed" &&
+          Boolean(fileKey) &&
+          trackedFileKeys.has(`${order.sellerId}\0${fileKey}`);
+        return {
+          ...order,
+          downloadUrl: canDownload
+            ? `/api/storefront/orders/${encodeURIComponent(order.id)}/download`
+            : null,
+        };
+      }),
+    );
   } catch (error) {
     logger.warn({ err: error }, "Error fetching storefront orders:");
     res.status(500).json({ error: "Failed to fetch orders" });

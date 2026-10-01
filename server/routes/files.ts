@@ -4,6 +4,7 @@ import { userStorage, userStorageFiles } from "../../shared/schema.js";
 import { eq, and, desc, sql, isNull, isNotNull } from "drizzle-orm";
 import { storageService } from "../services/storageService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { requireAuthOnly } from "../middleware/auth.js";
 import crypto from "crypto";
 import { logger } from "../logger.js";
 import {
@@ -36,9 +37,11 @@ setInterval(
 
 const router = Router();
 
+const MAX_UPLOAD_FILE_SIZE = 500 * 1024 * 1024;
+
 const upload = createHardenedUpload({
-  maxFileSize: 500 * 1024 * 1024,
-  maxFiles: 10,
+  maxFileSize: MAX_UPLOAD_FILE_SIZE,
+  maxFiles: 1,
   label: "file",
 });
 
@@ -102,6 +105,7 @@ async function getOrCreateUserStorage(userId: string) {
 
 router.post(
   "/upload",
+  requireAuthOnly,
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
@@ -147,7 +151,7 @@ router.post(
         });
       }
 
-      const maxSize = 500 * 1024 * 1024;
+      const maxSize = MAX_UPLOAD_FILE_SIZE;
       if (file.size > maxSize) {
         return res.status(413).json({
           success: false,
@@ -290,6 +294,7 @@ router.post(
 
 router.post(
   "/upload/chunk",
+  requireAuthOnly,
   upload.single("chunk"),
   async (req: Request, res: Response) => {
     try {
@@ -894,7 +899,8 @@ router.get(
 
 router.post(
   "/validate",
-  upload?.single("file"),
+  requireAuthOnly,
+  upload.single("file"),
   async (req: Request, res: Response) => {
     try {
       if (!req.user) {

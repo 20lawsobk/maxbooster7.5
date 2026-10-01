@@ -41,6 +41,17 @@ import {
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Star, UserPlus, UserCheck, Pause } from "lucide-react";
 
+interface StorefrontPurchase {
+  id: string;
+  listingId: string;
+  title: string | null;
+  licenseType: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  downloadUrl: string | null;
+}
+
 interface Storefront {
   id: string;
   userId: string;
@@ -237,9 +248,9 @@ export default function Storefront() {
     const membershipStatus = params.get("membership");
     if (checkoutStatus === "success") {
       toast({
-        title: "Purchase Complete!",
+        title: "Payment received",
         description:
-          "Your beats have been purchased successfully. Check your purchases page for downloads.",
+          "Your order is being finalized. Downloads will appear in your purchases when the order is complete.",
       });
       setCart([]);
       window.history.replaceState({}, "", window.location.pathname);
@@ -291,6 +302,23 @@ export default function Storefront() {
     publicLoading || (!!user && previewLoading && !publicStorefront);
   const isOwnerPreview =
     !!user && !!storefront && storefront.userId === user.id;
+
+  const { data: purchasedOrders = [] } = useQuery<StorefrontPurchase[]>({
+    queryKey: [`/api/storefront/${storefront?.id}/orders`],
+    enabled: !!storefront?.id && !!user && !isOwnerPreview,
+    retry: false,
+    refetchInterval: (query) =>
+      query.state.data?.some((order) => order.status === "pending")
+        ? 2500
+        : false,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/storefront/${encodeURIComponent(storefront!.id)}/orders`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch purchases");
+      return response.json();
+    },
+  });
 
   const { data: tiers = [] } = useQuery<
     MembershipTier[]
@@ -531,10 +559,11 @@ export default function Storefront() {
         window.location.href = data.checkoutUrl;
       } else {
         toast({
-          title: "Purchase Complete!",
-          description: "Your beats are ready for download.",
+          variant: "destructive",
+          title: "Checkout unavailable",
+          description:
+            "No payment link was returned. Your cart has been kept so you can try again.",
         });
-        setCart([]);
       }
     },
     onError: (error: Error) => {
@@ -1307,6 +1336,59 @@ export default function Storefront() {
               </div>
             )}
           </section>
+
+          {purchasedOrders.length > 0 && !isOwnerPreview && (
+            <section className="mt-12">
+              <div className="flex items-center gap-3 mb-5">
+                <h2
+                  className="text-2xl font-bold"
+                  style={{ fontFamily: headingFont, color: textColor }}
+                >
+                  Your purchases
+                </h2>
+                {purchasedOrders.some((order) => order.status === "pending") && (
+                  <Badge variant="secondary">Finalizing payment</Badge>
+                )}
+              </div>
+              <div className="space-y-3">
+                {purchasedOrders.map((order) => (
+                  <Card
+                    key={order.id}
+                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    style={{ backgroundColor: bgColor, color: textColor }}
+                  >
+                    <div>
+                      <p className="font-semibold">
+                        {order.title || "Purchased beat"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.licenseType} license ·{" "}
+                        {new Intl.NumberFormat(undefined, {
+                          style: "currency",
+                          currency: order.currency || "USD",
+                        }).format(Number(order.amountCents || 0) / 100)}
+                      </p>
+                    </div>
+                    {order.status === "completed" ? (
+                      order.downloadUrl ? (
+                        <Button asChild>
+                          <a href={order.downloadUrl}>Download audio</a>
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Download unavailable
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Order processing
+                      </span>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
 
           {cart.length > 0 && !isOwnerPreview && (
             <div className="fixed bottom-8 right-8 z-50 max-w-md">

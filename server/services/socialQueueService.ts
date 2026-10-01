@@ -6,6 +6,11 @@ import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { BoosterQueue } from "./queueService.js";
+import { storage } from "../storage.js";
+import {
+  autoPostingServiceV2,
+  normalizePublishingPlatform,
+} from "./autoPostingServiceV2.js";
 
 export interface SocialPostJobData {
   postId: string;
@@ -114,12 +119,28 @@ class SocialQueueService {
     data: SocialPostJobData,
     _delay?: number,
   ): Promise<{ id: string; name: string; data: SocialPostJobData }> {
-    data?.platform.toLowerCase();
-
-    return await this.socialQueue.add("publish-post", data, {
-      priority: data.scheduledAt ? 2 : 1,
-      jobId: data.postId,
-    });
+    const existingPost = await storage.getScheduledPostById(data.postId);
+    if (!existingPost) {
+      throw new Error(`Cannot queue missing social post ${data.postId}`);
+    }
+    const platforms = existingPost.platforms?.length
+      ? existingPost.platforms
+      : [data.platform];
+    const scheduledPost = await autoPostingServiceV2.scheduleExistingPost(
+      data.postId,
+      {
+        platforms: [...new Set(platforms.map(normalizePublishingPlatform))],
+        content: data.content || existingPost.content,
+        mediaUrls: data.mediaUrls || existingPost.mediaUrls || [],
+        scheduledAt:
+          data.scheduledAt || existingPost.scheduledTime || new Date(),
+      },
+    );
+    return {
+      id: scheduledPost.id,
+      name: "auto-post",
+      data,
+    };
   }
 
   async checkRateLimit(platform: string, accountId: string): Promise<boolean> {
@@ -508,7 +529,12 @@ class SocialQueueService {
       .where(
         and(
           eq(socialAccounts.userId, post.userId),
-          eq(socialAccounts.platform, platform),
+          eq(
+            socialAccounts.platform,
+            normalizePublishingPlatform(platform) === "google_business"
+              ? "googlebusiness"
+              : normalizePublishingPlatform(platform),
+          ),
         ),
       )
       .limit(1);

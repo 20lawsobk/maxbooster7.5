@@ -73,6 +73,8 @@ interface Message {
   postUrl?: string;
   replyContent?: string | null;
   replyDelivered?: boolean | null;
+  replyDeliveryState?: "draft" | "sending" | "delivered" | "failed" | "unknown" | null;
+  providerReplyId?: string | null;
   sentiment: "positive" | "neutral" | "negative";
   priority: "high" | "medium" | "low";
   status: "unread" | "read" | "replied" | "archived" | "snoozed";
@@ -176,6 +178,36 @@ export function UnifiedInbox() {
     queryClient.invalidateQueries({ queryKey: ["/api/social/inbox"] });
   };
 
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/social/inbox/sync", {});
+      return res.json();
+    },
+    onSuccess: (data: Record<string, any>) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/social/inbox"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/inbox/stats"] });
+      const details = (data.results || [])
+        .map((result: any) => {
+          if (result.status === "synced") {
+            return `${result.platform}: ${result.imported} new, ${result.scanned} checked`;
+          }
+          return `${result.platform}: ${result.error || result.status}`;
+        })
+        .join(" · ");
+      toast({
+        title: data.success ? "Inbox Sync Complete" : "Inbox Sync Needs Attention",
+        description: details || "No provider sync result was returned.",
+        variant: data.success ? undefined : "destructive",
+      });
+    },
+    onError: (error: any) =>
+      toast({
+        title: "Inbox Sync Failed",
+        description: error?.userMessage || "Could not sync provider inboxes.",
+        variant: "destructive",
+      }),
+  });
+
   const replyMutation = useMutation({
     mutationFn: async ({ id, content }: { id: string; content: string }) => {
       const res = await apiRequest("POST", `/api/social/inbox/${id}/reply`, {
@@ -185,14 +217,12 @@ export function UnifiedInbox() {
     },
     onSuccess: (data) => {
       toast({
-        title: data?.outcome?.title || "Reply Saved",
+        title: data?.outcome?.title || (data?.delivered ? "Reply Delivered" : "Reply Requires Reconciliation"),
         description:
           data?.outcome?.message ||
-          "Your reply was saved but not automatically delivered.",
+          "Check the provider receipt status before retrying.",
+        variant: data?.delivered ? undefined : "destructive",
       });
-      // Delivery isn't automated yet, so keep the composed text visible
-      // (instead of clearing it) so the user can copy it and send it
-      // manually on the platform.
       if (data?.delivered) {
         setReplyContent("");
       }
@@ -202,6 +232,7 @@ export function UnifiedInbox() {
               ...prev,
               replyContent: data?.replyContent ?? prev.replyContent,
               replyDelivered: !!data?.delivered,
+              replyDeliveryState: data?.status || prev.replyDeliveryState,
             }
           : prev,
       );
@@ -213,6 +244,18 @@ export function UnifiedInbox() {
         description: error?.userMessage || "Failed to send your reply.",
         variant: "destructive",
       });
+      invalidateInbox();
+      setSelectedMessage((prev) =>
+        prev
+          ? {
+              ...prev,
+              replyContent: replyContent || prev.replyContent,
+              replyDeliveryState:
+                error?.status === 422 ? "failed" : "unknown",
+              replyDelivered: false,
+            }
+          : prev,
+      );
     },
   });
 
@@ -426,17 +469,26 @@ export function UnifiedInbox() {
             Unified Inbox
           </h2>
           <p className="text-muted-foreground mt-1">
-            Manage all your social media conversations in one place
+            Sync provider comments and X mentions. Direct messages are not included.
           </p>
         </div>
-        <Button
-          onClick={() =>
-            queryClient.invalidateQueries({ queryKey: ["/api/social/inbox"] })
-          }
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => refetchMessages()}
+            disabled={messagesFetching}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${messagesFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+            {syncMutation.isPending ? "Syncing..." : "Sync Providers"}
+          </Button>
+        </div>
       </div>
 
       {messagesError && (
@@ -940,32 +992,85 @@ export function UnifiedInbox() {
                     )}
 
                     {selectedMessage?.replyContent &&
-                      !selectedMessage?.replyDelivered && (
-                        <div className="flex items-start gap-2 p-2 rounded border border-amber-500/40 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-400">
-                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      !selectedMessage?.replyDelivered &&
+                      selectedMessage.replyDeliveryState === "draft" && (
+                        <div className="flex items-start gap-2 p-2 rounded border border-blue-500/40 bg-blue-500/10 text-xs text-blue-700 dark:text-blue-400">
+                          <MessageSquare className="w-4 h-4 mt-0.5 shrink-0" />
                           <span>
-                            This reply was saved but not automatically sent —
-                            automated delivery to {selectedMessage.platform}{" "}
-                            isn't available yet. Copy the text below and send
-                            it manually.
+                            A saved reply draft is ready. Nothing has been sent
+                            until you choose Send Reply.
                           </span>
                         </div>
                       )}
+                    {selectedMessage?.replyContent &&
+                      !selectedMessage?.replyDelivered &&
+                      selectedMessage.replyDeliveryState === "unknown" && (
+                        <div className="flex items-start gap-2 p-2 rounded border border-amber-500/40 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>
+                            Provider acceptance is uncertain. Do not retry this
+                            reply until its delivery has been reconciled.
+                          </span>
+                        </div>
+                      )}
+                    {selectedMessage?.replyContent &&
+                      selectedMessage.replyDeliveryState === "failed" && (
+                        <div className="flex items-start gap-2 p-2 rounded border border-red-500/40 bg-red-500/10 text-xs text-red-700 dark:text-red-400">
+                          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>
+                            The provider rejected the last send. Review or edit
+                            the saved reply before trying again.
+                          </span>
+                        </div>
+                      )}
+                    {selectedMessage?.replyDelivered && (
+                      <div className="flex items-start gap-2 p-2 rounded border border-green-500/40 bg-green-500/10 text-xs text-green-700 dark:text-green-400">
+                        <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>
+                          Provider receipt saved
+                          {selectedMessage.providerReplyId
+                            ? ` (${selectedMessage.providerReplyId})`
+                            : ""}
+                          .
+                        </span>
+                      </div>
+                    )}
 
                     <Textarea
-                      placeholder="Type your reply..."
+                      placeholder={
+                        selectedMessage.replyDelivered
+                          ? "Reply already delivered"
+                          : "Type your reply..."
+                      }
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       rows={3}
+                      disabled={
+                        selectedMessage.replyDelivered ||
+                        ["sending", "unknown"].includes(
+                          selectedMessage.replyDeliveryState || "",
+                        )
+                      }
                     />
 
                     <Button
                       onClick={handleReply}
-                      disabled={!replyContent.trim() || replyMutation.isPending}
+                      disabled={
+                        !replyContent.trim() ||
+                        replyMutation.isPending ||
+                        selectedMessage.replyDelivered ||
+                        ["sending", "unknown"].includes(
+                          selectedMessage.replyDeliveryState || "",
+                        ) ||
+                        !["twitter", "facebook", "instagram"].includes(
+                          selectedMessage.platform,
+                        ) ||
+                        !["comment", "mention"].includes(selectedMessage.type)
+                      }
                       className="w-full"
                     >
                       <Send className="w-4 h-4 mr-2" />
-                      {replyMutation.isPending ? "Save Reply..." : "Save Reply"}
+                      {replyMutation.isPending ? "Sending..." : "Send Reply"}
                     </Button>
                   </div>
                 </CardContent>

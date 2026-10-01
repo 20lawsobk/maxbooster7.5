@@ -5,7 +5,7 @@ import { Save, Trash2, X } from "lucide-react";
 interface UnsavedChangesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => Promise<void> | void;
+  onSave: () => Promise<boolean | void> | boolean | void;
   onDiscard: () => void;
   onCancel: () => void;
   projectName?: string;
@@ -22,8 +22,8 @@ export function UnsavedChangesDialog({
   isSaving = false,
 }: UnsavedChangesDialogProps) {
   const handleSave = async () => {
-    await onSave();
-    onOpenChange(false);
+    const saved = await onSave();
+    if (saved !== false) onOpenChange(false);
   };
 
   const handleDiscard = () => {

@@ -96,7 +96,7 @@ interface ReleaseWizardProps {
 }
 
 export function ReleaseWizard({
-  _releaseId,
+  releaseId,
   onComplete,
   onCancel,
 }: ReleaseWizardProps) {
@@ -141,57 +141,46 @@ export function ReleaseWizard({
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [releaseDate, setReleaseDate] = useState<Date | null>(null);
   const [royaltySplits, setRoyaltySplits] = useState<any[]>([]);
+  const [draftReleaseId, setDraftReleaseId] = useState<string | undefined>(
+    releaseId,
+  );
   const [createPreSave, setCreatePreSave] = useState(true);
   const [preSaveSlug, setPreSaveSlug] = useState("");
 
   // Save as draft mutation
   const saveDraftMutation = useMutation({
     mutationFn: async () => {
-      const formData = new FormData();
-      formData.append("title", metadataData.title);
-      formData.append("artistName", metadataData.artistName);
-      formData.append("releaseType", metadataData.releaseType);
-      formData.append("primaryGenre", metadataData.primaryGenre);
-      formData.append("language", metadataData.language);
-      formData.append("copyrightYear", metadataData.copyrightYear.toString());
-      formData.append("copyrightOwner", metadataData.copyrightOwner);
-      formData.append("isExplicit", metadataData.isExplicit.toString());
-
-      if (releaseDate) {
-        formData.append("releaseDate", releaseDate.toISOString());
-      }
-
-      formData.append(
-        "metadata",
-        JSON.stringify({
-          ...metadataData,
-          territoryMode,
-          territories: selectedTerritories,
-          selectedPlatforms,
-          royaltySplits,
-        }),
-      );
-
+      const payload = {
+        ...metadataData,
+        releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
+        territoryMode,
+        territories: selectedTerritories,
+        selectedPlatforms,
+        royaltySplits,
+      };
       const response = await apiRequest(
-        "POST",
-        "/api/distribution/releases",
-        formData,
+        draftReleaseId ? "PATCH" : "POST",
+        draftReleaseId
+          ? `/api/distribution/releases/${encodeURIComponent(draftReleaseId)}`
+          : "/api/distribution/releases",
+        payload,
       );
-      return response.json();
+      return response.json() as Promise<{ id: string }>;
     },
-    onSuccess: () => {
+    onSuccess: (release) => {
+      if (release.id) setDraftReleaseId(release.id);
       toast({
         title: "Draft saved",
-        description: "Your release has been saved as a draft.",
+        description: "Your release metadata and royalty splits have been saved.",
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/releases"],
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to save draft. Please try again.",
+        description: error.message || "Failed to save draft. Please try again.",
         variant: "destructive",
       });
     },
@@ -226,11 +215,14 @@ export function ReleaseWizard({
       };
 
       const response = await apiRequest(
-        "POST",
-        "/api/distribution/releases",
+        draftReleaseId ? "PATCH" : "POST",
+        draftReleaseId
+          ? `/api/distribution/releases/${encodeURIComponent(draftReleaseId)}`
+          : "/api/distribution/releases",
         releasePayload,
       );
       const releaseData = await response.json();
+      if (releaseData.id) setDraftReleaseId(releaseData.id);
 
       // Step 2: Upload each track individually to the tracks endpoint
       if (releaseData.id && audioFiles.length > 0) {

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getToolostRedirectUri } from "../services/toolostRuntimeConfig";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import type { Request, Response } from "express";
 import { z } from "zod";
+import { parse as parseCsv } from "csv-parse/sync";
 import { storage } from "../storage";
 import { db } from "../db";
 import { eq, and, desc, sql, count, inArray } from "drizzle-orm";
@@ -25,13 +26,23 @@ import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
 import { distributionService } from "../services/distributionService";
 import { labelGridService } from "../services/labelgrid-service";
-import { getDistributionSubmissions } from "../services/distributionSubmissionRepository.js";
+import {
+  claimToolostRetry,
+  completeToolostRetry,
+  getDistributionSubmissions,
+} from "../services/distributionSubmissionRepository.js";
 import { toolostService } from "../services/toolost-service";
 import {
+  canRetryToolostRelease,
   deriveToolostSubmissionPersistence,
   mapToolostDispatchStatus,
   submitToolostRelease,
 } from "./distribution-toolost-submission";
+import {
+  createReleaseDraftSchema,
+  createReleaseSchema,
+  updateReleaseSchema,
+} from "./distribution-release-schemas";
 import { musicCodesService } from "../services/musicCodes";
 import {
   labelCopyLinter,
@@ -289,36 +300,175 @@ const upload = createHardenedUpload({
   label: "distribution",
 });
 
-// Validation schemas
-const createReleaseSchema = z.object({
-  title: z.string().min(1),
-  artistName: z.string().min(1),
-  releaseType: z.enum(["single", "EP", "album"]),
-  primaryGenre: z.string().min(1),
-  secondaryGenre: z.string().optional(),
-  language: z.string().min(1),
-  labelName: z.string().optional(),
-  copyrightYear: z.number().int().min(1900),
-  copyrightOwner: z.string().min(1),
-  publishingRights: z.string().optional(),
-  isExplicit: z.boolean().default(false),
-  moodTags: z.array(z.string()).optional(),
-  releaseDate: z.string().optional(),
-  territoryMode: z
-    .enum(["worldwide", "include", "exclude"])
-    .default("worldwide"),
-  territories: z.array(z.string()).optional(),
-  selectedPlatforms: z.array(z.string()).optional(),
-  artworkAiUsage: z.enum(["none", "ai-generated"]).optional(),
-  audioAiUsage: z.enum(["none", "ai-assisted"]).optional(),
-  compositionAiUsage: z.enum(["none", "ai-assisted"]).optional(),
-  composerName: z.string().max(120).optional(),
-  acceptTerms: z.boolean().optional(),
-  confirmRights: z.boolean().optional(),
-  confirmYoutubeRights: z.boolean().optional(),
-});
+function buildRoyaltySplitRows(
+  releaseId: string,
+  splits: NonNullable<z.infer<typeof createReleaseSchema>["royaltySplits"]>,
+) {
+  return splits.map((split) => ({
+    releaseId,
+    collaboratorName: split.name,
+    collaboratorEmail: split.email.toLowerCase(),
+    role: split.role,
+    percentage: split.percentage,
+    status: "pending",
+  }));
+}
 
-const updateReleaseSchema = createReleaseSchema.partial();
+function normalizeDistributionPlatform(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function replaceReleaseRoyaltySplits(
+  releaseId: string,
+  splits: NonNullable<z.infer<typeof createReleaseSchema>["royaltySplits"]>,
+) {
+  return db.transaction(async (tx) => {
+    await tx.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
+    if (splits.length === 0) return [];
+    return tx
+      .insert(royaltySplits)
+      .values(buildRoyaltySplitRows(releaseId, splits))
+      .returning();
+  });
+}
+
+const TOOLOST_CSV_LABEL_PREFIX = "__toolost_csv_v1__:";
+const TOOLOST_CSV_COLUMNS = [
+  "period_start",
+  "period_end",
+  "currency",
+  "platform",
+  "streams",
+  "amount",
+] as const;
+
+export function parseTooLostStatementCsv(input: string | Buffer) {
+  let rows: Record<string, string>[];
+  try {
+    rows = parseCsv(input, {
+      bom: true,
+      columns: (headers: string[]) => {
+        const normalized = headers.map((header) =>
+          header.trim().toLowerCase().replace(/[\s-]+/g, "_"),
+        );
+        if (new Set(normalized).size !== normalized.length) {
+          throw new Error("CSV contains duplicate column names");
+        }
+        return normalized;
+      },
+      skip_empty_lines: true,
+      trim: true,
+    }) as Record<string, string>[];
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? `Unable to parse CSV: ${error.message}`
+        : "Unable to parse CSV.",
+    );
+  }
+  if (rows.length === 0) throw new Error("CSV contains no statement rows.");
+
+  const columns = Object.keys(rows[0] || {});
+  const missingColumns = TOOLOST_CSV_COLUMNS.filter(
+    (column) => !columns.includes(column),
+  );
+  if (missingColumns.length > 0) {
+    throw new Error(
+      `CSV is missing required columns: ${missingColumns.join(", ")}.`,
+    );
+  }
+
+  let periodStart: string | undefined;
+  let periodEnd: string | undefined;
+  let currency: string | undefined;
+  let totalAmountCents = 0;
+  let totalStreams = 0;
+  const isDateOnly = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return (
+      Number.isFinite(parsed.getTime()) &&
+      parsed.toISOString().slice(0, 10) === value
+    );
+  };
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    const start = row.period_start?.trim();
+    const end = row.period_end?.trim();
+    if (!start || !isDateOnly(start)) {
+      throw new Error(`CSV row ${rowNumber}: period_start must use YYYY-MM-DD.`);
+    }
+    if (!end || !isDateOnly(end)) {
+      throw new Error(`CSV row ${rowNumber}: period_end must use YYYY-MM-DD.`);
+    }
+    if (start > end) {
+      throw new Error(`CSV row ${rowNumber}: period_end precedes period_start.`);
+    }
+    if (periodStart && (periodStart !== start || periodEnd !== end)) {
+      throw new Error("All statement rows must use the same reporting period.");
+    }
+    periodStart = start;
+    periodEnd = end;
+
+    const rowCurrency = row.currency?.trim().toUpperCase();
+    if (!rowCurrency || !/^[A-Z]{3}$/.test(rowCurrency)) {
+      throw new Error(`CSV row ${rowNumber}: currency must be a 3-letter code.`);
+    }
+    if (currency && currency !== rowCurrency) {
+      throw new Error("All statement rows must use the same currency.");
+    }
+    currency = rowCurrency;
+
+    if (!row.platform?.trim()) {
+      throw new Error(`CSV row ${rowNumber}: platform is required.`);
+    }
+    if (row.platform.trim().length > 120) {
+      throw new Error(`CSV row ${rowNumber}: platform must be 120 characters or fewer.`);
+    }
+    const streams = Number(row.streams);
+    if (!Number.isSafeInteger(streams) || streams < 0) {
+      throw new Error(`CSV row ${rowNumber}: streams must be a non-negative integer.`);
+    }
+    const amountText = row.amount?.trim() || "";
+    if (!/^-?\d+(?:\.\d{1,2})?$/.test(amountText)) {
+      throw new Error(`CSV row ${rowNumber}: amount must be a decimal with at most 2 places.`);
+    }
+    const amount = Number(amountText);
+    if (!Number.isFinite(amount)) {
+      throw new Error(`CSV row ${rowNumber}: amount is not a finite number.`);
+    }
+    totalAmountCents += Math.round(amount * 100);
+    totalStreams += streams;
+    if (!Number.isSafeInteger(totalAmountCents) || !Number.isSafeInteger(totalStreams)) {
+      throw new Error("Statement totals exceed supported numeric limits.");
+    }
+  });
+
+  return {
+    periodStart: new Date(`${periodStart}T00:00:00.000Z`),
+    periodEnd: new Date(`${periodEnd}T00:00:00.000Z`),
+    currency: currency!,
+    totalAmount: totalAmountCents / 100,
+    totalStreams,
+    rowCount: rows.length,
+  };
+}
+
+function decodeImportedStatementLabel(label: string | null | undefined) {
+  if (!label?.startsWith(TOOLOST_CSV_LABEL_PREFIX)) return null;
+  try {
+    const parsed = JSON.parse(
+      label.slice(TOOLOST_CSV_LABEL_PREFIX.length),
+    ) as Record<string, unknown>;
+    return parsed.source === "toolost_csv" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 const createTrackSchema = z.object({
   title: z.string().min(1),
@@ -370,7 +520,7 @@ router.get("/releases", requireAuth, async (req: Request, res: Response) => {
 router.post("/releases", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const data = createReleaseSchema?.parse(req.body);
+    const data = createReleaseDraftSchema.parse(req.body);
 
     const release = await storage.createDistroRelease({
       artistId: userId,
@@ -401,7 +551,11 @@ router.post("/releases", requireAuth, async (req: Request, res: Response) => {
       },
     });
 
-    res.json(release);
+    const persistedSplits =
+      data.royaltySplits === undefined
+        ? []
+        : await replaceReleaseRoyaltySplits(release.id, data.royaltySplits);
+    res.json({ ...release, royaltySplits: persistedSplits });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res
@@ -427,7 +581,18 @@ router.get(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      res.json(release);
+      const savedSplits = await db
+        .select({
+          id: royaltySplits.id,
+          name: royaltySplits.collaboratorName,
+          email: royaltySplits.collaboratorEmail,
+          role: royaltySplits.role,
+          percentage: royaltySplits.percentage,
+          inviteStatus: royaltySplits.status,
+        })
+        .from(royaltySplits)
+        .where(eq(royaltySplits.releaseId, id));
+      res.json({ ...release, royaltySplits: savedSplits });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching release:");
       res.status(500).json({ error: "Failed to fetch release" });
@@ -463,6 +628,7 @@ router.patch(
         });
       }
 
+      const { royaltySplits: requestedSplits, ...metadataUpdates } = updates;
       const updatedRelease = await storage.updateDistroRelease(id, {
         title: updates.title,
         releaseDate: updates.releaseDate
@@ -470,11 +636,18 @@ router.patch(
           : undefined,
         metadata: {
           ...(release?.metadata as Record<string, unknown> | undefined),
-          ...updates,
+          ...metadataUpdates,
         },
       });
 
-      res.json(updatedRelease);
+      const persistedSplits =
+        requestedSplits === undefined
+          ? undefined
+          : await replaceReleaseRoyaltySplits(id, requestedSplits);
+      res.json({
+        ...updatedRelease,
+        ...(persistedSplits ? { royaltySplits: persistedSplits } : {}),
+      });
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
@@ -1489,8 +1662,7 @@ router.get(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      // New submissions use Too Lost; legacy LabelGrid IDs remain readable.
-      const metadata = release.metadata as Record<string, unknown>;
+      const metadata = (release.metadata || {}) as Record<string, unknown>;
       let providerStatus: {
         releaseId: string;
         status: string;
@@ -1502,6 +1674,11 @@ router.get(
           errorMessage?: string;
         }>;
       } | null = null;
+      let providerError: string | undefined;
+      let lastChecked =
+        typeof metadata.toolostLastCheckedAt === "string"
+          ? metadata.toolostLastCheckedAt
+          : null;
 
       if (metadata.toolostReleaseId) {
         try {
@@ -1510,33 +1687,20 @@ router.get(
             metadata.toolostReleaseId as string,
           );
         } catch (error: unknown) {
+          providerError =
+            error instanceof Error ? error.message : "Too Lost status is unavailable";
           logger.warn({ err: error }, "Error fetching Too Lost status:");
         }
-      } else if (metadata.labelGridReleaseId) {
-        try {
-          providerStatus = await labelGridService.getReleaseStatus(
-            metadata.labelGridReleaseId as string,
-          );
-        } catch (error: unknown) {
-          logger.warn({ err: error }, "Error fetching legacy LabelGrid status:");
-        }
+      } else {
+        providerError =
+          "This release has no persisted Too Lost submission ID; provider status cannot be refreshed.";
       }
 
       if (providerStatus?.platforms) {
         try {
           for (const platformStatus of providerStatus.platforms) {
             const gatewayStatus = platformStatus.status.toLowerCase();
-            const localStatus = metadata.toolostReleaseId
-              ? mapToolostDispatchStatus(gatewayStatus).status
-              : [
-                    "unsupported",
-                    "not_supported",
-                    "not_configured",
-                  ].includes(gatewayStatus)
-                ? "not_supported"
-                : gatewayStatus === "error"
-                  ? "failed"
-                  : gatewayStatus;
+            const localStatus = mapToolostDispatchStatus(gatewayStatus).status;
             await storage.updateDistroDispatchStatus(id, {
               platform: platformStatus.platform,
               status: localStatus,
@@ -1546,7 +1710,18 @@ router.get(
               error: platformStatus.errorMessage,
             });
           }
+          lastChecked = new Date().toISOString();
+          await storage.updateDistroRelease(id, {
+            metadata: {
+              ...metadata,
+              toolostLastCheckedAt: lastChecked,
+            },
+          });
         } catch (error: unknown) {
+          providerError =
+            error instanceof Error
+              ? `Too Lost status was received but could not be saved: ${error.message}`
+              : "Too Lost status was received but could not be saved.";
           logger.warn({ err: error }, "Error saving distributor status:");
         }
       }
@@ -1558,8 +1733,10 @@ router.get(
       const liveCount = statuses.filter(
         (s: unknown) => (s as any).status === "live",
       ).length;
-      const totalCount = statuses.length || 1;
-      const overallProgress = (liveCount / (totalCount || 1)) * 100;
+      const overallProgress =
+        statuses.length === 0
+          ? null
+          : Math.round((liveCount / statuses.length) * 100);
 
       res.json({
         statuses: statuses.map((status: unknown) => ({
@@ -1574,14 +1751,16 @@ router.get(
           errorResolution: (status as any).errorResolution,
           lastChecked: (status as any).updatedAt,
         })),
-        overallProgress: Math.round(overallProgress),
-        labelGridStatus: providerStatus
+        overallProgress,
+        toolostStatus: providerStatus
           ? {
               releaseId: providerStatus.releaseId,
               status: providerStatus.status,
               estimatedLiveDate: providerStatus.estimatedLiveDate,
             }
           : null,
+        lastChecked,
+        providerError: providerError || null,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching release status:");
@@ -1604,73 +1783,81 @@ router.post(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      const releaseMetadata = release.metadata as Record<string, unknown>;
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
       const currentStatus =
         releaseMetadata.status || release.status || "draft";
 
-      if (currentStatus === "draft") {
-        return res.json({
-          success: true,
-          status: "draft",
+      if (currentStatus === "draft" || typeof releaseMetadata.toolostReleaseId !== "string") {
+        return res.status(409).json({
+          success: false,
+          error: "Release has not been submitted to Too Lost",
           message:
-            "Release has not been submitted yet. Submit it first before checking status.",
+            "A provider status check requires the Too Lost release ID from a confirmed submission.",
+          status: currentStatus,
           platforms: [],
-          lastChecked: new Date(),
+          lastChecked:
+            typeof releaseMetadata.toolostLastCheckedAt === "string"
+              ? releaseMetadata.toolostLastCheckedAt
+              : null,
         });
       }
 
       try {
-        const toolostReleaseId =
-          typeof releaseMetadata.toolostReleaseId === "string"
-            ? releaseMetadata.toolostReleaseId
-            : undefined;
-        const statusResult = toolostReleaseId
-          ? await (async () => {
-              const toolost = await getDistributionToolostService(userId);
-              const remote = await toolost.getReleaseStatus(toolostReleaseId);
-              const platforms = remote.platforms.map((platform) => {
-                const outcome = mapToolostDispatchStatus(platform.status);
-                return {
-                  platform: platform.platform,
-                  status: outcome.status,
-                  liveDate: platform.liveDate
-                    ? new Date(platform.liveDate)
-                    : undefined,
-                  indeterminate: outcome.indeterminate,
-                };
-              });
-              for (const platform of platforms) {
-                await storage.updateDistroDispatchStatus(id, {
-                  platform: platform.platform,
-                  status: platform.status,
-                  liveAt: platform.liveDate,
-                });
-              }
-              const remoteReleaseStatus = remote.status.toLowerCase();
-              const status =
-                remoteReleaseStatus === "live"
-                  ? "live"
-                  : remoteReleaseStatus === "failed"
-                    ? "failed"
-                    : mapToolostDispatchStatus(remoteReleaseStatus).status;
-              await storage.updateDistroRelease(id, {
-                status,
-                metadata: {
-                  ...releaseMetadata,
-                  status,
-                  toolostReleaseId,
-                  toolostLastCheckedAt: new Date().toISOString(),
-                },
-              });
-              return { status, platforms, lastChecked: new Date() };
-            })()
-          : await distributionService.refreshReleaseStatus(id);
+        const toolostReleaseId = releaseMetadata.toolostReleaseId;
+        const toolost = await getDistributionToolostService(userId);
+        const remote = await toolost.getReleaseStatus(toolostReleaseId);
+        const lastChecked = new Date().toISOString();
+        const platforms = remote.platforms.map((platform) => {
+          const outcome = mapToolostDispatchStatus(platform.status);
+          return {
+            platform: platform.platform,
+            status: outcome.status,
+            liveDate: platform.liveDate
+              ? new Date(platform.liveDate)
+              : undefined,
+            errorMessage: platform.errorMessage,
+            indeterminate: outcome.indeterminate,
+          };
+        });
+        for (const platform of platforms) {
+          const updatedDispatch = await storage.updateDistroDispatchStatus(id, {
+            platform: platform.platform,
+            status: platform.status,
+            liveAt: platform.liveDate,
+            error: platform.errorMessage,
+          });
+          if (!updatedDispatch) {
+            throw new Error(
+              `Too Lost reported ${platform.platform}, but its local dispatch record could not be found.`,
+            );
+          }
+        }
+        const remoteReleaseStatus = remote.status.toLowerCase();
+        const status =
+          remoteReleaseStatus === "live"
+            ? "live"
+            : remoteReleaseStatus === "failed"
+              ? "failed"
+              : mapToolostDispatchStatus(remoteReleaseStatus).status;
+        const updatedRelease = await storage.updateDistroRelease(id, {
+          status,
+          metadata: {
+            ...releaseMetadata,
+            status,
+            toolostReleaseId,
+            toolostLastCheckedAt: lastChecked,
+          },
+        });
+        if (!updatedRelease) {
+          throw new Error("Too Lost status could not be saved to the release.");
+        }
+        const statusResult = { status, platforms, lastChecked };
         res.json({
           success: true,
           status: statusResult.status,
           platforms: statusResult.platforms,
           lastChecked: statusResult.lastChecked,
-          message: "Status refreshed successfully",
+          message: "Too Lost status was refreshed and saved.",
         });
 
         // Only an explicit live status is confirmation that a DSP has made
@@ -1715,9 +1902,13 @@ router.post(
           lastChecked:
             typeof releaseMetadata.toolostLastCheckedAt === "string"
               ? releaseMetadata.toolostLastCheckedAt
-              : undefined,
+              : null,
           message:
-            "Could not reach distribution service. Showing last known status.",
+            "Too Lost status could not be confirmed. No new status was saved; showing the last known result.",
+          providerError:
+            refreshError instanceof Error
+              ? refreshError.message
+              : "Unknown Too Lost status error",
         });
       }
     } catch (error: unknown) {
@@ -4818,6 +5009,15 @@ router.post(
           details: metadataResult.error.issues,
         });
       }
+      const collaboratorSplitResult =
+        createReleaseSchema.shape.royaltySplits.safeParse(parsedCollaborators);
+      if (!collaboratorSplitResult.success) {
+        return res.status(400).json({
+          error: "Invalid royalty splits",
+          details: collaboratorSplitResult.error.issues,
+        });
+      }
+      const parsedRoyaltySplits = collaboratorSplitResult.data || [];
       if (rightsConfirmed !== "true" || contentOriginal !== "true") {
         return res.status(400).json({
           error: "Rights confirmation required",
@@ -4914,6 +5114,7 @@ router.post(
       if (trackInserts.length > 0) {
         await db.insert(distroTracks).values(trackInserts);
       }
+      await replaceReleaseRoyaltySplits(release.id, parsedRoyaltySplits);
 
       logger.info(
         `Distribution release created: ${release.id} by user ${userId}`,
@@ -5212,86 +5413,22 @@ router.post("/codes/:id/revoke", requireAuth, async (_req, res) => {
 // EARNINGS ENDPOINTS
 // ===========================
 
-// GET /api/distribution/earnings/entries - Get earnings entries (paginated)
-router.get(
-  "/earnings/entries",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-      const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
-      const pageOffset = Math.min(
-        Math.max(Number(req.query.offset) || 0, 0),
-        100_000,
-      );
+// Too Lost's API does not expose account-level per-track earnings rows.
+router.get("/earnings/entries", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost detailed earnings are not available through its API",
+    message:
+      "This app cannot present local marketplace transactions as Too Lost DSP earnings.",
+  });
+});
 
-      const [entries, [{ total }]] = await Promise.all([
-        db
-          .select({
-            id: royaltyTransactions.id,
-            splitId: royaltyTransactions.splitId,
-            releaseId: royaltyTransactions.releaseId,
-            amount: royaltyTransactions.amount,
-            currency: royaltyTransactions.currency,
-            transactionType: royaltyTransactions.transactionType,
-            platform: royaltyTransactions.platform,
-            periodStart: royaltyTransactions.periodStart,
-            periodEnd: royaltyTransactions.periodEnd,
-            streamCount: royaltyTransactions.streamCount,
-            status: royaltyTransactions.status,
-            paidAt: royaltyTransactions.paidAt,
-            metadata: royaltyTransactions.metadata,
-            createdAt: royaltyTransactions.createdAt,
-            releaseTitle: distroReleases.title,
-          })
-          .from(royaltyTransactions)
-          .leftJoin(
-            distroReleases,
-            eq(royaltyTransactions.releaseId, distroReleases.id),
-          )
-          .where(eq(royaltyTransactions.userId, userId))
-          .orderBy(desc(royaltyTransactions.createdAt))
-          .limit(pageLimit)
-          .offset(pageOffset),
-        db
-          .select({ total: count() })
-          .from(royaltyTransactions)
-          .where(eq(royaltyTransactions.userId, userId)),
-      ]);
-
-      res.json({
-        entries,
-        total: Number(total),
-        limit: pageLimit,
-        offset: pageOffset,
-      });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching earnings entries:");
-      res.status(500).json({ error: "Failed to fetch earnings entries" });
-    }
-  },
-);
-
-// GET /api/distribution/earnings/payouts - Get earnings payouts
-router.get(
-  "/earnings/payouts",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-      const payouts = await db
-        .select()
-        .from(instantPayouts)
-        .where(eq(instantPayouts.userId, userId))
-        .orderBy(desc(instantPayouts.createdAt))
-        .limit(500);
-      res.json({ payouts, total: payouts.length });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching earnings payouts:");
-      res.status(500).json({ error: "Failed to fetch earnings payouts" });
-    }
-  },
-);
+// Too Lost does not expose an in-app payout history endpoint.
+router.get("/earnings/payouts", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost payout history is not available through its API",
+    message: "Check the payout provider linked to your Too Lost account.",
+  });
+});
 
 // GET /api/distribution/earnings/statements - Get earnings statements (local DB)
 router.get(
@@ -5307,10 +5444,84 @@ router.get(
         .where(eq(royaltyStatements.userId, userId))
         .orderBy(desc(royaltyStatements.createdAt))
         .limit(500);
-      res.json({ statements });
+      res.json({
+        statements: statements.map((statement) => {
+          const importDetails = decodeImportedStatementLabel(statement.label);
+          const periodStart = statement.periodStart.toISOString().slice(0, 10);
+          const periodEnd = statement.periodEnd.toISOString().slice(0, 10);
+          return {
+            id: statement.id,
+            platform: importDetails ? "Too Lost CSV import" : statement.label || "Statement",
+            period: `${periodStart} – ${periodEnd}`,
+            statementDate: statement.createdAt?.toISOString() || null,
+            fileName:
+              typeof importDetails?.fileName === "string"
+                ? importDetails.fileName
+                : statement.label || "Statement file",
+            fileSize:
+              typeof importDetails?.fileSize === "number"
+                ? importDetails.fileSize
+                : null,
+            status: statement.status,
+            totalAmount: Number(statement.totalEarnings),
+            totalStreams:
+              typeof importDetails?.totalStreams === "number"
+                ? importDetails.totalStreams
+                : null,
+            rowCount:
+              typeof importDetails?.rowCount === "number"
+                ? importDetails.rowCount
+                : null,
+            currency:
+              typeof importDetails?.currency === "string"
+                ? importDetails.currency
+                : null,
+            importedAt: statement.createdAt?.toISOString() || null,
+            downloadUrl: statement.downloadUrl
+              ? `/api/distribution/earnings/statements/${encodeURIComponent(statement.id)}/download`
+              : null,
+          };
+        }),
+      });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching earnings statements:");
       res.status(500).json({ error: "Failed to fetch earnings statements" });
+    }
+  },
+);
+
+router.get(
+  "/earnings/statements/:id/download",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params as Record<string, string>;
+      const [statement] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)))
+        .limit(1);
+      const expectedPrefix = `users/${userId}/earnings-statements/`;
+      if (!statement?.downloadUrl?.startsWith(expectedPrefix)) {
+        return res.status(404).json({ error: "Imported statement file not found" });
+      }
+      const importDetails = decodeImportedStatementLabel(statement.label);
+      if (!importDetails) {
+        return res.status(404).json({ error: "Imported statement file not found" });
+      }
+      const contents = await storageService.downloadFile(statement.downloadUrl);
+      const fileName =
+        typeof importDetails.fileName === "string"
+          ? path.basename(importDetails.fileName)
+          : "toolost-statement.csv";
+      return res
+        .type("text/csv")
+        .attachment(fileName)
+        .send(contents);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error downloading imported statement:");
+      return res.status(500).json({ error: "Failed to download imported statement" });
     }
   },
 );
@@ -5333,156 +5544,58 @@ router.post(
       if (!statement) {
         return res.status(404).json({ error: "Statement not found" });
       }
-      if (statement.status === "reconciled") {
-        return res.json({ statement, alreadyReconciled: true });
+      if (statement.status === "reviewed") {
+        return res.json({ statement, alreadyReviewed: true });
       }
-      const [reconciled] = await db
+      const [reviewed] = await db
         .update(royaltyStatements)
-        .set({ status: "reconciled" })
+        .set({ status: "reviewed" })
         .where(
           and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, userId)),
         )
         .returning();
-      return res.json({ statement: reconciled });
+      return res.json({
+        statement: reviewed,
+        message:
+          "Review recorded. This does not reconcile the file against Too Lost ledger data.",
+      });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error reconciling earnings statement:");
-      return res.status(500).json({ error: "Failed to reconcile statement" });
+      logger.warn({ err: error }, "Error recording statement review:");
+      return res.status(500).json({ error: "Failed to record statement review" });
     }
   },
 );
 
-// GET /api/distribution/earnings/summary - Get earnings summary (LabelGrid primary)
+// GET /api/distribution/earnings/summary - Get Too Lost's actual lifetime sales totals
 router.get(
   "/earnings/summary",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
-
-      if (labelGridService?.isApiConfigured()) {
-        try {
-          const agg = await aggregateLabelGridAnalytics(userId);
-          if (agg) {
-            const now = new Date();
-            const thisMonthStart = new Date(
-              now?.getFullYear(),
-              now?.getMonth(),
-              1,
-            );
-            const lastMonthStart = new Date(
-              now?.getFullYear(),
-              now?.getMonth() - 1,
-              1,
-            );
-            const lastMonthEnd = new Date(
-              now?.getFullYear(),
-              now?.getMonth(),
-              0,
-              23,
-              59,
-              59,
-            );
-            const thisMonth = agg?.timeline
-              .filter((t) => new Date(t?.date) >= thisMonthStart)
-              .reduce((s, t) => s + t?.revenue, 0);
-            const lastMonth = agg?.timeline
-              .filter(
-                (t) =>
-                  new Date(t?.date) >= lastMonthStart &&
-                  new Date(t?.date) <= lastMonthEnd,
-              )
-              .reduce((s, t) => s + t?.revenue, 0);
-
-            return res.json({
-              totalEarnings: agg.totalRevenue,
-              thisMonth,
-              lastMonth,
-              source: "labelgrid",
-            });
-          }
-        } catch (lgErr) {
-          logger.warn(
-            { err: lgErr },
-            "[Distribution] LabelGrid earnings summary failed, falling back to DB:"
-          );
-        }
-      }
-
-      // Fall back to local DB
-      const now = new Date();
-      const thisMonthStart = new Date(now?.getFullYear(), now?.getMonth(), 1);
-      const lastMonthStart = new Date(now?.getFullYear(), now?.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(
-        now?.getFullYear(),
-        now?.getMonth(),
-        0,
-        23,
-        59,
-        59,
-      );
-
-      const [agg] = await db
-        .select({
-          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
-          pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
-          paidOut: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'paid' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
-          thisMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${thisMonthStart} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
-          lastMonth: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.createdAt} >= ${lastMonthStart} AND ${royaltyTransactions.createdAt} <= ${lastMonthEnd} THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
-        })
-        .from(royaltyTransactions)
-        .where(eq(royaltyTransactions.userId, userId));
-
-      res.json({
-        totalEarnings: Number(agg?.totalEarnings),
-        pendingEarnings: Number(agg?.pendingEarnings),
-        paidOut: Number(agg?.paidOut),
-        thisMonth: Number(agg?.thisMonth),
-        lastMonth: Number(agg?.lastMonth),
+      const toolost = await getDistributionToolostService(userId);
+      const summary = await toolost.getRoyaltySummary();
+      return res.json({
+        totalEarnings: summary.lifetime,
+        currency: summary.currency,
+        source: "toolost",
+        detailAvailable: false,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching earnings summary:");
-      res.status(500).json({ error: "Failed to fetch earnings summary" });
-    }
-  },
-);
-
-// GET /api/distribution/earnings/territories - Get earnings by territory
-router.get(
-  "/earnings/territories",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-
-      // SQL GROUP BY on JSONB territory field — O(territories) rows instead of O(all_transactions)
-      const rows = await db
-        .select({
-          territory: sql<string>`COALESCE(${royaltyTransactions.metadata}->>'territory', ${royaltyTransactions.metadata}->>'country', ${royaltyTransactions.platform}, 'unknown')`,
-          totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
-          streams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
-          transactions: sql<number>`COUNT(*)`,
-        })
-        .from(royaltyTransactions)
-        .where(eq(royaltyTransactions.userId, userId))
-        .groupBy(
-          sql`COALESCE(${royaltyTransactions.metadata}->>'territory', ${royaltyTransactions.metadata}->>'country', ${royaltyTransactions.platform}, 'unknown')`,
-        )
-        .orderBy(sql`SUM(${royaltyTransactions.amount}) DESC`);
-
-      res.json({
-        territories: rows.map((r) => ({
-          territory: r.territory,
-          totalEarnings: Number(r?.totalEarnings),
-          streams: Number(r?.streams),
-          transactions: Number(r?.transactions),
-        })),
+      res.status(502).json({
+        error: "Too Lost earnings summary is unavailable",
+        message: error instanceof Error ? error.message : "No provider response was received.",
       });
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching earnings territories:");
-      res.status(500).json({ error: "Failed to fetch earnings territories" });
     }
   },
 );
+
+router.get("/earnings/territories", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "Too Lost territory-level earnings are not available through its API",
+  });
+});
 
 // ===========================
 // ROYALTIES ENDPOINTS
@@ -6185,7 +6298,7 @@ router.get(
 // ENHANCED SUBMISSION STATUS ENDPOINTS
 // ===========================
 
-// GET /api/distribution/releases/:id/submission-status - Get detailed submission status with queue info
+// GET /api/distribution/releases/:id/submission-status - Get persisted provider status
 router.get(
   "/releases/:id/submission-status",
   requireAuth,
@@ -6203,8 +6316,7 @@ router.get(
         id,
       )) as DispatchStatus[];
 
-      const statuses = dispatches?.map(
-        (dispatch: DispatchStatus, index: number) => {
+      const statuses = dispatches.map((dispatch: DispatchStatus) => {
           let logs: Record<string, unknown> = {};
           try {
             logs = dispatch?.logs ? JSON.parse(dispatch.logs) : {};
@@ -6215,36 +6327,31 @@ router.get(
             platform: (dispatch as any).platform || dispatch.providerId,
             platformName: dispatch.providerName || dispatch?.providerId,
             status: dispatch.status,
-            queuePosition: dispatch.status === "queued" ? index + 1 : undefined,
-            estimatedTime:
-              dispatch?.status === "queued" ? "2-4 hours" : undefined,
             estimatedGoLive: logs.estimatedGoLive,
             deliveredAt: logs.deliveredAt,
-            liveAt: logs.liveAt,
-            errorMessage: logs.errorMessage,
+            liveAt: (dispatch as any).liveAt || logs.liveAt,
+            errorMessage: (dispatch as any).error || logs.errorMessage,
             errorCode: logs.errorCode,
             errorResolution: logs.errorResolution,
-            retryCount: logs.retryCount || 0,
+            retryCount: Number(logs.retryCount) || 0,
             maxRetries: 3,
             lastAttempt: logs.lastAttempt,
             externalId: logs.externalId,
             validationErrors: logs.validationErrors,
           };
-        },
-      );
+      });
 
-      const queued = statuses?.filter((s) => s?.status === "queued").length;
-      const processing = statuses?.filter((s) =>
+      const queued = statuses.filter((s) => s?.status === "queued").length;
+      const processing = statuses.filter((s) =>
         ["pending", "processing"].includes(s?.status),
       ).length;
-      const delivered = statuses?.filter((s) => s?.status === "delivered").length;
-      const live = statuses?.filter((s) => s?.status === "live").length;
-      const failed = statuses?.filter((s) =>
-        ["failed", "rejected", "not_supported"].includes(s?.status),
+      const delivered = statuses.filter((s) => s?.status === "delivered").length;
+      const live = statuses.filter((s) => s?.status === "live").length;
+      const failed = statuses.filter((s) =>
+        ["failed", "rejected"].includes(s?.status),
       ).length;
 
-      const overallProgress =
-        statuses?.length > 0 ? ((live + delivered) / statuses?.length) * 100 : 0;
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
 
       res.json({
         statuses,
@@ -6255,11 +6362,12 @@ router.get(
           delivered,
           live,
           failed,
-          overallProgress,
-          estimatedCompletion: new Date(
-            Date.now() + 5 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
         },
+        statusSource: "persisted",
+        lastChecked:
+          typeof releaseMetadata.toolostLastCheckedAt === "string"
+            ? releaseMetadata.toolostLastCheckedAt
+            : null,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching submission status:");
@@ -6268,7 +6376,7 @@ router.get(
   },
 );
 
-// POST /api/distribution/releases/:id/retry - Retry failed platform submission
+// POST /api/distribution/releases/:id/retry - Re-submit a failed release to Too Lost
 router.post(
   "/releases/:id/retry",
   requireAuth,
@@ -6276,60 +6384,292 @@ router.post(
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const { platform } = req.body;
+      const { platform } = z
+        .object({ platform: z.string().trim().min(1).max(120) })
+        .parse(req.body);
 
       const release = await storage.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
+      }
+      const releaseMetadata = (release.metadata || {}) as Record<string, unknown>;
+      const toolostReleaseId =
+        typeof releaseMetadata.toolostReleaseId === "string"
+          ? releaseMetadata.toolostReleaseId
+          : undefined;
+      if (!toolostReleaseId) {
+        return res.status(409).json({
+          error: "Too Lost retry unavailable",
+          message:
+            "This release has no persisted Too Lost submission ID. Reconcile the original provider receipt before retrying.",
+        });
       }
 
       const dispatches = (await storage.getDistroDispatchStatuses(
         id,
       )) as DispatchStatus[];
       const dispatch = dispatches?.find(
-        (d: DispatchStatus) => d?.providerId === platform,
+        (d: DispatchStatus) =>
+          normalizeDistributionPlatform(
+            String((d as any).platform || d.providerId || ""),
+          ) === normalizeDistributionPlatform(platform),
       );
 
       if (!dispatch) {
         return res.status(404).json({ error: "Platform dispatch not found" });
       }
 
-      const logs = dispatch?.logs ? JSON.parse(dispatch?.logs) : {};
-      const retryCount = (logs?.retryCount || 0) + 1;
-
-      if (retryCount > 3) {
-        return res
-          .status(400)
-          .json({ error: "Maximum retry attempts exceeded" });
+      if (!["failed", "rejected"].includes(dispatch.status.toLowerCase())) {
+        return res.status(409).json({
+          error: "Retry not available",
+          message: "Only a confirmed failed Too Lost delivery can be retried.",
+        });
       }
 
-      await storage.updateDistroDispatch(dispatch?.id, {
-        status: "queued",
+      let logs: Record<string, unknown> = {};
+      try {
+        logs = dispatch.logs ? JSON.parse(dispatch.logs) : {};
+      } catch {
+        logs = {};
+      }
+      const retryCount = (Number(logs.retryCount) || 0) + 1;
+      if (retryCount > 3) {
+        return res.status(409).json({
+          error: "Maximum Too Lost retry attempts exceeded",
+          message: "Refresh the provider status or contact Too Lost support.",
+        });
+      }
+
+      const acceptTerms = releaseMetadata.acceptTerms === true;
+      const confirmRights = releaseMetadata.confirmRights === true;
+      const confirmYoutubeRights =
+        releaseMetadata.confirmYoutubeRights === true;
+      if (
+        !acceptTerms ||
+        !confirmRights ||
+        (normalizeDistributionPlatform(platform).includes("youtube") &&
+          !confirmYoutubeRights)
+      ) {
+        return res.status(409).json({
+          error: "Required submission confirmations are missing",
+          message:
+            "The release does not contain the confirmations required by Too Lost. Review the release and submit it through the normal workflow.",
+        });
+      }
+
+      const toolost = await getDistributionToolostService(userId);
+      const remoteBeforeRetry = await toolost.getReleaseStatus(toolostReleaseId);
+      const remotePlatforms = remoteBeforeRetry.platforms || [];
+      const targetPlatform = remotePlatforms.find(
+        (remote) =>
+          normalizeDistributionPlatform(remote.platform) ===
+          normalizeDistributionPlatform(platform),
+      );
+      if (!targetPlatform) {
+        return res.status(409).json({
+          error: "Too Lost platform status is unavailable",
+          message:
+            "Too Lost did not return a matching platform status. Refresh status before retrying.",
+        });
+      }
+      const targetOutcome = mapToolostDispatchStatus(targetPlatform.status);
+      if (!["failed", "rejected"].includes(targetOutcome.status)) {
+        return res.status(409).json({
+          error: "Too Lost has not confirmed this platform failed",
+          message: `Too Lost currently reports ${targetPlatform.status || "unknown"} for ${platform}.`,
+        });
+      }
+      if (!canRetryToolostRelease(remotePlatforms, dispatches.length)) {
+        return res.status(409).json({
+          error: "Release-level retry is not safe",
+          message:
+            "Too Lost only exposes a release-level retry, not an individual platform retry. A current failed status for every selected destination is required, so this release was not resubmitted.",
+        });
+      }
+
+      const attemptId = await claimToolostRetry(
+        userId,
+        id,
+        platform,
+        retryCount,
+      );
+      const lastAttempt = new Date().toISOString();
+      let remoteAfterRetry;
+      try {
+        remoteAfterRetry = await toolost.retryReleaseSubmission(
+          toolostReleaseId,
+          {
+            acceptTerms: true,
+            confirmRights: true,
+            ...(confirmYoutubeRights ? { confirmYoutubeRights: true } : {}),
+          },
+        );
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Too Lost retry outcome is unknown";
+        await completeToolostRetry(
+          userId,
+          id,
+          platform,
+          attemptId,
+          retryCount,
+          "unknown",
+          { error: message },
+        );
+        await storage.updateDistroDispatch(dispatch.id, {
+          status: "pending",
+          logs: JSON.stringify({
+            ...logs,
+            retryCount,
+            lastAttempt,
+            retryOutcome: "unknown",
+            errorMessage:
+              "Too Lost did not confirm the retry outcome. Refresh provider status before retrying again.",
+          }),
+        });
+        return res.status(502).json({
+          success: false,
+          status: "pending",
+          retryCount,
+          message:
+            "Too Lost did not confirm the retry outcome. The release was not marked successful; refresh provider status before another attempt.",
+        });
+      }
+
+      const remoteTargetAfterRetry = (remoteAfterRetry.platforms || []).find(
+        (remote) =>
+          normalizeDistributionPlatform(remote.platform) ===
+          normalizeDistributionPlatform(platform),
+      );
+      if (!remoteTargetAfterRetry) {
+        await completeToolostRetry(
+          userId,
+          id,
+          platform,
+          attemptId,
+          retryCount,
+          "unknown",
+          { status: remoteAfterRetry.status, platforms: remoteAfterRetry.platforms || [] },
+        );
+        await storage.updateDistroDispatch(dispatch.id, {
+          status: "pending",
+          logs: JSON.stringify({
+            ...logs,
+            retryCount,
+            lastAttempt,
+            retryOutcome: "unknown",
+            errorMessage:
+              "Too Lost did not return this destination after retry. Refresh provider status before retrying again.",
+          }),
+        });
+        return res.status(502).json({
+          success: false,
+          status: "pending",
+          retryCount,
+          message:
+            "Too Lost accepted the release-level request but did not confirm this destination's status. Refresh provider status before retrying again.",
+        });
+      }
+
+      const retryOutcome = mapToolostDispatchStatus(
+        remoteTargetAfterRetry.status,
+      );
+      const persistedStatus = retryOutcome.indeterminate
+        ? "pending"
+        : retryOutcome.status;
+      const updatedDispatch = await storage.updateDistroDispatch(dispatch.id, {
+        status: persistedStatus,
+        error: retryOutcome.indeterminate
+          ? "Too Lost retry outcome is indeterminate; refresh provider status."
+          : remoteTargetAfterRetry.errorMessage || null,
         logs: JSON.stringify({
           ...logs,
+          gatewayStatus: remoteTargetAfterRetry.status,
           retryCount,
-          lastAttempt: new Date().toISOString(),
-          errorMessage: null,
+          lastAttempt,
+          retryOutcome: retryOutcome.indeterminate
+            ? "unknown"
+            : retryOutcome.accepted
+              ? "confirmed"
+              : "failed",
+          errorMessage: retryOutcome.indeterminate
+            ? "Too Lost retry outcome is indeterminate; refresh provider status."
+            : remoteTargetAfterRetry.errorMessage || null,
+          externalId: toolostReleaseId,
         }),
       });
-
-      logger.info(
-        {
-          releaseId: id,
+      if (!updatedDispatch) {
+        await completeToolostRetry(
+          userId,
+          id,
           platform,
+          attemptId,
           retryCount,
+          "unknown",
+          { status: remoteTargetAfterRetry.status, localPersistenceFailed: true },
+        );
+        return res.status(502).json({
+          success: false,
+          message:
+            "Too Lost returned a retry status but the local dispatch update failed. Refresh provider status before retrying.",
+        });
+      }
+
+      const checkedAt = new Date().toISOString();
+      await storage.updateDistroRelease(id, {
+        status: remoteAfterRetry.status,
+        metadata: {
+          ...releaseMetadata,
+          status: remoteAfterRetry.status,
+          toolostReleaseId,
+          toolostLastCheckedAt: checkedAt,
         },
-        `Retrying submission for release ${id} to platform ${platform}`,
+      });
+      await completeToolostRetry(
+        userId,
+        id,
+        platform,
+        attemptId,
+        retryCount,
+        retryOutcome.indeterminate
+          ? "unknown"
+          : retryOutcome.accepted
+            ? "confirmed"
+            : "failed",
+        {
+          status: remoteTargetAfterRetry.status,
+          errorMessage: remoteTargetAfterRetry.errorMessage,
+          checkedAt,
+        },
       );
 
-      res.json({
-        success: true,
-        message: `Retry initiated for ${platform}`,
+      const success = retryOutcome.accepted && !retryOutcome.indeterminate;
+      logger.info(
+        { releaseId: id, platform, retryCount, status: persistedStatus },
+        "Too Lost release retry status persisted",
+      );
+      return res.status(retryOutcome.indeterminate ? 202 : 200).json({
+        success,
+        platform,
+        status: persistedStatus,
         retryCount,
+        message: success
+          ? `Too Lost confirmed the release retry; ${platform} is ${remoteTargetAfterRetry.status}.`
+          : retryOutcome.indeterminate
+            ? "Too Lost has not confirmed the retry outcome. Refresh provider status before retrying."
+            : `Too Lost still reports ${remoteTargetAfterRetry.status} for ${platform}.`,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error retrying submission:");
-      res.status(500).json({ error: "Failed to retry submission" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: error.issues,
+        });
+      }
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to retry submission",
+      });
     }
   },
 );
@@ -7340,68 +7680,135 @@ router.post(
       if (!file)
         return res.status(400).json({ error: "statement file is required" });
 
-      const key = `earnings-statements/${userId}/${Date.now()}-${file.originalname}`;
-      await storageService.uploadFile(file.buffer, key, file.mimetype);
+      if (file.size > 10 * 1024 * 1024) {
+        return res.status(413).json({
+          error: "Statement CSV exceeds the 10 MB import limit",
+        });
+      }
+      const fileName = path.basename(file.originalname).slice(0, 255);
+      if (path.extname(fileName).toLowerCase() !== ".csv") {
+        return res.status(415).json({
+          error: "Only CSV statement files are supported",
+          message:
+            "The Too Lost API does not provide statements. Import a user-exported CSV using the required columns.",
+        });
+      }
+      let parsedStatement: ReturnType<typeof parseTooLostStatementCsv>;
+      try {
+        parsedStatement = parseTooLostStatementCsv(file.buffer);
+      } catch (error) {
+        return res.status(400).json({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Invalid Too Lost CSV statement",
+        });
+      }
 
-      logger.info(
-        `[Distribution] Earnings statement uploaded for user ${userId}: ${key}`,
+      const digest = createHash("sha256")
+        .update(userId)
+        .update(":")
+        .update(file.buffer)
+        .digest("hex");
+      const statementId = `toolost_csv_${digest}`;
+      const [existing] = await db
+        .select()
+        .from(royaltyStatements)
+        .where(
+          and(
+            eq(royaltyStatements.id, statementId),
+            eq(royaltyStatements.userId, userId),
+          ),
+        )
+        .limit(1);
+      if (existing) {
+        return res.json({
+          success: true,
+          duplicate: true,
+          message:
+            "This exact CSV was already imported. No duplicate statement was created.",
+          statementId: existing.id,
+        });
+      }
+
+      const storageKey = await storageService.uploadFile(
+        file.buffer,
+        `users/${userId}/earnings-statements`,
+        `${statementId}.csv`,
+        "text/csv",
       );
-      res.json({
+      const label =
+        TOOLOST_CSV_LABEL_PREFIX +
+        JSON.stringify({
+          source: "toolost_csv",
+          fileName,
+          fileSize: file.size,
+          currency: parsedStatement.currency,
+          totalStreams: parsedStatement.totalStreams,
+          rowCount: parsedStatement.rowCount,
+        });
+      const [statement] = await db
+        .insert(royaltyStatements)
+        .values({
+          id: statementId,
+          userId,
+          label,
+          periodStart: parsedStatement.periodStart,
+          periodEnd: parsedStatement.periodEnd,
+          totalEarnings: parsedStatement.totalAmount.toFixed(2),
+          status: "imported",
+          downloadUrl: storageKey,
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      if (!statement) {
+        return res.status(409).json({
+          error:
+            "The statement was uploaded but its import record was not created. Retry the same file to reconcile the saved import.",
+        });
+      }
+      logger.info(
+        { userId, statementId, rowCount: parsedStatement.rowCount },
+        "User-provided Too Lost CSV statement imported",
+      );
+      return res.status(201).json({
         success: true,
-        message: "Statement uploaded and queued for processing",
-        statementKey: key,
-        filename: file.originalname,
-        size: file.size,
+        message:
+          "The supplied CSV summary was imported. It was not fetched from Too Lost, reconciled against provider ledger data, or used to request a payout.",
+        statement: {
+          id: statement.id,
+          fileName,
+          fileSize: file.size,
+          periodStart: parsedStatement.periodStart,
+          periodEnd: parsedStatement.periodEnd,
+          totalAmount: parsedStatement.totalAmount,
+          totalStreams: parsedStatement.totalStreams,
+          rowCount: parsedStatement.rowCount,
+          currency: parsedStatement.currency,
+          status: statement.status,
+        },
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error importing earnings statement:");
-      res.status(500).json({ error: "Failed to import earnings statement" });
-    }
-  },
-);
-
-// POST /api/distribution/earnings/payout — Request payout from earnings
-router.post(
-  "/earnings/payout",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req.user as AuthenticatedUser).id;
-      const { amount, method } = req.body;
-      if (!amount || !method)
-        return res
-          .status(400)
-          .json({ error: "amount and method are required" });
-      if (typeof amount !== "number" || amount <= 0)
-        return res
-          .status(400)
-          .json({ error: "amount must be a positive number" });
-
-      // Route through LabelGrid — will throw (502) if distributor account not configured
-      const result = await labelGridService.requestPayout(amount, method);
-      logger.info(
-        `[Distribution] Payout requested by ${userId}: $${amount} via ${method} → id=${result.id}`,
-      );
-      res.json({
-        success: true,
-        payoutId: result.id,
-        amount: result.amount,
-        method,
-        status: result.status,
-        requestedAt: result.requestedAt,
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? `Failed to import earnings statement: ${error.message}`
+            : "Failed to import earnings statement",
       });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      logger.warn({ err: error }, "Error requesting earnings payout:");
-      if (message.includes("not configured") || message.includes("LABELGRID")) {
-        return res
-          .status(503)
-          .json({ error: "Payout unavailable", details: message });
-      }
-      res.status(500).json({ error: "Failed to request payout" });
     }
   },
 );
+
+// Too Lost handles payouts through its linked provider; it has no payout-request endpoint.
+router.post("/earnings/payout", requireAuth, (_req, res) => {
+  return res.status(501).json({
+    error: "In-app Too Lost payout requests are not supported",
+    message:
+      "Request and track payouts through the payout provider linked to your Too Lost account.",
+  });
+});
 
 // ─── POST /api/distribution/codes/generate — Generate ISRC or UPC codes ──────
 router.post(

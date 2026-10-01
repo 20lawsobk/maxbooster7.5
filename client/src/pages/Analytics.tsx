@@ -33,6 +33,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { StatCard, StatCardRow } from "@/components/ui/stat-card";
 import {
+  interactionMetricValueOrUnavailable,
+  metricValueOrUnavailable,
+} from "@/components/dashboard/dashboardDataContracts";
+import {
   ChartCard,
   SimpleAreaChart,
   PlatformBreakdown,
@@ -235,16 +239,16 @@ interface ForecastData {
 
 interface AnalyticsData {
   overview: {
-    totalStreams: number;
-    totalRevenue: number;
-    totalListeners: number;
-    totalPlays: number;
-    avgListenTime: number;
-    completionRate: number;
-    skipRate: number;
-    shareRate: number;
-    likeRate: number;
-    growthRate: number;
+    totalStreams: number | null;
+    totalRevenue: number | null;
+    totalListeners: number | null;
+    totalPlays: number | null;
+    avgListenTime: number | null;
+    completionRate: number | null;
+    skipRate: number | null;
+    shareRate: number | null;
+    likeRate: number | null;
+    growthRate: number | null;
   };
   streams: {
     daily: Array<{ date: string; streams: number; revenue: number }>;
@@ -589,6 +593,20 @@ const FanJourneyFunnel = memo(
           </p>
           <p className="text-xs text-muted-foreground/70 mt-1">
             Journey stages will appear when audience activity is recorded.
+          </p>
+        </div>
+      );
+    }
+
+    if (stages.every((stage) => Number(stage.count) === 0)) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <GitBranch className="h-10 w-10 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-muted-foreground">
+            Fan journey metrics unavailable
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            No audience activity has been reported to calculate funnel stages.
           </p>
         </div>
       );
@@ -1408,11 +1426,14 @@ const RevenueAttributionChart = memo(
 RevenueAttributionChart.displayName = "RevenueAttributionChart";
 
 const PredictiveForecasting = memo(
-  ({ forecasts }: { forecasts: ForecastData[] | undefined }) => {
-    const defaultForecasts: ForecastData[] = [];
-
-    const data =
-      forecasts && forecasts.length > 0 ? forecasts : defaultForecasts;
+  ({
+    forecasts,
+    isLoading,
+  }: {
+    forecasts: ForecastData[] | undefined;
+    isLoading: boolean;
+  }) => {
+    const data = forecasts ?? [];
 
     const getTrendIcon = (trend: string) => {
       switch (trend) {
@@ -1431,13 +1452,18 @@ const PredictiveForecasting = memo(
       return "text-orange-600 bg-orange-100";
     };
 
+    if (isLoading) {
+      return <Skeleton className="h-48 w-full" />;
+    }
+
     if (data.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-slate-500">
           <TrendingUp className="h-12 w-12 mb-3 opacity-30" />
-          <p className="text-sm">No forecast data available yet</p>
+          <p className="text-sm">Forecast unavailable</p>
           <p className="text-xs mt-1">
-            Predictions will appear here as streaming history accumulates
+            No verified forecast was supplied by the analytics service. No
+            projections are being invented.
           </p>
         </div>
       );
@@ -1836,10 +1862,46 @@ export default function Analytics() {
   const data = analyticsData as AnalyticsData;
   const currentValue = (
     key: keyof AnalyticsData["overview"],
-  ): number | string | undefined => {
+  ): number | string | null | undefined => {
     const rt = realtimeData?.[key];
     if (typeof rt === "number" || typeof rt === "string") return rt;
     return data?.overview?.[key];
+  };
+  const hasHistoricalAnalytics = (data?.streams?.daily?.length ?? 0) > 0;
+  const hasGrowthComparison = (data?.streams?.daily?.length ?? 0) > 1;
+  const getReportedMetric = (
+    key: keyof AnalyticsData["overview"],
+  ): number | string => {
+    const liveValue = realtimeData?.[key];
+    const hasLiveValue =
+      typeof liveValue === "number" ||
+      (typeof liveValue === "string" && liveValue.trim() !== "");
+    return metricValueOrUnavailable(
+      currentValue(key),
+      hasHistoricalAnalytics || hasLiveValue,
+    );
+  };
+  const growthChange =
+    hasGrowthComparison &&
+    typeof data?.overview?.growthRate === "number" &&
+    Number.isFinite(data.overview.growthRate)
+      ? data.overview.growthRate
+      : undefined;
+  const avgListenTimeDisplay = interactionMetricValueOrUnavailable(
+    data?.overview?.avgListenTime,
+  );
+  const completionRateDisplay = interactionMetricValueOrUnavailable(
+    data?.overview?.completionRate,
+  );
+  const shareRateDisplay = interactionMetricValueOrUnavailable(
+    data?.overview?.shareRate,
+  );
+
+  const formatPercent = (value: unknown) => {
+    const displayValue = interactionMetricValueOrUnavailable(value);
+    return typeof displayValue === "number"
+      ? `${displayValue}%`
+      : displayValue;
   };
 
   const getTimeSinceUpdate = useCallback(() => {
@@ -1981,16 +2043,16 @@ export default function Analytics() {
         <StatCardRow>
           <StatCard
             title="Total Streams"
-            value={
-              currentValue("totalStreams") ??
-              data?.overview?.totalStreams ??
-              0
-            }
-            change={data?.overview?.growthRate || 0}
+            value={getReportedMetric("totalStreams")}
+            change={growthChange}
             trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
+              growthChange === undefined
+                ? "neutral"
+                : growthChange > 0
+                  ? "up"
+                  : growthChange < 0
+                    ? "down"
+                    : "neutral"
             }
             sparklineData={
               data?.streams?.daily
@@ -2001,18 +2063,20 @@ export default function Analytics() {
           />
           <StatCard
             title="Total Revenue"
-            value={
-              currentValue("totalRevenue") ??
-              data?.overview?.totalRevenue ??
-              0
-            }
-            change={data?.overview?.growthRate || 0}
+            value={getReportedMetric("totalRevenue")}
+            change={growthChange}
             trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
+              growthChange === undefined
+                ? "neutral"
+                : growthChange > 0
+                  ? "up"
+                  : growthChange < 0
+                    ? "down"
+                    : "neutral"
             }
-            prefix="$"
+            prefix={
+              typeof getReportedMetric("totalRevenue") === "number" ? "$" : ""
+            }
             sparklineData={
               data?.streams?.daily
                 ?.slice(-7)
@@ -2022,56 +2086,41 @@ export default function Analytics() {
           />
           <StatCard
             title="Total Listeners"
-            value={
-              currentValue("totalListeners") ??
-              data?.overview?.totalListeners ??
-              0
-            }
-            change={data?.overview?.growthRate || 0}
+            value={getReportedMetric("totalListeners")}
+            change={growthChange}
             trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
+              growthChange === undefined
+                ? "neutral"
+                : growthChange > 0
+                  ? "up"
+                  : growthChange < 0
+                    ? "down"
+                    : "neutral"
             }
             sparklineData={[]}
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
             title="Avg Listen Time"
-            value={data?.overview?.avgListenTime || 0}
-            change={data?.overview?.growthRate || 0}
-            trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
-            }
-            suffix="m"
+            value={avgListenTimeDisplay}
+            change={undefined}
+            suffix={typeof avgListenTimeDisplay === "number" ? "m" : ""}
             sparklineData={[]}
             icon={<Clock className="h-5 w-5" />}
           />
           <StatCard
             title="Completion Rate"
-            value={data?.overview?.completionRate || 0}
-            change={data?.overview?.growthRate || 0}
-            trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
-            }
-            suffix="%"
+            value={completionRateDisplay}
+            change={undefined}
+            suffix={typeof completionRateDisplay === "number" ? "%" : ""}
             sparklineData={[]}
             icon={<Target className="h-5 w-5" />}
           />
           <StatCard
             title="Share Rate"
-            value={data?.overview?.shareRate || 0}
-            change={data?.overview?.growthRate || 0}
-            trend={
-              data?.overview?.growthRate && data.overview.growthRate > 0
-                ? "up"
-                : "neutral"
-            }
-            suffix="%"
+            value={shareRateDisplay}
+            change={undefined}
+            suffix={typeof shareRateDisplay === "number" ? "%" : ""}
             sparklineData={[]}
             icon={<Share2 className="h-5 w-5" />}
           />
@@ -2393,7 +2442,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <span className="text-xl font-bold text-blue-600">
-                        {data?.overview?.completionRate || 0}%
+                          {formatPercent(data?.overview?.completionRate)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -2409,7 +2458,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <span className="text-xl font-bold text-blue-600">
-                        {data?.overview?.shareRate || 0}%
+                          {formatPercent(data?.overview?.shareRate)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -2425,7 +2474,7 @@ export default function Analytics() {
                         </div>
                       </div>
                       <span className="text-xl font-bold text-blue-600">
-                        {data?.overview?.likeRate || 0}%
+                          {formatPercent(data?.overview?.likeRate)}
                       </span>
                     </div>
                   </div>
@@ -3066,7 +3115,10 @@ export default function Analytics() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <PredictiveForecasting forecasts={data?.forecasts} />
+                <PredictiveForecasting
+                  forecasts={data?.forecasts}
+                  isLoading={analyticsLoading}
+                />
               </CardContent>
             </Card>
           </TabsContent>

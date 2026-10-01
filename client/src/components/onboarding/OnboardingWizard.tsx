@@ -53,8 +53,30 @@ interface OnboardingData {
 }
 
 interface OnboardingWizardProps {
-  onComplete: () => void;
+  onComplete: (data: OnboardingData) => void;
   onSkip: () => void;
+}
+
+export function buildOnboardingPersistencePayload(
+  data: OnboardingData,
+  skippedAt?: string,
+) {
+  const onboardingData = {
+    persona: data.persona,
+    accountType: data.persona,
+    goals: data.goals,
+    experienceLevel: data.experienceLevel,
+    userLevel: data.experienceLevel,
+    preferSimplifiedView: data.experienceLevel === "beginner",
+    connectedPlatforms: data.connectedPlatforms,
+    completedSteps: data.completedSteps,
+    ...(skippedAt ? { skippedAt } : {}),
+  };
+
+  return {
+    hasCompletedOnboarding: true,
+    onboardingData,
+  };
 }
 
 const STEP_XP = [150, 200, 100, 250];
@@ -336,13 +358,7 @@ export default function OnboardingWizard({
   const completeMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
-        hasCompletedOnboarding: true,
-        onboardingData: {
-          accountType: data.persona,
-          goals: data.goals,
-          userLevel: data.experienceLevel,
-          preferSimplifiedView: data.experienceLevel === "beginner",
-        },
+        ...buildOnboardingPersistencePayload(data),
       });
       return response.json();
     },
@@ -393,10 +409,7 @@ export default function OnboardingWizard({
   const skipMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
-        hasCompletedOnboarding: true,
-        onboardingData: {
-          skippedAt: new Date().toISOString(),
-        },
+        ...buildOnboardingPersistencePayload(data, new Date().toISOString()),
       });
       return response.json();
     },
@@ -529,7 +542,7 @@ export default function OnboardingWizard({
             transition={{ delay: 1 }}
           >
             <Button
-              onClick={onComplete}
+              onClick={() => onComplete(data)}
               size="lg"
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg py-6 rounded-2xl"
             >

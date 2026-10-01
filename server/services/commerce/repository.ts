@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import type { Operation, Sale } from "./contract";
 import { majorUnits } from "./contract";
+import { logger } from "../../logger.js";
 
 export interface SqlClient { query(sql: string, params?: unknown[]): Promise<{ rows: any[] }>; release(): void }
 export interface SqlPool { connect(): Promise<SqlClient>; query(sql:string, params?:unknown[]): Promise<{rows:any[]}> }
@@ -63,9 +64,62 @@ export class CommerceRepository {
         if(!fulfilled.rows.length) throw new Error("Order license obligation is not ready");
       }
       if(sale.kind==="merchant") {
-        const fulfilled=await c.query("UPDATE storefront_orders SET status='completed',stripe_payment_intent_id=$2,stripe_session_id=$3,updated_at=now() WHERE id=$1 RETURNING id",
-          [sale.metadata?.merchantOrderId,sale.paymentIntent,sale.metadata?.sessionId]);
-        if(!fulfilled.rows.length) throw new Error("Merchant order no longer exists");
+        const sessionId=String(sale.metadata?.sessionId||"");
+        if(sale.metadata?.storefrontCheckout===true) {
+          const sellerId=String(sale.metadata?.sellerId||"");
+          const buyerId=String(sale.metadata?.buyerId||"");
+          const storefrontId=String(sale.metadata?.storefrontId||"");
+          if(!sessionId||!sellerId||!buyerId||!storefrontId||!sale.paymentIntent) {
+            throw new Error("Storefront settlement is missing its immutable identity");
+          }
+          const rows=(await c.query(`SELECT id,buyer_id,seller_id,storefront_id,amount_cents,currency,status,
+              stripe_session_id,stripe_payment_intent_id,applied_promotion_id
+            FROM storefront_orders WHERE stripe_session_id=$1 FOR UPDATE`,[sessionId])).rows;
+          if(!rows.length) throw new Error("Storefront checkout has no persisted orders");
+          const amounts=rows.map((row:any)=>Number(row.amount_cents));
+          if(amounts.some((amount:number)=>!Number.isSafeInteger(amount)||amount<0)||
+            amounts.reduce((total:number,amount:number)=>total+amount,0)!==sale.grossCents||
+            rows.some((row:any)=>String(row.buyer_id)!==buyerId||String(row.seller_id)!==sellerId||
+              String(row.storefront_id)!==storefrontId||String(row.currency||"usd").toLowerCase()!==sale.currency.toLowerCase()||
+              row.stripe_session_id!==sessionId||!["pending","completed"].includes(String(row.status))||
+              (row.stripe_payment_intent_id&&row.stripe_payment_intent_id!==sale.paymentIntent))) {
+            throw new Error("Persisted storefront order terms changed before settlement");
+          }
+          const fulfilled=await c.query(`UPDATE storefront_orders SET status='completed',stripe_payment_intent_id=$2,
+              updated_at=now()
+            WHERE stripe_session_id=$1 AND seller_id=$3 AND buyer_id=$4 AND storefront_id=$5
+              AND status IN ('pending','completed')
+              AND (stripe_payment_intent_id IS NULL OR stripe_payment_intent_id=$2)
+            RETURNING id`,[sessionId,sale.paymentIntent,sellerId,buyerId,storefrontId]);
+          if(fulfilled.rows.length!==rows.length) throw new Error("Storefront orders could not be fulfilled atomically");
+
+          const promotionIds=[...new Set(rows.map((row:any)=>row.applied_promotion_id).filter(Boolean).map(String))];
+          const metadataPromotionId=String(sale.metadata?.promotionId||"");
+          if(promotionIds.length>1||(metadataPromotionId&&promotionIds.length===1&&metadataPromotionId!==promotionIds[0])) {
+            throw new Error("Storefront promotion terms changed before settlement");
+          }
+          const promotionId=metadataPromotionId||promotionIds[0];
+          if(promotionId) {
+            const promotion=await c.query(`UPDATE bogo_promotions SET redemption_count=(
+                SELECT COUNT(DISTINCT stripe_session_id)::int FROM storefront_orders
+                WHERE applied_promotion_id=$1 AND status='completed' AND stripe_session_id IS NOT NULL
+              ) WHERE id=$1 RETURNING id`,[promotionId]);
+            if(!promotion.rows.length) {
+              logger.warn({promotionId,sessionId},"Paid storefront checkout settled, but its deleted promotion counter could not be reconciled");
+            }
+          }
+        } else {
+          const sellerId=String(sale.metadata?.sellerId||"");
+          const buyerId=String(sale.metadata?.buyerId||"");
+          const orderId=String(sale.metadata?.merchantOrderId||"");
+          const fulfilled=await c.query(`UPDATE storefront_orders SET status='completed',stripe_payment_intent_id=$2,
+              stripe_session_id=$3,updated_at=now()
+            WHERE id=$1 AND buyer_id=$4 AND seller_id=$5 AND status IN ('pending','completed')
+              AND (stripe_session_id IS NULL OR stripe_session_id=$3)
+              AND (stripe_payment_intent_id IS NULL OR stripe_payment_intent_id=$2)
+            RETURNING id`,[orderId,sale.paymentIntent,sessionId,buyerId,sellerId]);
+          if(!fulfilled.rows.length) throw new Error("Merchant order no longer exists or its payment identity changed");
+        }
       }
     });
   }

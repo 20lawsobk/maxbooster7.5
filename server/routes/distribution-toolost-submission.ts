@@ -56,6 +56,19 @@ export function mapToolostDispatchStatus(
   return { status: "pending", accepted: false, indeterminate: true };
 }
 
+export function canRetryToolostRelease(
+  statuses: Array<{ status?: string }>,
+  expectedDestinations = statuses.length,
+): boolean {
+  return (
+    statuses.length > 0 &&
+    statuses.length === expectedDestinations &&
+    statuses.every(({ status }) =>
+      ["failed", "rejected"].includes(mapToolostDispatchStatus(status).status),
+    )
+  );
+}
+
 export function deriveToolostSubmissionPersistence(
   dispatchResults: PromiseSettledResult<ToolostDispatchOutcome>[],
   providerStatus?: string,

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -23,7 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, CheckCircle2, Clock, AlertCircle, XCircle, Loader2, ExternalLink, RotateCcw, ChevronRight, Calendar, Users, Info, Zap, AlertTriangle } from "lucide-react";
+import { RefreshCw, CheckCircle2, Clock, AlertCircle, XCircle, Loader2, ExternalLink, RotateCcw, ChevronRight, Calendar, Info, Zap, AlertTriangle } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -46,9 +45,6 @@ interface PlatformSubmissionStatus {
     | "failed"
     | "rejected"
     | "not_supported";
-  queuePosition?: number;
-  estimatedTime?: string;
-  estimatedGoLive?: string;
   deliveredAt?: string;
   liveAt?: string;
   errorMessage?: string;
@@ -76,8 +72,6 @@ interface SubmissionSummary {
   delivered: number;
   live: number;
   failed: number;
-  overallProgress: number;
-  estimatedCompletion?: string;
 }
 
 interface SubmissionStatusTrackerProps {
@@ -89,30 +83,26 @@ interface SubmissionStatusTrackerProps {
 
 const PLATFORM_CONFIG: Record<
   string,
-  { icon: Record<string, unknown>; color: string; processingTime: string }
+  { icon: Record<string, unknown>; color: string }
 > = {
-  spotify: { icon: SpotifyIcon, color: "#1DB954", processingTime: "2-3 days" },
+  spotify: { icon: SpotifyIcon, color: "#1DB954" },
   "apple-music": {
     icon: AppleMusicIcon,
     color: "#FA243C",
-    processingTime: "3-5 days",
   },
   "youtube-music": {
     icon: YouTubeIcon,
     color: "#FF0000",
-    processingTime: "2-4 days",
   },
   "amazon-music": {
     icon: AmazonIcon,
     color: "#FF9900",
-    processingTime: "3-5 days",
   },
-  tidal: { icon: TidalIcon, color: "#000000", processingTime: "3-5 days" },
-  deezer: { icon: DeezerIcon, color: "#FEAA2D", processingTime: "2-4 days" },
+  tidal: { icon: TidalIcon, color: "#000000" },
+  deezer: { icon: DeezerIcon, color: "#FEAA2D" },
   soundcloud: {
     icon: SoundCloudIcon,
     color: "#FF3300",
-    processingTime: "1-2 days",
   },
 };
 
@@ -194,9 +184,13 @@ export function SubmissionStatusTracker({
   const {
     data: statusData,
     isLoading,
+    isError,
+    error,
   } = useQuery<{
     statuses: PlatformSubmissionStatus[];
     summary: SubmissionSummary;
+    statusSource?: string;
+    lastChecked?: string | null;
   }>({
     queryKey: [`/api/distribution/releases/${releaseId}/submission-status`],
     refetchInterval: 30000,
@@ -210,19 +204,19 @@ export function SubmissionStatusTracker({
       );
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Status updated",
-        description: "Latest delivery status has been fetched.",
+        description: result.message || "Latest Too Lost status was fetched and saved.",
       });
       queryClient.invalidateQueries({
         queryKey: [`/api/distribution/releases/${releaseId}/submission-status`],
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to refresh status.",
+        description: error.message || "Failed to refresh Too Lost status.",
         variant: "destructive",
       });
     },
@@ -237,10 +231,15 @@ export function SubmissionStatusTracker({
       );
       return response.json();
     },
-    onSuccess: (_, platform) => {
+    onSuccess: (result, platform) => {
       toast({
-        title: "Retry initiated",
-        description: `Re-submitting to ${platform}...`,
+        title: result.success
+          ? "Too Lost confirmed the retry"
+          : "Retry outcome needs review",
+        description:
+          result.message ||
+          `Refresh Too Lost status for ${platform} before treating the retry as complete.`,
+        ...(result.success ? {} : { variant: "destructive" as const }),
       });
       queryClient.invalidateQueries({
         queryKey: [`/api/distribution/releases/${releaseId}/submission-status`],
@@ -264,8 +263,10 @@ export function SubmissionStatusTracker({
     delivered: 0,
     live: 0,
     failed: 0,
-    overallProgress: 0,
   };
+  const wholeReleaseFailed =
+    statuses.length > 0 &&
+    statuses.every((status) => ["failed", "rejected"].includes(status.status));
 
   const filteredStatuses = statuses.filter((s) => {
     switch (activeTab) {
@@ -323,19 +324,53 @@ export function SubmissionStatusTracker({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Overall Progress</span>
+              <span className="text-muted-foreground">
+                Too Lost reported status
+              </span>
               <span className="font-medium">
-                {summary.live} / {summary.totalPlatforms} platforms live
+                {summary.totalPlatforms} destination
+                {summary.totalPlatforms === 1 ? "" : "s"}
               </span>
             </div>
-            <Progress value={summary.overallProgress} className="h-3" />
-            {summary.estimatedCompletion && (
-              <p className="text-xs text-muted-foreground">
-                Estimated completion:{" "}
-                {new Date(summary.estimatedCompletion).toLocaleDateString()}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Counts reflect the last persisted Too Lost response. The provider
+              does not return a delivery completion estimate.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {statusData?.lastChecked
+                ? `Last provider check: ${new Date(statusData.lastChecked).toLocaleString()}`
+                : "No provider status refresh has been recorded yet."}
+            </p>
           </div>
+          {isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Could not load saved provider status</AlertTitle>
+              <AlertDescription>
+                {error instanceof Error ? error.message : "Refresh the page and try again."}
+              </AlertDescription>
+            </Alert>
+          )}
+          {refreshMutation.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Too Lost status refresh failed</AlertTitle>
+              <AlertDescription>
+                {refreshMutation.error instanceof Error
+                  ? refreshMutation.error.message
+                  : "No confirmed provider response was saved."}
+              </AlertDescription>
+            </Alert>
+          )}
+          {statuses.some((status) => ["failed", "rejected"].includes(status.status)) && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Too Lost retries the whole release, not one destination. Retry
+                is offered only when every destination is confirmed failed.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
             <div className="text-center p-3 bg-slate-500/10 rounded-lg">
@@ -416,9 +451,6 @@ export function SubmissionStatusTracker({
                           <h4 className="font-semibold">
                             {platformStatus.platformName}
                           </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {config?.processingTime || "Processing time varies"}
-                          </p>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -435,23 +467,6 @@ export function SubmissionStatusTracker({
                       )}
                       {statusConfig.label}
                     </Badge>
-
-                    {platformStatus.status === "queued" &&
-                      platformStatus.queuePosition && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Users className="h-3 w-3" />
-                          <span>
-                            Queue position: #{platformStatus.queuePosition}
-                          </span>
-                        </div>
-                      )}
-
-                    {platformStatus.estimatedTime && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>Est. time: {platformStatus.estimatedTime}</span>
-                      </div>
-                    )}
 
                     {platformStatus.status === "live" &&
                       platformStatus.liveAt && (
@@ -491,8 +506,10 @@ export function SubmissionStatusTracker({
                           }}
                           disabled={
                             retryMutation.isPending ||
-                            (platformStatus.retryCount || 0) >=
-                              (platformStatus.maxRetries || 3)
+                            !wholeReleaseFailed ||
+                            (typeof platformStatus.maxRetries === "number" &&
+                              (platformStatus.retryCount || 0) >=
+                                platformStatus.maxRetries)
                           }
                         >
                           <RotateCcw className="h-3 w-3 mr-1" />
@@ -588,26 +605,6 @@ export function SubmissionStatusTracker({
                      }
                   </Badge>
                 </div>
-                {selectedPlatform.queuePosition && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Queue Position
-                    </span>
-                    <span className="text-sm font-medium">
-                      #{selectedPlatform.queuePosition}
-                    </span>
-                  </div>
-                )}
-                {selectedPlatform.estimatedTime && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Estimated Time
-                    </span>
-                    <span className="text-sm font-medium">
-                      {selectedPlatform.estimatedTime}
-                    </span>
-                  </div>
-                )}
                 {selectedPlatform.deliveredAt && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
@@ -697,7 +694,13 @@ export function SubmissionStatusTracker({
                   retryMutation.mutate(selectedPlatform.platform);
                   setSelectedPlatform(null);
                 }}
-                disabled={retryMutation.isPending}
+                disabled={
+                  retryMutation.isPending ||
+                  !wholeReleaseFailed ||
+                  (typeof selectedPlatform.maxRetries === "number" &&
+                    (selectedPlatform.retryCount || 0) >=
+                      selectedPlatform.maxRetries)
+                }
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Retry Submission

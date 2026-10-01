@@ -1,5 +1,8 @@
 // @ts-nocheck
 import express, { Router, Request, Response } from "express";
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
 import {
@@ -31,8 +34,10 @@ import {
   duplicateProject,
   ProjectNotFoundError,
 } from "../services/projectDuplicationService.js";
+import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
 
 const router = Router();
+const execFileAsync = promisify(execFile);
 
 const createTrackSchema = z.object({
   projectId: z.string().min(1),
@@ -1150,6 +1155,21 @@ router.post(
         version,
       } = req.body;
 
+      if (typeof dawState !== "string" || !dawState.trim()) {
+        return res.status(400).json({ success: false, error: "DAW state is required" });
+      }
+      if (!Number.isInteger(version) || version < 1) {
+        return res.status(400).json({ success: false, error: "A valid DAW state version is required" });
+      }
+      try {
+        const parsedDawState = JSON.parse(dawState);
+        if (!parsedDawState || !Array.isArray(parsedDawState.tracks)) {
+          return res.status(400).json({ success: false, error: "DAW state is invalid" });
+        }
+      } catch {
+        return res.status(400).json({ success: false, error: "DAW state is not valid JSON" });
+      }
+
       const metadata = await db.query.projects.findFirst({
         where: eq(projects.id, projectId),
         columns: { metadata: true },
@@ -1178,8 +1198,28 @@ router.post(
         .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
         .returning();
 
+      const persistedMetadata = (updated?.metadata || {}) as Record<string, unknown>;
+      const persistedStateMatches = persistedMetadata.dawState === dawState;
+      const persistedStateVersion = persistedMetadata.dawVersion;
+      if (
+        !updated ||
+        !persistedStateMatches ||
+        persistedStateVersion !== version
+      ) {
+        logger.error(`[Studio] DAW state persistence could not be verified for project ${projectId}`);
+        return res.status(500).json({
+          success: false,
+          error: "DAW state save could not be verified",
+        });
+      }
+
       logger.info(`[Studio] DAW state saved for project ${projectId}`);
-      res.json({ success: true, project: updated });
+      res.json({
+        success: true,
+        projectId,
+        persistedStateVersion,
+        persistedStateMatches,
+      });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error saving DAW state:");
       res.status(500).json({ error: "Failed to save DAW state" });
@@ -2797,6 +2837,9 @@ router.post(
       if (!file) {
         return res.status(400).json({ error: "No audio file provided" });
       }
+      if (projectId && !(await verifyProjectOwnership(projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
+      }
 
       const fileId = `file_${randomBytes(8).toString("hex")}`;
 
@@ -2815,8 +2858,6 @@ router.post(
       let clip = null;
 
       if (projectId) {
-        const hasAccess = await verifyProjectOwnership(projectId, userId);
-        if (hasAccess) {
           const existingTracks = await db.query.studioTracks.findMany({
             where: eq(studioTracks.projectId, projectId),
           });
@@ -2872,7 +2913,6 @@ router.post(
             clipId,
             projectId,
           }, "Created track and audio clip for uploaded file");
-        }
       }
 
       res.json({

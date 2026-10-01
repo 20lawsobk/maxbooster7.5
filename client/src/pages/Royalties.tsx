@@ -332,22 +332,55 @@ export default function Royalties() {
     },
   });
 
+  const payoutIntentStorageKey = user?.id
+    ? `royalty-payout-intent:${user.id}`
+    : null;
   const requestPayoutMutation = useMutation({
     mutationFn: async () => {
+      if (!payoutIntentStorageKey) {
+        throw new Error("Sign in again before requesting a payout");
+      }
+      let idempotencyKey = window.localStorage.getItem(
+        payoutIntentStorageKey,
+      );
+      if (!idempotencyKey) {
+        idempotencyKey = window.crypto.randomUUID();
+        window.localStorage.setItem(payoutIntentStorageKey, idempotencyKey);
+      }
       const response = await apiRequest(
         "POST",
         "/api/royalties/request-payout",
         {},
+        { headers: { "Idempotency-Key": idempotencyKey } },
       );
-      return response.json();
+      return { ...(await response.json()), idempotencyKey };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (!result?.success || !result?.payoutId) {
+        toast({
+          variant: "destructive",
+          title: "Payout not confirmed",
+          description:
+            result?.message || "The payout service did not confirm this request.",
+        });
+        return;
+      }
+      if (payoutIntentStorageKey) {
+        window.localStorage.removeItem(payoutIntentStorageKey);
+      }
       toast({
         title: "Payout Requested",
         description: "Your payout request has been submitted",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/royalties"] });
       invalidateOnRevenueChange();
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Payout request failed",
+        description: error.message || "Retrying will reuse the same request key.",
+      });
     },
   });
 
@@ -1335,12 +1368,6 @@ export default function Royalties() {
                               data-testid="option-platform-amazon"
                             >
                               Amazon Music
-                            </SelectItem>
-                            <SelectItem
-                              value="labelgrid"
-                              data-testid="option-platform-labelgrid"
-                            >
-                              LabelGrid Distribution
                             </SelectItem>
                           </SelectContent>
                         </Select>

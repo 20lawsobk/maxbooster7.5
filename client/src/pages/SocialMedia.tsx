@@ -982,14 +982,15 @@ export default function SocialMedia() {
       const response = await apiRequest(
         "POST",
         "/api/social/schedule-post",
-        postData,
+        { ...postData, idempotencyKey: crypto.randomUUID() },
       );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Post Scheduled!",
-        description: "Your post has been scheduled for the selected platforms.",
+        title: "Post Queued",
+        description:
+          "Your post is queued for the selected platforms. Delivery status will update after the provider responds.",
       });
       setPostContent("");
       setScheduledTime("");
@@ -998,10 +999,10 @@ export default function SocialMedia() {
       invalidateOnSocialChange();
       trackFirstPostScheduled();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Scheduling Failed",
-        description: "Failed to schedule post. Please try again.",
+        description: error.message || "Failed to schedule post. Please try again.",
         variant: "destructive",
       });
     },
@@ -1224,26 +1225,50 @@ export default function SocialMedia() {
   // Calendar mutations
   const createCalendarPostMutation = useMutation({
     mutationFn: async (data: SchedulePostData) => {
-      const response = await apiRequest("POST", "/api/social/calendar", data);
+      const scheduledAt =
+        data.status === "scheduled" && data.scheduledFor
+          ? new Date(data.scheduledFor).toISOString()
+          : null;
+      const response = await apiRequest("POST", "/api/social/calendar", {
+        platforms: data.platforms,
+        content: data.content,
+        mediaUrls: data.mediaUrls,
+        mediaType:
+          data.mediaUrls.length > 0
+            ? data.postType === "video" || data.postType === "reel"
+              ? "video"
+              : "image"
+            : undefined,
+        title: data.title,
+        hashtags: data.hashtags,
+        mentions: data.mentions,
+        scheduledAt,
+        status: data.status,
+        idempotencyKey: crypto.randomUUID(),
+      });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
-        title: "Post Scheduled!",
-        description: "Your post has been added to the calendar.",
+        title: result?.queued ? "Post Queued" : "Draft Saved",
+        description: result?.queued
+          ? "Your post is queued for delivery at the selected time. It will show as published only after platform confirmation."
+          : "Your post was saved as a draft and will not be sent until you schedule it.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/social/calendar"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/social/calendar/stats"],
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       invalidateOnSocialChange();
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Scheduling Failed",
-        description: "Failed to schedule post to calendar. Please try again.",
+        description:
+          error.message || "Failed to schedule post to calendar. Please try again.",
         variant: "destructive",
       });
     },
@@ -1257,10 +1282,24 @@ export default function SocialMedia() {
       postId: string;
       data: Partial<SchedulePostData>;
     }) => {
+      const scheduledAt =
+        data.status === "scheduled" && data.scheduledFor
+          ? new Date(data.scheduledFor).toISOString()
+          : null;
       const response = await apiRequest(
         "PUT",
         `/api/social/calendar/${postId}`,
-        data,
+        {
+          ...data,
+          platforms: data.platforms,
+          scheduledAt,
+          mediaType:
+            data.mediaUrls && data.mediaUrls.length > 0
+              ? data.postType === "video" || data.postType === "reel"
+                ? "video"
+                : "image"
+              : undefined,
+        },
       );
       return response.json();
     },
@@ -1277,10 +1316,11 @@ export default function SocialMedia() {
       setScheduleDialogOpen(false);
       setEditingCalendarPost(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Update Failed",
-        description: "Failed to update scheduled post. Please try again.",
+        description:
+          error.message || "Failed to update scheduled post. Please try again.",
         variant: "destructive",
       });
     },

@@ -93,7 +93,7 @@ const PLATFORMS = {
     authUrl: "https://www.facebook.com/v19.0/dialog/oauth",
     tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
     scope:
-      "public_profile,email,pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish,instagram_manage_comments",
+      "public_profile,email,pages_show_list,pages_read_engagement,pages_read_user_content,pages_manage_engagement,business_management,instagram_basic,instagram_content_publish,instagram_manage_comments",
     clientId: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
     usePKCE: false,

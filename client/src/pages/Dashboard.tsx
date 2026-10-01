@@ -4,7 +4,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { QuickStartWizard } from "@/components/onboarding/QuickStartWizard";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import { ValueCalculator } from "@/components/onboarding/ValueCalculator";
 import SimplifiedDashboard from "@/components/onboarding/SimplifiedDashboard";
 import FeatureDiscovery from "@/components/feature-discovery/FeatureDiscovery";
@@ -16,6 +16,11 @@ import PowerFeatureSpotlight from "@/components/onboarding/PowerFeatureSpotlight
 import ContextualFeatureHint from "@/components/onboarding/ContextualFeatureHint";
 import { AICareerCoach } from "@/components/dashboard/AICareerCoach";
 import { LoopHealthScore } from "@/components/dashboard/LoopHealthScore";
+import {
+  metricValueOrUnavailable,
+  normalizeDashboardAIInsights,
+  type DashboardAIInsights,
+} from "@/components/dashboard/dashboardDataContracts";
 import { StreakCounter } from "@/components/achievements/StreakCounter";
 import { AchievementNotification } from "@/components/achievements/AchievementNotification";
 import { CountdownCard } from "@/components/releases/CountdownCard";
@@ -66,15 +71,15 @@ interface OnboardingStatusResponse {
 }
 
 interface DashboardStats {
-  totalTracks: number;
-  activeDistributions: number;
-  totalRevenue: number;
-  socialReach: number;
-  monthlyGrowth: {
-    tracks: number;
-    distributions: number;
-    revenue: number;
-    socialReach: number;
+  totalTracks?: number | null;
+  activeDistributions?: number | null;
+  totalRevenue?: number | null;
+  socialReach?: number | null;
+  monthlyGrowth?: {
+    tracks?: number | null;
+    distributions?: number | null;
+    revenue?: number | null;
+    socialReach?: number | null;
   };
 }
 
@@ -86,7 +91,8 @@ interface DashboardTopPlatform {
 }
 
 interface DashboardActivity {
-  id: string | number;
+  id?: string | number;
+  type?: string;
   status: string;
   title: string;
   description: string;
@@ -97,6 +103,10 @@ interface ComprehensiveDashboardData {
   stats?: DashboardStats;
   topPlatforms?: DashboardTopPlatform[];
   recentActivity?: DashboardActivity[];
+  dataAvailability?: {
+    revenue?: boolean;
+    socialReach?: boolean;
+  };
 }
 
 interface DashboardProject {
@@ -111,24 +121,17 @@ interface ProjectsResponse {
   data: DashboardProject[];
 }
 
-interface AiRecommendation {
-  id?: string;
-  title: string;
-  description: string;
-  category?: string;
-  priority: string;
+function getStoredOnboardingData(user: User): Record<string, unknown> {
+  return user.onboardingData && typeof user.onboardingData === "object"
+    ? (user.onboardingData as Record<string, unknown>)
+    : {};
 }
 
-interface AiPredictions {
-  nextMonthStreams?: number;
-  nextMonthRevenue?: number;
-  viralPotential: number;
-}
-
-interface AiInsightsResponse {
-  performanceScore: number;
-  recommendations?: AiRecommendation[];
-  predictions: AiPredictions;
+function getStoredUserLevel(
+  onboardingData: Record<string, unknown>,
+): "beginner" | "intermediate" | "advanced" {
+  const level = onboardingData.experienceLevel ?? onboardingData.userLevel;
+  return level === "intermediate" || level === "advanced" ? level : "beginner";
 }
 
 export default function Dashboard() {
@@ -244,8 +247,13 @@ function DashboardContent({ user }: { user: User }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userLevel, setUserLevel] = useState<
     "beginner" | "intermediate" | "advanced"
-  >("beginner");
-  const [showSimplified, setShowSimplified] = useState(false);
+  >(() => getStoredUserLevel(getStoredOnboardingData(user)));
+  const [showSimplified, setShowSimplified] = useState(() => {
+    const onboardingData = getStoredOnboardingData(user);
+    return typeof onboardingData.preferSimplifiedView === "boolean"
+      ? onboardingData.preferSimplifiedView
+      : getStoredUserLevel(onboardingData) === "beginner";
+  });
   const [showFeatureDiscovery, setShowFeatureDiscovery] = useState(false);
   const [showFeatureSpotlight, setShowFeatureSpotlight] = useState(false);
 
@@ -299,10 +307,18 @@ function DashboardContent({ user }: { user: User }) {
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AiInsightsResponse>({
+  const {
+    data: aiInsights,
+    isLoading: aiInsightsLoading,
+    error: aiInsightsError,
+  } = useQuery<DashboardAIInsights>({
     queryKey: ["/api/ai/insights"],
     enabled: hasPaidSubscription, // Only fetch if user has paid subscription
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/ai/insights");
+      return normalizeDashboardAIInsights(await response.json());
+    },
   });
 
   const optimizeContentMutation = useMutation({
@@ -326,21 +342,23 @@ function DashboardContent({ user }: { user: User }) {
     },
   });
 
-  // Stats object - no memoization needed as it's just a fallback
-  const stats = dashboardData?.stats || {
-    totalTracks: 0,
-    activeDistributions: 0,
-    totalRevenue: 0,
-    socialReach: 0,
-    monthlyGrowth: { tracks: 0, distributions: 0, revenue: 0, socialReach: 0 },
-  };
+  const stats = dashboardData?.stats;
+  const hasAnalyticsReport =
+    (dashboardData?.topPlatforms?.length ?? 0) > 0;
+  const revenueAvailable =
+    dashboardData?.dataAvailability?.revenue ?? hasAnalyticsReport;
+  const socialReachAvailable =
+    dashboardData?.dataAvailability?.socialReach ?? hasAnalyticsReport;
+  const revenueValue = metricValueOrUnavailable(
+    stats?.totalRevenue,
+    revenueAvailable,
+  );
 
-  // Stats cards - simple array literal as stats changes with dashboard data
   const statsCards = [
     {
-      title: "Total Tracks",
-      value: stats.totalTracks?.toLocaleString() || "0",
-      change: `${stats.monthlyGrowth.tracks || 0}%`,
+      title: "Studio Projects",
+      value: metricValueOrUnavailable(stats?.totalTracks),
+      change: stats?.monthlyGrowth?.tracks ?? null,
       icon: Music,
       color: "text-blue-600",
       bgColor: "bg-blue-50 dark:bg-blue-950/20",
@@ -349,8 +367,8 @@ function DashboardContent({ user }: { user: User }) {
     },
     {
       title: "Active Distributions",
-      value: stats.activeDistributions?.toLocaleString() || "0",
-      change: `${stats.monthlyGrowth.distributions || 0}%`,
+      value: metricValueOrUnavailable(stats?.activeDistributions),
+      change: stats?.monthlyGrowth?.distributions ?? null,
       icon: Upload,
       color: "text-purple-600",
       bgColor: "bg-purple-50 dark:bg-purple-950/20",
@@ -359,8 +377,13 @@ function DashboardContent({ user }: { user: User }) {
     },
     {
       title: "Total Revenue",
-      value: `$${stats.totalRevenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`,
-      change: `${stats.monthlyGrowth.revenue || 0}%`,
+      value:
+        typeof revenueValue === "number"
+          ? `$${revenueValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : revenueValue,
+      change: revenueAvailable
+        ? (stats?.monthlyGrowth?.revenue ?? null)
+        : null,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50 dark:bg-green-950/20",
@@ -369,8 +392,10 @@ function DashboardContent({ user }: { user: User }) {
     },
     {
       title: "Social Reach",
-      value: stats.socialReach?.toLocaleString() || "0",
-      change: `${stats.monthlyGrowth.socialReach || 0}%`,
+      value: metricValueOrUnavailable(stats?.socialReach, socialReachAvailable),
+      change: socialReachAvailable
+        ? (stats?.monthlyGrowth?.socialReach ?? null)
+        : null,
       icon: TrendingUp,
       color: "text-orange-600",
       bgColor: "bg-orange-50 dark:bg-orange-950/20",
@@ -435,12 +460,20 @@ function DashboardContent({ user }: { user: User }) {
   ];
 
   // Onboarding handlers
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = (selection?: {
+    experienceLevel?: "beginner" | "intermediate" | "advanced" | null;
+    preferSimplifiedView?: boolean;
+  }) => {
+    const selectedLevel = selection?.experienceLevel ?? userLevel;
+    setUserLevel(selectedLevel);
     setShowOnboarding(false);
-    setShowSimplified(userLevel === "beginner");
+    setShowSimplified(
+      selection?.preferSimplifiedView ?? selectedLevel === "beginner",
+    );
     queryClient.invalidateQueries({
       queryKey: ["/api/auth/onboarding-status"],
     });
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   };
 
   const handleOnboardingSkip = () => {
@@ -465,7 +498,7 @@ function DashboardContent({ user }: { user: User }) {
   // Show onboarding flow
   if (showOnboarding) {
     return (
-      <QuickStartWizard
+      <OnboardingWizard
         onComplete={handleOnboardingComplete}
         onSkip={handleOnboardingSkip}
       />
@@ -580,53 +613,6 @@ function DashboardContent({ user }: { user: User }) {
         {/* Smart Next Action Widget */}
         <SmartNextActionWidget />
 
-        {/* AI Performance Banner */}
-        {aiInsights && (
-          <Card
-            className="border-2 border-gradient-to-r from-blue-500 to-purple-600 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950"
-            role="region"
-            aria-label="AI Performance Score"
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div
-                    className="p-3 bg-white dark:bg-gray-900 rounded-full"
-                    aria-hidden="true"
-                  >
-                    <Brain className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      AI Performance Score
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Your music career is optimized with AI assistance
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right" role="status" aria-live="polite">
-                  <div
-                    className="text-4xl font-bold text-green-600"
-                    aria-label={`Performance score: ${aiInsights?.performanceScore || 0} out of 100`}
-                  >
-                    {aiInsights?.performanceScore || 0}/100
-                  </div>
-                  <div className="text-sm text-muted-foreground" role="status">
-                    {aiInsights?.performanceScore >= 80
-                      ? "Excellent Performance"
-                      : aiInsights?.performanceScore >= 60
-                        ? "Good Performance"
-                        : aiInsights?.performanceScore >= 40
-                          ? "Room for Improvement"
-                          : "Getting Started"}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Stats Grid */}
         {dashboardError && (
           <Card className="border-destructive">
@@ -672,19 +658,28 @@ function DashboardContent({ user }: { user: User }) {
                       >
                         {stat.value}
                       </p>
-                       <p
-                         className={`text-[10px] sm:text-xs flex items-center mt-1 ${Number(stat.change.replace("%", "")) >= 0 ? "text-green-600" : "text-red-600"}`}
-                        id={`stat-change-${index}`}
-                      >
-                         {Number(stat.change.replace("%", "")) >= 0 ? (
-                           <ArrowUp className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Increase" />
-                         ) : (
-                           <ArrowDown className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Decrease" />
-                         )}
-                        <span className="truncate">
-                          {stat.change} from last month
-                        </span>
-                      </p>
+                      {stat.change === null ? (
+                        <p
+                          className="text-[10px] sm:text-xs mt-1 text-muted-foreground"
+                          id={`stat-change-${index}`}
+                        >
+                          Change unavailable
+                        </p>
+                      ) : (
+                        <p
+                          className={`text-[10px] sm:text-xs flex items-center mt-1 ${stat.change >= 0 ? "text-green-600" : "text-red-600"}`}
+                          id={`stat-change-${index}`}
+                        >
+                          {stat.change > 0 ? (
+                            <ArrowUp className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Increase" />
+                          ) : stat.change < 0 ? (
+                            <ArrowDown className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Decrease" />
+                          ) : null}
+                          <span className="truncate">
+                            {stat.change}% from last month
+                          </span>
+                        </p>
+                      )}
                     </div>
                     <div
                       className={`p-2 sm:p-3 rounded-full ${stat.bgColor} ${stat.borderColor} border-2 flex-shrink-0`}
@@ -870,7 +865,9 @@ function DashboardContent({ user }: { user: User }) {
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {project.genre} •{" "}
-                                {project.streams?.toLocaleString() || 0} streams
+                                {project.streams == null
+                                  ? "Streams not reported"
+                                  : `${project.streams.toLocaleString()} streams`}
                               </div>
                             </div>
                           </div>
@@ -957,126 +954,68 @@ function DashboardContent({ user }: { user: User }) {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
+            ) : aiInsightsError ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    AI Insights Unavailable
+                  </h3>
+                  <p className="text-muted-foreground">
+                    The insight service has not supplied a supported result.
+                    No performance scores or forecast values are being shown.
+                  </p>
+                </CardContent>
+              </Card>
             ) : aiInsights ? (
-              <>
-                {/* AI Recommendations */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
-                      AI Recommendations
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Personalized suggestions to boost your music career
-                    </p>
-                  </CardHeader>
-                  <CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
+                    AI Insights
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Insights returned by the analytics insight service
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {aiInsights.insights.length > 0 ? (
                     <div className="space-y-4">
-                      {aiInsights.recommendations?.map((rec, index) => (
+                      {aiInsights.insights.map((insight, index) => (
                         <div
-                          key={index}
-                          className={`p-4 rounded-lg border-l-4 ${
-                            rec.priority === "high"
-                              ? "border-red-500 bg-red-50 dark:bg-red-950/20"
-                              : rec.priority === "medium"
-                                ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
-                                : "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                          }`}
+                          key={`${insight.metric ?? insight.type}-${index}`}
+                          className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                         >
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-3">
                             <div>
-                              <h4 className="font-semibold">{rec.title}</h4>
+                              <h4 className="font-semibold">{insight.title}</h4>
                               <p className="text-sm text-muted-foreground mt-1">
-                                {rec.description}
+                                {insight.description}
                               </p>
-                              <Badge variant="outline" className="mt-2">
-                                {rec.category}
-                              </Badge>
                             </div>
-                            <Badge
-                              className={
-                                rec.priority === "high"
-                                  ? "bg-red-100 text-red-800"
-                                  : rec.priority === "medium"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-blue-100 text-blue-800"
-                              }
-                            >
-                              {rec.priority}
+                            <Badge variant="outline">
+                              {insight.impact ?? insight.type}
                             </Badge>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* AI Predictions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
-                      AI Predictions
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Forecast your music career growth with AI
+                  ) : (
+                    <p className="py-6 text-center text-muted-foreground">
+                      No insights are available from the current data.
                     </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {aiInsights.predictions?.nextMonthStreams?.toLocaleString() ||
-                            "0"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Predicted Streams
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Next Month
-                        </div>
-                      </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">
-                          $
-                          {aiInsights.predictions?.nextMonthRevenue?.toLocaleString() ||
-                            "0"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Predicted Revenue
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Next Month
-                        </div>
-                      </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {(
-                            aiInsights?.predictions?.viralPotential * 100 || 0
-                          ).toFixed(0)}
-                          %
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Viral Potential
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Current Content
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+                  )}
+                </CardContent>
+              </Card>
             ) : (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    Unable to Load AI Insights
+                    AI Insights Unavailable
                   </h3>
                   <p className="text-muted-foreground">
-                    AI insights are currently unavailable. Please try again
-                    later.
+                    No supported insight data is available yet.
                   </p>
                 </CardContent>
               </Card>
@@ -1102,7 +1041,10 @@ function DashboardContent({ user }: { user: User }) {
                   <div className="space-y-4">
                     {dashboardData.recentActivity.map((activity) => (
                       <div
-                        key={activity.id}
+                        key={
+                          activity.id ??
+                          `${activity.type ?? activity.title}-${activity.timestamp}`
+                        }
                         className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
                       >
                         <div

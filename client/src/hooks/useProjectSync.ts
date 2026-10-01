@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStudioStore } from "@/stores/studioStore";
 import type { TrackType, MidiClip, Track, ViewState, MixerState, PluginInstance, TrackSend, AutomationLane } from "@/stores/studioStore";
+import { mergeRelationalTracksIntoDawState } from "@/components/studio/studioProjectState";
 
 const SYNC_DEBOUNCE_MS = 2000;
 const DAW_STATE_VERSION = 1;
@@ -447,7 +448,14 @@ export function useProjectSync(projectId: string | null) {
         },
       );
 
-      if (response?.ok) {
+      const result = await response.json().catch(() => null);
+      if (
+        response.ok &&
+        result?.success === true &&
+        result?.projectId === projectId &&
+        result?.persistedStateVersion === stateVersionRef.current &&
+        result?.persistedStateMatches === true
+      ) {
         getStoreState().markSaved();
         logger.info(
           `[ProjectSync] Full DAW state saved for project ${projectId}`,
@@ -457,7 +465,7 @@ export function useProjectSync(projectId: string | null) {
       } else {
         logger.error(
           "[ProjectSync] Failed to save full state:",
-          await response?.text(),
+          result?.error || `Unexpected save response (HTTP ${response.status})`,
         );
         return false;
       }
@@ -481,42 +489,63 @@ export function useProjectSync(projectId: string | null) {
         return false;
       }
 
-      const data = await response?.json();
+      const data = await response.json();
 
       if (data?.dawState) {
         try {
-          const dawState: SerializedDAWState =
+          let dawState: SerializedDAWState =
             typeof data?.dawState === "string"
               ? JSON.parse(data?.dawState)
               : data?.dawState;
 
-          if (dawState?.version && dawState?.tracks) {
-            store?.setProject({
-              id: projectId,
-              name: data.project?.title || "Untitled",
-            });
-
-            deserializeAndRestoreState(dawState);
-
-            if (data?.dawVersion) {
-              stateVersionRef.current = data?.dawVersion;
-            }
-
-            store?.markSaved();
-            logger.info(
-              `[ProjectSync] Full DAW state loaded for project ${projectId}`,
-            );
-            return true;
+          if (
+            !dawState ||
+            !Number.isInteger(dawState.version) ||
+            !Array.isArray(dawState.tracks)
+          ) {
+            throw new Error("Saved DAW state has an invalid shape");
           }
+          const tracksResponse = await fetch(
+            `/api/studio/projects/${projectId}/tracks`,
+            { credentials: "include" },
+          );
+          if (!tracksResponse.ok) {
+            throw new Error(
+              `Failed to read project tracks after DAW state (HTTP ${tracksResponse.status})`,
+            );
+          }
+          const tracksData = await tracksResponse.json();
+          dawState = mergeRelationalTracksIntoDawState(dawState, {
+            tracks: tracksData?.tracks || [],
+            clips: tracksData?.clips || [],
+          });
+
+          store?.setProject({
+            id: projectId,
+            name: data.project?.title || "Untitled",
+          });
+
+          deserializeAndRestoreState(dawState);
+
+          if (data?.dawVersion) {
+            stateVersionRef.current = data?.dawVersion;
+          }
+
+          store?.markSaved();
+          logger.info(
+            `[ProjectSync] Full DAW state loaded for project ${projectId}`,
+          );
+          return true;
         } catch (parseError) {
           logger.error("[ProjectSync] Failed to parse DAW state:", parseError);
+          throw parseError;
         }
       }
 
       return false;
     } catch (error) {
       logger.error("[ProjectSync] Failed to load full state:", error);
-      return false;
+      throw error;
     }
   }, [projectId, store, deserializeAndRestoreState]);
 
@@ -568,7 +597,7 @@ export function useProjectSync(projectId: string | null) {
     if (syncTimeoutRef?.current) {
       clearTimeout(syncTimeoutRef?.current);
     }
-    await saveFullState();
+    return saveFullState();
   }, [saveFullState]);
 
   const refreshFromBackend = useCallback(async () => {
@@ -597,7 +626,12 @@ export function useProjectSync(projectId: string | null) {
 
     store?.resetForNewProject();
 
-    const fullStateLoaded = await loadFullState();
+    let fullStateLoaded = false;
+    try {
+      fullStateLoaded = await loadFullState();
+    } catch {
+      return false;
+    }
     if (fullStateLoaded) {
       return true;
     }
@@ -635,56 +669,13 @@ export function useProjectSync(projectId: string | null) {
         }
       }
 
-      const backendTracks: BackendTrack[] =
-        tracksData?.tracks || tracksData || [];
-      const backendClips: BackendClip[] = tracksData?.clips || [];
-
-      const currentState = getStoreState();
-      const existingTrackIds = new Set(currentState?.tracks.map((t) => t?.id));
-
-      const normalizeAudioUrl = (url: string): string => {
-        if (!url) return url;
-        if (url?.startsWith("/api/")) return url;
-        if (url?.startsWith("http")) return url;
-        const cleanPath = url?.replace(/^\/+/, "");
-        return `/api/marketplace/audio/${cleanPath}`;
-      };
-
-      for (const track of backendTracks) {
-        if (!existingTrackIds?.has(track?.id)) {
-          const trackType = (track?.trackType ||
-            track?.type ||
-            "audio") as TrackType;
-          const newTrackId = store?.addTrack(trackType, track?.name, track?.id);
-
-          const trackClips = backendClips?.filter((c) => c?.trackId === track?.id);
-          for (const clip of trackClips) {
-            const normalizedPath = normalizeAudioUrl(clip?.filePath);
-            const clipDuration = clip?.duration > 0 ? clip?.duration : 0;
-            store?.addAudioClip(newTrackId, {
-              id: clip?.id,
-              trackId: newTrackId,
-              name: clip.name || "Audio Clip",
-              sourceUrl: normalizedPath,
-              startTime: clip.startTime || 0,
-              duration: clipDuration,
-              offset: clip.offset || 0,
-              gain: clip.gain || 1,
-              fadeIn: clip.fadeIn || 0,
-              fadeOut: clip.fadeOut || 0,
-              color: track.color || "#3b82f6",
-              muted: false,
-              locked: false,
-            });
-          }
-
-          if (track?.volume !== undefined)
-            store?.setTrackVolume(newTrackId, track?.volume);
-          if (track?.pan !== undefined) store?.setTrackPan(newTrackId, track?.pan);
-          if (track?.muted || track?.isMuted) store?.toggleTrackMute(newTrackId);
-          if (track?.solo || track?.isSolo) store?.toggleTrackSolo(newTrackId);
-        }
-      }
+      const backendTracks: BackendTrack[] = tracksData?.tracks || tracksData || [];
+      const baselineState = serializeFullState();
+      const mergedState = mergeRelationalTracksIntoDawState(baselineState, {
+        tracks: backendTracks,
+        clips: tracksData?.clips || [],
+      });
+      deserializeAndRestoreState(mergedState);
 
       // Note: clip duration correction from actual audio length is handled by
       // StudioOneDAW when it decodes each clip's audio buffer for playback.
@@ -693,14 +684,21 @@ export function useProjectSync(projectId: string | null) {
 
       store?.markSaved();
       logger.info(
-        `[ProjectSync] Loaded project ${projectId} with ${backendTracks?.length} tracks from database`,
+        `[ProjectSync] Loaded project ${projectId} with ${mergedState.tracks.length} tracks from database`,
       );
       return true;
     } catch (error) {
       logger.error("[ProjectSync] Failed to load project data:", error);
       return false;
     }
-  }, [projectId, store, loadFullState, getStoreState]);
+  }, [
+    projectId,
+    store,
+    loadFullState,
+    getStoreState,
+    serializeFullState,
+    deserializeAndRestoreState,
+  ]);
 
   return {
     forceSave,

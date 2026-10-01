@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { formatEarningsRate } from "@/lib/earningsRate";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { EarningsReconciliation } from "@/components/distribution/EarningsReconciliation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, StatCardRow } from "@/components/ui/stat-card";
 import {
@@ -1537,7 +1538,7 @@ export default function Distribution() {
     data: comprehensiveAnalytics,
   } = useQuery<ComprehensiveAnalytics>({
     queryKey: ["/api/analytics/dashboard"],
-    enabled: !!user,
+    enabled: false,
   });
 
   // Extract distribution-specific analytics from comprehensive data
@@ -1571,31 +1572,45 @@ export default function Distribution() {
 
   const { data: analyticsGrowth } = useQuery<AnalyticsGrowth>({
     queryKey: ["/api/distribution/analytics/growth"],
-    enabled: !!user,
+    enabled: false,
   });
 
   const { data: streamingTrends = [] } = useQuery<StreamingTrend[]>({
     queryKey: ["/api/distribution/streaming-trends"],
-    enabled: !!user,
+    enabled: false,
   });
 
   const { data: geographicData = [] } = useQuery<GeographicData[]>({
     queryKey: ["/api/distribution/geographic"],
-    enabled: !!user,
+    enabled: false,
   });
 
   const { data: earningsBreakdown } = useQuery<EarningsBreakdown>({
     queryKey: ["/api/distribution/earnings/breakdown"],
-    enabled: !!user,
+    enabled: false,
   });
 
   const { data: platformEarnings = [] } = useQuery<PlatformEarning[]>({
     queryKey: ["/api/distribution/platform-earnings"],
-    enabled: !!user,
+    enabled: false,
   });
 
   const { data: payoutHistory = [] } = useQuery<PayoutHistory[]>({
     queryKey: ["/api/distribution/payout-history"],
+    enabled: false,
+  });
+
+  const {
+    data: toolostEarningsSummary,
+    isLoading: toolostEarningsLoading,
+    isError: toolostEarningsError,
+  } = useQuery<{
+    totalEarnings: number;
+    currency: string;
+    source: "toolost";
+    detailAvailable: false;
+  }>({
+    queryKey: ["/api/distribution/earnings/summary"],
     enabled: !!user,
   });
 
@@ -2253,15 +2268,22 @@ export default function Distribution() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                      Total Earnings
+                      Too Lost Lifetime Sales
                     </p>
                     <p className="text-3xl font-bold text-green-900 dark:text-green-100">
-                      ${(analytics?.totalEarnings ?? 0).toFixed(2)}
+                      {toolostEarningsLoading
+                        ? "Loading…"
+                        : toolostEarningsSummary
+                          ? new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: toolostEarningsSummary.currency,
+                            }).format(toolostEarningsSummary.totalEarnings)
+                          : "Unavailable"}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      {analyticsGrowth?.earningsGrowth
-                        ? `+${analyticsGrowth.earningsGrowth.toFixed(1)}% this month`
-                        : "No change"}
+                      {toolostEarningsError
+                        ? "Provider summary unavailable"
+                        : "Lifetime summary from Too Lost"}
                     </p>
                   </div>
                   <div className="p-3 bg-green-200 dark:bg-green-800 rounded-full">
@@ -2276,15 +2298,13 @@ export default function Distribution() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      Total Streams
+                      Detailed Stream Counts
                     </p>
                     <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                      {(analytics?.totalStreams ?? 0).toLocaleString()}
+                      Not available
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      {analyticsGrowth?.streamsGrowth
-                        ? `+${analyticsGrowth.streamsGrowth.toFixed(1)}% this month`
-                        : "No change"}
+                      Too Lost does not provide this total
                     </p>
                   </div>
                   <div className="p-3 bg-blue-200 dark:bg-blue-800 rounded-full">
@@ -2302,10 +2322,10 @@ export default function Distribution() {
                       Live Releases
                     </p>
                     <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
-                      {analytics?.totalReleases ?? 0}
+                      {releases.filter((release) => release.status === "live").length}
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                      {releases.filter((r) => r.status === "processing").length}{" "}
+                      {releases.filter((release) => release.status === "processing").length}{" "}
                       processing
                     </p>
                   </div>
@@ -2324,10 +2344,10 @@ export default function Distribution() {
                       Platforms
                     </p>
                     <p className="text-3xl font-bold text-orange-900 dark:text-orange-100">
-                      150+
+                      {platformsData.length}
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                      All connected
+                      Too Lost catalog stores
                     </p>
                   </div>
                   <div className="p-3 bg-orange-200 dark:bg-orange-800 rounded-full">
@@ -2607,19 +2627,10 @@ export default function Distribution() {
                           </div>
                           <div className="absolute bottom-3 left-3 right-3">
                             <div className="flex items-center justify-between text-white">
-                              <div className="flex items-center space-x-2">
-                                <Play className="w-4 h-4" />
-                                <span className="text-sm font-medium">
-                                  {release.totalStreams?.toLocaleString() ||
-                                    "0"}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <DollarSign className="w-4 h-4" />
-                                <span className="text-sm font-medium">
-                                  ${release.earnings?.toFixed(2) || "0.00"}
-                                </span>
-                              </div>
+                              <span className="text-xs font-medium">
+                                Per-release sales details are not available from
+                                Too Lost here
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -2863,6 +2874,17 @@ export default function Distribution() {
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
+              <Alert>
+                <AlertDescription>
+                  Too Lost currently exposes a lifetime sales summary only; this
+                  app cannot verify historical stream trends, earnings by
+                  platform, track earnings, or territory breakdowns. Open
+                  Earnings for the confirmed Too Lost total and user-exported
+                  CSV summaries.
+                </AlertDescription>
+              </Alert>
+              {false && (
+                <>
               {/* Modern Analytics Stats with Sparklines */}
               <StatCardRow>
                 <StatCard
@@ -3149,15 +3171,9 @@ export default function Distribution() {
                                 {release.title}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {release.totalStreams?.toLocaleString() ?? 0}{" "}
-                                streams
+                                Too Lost does not expose release-level stream totals here
                               </p>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              ${(release.earnings ?? 0).toFixed(2)}
-                            </p>
                           </div>
                         </div>
                       ))}
@@ -3212,9 +3228,14 @@ export default function Distribution() {
                   </div>
                 </CardContent>
               </Card>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="earnings" className="space-y-6">
+              <EarningsReconciliation />
+              {false && (
+                <>
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -3591,6 +3612,8 @@ export default function Distribution() {
                   </div>
                 </CardContent>
               </Card>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="hyperfollow" className="space-y-6">

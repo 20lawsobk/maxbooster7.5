@@ -56,7 +56,7 @@ interface FlowStateImportAudioProps {
   onOpenChange: (open: boolean) => void;
   onImportComplete: (
     files: { id: string; name: string; url: string; duration?: number }[],
-  ) => void;
+  ) => boolean | void | Promise<boolean | void>;
   projectId?: string;
 }
 
@@ -166,7 +166,7 @@ export function FlowStateImportAudio({
     [handleFiles],
   );
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const successfulFiles = files
       .filter((f) => f.status === "success" && f.url)
       .map((f) => ({
@@ -177,7 +177,24 @@ export function FlowStateImportAudio({
       }));
 
     if (successfulFiles.length > 0) {
-      onImportComplete(successfulFiles);
+      try {
+        const completed = await onImportComplete(successfulFiles);
+        if (completed === false) {
+          toast({
+            title: "Upload saved, but timeline refresh failed",
+            description: "The files are stored, but the project could not be reloaded. Try again before leaving the project.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        toast({
+          title: "Upload saved, but timeline refresh failed",
+          description: error instanceof Error ? error.message : "The project could not be reloaded.",
+          variant: "destructive",
+        });
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ["studio-tracks", projectId] });
       toast({
         title: "Import Complete",

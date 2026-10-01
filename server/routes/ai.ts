@@ -415,18 +415,54 @@ router.post("/forecast", requireAuth, async (req: Request, res: Response) => {
     if (
       !historicalData ||
       !Array.isArray(historicalData) ||
-      historicalData?.length < 10
+      historicalData.length < 10 ||
+      historicalData.some(
+        (value: unknown) =>
+          typeof value !== "number" || !Number.isFinite(value),
+      )
     ) {
       return res
         .status(400)
-        .json({ error: "At least 10 historical data points are required" });
+        .json({
+          error:
+            "At least 10 finite numeric historical data points are required",
+        });
+    }
+
+    let parsedTimestamps: Date[] | undefined;
+    if (timestamps !== undefined) {
+      if (
+        !Array.isArray(timestamps) ||
+        timestamps.length !== historicalData.length ||
+        timestamps.some(
+          (timestamp: unknown) =>
+            (typeof timestamp !== "string" &&
+              typeof timestamp !== "number") ||
+            (typeof timestamp === "string" && timestamp.trim() === ""),
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            "Timestamps must be an array with one valid date for each historical data point",
+        });
+      }
+
+      parsedTimestamps = timestamps.map(
+        (timestamp: string | number) => new Date(timestamp),
+      );
+      if (parsedTimestamps.some((timestamp) => Number.isNaN(timestamp.getTime()))) {
+        return res.status(400).json({
+          error:
+            "Timestamps must be an array with one valid date for each historical data point",
+        });
+      }
     }
 
     const options: ForecastOptions = {
       metric,
       horizon,
       historicalData,
-      timestamps: timestamps.map((t: string) => new Date(t)),
+      ...(parsedTimestamps ? { timestamps: parsedTimestamps } : {}),
     };
 
     const result = await unifiedAIController?.forecastMetrics(options);

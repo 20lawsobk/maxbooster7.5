@@ -23,6 +23,10 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  normalizeGeneratedMidiNotes,
+  resolveStudioGenerationResponse,
+} from "./studioAudioDelivery";
 
 interface AIMusicGeneratorProps {
   projectId?: string | null;
@@ -32,7 +36,7 @@ interface AIMusicGeneratorProps {
 }
 
 interface GeneratedTrack {
-  audioFilePath: string;
+  audioFilePath?: string;
   parameters: {
     key: string;
     scale: string;
@@ -42,6 +46,7 @@ interface GeneratedTrack {
   duration: number;
   generatedNotes?: unknown[];
   generatedChords?: unknown[];
+  midiError?: string;
   name?: string;
   type?: "audio" | "midi" | "instrument";
   color?: string;
@@ -273,15 +278,28 @@ export function AIMusicGenerator({
         scale: scale.toLowerCase(),
         complexity,
       });
-      const response = (await res.json()) as GeneratedTrack;
-
-      if (response.audioFilePath) {
-        setGeneratedTrack(response);
-        toast({
-          title: "Music Generated!",
-          description: `Created ${bars} bars of ${selectedGenre} ${instrumentName} at ${tempo} BPM`,
-        });
-      }
+      const submitted = (await res.json()) as Record<string, unknown>;
+      const generated = await resolveStudioGenerationResponse(submitted);
+      const response: GeneratedTrack = {
+        ...submitted,
+        audioFilePath: generated.audioFilePath,
+        duration: generated.duration || (bars * 4 * 60) / tempo,
+        generatedNotes: generated.generatedNotes,
+        midiError: generated.midiError,
+        parameters: {
+          key,
+          scale,
+          tempo,
+          genre: selectedGenre,
+        },
+      };
+      setGeneratedTrack(response);
+      toast({
+        title: generated.midiError ? "Audio Generated" : "Music Generated!",
+        description: generated.midiError
+          ? `Audio is ready. MIDI notes could not be loaded: ${generated.midiError}`
+          : `Created ${bars} bars of ${selectedGenre} ${instrumentName} at ${tempo} BPM`,
+      });
     } catch (error) {
       toast({
         title: "Generation Failed",
@@ -306,7 +324,17 @@ export function AIMusicGenerator({
   ]);
 
   const handlePlayPause = useCallback(() => {
-    if (!generatedTrack) return;
+    if (
+      !generatedTrack ||
+      (!generatedTrack.audioFilePath && !generatedTrack.generatedNotes?.length)
+    ) {
+      toast({
+        title: "No generated result",
+        description: "Generate audio or MIDI before adding a track.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (audioElement) {
       if (isPlaying) {
@@ -410,7 +438,7 @@ export function AIMusicGenerator({
               maxCoreJobId: data.arrangement.jobId,
             },
             duration: (bars * 4 * 60) / tempo,
-            generatedNotes: data.arrangement.notes,
+            generatedNotes: normalizeGeneratedMidiNotes(data.arrangement.notes),
             generatedChords: [],
           });
           toast({
