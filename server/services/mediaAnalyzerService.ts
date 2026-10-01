@@ -352,7 +352,7 @@ export async function analyzeImage(
 
 // ── Content generation seed ───────────────────────────────────────────────────
 // Converts any analysis result into the standard topic/genre/tone payload
-// accepted by unifiedAIController?.generateContent()
+// consumed by the direct MaxCore social-generation routes.
 
 export function urlToContentSeed(a: UrlAnalysis) {
   const topic = a?.track

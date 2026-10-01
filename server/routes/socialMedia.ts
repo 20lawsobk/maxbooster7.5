@@ -5063,16 +5063,67 @@ router.post(
         });
       }
 
-      // SSRF guard — block private/internal targets before fetching the URL
-      try {
-        assertSafeExternalUrl(url.trim());
-      } catch (ssrfErr) {
-        return res
-          .status(400)
-          .json({ success: false, message: (ssrfErr as Error).message || "Invalid URL" });
+      const normalizedUrl = url.trim();
+      const firstPartySource = resolveFirstPartySocialSource(normalizedUrl);
+      let analysis: any;
+      if (firstPartySource) {
+        // Use checkout-backed facts for the one trusted first-party route;
+        // never fetch the submitted page or send its URL to MaxCore as a topic.
+        const parsedUrl = new URL(normalizedUrl);
+        analysis = {
+          url: normalizedUrl,
+          domain: parsedUrl.hostname,
+          platform: "web",
+          platform_category: "web",
+          is_music: false,
+          title: firstPartySource.title,
+          description: firstPartySource.description,
+          author: "",
+          published: "",
+          modified: "",
+          og_image: "",
+          thumbnail_url: "",
+          canonical: normalizedUrl,
+          language: "",
+          content_type: firstPartySource.contentType,
+          content_category: "pricing",
+          genre: "default",
+          tone: "professional",
+          artist: "",
+          track: "",
+          album: "",
+          duration: "",
+          release_date: "",
+          label: "",
+          isrc: "",
+          bpm: "",
+          tracklist: [],
+          members: [],
+          keywords: [],
+          tags: [],
+          headings: [],
+          body_preview: firstPartySource.description,
+          summary: firstPartySource.description,
+          view_count: null,
+          like_count: null,
+          comment_count: null,
+          play_count: null,
+          share_count: null,
+          subscriber_count: null,
+          data_sources: [firstPartySource.provenance],
+          sourceProvenance: firstPartySource.provenance,
+        };
+      } else {
+        // All other URLs retain the fail-closed SSRF guard before parsing.
+        try {
+          assertSafeExternalUrl(normalizedUrl);
+        } catch (ssrfErr) {
+          return res
+            .status(400)
+            .json({ success: false, message: (ssrfErr as Error).message || "Invalid URL" });
+        }
+        analysis = await analyzeUrl(normalizedUrl);
       }
-
-      const analysis = await analyzeUrl(url.trim());
       if (analysis.error && !analysis.title) {
         return res
           .status(422)
@@ -5080,8 +5131,13 @@ router.post(
       }
 
       const seed = urlToContentSeed(analysis);
+      if (firstPartySource) {
+        seed.topic = firstPartySource.topic;
+      }
 
-      // Auto-generate social content from the extracted data using rich context
+      // Keep the extracted topic for the video config, but send external URLs
+      // to MaxCore's guarded URL resolver. Trusted first-party content instead
+      // uses its server-verified non-URL topic and checkout context.
       const aiTopic =
         seed.track && seed.artist
           ? `"${seed.track}" by ${seed.artist}${seed.genre && seed.genre !== "default" ? ` — ${seed.genre}` : ""}`
@@ -5091,35 +5147,37 @@ router.post(
               ? `New music by ${seed.artist}`
               : seed.topic.slice(0, 80);
 
-      const urlKeywords = [
-        ...new Set([...(seed.keywords || []), ...(seed.tags || [])]),
-      ].slice(0, 20);
-      const content = await (
-        await getUnifiedAI()
-      ).generateContent({
-        platform: (platform || "instagram") as import("../../shared/ml/nlp/ContentGenerator.js").Platform,
-        topic: aiTopic,
-        tone: (seed.tone !== "default" ? seed.tone : "energetic") as import("../../shared/ml/nlp/ContentGenerator.js").ContentTone,
-        genre: seed.genre !== "default" ? seed.genre : "hip-hop",
-        artistName: seed.artist,
-        trackTitle: seed.track,
-        album: seed.album || undefined,
-        releaseDate: seed.release_date || undefined,
-        label: seed.label || undefined,
-        keywords: urlKeywords.length ? urlKeywords : undefined,
-        description: analysis.description.slice(0, 200) || undefined,
-        bodyPreview: seed.body_preview.slice(0, 300) || undefined,
-        extraContext:
-          [
-            seed.view_count ? `${seed.view_count.toLocaleString()} views` : "",
-            seed.like_count ? `${seed.like_count.toLocaleString()} likes` : "",
-            seed.play_count ? `${seed.play_count.toLocaleString()} plays` : "",
-          ]
-            .filter(Boolean)
-            .join(" | ") || undefined,
-        includeHashtags: true,
-        includeEmojis: true,
+      const requestedPlatform =
+        typeof platform === "string" && platform.trim()
+          ? platform.trim()
+          : "instagram";
+      const maxCoreVariant = await generateSocialUrlWithMaxCore({
+        url: normalizedUrl,
+        topic: firstPartySource?.topic,
+        extraContext: firstPartySource?.extraContext,
+        platform: requestedPlatform,
+        userId: req.user!.id,
+        tone: seed.tone !== "default" ? seed.tone : "energetic",
+        format: "text",
+        genre: seed.genre !== "default" ? seed.genre : undefined,
+        contentType: seed.content_type,
       });
+      if (!maxCoreVariant?.caption) {
+        throw new AIUnavailableError(
+          "MaxCore did not return usable URL social content",
+        );
+      }
+      const content = {
+        success: true,
+        data: {
+          caption: maxCoreVariant.caption,
+          hook: maxCoreVariant.hook,
+          body: maxCoreVariant.body,
+          cta: maxCoreVariant.cta,
+          hashtags: maxCoreVariant.hashtags,
+        },
+        source: "MaxCoreAI",
+      };
 
       // Derive genre-based default colors for the video template
       const genreColorMap: Record<string, { bg: string; ac: string }> = {
@@ -5202,53 +5260,35 @@ router.post(
       const colors = platformColorMap[platformKey] ||
         genreColorMap[genreKey] || { bg: "#1a1a2e", ac: "#e94560" };
 
-      // Use AI-generated hook/body/cta for the video overlay when available
-      // content.data may be null when MaxCore returns no content — guard with ?.
-      const aiHook = content?.data?.hook || "";
-      const aiBody = content?.data?.body || "";
-      const aiCta = content?.data?.cta || "";
-
-      // Build punchy video-specific text (fallback from AI result)
-      const videoHook =
-        aiHook ||
-        (seed.track && seed.artist
-          ? `${seed.track} — out now`
-          : seed.track
-            ? `New drop: ${seed.track}`
-            : seed.artist
-              ? `New music from ${seed.artist}`
-              : aiTopic.slice(0, 50));
-
-      const videoBody =
-        aiBody ||
-        (seed.artist && seed.track
-          ? `${seed.genre && seed.genre !== "default" ? seed.genre.charAt(0).toUpperCase() + seed.genre.slice(1) + " — " : ""}Stream by ${seed.artist}`
-          : "Stream now on all platforms");
-
-      const videoCtaMap: Record<string, string> = {
-        music: "Stream now — link in bio",
-        video: "Watch now — link in bio",
-        event: "Get tickets — link in bio",
-        article: "Read more — link in bio",
-        podcast: "Listen now — link in bio",
-      };
-      const videoCta =
-        aiCta || videoCtaMap[seed.content_type] || "Follow for more";
-
-      const videoConfig = {
-        topic: aiTopic,
-        genre: seed.genre || "hip-hop",
-        tone: seed.tone !== "default" ? seed.tone : "energetic",
-        platform: platform || "tiktok",
-        duration: 15,
-        artist_name: seed.artist || "",
-        hook: videoHook,
-        body: videoBody,
-        cta: videoCta,
-        bg_color: colors.bg,
-        accent_color: colors.ac,
-        thumbnail_url: seed.og_image || seed.thumbnail_url || "",
-      };
+      // Video-overlay copy must also come from MaxCore; do not substitute
+      // locally templated hooks, bodies, or calls to action.
+      const stripMeta = (value: string) =>
+        value
+          .replace(/#\w+/g, "")
+          .replace(/https?:\/\/\S+/g, "")
+          .replace(/🔗.*$/g, "")
+          .trim();
+      const videoHook = stripMeta(content.data.hook).slice(0, 80);
+      const videoBody = stripMeta(content.data.body).slice(0, 100);
+      const videoCta = stripMeta(content.data.cta).slice(0, 50);
+      const videoConfig =
+        videoHook && videoBody && videoCta
+          ? {
+              topic: aiTopic,
+              genre:
+                seed.genre && seed.genre !== "default" ? seed.genre : "",
+              tone: seed.tone !== "default" ? seed.tone : "energetic",
+              platform: requestedPlatform,
+              duration: 15,
+              artist_name: seed.artist || "",
+              hook: videoHook,
+              body: videoBody,
+              cta: videoCta,
+              bg_color: colors.bg,
+              accent_color: colors.ac,
+              thumbnail_url: seed.og_image || seed.thumbnail_url || "",
+            }
+          : null;
 
       const audioStyle = {
         genre: seed.genre || "hip-hop",
@@ -5268,15 +5308,23 @@ router.post(
           .filter(Boolean)
           .join(". ") || seed.topic;
 
-      res.json({
+      const responsePayload: Record<string, unknown> = {
         success: true,
         analysis,
         seed,
-        content: (content as any).content || content || null,
-        video_config: videoConfig,
-        audio_style: audioStyle,
-        image_prompt: imagePrompt,
-      });
+        content,
+        source: "MaxCoreAI",
+        sourceProvenance:
+          firstPartySource?.provenance ?? "maxcore_fetched_url",
+      };
+      if (videoConfig) {
+        responsePayload.video_config = videoConfig;
+      }
+      if (!firstPartySource) {
+        responsePayload.audio_style = audioStyle;
+        responsePayload.image_prompt = imagePrompt;
+      }
+      res.json(responsePayload);
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         return res.status(503).json({
