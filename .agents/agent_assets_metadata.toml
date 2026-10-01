@@ -119,3 +119,17 @@ mtime_ms = 1789808162776
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/581dfd5e-15ec-439c-b1ef-82c14cae26ff/de92addf-9316-4a2b-8eeb-da1d8ab9dfa6"
 storage_version_token = "1789808212718795"
 content_type = "text/html"
+
+[[outputs]]
+id = "MnSWaYe2OPzEOOJRGzHmo"
+uri = "file://reports/payment-processing-verification.html"
+type = "html"
+title = "Payment processing verification"
+description = "Actual test-mode evidence, passing layers, three reproducible failures, fixes, Stripe setup blockers, cleanup limitations and stopped-workflow status."
+logical_id = "d8dedd57-6647-4980-9477-102b9a40e4d7"
+content_hash = "sha256:e8587863b74b35582bc5e224d7abf73b940ceed6673499183cfe0d1b8e22700e"
+size = 15241
+mtime_ms = 1790859113696
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/d8dedd57-6647-4980-9477-102b9a40e4d7/3954b2a3-147a-42ee-af4a-fa4f3b0af375"
+storage_version_token = "1790859114867417"
+content_type = "text/html"

@@ -485,11 +485,24 @@ router.get("/:storefrontId/membership-tiers", async (req, res) => {
  */
 router.post("/:storefrontId/membership-tiers", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { storefrontId } = req.params as Record<string, string>;
+    const [storefront] = await db
+      .select()
+      .from(storefronts)
+      .where(eq(storefronts.id, storefrontId))
+      .limit(1);
+
+    if (!storefront) {
+      return res.status(404).json({ error: "Storefront not found" });
+    }
+
+    if (storefront.userId !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
 
     const validatedData = insertMembershipTierSchema?.parse({
       ...req.body,
@@ -534,16 +547,39 @@ router.post("/:storefrontId/membership-tiers", async (req, res) => {
  */
 router.put("/membership-tiers/:tierId", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { tierId } = req.params as Record<string, string>;
+    const tierResults = await db
+      .select({ tier: membershipTiers, storefront: storefronts })
+      .from(membershipTiers)
+      .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+      .where(eq(membershipTiers.id, tierId))
+      .limit(1);
+    const existing = tierResults[0];
+
+    if (!existing?.tier) {
+      return res.status(404).json({ error: "Membership tier not found" });
+    }
+
+    if (existing.storefront?.userId !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
     const validatedData = updateMembershipTierSchema?.parse(req.body);
+
+    if (
+      validatedData.storefrontId !== undefined &&
+      validatedData.storefrontId !== existing.tier.storefrontId
+    ) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
 
     const tier = await storefrontService?.updateMembershipTier(
       tierId,
-      req.user!.id,
+      req.user.id,
       validatedData as import("../services/storefrontService.js").CreateMembershipTierInput,
     );
 
@@ -578,13 +614,28 @@ router.put("/membership-tiers/:tierId", async (req, res) => {
  */
 router.delete("/membership-tiers/:tierId", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { tierId } = req.params as Record<string, string>;
+    const tierResults = await db
+      .select({ tier: membershipTiers, storefront: storefronts })
+      .from(membershipTiers)
+      .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
+      .where(eq(membershipTiers.id, tierId))
+      .limit(1);
+    const existing = tierResults[0];
 
-    await storefrontService?.deleteMembershipTier(tierId, req.user!.id);
+    if (!existing?.tier) {
+      return res.status(404).json({ error: "Membership tier not found" });
+    }
+
+    if (existing.storefront?.userId !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await storefrontService?.deleteMembershipTier(tierId, req.user.id);
 
     res.json({
       success: true,

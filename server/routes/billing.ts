@@ -1485,23 +1485,36 @@ router.post(
         });
       }
 
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user?.stripeCustomerId) {
+        return res.status(403).json({
+          message: "Payment intent does not belong to the authenticated customer",
+          code: "PAYMENT_INTENT_OWNERSHIP_MISMATCH",
+          retryable: false,
+        });
+      }
+
       const paymentIntent =
         await stripe!.paymentIntents?.retrieve(paymentIntentId);
+      const paymentIntentCustomerId =
+        typeof paymentIntent?.customer === "string"
+          ? paymentIntent.customer
+          : paymentIntent?.customer?.id;
+
+      if (paymentIntentCustomerId !== user.stripeCustomerId) {
+        return res.status(403).json({
+          message: "Payment intent does not belong to the authenticated customer",
+          code: "PAYMENT_INTENT_OWNERSHIP_MISMATCH",
+          retryable: false,
+        });
+      }
 
       if (paymentIntent?.status === "succeeded") {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, userId))
-          .limit(1);
-
-        if (user?.stripeCustomerId) {
-          await db
-            .update(users)
-            .set({ subscriptionStatus: "active" })
-            .where(eq(users.id, userId));
-        }
-
         logger.info(`[Billing] 3DS confirmation successful for user ${userId}`);
 
         return res.json({
@@ -1523,13 +1536,20 @@ router.post(
               payment_method: paymentMethodId,
             },
           );
+          const confirmedCustomerId =
+            typeof confirmedIntent?.customer === "string"
+              ? confirmedIntent.customer
+              : confirmedIntent?.customer?.id;
+
+          if (confirmedCustomerId !== user.stripeCustomerId) {
+            return res.status(403).json({
+              message: "Payment intent does not belong to the authenticated customer",
+              code: "PAYMENT_INTENT_OWNERSHIP_MISMATCH",
+              retryable: false,
+            });
+          }
 
           if (confirmedIntent?.status === "succeeded") {
-            await db
-              .update(users)
-              .set({ subscriptionStatus: "active" })
-              .where(eq(users.id, userId));
-
             return res.json({
               success: true,
               message: "Payment confirmed successfully",

@@ -88,6 +88,10 @@ export class CommerceRepository {
       const prior=(await c.query("SELECT * FROM commerce_operations WHERE id=$1",[id])).rows[0];
       if(prior) {
         if(Number(prior.amount_cents)!==cents||prior.currency!==currency) throw new Error("Idempotency key reused with different payout");
+        // Connect destination is part of the immutable money-movement request.
+        // Legacy rows without an account binding fail closed instead of being
+        // silently replayed against a newly connected account.
+        if(prior.payload?.accountId!==accountId) throw new Error("Idempotency key reused with different payout account");
         return this.operation(prior);
       }
       const balance=(await c.query(`SELECT COALESCE(sum(e.amount_cents),0)::text AS cents FROM commerce_entries e
