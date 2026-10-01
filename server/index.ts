@@ -1113,7 +1113,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const { autoPostingServiceV2 } = await import(
     "./services/autoPostingServiceV2.js"
   );
-  readinessWorkerStops.push(() => autoPostingServiceV2.close());
+  readinessWorkerStops.push(() => autoPostingServiceV2.shutdown());
   await autoPostingServiceV2.initialize();
   if (backupsEnabled) {
     const { databaseBackupService } = await import("./services/backup/databaseBackupService.js");
