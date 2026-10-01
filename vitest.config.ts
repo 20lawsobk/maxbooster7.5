@@ -26,6 +26,13 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     pool: "forks",
+    // These suites include process-spawning PDIM simulations whose waits are
+    // wall-clock sensitive; on small CI containers the default worker-per-CPU
+    // parallelism starves them into intermittent timeouts. Cap the workers
+    // and let vitest retry a failed file once in a fresh process so a
+    // starved simulation gets one clean shot instead of failing the run.
+    maxWorkers: 2,
+    retry: 1,
     // @ts-ignore — poolOptions is valid in vitest 4.x but missing from older type stubs
     poolOptions: {
       forks: {

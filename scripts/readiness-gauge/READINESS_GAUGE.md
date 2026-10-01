@@ -116,6 +116,12 @@ Verdict rules, in order:
 4. score ≥ `thresholds.conditionalGo` → `CONDITIONAL GO`
 5. otherwise → `NO GO`
 
+Every Markdown report includes a **"Why it failed — and the steps to pass"**
+section: one entry per non-passing check with the exact evidence for why it
+failed (or was blocked) and numbered, evidence-aware steps to fix it — down to
+the file and line for type errors and the named failing suites for tests —
+ending with the `--only <check>` command to verify that single check.
+
 ## Honest limits
 
 - Static checks prove the code *has* a health endpoint, not that it *answers*.

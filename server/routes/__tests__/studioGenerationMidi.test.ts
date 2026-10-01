@@ -22,6 +22,8 @@ describe("studio MaxCore MIDI serialization", () => {
       parseMaxCoreMidiNotes(
         midi.buffer.slice(midi.byteOffset, midi.byteOffset + midi.byteLength),
       ),
-    ).toEqual([{ note: 0, octave: 4, duration: 1, velocity: 100 }]);
+    ).toEqual([
+      { pitch: 60, startTime: 0, note: 0, octave: 4, duration: 1, velocity: 100 },
+    ]);
   });
 });

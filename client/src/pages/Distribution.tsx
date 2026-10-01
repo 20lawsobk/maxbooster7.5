@@ -1472,6 +1472,13 @@ const GENRES = [
   "Lo-Fi",
 ];
 
+// Too Lost currently exposes a lifetime sales summary only. Until a data
+// source exists that can verify stream trends, per-platform / per-track
+// earnings, and territory breakdowns, the detailed analytics blocks in the
+// tabs below stay parked (rendered nowhere, kept in source). Flip this on
+// when that data lands.
+const SHOW_DETAILED_ANALYTICS = false;
+
 export default function Distribution() {
   const { user, isLoading } = useRequireSubscription();
   const { toast } = useToast();
@@ -2883,7 +2890,7 @@ export default function Distribution() {
                   CSV summaries.
                 </AlertDescription>
               </Alert>
-              {false && (
+              {SHOW_DETAILED_ANALYTICS && (
                 <>
               {/* Modern Analytics Stats with Sparklines */}
               <StatCardRow>
@@ -3234,7 +3241,7 @@ export default function Distribution() {
 
             <TabsContent value="earnings" className="space-y-6">
               <EarningsReconciliation />
-              {false && (
+              {SHOW_DETAILED_ANALYTICS && (
                 <>
               <div className="flex justify-between items-center">
                 <div>

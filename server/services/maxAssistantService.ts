@@ -1,4 +1,10 @@
 import { logger } from "../logger.js";
+import {
+  deriveCreativeState,
+  detectSignals,
+  planIntervention,
+  type CreativeState,
+} from "./maxPersona.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -25,6 +31,8 @@ interface AssistantResponse {
   proactiveSuggestions?: string[];
   relatedTopics?: string[];
   quickActions?: QuickAction[];
+  /** Max persona layer: creative state derived for this turn. */
+  personaState?: CreativeState;
 }
 
 interface QuickAction {
@@ -3620,7 +3628,7 @@ function getQuickActions(category: string): QuickAction[] {
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function generateMaxResponse(
+function generateKnowledgeResponse(
   userMessage: string,
   history: ConversationMessage[],
 ): AssistantResponse {
@@ -3737,6 +3745,43 @@ What would you like to explore?`;
         prompt: "How do I sell beats on the marketplace?",
       },
     ],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAX PERSONA LAYER
+// The knowledge engine above answers the question; the persona layer
+// (maxPersona.ts) calibrates tone and, when conversational signals call
+// for it, leads with a proactive micro/macro intervention. Knowledge
+// content is never altered except for a persona-voiced opener on turns
+// carrying fatigue/frustration/win signals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function generateMaxResponse(
+  userMessage: string,
+  history: ConversationMessage[],
+): AssistantResponse {
+  const base = generateKnowledgeResponse(userMessage, history);
+
+  const state = deriveCreativeState(history, userMessage, base.category);
+  const intervention = planIntervention(
+    state,
+    detectSignals(userMessage),
+    base.category,
+  );
+
+  if (!intervention) {
+    return { ...base, personaState: state };
+  }
+
+  const suggestions = [intervention.text, ...(base.proactiveSuggestions ?? [])];
+  return {
+    ...base,
+    content: intervention.opener
+      ? `${intervention.opener}\n\n${base.content}`
+      : base.content,
+    proactiveSuggestions: [...new Set(suggestions)].slice(0, 3),
+    personaState: state,
   };
 }
 

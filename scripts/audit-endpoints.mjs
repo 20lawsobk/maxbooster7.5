@@ -658,6 +658,21 @@ function extractFrontendCalls() {
       }
       if (!raw.startsWith("/api/")) continue;
 
+      // A "/api/..." literal in object-property-value position is a
+      // definition (endpoint maps, lookup tables), not a call site. The
+      // request is issued where the value is consumed, and that consumption
+      // is reported separately (computed-call tracing /
+      // DYNAMIC_FRONTEND_RESOLUTIONS). Classifying the definition itself as
+      // a call fabricates a GET entry for map values that are really POSTed
+      // through an index expression, e.g. `apiRequest("POST",
+      // endpoints[action], ...)` — the phantom GET then gets audited against
+      // the backend as if a user-facing call existed.
+      const beforeLiteral = src.slice(Math.max(0, m.index - 160), m.index);
+      const isDefinitionLiteral =
+        /(?:\{|,)\s*(?:[A-Za-z_$][\w$]*|"[^"\n]*"|'[^'\n]*')\s*:\s*$/.test(
+          beforeLiteral,
+        );
+
       let kind = "not-api-reference";
       let actualSource = source;
       if (comment) kind = "comment";
@@ -666,7 +681,7 @@ function extractFrontendCalls() {
       else if (inUseQuery) {
         actualSource = "useQuery";
         kind = queryKeyHasCustomFn(src, m.index) ? "query-key-custom-fn" : "useQuery";
-      } else if (source) {
+      } else if (source && !isDefinitionLiteral) {
         kind = source;
       } else if (
         /^\s*(?:endpoint|url)\s*=/.test(

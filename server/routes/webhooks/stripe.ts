@@ -20,8 +20,10 @@ import {
   orders,
   customerMemberships,
   users,
+  storefrontOrders,
+  bogoPromotions,
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { notificationService } from "../../services/notificationService.js";
 import { dunningService } from "../../services/dunningService.js";
 import { instantPayoutService } from "../../services/instantPayoutService.js";
@@ -107,6 +109,56 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
     (session?.payment_intent as string) || session?.id,
     true,
   );
+
+  // Legacy storefront sessions (metadata.storefrontId with no commerce kind)
+  // predate the merchant-settlement flow: their orders live in
+  // storefront_orders and are completed here, not by settleMerchantCheckout
+  // (v2 merchant sessions already returned above). Confirm the update
+  // matched a row before reporting success — an unmatched session is a paid
+  // order nobody fulfilled, so it must fail and let Stripe retry.
+  const { storefrontId, promotionId } = session?.metadata || {};
+  if (storefrontId) {
+    try {
+      const updatedStorefrontOrders = await db
+        .update(storefrontOrders)
+        .set({ status: "completed" })
+        .where(eq(storefrontOrders.stripeSessionId, session?.id))
+        .returning({ id: storefrontOrders.id });
+
+      if (updatedStorefrontOrders?.length > 0) {
+        logger.info(
+          `[Stripe] Storefront orders marked completed for session ${session?.id}`,
+        );
+      } else {
+        logger.warn(
+          `[Stripe] No storefront order found for session ${session?.id}`,
+        );
+        failures.push(`storefront order update for session ${session?.id}`);
+      }
+
+      if (promotionId) {
+        const updatedPromotions = await db
+          .update(bogoPromotions)
+          .set({ redemptionCount: sql`${bogoPromotions.redemptionCount} + 1` })
+          .where(eq(bogoPromotions.id, promotionId))
+          .returning({ id: bogoPromotions.id });
+
+        if (updatedPromotions?.length > 0) {
+          logger.info(
+            `[Stripe] BOGO promotion ${promotionId} redemption count incremented`,
+          );
+        } else {
+          logger.warn(
+            `[Stripe] BOGO promotion ${promotionId} not found for redemption increment`,
+          );
+          failures.push(`BOGO promotion redemption for ${promotionId}`);
+        }
+      }
+    } catch (storefrontError) {
+      logger.warn({ detail: storefrontError }, "[Stripe] Failed to update storefront orders:");
+      failures.push(`storefront order update for session ${session?.id}`);
+    }
+  }
 
   const {
     type: sessionType,

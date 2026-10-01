@@ -35,6 +35,8 @@ import {
   ProjectNotFoundError,
 } from "../services/projectDuplicationService.js";
 import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
+import { promises as fsPromises } from "fs";
+import { analyzeAudio } from "../services/mediaAnalyzerService.js";
 
 const router = Router();
 const execFileAsync = promisify(execFile);
@@ -2123,6 +2125,70 @@ router.delete(
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error deleting clip:");
       res.status(500).json({ error: "Failed to delete clip" });
+    }
+  },
+);
+
+// POST /clips/:clipId/analyze — full musical analysis (key/mode/tempo/
+// energy/dance/valence + section map) for one timeline clip, backing the
+// DAW's "Analyze Audio" action. The Python analyzer speaks snake_case; the
+// client contract is camelCase, so the mapping lives at this boundary. A
+// clip whose audio cannot be decoded comes back analysisQuality
+// "metadata_only" and the client says so.
+router.post(
+  "/clips/:clipId/analyze",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    let source: { localPath: string; cleanup: () => Promise<void> } | null =
+      null;
+    try {
+      const { clipId } = req.params as Record<string, string>;
+      const userId = req.user!.id;
+
+      const clip = await db.query.audioClips.findFirst({
+        where: eq(audioClips.id, clipId),
+      });
+      if (!clip) {
+        return res.status(404).json({ error: "Clip not found" });
+      }
+
+      const track = clip.trackId
+        ? await db.query.studioTracks.findFirst({
+            where: eq(studioTracks.id, clip.trackId),
+          })
+        : null;
+      if (!track || !(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+
+      if (!clip.audioUrl) {
+        return res.status(400).json({ error: "Clip has no audio to analyze" });
+      }
+
+      source = await resolveAudioUrlToLocalFile(clip.audioUrl);
+      const buffer = await fsPromises.readFile(source.localPath);
+      const analysis = await analyzeAudio(
+        buffer,
+        path.basename(source.localPath),
+      );
+
+      res.json({
+        analysisQuality: analysis.analysis_quality,
+        key: analysis.key ?? null,
+        mode: analysis.mode ?? null,
+        bpm: analysis.bpm,
+        energy: analysis.energy,
+        dance: analysis.dance,
+        valence: analysis.valence,
+        keyConfidence: analysis.key_confidence ?? 0,
+        bpmConfidence: analysis.bpm_confidence ?? 0,
+        sections: analysis.structure?.sections ?? [],
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error analyzing clip:");
+      res.status(500).json({ error: "Failed to analyze clip" });
+    } finally {
+      if (source) await source.cleanup();
     }
   },
 );

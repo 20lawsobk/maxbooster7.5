@@ -150,7 +150,11 @@ describe("local PDIM Redis AOF durability", () => {
     expect(await recovered.exec("GET", ["temporary"])).toBe("value");
   });
 
-  it("journals expiry tombstones so replay cannot resurrect expired keys", async () => {
+  // Waits on a real 100 ms TTL expiry event; under full-suite parallel load
+  // the global 15s test timeout can starve the event loop, so this test
+  // carries its own headroom (same treatment as the retained-PDIM recovery
+  // simulation). Assertions are unchanged.
+  it("journals expiry tombstones so replay cannot resurrect expired keys", { timeout: 120_000 }, async () => {
     const expiryFile = tempJournalPath();
     const expiryStore = owner(new LocalPdimAofJournal(expiryFile));
     const expired = new Promise<void>((resolve) => {

@@ -170,11 +170,16 @@ export function parseMaxCoreMidiNotes(buffer: ArrayBuffer): GeneratedMidiNote[] 
           throw new AIUnavailableError("studio MIDI generation (truncated meta event)");
         }
         cursor.value++;
-        cursor.value += readVarLen(bytes, cursor);
+        // NB: readVarLen advances the cursor itself; it must not be folded
+        // into `cursor.value += ...`, which would capture the pre-read
+        // position and re-read the length byte as the next delta time.
+        const metaLength = readVarLen(bytes, cursor);
+        cursor.value += metaLength;
         continue;
       }
       if (status === 0xf0 || status === 0xf7) {
-        cursor.value += readVarLen(bytes, cursor);
+        const sysexLength = readVarLen(bytes, cursor);
+        cursor.value += sysexLength;
         continue;
       }
 

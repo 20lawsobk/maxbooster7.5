@@ -11,7 +11,6 @@ import { eq, and, desc, sql, count, inArray } from "drizzle-orm";
 import {
   royaltyTransactions,
   royaltyStatements,
-  instantPayouts,
   royaltySplits,
   taxForms,
   royaltyDisputes,
@@ -24,7 +23,6 @@ import {
 } from "@shared/schema";
 import { storageService } from "../services/storageService";
 import * as codeGenerationService from "../services/distributionCodeGenerationService";
-import { distributionService } from "../services/distributionService";
 import { labelGridService } from "../services/labelgrid-service";
 import {
   claimToolostRetry,
@@ -1736,7 +1734,7 @@ router.get(
       const overallProgress =
         statuses.length === 0
           ? null
-          : Math.round((liveCount / statuses.length) * 100);
+          : Math.round((liveCount / (statuses.length || 1)) * 100);
 
       res.json({
         statuses: statuses.map((status: unknown) => ({

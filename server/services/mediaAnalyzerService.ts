@@ -120,6 +120,19 @@ export interface AudioAnalysis {
   };
   analysis_quality: "full" | "metadata_only";
   error?: string;
+  // Musical-descriptor fields the Python analyzer also returns. Optional in
+  // the interface because consumers written against the original shape do
+  // not read them; the clip-analysis route maps them to the client's
+  // camelCase contract.
+  key?: string | null;
+  mode?: "major" | "minor" | string | null;
+  key_full?: string;
+  key_confidence?: number;
+  bpm_confidence?: number;
+  structure?: {
+    sections?: Array<{ label: string; start: number; end: number; energy?: number }>;
+    chorus_start?: number;
+  };
 }
 
 export interface PaletteColor {

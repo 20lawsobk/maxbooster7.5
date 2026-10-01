@@ -302,6 +302,64 @@ describe("report rendering", () => {
     expect(parsed.verdict).toBe("GO");
     expect(parsed.tool).toBe("readiness-gauge");
   });
+
+  it("fix guide lists exactly why a check failed and the steps to pass", () => {
+    const failing = scored("typecheck", "fail", 2, true);
+    failing.summary = "1 TypeScript project(s) have errors";
+    failing.evidence = [
+      "tsconfig.server.json: 2 error(s)",
+      "server/routes/distribution.ts(14,3): error TS6133: 'instantPayouts' is declared but its value is never read.",
+    ];
+    const md = renderMarkdown(
+      buildGaugeReport(
+        baseProfile({ name: "generic", displayName: "Generic" }),
+        "/repo",
+        [failing],
+      ),
+    );
+    expect(md).toContain("## Why it failed — and the steps to pass");
+    expect(md).toContain("**Why:** 1 TypeScript project(s) have errors");
+    expect(md).toContain("server/routes/distribution.ts");
+    expect(md).toContain("remove it, use it");
+    expect(md).toContain("--only typecheck");
+    expect(md).toContain("rerun the full gauge");
+  });
+
+  it("fix guide names the failing test suites for unit-tests", () => {
+    const failing = scored("unit-tests", "fail", 5, true);
+    failing.summary = "6 test failure(s)";
+    failing.evidence = [
+      "Test Files: 145 passed, 5 failed",
+      "failing: tests/unit/stripe-webhook-honesty.test.ts",
+    ];
+    const md = renderMarkdown(
+      buildGaugeReport(
+        baseProfile({ name: "generic", displayName: "Generic" }),
+        "/repo",
+        [failing],
+      ),
+    );
+    expect(md).toContain("Fix the failing suite");
+    expect(md).toContain("stripe-webhook-honesty.test.ts");
+  });
+
+  it("fix guide says nothing to fix when every check passes", () => {
+    expect(renderMarkdown(report)).toContain(
+      "Nothing to fix — every check passed.",
+    );
+  });
+
+  it("blocked checks get unblock steps, not pass steps", () => {
+    const blockedCheck = scored("unit-tests", "blocked", 5, true);
+    const md = renderMarkdown(
+      buildGaugeReport(
+        baseProfile({ name: "generic", displayName: "Generic" }),
+        "/repo",
+        [blockedCheck],
+      ),
+    );
+    expect(md).toContain("**Steps to unblock:**");
+  });
 });
 
 /* ── real check probes ────────────────────────────────────────────────── */
@@ -518,6 +576,27 @@ describe("real checks against temp git repos", () => {
     const res: CheckResult = await getCheck("unit-tests").run({ cwd: dir }, {});
     expect(res.status).toBe("pass");
     expect(res.summary).toMatch(/all tests pass/);
+  }, 120_000);
+
+  it("unit-tests reports FAIL (not BLOCKED) when the suite fails", async () => {
+    const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const dir = mkdtempSync(join(tmpdir(), "gauge-vt-"));
+    dirs.push(dir);
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ type: "module" }));
+    mkdirSync(join(dir, "tests"), { recursive: true });
+    writeFileSync(
+      join(dir, "tests", "s.test.ts"),
+      'import { expect, it } from "vitest";\nit("ok", () => expect(1).toBe(1));\nit("bad", () => expect(1).toBe(2));\n',
+    );
+    symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
+    const res: CheckResult = await getCheck("unit-tests").run({ cwd: dir }, {});
+    // Vitest leads the summary with the failed count ("1 failed | 1 passed");
+    // the check must parse that as FAIL, not give up and report BLOCKED.
+    expect(res.status).toBe("fail");
+    expect(res.summary).toMatch(/test failure/);
+    expect(res.evidence.join("\n")).toContain("1 failed");
+    // And the failing suite is named, so the report can say what to fix.
+    expect(res.evidence.join("\n")).toContain("s.test.ts");
   }, 120_000);
 });
 

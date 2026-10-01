@@ -348,22 +348,41 @@ const unitTests: Check = {
     }
     // Strip ANSI escapes so summary regexes work regardless of color settings.
     const text = (out.stdout + out.stderr).replace(/\u001b\[[0-9;]*m/g, "");
-    const filesM = text.match(/Test Files\s+(\d+)\s+passed(?:\s*\((\d+)\))?/);
-    const failedFilesM = text.match(/Test Files[^\n]*?(\d+)\s+failed/);
-    const testsM = text.match(/Tests\s+(\d+)\s+passed/);
-    const failedTestsM = text.match(/Tests[^\n]*?(\d+)\s+failed/);
-    const skippedM = text.match(/(\d+)\s+skipped/);
+    // Vitest leads with the failed count when anything fails
+    // ("Test Files  5 failed | 145 passed (150)"), so parse each summary line
+    // whole instead of expecting "N passed" first — otherwise a failing
+    // suite is misreported as BLOCKED instead of FAIL.
+    const filesLine = text.match(/^\s*Test Files\s+\d[^\n]*/m)?.[0] ?? "";
+    const testsLine = text.match(/^\s*Tests\s+\d[^\n]*/m)?.[0] ?? "";
+    const countIn = (line: string, word: string): number => {
+      const m = line.match(new RegExp(`(\\d+)\\s+${word}\\b`));
+      return m ? Number(m[1]) : 0;
+    };
+    const filesPassed = countIn(filesLine, "passed");
+    const filesFailed = countIn(filesLine, "failed");
+    const testsPassed = countIn(testsLine, "passed");
+    const testsFailed = countIn(testsLine, "failed");
+    const testsSkipped = countIn(testsLine, "skipped");
     const evidence = [
-      `Test Files: ${filesM?.[1] ?? "?"} passed${failedFilesM ? `, ${failedFilesM[1]} failed` : ""}`,
-      `Tests: ${testsM?.[1] ?? "?"} passed${failedTestsM ? `, ${failedTestsM[1]} failed` : ""}${skippedM ? `, ${skippedM[1]} skipped` : ""}`,
+      `Test Files: ${filesPassed} passed, ${filesFailed} failed`,
+      `Tests: ${testsPassed} passed, ${testsFailed} failed${testsSkipped ? `, ${testsSkipped} skipped` : ""}`,
     ];
-    const failed = Number(failedFilesM?.[1] ?? 0) + Number(failedTestsM?.[1] ?? 0);
-    if (!filesM || !testsM) {
+    // Name the failing suites so the report says exactly what to fix.
+    if (filesFailed + testsFailed > 0) {
+      const failing = [
+        ...new Set(
+          [...text.matchAll(/^ ?FAIL\s+(.+)$/gm)].map((m) => m[1].trim()),
+        ),
+      ];
+      for (const f of failing.slice(0, 10)) evidence.push(`failing: ${f}`);
+    }
+    if (!filesLine || !testsLine) {
       return {
         ...blocked("could not parse vitest summary", "Run vitest locally and inspect the output."),
         durationMs: Date.now() - t0,
       };
     }
+    const failed = filesFailed + testsFailed;
     if (failed > 0 || !out.ok) {
       return {
         ...result("fail", `${failed} test failure(s)`, evidence, "Fix failing tests before shipping."),
@@ -371,7 +390,7 @@ const unitTests: Check = {
       };
     }
     return {
-      ...result("pass", `all tests pass (${testsM[1]} passed)`, evidence),
+      ...result("pass", `all tests pass (${testsPassed} passed)`, evidence),
       durationMs: Date.now() - t0,
     };
   },
@@ -390,7 +409,22 @@ const lint: Check = {
     const out = runCmd(
       ctx.cwd,
       "node",
-      ["node_modules/eslint/bin/eslint.js", "server", "client", "shared", "--quiet"],
+      [
+        "node_modules/eslint/bin/eslint.js",
+        "server",
+        "client",
+        "shared",
+        "--quiet",
+        // Content-keyed cache: repeat gauge runs skip unchanged files
+        // (~57s cold vs ~2s warm measured on maxbooster7.5). Content
+        // strategy (not mtime) so a same-size/same-timestamp edit can
+        // never replay a stale pass in a readiness gate.
+        "--cache",
+        "--cache-strategy",
+        "content",
+        "--cache-location",
+        "node_modules/.cache/eslint-gauge.json",
+      ],
       280_000,
     );
     if (out.timedOut) {

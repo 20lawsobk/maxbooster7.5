@@ -136,7 +136,10 @@ function simulatedGenerationStorage({ corruptSnapshotRead = false } = {}) {
 }
 
 describe("retained PDIM pre-deployment recovery simulation", () => {
-  it("retains an exact generation and restores it through independent real consumers", async () => {
+  // Spawns esbuild builds and real consumer processes; the global 15s test
+  // timeout is too tight when the full suite runs files in parallel, so this
+  // test carries its own headroom. Assertions are unchanged.
+  it("retains an exact generation and restores it through independent real consumers", { timeout: 120_000 }, async () => {
     const workspace = process.cwd();
     const scratch = await mkdtemp(join(workspace, ".pdim-recovery-simulation-"));
     try {
