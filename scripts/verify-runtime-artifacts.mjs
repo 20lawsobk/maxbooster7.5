@@ -8,6 +8,10 @@ import { spawnSync } from "node:child_process";
 import ignore from "ignore";
 
 export const floors = {
+  axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.3",
+  undici: "7.30.0", electron: "43.7.7",
+  // No patched release exists; certificate issuance must not pull this back in.
+  "node-forge": null,
   "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
   multer: "2.4.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
@@ -22,6 +26,7 @@ export const floors = {
   "extract-zip": null,
 };
 const alternateFloors = {
+  undici: { 6: "6.28.1" },
   "fast-uri": { 4: "4.1.5" },
   "linkify-it": { 6: "6.1.0" },
   "brace-expansion": { 2: "2.1.7" },

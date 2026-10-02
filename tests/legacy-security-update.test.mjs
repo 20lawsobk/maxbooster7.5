@@ -19,6 +19,10 @@ const entry = (name = "package.json") => ({
   path: `maxbooster7.5/${name}`, content: "patched",
   beforeSha256: hash("old"), afterSha256: hash("patched"),
 });
+const addEntry = (name, content = "new file") => ({
+  path: `maxbooster7.5/${name}`, operation: "add", content,
+  beforeSha256: null, afterSha256: hash(content),
+});
 const bundle = (...files) => ({ schemaVersion: 1, files });
 test("replay is opt-in, idempotent, and preserves unrelated files", t => {
   const root = fixture(t), update = bundle(entry());
@@ -27,6 +31,24 @@ test("replay is opt-in, idempotent, and preserves unrelated files", t => {
   assert.equal(applyLegacyUpdate(root, update, { apply: true }).applied.length, 1);
   assert.equal(applyLegacyUpdate(root, update, { apply: true }).applied.length, 0);
   assert.equal(fs.readFileSync(path.join(root, "maxbooster7.5/keep.txt"), "utf8"), "user content");
+});
+test("guarded additions create only absent files and replay idempotently", t => {
+  const root = fixture(t), update = bundle(addEntry("server/services/acmeCrypto.ts", "native helper"));
+  fs.mkdirSync(path.join(root, "maxbooster7.5/server/services"), { recursive: true });
+  assert.deepEqual(applyLegacyUpdate(root, update).pending, ["maxbooster7.5/server/services/acmeCrypto.ts"]);
+  assert.deepEqual(applyLegacyUpdate(root, update, { apply: true }).applied, ["maxbooster7.5/server/services/acmeCrypto.ts"]);
+  assert.equal(fs.readFileSync(path.join(root, "maxbooster7.5/server/services/acmeCrypto.ts"), "utf8"), "native helper");
+  assert.deepEqual(applyLegacyUpdate(root, update, { apply: true }).applied, []);
+});
+test("guarded additions refuse existing custom files and symlinks", t => {
+  const root = fixture(t);
+  fs.mkdirSync(path.join(root, "maxbooster7.5/server/services"), { recursive: true });
+  const custom = addEntry("server/services/acmeCrypto.ts", "native helper");
+  fs.writeFileSync(path.join(root, custom.path), "custom");
+  assert.throws(() => applyLegacyUpdate(root, bundle(custom), { apply: true }), /refusing add/);
+  fs.unlinkSync(path.join(root, custom.path));
+  fs.symlinkSync("package.json", path.join(root, custom.path));
+  assert.throws(() => applyLegacyUpdate(root, bundle(custom), { apply: true }), /Symlink/);
 });
 test("preflight rejects custom edits before changing another file", t => {
   const root = fixture(t);
@@ -37,6 +59,8 @@ test("preflight rejects custom edits before changing another file", t => {
 test("invalid hashes, traversal, duplicates, and symlinks fail closed", t => {
   const root = fixture(t);
   assert.throws(() => applyLegacyUpdate(root, bundle({ ...entry(), content: "tampered" }), { apply: true }), /checksum/);
+  assert.throws(() => applyLegacyUpdate(root, bundle({ ...addEntry("new.json"), beforeSha256: hash("old") }), { apply: true }), /checksum/);
+  assert.throws(() => applyLegacyUpdate(root, bundle({ ...addEntry("new.json"), operation: "replace" }), { apply: true }), /checksum/);
   assert.throws(() => applyLegacyUpdate(root, bundle({ ...entry(), path: "maxbooster7.5/../package.json" })), /Unsafe/);
   assert.throws(() => applyLegacyUpdate(root, bundle(entry(), entry())), /duplicate/);
   fs.symlinkSync("package.json", path.join(root, "maxbooster7.5/link.json"));

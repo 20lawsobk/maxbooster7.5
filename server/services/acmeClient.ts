@@ -27,9 +27,12 @@
  *     (single account reused for every cert).
  */
 
-import acme from "acme-client";
-import type { Challenge as AcmeChallenge } from "acme-client/types/rfc8555";
 import crypto from "crypto";
+import {
+  createAcmeAccountKey,
+  type Dns01Challenge,
+} from "./acmeCrypto.js";
+import { createAcmeClientProvider } from "./acmeClientLifecycle.js";
 import { pool } from "../db.js";
 import { logger } from "../logger.js";
 
@@ -37,7 +40,8 @@ import { logger } from "../logger.js";
 
 const ACME_ENABLED = process.env.ACME_ENABLED === "true";
 const ACME_DIRECTORY_URL =
-  process.env.ACME_DIRECTORY_URL || acme?.directory.letsencrypt?.staging;
+  process.env.ACME_DIRECTORY_URL ||
+  "https://acme-staging-v02.api.letsencrypt.org/directory";
 const ACME_CONTACT_EMAIL =
   process.env.ACME_CONTACT_EMAIL || "admin@max-booster.com";
 
@@ -157,24 +161,20 @@ async function decryptKey(blob: string): Promise<string> {
 
 // ─── ACME client lifecycle ────────────────────────────────────────────────────
 
-let client: acme.Client | null = null;
-
-async function getOrCreateClient(): Promise<acme.Client> {
-  if (client) return client;
-
+async function loadAccountKey(): Promise<string> {
   // Reuse the persisted account key so we don't register a new ACME account
   // on every server boot (LE rate-limits this aggressively).
   const { rows } = (await (pool as any).query(
-    `SELECT value FROM platform_settings WHERE key = $1`,
-    [ACME_ACCOUNT_KEY_SETTING],
-  )) as { rows: Array<{ value: string }> };
+    `SELECT key, value FROM platform_settings WHERE key = ANY($1)`,
+    [[ACME_ACCOUNT_KEY_SETTING]],
+  )) as { rows: Array<{ key: string; value: string }> };
 
+  const settings = new Map(rows.map((row) => [row.key, row.value]));
   let accountKeyPem: string;
-  if (rows[0]?.value) {
-    accountKeyPem = await decryptKey(rows[0].value);
+  if (settings.get(ACME_ACCOUNT_KEY_SETTING)) {
+    accountKeyPem = await decryptKey(settings.get(ACME_ACCOUNT_KEY_SETTING)!);
   } else {
-    const generated = await acme.crypto.createPrivateKey();
-    accountKeyPem = generated.toString();
+    accountKeyPem = createAcmeAccountKey();
     const enc = await encryptKey(accountKeyPem);
     await pool.query(
       `INSERT INTO platform_settings (key, value, description)
@@ -189,28 +189,29 @@ async function getOrCreateClient(): Promise<acme.Client> {
     logger.info("[acme] Generated and persisted new ACME account key");
   }
 
-  client = new acme.Client({
-    directoryUrl: ACME_DIRECTORY_URL,
-    accountKey: accountKeyPem,
-  });
-
-  // Create or retrieve the account on first use (idempotent on the LE side).
-  try {
-    await client.createAccount({
-      termsOfServiceAgreed: true,
-      contact: [`mailto:${ACME_CONTACT_EMAIL}`],
-    });
-  } catch (err) {
-    // "Account already exists" is fine — acme-client surfaces it as an
-    // existing-account response, but defensively we tolerate it.
-    logger.debug(
-      { err },
-      "[acme] createAccount returned (likely already-exists)",
-    );
-  }
-
-  return client;
+  return accountKeyPem;
 }
+
+const getOrCreateClient = createAcmeClientProvider({
+  directoryUrl: ACME_DIRECTORY_URL,
+  contactEmail: ACME_CONTACT_EMAIL,
+  loadAccountKey,
+  persistAccountUrl: async (accountUrl) => {
+    // Informational persistence only. Never initialize from this global URL:
+    // staging and production use different account IDs for the same key.
+    await pool.query(
+      `INSERT INTO platform_settings (key, value, description)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [
+        ACME_ACCOUNT_URL_SETTING,
+        accountUrl,
+        "ACME account URL — used in DNS-PERSIST-01 _validation-persist TXT record",
+      ],
+    );
+    logger.info({ url: accountUrl }, "[acme] persisted ACME account URL");
+  },
+});
 
 // ─── DNS-01 challenge handlers (write/clean TXT in our own DB-backed DNS) ─────
 
@@ -236,24 +237,19 @@ async function dnsZoneIdForHost(
 }
 
 async function challengeCreateFn(
-  authz: acme.Authorization,
-  challenge: AcmeChallenge,
-  keyAuthorization: string,
+  challenge: Dns01Challenge,
 ): Promise<void> {
-  if (challenge.type !== "dns-01") return;
-  const host = (authz.identifier.value || "").toLowerCase();
+  const { host, recordValue } = challenge;
   const zoneInfo = await dnsZoneIdForHost(host);
   if (!zoneInfo)
     throw new Error(
       `No dns_zone found for host '${host}' — cannot publish DNS-01 challenge`,
     );
 
-  // _acme-challenge.<host> within the zone — name is the part of host left of zone domain
-  const fullName = `_acme-challenge.${host}`;
-  const recordName =
-    fullName === `_acme-challenge.${zoneInfo.rootDomain}`
-      ? "_acme-challenge"
-      : fullName.replace(`.${zoneInfo.rootDomain}`, "");
+  const recordName = challenge.recordName.replace(
+    `.${zoneInfo.rootDomain}`,
+    "",
+  );
 
   await pool.query(
     `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl)
@@ -264,7 +260,7 @@ async function challengeCreateFn(
       zoneInfo.userId,
       zoneInfo.rootDomain,
       recordName,
-      keyAuthorization,
+      recordValue,
     ],
   );
   await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
@@ -274,25 +270,21 @@ async function challengeCreateFn(
 }
 
 async function challengeRemoveFn(
-  authz: acme.Authorization,
-  challenge: AcmeChallenge,
-  keyAuthorization: string,
+  challenge: Dns01Challenge,
 ): Promise<void> {
-  if (challenge.type !== "dns-01") return;
-  const host = (authz.identifier.value || "").toLowerCase();
+  const { host, recordValue } = challenge;
   const zoneInfo = await dnsZoneIdForHost(host);
   if (!zoneInfo) return;
 
-  const fullName = `_acme-challenge.${host}`;
-  const recordName =
-    fullName === `_acme-challenge.${zoneInfo.rootDomain}`
-      ? "_acme-challenge"
-      : fullName.replace(`.${zoneInfo.rootDomain}`, "");
+  const recordName = challenge.recordName.replace(
+    `.${zoneInfo.rootDomain}`,
+    "",
+  );
 
   await pool.query(
     `DELETE FROM dns_zone_records
      WHERE zone_id = $1 AND type = 'TXT' AND name = $2 AND value = $3`,
-    [zoneInfo.zoneId, recordName, keyAuthorization],
+    [zoneInfo.zoneId, recordName, recordValue],
   );
   logger.info({ host, recordName }, "[acme] removed DNS-01 challenge TXT");
 }
@@ -411,18 +403,12 @@ export async function provisionCertificate(
 async function issueAndStore(normalized: string): Promise<ProvisionResult> {
   try {
     const client = await getOrCreateClient();
-    const [key, csr] = await acme.crypto.createCsr({
-      commonName: normalized,
-      altNames: [normalized],
-    });
-    const cert = await client.auto({
-      csr,
-      email: ACME_CONTACT_EMAIL,
-      termsOfServiceAgreed: true,
-      challengePriority: ["dns-01"],
-      challengeCreateFn,
-      challengeRemoveFn,
-    });
+    const { certificatePem: cert, privateKeyPem: key } =
+      await client.issueCertificate(
+        normalized,
+        challengeCreateFn,
+        challengeRemoveFn,
+      );
 
     // Parse expiry + serial from the leaf certificate.
     const x509 = new crypto.X509Certificate(cert);
@@ -432,11 +418,11 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
       expiresAt.getTime() - RENEWAL_THRESHOLD_DAYS * 86_400_000,
     );
 
-    const certPem = cert.toString();
-    const keyPem = key.toString();
+    const certPem = cert;
+    const keyPem = key;
     const encryptedKey = await encryptKey(keyPem);
 
-    // Split leaf and chain. acme-client returns the full PEM bundle (leaf first, then chain).
+    // The ACME certificate resource returns the leaf followed by its chain.
     const pemBlocks =
       certPem.match(
         /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g,
@@ -629,35 +615,13 @@ export function stopAcmeRenewalCron(): void {
 const ACME_ACCOUNT_URL_SETTING = "acme_account_url";
 
 async function getOrCreateAccountUrl(): Promise<string | null> {
-  // Return cached value if present in platform_settings.
-  const { rows } = (await (pool as any).query(
-    `SELECT value FROM platform_settings WHERE key = $1`,
-    [ACME_ACCOUNT_URL_SETTING],
-  )) as { rows: Array<{ value: string }> };
-  if (rows[0]?.value) return rows[0].value;
-
-  // Initialise the ACME client (which registers/retrieves the account).
+  // Resolve through the registered client for THIS directory, never through a
+  // global stored URL that could belong to a previous staging configuration.
   try {
     const client = await getOrCreateClient();
-    // acme-client v5+ exposes getAccountUrl() after createAccount().
-    const url = (client as any).getAccountUrl?.() as string | undefined;
-    if (url) {
-      await pool.query(
-        `INSERT INTO platform_settings (key, value, description)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-        [
-          ACME_ACCOUNT_URL_SETTING,
-          url,
-          "ACME account URL — used in DNS-PERSIST-01 _validation-persist TXT record",
-        ],
-      );
-      logger.info({ url }, "[acme] persisted ACME account URL");
-      return url;
-    }
-    logger.warn(
-      "[acme] acme-client does not expose getAccountUrl() — upgrade to v5+",
-    );
+    const url = client.getAccountUrl();
+    if (url) return url;
+    logger.warn("[acme] native ACME client did not return an account URL");
     return null;
   } catch (err) {
     logger.warn({ err }, "[acme] could not retrieve account URL");

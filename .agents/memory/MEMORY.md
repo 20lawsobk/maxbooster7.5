@@ -154,4 +154,5 @@
 - [Payment test isolation](payment-test-isolation.md) — test keys do not isolate webhook/database effects; confirmed cards can precede provider accounting readiness.
 - [App workflow database side effects](app-workflow-database-side-effects.md) — startup seeds/syncs and preview web-vitals can write to the shared app database; avoid workflow/preview checks in no-write tasks.
 - [Dependency consumer compatibility](dependency-consumer-compatibility.md) — audit-clean global overrides can break startup; validate each real consumer and use patched compatible branches.
+- [Certificate crypto boundary](certificate-crypto-boundary.md) — certificate automation must use native cryptography, not an unpatched crypto dependency hidden under a protocol client.
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.

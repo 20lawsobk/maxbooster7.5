@@ -62,7 +62,7 @@ catalogs:
       version: 4.2.1
     tsx:
       specifier: ^4.21.0
-      version: 4.21.0
+      version: 4.23.13
     vite:
       specifier: ^7.3.5
       version: 7.3.6
@@ -75,7 +75,7 @@ overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   brace-expansion: 2.1.7
   fast-uri: 3.1.8
-  ip-address: ^10.7.1
+  ip-address: ^10.7.3
   js-yaml: 4.3.2
   linkify-it: ^5.0.1
   lodash: ^4.18.0
@@ -88,7 +88,7 @@ overrides:
   baseline-browser-mapping: 2.11.15
   browserslist: 4.28.8
   nanoid@3: 3.3.18
-  undici: ^6.28.1
+  undici: 6.28.1
   body-parser: ^2.3.0
   ws: ^8.21.0
   yaml: ^2.8.3
@@ -410,7 +410,7 @@ importers:
         specifier: ^5.11.0
         version: 5.11.0
       undici:
-        specifier: ^6.28.1
+        specifier: 6.28.1
         version: 6.28.1
     devDependencies:
       '@types/compression':
@@ -433,7 +433,7 @@ importers:
         version: 0.28.1
       tsx:
         specifier: 'catalog:'
-        version: 4.21.0
+        version: 4.23.13
 
   artifacts/mockup-sandbox:
     dependencies:
@@ -672,7 +672,7 @@ importers:
         version: 25.11.0
       tsx:
         specifier: 'catalog:'
-        version: 4.21.0
+        version: 4.23.13
 
 packages:
 
@@ -2432,9 +2432,6 @@ packages:
     resolution: {integrity: sha512-kVCxPF3vQM/N0B1PmoqVUqgHP+EeVjmZSQn+1oCRPxd2P21P2F19lIgbR3HBosbB1PUhOAoctJnfEn2GbN2eZA==}
     engines: {node: '>=18'}
 
-  get-tsconfig@4.13.6:
-    resolution: {integrity: sha512-shZT/QMiSHc/YBLxxOkMtgSid5HFoauqCE3/exfsEcwg1WkeqjG+V40yBbBrsD+jW2HDXcs28xOfcbm2jI8Ddw==}
-
   get-tsconfig@4.14.3:
     resolution: {integrity: sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==}
 
@@ -2482,8 +2479,8 @@ packages:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
 
-  ip-address@10.7.2:
-    resolution: {integrity: sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w==}
+  ip-address@10.7.3:
+    resolution: {integrity: sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -3118,11 +3115,6 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
-
-  tsx@4.21.0:
-    resolution: {integrity: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==}
-    engines: {node: '>=18.0.0'}
-    hasBin: true
 
   tsx@4.23.13:
     resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
@@ -5035,7 +5027,7 @@ snapshots:
   express-rate-limit@8.3.2(express@5.2.1):
     dependencies:
       express: 5.2.1
-      ip-address: 10.7.2
+      ip-address: 10.7.3
 
   express@5.2.1:
     dependencies:
@@ -5185,10 +5177,6 @@ snapshots:
       '@sec-ant/readable-stream': 0.4.1
       is-stream: 4.0.1
 
-  get-tsconfig@4.13.6:
-    dependencies:
-      resolve-pkg-maps: 1.0.0
-
   get-tsconfig@4.14.3:
     dependencies:
       resolve-pkg-maps: 1.0.0
@@ -5230,7 +5218,7 @@ snapshots:
 
   internmap@2.0.3: {}
 
-  ip-address@10.7.2: {}
+  ip-address@10.7.3: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -5845,13 +5833,6 @@ snapshots:
   toidentifier@1.0.1: {}
 
   tslib@2.8.1: {}
-
-  tsx@4.21.0:
-    dependencies:
-      esbuild: 0.28.1
-      get-tsconfig: 4.13.6
-    optionalDependencies:
-      fsevents: 2.3.3
 
   tsx@4.23.13:
     dependencies:

@@ -43,6 +43,12 @@ test("installed stale nested copy fails despite patched top-level package and lo
   write(root, "node_modules/parent/node_modules/qs/package.json", '{"name":"qs","version":"6.15.3"}');
   assert.equal(inspectDependencies(root, ["."]).ready, false);
 });
+test("unpatched node-forge is rejected even when only a nested consumer installs it", t => {
+  const root = fixture(t);
+  write(root, "package.json", "{}");
+  write(root, "node_modules/parent/node_modules/node-forge/package.json", '{"name":"node-forge","version":"1.4.0"}');
+  assert.match(inspectDependencies(root, ["."]).failures.join(), /node-forge@1.4.0; no patched release/);
+});
 test("missing workspace, prerelease version and escaping installed symlink fail closed", t => {
   const root = fixture(t), outside = fixture(t);
   write(root, "package.json", "{}");
@@ -65,6 +71,10 @@ test("all security families reject stale nested copies and accept explicitly val
   const root = fixture(t);
   write(root, "package.json", "{}");
   const pairs = [
+    ["axios", "1.19.0", "1.20.0"], ["fastify", "5.12.1", "5.12.5"],
+    ["ip-address", "10.5.0", "10.7.3"], ["undici", "7.29.0", "7.30.0"],
+    ["undici", "6.28.0", "6.28.1"],
+    ["electron", "43.4.0", "43.7.7"],
     ["orval", "8.5.3", "8.33.0"], ["linkify-it", "5.0.0", "6.1.0"],
     ["sharp", "0.35.3", "0.35.4"], ["dompurify", "3.4.12", "3.4.16"],
     ["postcss", "8.5.16", "8.5.26"], ["browserslist", "4.28.1", "4.28.8"],

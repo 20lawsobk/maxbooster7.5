@@ -20,30 +20,54 @@ export function applyLegacyUpdate(root, bundle, { apply = false, ifPresent = fal
   }
   const seen = new Set(), pending = [];
   for (const entry of bundle.files) {
+    const operation = entry.operation ?? "update";
     if (typeof entry.path !== "string" || !entry.path.startsWith("maxbooster7.5/") ||
         entry.path.split("/").some(part => !part || part === "." || part === "..") ||
         entry.path.includes("\\") || seen.has(entry.path)) {
       throw new Error(`Unsafe or duplicate update path: ${entry.path}`);
     }
     seen.add(entry.path);
-    if (typeof entry.content !== "string" || !/^[a-f0-9]{64}$/.test(entry.beforeSha256) ||
+    if (!["update", "add"].includes(operation) ||
+        (operation === "add" ? entry.beforeSha256 !== null : !/^[a-f0-9]{64}$/.test(entry.beforeSha256)) ||
+        typeof entry.content !== "string" ||
         !/^[a-f0-9]{64}$/.test(entry.afterSha256) || digest(entry.content) !== entry.afterSha256) {
       throw new Error(`Invalid update checksum: ${entry.path}`);
     }
     const target = path.join(root, entry.path);
-    // Check every ancestor, including the legacy directory itself. A symlink
-    // must not permit an update to reach another project or private files.
+    // Check every existing parent. A symlink must not permit an update to
+    // reach another project or private files.
     let ancestor = root;
-    for (const part of entry.path.split("/")) {
+    const parts = entry.path.split("/");
+    for (const part of parts.slice(0, -1)) {
       ancestor = path.join(ancestor, part);
-      if (fs.lstatSync(ancestor).isSymbolicLink()) throw new Error(`Symlink update path: ${entry.path}`);
+      const parentStat = fs.lstatSync(ancestor);
+      if (parentStat.isSymbolicLink()) throw new Error(`Symlink update path: ${entry.path}`);
+      if (!parentStat.isDirectory()) throw new Error(`Not a directory in update path: ${entry.path}`);
     }
+    let targetStat;
+    try {
+      targetStat = fs.lstatSync(target);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    if (operation === "add") {
+      if (targetStat) {
+        if (targetStat.isSymbolicLink()) throw new Error(`Symlink update path: ${entry.path}`);
+        if (!targetStat.isFile()) throw new Error(`Not a regular update file: ${entry.path}`);
+        if (digest(fs.readFileSync(target)) === entry.afterSha256) continue;
+        throw new Error(`File already exists; refusing add: ${entry.path}`);
+      }
+      pending.push({ ...entry, operation, target, mode: 0o644 });
+      continue;
+    }
+    if (!targetStat) throw new Error(`Missing update file: ${entry.path}`);
+    if (targetStat.isSymbolicLink()) throw new Error(`Symlink update path: ${entry.path}`);
+    if (!targetStat.isFile()) throw new Error(`Not a regular update file: ${entry.path}`);
     const stat = fs.statSync(target);
-    if (!stat.isFile()) throw new Error(`Not a regular update file: ${entry.path}`);
     const actual = digest(fs.readFileSync(target));
     if (actual === entry.afterSha256) continue;
     if (actual !== entry.beforeSha256) throw new Error(`Custom changes found; refusing overwrite: ${entry.path}`);
-    pending.push({ ...entry, target, mode: stat.mode });
+    pending.push({ ...entry, operation, target, mode: stat.mode });
   }
   // Preflight the whole bundle before writing anything.
   const applied = [];
@@ -52,7 +76,14 @@ export function applyLegacyUpdate(root, bundle, { apply = false, ifPresent = fal
       const temporary = `${entry.target}.security-update-${process.pid}`;
       try {
         fs.writeFileSync(temporary, entry.content, { flag: "wx", mode: entry.mode });
-        fs.renameSync(temporary, entry.target);
+        if (entry.operation === "add") {
+          // Linking gives an atomic create-if-absent; rename would overwrite
+          // a file created after preflight.
+          fs.linkSync(temporary, entry.target);
+          fs.unlinkSync(temporary);
+        } else {
+          fs.renameSync(temporary, entry.target);
+        }
         applied.push(entry.path);
       } finally {
         if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
