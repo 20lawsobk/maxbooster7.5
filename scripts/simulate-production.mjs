@@ -27,6 +27,7 @@ import {
   copyProductionSimulationTree,
   REQUIRED_SIMULATION_TEST_PATHS,
 } from "./lib/production-simulation-copy.mjs";
+import { validateSimulationResume } from "./lib/production-simulation-resume.mjs";
 import {
   assessHeavyRun,
   assertSanitizedEnvironment,
@@ -38,9 +39,6 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const reportDir = join(root, "reports", "production-simulation");
 const durableRoot = join(root, ".local", "production-simulation");
 const runsRoot = join(durableRoot, "runs");
-mkdirSync(reportDir, { recursive: true });
-mkdirSync(runsRoot, { recursive: true });
-
 const statePath = join(durableRoot, "state.json");
 const argv = new Set(process.argv.slice(2));
 const runtimeSandboxed = argv.has("--runtime-sandbox");
@@ -53,12 +51,43 @@ let stateFromDisk = null;
 if (existsSync(statePath)) {
   try { stateFromDisk = JSON.parse(readFileSync(statePath, "utf8")); } catch {}
 }
+const resuming = resumeRequested && !argv.has("--new");
+let priorReport = null;
+let resumePlan = null;
+if (resuming) {
+  try {
+    if (!argv.has("--cleanup")) {
+      if (!stateFromDisk?.runId || !/^[A-Za-z0-9_-]+$/.test(stateFromDisk.runId)) {
+        throw new Error("Production simulation resume refused: missing or invalid durable state; use --new for a fresh run.");
+      }
+      try {
+        priorReport = JSON.parse(readFileSync(join(reportDir, `${stateFromDisk.runId}.json`), "utf8"));
+      } catch {
+        throw new Error("Production simulation resume refused: missing or invalid durable report; preserved run was not modified. Use --new or --cleanup.");
+      }
+    }
+    resumePlan = validateSimulationResume({
+      state: stateFromDisk, report: priorReport, runsRoot, cleanup: argv.has("--cleanup"),
+    });
+  } catch (error) {
+    console.error(`Production simulation preflight failed: ${error.message}`);
+    process.exit(1);
+  }
+}
+if (argv.has("--cleanup")) {
+  if (!resumePlan) {
+    console.error("--cleanup requires an existing run and cannot be combined with --new");
+    process.exit(1);
+  }
+  rmSync(resumePlan.workspace, { recursive: true, force: true });
+  rmSync(statePath, { force: true });
+  console.log("Disposable simulation workspace removed; historical reports preserved.");
+  process.exit(0);
+}
 const runId = argv.has("--new") || !resumeRequested || !stateFromDisk?.runId
   ? new Date().toISOString().replace(/[:.]/g, "-")
   : stateFromDisk.runId;
-const workspace = stateFromDisk?.runId === runId && existsSync(stateFromDisk.workspace)
-  ? stateFromDisk.workspace
-  : join(runsRoot, runId);
+const workspace = resumePlan?.workspace || join(runsRoot, runId);
 const copyRoot = join(workspace, "app");
 const copyCompleteSentinel = join(copyRoot, ".simulation-copy-complete");
 const boundedBuildSentinel = join(workspace, "phased-build-complete.json");
@@ -68,6 +97,8 @@ const logsRoot = join(workspace, "logs");
 // long for Linux's sockaddr_un limit. This is disposable process scratch,
 // not resumable state.
 const runtimeTmp = join("/tmp", `mb-sim-${runId.slice(-12)}`);
+mkdirSync(reportDir, { recursive: true });
+mkdirSync(runsRoot, { recursive: true });
 mkdirSync(copyRoot, { recursive: true });
 mkdirSync(transientRoot, { recursive: true });
 mkdirSync(logsRoot, { recursive: true });
@@ -140,9 +171,7 @@ let runtimePgRoot;
 let runtimePgEnv;
 
 const priorReportPath = join(reportDir, `${runId}.json`);
-if (stateFromDisk?.runId === runId && existsSync(priorReportPath)) {
-  try { Object.assign(report, JSON.parse(readFileSync(priorReportPath, "utf8"))); } catch {}
-}
+if (priorReport) Object.assign(report, priorReport);
 report.capsuleRestore ||= {};
 report.capsuleRestore.historicalCompatibility ||= [];
 report.capsuleRestore.manifestValidation ||= [];
