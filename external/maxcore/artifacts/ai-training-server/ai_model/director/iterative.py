@@ -90,24 +90,32 @@ def mutate_social_params(
     params: Dict[str, Any],
     failures,
 ) -> Dict[str, Any]:
-    """Adjust social generation params based on critic failures."""
+    """Adjust social generation params based on critic failures.
+
+    Every mutation maps to a real compose_caption input:
+    - keywords -> brief themes (authoritative in build_brief)
+    - force_cta -> agent_cta (first candidate in _cta_candidates)
+    """
     params = dict(params)
     failed_dims = {f.dimension for f in failures}
 
-    # Ensure keywords list exists for mutation.
+    # Keywords flow through build_brief(themes=[...]) — verified authoritative.
     keywords = list(params.get("keywords", []))
 
     if "emotional_arc" in failed_dims:
-        # Force tension + resolution vocabulary.
+        # Force tension + resolution vocabulary into themes.
         keywords.extend(["3am", "struggle", "finally", "survived"])
     if "cta" in failed_dims:
-        # Force one-tap verbs via topic hint.
-        params["cta_hint"] = "save comment tag"
+        # agent_cta becomes the FIRST CTA candidate — guaranteed consideration.
+        # Pick platform-native one-tap verbs per the algorithm research.
+        from .social_director import SocialDirector
+        params["force_cta"] = SocialDirector._platform_cta(
+            params.get("platform", "instagram"))
     if "engagement" in failed_dims:
         keywords.extend(["fire", "obsessed", "you"])
     if "specificity" in failed_dims:
-        # Force concrete details.
-        params["detail_hint"] = "include numbers, dates, names"
+        # Concrete details flow through themes into body candidates.
+        keywords.extend(["midnight", "studio", "3am", "2026"])
 
     # Deduplicate while preserving order.
     seen = set()

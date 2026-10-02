@@ -77,6 +77,7 @@ class SocialDirector:
             result = compose_caption(
                 p["topic"], p["artist"], brief,
                 genre=p.get("genre", ""), variants=3,
+                agent_cta=p.get("force_cta", ""),
             )
             return result
 
@@ -105,9 +106,37 @@ class SocialDirector:
                 "fallback": True,
             }
 
+        # Surgical repair: if the critic still fails CTA after all iterations,
+        # substitute the platform-native CTA directly. Regeneration expands
+        # the search space; this guarantees the prescription is honored.
+        report = result.get("critique_report")
+        if report:
+            cta_crit = next(
+                (c for c in report.critiques if c.dimension == "cta"), None)
+            if cta_crit and not cta_crit.passed:
+                forced = self._platform_cta(platform)
+                parts = result.get("caption", "").rsplit("\n\n", 1)
+                if len(parts) == 2:
+                    result["caption"] = f"{parts[0]}\n\n{forced}"
+                result["cta"] = forced
+                result["cta_repaired"] = True
+                self.log.info("cta_surgically_repaired", platform=platform)
+
         result["platform_directive"] = get_platform_directive(platform)["social"]
         result["platform"] = platform
         self.log.info("direct_complete",
                       score=result.get("final_score"),
                       iterations=result.get("iteration", 0) + 1)
         return result
+
+    @staticmethod
+    def _platform_cta(platform: str) -> str:
+        return {
+            "tiktok": "Duet this if it hit",
+            "instagram": "Save this for later",
+            "youtube": "Subscribe for the drop",
+            "facebook": "Tag someone who needs this",
+            "threads": "Reply with your take",
+            "x": "Repost if you feel this",
+            "linkedin": "Share your perspective below",
+        }.get(platform, "Save and share this")
