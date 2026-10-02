@@ -136,7 +136,7 @@ class IterativeLoopTests(unittest.TestCase):
                 Critique("engagement", 0.5 + boost, 0.65, "", ""),
             ])
 
-        def mutate(params, failures):
+        def mutate(params, failures, iteration=0):
             params = dict(params)
             kw = list(params.get("keywords", []))
             kw.append("fire")

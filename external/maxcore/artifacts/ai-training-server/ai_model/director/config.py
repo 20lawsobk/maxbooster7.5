@@ -33,6 +33,10 @@ _DEFAULTS: Dict[str, Any] = {
 
     # Observability.
     "log.level": "info",
+
+    # Rate limiting.
+    "rate.campaign_per_minute": 10,
+    "rate.requests_per_minute": 60,
 }
 
 

@@ -106,27 +106,70 @@ class SocialDirector:
                 "fallback": True,
             }
 
-        # Surgical repair: if the critic still fails CTA after all iterations,
-        # substitute the platform-native CTA directly. Regeneration expands
-        # the search space; this guarantees the prescription is honored.
+        # Surgical repairs: if the critic still fails dimensions after all
+        # iterations, apply targeted edits. Regeneration explores the space;
+        # these guarantee the critic's prescriptions are honored.
+        result = self._surgical_repairs(result, platform)
+
+        result["platform_directive"] = get_platform_directive(platform)["social"]
+        result["platform"] = platform
+
+        # Record metrics.
+        from .observability import get_metrics
+        metrics = get_metrics()
+        metrics.increment("social.completed")
+        metrics.increment(f"social.platform.{platform}")
+        if result.get("final_score") is not None:
+            metrics.record_score("social.critic", result["final_score"])
+        if result.get("repaired"):
+            metrics.increment("social.repaired")
+
+        self.log.info("direct_complete",
+                      score=result.get("final_score"),
+                      iterations=result.get("candidates_considered", 1))
+        return result
+
+    def _surgical_repairs(self, result: Dict, platform: str) -> Dict:
+        """Apply targeted edits for still-failing critic dimensions."""
         report = result.get("critique_report")
-        if report:
-            cta_crit = next(
-                (c for c in report.critiques if c.dimension == "cta"), None)
-            if cta_crit and not cta_crit.passed:
+        if not report:
+            return result
+
+        repairs = []
+        for crit in report.critiques:
+            if crit.passed:
+                continue
+            if crit.dimension == "cta":
                 forced = self._platform_cta(platform)
                 parts = result.get("caption", "").rsplit("\n\n", 1)
                 if len(parts) == 2:
                     result["caption"] = f"{parts[0]}\n\n{forced}"
                 result["cta"] = forced
-                result["cta_repaired"] = True
-                self.log.info("cta_surgically_repaired", platform=platform)
+                repairs.append("cta")
+            elif crit.dimension == "emotional_arc":
+                # Ensure tension + resolution are both present.
+                low = result.get("caption", "").lower()
+                has_tension = any(t in low for t in
+                                  ["3am", "struggle", "scrapped", "doubt"])
+                has_resolution = any(r in low for r in
+                                     ["finally", "survived", "out now"])
+                body = result.get("body", "")
+                if not has_tension and body:
+                    body = f"After the 3am sessions that almost broke me. {body}"
+                if not has_resolution and body:
+                    body = f"{body} Finally out now."
+                if body != result.get("body", ""):
+                    # Rebuild caption with repaired body.
+                    hook = result.get("hook", "")
+                    cta = result.get("cta", "")
+                    result["body"] = body
+                    result["caption"] = f"{hook}\n\n{body}\n\n{cta}"
+                    repairs.append("emotional_arc")
 
-        result["platform_directive"] = get_platform_directive(platform)["social"]
-        result["platform"] = platform
-        self.log.info("direct_complete",
-                      score=result.get("final_score"),
-                      iterations=result.get("iteration", 0) + 1)
+        if repairs:
+            result["repaired"] = repairs
+            self.log.info("surgical_repairs_applied",
+                          platform=platform, repairs=repairs)
         return result
 
     @staticmethod
