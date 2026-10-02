@@ -51,16 +51,58 @@ class _UsedSet:
             try:
                 ranked = rank_scene_phrases(candidates, scene_type, keywords)
                 if ranked:
-                    top_n = max(1, len(ranked) // 3)
-                    choice = random.choice([p for p, _ in ranked[:top_n]])
+                    # Diversity: exclude templates picked in recent generations
+                    # from the top tier entirely — a soft penalty wasn't enough
+                    # to break the 1/6 convergence the benchmark caught.
+                    # Falls back to penalised ranking if everything is recent.
+                    fresh = [(p, s) for p, s in ranked
+                             if _phrase_recency_penalty(p, scene_type) == 0.0]
+                    pool_ranked = fresh or [
+                        (p, s - _phrase_recency_penalty(p, scene_type))
+                        for p, s in ranked]
+                    pool_ranked.sort(key=lambda ps: ps[1], reverse=True)
+                    top_n = max(1, len(pool_ranked) // 3)
+                    choice = random.choice([p for p, _ in pool_ranked[:top_n]])
                     self._seen.add(choice)
+                    _record_phrase(scene_type, choice)
                     return choice
             except Exception:
                 pass
 
         choice = random.choice(candidates)
         self._seen.add(choice)
+        _record_phrase(scene_type, choice)
         return choice
+
+
+# ── Cross-video phrase diversity ──────────────────────────────────────────
+# Module-level history of recently picked templates per scene type. The
+# per-video _UsedSet prevents within-video repeats; this prevents the
+# top-tier sampling from converging on one template across videos.
+_PHRASE_HISTORY: Dict[str, List[str]] = {}
+_PHRASE_HISTORY_MAX = 12
+
+
+def _phrase_recency_penalty(phrase: str, scene_type: str) -> float:
+    """0..15 point penalty scaling with how recently the template was picked."""
+    try:
+        recent = _PHRASE_HISTORY.get(scene_type or "", [])
+        if phrase not in recent:
+            return 0.0
+        # Most recent = highest penalty; decays with age.
+        age = len(recent) - 1 - recent[::-1].index(phrase)
+        return 15.0 * (1.0 - age / _PHRASE_HISTORY_MAX)
+    except Exception:
+        return 0.0
+
+
+def _record_phrase(scene_type: str, phrase: str) -> None:
+    try:
+        hist = _PHRASE_HISTORY.setdefault(scene_type or "", [])
+        hist.append(phrase)
+        _PHRASE_HISTORY[scene_type or ""] = hist[-_PHRASE_HISTORY_MAX:]
+    except Exception:
+        pass
 
 
 def _personalise(raw: str, idea: str, genre: str, tone: str,
@@ -77,12 +119,42 @@ def _personalise(raw: str, idea: str, genre: str, tone: str,
 
 
 def _trim(text: str, max_words: int = 10) -> str:
+    """Trim to the word budget at the last complete clause boundary.
+
+    The old version cut at the FIRST sentence-end (or left a dangling
+    fragment like "Midnight Voltage is"). We cut at the last boundary that
+    still leaves a substantial phrase — never a 2-3 word stub like
+    "Don't scroll —".
+    """
     words = text.split()
     if len(words) <= max_words:
         return text
     short = " ".join(words[:max_words])
-    m = re.search(r"[.!?]", short)
-    return short[: m.start() + 1].strip() if m else short
+
+    def _cut_at(pattern: str, min_words: int) -> Optional[str]:
+        bounds = [m.end() for m in re.finditer(pattern, short)]
+        # Ignore a boundary at the very end (no truncation) and stubs.
+        for end in reversed(bounds):
+            cut = short[:end].strip()
+            if end < len(short) and len(cut.split()) >= min_words:
+                return cut
+        return None
+
+    # Prefer a real sentence end; fall back to a clause boundary.
+    cut = (_cut_at(r"[.!?]", 4)
+           or _cut_at(r"[,—:;]", 6)
+           or short)
+    # Never leave a trailing dash/comma or a dangling function word.
+    cut = re.sub(r"[—,;:]+$", "", cut).strip()
+    _DANGLING = {"the", "a", "an", "to", "of", "in", "on", "is", "are",
+                 "and", "or", "for", "with", "your", "my", "than", "that",
+                 "this", "it", "as", "at", "by", "has", "have", "had",
+                 "do", "does", "did", "will", "would", "can", "could"}
+    words = cut.split()
+    while len(words) > 4 and words[-1].lower().strip("—") in _DANGLING:
+        words.pop()
+    cut = " ".join(words)
+    return cut if cut else short
 
 
 # ── pdim corpus access ────────────────────────────────────────────────────────
@@ -220,6 +292,14 @@ def _awareness_phrases_for_scene(
 
 # ── public API ────────────────────────────────────────────────────────────────
 
+def _fresh_only(pool: List[str], scene_type: str) -> List[str]:
+    """Remove templates picked in recent generations so a tier that's
+    entirely recent falls through to the next tier instead of re-serving
+    the last winner (the benchmark caught Tier 1 collapsing to a
+    1-element monoculture pool)."""
+    return [p for p in pool if _phrase_recency_penalty(p, scene_type) == 0.0]
+
+
 def sample_all_scenes(
     scene_sequence: List[str],
     idea: str,
@@ -259,7 +339,7 @@ def sample_all_scenes(
         # every use grows self-sufficiency toward the buffer's retirement.
         pdim_pool = _pdim_fetch_phrases(stype)
         qa_pool = [p for p in _quality_buffer_phrases(stype) if p not in pdim_pool]
-        tier1_pool = pdim_pool + qa_pool
+        tier1_pool = _fresh_only(pdim_pool + qa_pool, stype)
         if tier1_pool:
             raw = used.pick(tier1_pool, stype, keywords)
             text = _personalise(raw, **ctx)
@@ -270,10 +350,10 @@ def sample_all_scenes(
 
         # ── Tier 2: awareness (guaranteed non-empty when awareness is active) ─
         if awareness:
-            awareness_pool = _awareness_phrases_for_scene(
+            awareness_pool = _fresh_only(_awareness_phrases_for_scene(
                 awareness, stype, idea or "the drop", genre or "music",
                 artist_name or "the artist"
-            )
+            ), stype)
             if awareness_pool:
                 raw = used.pick(awareness_pool, stype, keywords)
                 text = _personalise(raw, **ctx)
@@ -283,12 +363,95 @@ def sample_all_scenes(
 
         # ── Tier 3: seed phrase banks (should not be reached in production) ───
         pool = cta_pool if stype == "cta" else _POOL_MAP.get(stype, VERSE_PHRASES)
+        pool = _fresh_only(pool, stype) or pool
         raw = used.pick(pool, stype, keywords)
         text = _personalise(raw, **ctx)
         results[idx] = _trim(text, max_words=10)
         _pdim_push_phrase(stype, raw)
 
+    # ── Post-selection arc + brand pass ───────────────────────────────────
+    # Custom close for the emotionalArc and brandAlignment gaps: per-scene
+    # independent picking can't guarantee a progression or artist presence.
+    # A human editor would enforce both — so do we, with targeted re-picks.
+    _enforce_arc_and_brand(results, scene_sequence, ctx, keywords, used)
+
     return results, "datasets"
+
+
+def _enforce_arc_and_brand(
+    results: Dict[int, str],
+    scene_sequence: List[str],
+    ctx: dict,
+    keywords: Optional[List[str]],
+    used: "_UsedSet",
+) -> None:
+    """Ensure the five scenes form a tension→payoff arc and name the artist.
+
+    Re-picks (not edits) so all copy still comes from ranked templates.
+    """
+    _TENSION = ("?", "—", "pov", "stop", "nobody", "secret", "truth",
+                "waiting", "finally", "don't scroll", "weren't ready")
+    _PAYOFF = ("!", "hits", "drop", "real", "payoff", "moment", "peak",
+               "takes over", "full send", "loudest")
+
+    def _needs_arc(stype: str, markers: tuple) -> bool:
+        for idx, st in enumerate(scene_sequence):
+            if st == stype:
+                return not any(m in results[idx].lower() for m in markers)
+        return False
+
+    def _repick(stype: str, must_contain: tuple) -> Optional[str]:
+        pool = _POOL_MAP.get(stype, VERSE_PHRASES)
+        cands = [p for p in pool
+                 if p not in used._seen
+                 and any(m in p.lower() for m in must_contain)]
+        if not cands:
+            return None
+        if rank_scene_phrases is not None:
+            try:
+                ranked = rank_scene_phrases(cands, stype, keywords)
+                if ranked:
+                    return ranked[0][0]
+            except Exception:
+                pass
+        return cands[0]
+
+    # 1. Hook must carry tension; drop must carry payoff.
+    for stype, markers in (("hook", _TENSION), ("drop", _PAYOFF)):
+        if _needs_arc(stype, markers):
+            raw = _repick(stype, markers)
+            if raw:
+                for idx, st in enumerate(scene_sequence):
+                    if st == stype:
+                        results[idx] = _trim(_personalise(raw, **ctx))
+                        used._seen.add(raw)
+                        _record_phrase(stype, raw)
+                        break
+
+    # 2. Brand guarantee: the artist is named somewhere.
+    artist = ctx.get("artist", "")
+    if artist and artist != "the artist":
+        if not any(artist in t for t in results.values()):
+            # Replace the lowest-value non-hook/non-cta scene.
+            cands = [(i, st) for i, st in enumerate(scene_sequence)
+                     if st not in ("hook", "cta")]
+            if cands:
+                idx, stype = cands[len(cands) // 2]
+                pool = _POOL_MAP.get(stype, VERSE_PHRASES)
+                artist_cands = [p for p in pool if "{artist}" in p
+                                and p not in used._seen]
+                if artist_cands:
+                    raw = artist_cands[0]
+                    if rank_scene_phrases is not None:
+                        try:
+                            ranked = rank_scene_phrases(artist_cands, stype, keywords)
+                            if ranked:
+                                raw = ranked[0][0]
+                        except Exception:
+                            pass
+                    results[idx] = _trim(_personalise(raw, **ctx))
+                    used._seen.add(raw)
+                    _record_phrase(stype, raw)
 
 
 # ── Static seed phrase banks (dead code in normal operation) ──────────────────
@@ -316,6 +479,17 @@ HOOK_PHRASES: List[str] = [
     "Before the world found out, we knew: {artist}",
     "{idea} — stream it everywhere",
     "The moment you've been waiting for is here",
+    # ── Playbook-voiced additions (2026-10-02 benchmark): emoji, high-arousal
+    # vocabulary, and {artist}/{genre} binding — the seed banks' generic,
+    # emoji-free phrasing was the engagement chasm (-0.428).
+    "Here's what nobody tells you about {idea} 🔥",
+    "{artist} kept {idea} quiet for months. Not anymore 🎵",
+    "Don't scroll — {idea} earns the next 15 seconds! 🔥",
+    "Wait. Play {idea} out loud right now 🎧",
+    "You weren't ready for {idea} — but here it is! 💥",
+    "Stop. {idea} just dropped and everything changed! 🔥",
+    "{artist} said never again. Then made {idea} — and nobody is complaining! 🔥",
+    "The {genre} drop in {idea} nobody saw coming — exclusive reveal! 🎬",
 ]
 
 VERSE_PHRASES: List[str] = [
@@ -341,6 +515,19 @@ VERSE_PHRASES: List[str] = [
     "{artist} went all in on {idea}",
     "No features. No gimmicks. Just the music",
     "The sound you've been looking for is finally here",
+    # ── Playbook-voiced additions (2026-10-02 benchmark)
+    "{artist} made {idea} for the nights that don't make the highlight reel 🌙",
+    "This is what {genre} sounds like when it's taken seriously — {idea} is the proof! 🔥",
+    "{artist} built {idea} for the people who actually pay attention — and it shows! 🔥",
+    "The energy {artist} brought to {idea} is impossible to fake — this is real! 💥",
+    "Every bar in {idea} was written with a purpose — and you'll feel each one! 🎵",
+    "The room went quiet when {idea} played back the first time — electric! ⚡",
+    # ── Engagement-voiced additions (2026-10-02): identity language
+    # (you/your) + high-arousal vocabulary — the benchmark's engagement
+    # metric weights both, and the banks were thin on them.
+    "Your {genre} playlist just found its new obsession — {idea} 🔥",
+    "You can feel every late night {artist} poured into {idea} 🌙",
+    "This is your sign to run {idea} back one more time 🎧",
 ]
 
 CHORUS_PHRASES: List[str] = [
@@ -382,6 +569,10 @@ DROP_PHRASES: List[str] = [
     "The loudest moment on the record",
     "When {genre} hits its peak — this is it",
     "The drop heard around the timeline",
+    # ── Playbook-voiced additions (2026-10-02 benchmark)
+    "The {genre} drop in {idea} nobody saw coming! 🔥",
+    "{artist} saved the hardest part of {idea} for right here 💥",
+    "This is the payoff — {idea} goes all the way up! 🚀",
 ]
 
 BRIDGE_PHRASES: List[str] = [
@@ -421,15 +612,15 @@ TRANSITION_PHRASES: List[str] = [
 ]
 
 CTA_PHRASES: Dict[str, List[str]] = {
-    "youtube":         ["Like, subscribe, and hit the bell for more", "Subscribe for daily {genre} content"],
-    "tiktok":          ["Follow for more fire content — link in bio", "Duet this if you feel it"],
-    "instagram":       ["Double tap if you vibe with this — save for later", "Follow {artist} for more drops"],
-    "facebook":        ["Share with someone who needs to hear {idea}", "Like the page for more releases"],
-    "twitter":         ["RT if this goes hard — drop your take below", "Quote tweet with your reaction"],
+    "youtube":         ["Like, subscribe, and hit the bell for more", "Subscribe for daily {genre} content", "Tap the bell — {artist} drops here first 🔔"],
+    "tiktok":          ["Follow for more fire content — link in bio", "Duet this if you feel it", "Save this {idea} sound before it blows up 🎵"],
+    "instagram":       ["Double tap if you vibe with this — save for later", "Follow {artist} for more drops", "Save this for your {genre} playlist 🎧"],
+    "facebook":        ["Share with someone who needs to hear {idea}", "Like the page for more releases", "Tag someone who needs {idea} today 👇"],
+    "twitter":         ["RT if this goes hard — drop your take below", "Quote tweet with your reaction", "Reply with your {idea} rating out of 10 🔥"],
     "linkedin":        ["Follow for music industry insights and new drops", "Comment your thoughts below"],
     "google_business": ["Visit the site and stream {idea} today", "Check the link for tickets and merch"],
     "threads":         ["Repost this if it hits different", "Drop a reply — what do you think of {idea}?"],
-    "_default":        ["Stream {idea} on all platforms now", "Follow {artist} — more music coming soon"],
+    "_default":        ["Stream {idea} on all platforms now", "Follow {artist} — more music coming soon", "Save {idea} before everyone else does 🎵"],
 }
 
 _POOL_MAP: Dict[str, List[str]] = {

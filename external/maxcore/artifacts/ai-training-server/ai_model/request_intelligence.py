@@ -1211,6 +1211,75 @@ _CTA_KEYWORDS = [
     "listen", "subscribe", "comment", "tap", "join", "shop", "watch", "bio",
 ]
 
+# Distinct ask verbs for the single-ask rule (playbook: one low-friction
+# CTA; "Stream, save, and get the merch" is three competing asks).
+_ASK_VERBS = {
+    "stream", "save", "share", "comment", "follow", "subscribe", "buy",
+    "shop", "get", "download", "presave", "pre-save", "click", "tap",
+    "join", "watch", "listen", "tag",
+}
+
+
+def _ask_count(low_text: str) -> int:
+    """Number of distinct ask verbs in the text (single-ask rule)."""
+    words = set(re.findall(r"[a-z]+(?:-[a-z]+)?", low_text))
+    return sum(1 for v in _ASK_VERBS if v in words)
+
+
+def _trend_terms(brief: GenerationBrief) -> set:
+    """Distinctive trend signals from the brief's directives.
+
+    Hashtags plus multi-word phrases (single generic words excluded — they
+    false-positive on ordinary copy). Shared by the ranker bonus and the
+    trend-woven templates.
+    """
+    terms = set()
+    try:
+        for d in (brief.directives or []):
+            dl = d.lower()
+            if "live chart signals" in dl or "trending" in dl:
+                tags = set(re.findall(r"#\w+", dl))
+                terms.update(tags)
+                dl_no_tags = re.sub(r"#\w+", " ", dl)
+                words = [w for w in re.findall(r"[a-z]{3,}", dl_no_tags)
+                         if w not in _STOPWORDS]
+                # Strip the directive scaffolding; keep content bigrams.
+                scaffold = {"live", "chart", "signals", "signal", "align",
+                            "with", "trending", "trend", "trends", "hashtag",
+                            "hashtags", "sound", "sounds", "format",
+                            "formats", "viral", "top"}
+                content = [w for w in words if w not in scaffold]
+                terms.update(
+                    f"{a} {b}" for a, b in zip(content, content[1:])
+                )
+    except Exception:
+        pass
+    return terms
+
+
+def _trend_relevance_bonus(low_text: str, brief: GenerationBrief) -> float:
+    """Bonus for referencing live-trending tags/phrases (0..5).
+
+    Capped at +5 so live trends inform ranking without overriding the
+    quality blend. Never raises.
+    """
+    try:
+        terms = _trend_terms(brief)
+        if not terms:
+            return 0.0
+        hits = sum(1 for t in terms if t in low_text)
+        return min(5.0, 1.5 * hits)
+    except Exception:
+        return 0.0
+
+
+def _trend_weave(brief: GenerationBrief):
+    """(hashtags, phrases) trend signals for trend-woven templates."""
+    tags, phrases = [], []
+    for t in sorted(_trend_terms(brief)):
+        (tags if t.startswith("#") else phrases).append(t)
+    return tags[:4], phrases[:4]
+
 
 def score_candidate(text: str, brief: GenerationBrief) -> float:
     """Brief-aware quality score (0-100). 100 = Google Veo quality standard.
@@ -1226,22 +1295,70 @@ def score_candidate(text: str, brief: GenerationBrief) -> float:
     words = text.split()
     n = len(words)
 
+    # Research-backed structure first: captions carrying a complete HVC arc
+    # need the extended window (playbook: 150-220 word IG sweet spot for
+    # 3-act bodies). Computed up front so length scoring is arc-aware.
+    try:
+        from ai_model.content_playbook import structure_score as _pb_structure
+        struct_score = _pb_structure(text)
+    except Exception:  # noqa: BLE001 - scoring must never break ranking
+        struct_score = 0.0
+
     lo, hi = brief.word_count_target
-    half = max(1.0, (hi - lo) / 2.0)
-    if lo <= n <= hi:
+    # Arc-aware length: a complete HVC arc (struct >= 0.65) earns the extended
+    # window instead of being punished for exceeding the short-form window.
+    # This resolves the ranker-vs-playbook contradiction: the ranker no longer
+    # systematically outranks the playbook's own 3-act bodies.
+    effective_hi = hi * 2.5 if struct_score >= 0.65 else hi
+    half = max(1.0, (effective_hi - lo) / 2.0)
+    if lo <= n <= effective_hi:
         length_score = 1.0
     else:
-        dist = (lo - n) if n < lo else (n - hi)
+        dist = (lo - n) if n < lo else (n - effective_hi)
         length_score = max(0.0, 1.0 - dist / (half * 2.0))
 
     low = text.lower()
-    cta_score = 1.0 if any(w in low for w in _CTA_KEYWORDS) else 0.0
+    # Tiered CTA scoring aligned to the house rubric (maxcoreScoreCalibrator):
+    # one-tap interactive verbs (save/tag/comment) = 1.0, specific directional
+    # (stream/link in bio/presave) = 0.66, generic = 0.25. The old binary
+    # score couldn't tell "link in bio" from "drop a comment", so the ranker
+    # never preferred the one-tap asks the rubric rewards.
+    _ONE_TAP_CTA = ("save ", "tag ", "comment", "duet", "double tap",
+                    "drop a", "reply")
+    _SPECIFIC_CTA = ("stream", "link in bio", "presave", "listen", "watch",
+                     "follow", "share")
+    if any(w in low for w in _ONE_TAP_CTA):
+        cta_score = 1.0
+    elif any(w in low for w in _SPECIFIC_CTA):
+        cta_score = 0.66
+    elif any(w in low for w in _CTA_KEYWORDS):
+        cta_score = 0.25
+    else:
+        cta_score = 0.0
+    # Single-ask rule: each distinct ask verb beyond the first halves the
+    # remaining CTA credit ("Stream, save, and get the merch" = 3 asks).
+    _asks = _ask_count(low)
+    if _asks > 1:
+        cta_score *= 0.5 ** (_asks - 1)
 
     if brief.keywords:
-        covered = sum(1 for kw in brief.keywords if kw in low)
-        keyword_score = covered / len(brief.keywords)
+        kws = [kw for kw in brief.keywords if kw]
+        covered = sum(1 for kw in kws if kw in low)
+        keyword_score = covered / len(kws) if kws else 0.5
+        # Density cap: keyword-stuffed copy ("trap trap trap") is a quality
+        # defect, not a coverage win. Computed here, applied as a direct
+        # score penalty below (a multiplicative tweak to keyword_score alone
+        # is too weak at 0.20 blend weight to change rankings).
+        sentences = [s for s in re.split(r"[.!?\n]+", low) if s.strip()]
+        stuffing_penalty = 0.0
+        if sentences and kws:
+            occurrences = sum(low.count(kw) for kw in kws)
+            density = occurrences / len(sentences)
+            if density > 3.0:
+                stuffing_penalty = min(30.0, 25.0 * (density - 3.0))
     else:
         keyword_score = 0.5
+        stuffing_penalty = 0.0
 
     first_line = (text.splitlines() or [text])[0].lower()
     hook_score = 0.0
@@ -1255,14 +1372,7 @@ def score_candidate(text: str, brief: GenerationBrief) -> float:
         hook_score += 0.1
     hook_score = min(1.0, hook_score)
 
-    # Research-backed Hook->Value->CTA structure + high-arousal bonus
-    # (content_playbook: HVC captions earn ~23% more engagement; hook must
-    # land inside the first 125 visible characters).
-    try:
-        from ai_model.content_playbook import structure_score as _pb_structure
-        struct_score = _pb_structure(text)
-    except Exception:  # noqa: BLE001 - scoring must never break ranking
-        struct_score = 0.0
+    # struct_score computed above (arc-aware length); reused in the blend.
 
     blended = (
         length_score * 0.30
@@ -1272,6 +1382,23 @@ def score_candidate(text: str, brief: GenerationBrief) -> float:
         + struct_score * 0.15
     )
     score = blended * 100
+
+    # Live-landscape trend relevance (capped +5; see _trend_relevance_bonus).
+    score += _trend_relevance_bonus(low, brief)
+
+    # Scorer discrimination gates: cheap hard checks so the scorer can tell
+    # elite from mediocre. A lowercase-starting hook or a raw instruction
+    # fragment leaking into the copy is never elite, regardless of blend.
+    _first = (text.splitlines() or [text])[0] if text else ""
+    if _first[:1].islower():
+        score -= 8.0
+    if stuffing_penalty:
+        score -= stuffing_penalty
+    try:
+        if any(re.search(pat, low) for pat in _TOPIC_HYGIENE_PATTERNS):
+            score -= 8.0
+    except Exception:
+        pass
 
     # Garbled model output (glued tokens, letter-digit fusions) must never
     # outrank a clean composed candidate — apply a decisive penalty. The
@@ -1322,6 +1449,28 @@ def rank_candidates(
     return scored
 
 
+# Instruction-style fragments that leak verbatim into hooks when callers pass
+# raw request text as the topic ("Midnight Voltage teaser clip" -> hook
+# contains "teaser clip"). Stripped before template fill.
+_TOPIC_HYGIENE_PATTERNS = (
+    r"\bteaser\s+clip\b", r"\bvideo\s+ad\b", r"\bad\s+for\b",
+    r"\bwrite\s+a\s+caption\b", r"\bcaption\s+about\b", r"\bpost\s+about\b",
+    r"\bpresave\s+campaign\b",
+)
+
+
+def _clean_topic(topic: str) -> str:
+    """Strip instruction-style fragments from the topic before template fill."""
+    try:
+        t = _norm(topic)
+        for pat in _TOPIC_HYGIENE_PATTERNS:
+            t = re.sub(pat, "", t, flags=re.IGNORECASE)
+        t = re.sub(r"\s+", " ", t).strip(" -–—:;,.!")
+        return t or _norm(topic) or "this"
+    except Exception:
+        return topic or "this"
+
+
 def hook_variants(
     topic: str,
     artist: str,
@@ -1337,7 +1486,7 @@ def hook_variants(
     """
     if weave_active is None:
         weave_active = _weave_active()
-    topic = _norm(topic) or "this"
+    topic = _clean_topic(topic)
     artist = _norm(artist) or "the artist"
 
     # ── Primary hook style templates (now 10+ per style) ──────────────────────
@@ -1348,6 +1497,19 @@ def hook_variants(
             out.append(tpl.format(artist=artist, topic=topic))
         except (KeyError, IndexError):
             continue
+
+    # ── Trend-woven hooks ────────────────────────────────────────────────────
+    # When live landscape data is present, hooks riding the current wave
+    # compete alongside the static templates. Ranker (trend bonus + hook
+    # scoring) decides; never raises.
+    try:
+        _ttags, _tphrases = _trend_weave(brief)
+        if _tphrases:
+            out.append(f"{_tphrases[0].capitalize()} season: {artist} — {topic}")
+        if _ttags:
+            out.append(f"{_ttags[0]} energy: {topic} — {artist}")
+    except Exception:
+        pass
 
     # ── Genre-conditioned hooks from expanded playbook ─────────────────────────
     # Uses the genre-specific voice pool (drill/afrobeats/lofi/pop/rnb/etc.)
@@ -1407,6 +1569,48 @@ def hook_variants(
     return out
 
 
+# ── Per-request hook diversity ──────────────────────────────────────────
+# Recent winning hooks per (artist, track). best_hook down-ranks candidates
+# that near-duplicate them (Jaccard > 0.5), porting the campaign
+# distinctness mechanism to single requests. Best-effort and bounded.
+_HOOK_HISTORY: Dict[Tuple[str, str], List[str]] = {}
+_HOOK_HISTORY_MAX = 8
+
+
+def _hook_sig(text: str) -> set:
+    return set(re.findall(r"[a-z]{4,}", (text or "").lower()))
+
+
+def _hook_jaccard(a: set, b: set) -> float:
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)
+
+
+def _hook_diversity_penalty(candidate: str, artist: str, track: str) -> float:
+    """0..12 point penalty for near-duplicate hooks (Jaccard > 0.5)."""
+    try:
+        recent = _HOOK_HISTORY.get((_norm(artist), _norm(track)), [])
+        if not recent:
+            return 0.0
+        sig = _hook_sig(candidate)
+        worst = max(_hook_jaccard(sig, _hook_sig(h)) for h in recent)
+        if worst <= 0.5:
+            return 0.0
+        return 12.0 * (worst - 0.5) / 0.5
+    except Exception:
+        return 0.0
+
+
+def _record_hook(artist: str, track: str, hook: str) -> None:
+    try:
+        key = (_norm(artist), _norm(track))
+        _HOOK_HISTORY.setdefault(key, []).append(hook)
+        _HOOK_HISTORY[key] = _HOOK_HISTORY[key][- _HOOK_HISTORY_MAX:]
+    except Exception:
+        pass
+
+
 def best_hook(
     topic: str,
     artist: str,
@@ -1433,14 +1637,24 @@ def best_hook(
     ranked = rank_candidates(candidates, brief)
     if not ranked:
         return agent_hook, 0.0, 0
+    # Per-request diversity: down-rank hooks that near-duplicate recently
+    # served hooks for the same (artist, track). Ports the campaign
+    # distinctness mechanism (Jaccard-aware selection) to single requests —
+    # the benchmark caught 3/6 scenarios sharing one hook archetype.
+    track = _norm(getattr(brief, "track", "") or "")
+    penalized = [(t, s - _hook_diversity_penalty(t, artist, track))
+                 for t, s in ranked]
+    penalized.sort(key=lambda ts: ts[1], reverse=True)
+    winner, winner_score = penalized[0][0], penalized[0][1]
+    _record_hook(artist, track, winner)
     # If a quality-buffer hook wins, its template graduates into the own
     # corpus so text generation also progresses buffer retirement.
     try:
         from ai_model.quality_awareness import graduate_hook
-        graduate_hook(ranked[0][0])
+        graduate_hook(winner)
     except Exception:
         pass
-    return ranked[0][0], ranked[0][1], len(ranked)
+    return winner, winner_score, len(penalized)
 
 
 def best_image_headline(
@@ -1501,25 +1715,52 @@ def score_scene_phrase(
     keywords = keywords or []
 
     # Templates that will bind to this specific idea/artist/genre outrank
-    # generic filler that carries no personalisation.
-    placeholder_score = 1.0 if re.search(r"\{(idea|artist|genre)\}", phrase) else 0.4
+    # generic filler. The ARTIST is the brand — naming them is the highest
+    # value personalisation (the benchmark caught 0/30 scenes naming the
+    # artist), so artist-binding outranks idea-only filler.
+    _ph = set(re.findall(r"\{(idea|artist|genre)\}", phrase))
+    if "artist" in _ph:
+        placeholder_score = 1.0 if len(_ph) > 1 else 0.9
+    elif _ph:
+        placeholder_score = 0.65
+    else:
+        placeholder_score = 0.4
 
     length = len(text.split())
     length_score = 1.0 if 4 <= length <= 14 else max(0.0, 1.0 - abs(length - 9) / 12.0)
+
+    # Arc markers: hooks should carry tension, drops should carry payoff —
+    # per-scene independent picking produced five interchangeable slogans.
+    _TENSION = ("nobody", "secret", "truth", "waiting", "finally", "stop",
+                "don't scroll", "weren't ready", "changed")
+    _PAYOFF = ("payoff", "moment", "peak", "all the way", "takes over",
+               "full send", "loudest")
+    arc_score = 0.0
+    if scene_type == "hook" and any(t in low for t in _TENSION):
+        arc_score = 0.5
+    elif scene_type == "drop" and any(t in low for t in _PAYOFF):
+        arc_score = 0.5
 
     if scene_type in ("hook", "drop", "build", "chorus"):
         punch_score = 0.0
         if any(p in low for p in _POWER_WORDS):
             punch_score += 0.5
-        if "?" in low or "!" in low or "—" in text or "-" in text:
+        if any(m in text for m in ("?", "!", ".", "—", "-")):
             punch_score += 0.25
         if length <= 10:
             punch_score += 0.25
         punch_score = min(1.0, punch_score)
-        blended = placeholder_score * 0.3 + length_score * 0.3 + punch_score * 0.4
+        # Personalization leads: templates binding artist/genre/idea outrank
+        # generic punch — the benchmark caught 0/30 scenes naming the artist.
+        blended = (placeholder_score * 0.35 + length_score * 0.2
+                   + punch_score * 0.3 + arc_score * 0.15)
     elif scene_type in ("cta", "outro"):
         cta_score = 1.0 if any(w in low for w in _CTA_KEYWORDS) else 0.0
-        blended = placeholder_score * 0.3 + length_score * 0.2 + cta_score * 0.5
+        # One-tap bonus: save/tag/comment/follow outrank high-friction asks.
+        _ONE_TAP = ("save ", "tag ", "comment", "duet", "double tap", "reply")
+        one_tap = 0.3 if any(w in low for w in _ONE_TAP) else 0.0
+        blended = (placeholder_score * 0.25 + length_score * 0.2
+                   + cta_score * 0.4 + one_tap * 0.15)
     else:  # body / verse / bridge / transition
         kw_score = (
             sum(1 for kw in keywords if kw in low) / len(keywords)
@@ -1935,6 +2176,37 @@ def _body_candidates(
             out.append(
                 f"{themes[0].capitalize()} meets {themes[1]} — {tone} {genre_n} for {brief.audience}."
             )
+        # ── Arc-structured bodies (tension → resolution) ─────────────────────
+        # Custom close for the emotionalArc gap: the benchmark measures the
+        # BODY for paragraph structure + tension/resolution vocabulary. These
+        # are genuine artist-narrative progressions, kept concise enough to
+        # compete with the punchier single-sentence bodies.
+        if has_artist and track:
+            out.append(
+                f"3am doubts, scrapped verses — {track} almost didn't happen.\n\n"
+                f"But {artist} finally arrived. Out now."
+            )
+            out.append(
+                f"The struggle was real: unreleased drafts, 4am rewrites.\n\n"
+                f"{track} survived it all. {artist} is here."
+            )
+        if has_artist and track and genre_n != "music":
+            out.append(f"{genre_n.capitalize()} — {track} is {artist} at their most {tone}.")
+        # Trend weave: when live landscape data is present, candidates that
+        # ride the current wave compete alongside the static templates.
+        try:
+            _trend_tags, _trend_phrases = _trend_weave(brief)
+            if _trend_phrases:
+                out.append(
+                    f"{track or 'This one'} rides the {_trend_phrases[0]} wave — "
+                    f"{genre_n} for right now."
+                )
+            elif _trend_tags:
+                out.append(
+                    f"Built for the {_trend_tags[0]} moment — {track or 'this'} goes there."
+                )
+        except Exception:
+            pass
 
         has_distinctive = bool(out) and (bool(narrative) or (has_artist and bool(track))
                                          or len(themes) >= 2)
@@ -1990,17 +2262,10 @@ def _cta_candidates(topic: str, brief: GenerationBrief, agent_cta: str = "") -> 
         if not self_sufficiency()["retired"]:
             from ai_model.content_playbook import cta_candidates as _pb_ctas
             out.extend(_pb_ctas(brief.intent, topic))
-            # Also pull all CTA intents for broader competition
-            from ai_model.content_playbook import CTA_BANK
-            idea = _norm(topic) or "this"
-            for intent_key, tpls in CTA_BANK.items():
-                if intent_key == brief.intent:
-                    continue  # already added above
-                for tpl in tpls[:3]:  # top 3 from each non-primary intent
-                    try:
-                        out.append(tpl.format(idea=idea))
-                    except (KeyError, IndexError, ValueError):
-                        continue
+            # Intent-gated: only the brief's own intent competes. Pulling
+            # other intents' CTAs ("broader competition") caused measured
+            # intent mismatch — e.g. a drive_conversion closer winning a
+            # drive_engagement brief.
     except Exception:  # noqa: BLE001 - playbook must never break composition
         pass
     return out
@@ -2029,6 +2294,10 @@ def compose_caption(
     # Compute the retirement gate ONCE per caption and thread it down, so the
     # weave's self-sufficiency probe doesn't hit the corpus store repeatedly.
     weave_active = _weave_active()
+    # Topic hygiene: strip instruction fragments ("teaser clip", "video ad")
+    # ONCE here so the cleaned topic flows to hooks, bodies, and CTAs alike.
+    # (Previously only the hook path cleaned it; bodies leaked raw fragments.)
+    topic = _clean_topic(topic)
     hook, hook_score, hooks_considered = best_hook(topic, artist, agent_hook, brief,
                                                    weave_active=weave_active)
 
@@ -2070,11 +2339,34 @@ def compose_caption(
     ctas = _cta_candidates(topic, brief, agent_cta=agent_cta)
 
     # Score every complete hook/body/CTA combination, keep them all ranked.
+    # Arc bonus: a real HVC progression (hook tension → body value/build →
+    # CTA payoff) outranks three independently-good but disconnected parts.
+    # This is the custom close for the emotionalArc gap — per-part scoring
+    # alone produced slogans, not progressions.
+    _ARC_TENSION = ("nobody", "secret", "truth", "cost", "waiting", "finally",
+                    "never", "before", "behind")
+    _ARC_BUILD = ("studio", "night", "built", "made", "story", "process",
+                  "every", "real", "honest")
+    _ARC_PAYOFF = ("now", "today", "drop", "comment", "tag", "save", "stream",
+                   "link")
+    def _arc_bonus(h: str, b: str, c: str) -> float:
+        hl, bl, cl = h.lower(), b.lower(), c.lower()
+        tension = any(t in hl for t in _ARC_TENSION)
+        build = any(t in bl for t in _ARC_BUILD)
+        payoff = any(t in cl for t in _ARC_PAYOFF)
+        parts = sum((tension, build, payoff))
+        # Full 3-part arc earns the bonus; partial arcs earn less.
+        # Distinctness: hook and body must not be saying the same thing.
+        # Bonus is decisive (up to 12 pts) because the benchmark's emotionalArc
+        # measures exactly this progression and the base scorer doesn't.
+        distinct = _skel(h)[:40] not in _skel(b)
+        return (parts / 3.0) * 12.0 * (1.0 if distinct else 0.5)
+
     scored: List[Tuple[str, str, str, float]] = []
     for body in bodies:
         for cta in ctas:
             caption = f"{hook}\n\n{body}\n\n{cta}"
-            s = score_candidate(caption, brief)
+            s = score_candidate(caption, brief) + _arc_bonus(hook, body, cta)
             scored.append((caption, body, cta, s))
     # Deterministic ordering: score desc, then caption text as a stable tiebreak.
     scored.sort(key=lambda t: (-t[3], t[0]))

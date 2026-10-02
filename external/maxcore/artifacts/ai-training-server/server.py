@@ -7852,6 +7852,12 @@ class AudioMasteringRecommendationRequest(BaseModel):
     frequencyBalance: MasteringFrequencyBalance
     genre: Optional[str] = None
     sampleRate: int = 44100
+    # Elite reference anchoring: the Node layer attaches the measured elite
+    # reference profile (target LUFS, true-peak ceiling, LRA, stereo width,
+    # 7-band shares) on every request. When present it overrides the
+    # genre-preset targets below — the benchmark showed the gap is in
+    # mastering/finishing, not genre identity.
+    referenceProfile: Optional[Dict[str, Any]] = None
 
 
 class AudioMixingRecommendationRequest(BaseModel):
@@ -12447,6 +12453,24 @@ async def audio_mastering_recommendation(
         genre_confidence = .92
     profile = genres[genre]
 
+    # ── Elite reference anchoring ─────────────────────────────────────────
+    # When the Node layer attaches the measured elite reference profile, its
+    # finishing targets override the genre presets: the benchmark showed the
+    # MaxCore-vs-elite gap is mastering/finishing (LUFS, true peak, LRA,
+    # stereo image), not genre identity or composition.
+    ref = req.referenceProfile or {}
+    def _ref(key: str, fallback: float) -> float:
+        try:
+            v = float(ref.get(key, fallback))
+            return v if math.isfinite(v) else fallback
+        except (TypeError, ValueError):
+            return fallback
+    ref_lufs = _ref("targetLUFS", profile["lufs"])
+    ref_peak = _ref("truePeakCeilingDbtp", -1.0 if genre in ("jazz", "classical") else (-.3 if genre in ("hip-hop", "electronic", "metal", "r&b") else -.6))
+    ref_lra = _ref("lraLu", profile["range"])
+    ref_width = _ref("stereoWidth", profile["width"])
+    ref_anchored = bool(ref)
+
     # A corrective target moves with programme material: high transient/noisy
     # material gets less high boost; dense low-end material gets more control.
     ideal_low = profile["low"] - .06 * noise + .03 * harmonic
@@ -12464,9 +12488,12 @@ async def audio_mastering_recommendation(
     low_control = clip(1.5 + density * 1.6 + max(0, low_weight - ideal_low) * 3 + roughness * .3, 1.2, 5)
     high_control = clip(1.3 + density * .9 + noise * .9, 1.1, 3.8)
     base_threshold = clip(-17 + (lufs + 14) * .22 - transient_pressure * 2, -25, -8)
-    desired_width = clip(profile["width"] + (profile["width"] - width) * .34 - noise * .08, .85, 1.35)
-    true_peak = -1.0 if genre in ("jazz", "classical") else (-.3 if genre in ("hip-hop", "electronic", "metal", "r&b") else -.6)
-    target_lufs = profile["lufs"]
+    # Stereo target: when elite-anchored, move toward the reference width
+    # (0.7683 measured) instead of the genre preset alone.
+    _width_anchor = ref_width if ref_anchored else profile["width"]
+    desired_width = clip(_width_anchor + (_width_anchor - width) * .34 - noise * .08, .85, 1.35)
+    true_peak = ref_peak if ref_anchored else (-1.0 if genre in ("jazz", "classical") else (-.3 if genre in ("hip-hop", "electronic", "metal", "r&b") else -.6))
+    target_lufs = ref_lufs
     limiter_ceiling = clip(true_peak - (.12 if dynamic_range < 6 or peak > -.3 else 0), -1.3, -.1)
     input_gain = clip(-6 - peak, -12, 6)
 
@@ -12481,6 +12508,11 @@ async def audio_mastering_recommendation(
         f"Compression responds to density {density:.2f}, crest factor {crest:.1f}, and timbral noise {noise:.2f}; it is not a fixed genre preset.",
         f"Stereo target {desired_width:.2f} protects low frequencies below {120 if low_weight > .5 else 100} Hz while responding to measured width {width:.2f}.",
     ]
+    if ref_anchored:
+        reasoning.append(
+            f"Elite-reference anchored: target {ref_lufs:.1f} LUFS, "
+            f"{ref_peak:.1f} dBTP ceiling, {ref_lra:.1f} LU LRA, "
+            f"width {ref_width:.2f} (measured {ref.get('measuredFrom', 'elite reference')}).")
     return {
         "genre": genre,
         "config": {
@@ -12502,7 +12534,7 @@ async def audio_mastering_recommendation(
             "stereo": {"width": round(desired_width, 3), "bassMonoFreq": 120 if low_weight > .5 else 100,
                        "midSideBalance": 0, "correlation": .3},
             "loudness": {"targetLUFS": target_lufs, "truePeak": true_peak,
-                         "loudnessRange": round(clip(max(dynamic_range, profile["range"] * .65), 4, 16), 3),
+                         "loudnessRange": round(clip(max(dynamic_range, ref_lra * .65) if ref_anchored else max(dynamic_range, profile["range"] * .65), 4, 16), 3),
                          "shortTermMax": 3},
             "limiter": {"ceiling": round(limiter_ceiling, 3), "release": 90 if dynamic_range > 13 else 50,
                         "lookahead": 1.5, "softClip": dynamic_range < 8},

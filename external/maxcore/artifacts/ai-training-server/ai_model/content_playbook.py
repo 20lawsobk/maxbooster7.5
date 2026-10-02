@@ -365,7 +365,7 @@ CTA_BANK: Dict[str, List[str]] = {
         "First streams set the momentum — go listen now, link in bio 🎧",
         "Put {idea} on your playlist before it's on every editorial one 🎵",
         "The algorithm rewards early listeners — be one of them, link in bio! 🔥",
-        "Hit play. Add it. Share it. That's all {idea} needs from you today 🎶",
+        "Hit play — that's all {idea} needs from you today 🎶",
     ],
     "drive_engagement": [
         "Drop a 🔥 if {idea} hits different",
@@ -379,7 +379,7 @@ CTA_BANK: Dict[str, List[str]] = {
     ],
     "grow_followers": [
         "Follow — the {idea} story is just getting started 🔔",
-        "Stay close: everything behind {idea} drops here first! 🎵",
+        "Follow to stay close: everything behind {idea} drops here first! 🎵",
         "Follow now and be first for every drop after {idea}! 🔥",
         "The next chapter after {idea} is already in progress — follow to hear it first! 🔔",
         "If {idea} is what you've been looking for — you're in the right place. Follow! 🎶",
@@ -390,7 +390,7 @@ CTA_BANK: Dict[str, List[str]] = {
     "drive_conversion": [
         "Link in bio before it's gone 🛒",
         "First listeners get first access — link in bio! 🔥",
-        "Limited window. Stream, save, and get the merch before it's everywhere — link in bio! 🛒",
+        "Limited window — link in bio before it's everywhere! 🛒",
         "The presave link is live — secure your spot before the release! 🎶",
         "Tickets, merch, and early access — everything is at the link in bio! 🔥",
         "Claim your early access before the window closes — link in bio! ⏰",
@@ -400,7 +400,7 @@ CTA_BANK: Dict[str, List[str]] = {
     "build_awareness": [
         "Share this with someone who hears music differently 🎵",
         "Remember where you heard {idea} first 👀",
-        "Be the person who was on {idea} before it was everywhere! 🔥",
+        "Be the person who was on {idea} before it was everywhere — share it first! 🔥",
         "Send this to the one person in your life who will immediately understand it! 💬",
         "Share if {idea} is exactly the music you've been waiting for! 🎶",
         "Tag the friend who always finds the good music before everyone else! 👇",

@@ -107,6 +107,104 @@ def hn(url):
             for h in data.get("hits", [])[:30] if str(h.get("objectID", "")).isdigit()]
 
 
+# ── Live social-platform landscape ──────────────────────────────────────
+# The social domain historically saw charts, Mastodon trends and creator news,
+# but nothing from the platforms captions are actually written for. These
+# adapters close that gap: trending hashtags, trending sounds and viral
+# formats per platform. Rows reuse the standard _row shape so they flow
+# through snapshots, conditioning and TRENDS: lines untouched. Every fetcher
+# degrades to [] — landscape data is optional context, never a gate.
+
+LANDSCAPE_METRICS = {
+    "hashtags": "platform_trending_hashtag",
+    "sounds": "platform_trending_sound",
+    "formats": "platform_viral_format",
+}
+
+# Trend-specific search queries for the credential-inheriting providers
+# (tavily/exa). Registered in the social domain alongside the generic
+# per-domain queries when provider keys are present.
+LANDSCAPE_SEARCH_QUERIES = (
+    "trending hashtags TikTok Instagram Reels this week music",
+    "trending sounds TikTok Instagram Reels viral audio",
+    "viral content formats TikTok Instagram creators trending now",
+)
+
+
+def landscape_feed(kind):
+    """Fetch structured trend rows from the configured landscape endpoint.
+
+    Contract: ``SOCIAL_LANDSCAPE_URL`` must serve JSON shaped like
+    ``{"trends": [{"text": "#tag", "url": "...", "value": 1234,
+    "platform": "tiktok"}, ...]}``. ``kind`` is one of "hashtags",
+    "sounds", "formats" and selects the row metric. Anything unexpected —
+    missing env, bad JSON, wrong shape — returns [].
+    """
+    if kind not in LANDSCAPE_METRICS:
+        return []
+    url = os.environ.get("SOCIAL_LANDSCAPE_URL", "").strip()
+    if not url:
+        return []
+    try:
+        data = json.loads(legacy._fetch(url))
+    except Exception:
+        return []
+    trends = data.get("trends") if isinstance(data, dict) else None
+    if not isinstance(trends, list):
+        return []
+    metric = LANDSCAPE_METRICS[kind]
+    rows = []
+    for t in trends[:20]:
+        if not isinstance(t, dict):
+            continue
+        text = t.get("text")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        value = t.get("value", 1)
+        if not isinstance(value, (int, float)):
+            value = 1
+        url_v = t.get("url") if isinstance(t.get("url"), str) else ""
+        rows.append(_row(text.strip()[:120], url_v, value, metric))
+    return rows
+
+
+def trends_lines(rows, platform=""):
+    """Render trend rows as TRENDS: lines for the awareness string.
+
+    The distribution agent's hashtag parser prioritises lines containing the
+    platform name or a "Trending:" marker, so live tags flow into hashtag
+    selection automatically. Pure formatting — never raises.
+    """
+    try:
+        plat = (platform or "").strip().lower()
+        by_kind = {}
+        for r in rows or []:
+            if not isinstance(r, dict):
+                continue
+            metric = str(r.get("metric", ""))
+            text = str(r.get("text", "")).strip()
+            if not text:
+                continue
+            by_kind.setdefault(metric, []).append(text)
+        lines = []
+        order = [
+            ("platform_trending_hashtag", "trending hashtags"),
+            ("platform_trending_sound", "trending sounds"),
+            ("platform_viral_format", "viral formats"),
+        ]
+        for metric, label in order:
+            tags = by_kind.get(metric)
+            if not tags:
+                continue
+            head = f"Trending {label}"
+            if plat:
+                head += f" on {plat}"
+            lines.append(f"TRENDS: {head}: " + " ".join(tags[:8]))
+        return lines
+    except Exception:
+        return []
+
+
 def youtube(url):
     root = ET.fromstring(legacy._fetch(url))
     atom = "{http://www.w3.org/2005/Atom}"
@@ -157,4 +255,15 @@ def configured_sources():
             for domain, query in queries.items():
                 sources[provider + "_" + domain] = (
                     domain, url, functools.partial(search, provider, query))
+            # Live platform landscape: trend-specific queries in the social
+            # domain so trending hashtags/sounds/formats reach the snapshot
+            # through the same credential-inheriting pipe.
+            for i, lq in enumerate(LANDSCAPE_SEARCH_QUERIES):
+                sources[f"{provider}_social_landscape_{i}"] = (
+                    "social", url, functools.partial(search, provider, lq))
+    if os.environ.get("SOCIAL_LANDSCAPE_URL", "").strip():
+        for kind in LANDSCAPE_METRICS:
+            sources[f"landscape_{kind}"] = (
+                "social", os.environ["SOCIAL_LANDSCAPE_URL"].strip(),
+                functools.partial(landscape_feed, kind))
     return sources
