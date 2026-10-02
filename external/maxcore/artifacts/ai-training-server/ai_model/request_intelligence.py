@@ -1281,6 +1281,50 @@ def _trend_weave(brief: GenerationBrief):
     return tags[:4], phrases[:4]
 
 
+# ---------------------------------------------------------------------------
+# Platform algorithm research → deterministic scoring
+# ---------------------------------------------------------------------------
+# The thoroughly-documented platform research (shared/social-platform-
+# optimization.json, researched 2026-09-11 from official platform docs)
+# was only reaching the model path via format_platform_optimization.
+# These mappings bring the research's CTA and engagement findings into
+# the deterministic ranker so platform-specific best practices actually
+# influence which copy wins.
+_PLATFORM_CTA_VERBS: Dict[str, tuple] = {
+    # From research: TikTok rewards completion/rewatches/shares/duets;
+    # the CTA should invite those specific actions.
+    "tiktok": ("duet", "stitch", "rewatch", "follow", "comment"),
+    "instagram": ("save", "share", "comment", "dm"),
+    "instagram_reels": ("save", "share", "comment", "dm"),
+    # YouTube: session continuation + subscribe.
+    "youtube": ("subscribe", "comment", "watch"),
+    "youtube_shorts": ("subscribe", "comment", "watch"),
+    # Facebook: meaningful interactions; scroll-past is a negative signal,
+    # so the CTA must earn a real action, not passive consumption.
+    "facebook": ("share", "tag", "react", "comment", "rsvp"),
+    # Threads: honest question earning a reply (engagement bait is suppressed).
+    "threads": ("reply", "question", "think"),
+    # X: replies/reposts/quotes; open-source pipeline boosts diversity.
+    "twitter": ("reply", "repost", "quote", "poll"),
+    "x": ("reply", "repost", "quote", "poll"),
+    # LinkedIn: dwell time + meaningful comments from topic experts.
+    "linkedin": ("comment", "share", "perspective"),
+}
+
+
+def _platform_cta_bonus(text_low: str, platform: str) -> float:
+    """2.5pt bonus when the copy's CTA uses the platform's research-backed
+    verbs (shared/social-platform-optimization.json). Small enough to nudge,
+    not dominate — the base quality scores still decide."""
+    try:
+        verbs = _PLATFORM_CTA_VERBS.get((platform or "").lower())
+        if not verbs:
+            return 0.0
+        return 2.5 if any(v in text_low for v in verbs) else 0.0
+    except Exception:
+        return 0.0
+
+
 def score_candidate(text: str, brief: GenerationBrief) -> float:
     """Brief-aware quality score (0-100). 100 = Google Veo quality standard.
 
@@ -1394,6 +1438,9 @@ def score_candidate(text: str, brief: GenerationBrief) -> float:
         score -= 8.0
     if stuffing_penalty:
         score -= stuffing_penalty
+    # Platform algorithm research: the copy earns the actions each platform's
+    # ranking model predicts on (not a fixed formula — see research notes).
+    score += _platform_cta_bonus(low, brief.platform)
     try:
         if any(re.search(pat, low) for pat in _TOPIC_HYGIENE_PATTERNS):
             score -= 8.0

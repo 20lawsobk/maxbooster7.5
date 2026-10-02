@@ -115,6 +115,32 @@ class TopicHygieneTests(unittest.TestCase):
         self.assertIn("Midnight Voltage", cleaned)
 
 
+class PlatformResearchTests(unittest.TestCase):
+    def test_platform_cta_bonus(self):
+        # Research: TikTok rewards duet/stitch/comment; Instagram rewards save.
+        # The bonus nudges the ranker toward platform-native CTAs.
+        from ai_model.request_intelligence import _platform_cta_bonus
+        self.assertGreater(
+            _platform_cta_bonus("duet this if it hits", "tiktok"), 0.0)
+        self.assertGreater(
+            _platform_cta_bonus("save this for later", "instagram"), 0.0)
+        self.assertEqual(
+            _platform_cta_bonus("stream now on all platforms", "tiktok"), 0.0)
+        self.assertEqual(
+            _platform_cta_bonus("duet this", "unknown_platform"), 0.0)
+
+    def test_platform_bonus_influences_ranking(self):
+        # A TikTok brief should prefer the duet CTA over a generic one,
+        # all else being equal.
+        brief_tiktok = _brief(platform="tiktok")
+        duet = ("Midnight Voltage is out. " * 8
+                + "Duet this if it hits different")
+        generic = ("Midnight Voltage is out. " * 8
+                   + "Check it out on all platforms today")
+        self.assertGreater(score_candidate(duet, brief_tiktok),
+                           score_candidate(generic, brief_tiktok))
+
+
 class ComposeCaptionTests(unittest.TestCase):
     def test_compose_caption_end_to_end(self):
         brief = _brief()
