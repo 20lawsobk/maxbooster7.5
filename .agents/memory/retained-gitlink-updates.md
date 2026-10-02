@@ -9,6 +9,12 @@ description: Preserve legacy dependency updates when the legacy directory is tra
 
 **How to apply:** Preserve the legacy source. Record reproducible updates in the tracked parent and verify replay against the original bytes. Reject unexpected custom edits and symlink paths instead of overwriting them; test idempotence and configure replay during merge setup.
 
+Successive replay bundles must retain verified predecessor hashes, not just the original and newest hashes.
+
+**Why:** A later cumulative security update kept the original baseline but replaced the final content, causing a previously patched main workspace to be misclassified as custom changes.
+
+**How to apply:** Carry forward exact, path-specific hashes from prior reviewed bundle contents. Never accept an observed live hash merely to unblock setup. Test original, intermediate, newest, and genuinely customized files.
+
 Keep whole-workspace audits separate from deployment-payload gates.
 
 **Why:** The publishing build sees retained legacy copies before final image filtering. Requiring their installed dependencies blocked publishing even though those trees were excluded from the shipped image and app-remainder capsule.

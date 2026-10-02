@@ -21,13 +21,17 @@ export function applyLegacyUpdate(root, bundle, { apply = false, ifPresent = fal
   const seen = new Set(), pending = [];
   for (const entry of bundle.files) {
     const operation = entry.operation ?? "update";
+    const predecessors = entry.acceptedBeforeSha256 ?? [];
     if (typeof entry.path !== "string" || !entry.path.startsWith("maxbooster7.5/") ||
         entry.path.split("/").some(part => !part || part === "." || part === "..") ||
         entry.path.includes("\\") || seen.has(entry.path)) {
       throw new Error(`Unsafe or duplicate update path: ${entry.path}`);
     }
     seen.add(entry.path);
-    if (!["update", "add"].includes(operation) ||
+    if (!Array.isArray(predecessors) ||
+        predecessors.some(hash => typeof hash !== "string" || !/^[a-f0-9]{64}$/.test(hash)) ||
+        (operation === "add" && predecessors.length > 0) ||
+        !["update", "add"].includes(operation) ||
         (operation === "add" ? entry.beforeSha256 !== null : !/^[a-f0-9]{64}$/.test(entry.beforeSha256)) ||
         typeof entry.content !== "string" ||
         !/^[a-f0-9]{64}$/.test(entry.afterSha256) || digest(entry.content) !== entry.afterSha256) {
@@ -66,7 +70,7 @@ export function applyLegacyUpdate(root, bundle, { apply = false, ifPresent = fal
     const stat = fs.statSync(target);
     const actual = digest(fs.readFileSync(target));
     if (actual === entry.afterSha256) continue;
-    if (actual !== entry.beforeSha256) throw new Error(`Custom changes found; refusing overwrite: ${entry.path}`);
+    if (actual !== entry.beforeSha256 && !predecessors.includes(actual)) throw new Error(`Custom changes found; refusing overwrite: ${entry.path}`);
     pending.push({ ...entry, operation, target, mode: stat.mode });
   }
   // Preflight the whole bundle before writing anything.

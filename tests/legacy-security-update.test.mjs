@@ -32,6 +32,28 @@ test("replay is opt-in, idempotent, and preserves unrelated files", t => {
   assert.equal(applyLegacyUpdate(root, update, { apply: true }).applied.length, 0);
   assert.equal(fs.readFileSync(path.join(root, "maxbooster7.5/keep.txt"), "utf8"), "user content");
 });
+test("successive updates accept original and verified predecessors, never custom edits", t => {
+  const root = fixture(t), file = path.join(root, entry().path);
+  const update = bundle({ ...entry(), acceptedBeforeSha256: [hash("previous patch")] });
+  for (const startingContent of ["old", "previous patch", "patched"]) {
+    fs.writeFileSync(file, startingContent);
+    applyLegacyUpdate(root, update, { apply: true });
+    assert.equal(fs.readFileSync(file, "utf8"), "patched");
+    assert.deepEqual(applyLegacyUpdate(root, update, { apply: true }).applied, []);
+  }
+  fs.writeFileSync(file, "custom");
+  assert.throws(() => applyLegacyUpdate(root, update, { apply: true }), /refusing overwrite/);
+  assert.equal(fs.readFileSync(file, "utf8"), "custom");
+});
+test("invalid predecessor lists and predecessors on additions are rejected", t => {
+  const root = fixture(t);
+  for (const acceptedBeforeSha256 of ["not-array", ["bad-hash"], [null], [123]]) {
+    assert.throws(() => applyLegacyUpdate(root, bundle({ ...entry(), acceptedBeforeSha256 })), /checksum/);
+  }
+  assert.throws(() => applyLegacyUpdate(root, bundle({
+    ...addEntry("new.json"), acceptedBeforeSha256: [hash("old")],
+  })), /checksum/);
+});
 test("guarded additions create only absent files and replay idempotently", t => {
   const root = fixture(t), update = bundle(addEntry("server/services/acmeCrypto.ts", "native helper"));
   fs.mkdirSync(path.join(root, "maxbooster7.5/server/services"), { recursive: true });
