@@ -1,4 +1,3 @@
-// @ts-nocheck
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { storage } from "../storage";
@@ -60,11 +59,10 @@ interface RotatedTokenResult {
 }
 
 export class JWTAuthService {
-  private _userTokenVersions: Map<string, number> = new Map();
 
   async getUserTokenVersion(userId: string): Promise<number> {
     const user = await storage.getUser(userId);
-    return (user as Record<string, unknown>)?.tokenVersion || 0;
+    return ((user as Record<string, unknown>)?.tokenVersion as number) || 0;
   }
 
   async incrementUserTokenVersion(userId: string): Promise<number> {

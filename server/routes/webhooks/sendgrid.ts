@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router, raw } from "express";
 import { emailTrackingService } from "../../services/emailTrackingService.js";
 import { logger } from "../../logger.js";
@@ -58,11 +57,10 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
     for (const event of events) {
       const {
         sg_message_id,
-        
+        email: sg_email,
         event: eventType,
         timestamp: eventTimestamp,
         reason,
-        smtp_response,
       } = event;
 
       if (!sg_message_id || !eventType) {
@@ -74,9 +72,9 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
 
       await emailTrackingService?.recordEmailEvent({
         messageId: sg_message_id,
-        eventType: mapped,
-        eventAt: new Date(eventTimestamp * 1000),
-        smtpResponse: smtp_response,
+        email: sg_email || "",
+        event: mapped,
+        timestamp: new Date(eventTimestamp * 1000),
         reason,
         metadata: event,
       });

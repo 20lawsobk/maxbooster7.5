@@ -44,6 +44,7 @@ export const users = pgTable(
     subscriptionStatus: text("subscription_status"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeConnectedAccountId: text("stripe_connected_account_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
     subscriptionEndsAt: timestamp("subscription_ends_at"),
     trialEndsAt: timestamp("trial_ends_at"),
     onboardingCompleted: boolean("onboarding_completed").default(false),

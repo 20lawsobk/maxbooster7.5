@@ -1,4 +1,3 @@
-// @ts-nocheck
 import Stripe from "stripe";
 import { validateCustomerRefund } from "./commercePolicy";
 import { initiateCommerceRefund } from "./commerce/compensation";
@@ -7,7 +6,7 @@ import { getStripePriceIds } from "./stripeSetup.js";
 import { logger } from "../logger.js";
 import { executeStripeOperation } from "./externalServices.js";
 import { db } from "../db.js";
-import { users, orders, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
+import { users, orders, refunds, taxForms } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { env } from "../config/env.js";
@@ -42,7 +41,7 @@ if (!actualStripeKey) {
 }
 
 const stripe = new Stripe(actualStripeKey, {
-  apiVersion: "2026-01-28.clover",
+  apiVersion: "2026-02-25.clover" as any,
 });
 
 export class StripeService {
@@ -217,7 +216,7 @@ export class StripeService {
 
   async handleWebhook(event: Stripe.Event) {
     try {
-      switch (event?.type) {
+      switch (event?.type as string) {
         // Subscription & payment events
         case "payment_intent.succeeded":
           const paymentIntent = event?.data?.object as Stripe.PaymentIntent;
@@ -306,7 +305,7 @@ export class StripeService {
     }
   }
 
-  private async handleStemPurchase(data: {
+  private async handleStemPurchase(_data: {
     stemId: string;
     buyerId: string;
     sellerId: string;
@@ -374,201 +373,11 @@ export class StripeService {
     try {
       const [order]=await db.select().from(orders).where(eq(orders.id,params.orderId)).limit(1);
       if(!order) throw new Error("Order not found");
-      const cents=validateCustomerRefund(order,params.userId,params.amountCents);
+      const cents=validateCustomerRefund({...order, status: order.status || "pending"},params.userId,params.amountCents);
       return await initiateCommerceRefund(params.orderId,params.userId,cents,params.idempotencyKey||"");
     } catch(error) {return {success:false,error:error instanceof Error?error.message:String(error)};}
   }
 
-  private async legacyCreateRefund(params: {
-    orderId: string;
-    userId: string;
-    sellerId?: string;
-    amountCents?: number;
-    reason?: string;
-    initiatedBy?: string;
-  }): Promise<{
-    success: boolean;
-    refundId?: string;
-    stripeRefundId?: string;
-    error?: string;
-  }> {
-    try {
-      const [order] = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.id, params?.orderId))
-        .limit(1);
-
-      if (!order) {
-        return { success: false, error: "Order not found" };
-      }
-
-      if (!order?.stripePaymentIntentId) {
-        return { success: false, error: "No payment found for order" };
-      }
-
-      // Enforce ownership at the service boundary, not only the HTTP route.
-      // initiatedBy/sellerId are descriptions, never authorization credentials.
-      const amountCents = validateCustomerRefund(order, params.userId, params.amountCents);
-      const refundType =
-        params?.amountCents &&
-        params?.amountCents < Math.round(order?.amount * 100)
-          ? "partial"
-          : "full";
-
-      // Step 1 (outside tx): create the pending refund row so we have an id to
-      // pass to Stripe as idempotency metadata.
-      const [refundRecord] = await db
-        .insert(refunds)
-        .values({
-          orderId: params.orderId,
-          userId: params.userId,
-          sellerId: params.sellerId || order?.sellerId,
-          amountCents,
-          currency: order.currency || "usd",
-          reason: params.reason,
-          status: "pending",
-          initiatedBy: params.initiatedBy || "customer",
-          refundType,
-        })
-        .returning();
-
-      // Step 2: call Stripe BEFORE the local ledger transaction. If Stripe
-      // fails, mark the row failed and bail out — no ledger / notification
-      // writes happen, so the books stay consistent.
-      let stripeRefund: Stripe.Refund;
-      let chargeId: string;
-      try {
-        const paymentIntent = await stripe?.paymentIntents?.retrieve(
-          order?.stripePaymentIntentId,
-        );
-        chargeId = paymentIntent?.latest_charge as string;
-
-        stripeRefund = await stripe?.refunds?.create(
-          {
-            charge: chargeId,
-            amount: amountCents,
-            reason: this.mapRefundReason(params?.reason),
-            metadata: {
-              orderId: params.orderId,
-              refundId: refundRecord.id,
-              initiatedBy: params.initiatedBy || "customer",
-            },
-          },
-          // Idempotency: Stripe will dedupe on this key for 24h, so a retry
-          // that also creates a duplicate refundRecord is still safe.
-          { idempotencyKey: `refund:${refundRecord?.id}` },
-        );
-      } catch (stripeError: unknown) {
-        const _stripeErrMsg =
-          stripeError instanceof Error
-            ? stripeError?.message
-            : String(stripeError);
-        await db
-          .update(refunds)
-          .set({ status: "failed", failureReason: _stripeErrMsg })
-          .where(eq(refunds.id, refundRecord?.id));
-        return { success: false, error: _stripeErrMsg };
-      }
-
-      // Step 3: atomic ledger update. All three writes must succeed together;
-      // if any fails, Postgres rolls back the whole tx so the local state
-      // matches Stripe's view (which has the successful refund).
-      try {
-        await db.transaction(async (tx) => {
-          await tx
-            .update(refunds)
-            .set({
-              status: stripeRefund.status as string,
-              stripeRefundId: stripeRefund.id,
-              stripeChargeId: chargeId,
-              processedAt: new Date(),
-            })
-            .where(eq(refunds.id, refundRecord.id));
-
-          await tx.insert(ledgerEntries).values({
-            userId: params.userId,
-            entryType: "refund",
-            amountCents,
-            currency: order.currency || "usd",
-            referenceType: "refund",
-            referenceId: refundRecord.id,
-            description: `Refund for order ${params.orderId}`,
-          });
-
-          await tx.insert(notifications).values({
-            userId: params.userId,
-            type: "refund",
-            title: "Refund Processed",
-            message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
-            metadata: { refundId: refundRecord.id, orderId: params.orderId },
-          });
-        });
-      } catch (ledgerError: unknown) {
-        // Stripe accepted the refund but the ledger tx failed. Surface a loud
-        // alert — manual reconciliation is required (the refund webhook will
-        // also retry the status update independently).
-        logger.warn(
-          {
-            err: ledgerError,
-            refundId: refundRecord.id,
-            stripeRefundId: stripeRefund.id,
-          },
-          "🚨 Stripe refund succeeded but ledger transaction failed — manual reconcile required",
-        );
-        await db
-          .update(refunds)
-          .set({
-            status: "reconcile_required",
-            failureReason:
-              ledgerError instanceof Error
-                ? ledgerError.message
-                : String(ledgerError),
-          })
-          .where(eq(refunds.id, refundRecord.id))
-          .catch(() => undefined);
-        return {
-          success: false,
-          refundId: refundRecord.id,
-          stripeRefundId: stripeRefund.id,
-          error:
-            "Refund processed by Stripe but ledger update failed; flagged for reconciliation",
-        };
-      }
-
-      logger.info(
-        {
-          refundId: refundRecord.id,
-          stripeRefundId: stripeRefund.id,
-        },
-        "Refund created successfully",
-      );
-
-      return {
-        success: true,
-        refundId: refundRecord.id,
-        stripeRefundId: stripeRefund.id,
-      };
-    } catch (error) {
-      logger.warn({ err: error }, "Error creating refund:");
-      return {
-        success: false,
-        error:
-          (error instanceof Error ? error.message : undefined) ||
-          "Failed to create refund",
-      };
-    }
-  }
-
-  private mapRefundReason(
-    reason?: string,
-  ): "duplicate" | "fraudulent" | "requested_by_customer" | undefined {
-    if (!reason) return "requested_by_customer";
-    const lower = reason.toLowerCase();
-    if (lower.includes("duplicate")) return "duplicate";
-    if (lower.includes("fraud")) return "fraudulent";
-    return "requested_by_customer";
-  }
 
   /**
    * Handle refund webhook events

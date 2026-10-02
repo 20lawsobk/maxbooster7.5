@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import {
@@ -15,7 +14,7 @@ import { emailService } from "../services/emailService.js";
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
+interface AuthenticatedRequest extends Omit<Request, "user"> {
   user?: { id: string; email?: string };
 }
 
@@ -729,7 +728,7 @@ router.post(
 router.post(
   "/send-verification-email",
   requireAuth,
-  async (req: Record<string, unknown>, res) => {
+  async (req: AuthenticatedRequest, res) => {
     try {
       const userId = (req.user! as any).id;
       const [user] = await db
@@ -827,7 +826,7 @@ router.get("/verify-email", async (req, res) => {
 router.get(
   "/email-verification-status",
   requireAuth,
-  async (req: Record<string, unknown>, res) => {
+  async (req: AuthenticatedRequest, res) => {
     try {
       const userId = (req.user! as any).id;
       const [user] = await db

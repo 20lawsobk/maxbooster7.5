@@ -1159,6 +1159,17 @@ def require_scope(scope: str):
 from ai_model.native_analysis.api import create_analysis_router
 app.include_router(create_analysis_router(require_scope("generate"), _UPLOADS_PATH))
 
+# Campaign Director: unified multi-modal generation (audio/video/social/ads).
+# Mounted with 'generate' scope — same auth as other generation endpoints.
+try:
+    from ai_model.director.api import create_director_router
+    _director_router = create_director_router(require_scope("generate"))
+    if _director_router is not None:
+        app.include_router(_director_router, prefix="/api/director")
+        print("[Server] Director API mounted at /api/director")
+except Exception as e:
+    print(f"[Server] Director API not mounted: {e}")
+
 def verify_admin(x_admin_key: str = Header(None), authorization: str = Header(None)):
     """Admin-only endpoint auth (X-Admin-Key or Authorization: Bearer)."""
     if not x_admin_key and authorization and authorization.lower().startswith("bearer "):

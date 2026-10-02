@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * STRIPE WEBHOOK ROUTES
  *
@@ -8,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 
-interface StripeWebhookRequest extends Request {
+interface StripeWebhookRequest extends Omit<Request, "user"> {
   stripeEvent: Stripe.Event;
 }
 import Stripe from "stripe";
@@ -33,7 +32,6 @@ import { settleMerchantCheckout } from "../../services/commerce/merchant";
 import { consumeMarketplaceCheckout } from "../../services/commerce/marketplaceCheckout";
 import { handleCommercePayoutEvent } from "../../services/commerce/payouts";
 import { currentSubscription } from "../../services/commerce/entitlements";
-import { majorUnits } from "../../services/commerce/contract";
 import { installStripeMerchPaymentAdapter, handleGrowthMerchCheckout } from "../../services/commerce/growthMerch";
 
 const router = Router();
@@ -505,10 +503,10 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
   );
 
   try {
-    const customerId =
+    const customerId: string | undefined =
       typeof invoice?.customer === "string"
         ? invoice?.customer
-        : (invoice?.customer as unknown as Record<string, unknown>)?.id;
+        : (invoice?.customer as unknown as Record<string, unknown>)?.id as string | undefined;
 
     if (!customerId) {
       logger.warn(
@@ -537,8 +535,8 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
     }
 
     const amount = invoice?.amount_due / 100;
-    const reason = (invoice as unknown as Record<string, unknown>).last_payment_error
-      ?.message;
+    const reason = ((invoice as unknown as Record<string, unknown>).last_payment_error as Record<string, unknown> | undefined)
+      ?.message as string | undefined;
 
     // Notifications are best-effort — a delivery failure shouldn't mask
     // whether the critical write (the dunning sequence row) succeeded.
@@ -793,9 +791,9 @@ registerWebhookHandler("payout.failed", async (event) => {
 router.post(
   "/",
   stripeWebhookMiddleware,
-  async (req: StripeWebhookRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const event = req.stripeEvent;
+      const event = (req as StripeWebhookRequest).stripeEvent;
 
       if (!event) {
         return res.status(400).json({ error: "No event found" });

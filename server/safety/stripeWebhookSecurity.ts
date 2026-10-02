@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * STRIPE WEBHOOK SECURITY
  *
@@ -59,12 +58,12 @@ export function stripeWebhookMiddleware(
   }
 
   try {
-    const stripe = new Stripe(env?.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-10-16",
+    const stripe = new Stripe(env?.STRIPE_SECRET_KEY as string, {
+      apiVersion: "2026-02-25.clover" as any,
     });
 
     // Verify the signature using the raw body
-    const rawBody = (req as unknown as Record<string, unknown>).rawBody;
+    const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | Buffer | undefined;
     if (!rawBody) {
       throw new Error(
         "Raw body not available - ensure body parser preserves raw body",
@@ -73,7 +72,7 @@ export function stripeWebhookMiddleware(
 
     const event = stripe?.webhooks.constructEvent(
       rawBody,
-      signature,
+      signature as string,
       webhookSecret,
     );
 
@@ -86,8 +85,8 @@ export function stripeWebhookMiddleware(
       eventId: event.id,
       eventType: event.type,
       success: true,
-      customerId: (event?.data.object as unknown as Record<string, unknown>).customer,
-      amount: (event?.data.object as unknown as Record<string, unknown>).amount,
+      customerId: (event?.data.object as unknown as Record<string, unknown>).customer as string | undefined,
+      amount: (event?.data.object as unknown as Record<string, unknown>).amount as number | undefined,
     });
 
     logger.info(`[Stripe Webhook] Verified event: ${event?.type} (${event?.id})`);
@@ -247,7 +246,7 @@ async function recordWebhookFailureAudit(
   message: string | undefined,
 ): Promise<void> {
   try {
-    const obj = event?.data?.object as Record<string, unknown> | undefined;
+    const obj = event?.data?.object as unknown as Record<string, unknown> | undefined;
     const customerRef =
       (typeof obj?.customer === "string" ? obj?.customer : undefined) ||
       (obj?.metadata as Record<string, unknown> | undefined)?.userId ||
