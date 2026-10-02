@@ -156,3 +156,4 @@
 - [Dependency consumer compatibility](dependency-consumer-compatibility.md) — audit-clean global overrides can break startup; validate each real consumer and use patched compatible branches.
 - [Certificate crypto boundary](certificate-crypto-boundary.md) — certificate automation must use native cryptography, not an unpatched crypto dependency hidden under a protocol client.
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.
+- [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.

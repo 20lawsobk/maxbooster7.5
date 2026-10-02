@@ -17,6 +17,7 @@ import {
   BOOTSTRAP_AND_CAPSULE_OWN_PATHS,
 } from "./lib/dockerignoreScan.js";
 import { validateModelRelease } from "./lib/modelRelease.js";
+import { runPortablePython } from "./lib/portablePython.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -148,7 +149,9 @@ async function main() {
           { cwd: root, stdio: "inherit", shell: "/bin/bash" },
         );
       }
-      execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
+      runPortablePython(pyBin, ["--version"], { stdio: "inherit" });
+      const pythonVerifier = path.join(root, "script/lib/verifyPortablePython.py");
+      runPortablePython(pyBin, [pythonVerifier, pyDir], { stdio: "inherit" });
       console.log(
         "   Installing locked app + MaxCore Python deps (including CPU torch)...",
       );
@@ -157,12 +160,9 @@ async function main() {
         root,
         "external/maxcore/artifacts/ai-training-server/uv.lock",
       );
-      execFileSync(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), maxcoreLock, requirements], { stdio: "inherit" });
-      execFileSync(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements], { cwd: root, stdio: "inherit" });
-      execSync(
-        `${JSON.stringify(pyBin)} -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, psycopg2, librosa, sklearn, soundfile, torch; print(torch.__version__)"`,
-        { stdio: "inherit", shell: "/bin/bash" },
-      );
+      runPortablePython(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), maxcoreLock, requirements], { stdio: "inherit" });
+      runPortablePython(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements], { cwd: root, stdio: "inherit" });
+      runPortablePython(pyBin, [pythonVerifier, pyDir, "--runtime"], { stdio: "inherit" });
       console.log("   ✅ Portable Python runtime ready → python_runtime/");
     } catch (e) {
       fs.rmSync(pyDir, { recursive: true, force: true });
