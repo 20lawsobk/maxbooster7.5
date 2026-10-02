@@ -58,6 +58,7 @@ boosterstate-data/
 cookies.txt
 .audit-wal/
 .capsule-temp/
+/.deployment-pack-state/
 data/
 !client/src/data/
 !client/src/data/**

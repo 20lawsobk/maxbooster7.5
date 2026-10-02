@@ -85,7 +85,7 @@
 - [ShellExec background nesting trap](shellexec-background-nesting.md) — never combine run_in_background:true with an inner &/nohup/disown; the tracked outer task exits immediately and becomes untrackable via Monitor
 - [vitest integration globalSetup server dep](vitest-integration-globalsetup-server-dep.md) — shared globalSetup polls localhost:5000 up to 8min SILENTLY; stopping the dev workflow to "isolate" one test file makes it hang with zero output, looks like a code bug
 - [Deploy runtime helper packaging](deploy-runtime-helper-packaging.md) — launch helpers must survive deployment-context filtering or promote can fail before useful runtime logs appear
-- [Capsule compression codec choice](capsule-compression-codec-choice.md) — real zstd-19 beats gzip/xz on ratio+speed for this project's capsules; benchmark the real restore path (bsdtar), not a raw CLI pipe; hardlink-copy technique for safe destructive-op verification
+- [Capsule compression benchmarks](capsule-compression-codec-choice.md) — level 6 meets the 2× packing target; measure recovery overhead and image size, not just codec choice.
 - [Live storage codec-mesh integration](live-storage-codec-mesh-integration.md) — PocketDimension wires codecMesh+PDCF directly (not the fuller router); PDCF magic bytes alone gate legacy-vs-new, no schema field needed
 - [AwarenessProfiler detection gaps](awareness-profiler-detection-gaps.md) — RIFF magic collision mislabeled WAV as WebP/already-compressed (fixed); Shannon entropy alone can't see LZ-style repetition (open, follow-up filed)
 - [Deploy autofix coverage gaps](deploy-autofix-coverage-gaps.md) — image checks must add the deduplicated Nix closure to tracked payload bytes and fail closed on unmeasured roots

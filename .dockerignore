@@ -195,6 +195,7 @@ main.py
 cookies.txt
 .audit-wal/
 .capsule-temp/
+/.deployment-pack-state/
 storybook-static/
 *.backup
 

@@ -6,6 +6,21 @@ description: Real zstd/xz/gzip benchmark results for this project's deploy capsu
 # Deploy capsule compression: codec choice + verification method
 
 ## The decision
+Current priority is the user's explicit at-least-2× packing-speed target. Use
+the measured throughput-oriented zstd setting, not the historical level-19
+default below.
+
+**Why:** On the real four-payload, four-CPU workload, level 19 was still
+unfinished after 503 seconds; level 6 completed in 221 seconds including
+reentry backup creation. Codec comparisons alone had hidden the cost of the
+chosen compression level.
+
+**How to apply:** Benchmark both compression levels and include recovery
+overhead. Keep the full image-size gate; faster packing increases archive
+size. The older measurements below establish codec/restore behavior, not a
+requirement to retain level 19.
+
+## Historical codec comparison
 zstd at level 19 with a long-distance-matching window (`--long=27 -T0`) beats both gzip-9 and xz-9e simultaneously on ratio, compress time, AND decompress time for this project's actual capsule content (dependency trees / vendored subsystem checkouts). xz's small ratio edge (~5%) was not worth ~5x the compress time. Do not re-litigate this by guessing — the numbers below are real, on this project's real directories.
 
 **Why:** benchmarked gzip-9 vs zstd-19 vs xz-9e against the real `external/pdim` (499M) and `node_modules` (1.6G) trees. zstd won on every axis. Confirmed again during full production verification across all four real capsule directories.

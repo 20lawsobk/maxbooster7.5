@@ -6,7 +6,10 @@
  * (tests/unit/capsule-pack-restore-roundtrip.test.ts) so both exercise the
  * exact same real tar+codec pipeline — no mocks on either side.
  *
- * Codec: zstd, chosen from a real benchmark against this project's actual
+ * Codec: zstd. Production uses level 6 for build throughput; the historical
+ * level-19 measurements below explain the codec choice, not today's level.
+ * Reproduce the level comparison with script/benchmark-capsule-packing.ts.
+ * zstd was chosen from a real benchmark against this project's actual
  * capsule directories, all measured through the real pack/restore code
  * paths below (not a hand-rolled CLI pipe — a naive benchmark script
  * measures different numbers than what this file and dist/pdim-restore.mjs
@@ -42,7 +45,7 @@ import fs from "fs";
 import path from "path";
 import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
 
-export const CAPSULE_COMPRESSION_LEVEL = 19;
+export const CAPSULE_COMPRESSION_LEVEL = 6;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
 export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
@@ -89,7 +92,7 @@ function sha256FileSync(file: string): string {
   return hash.digest("hex");
 }
 
-function zstdCompressArgs(threads: number): string[] {
+function zstdCompressArgs(threads: number, level: number): string[] {
   // `-T0` tells zstd to claim every core on the machine for ITS OWN
   // compression. That is correct when only one capsule packs at a time, but
   // the caller (script/build.ts) packs all capsules concurrently via
@@ -99,7 +102,8 @@ function zstdCompressArgs(threads: number): string[] {
   // should pass `threads = max(1, floor(cpuCount / N))` so the combined
   // demand matches what the machine actually has; a single caller can still
   // pass 0 to keep the old all-cores behavior.
-  return [`-${CAPSULE_COMPRESSION_LEVEL}`, "--long=27", `-T${threads}`, "-c"];
+  if (!Number.isInteger(level) || level < 1 || level > 19) throw new Error("Invalid capsule compression level");
+  return [`-${level}`, "--long=27", `-T${threads}`, "-c"];
 }
 
 export interface PackCapsuleOptions {
@@ -117,6 +121,8 @@ export interface PackCapsuleOptions {
    * machine's cores instead of leaving every job to claim all of them.
    */
   threads?: number;
+  /** Explicit level for reproducible performance comparisons. */
+  compressionLevel?: number;
   /** Files that must be hash-verified inside `dir` and recorded in the capsule manifest. */
   requiredMembers?: Array<{ path: string; bytes: number; sha256: string }>;
   /**
@@ -177,9 +183,12 @@ export function packCapsule({
   dir,
   capsule,
   threads = 0,
+  compressionLevel = CAPSULE_COMPRESSION_LEVEL,
   requiredMembers = [],
   excludePaths = [],
 }: PackCapsuleOptions): Promise<PackCapsuleResult | null> {
+  const compression = `zstd-${compressionLevel}`;
+  const compressArgs = zstdCompressArgs(threads, compressionLevel);
   return new Promise((resolveOne, rejectOne) => {
     const normalizedExcludePaths = normalizeExcludePaths(excludePaths);
     const abs = path.resolve(root, dir);
@@ -209,7 +218,7 @@ export function packCapsule({
 
     const capsulePath = path.resolve(root, capsule);
     console.log(
-      `==> Packing ${dir}/ → ${capsule} (${CAPSULE_COMPRESSION_ID}, -T${threads}, Extract & Boot)...`,
+      `==> Packing ${dir}/ → ${capsule} (${compression}, -T${threads}, Extract & Boot)...`,
     );
 
     const tarExcludes = normalizedExcludePaths
@@ -219,7 +228,7 @@ export function packCapsule({
       "bash",
       [
         "-c",
-        `set -o pipefail; tar ${tarExcludes} -cf - ${JSON.stringify(dir)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
+        `set -o pipefail; tar ${tarExcludes} -cf - ${JSON.stringify(dir)} | zstd ${compressArgs.join(" ")}`,
       ],
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
@@ -263,7 +272,7 @@ export function packCapsule({
         manifestPath,
         JSON.stringify(
           {
-            compression: CAPSULE_COMPRESSION_ID,
+            compression,
             sha256,
             dir,
             requiredMembers,
@@ -283,7 +292,7 @@ export function packCapsule({
         manifestPath,
         sizeBytes,
         sha256,
-        compression: CAPSULE_COMPRESSION_ID,
+        compression,
       });
     };
 
@@ -317,6 +326,7 @@ export interface PackCapsuleMembersOptions {
   capsule: string;
   /** zstd thread count for this capsule's compression (`-T<n>`). See packCapsule. */
   threads?: number;
+  compressionLevel?: number;
 }
 
 /**
@@ -339,7 +349,10 @@ export function packCapsuleMembers({
   members,
   capsule,
   threads = 0,
+  compressionLevel = CAPSULE_COMPRESSION_LEVEL,
 }: PackCapsuleMembersOptions): Promise<PackCapsuleResult | null> {
+  const compression = `zstd-${compressionLevel}`;
+  const compressArgs = zstdCompressArgs(threads, compressionLevel);
   return new Promise((resolveOne, rejectOne) => {
     // Enforce this at the destructive packing boundary too: a caller supplying
     // its own member list must not bypass the scanner's bootstrap exclusions.
@@ -367,7 +380,7 @@ export function packCapsuleMembers({
     fs.writeFileSync(fileListPath, existingMembers.join("\n") + "\n");
 
     console.log(
-      `==> Packing ${existingMembers.length} remaining app files → ${capsule} (${CAPSULE_COMPRESSION_ID}, -T${threads}, Extract & Boot)...`,
+      `==> Packing ${existingMembers.length} remaining app files → ${capsule} (${compression}, -T${threads}, Extract & Boot)...`,
     );
 
     const cleanupFileList = () => {
@@ -380,7 +393,7 @@ export function packCapsuleMembers({
       "bash",
       [
         "-c",
-        `set -o pipefail; tar -cf - --no-recursion -T ${JSON.stringify(fileListPath)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
+        `set -o pipefail; tar -cf - --no-recursion -T ${JSON.stringify(fileListPath)} | zstd ${compressArgs.join(" ")}`,
       ],
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
@@ -426,7 +439,7 @@ export function packCapsuleMembers({
         manifestPath,
         JSON.stringify(
           {
-            compression: CAPSULE_COMPRESSION_ID,
+            compression,
             sha256,
             dir: "<multiple>",
             memberCount: existingMembers.length,
@@ -449,7 +462,7 @@ export function packCapsuleMembers({
         manifestPath,
         sizeBytes,
         sha256,
-        compression: CAPSULE_COMPRESSION_ID,
+        compression,
       });
     };
 

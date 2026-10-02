@@ -18,11 +18,20 @@ import {
 } from "./lib/dockerignoreScan.js";
 import { validateModelRelease } from "./lib/modelRelease.js";
 import { runPortablePython } from "./lib/portablePython.mjs";
+import {
+  beginDeploymentPack,
+  recoverDeploymentPack,
+  RECOVERY_HELPER_PATH,
+} from "./lib/deploymentPackRecovery.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  // The deployment command also invokes this dependency-free helper BEFORE
+  // npm/tsx, because packing can remove node_modules and build.ts itself.
+  recoverDeploymentPack(root);
+  let packTransaction: ReturnType<typeof beginDeploymentPack> | null = null;
   const modelRelease = process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID
     ? validateModelRelease(root)
     : null;
@@ -172,6 +181,10 @@ async function main() {
 
   if (isDeployBuild) {
     assertNoSelectedMaxCoreCandidate(root);
+    // Snapshot ALL inputs before the first destructive pack, including files
+    // intentionally excluded from runtime capsules (notably model.corrupt).
+    // .deployment-pack-state is dockerignored; backups never inflate the shipped image.
+    packTransaction = beginDeploymentPack(root);
     const capsuleTargets: Array<{
       dir: string;
       capsule: string;
@@ -208,9 +221,11 @@ async function main() {
     // time budget as more capsules were added. packCapsule (script/lib/
     // capsulePack.ts) is the same real streaming tar+zstd implementation the
     // round-trip test (tests/unit/capsule-pack-restore-roundtrip.test.ts)
-    // exercises. zstd -19 --long=27 was chosen over gzip-9 and xz-9e after
+    // exercises. zstd --long=27 was chosen over gzip-9 and xz-9e after
     // benchmarking all three against this project's real capsule directories:
     // it won on compressed size, compress time, AND decompress time.
+    // The packer now uses level 6 to prioritize build throughput; the image
+    // size gate below still enforces the same total-image safety budget.
     //
     // Thread allocation: zstd's own -T0 mode claims every core for ONE
     // capsule's compression. Left at -T0 while four capsules pack
@@ -272,7 +287,10 @@ async function main() {
   let appRemainderResult: Awaited<ReturnType<typeof packCapsuleMembers>> =
     null;
   if (isDeployBuild) {
-    const remainingMembers = computeRemainingAppMembers(root);
+    const remainingMembers = computeRemainingAppMembers(root).filter(
+      (member) => member !== RECOVERY_HELPER_PATH &&
+        member !== ".deployment-pack-state" && !member.startsWith(".deployment-pack-state/"),
+    );
     const requiredPdimWorker = "dist/retained-pdim-recovery-worker.mjs";
     if (!remainingMembers.includes(requiredPdimWorker)) {
       throw new Error(
@@ -282,6 +300,7 @@ async function main() {
     console.log(
       `==> Scanned .dockerignore-survivor payload: ${remainingMembers.length} file(s) remaining outside the four existing capsules and the boot bootstrap set (${BOOTSTRAP_AND_CAPSULE_OWN_PATHS.join(", ")})`,
     );
+    packTransaction!.preserveMembers(remainingMembers);
     appRemainderResult = await packCapsuleMembers({
       root,
       members: remainingMembers,
@@ -365,6 +384,7 @@ async function main() {
       );
     }
   }
+  packTransaction?.complete();
 }
 
 /** `du -sb` on one path; returns null (never a silent 0) when it can't be measured, so a
