@@ -4,7 +4,7 @@
 - [Route mount duplication/shadowing](route-mount-prefix-duplication.md) — mount path repeating router's own topic word 404s all; duplicate (method,path) across routers = first-mounted wins, rest is dead code
 - [Static index route shadowing](static-index-route-shadowing.md) — early express.static must not serve index.html for `/`, or root-style OAuth callbacks silently become the SPA
 - [Multi-member capsule restore merge](capsule-multi-member-merge-restore.md) — a scattered-file-list capsule restore must recursively MERGE into a pre-existing destination dir, never rmSync-then-replace it (destroyed a real tests/ dir once)
-- [Software-GPU "rebuild it" categories](software-gpu-rebuild-categories.md) — which of ZLUDA/vGPU-MIG/from-scratch-silicon are honestly buildable on CPU-only, plus DRR-fairness and job-payload OOM test pitfalls
+- [GPU compute lessons](gpu-compute-lessons-index.md) — buildable GPU scope, GIL/process-pool measurements, scheduler correctness, BLAS rounding and cache cost accounting.
 - [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
 - [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed some-routes-work/some-404 after restart means registration still in progress, check "[Boot] Routes registered"
 - [PDIM tuning history](pdim-tuning-index.md) — queue separation, startup gap caps, worker floors, coalescing and parallel-lane lessons.
@@ -81,11 +81,6 @@
 - [Replit home dir is ephemeral, workspace/ is not](replit-home-vs-workspace-persistence.md) — container can fully restart mid-session; only /home/runner/workspace survives, $HOME-installed tool caches (e.g. PDKs) can vanish
 - [Heavy background compute vs live app workflow](heavy-background-compute-vs-live-app.md) — a memory-heavy native background job can OOM-kill the app workflow with no stack trace; pause the workflow first if headroom is thin
 - [MaxCore status route topology](maxcore-status-route-topology.md) — /gpu/* status endpoints are loopback-only (8090→9878 chain), never bridged to the public app; dashboard SPA never serves in dev mode
-- [GIL blocks thread speedup](gil-blocks-thread-speedup.md) — measured: thread-based num_streams made this project's NumPy-bound GEMMs 3-8x slower, not faster; default concurrency knobs to serial, make it opt-in
-- [Dependency-graph scheduler traps](dependency-graph-scheduler-traps.md) — free-on-last-consumer needs live countdown not precomputed index; Future/error checks need the lock BEFORE creating the future or failure-during-wait deadlocks
-- [GPU multi-stream process-pool speedup ceiling](gpu-process-pool-speedup-ceiling.md) — process-pool+shared-memory moves GIL-bound thread scheduling from guaranteed loss to near-parity coin-flip, not a reliable win; native GIL-releasing kernel is the remaining lever
-- [BLAS thread-count cross-comparison float drift](blas-threadcount-float-drift.md) — serial (multi-threaded BLAS) vs per-worker (single-threaded BLAS) GEMM results legitimately differ in float32 rounding; not a correctness bug, use same-config bit-identical checks instead
-- [Admission breakeven cost-series separation](admission-breakeven-cost-series.md) — every-call/hit-only/miss-only costs feeding a cache-admission breakeven ratio need separate EWMAs; blending drifts the ratio from its stated derivation
 - [MaxCore bootstrap capsule race](maxcore-bootstrap-capsule-race.md) — disambiguate "restore pending" from "never provisioned" before running a one-shot bootstrap; never permanently latch a failed provision with no retry
 - [ShellExec background nesting trap](shellexec-background-nesting.md) — never combine run_in_background:true with an inner &/nohup/disown; the tracked outer task exits immediately and becomes untrackable via Monitor
 - [vitest integration globalSetup server dep](vitest-integration-globalsetup-server-dep.md) — shared globalSetup polls localhost:5000 up to 8min SILENTLY; stopping the dev workflow to "isolate" one test file makes it hang with zero output, looks like a code bug
@@ -157,3 +152,4 @@
 - [Certificate crypto boundary](certificate-crypto-boundary.md) — certificate automation must use native cryptography, not an unpatched crypto dependency hidden under a protocol client.
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.
 - [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.
+- [Capsule build control files](capsule-build-control-files.md) — publishing still needs root manifests after packing; archive removal must not delete package-manager control files.

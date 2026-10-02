@@ -20,6 +20,7 @@
 import fs from "fs";
 import path from "path";
 import ignore from "ignore";
+import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
 
 /**
  * Directories/files this scan must never report as "remaining" even though
@@ -32,6 +33,7 @@ import ignore from "ignore";
  * expected to know about — they're specific to the Extract & Boot mechanism.
  */
 export const BOOTSTRAP_AND_CAPSULE_OWN_PATHS = [
+  ...DEPLOYMENT_CONTROL_FILES.map((file) => `/${file}`),
   "start.sh",
   ".node_bin",
   "scripts/boot-stub-server.mjs",

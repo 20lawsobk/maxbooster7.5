@@ -40,6 +40,7 @@ import { spawn } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
+import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
 
 export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
@@ -340,6 +341,19 @@ export function packCapsuleMembers({
   threads = 0,
 }: PackCapsuleMembersOptions): Promise<PackCapsuleResult | null> {
   return new Promise((resolveOne, rejectOne) => {
+    // Enforce this at the destructive packing boundary too: a caller supplying
+    // its own member list must not bypass the scanner's bootstrap exclusions.
+    const protectedPaths = new Set(
+      DEPLOYMENT_CONTROL_FILES.map((file) => path.resolve(root, file)),
+    );
+    const protectedMember = members.find((file) =>
+      protectedPaths.has(path.resolve(root, file)),
+    );
+    if (protectedMember) {
+      return rejectOne(new Error(
+        `Refusing to capsule deployment control file: ${protectedMember}`,
+      ));
+    }
     const existingMembers = members.filter((m) =>
       fs.existsSync(path.resolve(root, m)),
     );
