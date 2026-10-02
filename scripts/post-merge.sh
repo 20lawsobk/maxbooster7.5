@@ -9,6 +9,9 @@ node scripts/apply-legacy-security-update.mjs --apply --if-present
 echo "[post-merge] Installing dependencies..."
 npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -5
 
+echo "[post-merge] Reconciling locked MaxCore and PDIM dependencies..."
+node scripts/reconcile-nested-dependencies.mjs --apply --online
+
 echo "[post-merge] Database changes require an explicit reviewed migration release; no shared database mutation during merge."
 
 echo "[post-merge] Done."
