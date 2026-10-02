@@ -14,7 +14,50 @@ from __future__ import annotations
 
 import time
 from typing import List, Optional, Callable, Dict
-from pydantic import BaseModel, Field
+
+try:
+    from pydantic import BaseModel, Field
+    _HAS_PYDANTIC = True
+except ImportError:
+    _HAS_PYDANTIC = False
+    # Minimal fallback with basic validation (dev/test environments).
+    class _FieldInfo:
+        def __init__(self, default=None, min_length=None, max_length=None,
+                     ge=None, le=None, max_items=None):
+            self.default = default
+            self.min_length = min_length
+            self.max_length = max_length
+            self.ge = ge
+            self.le = le
+            self.max_items = max_items
+
+    def Field(default=None, **kwargs):
+        return _FieldInfo(default=default, **kwargs)
+
+    class BaseModel:
+        def __init__(self, **kwargs):
+            cls = type(self)
+            for name in dir(cls):
+                if name.startswith("_"):
+                    continue
+                attr = getattr(cls, name, None)
+                if isinstance(attr, _FieldInfo):
+                    value = kwargs.get(name, attr.default)
+                    # Basic validation.
+                    if isinstance(value, str):
+                        if attr.min_length and len(value) < attr.min_length:
+                            raise ValueError(f"{name} too short")
+                        if attr.max_length and len(value) > attr.max_length:
+                            raise ValueError(f"{name} too long")
+                    if isinstance(value, (int, float)):
+                        if attr.ge is not None and value < attr.ge:
+                            raise ValueError(f"{name} below minimum")
+                        if attr.le is not None and value > attr.le:
+                            raise ValueError(f"{name} above maximum")
+                    if isinstance(value, list) and attr.max_items:
+                        if len(value) > attr.max_items:
+                            raise ValueError(f"{name} too many items")
+                    setattr(self, name, value)
 
 try:
     from fastapi import APIRouter, Depends, HTTPException, Request
