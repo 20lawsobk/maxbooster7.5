@@ -8,3 +8,9 @@ description: Preserve legacy dependency updates when the legacy directory is tra
 **Why:** A retained legacy copy, including another copy inside it, had no submodule Git metadata. Its dependency edits were invisible to the parent diff despite its original commit objects being locally available.
 
 **How to apply:** Preserve the legacy source. Record reproducible updates in the tracked parent and verify replay against the original bytes. Reject unexpected custom edits and symlink paths instead of overwriting them; test idempotence and configure replay during merge setup.
+
+Keep whole-workspace audits separate from deployment-payload gates.
+
+**Why:** The publishing build sees retained legacy copies before final image filtering. Requiring their installed dependencies blocked publishing even though those trees were excluded from the shipped image and app-remainder capsule.
+
+**How to apply:** Preserve exhaustive legacy findings in workspace audits. A release gate may omit legacy scopes only with verified whole-tree image exclusions; fail closed if exclusions disappear, and continue checking every shipped workspace and nested installed dependency.

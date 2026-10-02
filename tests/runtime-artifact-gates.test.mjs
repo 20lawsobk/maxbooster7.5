@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { inspectDependencies, inspectArtifacts, inspectRestored, digest } from "../scripts/verify-runtime-artifacts.mjs";
+import { inspectDependencies, inspectDeploymentDependencies, inspectArtifacts, inspectRestored, digest } from "../scripts/verify-runtime-artifacts.mjs";
 
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-gate-"));
@@ -14,6 +14,26 @@ function write(root, file, content) {
   fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
   fs.writeFileSync(path.join(root, file), content);
 }
+test("release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy", t => {
+  const root = fixture(t);
+  for (const scope of [".", "external/maxcore", "external/pdim", "dns-os", "tls-proxy"]) {
+    write(root, `${scope}/package.json`, "{}");
+    write(root, `${scope}/node_modules/qs/package.json`, '{"name":"qs","version":"6.16.0"}');
+  }
+  write(root, "maxbooster7.5/node_modules/qs/package.json", '{"name":"qs","version":"6.15.3"}');
+  write(root, ".dockerignore", "maxbooster7.5/\n");
+  assert.equal(inspectDeploymentDependencies(root).ready, true);
+  assert.equal(inspectDependencies(root).ready, false);
+  write(root, ".dockerignore", "maxbooster7.5/\n!maxbooster7.5/\n");
+  assert.match(inspectDeploymentDependencies(root).failures.join(), /not excluded/);
+  write(root, ".dockerignore", "maxbooster7.5/\n");
+  write(root, "external/maxcore/node_modules/qs/package.json", '{"name":"qs","version":"6.15.3"}');
+  assert.match(inspectDeploymentDependencies(root).failures.join(), /external\/maxcore.*validated floor/);
+  fs.rmSync(path.join(root, "external/pdim/node_modules"), { recursive: true });
+  assert.match(inspectDeploymentDependencies(root).failures.join(), /external\/pdim/);
+  fs.unlinkSync(path.join(root, ".dockerignore"));
+  assert.throws(() => inspectDeploymentDependencies(root), /ENOENT/);
+});
 test("installed stale nested copy fails despite patched top-level package and lock", t => {
   const root = fixture(t);
   write(root, "package.json", '{"dependencies":{"qs":"6.16.0"}}');

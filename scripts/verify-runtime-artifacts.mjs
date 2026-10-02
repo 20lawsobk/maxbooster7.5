@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import ignore from "ignore";
 
 export const floors = {
   "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
@@ -106,6 +107,20 @@ export function inspectDependencies(root, scopes) {
   if (!occurrences.length) failures.push("No audited installed dependencies found");
   return { ready: failures.length === 0, failures, occurrences, resolutions };
 }
+// Build inputs include retained source copies that are not deployment payload.
+// Keep the default workspace audit exhaustive; release checks may omit legacy
+// scopes only when the actual image exclusion rules exclude their entire tree.
+export function inspectDeploymentDependencies(root) {
+  const matcher = ignore().add(fs.readFileSync(path.join(root, ".dockerignore"), "utf8"));
+  const result = inspectDependencies(root, workspaces);
+  for (const scope of legacyWorkspaces) {
+    if (!matcher.ignores(`${scope}/`)) {
+      result.failures.push(`${scope}: legacy workspace is not excluded from the deployment image`);
+    }
+  }
+  result.ready = result.failures.length === 0;
+  return result;
+}
 export async function digest(file) {
   const hash = createHash("sha256");
   for await (const chunk of fs.createReadStream(file)) hash.update(chunk);
@@ -156,8 +171,10 @@ export function inspectRestored(root) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const mode = process.argv[2], root = path.resolve(process.argv[3] ?? ".");
-    if (!["dependencies", "capsules", "restored"].includes(mode)) throw new Error("Usage: node scripts/verify-runtime-artifacts.mjs dependencies|capsules|restored [root]");
-    const result = mode === "dependencies" ? inspectDependencies(root) : mode === "capsules" ? await inspectArtifacts(root) : inspectRestored(root);
+    if (!["dependencies", "deployment-dependencies", "capsules", "restored"].includes(mode)) throw new Error("Usage: node scripts/verify-runtime-artifacts.mjs dependencies|deployment-dependencies|capsules|restored [root]");
+    const result = mode === "dependencies" ? inspectDependencies(root)
+      : mode === "deployment-dependencies" ? inspectDeploymentDependencies(root)
+      : mode === "capsules" ? await inspectArtifacts(root) : inspectRestored(root);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = result.ready ? 0 : 1;
   } catch (error) { console.error(error.message); process.exitCode = 1; }
