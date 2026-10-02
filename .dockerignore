@@ -189,8 +189,7 @@ dist/public/**/*.gz
 dist/public/**/*.br
 
 # Python/miscellaneous
-pyproject.toml
-uv.lock
+# Root dependency manifests/locks must survive publishing build reentry.
 main.py
 cookies.txt
 .audit-wal/

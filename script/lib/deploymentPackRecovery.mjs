@@ -1,14 +1,16 @@
 /**
  * Build-only undo journal for the destructive capsulePack API.
  * Only Node builtins are used: invoke this BEFORE npm/tsx on build reentry.
- * Backups remain in the dockerignored .deployment-pack-state directory after
- * success, since a second platform install/build can run in the same tree.
+ * Publishing backups live outside the uploaded workspace, in build-container
+ * /tmp. Local simulations retain their workspace-local recovery directory.
+ * These support reentry in the same build container, not container replacement.
  * They are not runtime payload and must never enter the app-remainder capsule.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 export const RECOVERY_HELPER_PATH = "script/lib/deploymentPackRecovery.mjs";
 const TRANSACTION_PATH = ".deployment-pack-state/transaction";
@@ -39,9 +41,39 @@ function assertRealParents(root, relative) {
   }
 }
 
+export function isPublishingEnvironment(env = process.env) {
+  return env.REPLIT_DEPLOYMENT === "1" ||
+    (typeof env.REPLIT_DEPLOYMENT_ID === "string" && env.REPLIT_DEPLOYMENT_ID.trim().length > 0);
+}
+
+export function deploymentPackStateDirectory(root, env = process.env) {
+  root = path.resolve(root);
+  if (!isPublishingEnvironment(env)) return path.join(root, TRANSACTION_PATH);
+  const identity = createHash("sha256").update(root).update("\0")
+    .update(env.REPLIT_DEPLOYMENT_ID || "publishing").digest("hex");
+  const directory = path.join("/tmp", `maxbooster-build-recovery-${identity}`);
+  if (directory === root || directory.startsWith(`${root}${path.sep}`)) {
+    throw new Error("Publishing recovery must be outside the uploaded workspace");
+  }
+  const stat = fs.lstatSync(directory, { throwIfNoEntry: false });
+  if (stat && (!stat.isDirectory() || stat.isSymbolicLink() ||
+      (process.getuid && stat.uid !== process.getuid()))) {
+    throw new Error("Unsafe publishing recovery directory");
+  }
+  return directory;
+}
+
 function transactionDirectory(root) {
   assertRealParents(root, `${TRANSACTION_PATH}/journal.json`);
-  return path.join(root, TRANSACTION_PATH);
+  const directory = deploymentPackStateDirectory(root);
+  const legacy = path.join(root, TRANSACTION_PATH);
+  // A prior workspace-local journal must be recovered, never silently removed
+  // by payload cleanup. Do not guess which transaction wins if both exist.
+  if (directory !== legacy && fs.existsSync(legacy)) {
+    if (fs.existsSync(directory)) throw new Error("Conflicting local and publishing recovery journals");
+    return legacy;
+  }
+  return directory;
 }
 
 function writeJournal(directory, journal) {
@@ -212,6 +244,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exitCode = 1;
   } else {
     try {
+      if (process.env.PUBLISH_PAYLOAD_CLEANUP === "1" &&
+          !(process.env.DEPLOY_PACK === "1" && isPublishingEnvironment())) {
+        throw new Error("Publishing recovery refused: no platform deployment indicator; workspace left unchanged");
+      }
       recoverDeploymentPack(process.argv[3] || process.cwd());
     } catch (error) {
       console.error("Deployment build recovery failed:", error.message);

@@ -26,3 +26,25 @@ delete them or manufacture missing audio/socket targets to silence warnings.
 Use the specific failed build's logs as evidence. A live URL returning 200
 or general deployment metadata reporting success does not establish that a
 new publishing attempt succeeded.
+
+## Cleanup authorization boundary
+
+The user authorized: “Yes—clean only the publishing copy.”
+
+**Why:** Workspace originals and preserved simulation copies must remain intact.
+
+**How to apply:** Cleanup requires a platform publishing indicator as well as
+the deployment-pack flag. A local simulation's pack flag alone is not permission
+to delete ignored workspace paths. If publishing cannot establish that boundary,
+stop explicitly instead of relaxing the guard. Verify the actual remaining
+payload after cleanup, not a git-tracked approximation.
+
+Publishing retry backups belong outside the uploaded workspace for the lifetime
+of the build container. This is transient undo data, not durable simulation output.
+
+**Why:** A directory merely marked dockerignored can still be traversed/uploaded,
+duplicating the full uncompressed payload and defeating the image budget.
+
+**How to apply:** Preserve same-container retry recovery without shipping backup
+bytes. Do not claim this survives replacement of the build container; retain
+normal model/input validation and keep durable local simulations workspace-backed.

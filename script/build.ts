@@ -19,6 +19,12 @@ import {
 import { validateModelRelease } from "./lib/modelRelease.js";
 import { runPortablePython } from "./lib/portablePython.mjs";
 import {
+  assertPublishingCleanupExpectation,
+  cleanPublishingPayload,
+  isDisposablePublishingCopy,
+  measurePublishingPayload,
+} from "./lib/publishingPayload.js";
+import {
   beginDeploymentPack,
   recoverDeploymentPack,
   RECOVERY_HELPER_PATH,
@@ -28,6 +34,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  // Publishing commands opt into a fail-closed expectation, not authorization.
+  // Check before recovery (which mutates inputs), Vite, or any pack operation.
+  assertPublishingCleanupExpectation(process.env);
   // The deployment command also invokes this dependency-free helper BEFORE
   // npm/tsx, because packing can remove node_modules and build.ts itself.
   recoverDeploymentPack(root);
@@ -122,6 +131,11 @@ async function main() {
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
   const isDeployBuild =
     process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID;
+  // Capture the policy while it is still on disk: app-remainder packing may
+  // remove .dockerignore itself. Missing policy is an explicit build failure.
+  const publishingDockerignore = isDeployBuild
+    ? fs.readFileSync(path.join(root, ".dockerignore"), "utf8")
+    : "";
   let capsuleResults: Array<Awaited<ReturnType<typeof packCapsule>>> = [];
 
   // ─── Portable Python runtime (video/audio analysis + AI sidecar deps) ─────
@@ -309,6 +323,30 @@ async function main() {
     });
   }
 
+  // The Repl-layer uploader can traverse dockerignored workspace state anyway.
+  // Enforce the policy physically ONLY on a platform-marked disposable copy,
+  // after every capsule has finished and before measuring the final payload.
+  // DEPLOY_PACK alone is used by preserved simulations and MUST NOT delete it.
+  if (isDeployBuild && isDisposablePublishingCopy(process.env)) {
+    const requiredPaths = [
+      "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+      "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
+      "scripts/check-port-contract.ts", RECOVERY_HELPER_PATH,
+      ...[...capsuleResults, appRemainderResult]
+        .filter((result): result is NonNullable<typeof result> => result !== null)
+        .flatMap((result) => [
+          path.relative(root, result.capsulePath),
+          path.relative(root, result.manifestPath),
+        ]),
+    ];
+    const cleaned = cleanPublishingPayload({
+      root, env: process.env, dockerignore: publishingDockerignore, requiredPaths,
+    });
+    console.log(`==> Publishing-copy cleanup: removed ${cleaned.removedPaths.length} excluded path(s); bootstrap, recovery helper, manifests and capsules preserved`);
+  } else if (isDeployBuild) {
+    console.log("==> Publishing-copy cleanup skipped: platform deployment indicator absent (DEPLOY_PACK alone is not authorization)");
+  }
+
   // ─── Pre-flight image size check ───────────────────────────────────────
   // Replit's 8 GiB limit includes BOTH the Repl payload and every transitive
   // Nix dependency. Measuring only tracked files/capsules is therefore not a
@@ -322,22 +360,9 @@ async function main() {
   if (isDeployBuild) {
     const hardLimitBytes = 8 * 1024 ** 3;
     const budgetBytes = 7.5 * 1024 ** 3;
-    const { totalBytes: trackedBytes, byTopDir } =
-      getTrackedSizeBreakdown(root);
-    const distBytes = requireMeasuredBytes(path.join(root, "dist"), "dist/");
-    const capsuleBreakdown = [...capsuleResults, appRemainderResult]
-      .filter((r): r is NonNullable<typeof r> => r !== null)
-      .map((r) => ({
-        name: path.basename(r.capsulePath),
-        sizeBytes: r.sizeBytes,
-      }));
-    const capsuleBytes = capsuleBreakdown.reduce(
-      (sum, c) => sum + c.sizeBytes,
-      0,
-    );
+    const { totalBytes: payloadBytes, byTopDir } =
+      measurePublishingPayload(root, publishingDockerignore);
     const nix = getNixClosureSize();
-    const nodeBytes = requireMeasuredBytes(path.join(root, ".node_bin"), "portable Node bootstrap");
-    const payloadBytes = trackedBytes + distBytes + capsuleBytes + nodeBytes;
     const totalBytes = payloadBytes + nix.totalBytes;
     const totalGiB = totalBytes / 1024 ** 3;
 
@@ -355,11 +380,9 @@ async function main() {
           sizeBytes,
         })),
         ...[...byTopDir.entries()].map(([name, sizeBytes]) => ({
-          name: `${name}/ (tracked)`,
+          name: `${name} (actual payload)`,
           sizeBytes,
         })),
-        { name: "dist/ (build output)", sizeBytes: distBytes },
-        ...capsuleBreakdown,
       ].sort((a, b) => b.sizeBytes - a.sizeBytes);
       console.error(
         "❌ Pre-flight image size verification failed. Largest contributors:",
@@ -400,16 +423,6 @@ export function duBytesOrNull(target: string): number | null {
   } catch {
     return null;
   }
-}
-
-function requireMeasuredBytes(target: string, label: string): number {
-  const measured = duBytesOrNull(target);
-  if (measured === null) {
-    throw new Error(
-      `deploy image pre-flight size check: could not measure ${label}; refusing to report a false PASS`,
-    );
-  }
-  return measured;
 }
 
 type NixClosureMeasurement = {
@@ -588,34 +601,6 @@ print(json.dumps({
       { cause: error },
     );
   }
-}
-
-/** Sums the real on-disk size of every git-tracked file (what a deploy build actually ships,
- * as opposed to `du` on the project root which is dominated by gitignored dev-tooling caches),
- * grouped by top-level directory for attributing which part of the tracked tree is heaviest. */
-function getTrackedSizeBreakdown(root: string): {
-  totalBytes: number;
-  byTopDir: Map<string, number>;
-} {
-  const out = execSync("git ls-files -z", {
-    cwd: root,
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  const files = out.toString("utf8").split("\0").filter(Boolean);
-  let totalBytes = 0;
-  const byTopDir = new Map<string, number>();
-  for (const rel of files) {
-    let size = 0;
-    try {
-      size = fs.statSync(path.join(root, rel)).size;
-    } catch {
-      continue; // tracked but deleted-on-disk file; nothing to ship for it
-    }
-    totalBytes += size;
-    const top = rel.includes("/") ? rel.split("/")[0] : "(root files)";
-    byTopDir.set(top, (byTopDir.get(top) ?? 0) + size);
-  }
-  return { totalBytes, byTopDir };
 }
 
 if (
