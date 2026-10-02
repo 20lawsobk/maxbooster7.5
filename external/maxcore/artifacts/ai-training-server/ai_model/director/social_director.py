@@ -4,7 +4,8 @@ Wraps compose_caption with Director enhancements:
 - Story Bible context woven into the brief
 - Platform-specific directives from research
 - Awareness trends in the language
-- Critic loop iteration
+- Iterative critic loop with real brief mutation
+- Error boundaries with graceful fallback
 """
 from __future__ import annotations
 
@@ -14,6 +15,8 @@ from .story_bible import StoryBible
 from .awareness_bus import AwarenessSnapshot
 from .platforms import get_platform_directive
 from .critic import Critic, CritiqueReport
+from .iterative import IterativeLoop, mutate_social_params
+from .observability import get_logger
 
 
 class SocialDirector:
@@ -21,6 +24,8 @@ class SocialDirector:
 
     def __init__(self):
         self.critic = Critic()
+        self.loop = IterativeLoop(critic=self.critic, max_iterations=5)
+        self.log = get_logger("social_director")
 
     def direct(
         self,
@@ -31,71 +36,78 @@ class SocialDirector:
         goal: str = "drive_engagement",
         bible: Optional[StoryBible] = None,
         awareness: Optional[AwarenessSnapshot] = None,
-        max_iterations: int = 3,
+        max_iterations: int = 5,
     ) -> Dict:
-        """Generate platform-native social copy with critic iteration."""
+        """Generate platform-native social copy with iterative critic loop."""
         from ai_model.request_intelligence import (
             build_brief, compose_caption,
         )
 
-        # Build the brief with Director context.
-        brief_kwargs = dict(
-            modality="text",
-            platform=platform,
+        self.log.info("direct_start", platform=platform, topic=topic[:40])
+
+        # Build initial params.
+        params = dict(
             topic=topic,
-            goal=goal,
-            genre=genre,
             artist=artist,
+            platform=platform,
+            genre=genre,
+            goal=goal,
+            bible=bible,
+            awareness=awareness,
         )
 
-        # Weave Story Bible into the topic/narrative.
-        if bible and bible.is_complete():
-            # The emotional core becomes part of the creative direction.
-            brief_kwargs["narrative"] = bible.emotional_core
-
-        # Weave awareness trends.
-        awareness_str = ""
-        if awareness and awareness.has_landscape():
-            awareness_str = " | ".join(awareness.hashtags[:5])
-            brief_kwargs["awareness"] = awareness_str
-
-        brief = build_brief(**brief_kwargs)
-
-        # Platform directive from research.
-        directive = get_platform_directive(platform)
-
-        best = None
-        best_score = -1
-
-        for iteration in range(max_iterations):
-            result = compose_caption(
-                topic, artist, brief, genre=genre, variants=3,
+        def generate(p: Dict) -> Dict:
+            brief_kwargs = dict(
+                modality="text",
+                platform=p["platform"],
+                topic=p["topic"],
+                goal=p["goal"],
+                genre=p.get("genre", ""),
+                artist=p["artist"],
             )
-            caption = result.get("caption", "")
+            if p.get("bible") and p["bible"].is_complete():
+                brief_kwargs["narrative"] = p["bible"].emotional_core
+            if p.get("awareness") and p["awareness"].has_landscape():
+                brief_kwargs["awareness"] = " | ".join(p["awareness"].hashtags[:5])
+            # Mutated keywords from critic feedback.
+            if p.get("keywords"):
+                brief_kwargs["themes"] = p["keywords"][:6]
 
-            # Critique.
-            report = self.critic.critique_social(
-                caption,
-                hook=result.get("hook", ""),
-                body=result.get("body", ""),
-                cta=result.get("cta", ""),
+            brief = build_brief(**brief_kwargs)
+            result = compose_caption(
+                p["topic"], p["artist"], brief,
+                genre=p.get("genre", ""), variants=3,
+            )
+            return result
+
+        def critique(output: Dict) -> CritiqueReport:
+            return self.critic.critique_social(
+                output.get("caption", ""),
+                hook=output.get("hook", ""),
+                body=output.get("body", ""),
+                cta=output.get("cta", ""),
                 platform=platform,
             )
 
-            score = sum(c.score for c in report.critiques) / max(1, len(report.critiques))
-            if score > best_score:
-                best_score = score
-                best = result
-                best["critique"] = report.summary()
-                best["iterations"] = iteration + 1
+        # Run the iterative loop.
+        self.loop.max_iterations = max_iterations
+        result = self.loop.run(generate, critique, mutate_social_params, params)
 
-            if report.passed():
-                break
+        if "error" in result:
+            self.log.error("direct_failed", error=result["error"])
+            # Fallback: minimal viable output, never empty.
+            return {
+                "caption": f"{artist} — {topic} out now.",
+                "hook": f"{topic} out now",
+                "body": "",
+                "cta": "Stream now",
+                "platform": platform,
+                "fallback": True,
+            }
 
-            # If failed, the next iteration uses the critique to adjust.
-            # (In the full system, this would modify the brief; for now,
-            # we accept the best of N iterations.)
-
-        best["platform_directive"] = directive["social"]
-        best["platform"] = platform
-        return best
+        result["platform_directive"] = get_platform_directive(platform)["social"]
+        result["platform"] = platform
+        self.log.info("direct_complete",
+                      score=result.get("final_score"),
+                      iterations=result.get("iteration", 0) + 1)
+        return result

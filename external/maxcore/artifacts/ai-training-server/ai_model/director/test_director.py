@@ -115,5 +115,81 @@ class CampaignDirectorTests(unittest.TestCase):
         self.assertEqual(len(output.social), 3)
 
 
+class IterativeLoopTests(unittest.TestCase):
+    def test_loop_improves(self):
+        from ai_model.director.iterative import IterativeLoop
+        from ai_model.director.critic import Critic
+
+        calls = []
+
+        def generate(params):
+            calls.append(dict(params))
+            # Simulate improvement when keywords are added.
+            kw = params.get("keywords", [])
+            score_boost = len(kw) * 0.1
+            return {"score_boost": score_boost, "caption": "test " * 10}
+
+        def critique(output):
+            from ai_model.director.critic import CritiqueReport, Critique
+            boost = output.get("score_boost", 0)
+            return CritiqueReport(critiques=[
+                Critique("engagement", 0.5 + boost, 0.65, "", ""),
+            ])
+
+        def mutate(params, failures):
+            params = dict(params)
+            kw = list(params.get("keywords", []))
+            kw.append("fire")
+            params["keywords"] = kw
+            return params
+
+        loop = IterativeLoop(max_iterations=3)
+        result = loop.run(generate, critique, mutate, {"topic": "x"})
+        # Should have mutated (added keywords) across iterations.
+        self.assertTrue(len(calls) >= 2)
+        self.assertIn("loop_history", result)
+
+    def test_loop_handles_generation_failure(self):
+        from ai_model.director.iterative import IterativeLoop
+
+        def bad_generate(params):
+            raise ValueError("boom")
+
+        def critique(output):
+            from ai_model.director.critic import CritiqueReport
+            return CritiqueReport()
+
+        loop = IterativeLoop(max_iterations=2)
+        result = loop.run(bad_generate, critique, lambda p, f: p, {})
+        self.assertIn("error", result)
+
+
+class ConfigTests(unittest.TestCase):
+    def test_defaults(self):
+        from ai_model.director import config
+        self.assertEqual(config.get("loop.max_iterations"), 5)
+        self.assertEqual(config.get("nonexistent", "fallback"), "fallback")
+
+    def test_env_override(self):
+        import os
+        from ai_model.director import config
+        os.environ["DIRECTOR_LOOP_MAX_ITERATIONS"] = "10"
+        try:
+            self.assertEqual(config.get("loop.max_iterations"), 10)
+        finally:
+            del os.environ["DIRECTOR_LOOP_MAX_ITERATIONS"]
+
+
+class PersistenceTests(unittest.TestCase):
+    def test_save_load_bible(self):
+        from ai_model.director.persistence import save_bible, load_bible
+        import uuid
+        bid = f"test_{uuid.uuid4().hex[:8]}"
+        data = {"artist": "Test", "emotional_core": "test core"}
+        self.assertTrue(save_bible(bid, data))
+        loaded = load_bible(bid)
+        self.assertEqual(loaded["artist"], "Test")
+
+
 if __name__ == "__main__":
     unittest.main()

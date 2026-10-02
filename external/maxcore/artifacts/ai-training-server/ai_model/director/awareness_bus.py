@@ -49,6 +49,8 @@ class AwarenessBus:
     def __init__(self):
         self._landscape_cache: Optional[dict] = None
         self._platform_cache: Optional[dict] = None
+        from .analytics import FeedbackLoop
+        self.feedback = FeedbackLoop()
 
     def snapshot(
         self,
@@ -100,8 +102,15 @@ class AwarenessBus:
         except Exception:
             pass
 
-        # Stream 3: Performance (placeholder — wired when analytics available)
-        # In production, this reads from the analytics store.
+        # Stream 3: Performance (feedback loop).
+        # When analytics is connected, real engagement data informs generation.
+        try:
+            for plat in (platforms or []):
+                hints = self.feedback.get_hints(plat)
+                if hints:
+                    snap.performance_hints[plat] = hints.get("top_pattern", "")
+        except Exception:
+            pass
 
         return snap
 
