@@ -1,0 +1,680 @@
+{
+  "runId": "2026-10-02T00-28-30-671Z",
+  "workspace": "/home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z (disposable isolated copy; remove with --cleanup)",
+  "commands": {
+    "build": "DEPLOY_PACK=1 npm run build",
+    "start": "bash start.sh"
+  },
+  "safety": {
+    "sourceRoot": "/home/runner/workspace",
+    "sourceRootUsedAsBuildCwd": false,
+    "sourceFilesMutated": false,
+    "excluded": [
+      ".replit",
+      ".git",
+      "data",
+      "logs",
+      "attached_assets",
+      "*.env secrets",
+      "dns-node/keys"
+    ],
+    "networkCredentialsProvided": false,
+    "thirdPartyOrLiveDatabaseTargeted": false,
+    "runtimeIsolationPolicy": {
+      "required": true,
+      "transport": "Unprivileged Linux user+network namespace; only namespace-local loopback is reachable by the app and every native/Python descendant",
+      "filesystem": "all build and runtime writes are rooted in the disposable copy; source credentials, data, logs, media, and VCS metadata are excluded",
+      "credentials": "env-i style allowlist; generated simulation-only secrets; ephemeral local PostgreSQL only"
+    },
+    "hostNetworkNamespace": "net:[4026532720]",
+    "runtimeNetworkNamespace": null,
+    "runtimeIsolationEnforced": false,
+    "deployPackOnSourceWorkspace": false,
+    "networkNamespacePreflight": {
+      "available": true,
+      "exitCode": 0,
+      "signal": null,
+      "error": "",
+      "classification": "supported unprivileged user+network namespace with namespace-local loopback"
+    }
+  },
+  "resourceProfile": {
+    "configured": {
+      "cpu": 4,
+      "memoryBytes": 8589934592,
+      "imageHardLimitBytes": 8589934592
+    },
+    "observed": {
+      "cpuQuota": 4,
+      "logicalCpuCount": 4,
+      "memoryLimitBytes": 8589934592,
+      "memoryCurrentBytes": 2018365440,
+      "memoryHeadroomBytes": 6571569152,
+      "diskAvailableBytes": 223750438912,
+      "filesystemUsedUpperBoundBytes": 50142265344
+    },
+    "admission": {
+      "safe": true,
+      "reasons": [],
+      "estimatedScratchBytes": 100284530688
+    }
+  },
+  "sourceSnapshot": {
+    "capturedAt": "2026-10-02T00:29:20.736Z",
+    "note": "Build and capsule artifacts use the immutable disposable copy captured at copy stage. The bootstrap restore module was explicitly synchronized from current source after capture. Later simulation-controller changes affect verification reporting, not app startup behavior."
+  },
+  "nodeResolution": {
+    "bundledNodePresentInCopy": false,
+    "pathNodeProbe": {
+      "exitCode": 0,
+      "output": "/nix/store/bf45nflf0wylnscwwa2xgliib91x226l-nodejs-22.22.0/bin/node\nv22.22.0\n",
+      "error": ""
+    },
+    "startScriptEvidence": null
+  },
+  "copyIntegrity": {
+    "checked": [
+      {
+        "path": "node_modules/@sentry/core/build/esm/logs/public-api.js",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 986,
+        "copyBytes": 986,
+        "sourceSha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b",
+        "copySha256": "57b34a93897018525bee345657b99ed84bb39c1cbc25fa19e0aaf0787f925c5b"
+      },
+      {
+        "path": "node_modules/vite/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5158,
+        "copyBytes": 5158,
+        "sourceSha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0",
+        "copySha256": "e5ed0f85215f871fe22a48987dcd77fcfbe14064a53c0c9f7f48186a6b7e2cf0"
+      },
+      {
+        "path": "node_modules/tsx/package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1601,
+        "copyBytes": 1601,
+        "sourceSha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659",
+        "copySha256": "96aee9fd252d0cc31f3c01468250961f5b338c797bc208700d7db926450c7659"
+      },
+      {
+        "path": "python_runtime/bin/python3.12",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 100186336,
+        "copyBytes": 100186336,
+        "sourceSha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929",
+        "copySha256": "56e774729366f339bc30a8495bf11109a5ba98baf38e3024e109ebbca59fa929"
+      },
+      {
+        "path": "python_runtime/lib/python3.12/site-packages/pip/_vendor/certifi/cacert.pem",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 270954,
+        "copyBytes": 270954,
+        "sourceSha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+        "copySha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+      },
+      {
+        "path": ".dockerignore",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 6205,
+        "copyBytes": 6205,
+        "sourceSha256": "673f8b07382d14b411fe6c60b67f8b74ee84bb0da4e8c9b490c468c1994028e2",
+        "copySha256": "673f8b07382d14b411fe6c60b67f8b74ee84bb0da4e8c9b490c468c1994028e2"
+      },
+      {
+        "path": "build.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 423,
+        "copyBytes": 423,
+        "sourceSha256": "448fdb4b98afcd574beca5d58fb66cf01304d8c6cfb3038d235066813228af0f",
+        "copySha256": "448fdb4b98afcd574beca5d58fb66cf01304d8c6cfb3038d235066813228af0f"
+      },
+      {
+        "path": "package.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 15190,
+        "copyBytes": 15190,
+        "sourceSha256": "7e7cf1f6a9fc1aa631c7d8d828ab9e58d3315952dd4f9f784f4dd2f6bdbac065",
+        "copySha256": "7e7cf1f6a9fc1aa631c7d8d828ab9e58d3315952dd4f9f784f4dd2f6bdbac065"
+      },
+      {
+        "path": "script/build.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 26876,
+        "copyBytes": 26876,
+        "sourceSha256": "a63ed409ceb7a850a517e715024698af43a2859f3199377d14899057ab10b6c6",
+        "copySha256": "a63ed409ceb7a850a517e715024698af43a2859f3199377d14899057ab10b6c6"
+      },
+      {
+        "path": "scripts/boosterstate-toolchain.nix",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 326,
+        "copyBytes": 326,
+        "sourceSha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02",
+        "copySha256": "c29cc29cb89ba60b0fcdcc5451c09eadbb95fa427e20e50a7dacee2d8eecec02"
+      },
+      {
+        "path": "scripts/build-boosterstate.sh",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2004,
+        "copyBytes": 2004,
+        "sourceSha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090",
+        "copySha256": "a888abbd2750adb33435285469e5cd536abe7adb57ee4e19308b449d41983090"
+      },
+      {
+        "path": "scripts/lib/productionSimulationPolicy.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3275,
+        "copyBytes": 3275,
+        "sourceSha256": "f545633995fdb69d4debbd11d25a661117b3ac13544b128b399c248fc12f7cf5",
+        "copySha256": "f545633995fdb69d4debbd11d25a661117b3ac13544b128b399c248fc12f7cf5"
+      },
+      {
+        "path": "scripts/simulate-production.mjs",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 99377,
+        "copyBytes": 99377,
+        "sourceSha256": "4c098d4d6b1b775d8226e6ec56fabd5f1324bb35b08c35758855d531cbae7d50",
+        "copySha256": "4c098d4d6b1b775d8226e6ec56fabd5f1324bb35b08c35758855d531cbae7d50"
+      },
+      {
+        "path": "server/routes/distribution.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 285871,
+        "copyBytes": 285871,
+        "sourceSha256": "f96f6e35770ed2a83656a4df7f06bddf979a465fc716903fc052e97fac34f1d0",
+        "copySha256": "f96f6e35770ed2a83656a4df7f06bddf979a465fc716903fc052e97fac34f1d0"
+      },
+      {
+        "path": "server/services/toolostRuntimeConfig.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 705,
+        "copyBytes": 705,
+        "sourceSha256": "49981a286dbd4c2246ec7927e3c09cb0584ea623e1f3dc109da76ac7ff7f53b7",
+        "copySha256": "49981a286dbd4c2246ec7927e3c09cb0584ea623e1f3dc109da76ac7ff7f53b7"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/server.py",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 580688,
+        "copyBytes": 580688,
+        "sourceSha256": "7ffd279a3ee04a3db4c9900f3e6bee5525e5a9bda1055a9791381aab4c885f4a",
+        "copySha256": "7ffd279a3ee04a3db4c9900f3e6bee5525e5a9bda1055a9791381aab4c885f4a"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 444,
+        "copyBytes": 444,
+        "sourceSha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3",
+        "copySha256": "84b2d85f4ba64d97bd1e35bf939bd7faef533c5abaa1edd62d6aff6121dedef3"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 109368185,
+        "copyBytes": 109368185,
+        "sourceSha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419",
+        "copySha256": "80c19ffc3ec155808f0a2a3ce5b75f09e203d336ebf3e076144dd6e970d3b419"
+      },
+      {
+        "path": "external/pdim/artifacts/api-server/src/index.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 11339,
+        "copyBytes": 11339,
+        "sourceSha256": "c89d46fad1a4c193fb55a625ef1ee29fb2725bef702955bd9f6ec0be0e9ba979",
+        "copySha256": "c89d46fad1a4c193fb55a625ef1ee29fb2725bef702955bd9f6ec0be0e9ba979"
+      },
+      {
+        "path": "tests/fixtures/pdim-recovery-cluster-fixture.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 4485,
+        "copyBytes": 4485,
+        "sourceSha256": "16e6af40755516de5b04da56d2ba7436727819de36142637a7612b2b47d51328",
+        "copySha256": "16e6af40755516de5b04da56d2ba7436727819de36142637a7612b2b47d51328"
+      },
+      {
+        "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 1207,
+        "copyBytes": 1207,
+        "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+        "copySha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47"
+      },
+      {
+        "path": "tests/unit/maxcore-cluster-ownership.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 4412,
+        "copyBytes": 4412,
+        "sourceSha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086",
+        "copySha256": "db5d20fcb9d727264284377ce943a2c95fb18dd41dea1f42992ca1e54ce11086"
+      },
+      {
+        "path": "tests/unit/maxcore-python-launcher.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2416,
+        "copyBytes": 2416,
+        "sourceSha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6",
+        "copySha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6"
+      },
+      {
+        "path": "tests/unit/compute-sizing-cpu-share.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 3993,
+        "copyBytes": 3993,
+        "sourceSha256": "bd827e9c9890da9ba673f532c68cbbd3013c5710286e7292da9d10a4e33688ef",
+        "copySha256": "bd827e9c9890da9ba673f532c68cbbd3013c5710286e7292da9d10a4e33688ef"
+      },
+      {
+        "path": "tests/unit/maxcore-readiness-gate.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 2118,
+        "copyBytes": 2118,
+        "sourceSha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea",
+        "copySha256": "656c2facb8636c20428335e09da5c22036e3301b1b55197d77f87fcac6bb8fea"
+      },
+      {
+        "path": "tests/unit/pdim-recovery-cluster-integration.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 5294,
+        "copyBytes": 5294,
+        "sourceSha256": "85a5e5259d3bc4c1aa368ff0ae163d569ec53eea6ccfe1000fdb19bae6d6c815",
+        "copySha256": "85a5e5259d3bc4c1aa368ff0ae163d569ec53eea6ccfe1000fdb19bae6d6c815"
+      },
+      {
+        "path": "tests/unit/pdim-recovery-operator.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 7534,
+        "copyBytes": 7534,
+        "sourceSha256": "4ce2ed2099ff0f6df0190dcd47de893ffa8c44c3728c47ab8d7d5573db6b9134",
+        "copySha256": "4ce2ed2099ff0f6df0190dcd47de893ffa8c44c3728c47ab8d7d5573db6b9134"
+      },
+      {
+        "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 8619,
+        "copyBytes": 8619,
+        "sourceSha256": "bf2d07167ddcb69538c3da25d77e319579f71e0d43e231724c0cabe0e724214b",
+        "copySha256": "bf2d07167ddcb69538c3da25d77e319579f71e0d43e231724c0cabe0e724214b"
+      },
+      {
+        "path": "tests/unit/toolost-runtime-config.test.ts",
+        "sourcePresent": true,
+        "copyPresent": true,
+        "sourceBytes": 910,
+        "copyBytes": 910,
+        "sourceSha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd",
+        "copySha256": "074329442e67447953b6962a47bad522dab306542eb10d9a0d7bd80c36f0d6fd"
+      }
+    ],
+    "passed": true
+  },
+  "configValidation": {
+    "checked": [
+      {
+        "path": "package.json",
+        "present": true,
+        "bytes": 15190
+      },
+      {
+        "path": "start.sh",
+        "present": true,
+        "bytes": 16323
+      },
+      {
+        "path": "script/build.ts",
+        "present": true,
+        "bytes": 26876
+      },
+      {
+        "path": "dist/pdim-restore.mjs",
+        "present": true,
+        "bytes": 33028
+      }
+    ],
+    "passed": true
+  },
+  "build": {
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 1191813,
+    "artifacts": {
+      "dist/index.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/cluster.mjs": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/public/index.html": {
+        "present": false,
+        "packedIntoAppRemainder": true
+      },
+      "dist/pdim-restore.mjs": {
+        "present": true,
+        "bytes": 31525
+      },
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 152270153
+      },
+      "node_modules.manifest.json": {
+        "present": true,
+        "bytes": 182
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7502283
+      },
+      "app_remainder.manifest.json": {
+        "present": true,
+        "bytes": 156
+      }
+    },
+    "outputTail": [
+      "Collecting soundfile==0.14.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 40))",
+      "  Downloading soundfile-0.14.0-py2.py3-none-manylinux_2_28_x86_64.whl (1.3 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 211.6 MB/s  0:00:00",
+      "Collecting soxr==1.1.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 41))",
+      "  Downloading soxr-1.1.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (240 kB)",
+      "Collecting starlette==1.3.1 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 42))",
+      "  Downloading starlette-1.3.1-py3-none-any.whl (73 kB)",
+      "Collecting sympy==1.14.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 43))",
+      "  Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 191.7 MB/s  0:00:00",
+      "Collecting threadpoolctl==3.6.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 44))",
+      "  Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)",
+      "Collecting torch==2.13.0+cpu (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 45))",
+      "  Downloading https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)",
+      "     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.8/191.8 MB 207.7 MB/s  0:00:00",
+      "Collecting typing-extensions==4.15.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 46))",
+      "  Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)",
+      "Collecting typing-inspection==0.4.2 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 47))",
+      "  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)",
+      "Collecting urllib3==2.7.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 48))",
+      "  Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)",
+      "Collecting uvicorn==0.49.0 (from -r /home/runner/workspace/.local/production-simulation/runs/2026-10-02T00-28-30-671Z/app/python_runtime/requirements.lock (line 49))",
+      "  Downloading uvicorn-0.49.0-py3-none-any.whl (71 kB)",
+      "Installing collected packages: mpmath, urllib3, typing-extensions, threadpoolctl, sympy, setuptools, pycparser, psycopg2-binary, platformdirs, pillow, packaging, numpy, networkx, narwhals, msgpack, markupsafe, llvmlite, joblib, idna, h11, fsspec, filelock, decorator, click, charset-normalizer, certifi, audioread, annotated-types, annotated-doc, uvicorn, typing-inspection, soxr, scipy, requests, pydantic-core, numba, lazy-loader, jinja2, cffi, anyio, torch, starlette, soundfile, scikit-learn, pydantic, pooch, librosa, fastapi",
+      "Successfully installed annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.14.2 audioread-3.1.0 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 click-8.4.1 decorator-5.3.1 fastapi-0.136.3 filelock-3.29.3 fsspec-2026.4.0 h11-0.16.0 idna-3.18 jinja2-3.1.6 joblib-1.5.3 lazy-loader-0.5 librosa-0.11.0 llvmlite-0.47.0 markupsafe-3.0.3 mpmath-1.3.0 msgpack-1.2.1 narwhals-2.22.1 networkx-3.6.1 numba-0.65.1 numpy-2.4.6 packaging-26.2 pillow-12.3.0 platformdirs-4.10.0 pooch-1.9.0 psycopg2-binary-2.9.12 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 requests-2.34.2 scikit-learn-1.9.0 scipy-1.17.1 setuptools-83.0.0 soundfile-0.14.0 soxr-1.1.0 starlette-1.3.1 sympy-1.14.0 threadpoolctl-3.6.0 torch-2.13.0+cpu typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.7.0 uvicorn-0.49.0",
+      "2.13.0+cpu",
+      "   ✅ Portable Python runtime ready → python_runtime/",
+      "==> Packing 4 capsule(s) concurrently across 4 CPU(s) → 1 zstd thread(s) each",
+      "==> Packing python_runtime/ → python_runtime.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing node_modules/ → node_modules.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/maxcore/ → external_maxcore.pdim (zstd-19, -T1, Extract & Boot)...",
+      "==> Packing external/pdim/ → external_pdim.pdim (zstd-19, -T1, Extract & Boot)...",
+      "   ✅ external/pdim/ packed (40MB) and removed from image",
+      "   ✅ external/maxcore/ packed (556MB) and removed from image",
+      "   ✅ node_modules/ packed (145MB) and removed from image",
+      "   ✅ python_runtime/ packed (308MB) and removed from image",
+      "==> Scanned .dockerignore-survivor payload: 2143 file(s) remaining outside the four existing capsules and the boot bootstrap set (start.sh, .node_bin, scripts/boot-stub-server.mjs, scripts/port-contract.sh, scripts/check-port-contract.ts, dist/pdim-restore.mjs, dist/.db-indexes-ok, .replit, .git, node_modules, python_runtime, external/maxcore, external/pdim, node_modules.pdim, node_modules.manifest.json, python_runtime.pdim, python_runtime.manifest.json, external_maxcore.pdim, external_maxcore.manifest.json, external_pdim.pdim, external_pdim.manifest.json)",
+      "==> Packing 2143 remaining app files → app_remainder.pdim (zstd-19, -T4, Extract & Boot)...",
+      "   ✅ 2143 files packed (7MB) and removed from image",
+      "==> Pre-flight image size check: 1.47 GiB (1.17 GiB Repl payload + 0.30 GiB deduplicated Nix closure; 10/10 Nix roots accounted for; safety budget 7.5 GiB, hard limit 8 GiB)"
+    ],
+    "nixPreflight": {
+      "totalGiB": 1.47,
+      "payloadGiB": 1.17,
+      "nixClosureGiB": 0.3,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "toolchain": {
+      "nix-shell": "/nix/store/2mpy2a5x1psx3i2za4i0hk97dpyw5g52-replit-runtime-path/bin/nix-shell",
+      "curl": "/nix/store/2mpy2a5x1psx3i2za4i0hk97dpyw5g52-replit-runtime-path/bin/curl",
+      "tar": "/nix/store/7nilh5hvnfbsx3vn020pkjkgx9rgsizb-gnutar-1.35/bin/tar",
+      "zstd": "/nix/store/ddap6dm3fjdm0zmw4m3rls73a0gml3xd-zstd-1.5.7-bin/bin/zstd"
+    },
+    "gitIndexPreparation": {
+      "method": "source tracked index copy plus explicit required source anchors; no work-tree add and no LFS filtering",
+      "indexedPathCount": 6459,
+      "requiredIndexAnchors": [
+        ".gitattributes",
+        "script/lib/modelRelease.ts",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
+        "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "scripts/boosterstate-toolchain.nix",
+        "scripts/build-boosterstate.sh",
+        "server/services/toolostRuntimeConfig.ts",
+        "server/computeSizing.ts",
+        "server/middleware/csrf.ts",
+        "tests/fixtures/pdim-recovery-cluster-fixture.ts",
+        "tests/fixtures/retained-pdim-source-fixture-worker.ts",
+        "tests/unit/maxcore-cluster-ownership.test.ts",
+        "tests/unit/maxcore-python-launcher.test.ts",
+        "tests/unit/compute-sizing-cpu-share.test.ts",
+        "tests/unit/maxcore-readiness-gate.test.ts",
+        "tests/unit/pdim-recovery-cluster-integration.test.ts",
+        "tests/unit/pdim-recovery-operator.test.ts",
+        "tests/unit/retained-pdim-recovery-simulation.test.ts",
+        "tests/unit/toolost-runtime-config.test.ts"
+      ],
+      "boundedTimeouts": true
+    }
+  },
+  "pythonCapability": {
+    "status": "production_build_imports_passed",
+    "note": "The production build recreates the pinned portable Python runtime. No provider credentials are available; package and fixed runtime downloads are build-time only."
+  },
+  "capsuleRestore": {
+    "buildCapsules": {
+      "nodeModules": {
+        "present": true,
+        "bytes": 152270153
+      },
+      "appRemainder": {
+        "present": true,
+        "bytes": 7502283
+      },
+      "pythonRuntime": {
+        "present": true,
+        "bytes": 322621923
+      },
+      "nodeModulesRemovedBeforeColdBoot": true,
+      "freshSourceBuild": true
+    },
+    "manifestValidation": [
+      {
+        "capsule": "node_modules.pdim",
+        "manifest": "node_modules.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "d6dd2e88d26304867e4ad356730456e033020b086ba7a644850d62492887f9bf",
+        "actualSha256": "d6dd2e88d26304867e4ad356730456e033020b086ba7a644850d62492887f9bf",
+        "bytes": 152270153,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "app_remainder.pdim",
+        "manifest": "app_remainder.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "e905c39699b36f1c25a7f76efbc72f47c0302d490b8be9b47a012cf8e1efb647",
+        "actualSha256": "e905c39699b36f1c25a7f76efbc72f47c0302d490b8be9b47a012cf8e1efb647",
+        "bytes": 7502283,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "python_runtime.pdim",
+        "manifest": "python_runtime.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "652559484cb78fd497bc7fbca8c7f322499db288f06215cec1cbf4758725021a",
+        "actualSha256": "652559484cb78fd497bc7fbca8c7f322499db288f06215cec1cbf4758725021a",
+        "bytes": 322621923,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_maxcore.pdim",
+        "manifest": "external_maxcore.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "4adb03684c341ac924dd3c3a61e56627ab05504516f98413c000db7fed8bad66",
+        "actualSha256": "4adb03684c341ac924dd3c3a61e56627ab05504516f98413c000db7fed8bad66",
+        "bytes": 583060049,
+        "provenance": "current-source build artifact"
+      },
+      {
+        "capsule": "external_pdim.pdim",
+        "manifest": "external_pdim.manifest.json",
+        "historical": false,
+        "present": true,
+        "passed": true,
+        "expectedSha256": "eee0b4d2a08e45aeed324de109ed62466707f1677fb3a58e5436e916b6d9f68a",
+        "actualSha256": "eee0b4d2a08e45aeed324de109ed62466707f1677fb3a58e5436e916b6d9f68a",
+        "bytes": 41776092,
+        "provenance": "current-source build artifact"
+      }
+    ],
+    "historicalCompatibility": [],
+    "coldCriticalRestore": {
+      "exitCode": 1,
+      "nodeModulesSentinel": false,
+      "appRemainderSentinel": true,
+      "appEntryPointsPresentAfterRestore": true,
+      "pythonRuntimeSentinel": true,
+      "reusedAppRemainderEntries": 2143,
+      "outputTail": [
+        "[pdim-restore] ✅ app remainder restored from app_remainder.pdim (81 top-level entries; reused 2143 identical entries from a prior merge)",
+        "[pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim",
+        "tar: node_modules/.bin: Directory renamed before its status could be extracted",
+        "tar: Exiting with failure status due to previous errors",
+        "[pdim-restore] ERROR: tar exited with fatal code 2",
+        "[pdim-restore] FATAL: critical restore failed (node_modules: false, app remainder: true, Python: true)"
+      ],
+      "priorSuccessfulAttemptEvidence": "diagnostics/pre-resume-restore/cold-critical-restore.log shows the earlier critical restore completed; retained as supporting evidence, not a substitute for this failed retry."
+    },
+    "coldBackgroundRestore": {
+      "exitCode": 1,
+      "maxcoreSentinel": false,
+      "pdimSentinel": true,
+      "outputTail": [
+        "tar: external/maxcore/artifacts/ai-dashboard/node_modules: Directory renamed before its status could be extracted",
+        "tar: external/maxcore/artifacts/ai-dashboard: Directory renamed before its status could be extracted",
+        "tar: Exiting with failure status due to previous errors",
+        "[pdim-restore] ERROR: tar exited with fatal code 2",
+        "[pdim-restore] Background capsule restoration failed"
+      ],
+      "historicalInputs": false,
+      "securityReadiness": "current captured source restored with manifest verification"
+    },
+    "warmIdempotentRestore": null
+  },
+  "imageSize": {
+    "totalBytes": 1529831281,
+    "totalGiB": 1.425,
+    "nixPreflight": {
+      "totalGiB": 1.47,
+      "payloadGiB": 1.17,
+      "nixClosureGiB": 0.3,
+      "rootsAccounted": 10,
+      "rootsDiscovered": 10,
+      "scope": "sanitized simulation PATH/environment only; not a target image closure claim"
+    },
+    "capsules": {
+      "node_modules.pdim": {
+        "present": true,
+        "bytes": 152270153
+      },
+      "app_remainder.pdim": {
+        "present": true,
+        "bytes": 7502283
+      },
+      "python_runtime.pdim": {
+        "present": true,
+        "bytes": 322621923
+      },
+      "external_maxcore.pdim": {
+        "present": true,
+        "bytes": 583060049
+      },
+      "external_pdim.pdim": {
+        "present": true,
+        "bytes": 41776092
+      }
+    },
+    "underHardLimit": true,
+    "note": "Disposable simulation image footprint built from the captured current source. Nix preflight scope is the sanitized PATH/environment and may differ from the target image."
+  },
+  "productionReadiness": {
+    "publishReady": false,
+    "reason": "Not evaluated: cold node_modules and MaxCore restores did not complete in the quota-limited sandbox, so startup/readiness were not attempted and no publish-ready claim is made."
+  },
+  "startup": {
+    "exitCode": null,
+    "signal": null,
+    "liveness": {
+      "observed": false,
+      "transportOnly": false,
+      "realServer": false,
+      "jsonObserved": false,
+      "earlyAppResponse": false,
+      "startupResponseObserved": false,
+      "samples": []
+    },
+    "readiness": {
+      "observed": false,
+      "fullReady": false,
+      "statusCodes": [],
+      "lastBody": null,
+      "note": null
+    },
+    "attempts": []
+  },
+  "failures": [
+    {
+      "stage": "capsule-restore",
+      "message": "Cold critical restore failed: GNU tar exited 2 while extracting node_modules with repeated 'Directory renamed before its status could be extracted' errors; the node_modules sentinel was absent."
+    },
+    {
+      "stage": "capsule-restore",
+      "message": "Cold background restore failed: GNU tar exited 2 while extracting external/maxcore; the MaxCore sentinel was absent."
+    },
+    {
+      "stage": "harness",
+      "message": "The simulation controller hit a log WriteStream failure with errno -122 (disk quota exceeded) before it could persist the restore-stage report. Startup/readiness were not attempted."
+    }
+  ],
+  "result": "HARNESS_FAILED",
+  "completedStages": [
+    "copy",
+    "build",
+    "size"
+  ]
+}

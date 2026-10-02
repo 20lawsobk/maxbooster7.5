@@ -19,6 +19,8 @@ import {
   packCapsule,
   packCapsuleMembers,
   CAPSULE_COMPRESSION_ID,
+  MAXCORE_CAPSULE_EXCLUDE_PATHS,
+  PDIM_CAPSULE_EXCLUDE_PATHS,
 } from "../../script/lib/capsulePack.js";
 import {
   restoreCapsule,
@@ -263,6 +265,10 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       path.join(baseAbs, "client", "index.html"),
       "<html>packed</html>",
     );
+    await fs.symlink(
+      "index.html",
+      path.join(baseAbs, "client", "current.html"),
+    );
     await fs.writeFile(
       path.join(baseAbs, "dist", "cluster.mjs"),
       "console.log('packed cluster');",
@@ -281,6 +287,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
 
     const members = [
       `${base}/client/index.html`,
+      `${base}/client/current.html`,
       `${base}/dist/cluster.mjs`,
       `${base}/server/nested/deep.ts`,
     ];
@@ -333,7 +340,10 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       await fs.readFile(path.resolve(projectRoot, members[0]), "utf8"),
     ).toBe("<html>packed</html>");
     expect(
-      await fs.readFile(path.resolve(projectRoot, members[1]), "utf8"),
+      await fs.readlink(path.resolve(projectRoot, members[1])),
+    ).toBe("index.html");
+    expect(
+      await fs.readFile(path.resolve(projectRoot, members[2]), "utf8"),
     ).toBe("console.log('packed cluster');");
     // The never-packed sibling must still be exactly what it was before —
     // restore must never clobber a file that pack never touched.
@@ -346,14 +356,234 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     ).sort();
     expect(realTestsUnitAfter).toEqual(realTestsUnitBefore);
 
-    // Idempotent second restore hits the sentinel skip path.
-    const second = await restoreAppRemainderCapsule(
+    // Simulate interruption after files were merged but before the sentinel
+    // was written. Identical files and symlinks must be reused safely.
+    await fs.rm(path.resolve(projectRoot, sentinelRelative), { force: true });
+    const resumed = await restoreAppRemainderCapsule(
       capsuleRelative,
       manifestRelative,
       sentinelRelative,
     );
-    expect(second).toBe(true);
+    expect(resumed).toBe(true);
+    expect(
+      await fs.readFile(path.resolve(projectRoot, members[0]), "utf8"),
+    ).toBe("<html>packed</html>");
+    expect(
+      await fs.readlink(path.resolve(projectRoot, members[1])),
+    ).toBe("index.html");
+
+    // With the sentinel restored, a subsequent retry skips extraction.
+    const idempotent = await restoreAppRemainderCapsule(
+      capsuleRelative,
+      manifestRelative,
+      sentinelRelative,
+    );
+    expect(idempotent).toBe(true);
+
+    // Existing but different content remains a hard failure and is never
+    // silently overwritten with the archive's copy.
+    await fs.rm(path.resolve(projectRoot, sentinelRelative), { force: true });
+    await fs.writeFile(
+      path.resolve(projectRoot, members[0]),
+      "<html>conflicting local content</html>",
+    );
+    const conflict = await restoreAppRemainderCapsule(
+      capsuleRelative,
+      manifestRelative,
+      sentinelRelative,
+    );
+    expect(conflict).toBe(false);
+    expect(
+      await fs.readFile(path.resolve(projectRoot, members[0]), "utf8"),
+    ).toBe("<html>conflicting local content</html>");
   }, 60000);
+
+  itRequiresZstd("omits configured secrets and generated MaxCore data while retaining the serving model and source corpora", async () => {
+    const dirRelative = `${ROOT_RELATIVE}/external/maxcore`;
+    const capsuleRelative = `${ROOT_RELATIVE}/external_maxcore.pdim`;
+    const manifestRelative = `${ROOT_RELATIVE}/external_maxcore.manifest.json`;
+    const baseAbs = path.resolve(projectRoot, dirRelative);
+    const fileContents = new Map<string, string>([
+      [".npmrc", "credential-fixture"],
+      ["nested/.npmrc", "nested-credential-fixture"],
+      [".env.production", "env-fixture"],
+      [".cloudflared/config.yml", "tunnel-config-fixture"],
+      ["cookies.txt", "cookie-fixture"],
+      [
+        "artifacts/ai-training-server/ai_model/training_data/pull_1.json",
+        "generated-pull-fixture",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/training/candidate_runs/run-1/candidate.pt",
+        "generated-candidate-fixture",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/training/live_learning_runs/run-2/holdout.json",
+        "generated-live-learning-fixture",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/training/live_candidate_admissions/run-3/admission.json",
+        "generated-admission-fixture",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/training/candidate_registry/metadata.json",
+        "generated-registry-fixture",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/training/trainer.py",
+        "training source",
+      ],
+      [
+        "artifacts/ai-training-server/training/combined_training_data.json",
+        "named corpus",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/weights/model.pt",
+        "approved serving model",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/weights/model.corrupt",
+        "build-only source model",
+      ],
+      [
+        "artifacts/ai-training-server/ai_model/__pycache__/trainer.pyc",
+        "generated bytecode",
+      ],
+    ]);
+
+    for (const [relativeFile, contents] of fileContents) {
+      const absoluteFile = path.join(baseAbs, relativeFile);
+      await fs.mkdir(path.dirname(absoluteFile), { recursive: true });
+      await fs.writeFile(absoluteFile, contents);
+    }
+
+    const modelRelative =
+      "artifacts/ai-training-server/ai_model/weights/model.pt";
+    const modelBytes = Buffer.from(fileContents.get(modelRelative)!);
+    const excludePaths = MAXCORE_CAPSULE_EXCLUDE_PATHS;
+    const requiredMember = {
+      path: modelRelative,
+      bytes: modelBytes.length,
+      sha256: createHash("sha256").update(modelBytes).digest("hex"),
+    };
+
+    const packed = await packCapsule({
+      root: projectRoot,
+      dir: dirRelative,
+      capsule: capsuleRelative,
+      threads: 1,
+      requiredMembers: [requiredMember],
+      excludePaths,
+    });
+    expect(packed).not.toBeNull();
+
+    const manifest = JSON.parse(
+      await fs.readFile(path.resolve(projectRoot, manifestRelative), "utf8"),
+    );
+    expect(manifest.excludePaths).toEqual(excludePaths);
+
+    const restored = await restoreCapsule(
+      capsuleRelative,
+      manifestRelative,
+      dirRelative,
+      sentinelName,
+    );
+    expect(restored).toBe(true);
+
+    for (const omitted of [
+      ".npmrc",
+      ".env.production",
+      ".cloudflared/config.yml",
+      "cookies.txt",
+      "artifacts/ai-training-server/ai_model/training_data/pull_1.json",
+      "artifacts/ai-training-server/ai_model/training/candidate_runs/run-1/candidate.pt",
+      "artifacts/ai-training-server/ai_model/training/live_learning_runs/run-2/holdout.json",
+      "artifacts/ai-training-server/ai_model/training/live_candidate_admissions/run-3/admission.json",
+      "artifacts/ai-training-server/ai_model/training/candidate_registry/metadata.json",
+      "artifacts/ai-training-server/ai_model/weights/model.corrupt",
+      "artifacts/ai-training-server/ai_model/__pycache__/trainer.pyc",
+    ]) {
+      await expect(fs.access(path.join(baseAbs, omitted))).rejects.toThrow();
+    }
+    for (const retained of [
+      "nested/.npmrc",
+      "artifacts/ai-training-server/ai_model/training/trainer.py",
+      "artifacts/ai-training-server/training/combined_training_data.json",
+      modelRelative,
+    ]) {
+      await expect(fs.access(path.join(baseAbs, retained))).resolves.toBeUndefined();
+    }
+    expect(
+      await fs.readFile(path.join(baseAbs, modelRelative), "utf8"),
+    ).toBe("approved serving model");
+  }, 60000);
+
+  itRequiresZstd("applies the PDIM capsule credential and cache exclusions", async () => {
+    const dirRelative = `${ROOT_RELATIVE}/external/pdim`;
+    const capsuleRelative = `${ROOT_RELATIVE}/external_pdim.pdim`;
+    const manifestRelative = `${ROOT_RELATIVE}/external_pdim.manifest.json`;
+    const baseAbs = path.resolve(projectRoot, dirRelative);
+    const fixtureFiles = [
+      ".npmrc",
+      "nested/.npmrc",
+      ".env.production",
+      ".cloudflared/config.yml",
+      "cookies.txt",
+      "src/__pycache__/module.pyc",
+      "src/index.py",
+    ];
+    for (const relativeFile of fixtureFiles) {
+      const absoluteFile = path.join(baseAbs, relativeFile);
+      await fs.mkdir(path.dirname(absoluteFile), { recursive: true });
+      await fs.writeFile(absoluteFile, `fixture:${relativeFile}`);
+    }
+
+    const packed = await packCapsule({
+      root: projectRoot,
+      dir: dirRelative,
+      capsule: capsuleRelative,
+      threads: 1,
+      excludePaths: PDIM_CAPSULE_EXCLUDE_PATHS,
+    });
+    expect(packed).not.toBeNull();
+
+    const manifest = JSON.parse(
+      await fs.readFile(path.resolve(projectRoot, manifestRelative), "utf8"),
+    );
+    expect(manifest.excludePaths).toEqual(PDIM_CAPSULE_EXCLUDE_PATHS);
+
+    const restored = await restoreCapsule(
+      capsuleRelative,
+      manifestRelative,
+      dirRelative,
+      sentinelName,
+    );
+    expect(restored).toBe(true);
+
+    for (const omitted of fixtureFiles.filter(
+      (relativeFile) =>
+        relativeFile !== "src/index.py" && relativeFile !== "nested/.npmrc",
+    )) {
+      await expect(fs.access(path.join(baseAbs, omitted))).rejects.toThrow();
+    }
+    await expect(
+      fs.access(path.join(baseAbs, "src/index.py")),
+    ).resolves.toBeUndefined();
+    await expect(
+      fs.access(path.join(baseAbs, "nested/.npmrc")),
+    ).resolves.toBeUndefined();
+  }, 60000);
+
+  it("rejects capsule exclusions that could escape the packed directory", async () => {
+    await expect(
+      packCapsule({
+        root: projectRoot,
+        dir: ROOT_RELATIVE,
+        capsule: `${ROOT_RELATIVE}/invalid.pdim`,
+        excludePaths: ["../outside"],
+      }),
+    ).rejects.toThrow("invalid capsule exclusion pattern");
+  });
 
   it("selects the correct GNU-tar extraction flag for every real capsule codec id", () => {
     // Covers the GNU-tar fallback branch directly: bsdtar (preferred when

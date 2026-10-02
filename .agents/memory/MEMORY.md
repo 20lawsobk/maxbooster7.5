@@ -136,6 +136,8 @@
 - [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
 - [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
 - [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
+- [Production capsule exclusions](production-capsule-exclusions.md) — whole-directory capsule packing bypasses `.dockerignore`; every capsule needs explicit, tested exclusions.
+- [Production simulation storage limits](production-simulation-resource-sizing.md) — `df` can overstate usable scratch space under hidden quotas; size conservatively and verify path-specific limits.
 - [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.
 - [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.
 - [Semgrep coverage and timeouts](semgrep-coverage-and-timeouts.md) — valid JSX/type syntax can partially parse; measure slow rules and include new untracked helpers in verification.

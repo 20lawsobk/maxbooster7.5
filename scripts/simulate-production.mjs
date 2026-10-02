@@ -24,6 +24,10 @@ import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  copyProductionSimulationTree,
+  REQUIRED_SIMULATION_TEST_PATHS,
+} from "./lib/production-simulation-copy.mjs";
+import {
   assessHeavyRun,
   assertSanitizedEnvironment,
   inspectProductionProfile,
@@ -559,6 +563,43 @@ function runProcess(command, args, options = {}) {
   return new Promise((resolveResult) => {
     const output = [];
     const out = logPath ? createWriteStream(logPath) : null;
+    let logWriteError = null;
+    let finalizing = false;
+    if (out) {
+      out.on("error", (error) => {
+        logWriteError ||= error;
+      });
+    }
+    const finish = (code, signal, error) => {
+      if (finalizing) return;
+      finalizing = true;
+      const complete = () => {
+        if (logWriteError) {
+          output.push(
+            `[simulation] command log write failed${logPath ? ` (${logPath})` : ""}: ${logWriteError.message}`,
+          );
+        }
+        const result = {
+          code: logWriteError && code === 0 ? 1 : code,
+          signal,
+          output: output.join(""),
+        };
+        if (error) result.error = error;
+        if (logWriteError) result.logWriteError = logWriteError.message;
+        resolveResult(result);
+      };
+      if (!out || logWriteError) {
+        out?.destroy();
+        complete();
+        return;
+      }
+      out.once("finish", complete);
+      out.once("error", (streamError) => {
+        logWriteError ||= streamError;
+        complete();
+      });
+      out.end();
+    };
     const child = spawn(command, args, {
       cwd,
       env,
@@ -578,59 +619,22 @@ function runProcess(command, args, options = {}) {
     }, timeoutMs);
     child.on("close", (code, signal) => {
       clearTimeout(timer);
-      out?.end();
-      resolveResult({ code, signal, output: output.join("") });
+      finish(code, signal);
     });
     child.on("error", (error) => {
       clearTimeout(timer);
-      out?.end();
-      resolveResult({ code: null, signal: null, output: output.join(""), error });
+      finish(null, null, error);
     });
   });
 }
 
 async function copyFilteredTree() {
-  // Copy-on-write reflinks preserve symlinks/modes without reading and
-  // rewriting several GiB of immutable dependency/runtime files into page
-  // cache. The allowlist is assembled before cp runs, so credentials, user
-  // data, VCS metadata, reports, and prior simulation state never enter the
-  // disposable tree. Subsequent packed-build writes trigger filesystem COW
-  // and cannot mutate the source checkout.
-  const excludedTopLevel = new Set([
-    ".git", ".replit", "data", "logs", "attached_assets",
-    "archive-capsules", ".cache", ".local", ".auditscratch", ".audit-wal",
-    "reports", "uploads", "AI enhancements", "built-in plugins dsp",
-    "awareness layer", "hardware", "VST", "VST3", "artifacts",
-  ]);
-  const sourceEntries = readdirSync(root)
-    .filter((name) =>
-      !excludedTopLevel.has(name) &&
-      !name.endsWith(".log") &&
-      !name.endsWith(".pdim") &&
-      !name.endsWith(".manifest.json") &&
-      ![".env", ".env.local", ".env.development", ".env.production"].includes(name))
-    .map((name) => join(root, name));
-  const copy = await runProcess("cp", [
-    "-a", "--reflink=auto", "--", ...sourceEntries, copyRoot,
-  ], {
-    cwd: root,
-    env: buildEnv(),
-    timeoutMs: 8 * 60_000,
-  });
-  if (copy.code !== 0) {
-    throw new Error(`filtered reflink copy failed (${copy.code ?? copy.signal}): ${copy.output}`);
-  }
-  rmSync(join(copyRoot, "public/generated-content"), { recursive: true, force: true });
-  rmSync(join(copyRoot, "dns-node/keys"), { recursive: true, force: true });
-  const weightsDir = join(copyRoot, "external/maxcore/artifacts/ai-training-server/ai_model/weights");
-  for (const name of existsSync(weightsDir) ? readdirSync(weightsDir) : []) {
-    if (name.endsWith(".pt") || name === "model.corrupt") {
-      rmSync(join(weightsDir, name), { force: true });
-    }
-  }
-  // Checkpoints are gitignored runtime artifacts. Exclude every .pt file from
-  // the broad source copy, then admit only the immutable manifest-bound serving
-  // checkpoint so unrelated generated weights or secrets cannot hitchhike.
+  const copied = copyProductionSimulationTree(root, copyRoot);
+  console.log(
+    `Copied filtered source tree with ${copied.files} files, ${copied.directories} directories, and ${copied.symlinks} symlinks`,
+  );
+  // The verified immutable release source is the only model checkpoint
+  // admitted into the simulation copy. The build materializes model.pt from it.
   const releaseManifestRelative =
     "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json";
   const releaseManifest = JSON.parse(readFileSync(join(root, releaseManifestRelative), "utf8"));
@@ -1014,8 +1018,12 @@ async function main() {
         ? "supported unprivileged user+network namespace with namespace-local loopback"
         : "test-environment blocker; not an application defect",
     };
+    // Every build input and the disposable copy share the workspace filesystem.
+    // Its allocated bytes are a conservative no-traversal upper bound; a
+    // recursive `du` would walk .git, excluded local data, and credentials
+    // before the filtered copy has a chance to omit them.
     const sourceBytes = report.safety.networkNamespacePreflight.available
-      ? Number(spawnSync("du", ["-sb", root], { encoding: "utf8" }).stdout.trim().split(/\s+/)[0]) || 0
+      ? report.resourceProfile.observed.filesystemUsedUpperBoundBytes
       : 0;
     const admission = assessHeavyRun(report.resourceProfile, sourceBytes * 2, {
       networkNamespaceAvailable: report.safety.networkNamespacePreflight.available,
@@ -1059,9 +1067,7 @@ async function main() {
       "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.release.json",
       "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
       "external/pdim/artifacts/api-server/src/index.ts",
-      "tests/fixtures/retained-pdim-source-fixture-worker.ts",
-      "tests/unit/retained-pdim-recovery-simulation.test.ts",
-      "tests/unit/toolost-runtime-config.test.ts",
+      ...REQUIRED_SIMULATION_TEST_PATHS,
     ];
     report.copyIntegrity.checked = [];
     for (const relative of integrityPaths) {
@@ -1226,16 +1232,7 @@ async function main() {
       "server/services/toolostRuntimeConfig.ts",
       "server/computeSizing.ts",
       "server/middleware/csrf.ts",
-      "tests/fixtures/pdim-recovery-cluster-fixture.ts",
-      "tests/fixtures/retained-pdim-source-fixture-worker.ts",
-      "tests/unit/maxcore-cluster-ownership.test.ts",
-      "tests/unit/maxcore-python-launcher.test.ts",
-      "tests/unit/compute-sizing-cpu-share.test.ts",
-      "tests/unit/maxcore-readiness-gate.test.ts",
-      "tests/unit/pdim-recovery-cluster-integration.test.ts",
-      "tests/unit/pdim-recovery-operator.test.ts",
-      "tests/unit/retained-pdim-recovery-simulation.test.ts",
-      "tests/unit/toolost-runtime-config.test.ts",
+      ...REQUIRED_SIMULATION_TEST_PATHS,
     ];
     const missingIndexAnchors = requiredIndexAnchors.filter(
       (relative) => !existsSync(join(copyRoot, relative)),

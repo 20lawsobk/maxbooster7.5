@@ -21,6 +21,10 @@ export function inspectProductionProfile(path = ".") {
     if (quota !== "max") cpuQuota = Number(quota) / Number(period);
   } catch {}
   const disk = statfsSync(path);
+  const filesystemUsedUpperBoundBytes = Math.max(
+    0,
+    (Number(disk.blocks) - Number(disk.bfree)) * Number(disk.bsize),
+  );
   return {
     configured: { cpu: 4, memoryBytes: 8 * GIB, imageHardLimitBytes: 8 * GIB },
     observed: {
@@ -32,6 +36,7 @@ export function inspectProductionProfile(path = ".") {
         ? null
         : memoryLimitBytes - memoryCurrentBytes,
       diskAvailableBytes: Number(disk.bavail) * Number(disk.bsize),
+      filesystemUsedUpperBoundBytes,
     },
   };
 }

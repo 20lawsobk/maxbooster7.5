@@ -26,6 +26,7 @@ import {
   readdirSync,
   createReadStream,
   lstatSync,
+  readlinkSync,
 } from "fs";
 import { createHash } from "crypto";
 import { spawn, spawnSync } from "child_process";
@@ -546,7 +547,7 @@ export async function restoreAppRemainderCapsule(
       fail(`tar spawn failed: ${err.message}`);
     });
 
-    child.on("exit", (code) => {
+    child.on("exit", async (code) => {
       clearTimeout(timer);
       if (sourceErrored) return;
 
@@ -589,32 +590,71 @@ export async function restoreAppRemainderCapsule(
       // thing the bootstrap-set exclusion exists to prevent. So an existing
       // DIRECTORY is merged recursively (only the extracted files are moved
       // in; anything already there and not part of this capsule is left
-      // untouched); an existing FILE at the same path would mean the same
-      // path was both left on disk AND packed, which the pack step never
-      // allows, so that is treated as a hard failure rather than silently
-      // picking one copy.
-      const mergeInto = (fromPath, toPath) => {
-        if (!existsSync(toPath)) {
+      // untouched). A previous process may have stopped partway through this
+      // merge before writing the sentinel, so an existing file or symlink is
+      // reusable only when it is exactly the same archive member. Conflicting
+      // content remains a hard failure; restore must never silently replace it.
+      let reusedExistingEntries = 0;
+      const identicalFileContents = async (leftPath, rightPath) => {
+        const leftStat = lstatSync(leftPath);
+        const rightStat = lstatSync(rightPath);
+        if (
+          !leftStat.isFile() ||
+          !rightStat.isFile() ||
+          leftStat.size !== rightStat.size ||
+          (leftStat.mode & 0o7777) !== (rightStat.mode & 0o7777)
+        ) {
+          return false;
+        }
+        const digestFile = async (filePath) => {
+          const digest = createHash("sha256");
+          for await (const chunk of createReadStream(filePath)) digest.update(chunk);
+          return digest.digest("hex");
+        };
+        const [leftDigest, rightDigest] = await Promise.all([
+          digestFile(leftPath),
+          digestFile(rightPath),
+        ]);
+        return leftDigest === rightDigest;
+      };
+      const mergeInto = async (fromPath, toPath) => {
+        let toStat;
+        try {
+          toStat = lstatSync(toPath);
+        } catch (error) {
+          if (error?.code !== "ENOENT") throw error;
           mkdirSync(dirname(toPath), { recursive: true });
           renameSync(fromPath, toPath);
           return;
         }
         const fromStat = lstatSync(fromPath);
-        const toStat = lstatSync(toPath);
-        if (!fromStat.isDirectory() || !toStat.isDirectory()) {
-          throw new Error(
-            `refusing to overwrite pre-existing non-directory path during app-remainder merge: ${toPath}`,
-          );
+        if (fromStat.isDirectory() && toStat.isDirectory()) {
+          for (const child of readdirSync(fromPath)) {
+            await mergeInto(resolve(fromPath, child), resolve(toPath, child));
+          }
+          rmSync(fromPath, { recursive: true, force: true });
+          return;
         }
-        for (const child of readdirSync(fromPath)) {
-          mergeInto(resolve(fromPath, child), resolve(toPath, child));
+        if (await identicalFileContents(fromPath, toPath)) {
+          reusedExistingEntries++;
+          return;
         }
-        rmSync(fromPath, { recursive: true, force: true });
+        if (
+          fromStat.isSymbolicLink() &&
+          toStat.isSymbolicLink() &&
+          readlinkSync(fromPath) === readlinkSync(toPath)
+        ) {
+          reusedExistingEntries++;
+          return;
+        }
+        throw new Error(
+          `refusing to overwrite conflicting pre-existing path during app-remainder merge: ${toPath}`,
+        );
       };
 
       try {
         for (const entry of topEntries) {
-          mergeInto(resolve(scratchDir, entry), resolve(ROOT, entry));
+          await mergeInto(resolve(scratchDir, entry), resolve(ROOT, entry));
         }
       } catch (e) {
         return fail(`failed to merge extracted app remainder into ${ROOT}: ${e.message}`);
@@ -633,7 +673,7 @@ export async function restoreAppRemainderCapsule(
       }
 
       console.log(
-        `[pdim-restore] ✅ app remainder restored from ${capsuleName} (${topEntries.length} top-level entries)`,
+        `[pdim-restore] ✅ app remainder restored from ${capsuleName} (${topEntries.length} top-level entries${reusedExistingEntries ? `; reused ${reusedExistingEntries} identical entries from a prior merge` : ""})`,
       );
       releaseLock();
       resolvePromise(true);

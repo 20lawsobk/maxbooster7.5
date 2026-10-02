@@ -4,7 +4,13 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
-import { packCapsule, packCapsuleMembers } from "./lib/capsulePack.js";
+import {
+  MAXCORE_CAPSULE_EXCLUDE_PATHS,
+  PDIM_CAPSULE_EXCLUDE_PATHS,
+  packCapsule,
+  packCapsuleMembers,
+} from "./lib/capsulePack.js";
+import { assertNoSelectedMaxCoreCandidate } from "./lib/deploymentPreflight.js";
 import { buildPortableNode } from "./lib/portableNode.js";
 import {
   computeRemainingAppMembers,
@@ -165,10 +171,12 @@ async function main() {
   }
 
   if (isDeployBuild) {
+    assertNoSelectedMaxCoreCandidate(root);
     const capsuleTargets: Array<{
       dir: string;
       capsule: string;
       requiredMembers?: Array<{ path: string; bytes: number; sha256: string }>;
+      excludePaths?: string[];
     }> = [
       { dir: "python_runtime", capsule: "python_runtime.pdim" },
       { dir: "node_modules", capsule: "node_modules.pdim" },
@@ -176,11 +184,20 @@ async function main() {
         dir: "external/maxcore",
         capsule: "external_maxcore.pdim",
         requiredMembers: modelRelease ? [modelRelease] : [],
+        // These are workspace credentials, mutable training pulls, or
+        // generated candidate artifacts—not serving code or named training
+        // corpora. The source modules and supported corpus files remain in
+        // the capsule; model.pt is independently admitted by modelRelease.
+        excludePaths: MAXCORE_CAPSULE_EXCLUDE_PATHS,
       },
       // 2026-08-14: user directive — the ENTIRE project must ship in the
       // deployment (external/pdim included), so it is packed as a capsule
       // rather than deleted from the image.
-      { dir: "external/pdim", capsule: "external_pdim.pdim" },
+      {
+        dir: "external/pdim",
+        capsule: "external_pdim.pdim",
+        excludePaths: PDIM_CAPSULE_EXCLUDE_PATHS,
+      },
     ];
 
     // Pack all capsules CONCURRENTLY instead of one after another. Each
@@ -216,8 +233,15 @@ async function main() {
       `==> Packing ${existingTargets.length} capsule(s) concurrently across ${cpuCount} CPU(s) → ${perJobThreads} zstd thread(s) each`,
     );
     capsuleResults = await Promise.all(
-      capsuleTargets.map(({ dir, capsule, requiredMembers }) =>
-        packCapsule({ root, dir, capsule, threads: perJobThreads, requiredMembers }),
+      capsuleTargets.map(({ dir, capsule, requiredMembers, excludePaths }) =>
+        packCapsule({
+          root,
+          dir,
+          capsule,
+          threads: perJobThreads,
+          requiredMembers,
+          excludePaths,
+        }),
       ),
     );
   }

@@ -46,6 +46,11 @@ const seedIds = {
   buyerId:    `test-buyer-${run}`,
   beatPostId: `test-beat-post-${run}`, // D: content-dispatch section
 };
+const paymentIntentIds = {
+  orderId: `pi_test_${run}`,
+  order2Id: `pi_test2_${run}`,
+  order3Id: `pi_test3_${run}`,
+};
 
 // ── Setup / teardown ────────────────────────────────────────────────────────
 beforeAll(async () => {
@@ -125,7 +130,7 @@ beforeAll(async () => {
       amount:                29.99,
       currency:              "usd",
       status:                "completed",
-      stripePaymentIntentId: `pi_test_${run}`,
+      stripePaymentIntentId: paymentIntentIds.orderId,
     });
 
     // ── C: order2 for notification retry/idempotency test ───────────────────
@@ -138,7 +143,7 @@ beforeAll(async () => {
       amount:                199.99,
       currency:              "usd",
       status:                "completed",
-      stripePaymentIntentId: `pi_test2_${run}`,
+      stripePaymentIntentId: paymentIntentIds.order2Id,
       // no notifStatus in metadata → delivery not yet attempted
     });
 
@@ -152,7 +157,7 @@ beforeAll(async () => {
       amount:                49.99,
       currency:              "usd",
       status:                "completed",
-      stripePaymentIntentId: `pi_test3_${run}`,
+      stripePaymentIntentId: paymentIntentIds.order3Id,
     });
 
     // ── D: scheduled beat-loop post ─────────────────────────────────────────
@@ -363,7 +368,7 @@ describe("C. Sale notifications — confirmed payment idempotency", () => {
     if (!db || !processPaymentImpl || !notifications) return;
 
     // order2 is already 'completed' with no notifStatus — first call should deliver.
-    await processPaymentImpl(seedIds.order2Id, "pi_fake_first");
+    await processPaymentImpl(seedIds.order2Id, paymentIntentIds.order2Id);
 
     const sellerRows = await db
       .select()
@@ -402,7 +407,7 @@ describe("C. Sale notifications — confirmed payment idempotency", () => {
     if (!db || !processPaymentImpl || !notifications) return;
 
     // Second call on the same completed order — idempotent.
-    await processPaymentImpl(seedIds.order2Id, "pi_fake_replay");
+    await processPaymentImpl(seedIds.order2Id, paymentIntentIds.order2Id);
 
     const sellerRows = await db
       .select()
@@ -436,8 +441,8 @@ describe("C. Sale notifications — confirmed payment idempotency", () => {
     // compete for the atomic 'pending' claim.  The conditional UPDATE ensures
     // only one wins; the other sees rowCount=0 and skips delivery.
     await Promise.all([
-      processPaymentImpl(seedIds.order3Id, "pi_fake_concurrent_a"),
-      processPaymentImpl(seedIds.order3Id, "pi_fake_concurrent_b"),
+      processPaymentImpl(seedIds.order3Id, paymentIntentIds.order3Id),
+      processPaymentImpl(seedIds.order3Id, paymentIntentIds.order3Id),
     ]);
 
     const sellerRows = await db

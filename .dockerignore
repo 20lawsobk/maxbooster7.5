@@ -7,6 +7,13 @@
 .vscode
 .idea
 
+# Workspace credentials and local-only network configuration
+**/.npmrc
+**/.env
+**/.env.*
+.cloudflared/
+dns-node/keys/
+
 # Caches and runtime environments
 .cache
 node_modules/.cache

@@ -44,6 +44,34 @@ import path from "path";
 export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
+export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
+  ".npmrc",
+  ".env*",
+  ".cloudflared",
+  "cookies.txt",
+  "__pycache__",
+  "**/__pycache__",
+  "*.pyc",
+  "**/*.pyc",
+  "artifacts/ai-training-server/ai_model/training_data",
+  "artifacts/ai-training-server/ai_model/training/candidate_runs",
+  "artifacts/ai-training-server/ai_model/training/live_learning_runs",
+  "artifacts/ai-training-server/ai_model/training/live_candidate_admissions",
+  "artifacts/ai-training-server/ai_model/training/candidate_registry",
+  "artifacts/ai-training-server/ai_model/weights/model.corrupt",
+];
+
+export const PDIM_CAPSULE_EXCLUDE_PATHS = [
+  ".npmrc",
+  ".env*",
+  ".cloudflared",
+  "cookies.txt",
+  "__pycache__",
+  "**/__pycache__",
+  "*.pyc",
+  "**/*.pyc",
+];
+
 function sha256FileSync(file: string): string {
   const hash = createHash("sha256");
   const buffer = Buffer.allocUnsafe(1024 * 1024);
@@ -90,6 +118,13 @@ export interface PackCapsuleOptions {
   threads?: number;
   /** Files that must be hash-verified inside `dir` and recorded in the capsule manifest. */
   requiredMembers?: Array<{ path: string; bytes: number; sha256: string }>;
+  /**
+   * File or directory patterns relative to `dir` that tar must omit. Patterns
+   * are recorded in the capsule manifest so deployment exclusions are
+   * auditable. This is separate from .dockerignore: whole-directory capsules
+   * are packed before the app-remainder .dockerignore scan.
+   */
+  excludePaths?: string[];
 }
 
 export interface PackCapsuleResult {
@@ -98,6 +133,21 @@ export interface PackCapsuleResult {
   sizeBytes: number;
   sha256: string;
   compression: string;
+}
+
+function normalizeExcludePaths(excludePaths: string[]): string[] {
+  return [...new Set(excludePaths.map((pattern) => {
+    const normalized = pattern.replace(/\\/g, "/");
+    if (
+      !normalized ||
+      normalized.startsWith("/") ||
+      path.posix.normalize(normalized) !== normalized ||
+      normalized.split("/").some((part) => part === "." || part === "..")
+    ) {
+      throw new Error(`invalid capsule exclusion pattern: ${pattern}`);
+    }
+    return normalized;
+  }))];
 }
 
 /**
@@ -127,8 +177,10 @@ export function packCapsule({
   capsule,
   threads = 0,
   requiredMembers = [],
+  excludePaths = [],
 }: PackCapsuleOptions): Promise<PackCapsuleResult | null> {
   return new Promise((resolveOne, rejectOne) => {
+    const normalizedExcludePaths = normalizeExcludePaths(excludePaths);
     const abs = path.resolve(root, dir);
     if (!fs.existsSync(abs)) return resolveOne(null);
 
@@ -159,11 +211,14 @@ export function packCapsule({
       `==> Packing ${dir}/ → ${capsule} (${CAPSULE_COMPRESSION_ID}, -T${threads}, Extract & Boot)...`,
     );
 
+    const tarExcludes = normalizedExcludePaths
+      .map((pattern) => `--exclude=${JSON.stringify(`${dir}/${pattern}`)}`)
+      .join(" ");
     const child = spawn(
       "bash",
       [
         "-c",
-        `set -o pipefail; tar -cf - ${JSON.stringify(dir)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
+        `set -o pipefail; tar ${tarExcludes} -cf - ${JSON.stringify(dir)} | zstd ${zstdCompressArgs(threads).join(" ")}`,
       ],
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
@@ -211,6 +266,7 @@ export function packCapsule({
             sha256,
             dir,
             requiredMembers,
+            excludePaths: normalizedExcludePaths,
           },
           null,
           2,
