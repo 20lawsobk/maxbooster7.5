@@ -53,7 +53,8 @@ configured request path and provider contract before requesting a reconnect.
 
 ### Pre-deployment acceptance
 
-The production Reserved VM is 16 vCPUs / 64 GiB; development simulation has
+The production target is Replit Reserved VM in North America, with 16 vCPUs /
+64 GiB; development simulation has
 4 cgroup CPUs / 8 GiB. `APP_WORKER_CPU_SHARE=0.5` is an explicit, simulation-only
 app-sizing allocation for two time-sharing workers, not an enforced CPU quota or
 a production-throughput measurement. It does not alter MaxCore or memory budgets.

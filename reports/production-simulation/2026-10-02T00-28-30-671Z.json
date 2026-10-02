@@ -637,6 +637,17 @@
     "reason": "Not evaluated: cold node_modules and MaxCore restores did not complete in the quota-limited sandbox, so startup/readiness were not attempted and no publish-ready claim is made."
   },
   "continuationAssessment": {
+    "postCleanupCapacity": {
+      "checkedAt": "2026-10-02T05:10:26.000Z",
+      "approvedCleanup": "Removed only runs/2026-09-17T08-43-27-758Z/app; reports, diagnostics, and other run directories preserved.",
+      "workspaceReservation8GiB": "succeeded, allocated 8589934592 bytes, then released",
+      "filteredSourceBytes": 4677886919,
+      "workspaceReservation17GiB": "failed with EDQUOT; probe removed",
+      "reservationSizing": "Rounded-up twice-filtered-source size plus the existing 8 GiB simulation safety reserve; this is a conservative local verification budget, not a Replit deployment requirement.",
+      "remainingOldAppCopyAllocatedBytes": 10936553472,
+      "remainingOldAppCopy": "runs/2026-09-23T18-57-24-314Z/app",
+      "freshBuildStarted": false
+    },
     "checkedAt": "2026-10-02T05:04:31.000Z",
     "resumable": false,
     "artifactAvailability": "Disposable app and log symlinks now have missing ephemeral-home targets. Preserved diagnostics remain in the workspace; this run's fresh build capsules are unavailable.",
