@@ -6,8 +6,8 @@
  * vulnerability remediation, so the audit result is backed by working
  * features rather than by inspection:
  *   - sharp            (image resize / composite / encode / metadata / file output)
- *   - adm-zip          (archive write + extractAllTo, the API tfjs-node uses)
- *   - @tensorflow/tfjs-node (its adm-zip dependency resolves to the patched release)
+ *   - tar              (real desktop-tool consumer archive create + extract)
+ *   - yaml             (desktop packaging consumer parse + stringify)
  *   - @tensorflow/tfjs (the pure-JS runtime used by the application)
  *   - exceljs          (workbook write + read, including the uuid-backed x14 path)
  *   - uuid             (nested CJS copies used by gaxios / teeny-request / exceljs)
@@ -127,43 +127,51 @@ await check("sharp: normalize + sharpen + webp + toFile", async () => {
   return `webp buffer ${processed.length}B, file written`;
 });
 
-// -------------------------------------------------------------- adm-zip
-await check("adm-zip: write + extractAllTo (tfjs-node install path)", async () => {
-  const AdmZip = require("adm-zip");
-  const version = installedVersion("adm-zip");
-  if (!/^0\.(6|[7-9])\./.test(version)) throw new Error(`expected adm-zip >=0.6.0, got ${version}`);
-  const zip = new AdmZip();
-  zip.addFile("top.txt", Buffer.from("hello"));
-  zip.addFile("nested/dir/inner.bin", Buffer.from([1, 2, 3, 4]));
-  const zipPath = join(work, "sample.zip");
-  zip.writeZip(zipPath);
-
-  const dest = join(work, "unzipped");
-  // Exactly the call shape @tensorflow/tfjs-node/scripts/resources.js uses.
-  new AdmZip(zipPath).extractAllTo(dest, true);
-  const top = readFileSync(join(dest, "top.txt"), "utf8");
-  if (top !== "hello") throw new Error("top-level entry did not extract");
-  const inner = readFileSync(join(dest, "nested", "dir", "inner.bin"));
-  if (inner.length !== 4) throw new Error("nested entry did not extract");
-  const entries = new AdmZip(zipPath).getEntries().map((e) => e.entryName);
-  return `adm-zip ${version}, entries: ${entries.join(", ")}`;
+// --------------------------------------------------------- desktop archives
+await check("tar: each actual desktop consumer creates and extracts archives", async () => {
+  const { mkdirSync } = await import("node:fs");
+  const consumers = ["@capacitor/cli", "app-builder-lib", "node-gyp"];
+  for (const consumer of consumers) {
+    const dir = `node_modules/${consumer}`;
+    const tar = resolveFrom(dir, "tar");
+    const version = installedVersion("tar", join(dir, "node_modules"));
+    if (version !== "7.5.22") throw new Error(`${consumer}: expected tar 7.5.22, got ${version}`);
+    const source = mkdtempSync(join(work, "tar-source-"));
+    const destination = mkdtempSync(join(work, "tar-destination-"));
+    mkdirSync(join(source, "nested"));
+    writeFileSync(join(source, "nested", "payload.txt"), "real tar round trip");
+    const archive = join(source, "payload.tgz");
+    await tar.c({ gzip: true, file: archive, cwd: source }, ["nested/payload.txt"]);
+    await tar.x({ file: archive, cwd: destination, strict: true });
+    if (readFileSync(join(destination, "nested", "payload.txt"), "utf8") !== "real tar round trip") {
+      throw new Error(`${consumer}: archive round trip failed`);
+    }
+  }
+  return consumers.join(", ");
 });
 
-await check("@tensorflow/tfjs-node: sees the patched adm-zip", async () => {
-  // tfjs-node is the package whose transitive adm-zip carried the advisory.
-  // Its own native addon is fetched by an install script that this environment
-  // blocks (unrelated, pre-existing), so verify the dependency edge we changed:
-  // the adm-zip that tfjs-node's resources script resolves must be patched.
-  const declared = JSON.parse(
-    readFileSync("node_modules/@tensorflow/tfjs-node/package.json", "utf8"),
-  ).dependencies["adm-zip"];
-  const resolved = resolveFrom("node_modules/@tensorflow/tfjs-node", "adm-zip");
-  const version = installedVersion("adm-zip");
-  if (!/^0\.(6|[7-9])\./.test(version)) {
-    throw new Error(`tfjs-node resolves adm-zip ${version}, expected >=0.6.0`);
+await check("js-yaml: desktop packager parses and serializes configuration", async () => {
+  // app-builder-lib actually imports js-yaml, not swagger-jsdoc's yaml.
+  const yaml = resolveFrom("node_modules/app-builder-lib", "js-yaml");
+  const value = yaml.load("appId: com.example.test\nfiles:\n  - dist/index.mjs\n");
+  const roundTrip = yaml.load(yaml.dump(value));
+  if (roundTrip.appId !== "com.example.test" || roundTrip.files?.[0] !== "dist/index.mjs") {
+    throw new Error("desktop YAML configuration round trip failed");
   }
-  if (typeof resolved !== "function") throw new Error("adm-zip not constructible from tfjs-node");
-  return `declared ${declared} -> resolved ${version}`;
+  return `js-yaml ${installedVersion("js-yaml")}`;
+});
+
+await check("swagger-jsdoc: real annotated APIs compile with compatible patched YAML", async () => {
+  const swagger = resolveFrom("node_modules/swagger-jsdoc", "swagger-jsdoc");
+  const spec = swagger({
+    definition: { openapi: "3.0.0", info: { title: "Dependency verification", version: "1" } },
+    apis: ["server/swagger.ts"],
+    failOnErrors: true,
+  });
+  if (spec.openapi !== "3.0.0" || !Object.keys(spec.paths ?? {}).length) {
+    throw new Error("Swagger did not parse the real API annotations");
+  }
+  return `parsed ${Object.keys(spec.paths).length} API paths`;
 });
 
 await check("@tensorflow/tfjs: pure-JS runtime still computes", async () => {

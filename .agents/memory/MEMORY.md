@@ -29,7 +29,7 @@
 - [Music Video Studio scene cap](music-video-scene-cap.md) — Music Video Studio path has NO app-side scene-count cap by design (MaxCore owns scene count); never re-add one — use a non-truncating concurrency queue if load pressure appears
 - [Additive optional-field injection](additive-optional-field-injection.md) — add optional fields via conditional spread `...(x?{k:x}:{})`, never `k:x??undefined` (adds undefined-valued keys); detail + the two URL→gen seams in the topic file
 - [Content-gen endpoint crash/timeout bug class](generation-endpoint-timeouts.md) — gen handlers crash on bare access to optional req.body/nullable JSONB fields; generateContent's internal 25s timeout means crashes, not hangs, dominate; details in file
-- [Install: tar blocked + stub workaround](install-tar-stub.md) — Replit firewall blocks tar npm pkg (all versions, CVE reason); fix: create stubs/tar/ local stub + add overrides.tar = file:./stubs/tar in package.json; delete package-lock.json before reinstall so stale lockfile tar refs don't re-trigger the block
+- [Tar firewall recovery](install-tar-stub.md) — the old all-versions-blocked claim is stale; use a real patched registry release, never the former local stub.
 - [Mobile load: dev-link vs published](mobile-load-dev-vs-prod.md) — dev/preview (.replit.dev) cellular flakiness is Vite-unbundled-dev + SW-bypass (not the SW); the PRODUCTION SW has real mobile defects (empty-503 hashed-asset poisoning w/ no retry, no shell-fetch timeout) left UNFIXED per user
 - [Spotify oEmbed native fetch](spotify-oembed-native-fetch.md) — safeFetchText axios agent fails for Spotify TLS (ERR_INVALID_IP_ADDRESS); hardcoded oEmbed URL uses native fetch safely
 - [Frontend content-gen UI testing](frontend-content-gen-testing.md) — live /social-media composer gates generation behind a CONNECTED platform; demo is read-only (nWrite); social ContentGenerator.tsx is dead code; seed an active social_accounts row to unlock the toggle
@@ -153,3 +153,5 @@
 - [Conflicting PDIM AOF sequences](local-pdim-aof-conflicting-sequences.md) — different mutations at one sequence are ambiguous; never dedupe or renumber without authoritative recovery evidence.
 - [Payment test isolation](payment-test-isolation.md) — test keys do not isolate webhook/database effects; confirmed cards can precede provider accounting readiness.
 - [App workflow database side effects](app-workflow-database-side-effects.md) — startup seeds/syncs and preview web-vitals can write to the shared app database; avoid workflow/preview checks in no-write tasks.
+- [Dependency consumer compatibility](dependency-consumer-compatibility.md) — audit-clean global overrides can break startup; validate each real consumer and use patched compatible branches.
+- [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.

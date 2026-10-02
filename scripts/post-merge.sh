@@ -3,6 +3,9 @@
 # Must be: idempotent, non-interactive, fast (< 2 min), and fail-fast.
 set -euo pipefail
 
+echo "[post-merge] Replaying verified legacy dependency updates if the retained copy exists..."
+node scripts/apply-legacy-security-update.mjs --apply --if-present
+
 echo "[post-merge] Installing dependencies..."
 npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -5
 

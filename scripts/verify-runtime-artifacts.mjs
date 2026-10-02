@@ -7,11 +7,32 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 export const floors = {
-  "fast-uri": "3.1.6", "js-yaml": "4.3.2", qs: "6.16.0",
+  "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
   multer: "2.4.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
+  orval: "8.33.0", "linkify-it": "5.0.1", sharp: "0.35.4",
+  postcss: "8.5.23", browserslist: "4.28.7",
+  "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
+  "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
+  yaml: "2.8.3", dompurify: "3.4.16", "markdown-it": "14.3.1",
+  vitest: "4.1.11", "@vitest/mocker": "4.1.11", "csv-parse": "7.0.2",
+  // No patched release exists for the reported extract-zip advisories.
+  // Keep it in the inventory so reintroduction fails rather than disappearing.
+  "extract-zip": null,
+};
+const alternateFloors = {
+  "fast-uri": { 4: "4.1.5" },
+  "linkify-it": { 6: "6.1.0" },
+  "brace-expansion": { 2: "2.1.7" },
+  nanoid: { 5: "5.1.16" },
+  uuid: { 14: "14.0.2" },
+  yaml: { 1: "1.10.3" },
 };
 const workspaces = [".", "external/maxcore", "external/pdim", "dns-os", "tls-proxy"];
+const legacyWorkspaces = [
+  "maxbooster7.5", "maxbooster7.5/dns-os", "maxbooster7.5/tls-proxy",
+  "maxbooster7.5/maxbooster7.5", "maxbooster7.5/maxbooster7.5/dns-os", "maxbooster7.5/maxbooster7.5/tls-proxy",
+];
 function inside(root, file) {
   const relative = path.relative(root, file);
   return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative));
@@ -22,20 +43,24 @@ function patched(version, floor) {
   // A new major is not a validated compatible remediation.
   return a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2]));
 }
-export function inspectDependencies(root, scopes = workspaces) {
+export function inspectDependencies(root, scopes) {
   root = fs.realpathSync(root);
+  // Legacy copies are optional in a fresh checkout, but every retained copy
+  // participates in the same installed-tree checks when present.
+  scopes ??= [...workspaces, ...legacyWorkspaces.filter(scope => fs.existsSync(path.join(root, scope)))];
   const failures = [], occurrences = [], resolutions = [], seen = new Set();
   function record(file, scope, consumer) {
     const real = fs.realpathSync(file);
     if (!inside(scope, real)) throw new Error(`dependency escaped workspace: ${file}`);
     const pkg = JSON.parse(fs.readFileSync(real, "utf8"));
-    if (!floors[pkg.name]) return;
+    if (!Object.hasOwn(floors, pkg.name)) return;
     if (consumer !== "installed-tree") resolutions.push({ consumer, package: pkg.name, version: pkg.version, path: path.relative(root, real) });
     if (!seen.has(real)) {
       seen.add(real);
       occurrences.push({ package: pkg.name, version: pkg.version, path: path.relative(root, real), consumer });
-      const floor = pkg.name === "fast-uri" && pkg.version?.startsWith("4.") ? "4.1.3" : floors[pkg.name];
-      if (!patched(pkg.version, floor)) failures.push(`${path.relative(root, real)}: ${pkg.name}@${pkg.version}; validated floor ${floor}`);
+      const floor = alternateFloors[pkg.name]?.[Number(pkg.version?.split(".")[0])] ?? floors[pkg.name];
+      if (floor === null) failures.push(`${path.relative(root, real)}: ${pkg.name}@${pkg.version}; no patched release, upgrade the consuming dependency`);
+      else if (!patched(pkg.version, floor)) failures.push(`${path.relative(root, real)}: ${pkg.name}@${pkg.version}; validated floor ${floor}`);
     }
   }
   for (const relative of scopes) {
