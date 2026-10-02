@@ -512,6 +512,7 @@ function makePath() {
     commandPath("npm"),
     commandPath("npx"),
     commandPath("zstd"),
+    commandPath("bsdtar"),
     commandPath("tar"),
     commandPath("git"),
     commandPath("nix-shell"),

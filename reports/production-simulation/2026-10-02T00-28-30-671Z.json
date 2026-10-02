@@ -636,6 +636,30 @@
     "publishReady": false,
     "reason": "Not evaluated: cold node_modules and MaxCore restores did not complete in the quota-limited sandbox, so startup/readiness were not attempted and no publish-ready claim is made."
   },
+  "continuationAssessment": {
+    "checkedAt": "2026-10-02T05:04:31.000Z",
+    "resumable": false,
+    "artifactAvailability": "Disposable app and log symlinks now have missing ephemeral-home targets. Preserved diagnostics remain in the workspace; this run's fresh build capsules are unavailable.",
+    "capacityProbes": [
+      {
+        "path": ".local/production-simulation",
+        "requestedBytes": 8589934592,
+        "result": "EDQUOT",
+        "temporaryProbeRemoved": true
+      },
+      {
+        "path": "/tmp",
+        "requestedBytes": 8589934592,
+        "result": "EDQUOT",
+        "temporaryProbeRemoved": true
+      }
+    ],
+    "quotaInspection": "btrfs qgroup query denied with Operation not permitted",
+    "controllerVerification": "Actual runProcess function tested with real child processes: success without a log, ENOSPC from /dev/full converted to failure while preserving output, and nonzero child exit preserved.",
+    "extractorProbe": "GNU tar and bsdtar both extracted a small 150-package nested-directory/symlink fixture successfully. This does not reproduce or explain the earlier full-restore failure.",
+    "controllerPathCorrection": "Added the production-declared bsdtar tool to the simulation PATH allowlist. Earlier build size and restore measurements are historical and have not been rerun with this correction.",
+    "nextRequiredStep": "Provision verified effective scratch quota, then create a fresh isolated copy and build before cold restore and startup/readiness verification. Do not reuse historical capsules as current-build evidence."
+  },
   "startup": {
     "exitCode": null,
     "signal": null,
