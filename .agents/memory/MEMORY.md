@@ -151,3 +151,4 @@
 - [Snapshot string ceiling](pdim-snapshot-string-limit.md) — verify both read and write beyond V8's single-string limit; preserve checkpoint consistency.
 - [Local DNS enabled](local-dns-enabled.md) — keep the local authoritative service enabled; verify UDP and TCP separately from public delegation.
 - [MaxCore lifecycle IPC](maxcore-cluster-lifecycle-state.md) — process-local restart flags cannot gate clustered HTTP workers; verify primary-to-worker readiness propagation.
+- [Awareness before training](awareness-training-prerequisite.md) — user intends awareness to support use before training; investigate the active path before prescribing retraining.
