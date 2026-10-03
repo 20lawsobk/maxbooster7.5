@@ -89,11 +89,9 @@ export class ReplitChunkStore implements ChunkStore {
 
   async deleteChunk(chunkId: ChunkId): Promise<void> {
     const client = await this.getClient();
-    const result = await (client["delete"] as (key: string, options: { ignoreNotFound: boolean }) => Promise<{ ok: boolean; error?: string }>)(
+    await (client["delete"] as (key: string) => Promise<void>)(
       this.key(chunkId),
-      { ignoreNotFound: true },
     );
-    if (!result?.ok) throw new Error(`ReplitChunkStore.deleteChunk failed: ${result?.error ?? "missing receipt"}`);
   }
 
   async hasChunk(chunkId: ChunkId): Promise<boolean> {

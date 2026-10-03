@@ -7,7 +7,6 @@ import { randomBytes } from "crypto";
 import { db, redisInstances } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { RedisStore } from "./store.js";
-import { fabricStorage } from "../pocket-dimension/fabric/index.js";
 
 // System instances that must always exist (IDs and tokens come from env)
 const SYSTEM_INSTANCES = [
@@ -36,7 +35,7 @@ function generateToken(): string {
 // on a public host again.
 const PRODUCTION_HOST =
   process.env["PDIM_PUBLIC_HOST"] ??
-  `127.0.0.1:${process.env["LOCAL_PDIM_PORT"] ?? "5556"}`;
+  `127.0.0.1:${process.env["PORT"] ?? "5556"}`;
 const HTTP_SCHEME = PRODUCTION_HOST.startsWith("127.0.0.1") ? "http" : "https";
 
 export function buildConnectionUrl(token: string, instanceId: string): string {
@@ -60,7 +59,7 @@ class RedisManager {
         );
         continue;
       }
-      const inserted = await db
+      await db
         .insert(redisInstances)
         .values({
           id,
@@ -71,16 +70,10 @@ class RedisManager {
           keyCount: 0,
           isActive: true,
         })
-        .onConflictDoNothing()
-        .returning();
-      if (inserted.length) {
-        const store = new RedisStore(id, name, fabricStorage);
-        await store.load(true);
-        this.stores.set(id, store);
-        this.tokenIndex.set(token, id);
-      } else {
-        await db.update(redisInstances).set({ token }).where(eq(redisInstances.id, id));
-      }
+        .onConflictDoUpdate({
+          target: redisInstances.id,
+          set: { token },
+        });
     }
     console.log("[RedisManager] System instances bootstrapped.");
   }
@@ -90,9 +83,8 @@ class RedisManager {
     await Promise.all(
       rows.map(async (row) => {
         if (!row.isActive) return;
-        if (this.stores.has(row.id)) return;
         try {
-          const store = new RedisStore(row.id, row.name, fabricStorage);
+          const store = new RedisStore(row.id, row.name);
           await store.load();
           this.stores.set(row.id, store);
           this.tokenIndex.set(row.token, row.id);
@@ -136,8 +128,8 @@ class RedisManager {
 
     if (!row) throw new Error("Failed to create redis instance record");
 
-    const store = new RedisStore(id, name, fabricStorage);
-    await store.load(true);
+    const store = new RedisStore(id, name);
+    await store.load();
     this.stores.set(id, store);
     this.tokenIndex.set(token, id);
 
@@ -171,7 +163,7 @@ class RedisManager {
 
       if (!row || !row.isActive) return null;
 
-      const store = new RedisStore(instanceId, row.name, fabricStorage);
+      const store = new RedisStore(instanceId, row.name);
       await store.load();
       this.stores.set(instanceId, store);
       this.tokenIndex.set(row.token, instanceId);

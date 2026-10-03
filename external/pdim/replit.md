@@ -2,59 +2,6 @@
 
 ## Purpose
 
-### Embedded Max Booster deployment
-
-The unified backend does **not** start this repository's standalone HTTP app.
-`server/cluster.ts` starts one local PDIM owner before forking workers; in
-single-process mode `server/index.ts` owns it. All workers and the supervised
-MaxCore child use `http://127.0.0.1:${LOCAL_PDIM_PORT}/api/redis/instances/local/exec`
-(`LOCAL_PDIM_PORT` defaults to 5556 and is distinct from public `PORT`).
-The owner reuses this repository's canonical Redis/Lua engine, with the existing
-`data/local-pdim-store.json` atomic snapshot/recovery boundary. Existing entries
-and checkpoints are retained; no database migration or dataset reseeding is
-required. Legacy stream field maps are accepted and consumer groups are retained
-in subsequent snapshots.
-
-`server/lib/pdimEnvFix.ts` supplies `STORAGE_HTTP_URL`, `PDIM_EXEC_URL`,
-`PDIM_HTTP_EXEC_URL` and matching bearer variables before clients initialize.
-It generates `PDIM_LOCAL_CHANNEL_TOKEN` internally and passes it through the
-supervisor's inherited environment: users need not supply a PDIM API key.
-Python must use `STORAGE_HTTP_URL` with `STORAGE_BEARER_TOKEN` as a Bearer header,
-not a public MaxCore generation/admin credential. Never log these values.
-`PDIM_FORCE_REMOTE=1` retains the explicit remote URL/credential configuration.
-Private channel authorization accepts no forwarded identity headers. Public
-generation and admin authentication remain separate and unchanged.
-
-Only the background worker owns PocketFabric topology changes; other workers
-resolve newly spawned pockets from the persisted node registry. Scaling uses
-health, utilization, cooldowns, verified chunk migration and safe drains.
-Logical node lifetimes have no fixed count ceiling. Advertised node capacity and
-region labels do not create physical disk, CPUs, GPUs or independent failure
-domains: migrations use a serialized physical I/O lane, while MaxCore must
-continue to admit active work according to measured host capacity.
-
-#### Actual GPU/KV state capsules
-
-GPU state clients use the same authenticated exec endpoint with
-`CAPSULE.SET [key, serializedState]`, `CAPSULE.GET [key]` and
-`CAPSULE.DEL [key]`. SET returns `"OK"` only after the owner commits its atomic
-snapshot; GET returns the original serialized string (or null when absent).
-Binary tensors should carry dtype/shape and base64 bytes in that string.
-Plain Redis SET remains plain Redis: clients must explicitly use CAPSULE.SET
-for VRAM/KV state rather than treating a lifecycle record as GPU state storage.
-
-The physical path is LocalPdimCapsules → PocketDimension root
-`local-compute-capsules` → nested `gpu-state` → nested key-hash shard →
-content-addressed state entry → CodecMesh → PDCF compressed chunk containers.
-PocketDimension uses the owner's directly injected canonical RedisStore, not
-an HTTP call back into itself. The existing JSON snapshot is the durable
-envelope for compressed chunk bytes, nested indexes and references, **not** a
-raw GPU-payload dump. Reads verify length and SHA-256 after decompression.
-Legacy raw Redis state remains readable through CAPSULE.GET until explicitly
-rewritten. DEL removes the live reference only; shared chunks are retained
-until snapshot-aware reachability reclamation, so physical storage is finite
-and must be monitored. No pre-existing snapshots or chunks are migrated/deleted.
-
 **PDIM** (`pocketdimensionstorage.replit.app`) is Max Booster's **primary storage model** — a tri-app storage backbone connecting the AI dataset agent, the storage server, and the AI training consumer.
 
 ```

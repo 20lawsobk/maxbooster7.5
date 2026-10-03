@@ -8150,6 +8150,30 @@ var init_localPdimCapsules = __esm({
 import fs3 from "node:fs";
 import path5 from "node:path";
 import { createHash as createHash5 } from "node:crypto";
+function* completeLines(file) {
+  const fd = fs3.openSync(file, "r");
+  let offset = 0;
+  let fragments = [];
+  try {
+    while (true) {
+      const chunk = Buffer.allocUnsafe(1024 * 1024);
+      const count = fs3.readSync(fd, chunk, 0, chunk.length, null);
+      if (!count) return;
+      let start = 0;
+      for (let index = 0; index < count; index++) {
+        if (chunk[index] !== 10) continue;
+        fragments.push(chunk.subarray(start, index));
+        yield { line: Buffer.concat(fragments).toString("utf8"), end: offset + index + 1 };
+        fragments = [];
+        start = index + 1;
+      }
+      if (start < count) fragments.push(Buffer.from(chunk.subarray(start, count)));
+      offset += count;
+    }
+  } finally {
+    fs3.closeSync(fd);
+  }
+}
 var checksum, LocalPdimCapsuleJournal;
 var init_localPdimCapsuleJournal = __esm({
   "server/lib/localPdimCapsuleJournal.ts"() {
@@ -8176,19 +8200,28 @@ var init_localPdimCapsuleJournal = __esm({
       recover(baseline, apply) {
         this.publishedSeq = baseline;
         if (!fs3.existsSync(this.file)) return;
-        const bytes = fs3.readFileSync(this.file);
-        const end = bytes.lastIndexOf(10) + 1;
-        const records = bytes.subarray(0, end).toString("utf8").split("\n").filter(Boolean).map((line) => this.decode(line));
+        const size = fs3.statSync(this.file).size;
+        let end = 0;
         let previous = 0;
-        for (const record of records) {
+        let sequence = baseline;
+        for (const item of completeLines(this.file)) {
+          end = item.end;
+          if (!item.line) continue;
+          const record = this.decode(item.line);
           if (record.seq <= previous) throw new Error("Capsule journal sequence regression");
           previous = record.seq;
           if (record.seq <= baseline) continue;
-          if (record.seq !== this.publishedSeq + 1) throw new Error("Capsule journal sequence gap");
+          if (record.seq !== sequence + 1) throw new Error("Capsule journal sequence gap");
+          sequence = record.seq;
+        }
+        for (const { line } of completeLines(this.file)) {
+          if (!line) continue;
+          const record = this.decode(line);
+          if (record.seq <= baseline) continue;
           apply(record.changes);
           this.publishedSeq = record.seq;
         }
-        if (end !== bytes.length) fs3.truncateSync(this.file, end);
+        if (end !== size) fs3.truncateSync(this.file, end);
       }
       commit(changes, publish) {
         const operation = this.tail.then(async () => {
@@ -8231,23 +8264,22 @@ var init_localPdimCapsuleJournal = __esm({
       compact(baseline) {
         const operation = this.tail.then(async () => {
           if (this.poisoned) return;
-          let raw;
-          try {
-            raw = await fs3.promises.readFile(this.file, "utf8");
-          } catch (error) {
-            if (error.code === "ENOENT") return;
-            throw error;
-          }
-          const retained = raw.split("\n").filter(Boolean).filter((line) => this.decode(line).seq > baseline);
+          if (!fs3.existsSync(this.file)) return;
           const temporary = `${this.file}.compact-${process.pid}`;
           const file = await fs3.promises.open(temporary, "w", 384);
           try {
-            await file.writeFile(retained.length ? retained.join("\n") + "\n" : "");
-            await file.sync();
+            try {
+              for (const { line } of completeLines(this.file)) {
+                if (line && this.decode(line).seq > baseline) await file.writeFile(line + "\n");
+              }
+              await file.sync();
+            } finally {
+              await file.close();
+            }
+            await fs3.promises.rename(temporary, this.file);
           } finally {
-            await file.close();
+            await fs3.promises.rm(temporary, { force: true });
           }
-          await fs3.promises.rename(temporary, this.file);
           const directory = await fs3.promises.open(path5.dirname(this.file), "r");
           try {
             await directory.sync();
