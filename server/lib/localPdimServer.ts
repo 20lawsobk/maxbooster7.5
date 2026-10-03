@@ -27,6 +27,7 @@ import { LocalPdimCapsules } from "./localPdimCapsules.js";
 import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
 import { LocalPdimAofJournal } from "./localPdimAofJournal.js";
 import { readSnapshotJson, snapshotJsonChunks } from "./pdimSnapshotJson.js";
+import { writeSnapshotOffThread } from "./pdimSnapshotWriter.js";
 
 const LOCAL_PORT = runtimePorts.localPdim;
 const PERSIST_FILE = path.resolve(
@@ -97,6 +98,8 @@ function saveStoreAsync(): Promise<boolean> {
     const publication = snapshotPublication;
     const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
     try {
+      await fs.promises.mkdir(path.dirname(PERSIST_FILE), { recursive: true });
+      let writeFailure: unknown;
       const snapshot = await canonicalStore.captureEmbeddedCheckpoint((redisBaseline: number) => {
         const capsuleBaseline = capsuleJournal.publishedSeq;
         const obj: Record<string, StoreEntry> = {};
@@ -112,19 +115,15 @@ function saveStoreAsync(): Promise<boolean> {
           value: String(redisBaseline),
         };
         return {
-          serialized: snapshotJsonChunks(obj),
+          // Attach the rejection handler immediately, even while the capture
+          // boundary is unwinding, without concealing an unsuccessful write.
+          writing: writeSnapshotOffThread(temporaryFile, obj).catch(error => { writeFailure = error; }),
           capsuleBaseline,
           redisBaseline,
         };
       });
-      await fs.promises.mkdir(path.dirname(PERSIST_FILE), { recursive: true });
-      const file = await fs.promises.open(temporaryFile, "wx", 0o600);
-      try {
-        for (const chunk of snapshot.serialized) await file.writeFile(chunk, "utf8");
-        await file.sync();
-      } finally {
-        await file.close();
-      }
+      await snapshot.writing;
+      if (writeFailure) throw writeFailure;
       if (snapshotPublication !== publication) {
         // A newer synchronous checkpoint already durably covers this state.
         await fs.promises.rm(temporaryFile, { force: true });

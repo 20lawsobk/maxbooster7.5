@@ -100,9 +100,8 @@ import("./services/maxcoreLocalSupervisor.js")
 // Optionally start an internal-only dns-node instance (backend testing of the
 // DNS zone pipeline only — never publicly reachable). No-op unless
 // DNS_NODE_LOCAL=1. See server/services/dnsNodeLocalSupervisor.ts for why.
-import("./services/dnsNodeLocalSupervisor.js")
-  .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
-  .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
+// Started after route registration below: its initial zone sync depends on
+// /api/dns/zone/:domain being mounted.
 
 // Kick off readiness probes asynchronously — /ready transitions from
 // "not_ready" → "ready"/"degraded" once DB + Redis + MaxCore have responded.
@@ -1141,6 +1140,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info("Fan delivery scheduler disabled; enable only after consent schema and mail configuration approval");
   }
   _routesReady = true;
+  void import("./services/dnsNodeLocalSupervisor.js")
+    .then(({ startDnsNodeLocal }) => startDnsNodeLocal())
+    .catch((err) => logger.error({ err }, "[DnsNodeLocal] failed to start supervisor"));
   const { setRoutesReady: _setRoutesReady } = await import(
     "./lib/bootState.js"
   );
@@ -1872,14 +1874,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     );
     logger.info("🤖 AUTONOMOUS SYSTEMS READY");
 
-    // Built-in authoritative DNS server for *.maxbooster?.replit.app
-    import("./services/dnsServer.js")
-      .then(({ startDNSServer }) => {
-        startDNSServer().catch((e) =>
-          logger.warn("[DNS] Start error:", e?.message),
-        );
-      })
-      .catch(() => {});
+    // A socket has one owner. The supervised node already serves this zone
+    // when configured on the same port; never race a second nameserver for it.
+    const supervisedDnsOwnsPort = process.env.DNS_NODE_LOCAL === "1" &&
+      (Number(process.env.DNS_NODE_LOCAL_PORT) || 5353) ===
+        Number(process.env.DNS_PORT || "53");
+    if (supervisedDnsOwnsPort) {
+      logger.info("[DNS] Authoritative listener owned by the supervised local DNS node");
+    } else {
+      void import("./services/dnsServer.js")
+        .then(({ startDNSServer }) => startDNSServer())
+        .catch((err) => logger.error({ err }, "[DNS] Failed to start authoritative listener"));
+    }
 
     // MaxCore feedback/state transport runs on worker 0 only. MaxCore owns its
     // model lifecycle; app startup must not launch model training.

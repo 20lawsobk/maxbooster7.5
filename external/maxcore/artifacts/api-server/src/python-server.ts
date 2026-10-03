@@ -353,6 +353,9 @@ const scheduleWarmup = ownedSingleFlight(() => pythonProcess, async (owner) => {
 function spawnPython() {
   if (shuttingDown || pythonProcess) return;
 
+  // Publish startup state before opening the child. Otherwise early probes
+  // enter the connection-retry loop while no Python listener exists yet.
+  setPythonRestarting(true);
   console.log(`[Python] Starting AI training server (port ${PYTHON_PORT})...`);
   lastStartTime = Date.now();
 
@@ -552,6 +555,9 @@ export async function ensurePythonServer(): Promise<void> {
     } else {
       console.log(`[Python] AI training server ready on port ${PYTHON_PORT}`);
     }
+    // In proxy-only mode the external owner, not this lifecycle manager,
+    // controls readiness. Preserve direct proxying after the startup wait.
+    setPythonRestarting(false);
     return;
   }
 
