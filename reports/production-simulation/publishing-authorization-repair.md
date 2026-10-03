@@ -62,3 +62,34 @@ No full application build, workflow start, shared-database access, or
 publication was performed. Fixture results do not establish full-build or
 publication success. Full-build validation remains with its existing
 capacity-gated validation task; no existing copies were deleted for space.
+
+## Workspace Python environment exclusion evidence
+
+The workspace contains `venv/bin/.python-wrapped` pointing to an external Nix
+interpreter. The policy previously excluded `.venv` but not the root `venv`.
+The narrowly rooted `/venv/` publishing rule and matching top-level simulation
+exclusion now omit that development environment without excluding nested
+dependency directories named `venv`.
+
+Verification: **43 Vitest regressions and 22 Node publishing-entry/recovery
+tests passed**. The fixture evidence covers:
+
+- Real-policy app-remainder member selection omits root environment regular
+  files and a Python-wrapper symlink chain ending outside the disposable root.
+- Portable runtime capsules, manifests and startup helpers are not nested into
+  app_remainder and remain available to protected-path cleanup validation.
+- Authorized cleanup and payload measurement skip the excluded environment,
+  preserve required artifacts, and leave external interpreter bytes unchanged.
+- The real simulation copier omits the environment before traversal, retains
+  nested dependency directories and portable runtime sources, and preserves
+  source-environment links and external target bytes.
+- The configured publishing command runs real npm and tar/zstd fixture builds
+  with the actual publishing policy, including cleanup and recovery reentry.
+- Surviving external, broken, cyclic and excluded-target links still fail
+  before any excluded environment data is removed. Existing authorization,
+  protected-file and recovery tests remain passing.
+
+No full application build or publishing attempt was made. No application
+services were started for these tests, no shared database was accessed, and no
+workspace Python environment or retained simulation copy was altered or deleted.
+The existing capacity-gated full-build validation remains separate.

@@ -20,6 +20,7 @@ node_modules/.cache
 .next
 .pythonlibs
 .venv
+# Workspace-only Nix-backed Python environment; do not match nested dependencies.
 /venv/
 __pycache__
 .config/

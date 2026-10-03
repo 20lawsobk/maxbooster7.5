@@ -24,12 +24,14 @@ function configuredBuildCommand() {
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-entry-"));
   const calls = `${root}.npm-calls.jsonl`;
+  const outsideInterpreter = `${root}.external-python`;
   const authorization = { DEPLOY_PACK:"1", PUBLISH_PAYLOAD_CLEANUP:"1", PUBLISH_BUILD_ROOT:root };
   const state = deploymentPackStateDirectory(root, authorization);
   t.after(() => {
     fs.rmSync(root, {recursive:true, force:true});
     fs.rmSync(state, {recursive:true, force:true});
     fs.rmSync(calls, {force:true});
+    fs.rmSync(outsideInterpreter, {force:true});
   });
   function write(file, value) {
     fs.mkdirSync(path.dirname(path.join(root,file)), {recursive:true});
@@ -43,6 +45,10 @@ function fixture(t) {
   write("server/source.ts", "original source");
   write("start.sh", "preserved bootstrap");
   write(".local/ignored/evidence", "disposable evidence");
+  write("venv/pyvenv.cfg", "workspace-only Python environment");
+  write("venv/bin/python", "workspace-only interpreter");
+  fs.writeFileSync(outsideInterpreter, "external interpreter must remain unchanged");
+  fs.symlinkSync(outsideInterpreter, path.join(root, "venv/bin/.python-wrapped"));
   write("fixture-build.mjs", `
     import fs from "node:fs";
     import {beginDeploymentPack, deploymentPackStateDirectory} from "./${RECOVERY_HELPER_PATH}";
@@ -56,21 +62,22 @@ function fixture(t) {
       runtimeIndicator:Boolean(process.env.REPLIT_DEPLOYMENT || process.env.REPLIT_DEPLOYMENT_ID),
     })+"\\n");
     assertPublishingCleanupExpectation(process.env, root);
+    const policy=fs.readFileSync(".dockerignore","utf8");
     if (!fs.existsSync("node_modules/input")) throw Error("pre-npm recovery missing");
     const tx=beginDeploymentPack(root);
     await packCapsule({root,dir:"node_modules",capsule:"node_modules.pdim",threads:1});
     if(process.env.FIXTURE_INTERRUPT==="1") process.kill(process.pid,"SIGKILL");
     const members=computeRemainingAppMembers(root).filter(p => p!=="${RECOVERY_HELPER_PATH}");
     if(members.some(p=>p.includes("journal.json"))) throw Error("shipped recovery");
+    if(members.some(p=>p==="venv" || p.startsWith("venv/"))) throw Error("shipped workspace Python environment");
     tx.preserveMembers(members);
     await packCapsuleMembers({root,members,capsule:"app_remainder.pdim",threads:1});
-    const policy=".local/\\n.deployment-pack-state/\\n";
     cleanPublishingPayload({root,env:process.env,dockerignore:policy,requiredPaths:["start.sh","package.json","${RECOVERY_HELPER_PATH}"]});
     const measured=measurePublishingPayload(root,policy);
     console.log("REAL_FIXTURE_BUILD_COMPLETE", measured.totalBytes, deploymentPackStateDirectory(root));
     tx.complete();
   `);
-  write(".dockerignore", ".local/\n.deployment-pack-state/\n");
+  write(".dockerignore", fs.readFileSync(path.join(repo, ".dockerignore")));
   const env = { PATH:process.env.PATH, HOME:root, CI:"true" };
   const run = (extra = {}, args = ["--publish-disposable-copy", "."]) =>
     spawnSync(process.execPath, [path.join(root,RECOVERY_HELPER_PATH), ...args],
@@ -81,7 +88,7 @@ function fixture(t) {
     return spawnSync(executable, args,
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
   };
-  return {root,state,calls,authorization,write,run,runConfigured};
+  return {root,state,calls,authorization,write,run,runConfigured,outsideInterpreter};
 }
 
 test("actual deployment wiring agrees with the documented single publishing entry", () => {
@@ -112,6 +119,8 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
       assert.ok(!fs.existsSync(path.join(f.root,".deployment-pack-state")));
       assert.ok(!fs.existsSync(path.join(f.root,"node_modules")));
       assert.ok(!fs.existsSync(path.join(f.root,"fixture-build.mjs")));
+      assert.ok(!fs.existsSync(path.join(f.root,"venv")));
+      assert.equal(fs.readFileSync(f.outsideInterpreter,"utf8"), "external interpreter must remain unchanged");
     }
     const restored=f.run({...indicators,...f.authorization},["--recover", "."]);
     assert.equal(restored.status,0,restored.stderr);

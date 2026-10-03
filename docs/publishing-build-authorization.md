@@ -61,3 +61,30 @@ They verify one npm build per invocation, the canonical root context, absent
 and empty runtime indicators, repeated recovery, and rejection of inherited
 authorization before npm or filesystem mutation. Testing a separately written
 helper command alone does not validate the publishing configuration.
+
+## Workspace Python environment exclusion
+
+The root `venv` is development state, not the portable runtime. Its Python
+wrapper may point outside the publishing tree into the host Nix store.
+`/venv/` is excluded by the real publishing policy, and the simulation copier
+excludes the same top-level name before traversing it. Nested dependency
+directories named `venv` are not covered by this root-only rule.
+
+App-remainder selection omits these development files. Authorized publishing
+cleanup removes only the excluded copy without following its links. The
+workspace original and external interpreter targets are not cleanup inputs.
+Surviving external, broken, cyclic and excluded-target links still cause
+failure before deletion.
+
+Production continues to use the separately built and verified portable Python
+capsule. Capsules, manifests and bootstrap helpers remain outside app_remainder
+and retain their existing protected-path and runtime-validation requirements.
+
+Focused fixture regressions:
+
+```
+env -i PATH="$PATH" HOME=/tmp node node_modules/vitest/vitest.mjs run tests/unit/publishing-payload-cleanup.test.ts tests/unit/dockerignore-scan-sensitive-paths.test.ts tests/unit/production-simulation-copy.test.ts tests/unit/deployment-pack-reentry.test.ts --maxWorkers=2
+```
+
+These fixtures test selection, copying, packing, authorized cleanup and
+measurement. They are not a full application build or successful publication.

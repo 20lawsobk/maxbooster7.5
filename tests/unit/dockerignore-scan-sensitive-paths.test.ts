@@ -66,6 +66,8 @@ describe("deployment .dockerignore sensitive path coverage", () => {
         ["python_runtime.pdim", "portable runtime capsule"],
         ["python_runtime.manifest.json", "portable runtime manifest"],
         ["start.sh", "bootstrap entry point"],
+        ["lib/venv/dependency.py", "nested dependency data"],
+        ["server/index.ts", "app remainder source"],
       ]) {
         const file = path.join(workspace, relative);
         await fs.mkdir(path.dirname(file), { recursive: true });
@@ -79,9 +81,13 @@ describe("deployment .dockerignore sensitive path coverage", () => {
 
       const members = computeRemainingAppMembers(workspace);
       expect(members.some((member) => member === "venv" || member.startsWith("venv/"))).toBe(false);
-      expect(members).toContain("python_runtime.pdim");
-      expect(members).toContain("python_runtime.manifest.json");
-      expect(members).toContain("start.sh");
+      // Bootstrap files and existing capsules must remain OUTSIDE app_remainder.
+      for (const protectedFile of ["python_runtime.pdim", "python_runtime.manifest.json", "start.sh"]) {
+        expect(members).not.toContain(protectedFile);
+        await expect(fs.access(path.join(workspace, protectedFile))).resolves.toBeUndefined();
+      }
+      expect(members).toContain("lib/venv/dependency.py");
+      expect(members).toContain("server/index.ts");
       expect(await fs.readlink(wrapper)).toContain("external-wrapper");
       expect(await fs.readlink(wrapperTarget)).toBe(originalTarget);
       expect(createHash("sha256").update(await fs.readFile(executable)).digest("hex")).toBe(targetBytes);

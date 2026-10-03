@@ -164,11 +164,15 @@ describe("disposable publishing payload cleanup", () => {
     const targetBytes = fs.readFileSync(interpreter);
     const outsideLinkValue = fs.readlinkSync(outsideLink);
     const policy = fs.readFileSync(".dockerignore", "utf8");
+    write(".dockerignore", policy);
     const beforeMembers = computeRemainingAppMembers(root);
     expect(beforeMembers.some((member) => member === "venv" || member.startsWith("venv/"))).toBe(false);
-    expect(beforeMembers).toContain("python_runtime.pdim");
-    expect(beforeMembers).toContain("python_runtime.manifest.json");
-    expect(beforeMembers).toContain("start.sh");
+    for (const protectedFile of ["python_runtime.pdim", "python_runtime.manifest.json", "start.sh"]) {
+      expect(beforeMembers).not.toContain(protectedFile);
+      expect(fs.existsSync(path.join(root, protectedFile))).toBe(true);
+    }
+    const measuredBefore = measurePublishingPayload(root, policy);
+    expect(measuredBefore.byTopDir.has("venv")).toBe(false);
 
     const required = [
       "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
@@ -189,7 +193,28 @@ describe("disposable publishing payload cleanup", () => {
     expect(fs.existsSync(path.join(root, "external/pdim/venv/lib/site-packages/nested-dependency.py"))).toBe(true);
     expect(fs.readFileSync(interpreter)).toEqual(targetBytes);
     expect(fs.readlinkSync(outsideLink)).toBe(outsideLinkValue);
+    expect(result.measurement.byTopDir.has("venv")).toBe(false);
+    expect(result.measurement.entries).toBe(measuredBefore.entries);
   });
+
+  for (const kind of ["broken", "external", "excluded", "cycle"]) {
+    it(`real venv policy still rejects a surviving ${kind} link before cleanup`, () => {
+      const { base, root, write } = fixture();
+      const environment = write("venv/pyvenv.cfg", "preserve until validation succeeds");
+      const outside = path.join(base, "outside-python");
+      fs.writeFileSync(outside, "untouched external interpreter");
+      const target = kind === "broken" ? "missing" : kind === "external"
+        ? outside : kind === "excluded" ? "venv/pyvenv.cfg" : "surviving-link";
+      fs.symlinkSync(target, path.join(root, "surviving-link"));
+      const policy = fs.readFileSync(".dockerignore", "utf8");
+      expect(() => measurePublishingPayload(root, policy)).toThrow(/publishing payload symlink/i);
+      expect(() => cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: policy, requiredPaths: [],
+      })).toThrow(/publishing payload symlink/i);
+      expect(fs.readFileSync(environment, "utf8")).toBe("preserve until validation succeeds");
+      expect(fs.readFileSync(outside, "utf8")).toBe("untouched external interpreter");
+    });
+  }
 
   for (const conflictingPattern of ["start.sh", "script/", "*.pdim", "*.manifest.json", "pyproject.toml", ".node_bin/"]) {
     it(`fails before any deletion when policy excludes a protected runtime path (${conflictingPattern})`, () => {
