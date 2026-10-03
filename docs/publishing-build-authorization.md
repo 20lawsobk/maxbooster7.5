@@ -3,12 +3,21 @@
 The configured command is:
 
 ```
-node script/lib/deploymentPackRecovery.mjs --publish-disposable-copy .
+node --import tsx script/publish-release.ts --publish-disposable-copy .
 ```
 
 **Destructive command: use only in the disposable publishing build copy. Never
 run this command in the working checkout.** It authorizes packing and physical
-removal of ignored files in the copy. A local full-path test requires a separate
+installation of the previously verified payload and removal of build inputs in
+the copy. It does not compile or pack. See `prepared-production-releases.md`.
+
+The preparation step invokes the existing packer only in its isolated copy:
+
+```
+node script/lib/deploymentPackRecovery.mjs --publish-disposable-copy .
+```
+
+A local full-path test requires a separate
 disposable copy and verified scratch capacity first.
 
 Replit documentation describes `REPLIT_DEPLOYMENT=1` on running published apps;
@@ -55,9 +64,11 @@ The entry-point fixture uses real npm, recovery, capsule packing and cleanup,
 with a tiny build script instead of the full application. It is not evidence
 of a successful full application build or publication.
 
-The configured-command regressions read `deployment.build` directly from
-`.replit` and execute that argument array only inside disposable fixtures.
-They verify one npm build per invocation, the canonical root context, absent
+The wiring regression reads `deployment.build` directly from `.replit` and checks
+the build-free installer command. Separate installer fixtures exercise verified
+payload replacement and rejection before mutation. Packing regressions derive
+the preparation command from its real implementation and execute it only inside
+disposable fixtures. They verify one npm build per preparation invocation, the canonical root context, absent
 and empty runtime indicators, repeated recovery, and rejection of inherited
 authorization before npm or filesystem mutation. Testing a separately written
 helper command alone does not validate the publishing configuration.

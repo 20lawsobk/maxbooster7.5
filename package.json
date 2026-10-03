@@ -15,6 +15,8 @@
     "dev": "bash scripts/start-dev.sh",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "node --import tsx script/build.ts",
+    "release:prepare": "node --import tsx script/prepare-release.ts",
+    "release:verify": "node --import tsx -e \"import('./script/publish-release.ts').then(m=>m.verifyPreparedRelease(process.cwd())).then(()=>console.log('Prepared release is current')).catch(e=>{console.error(e.message);process.exitCode=1})\"",
     "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",
     "build:full": "npm run security-fix && npm run build",
     "build:deploy": "npm ci --omit=dev --ignore-scripts && node scripts/postinstall.mjs",

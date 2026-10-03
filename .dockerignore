@@ -39,6 +39,7 @@ __pycache__
 # The build command installs only production dependencies fresh in the
 # deployment container. Pre-built dist/ artifacts skip the compile step.
 node_modules/
+.prepared-release/
 
 # Large desktop/mobile app binary artifacts (not needed in web server deployment)
 electron/

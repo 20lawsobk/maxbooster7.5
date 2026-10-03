@@ -6,6 +6,32 @@ export type CapsuleChanges = Record<string, string | null>;
 type RecordBody = { seq: number; changes: CapsuleChanges };
 const checksum = (body: string) => createHash("sha256").update(body).digest("hex");
 
+/** Read complete records without converting the entire journal into one V8
+ * string. Keep only the current record in memory; byte offsets preserve UTF-8
+ * boundaries and allow recovery to truncate an unacknowledged partial append. */
+function* completeLines(file: string): Generator<{ line: string; end: number }> {
+  const fd = fs.openSync(file, "r");
+  let offset = 0;
+  let fragments: Buffer[] = [];
+  try {
+    while (true) {
+      const chunk = Buffer.allocUnsafe(1024 * 1024);
+      const count = fs.readSync(fd, chunk, 0, chunk.length, null);
+      if (!count) return;
+      let start = 0;
+      for (let index = 0; index < count; index++) {
+        if (chunk[index] !== 10) continue;
+        fragments.push(chunk.subarray(start, index));
+        yield { line: Buffer.concat(fragments).toString("utf8"), end: offset + index + 1 };
+        fragments = [];
+        start = index + 1;
+      }
+      if (start < count) fragments.push(Buffer.from(chunk.subarray(start, count)));
+      offset += count;
+    }
+  } finally { fs.closeSync(fd); }
+}
+
 /** One owner's durable capsule transactions; only changed compressed objects
  * enter the log. The snapshot watermark makes replay/compaction idempotent. */
 export class LocalPdimCapsuleJournal {
@@ -31,21 +57,31 @@ export class LocalPdimCapsuleJournal {
   recover(baseline: number, apply: (changes: CapsuleChanges) => void): void {
     this.publishedSeq = baseline;
     if (!fs.existsSync(this.file)) return;
-    const bytes = fs.readFileSync(this.file);
-    const end = bytes.lastIndexOf(10) + 1;
+    const size = fs.statSync(this.file).size;
+    let end = 0;
     // An incomplete final append was never acknowledged. Remove it before
     // allowing another transaction to append; complete corrupt records fail shut.
-    const records = bytes.subarray(0, end).toString("utf8").split("\n").filter(Boolean).map(line => this.decode(line));
     let previous = 0;
-    for (const record of records) {
+    let sequence = baseline;
+    // Validate the whole committed log before publishing any recovered data.
+    for (const item of completeLines(this.file)) {
+      end = item.end;
+      if (!item.line) continue;
+      const record = this.decode(item.line);
       if (record.seq <= previous) throw new Error("Capsule journal sequence regression");
       previous = record.seq;
       if (record.seq <= baseline) continue;
-      if (record.seq !== this.publishedSeq + 1) throw new Error("Capsule journal sequence gap");
+      if (record.seq !== sequence + 1) throw new Error("Capsule journal sequence gap");
+      sequence = record.seq;
+    }
+    for (const { line } of completeLines(this.file)) {
+      if (!line) continue;
+      const record = this.decode(line);
+      if (record.seq <= baseline) continue;
       apply(record.changes);
       this.publishedSeq = record.seq;
     }
-    if (end !== bytes.length) fs.truncateSync(this.file, end);
+    if (end !== size) fs.truncateSync(this.file, end);
   }
 
   commit(changes: CapsuleChanges, publish: () => void): Promise<void> {
@@ -83,16 +119,18 @@ export class LocalPdimCapsuleJournal {
   compact(baseline: number): Promise<void> {
     const operation = this.tail.then(async () => {
       if (this.poisoned) return;
-      let raw: string;
-      try { raw = await fs.promises.readFile(this.file, "utf8"); }
-      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return; throw error; }
-      const retained = raw.split("\n").filter(Boolean)
-        .filter(line => this.decode(line).seq > baseline);
+      if (!fs.existsSync(this.file)) return;
       const temporary = `${this.file}.compact-${process.pid}`;
       const file = await fs.promises.open(temporary, "w", 0o600);
-      try { await file.writeFile(retained.length ? retained.join("\n") + "\n" : ""); await file.sync(); }
-      finally { await file.close(); }
-      await fs.promises.rename(temporary, this.file);
+      try {
+        try {
+          for (const { line } of completeLines(this.file)) {
+            if (line && this.decode(line).seq > baseline) await file.writeFile(line + "\n");
+          }
+          await file.sync();
+        } finally { await file.close(); }
+        await fs.promises.rename(temporary, this.file);
+      } finally { await fs.promises.rm(temporary, { force: true }); }
       const directory = await fs.promises.open(path.dirname(this.file), "r");
       try { await directory.sync(); } finally { await directory.close(); }
     });

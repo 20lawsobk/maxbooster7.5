@@ -9,6 +9,30 @@ import { LocalPdimCapsules } from "../../server/lib/localPdimCapsules.js";
 import { LocalPdimCapsuleJournal } from "../../server/lib/localPdimCapsuleJournal.js";
 
 describe("durable capsule delta journal", () => {
+  it("streams multi-chunk UTF-8 records through recovery and compaction", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "capsule-chunk-journal-"));
+    const file = join(directory, "capsules.jsonl");
+    try {
+      const journal = new LocalPdimCapsuleJournal(file);
+      const large = "音".repeat(800_000);
+      await journal.commit({ first: large }, () => {});
+      await journal.commit({ second: large }, () => {});
+      const seen: string[] = [];
+      new LocalPdimCapsuleJournal(file).recover(0, changes => {
+        seen.push(...Object.keys(changes));
+        expect(Object.values(changes)[0]).toBe(large);
+      });
+      expect(seen).toEqual(["first", "second"]);
+      await journal.compact(1);
+      const compacted: string[] = [];
+      new LocalPdimCapsuleJournal(file).recover(1, changes => compacted.push(...Object.keys(changes)));
+      expect(compacted).toEqual(["second"]);
+      await appendFile(file, '{"body":"{}", "sha256":"bad"}\n');
+      const apply = vi.fn();
+      expect(() => new LocalPdimCapsuleJournal(file).recover(1, apply)).toThrow(/checksum/);
+      expect(apply).not.toHaveBeenCalled();
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  });
   it("reconstructs real compressed operations, compacts at a snapshot boundary and ignores a torn tail", async () => {
     const directory = await mkdtemp(join(tmpdir(), "capsule-journal-"));
     const file = join(directory, "capsules.jsonl");

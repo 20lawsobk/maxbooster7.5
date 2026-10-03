@@ -3,6 +3,8 @@ import path from "node:path";
 
 const EXCLUDED_TOP_LEVEL = new Set([
   ".git",
+  ".prepared-release",
+  ".deployment-pack-state",
   ".github",
   ".vscode",
   ".idea",

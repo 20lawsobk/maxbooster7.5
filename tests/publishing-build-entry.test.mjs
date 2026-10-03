@@ -13,11 +13,12 @@ const url = file => JSON.stringify(pathToFileURL(path.join(repo, file)).href);
 // Read only deployment wiring; never copy workspace userenv into a fixture.
 // The configured build is a single-line TOML array of JSON-compatible strings.
 function configuredBuildCommand() {
-  const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
-    .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
-  const value = section?.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)?.[1];
-  assert.ok(value, "deployment.build must be an explicit argument array");
-  const command = JSON.parse(value);
+  // Packing is now preparation-only. Exercise the exact command used inside
+  // its isolated copy; Publish uses the independent verified-release installer.
+  const source = fs.readFileSync(path.join(repo, "script/prepare-release.ts"), "utf8");
+  const value = source.match(/\["script\/lib\/deploymentPackRecovery\.mjs", "--publish-disposable-copy", "\."\]/)?.[0];
+  assert.ok(value, "preparation must invoke the authorized packing entrypoint");
+  const command = [process.execPath, ...JSON.parse(value)];
   assert.ok(Array.isArray(command) && command.length && command.every(v => typeof v === "string"));
   return command;
 }
@@ -96,17 +97,21 @@ function fixture(t) {
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
   const runConfigured = (extra = {}) => {
     const [executable, ...args] = configuredBuildCommand();
-    // The executable comes from .replit, not a separately maintained command.
+    // Exercise the isolated preparation entry, not a second packing recipe.
     return spawnSync(executable, args,
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
   };
   return {root,state,calls,authorization,write,run,runConfigured,outsideInterpreter};
 }
 
-test("actual deployment wiring agrees with the documented single publishing entry", () => {
+test("preparation packing and build-free publishing use distinct documented entrypoints", () => {
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["node", RECOVERY_HELPER_PATH, "--publish-disposable-copy", "."]);
-  assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(command.join(" ")));
+  assert.deepEqual(command, [process.execPath, RECOVERY_HELPER_PATH, "--publish-disposable-copy", "."]);
+  const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
+    .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
+  const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
+  assert.deepEqual(publishing, ["node", "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", "."]);
+  assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });
 
 for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
