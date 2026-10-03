@@ -40,3 +40,26 @@ No full application build, workspace-environment deletion, retained-simulation
 cleanup, application restart, shared database access or publication was
 performed. A subsequent real publish is needed to confirm that no platform
 writer bypasses the redirected cache environment.
+
+## Subsequent publishing evidence and cleanup order
+
+The next real publish still failed. Expanded diagnostics identified
+`.cache/replit` as the surviving subtree, after `.cache` had been scheduled for
+removal. Thus the earlier cache-environment changes did not resolve the reported
+failure.
+
+Cleanup's alphabetical deletion order removed `.cache` before `.config` and
+`.replit`. Cache cleanup now happens after all other excluded inputs are removed.
+A fresh policy scan admits only excluded cache roots for that final deletion
+phase, including ones created during input removal; surviving links are
+revalidated before that deletion. No repeated cleanup, ignored error or cache
+exemption was added.
+
+Verification: 49 Vitest regressions and 15 Node publishing/recovery tests passed.
+Controlled configuration-invalidation fixtures cover both initially present
+and newly created caches. Non-excluded cache data is retained and measured.
+Existing tests still reject recreation during cache deletion or afterward.
+
+These fixtures model configuration-triggered cache regeneration; they do not
+identify the live producer's PID or establish that it has finished writing.
+The observed publishing failure is not yet verified resolved in a real build.

@@ -38,6 +38,54 @@ function fixture() {
 }
 
 describe("disposable publishing payload cleanup", () => {
+  for (const cacheInitiallyPresent of [true, false]) {
+    it(`removes invalidating inputs before the platform cache (initial cache: ${cacheInitiallyPresent})`, () => {
+      const { root, write } = fixture();
+      write(".replit", "fixture config");
+      write(".config/settings", "fixture settings");
+      write("start.sh", "bootstrap bytes");
+      if (cacheInitiallyPresent) write(".cache/replit/old", "old cache");
+      const remove = fs.rmSync;
+      const removals: string[] = [];
+      vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+        const relative = path.relative(root, String(target));
+        remove(target, options);
+        removals.push(relative);
+        // Simulate an independent configuration-cache producer, not a cache
+        // write caused by removing the cache itself.
+        if (relative === ".replit" || relative === ".config") {
+          write(".cache/replit/env/fixture", "regenerated platform cache");
+        }
+      });
+      const policy = ".cache\n.config/\n.replit\n";
+      const result = cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"],
+      });
+      expect(removals).toEqual([".config", ".replit", ".cache"]);
+      expect(result.removedPaths).toEqual(removals);
+      expect(result.measurement.byTopDir.has(".cache")).toBe(false);
+      expect(fs.existsSync(path.join(root, ".cache"))).toBe(false);
+      expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap bytes");
+      assertPublishingPayloadClean(root, policy);
+    });
+  }
+
+  it("does not delete a non-excluded cache created by input removal", () => {
+    const { root, write } = fixture();
+    write(".replit", "fixture config");
+    const remove = fs.rmSync;
+    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      remove(target, options);
+      if (String(target) === path.join(root, ".replit")) write(".cache/keep", "retained bytes");
+    });
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".replit\n", requiredPaths: [],
+    });
+    expect(result.removedPaths).toEqual([".replit"]);
+    expect(result.measurement.byTopDir.has(".cache")).toBe(true);
+    expect(fs.readFileSync(path.join(root, ".cache/keep"), "utf8")).toBe("retained bytes");
+  });
+
   it("final read-only assertion rejects a late cache writer without deleting evidence", () => {
     const { root, write } = fixture();
     write("start.sh", "bootstrap");

@@ -103,6 +103,12 @@ uses cleanup's returned measurement, and a final read-only exclusion/symlink
 assertion runs after journal completion. A late writer still fails publishing;
 there are no retries, exemptions for `.cache`, or suppressed safety checks.
 
+Physical cleanup is dependency-ordered: remove excluded configuration/source
+inputs first, rescan and validate surviving links, then remove policy-excluded
+`.cache` roots once. This includes an excluded cache first created during input
+removal. Non-excluded caches are retained and measured. Writes after the cache
+phase still fail the final assertion; cache files are not permitted to survive.
+
 Cache-isolation and entry-point verification:
 
 ```

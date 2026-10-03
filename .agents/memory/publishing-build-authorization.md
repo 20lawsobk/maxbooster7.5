@@ -27,6 +27,16 @@ proof of the original writer. Check the payload after child shutdown, retain
 failure for uncontrolled late writes, and reserve publication-success claims
 for an observed real publish.
 
+The publishing survivor was subsequently narrowed to `.cache/replit` despite
+child-only cache redirection. Do not assume changing child XDG/npm/Python cache
+locations controls a platform process started before that child.
+
+**Why:** A real publishing attempt still failed after that redirection.
+
+**How to apply:** Separate platform cache producers from application build
+tools, and distinguish controlled invalidation fixtures from an observed
+platform-writer trace.
+
 Exercise the actual configured publishing command in disposable regression
 fixtures, rather than maintaining a separate test-only command.
 

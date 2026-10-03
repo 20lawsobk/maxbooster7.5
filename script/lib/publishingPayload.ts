@@ -209,9 +209,24 @@ export function cleanPublishingPayload(options: {
     throw new Error("Deployment pack recovery state must be outside the publishing payload before cleanup");
   }
   validateSurvivingLinks(root, survivors, excluded);
-  for (const relative of excluded) {
+  // Configuration removals can invalidate platform caches. Deleting .cache
+  // first (alphabetical order) allows later .replit/.config removal to recreate
+  // it. Finish input removals before taking the cache-deletion snapshot.
+  const isCacheRoot = (relative: string) => path.posix.basename(relative) === ".cache";
+  const removedPaths: string[] = [];
+  for (const relative of excluded.filter((relative) => !isCacheRoot(relative))) {
     // rm of a link unlinks the entry; it does not recurse into its target.
     fs.rmSync(path.join(root, relative), { recursive: true, force: true });
+    removedPaths.push(relative);
+  }
+  const afterInputs = scan(root, options.dockerignore);
+  validateSurvivingLinks(root, afterInputs.survivors, afterInputs.excluded);
+  // Only policy-excluded caches are eligible, including caches first created
+  // by input invalidation. This is a single dependency-ordered pass, not a
+  // retry loop: a writer after this phase still fails below.
+  for (const relative of afterInputs.excluded.filter(isCacheRoot)) {
+    fs.rmSync(path.join(root, relative), { recursive: true, force: true });
+    removedPaths.push(relative);
   }
   const measurement = measurePublishingPayload(root, options.dockerignore);
   const remainingExcluded = scan(root, options.dockerignore).excluded;
@@ -224,5 +239,5 @@ export function cleanPublishingPayload(options: {
       "\nCleanup remains blocked. Identify and stop or relocate the writer before publishing; do not bypass this check.",
     );
   }
-  return { removedPaths: excluded, measurement };
+  return { removedPaths, measurement };
 }
