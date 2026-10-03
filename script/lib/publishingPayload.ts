@@ -148,6 +148,10 @@ export function measurePublishingPayload(root: string, dockerignore: string): Pa
   root = realRoot(root);
   const { survivors, excluded } = scan(root, dockerignore);
   validateSurvivingLinks(root, survivors, excluded);
+  return measureEntries(root, survivors);
+}
+
+function measureEntries(root: string, survivors: Entry[]): PayloadMeasurement {
   const byTopDir = new Map<string, number>();
   let totalBytes = fs.lstatSync(root).size;
   byTopDir.set("(root files)", totalBytes);
@@ -228,8 +232,11 @@ export function cleanPublishingPayload(options: {
     fs.rmSync(path.join(root, relative), { recursive: true, force: true });
     removedPaths.push(relative);
   }
-  const measurement = measurePublishingPayload(root, options.dockerignore);
-  const remainingExcluded = scan(root, options.dockerignore).excluded;
+  // Measure and verify the same snapshot, rather than walking every survivor
+  // twice. The separate post-journal assertion still detects later writers.
+  const final = scan(root, options.dockerignore);
+  validateSurvivingLinks(root, final.survivors, final.excluded);
+  const remainingExcluded = final.excluded;
   if (remainingExcluded.length) {
     const details = remainingExcluded.slice(0, 8)
       .map((relative) => describeCleanupSurvivor(root, relative, excluded));
@@ -239,5 +246,5 @@ export function cleanPublishingPayload(options: {
       "\nCleanup remains blocked. Identify and stop or relocate the writer before publishing; do not bypass this check.",
     );
   }
-  return { removedPaths, measurement };
+  return { removedPaths, measurement: measureEntries(root, final.survivors) };
 }

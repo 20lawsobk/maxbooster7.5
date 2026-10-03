@@ -1,7 +1,8 @@
 import { execFileSync, execSync } from "child_process";
-import { build as esBuild } from "esbuild";
+import { buildServerBundles } from "./lib/serverBundles.js";
+import { compressionPlan, deploymentTimings, runDeploymentJobs } from "./lib/deploymentExecution.js";
+import { effectiveCapacity } from "../server/computeSizing.js";
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import {
@@ -35,9 +36,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  const timing = deploymentTimings();
   // Publishing commands declare an exact disposable root.
   // Check before recovery (which mutates inputs), Vite, or any pack operation.
-   assertPublishingCleanupExpectation(process.env, root);
+  assertPublishingCleanupExpectation(process.env, root);
   // The deployment command also invokes this dependency-free helper BEFORE
   // npm/tsx, because packing can remove node_modules and build.ts itself.
   recoverDeploymentPack(root);
@@ -50,71 +52,21 @@ async function main() {
     execFileSync(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "deployment-dependencies", root],
       { cwd: root, stdio: "inherit" });
   }
+  timing("recovery-and-preflight");
   console.log("==> Building frontend with Vite...");
   execSync("npx vite build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
+  timing("frontend");
 
-  console.log("==> Bundling server with esbuild → dist/index.mjs...");
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/index.ts")],
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    outfile: path.resolve(root, "dist/index.mjs"),
-    packages: "external",
-    sourcemap: false,
-    minify: false,
-  });
-  console.log("   ✅ Server bundle → dist/index.mjs");
-
-  console.log("==> Bundling isolated PDIM verifier → dist/retained-pdim-recovery-worker.mjs...");
-  await esBuild({
-    entryPoints: [
-      path.resolve(root, "scripts/retained-pdim-recovery-worker.ts"),
-    ],
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    outfile: path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
-    packages: "external",
-    sourcemap: false,
-    minify: false,
-  });
+  console.log("==> Bundling five server entrypoints in one graph scan...");
+  await buildServerBundles(root);
   if (!fs.statSync(
     path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
   ).isFile()) {
     throw new Error("Required retained PDIM recovery worker artifact was not built");
   }
-  console.log("   ✅ Isolated PDIM verifier bundle ready");
-
-  console.log("==> Bundling cluster entry with esbuild → dist/cluster.mjs...");
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/cluster.ts")],
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    outfile: path.resolve(root, "dist/cluster.mjs"),
-    packages: "external",
-    sourcemap: false,
-    minify: false,
-  });
-  console.log("   ✅ Cluster bundle → dist/cluster.mjs");
-
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/diffusion-gateway/index.ts")],
-    bundle: true, platform: "node", target: "node22", format: "esm",
-    outfile: path.resolve(root, "dist/gateway.mjs"), packages: "external",
-  });
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/computeSizing.ts")],
-    bundle: true, platform: "node", target: "node22", format: "esm",
-    outfile: path.resolve(root, "dist/compute-sizing.mjs"), packages: "external",
-  });
-
-  console.log("\n✅ Build complete.");
+  timing("server-bundles");
+  console.log("\n✅ Compilation complete; deployment preparation follows.");
 
   // ─── Extract & Boot capsules (Pocket Dimension) ────────────────────────────
   // RESTORED 2026-08-14. The old build.sh pipeline packed node_modules (and
@@ -153,6 +105,7 @@ async function main() {
     // persistent replit.nix/runtime closure.
     execFileSync("bash", ["scripts/build-boosterstate.sh"],
       { cwd: root, stdio: "inherit" });
+    timing("portable-node-and-native-sidecar");
     const pyDir = path.resolve(root, "python_runtime");
     const pyBin = path.join(pyDir, "bin", "python3");
     const PYVER = "3.12.13";
@@ -192,6 +145,7 @@ async function main() {
       throw new Error("Required portable Python runtime build failed", { cause: e });
     }
   }
+  timing("portable-python");
 
   if (isDeployBuild) {
     assertNoSelectedMaxCoreCandidate(root);
@@ -199,6 +153,7 @@ async function main() {
     // intentionally excluded from runtime capsules (notably model.corrupt).
     // .deployment-pack-state is dockerignored; backups never inflate the shipped image.
     packTransaction = beginDeploymentPack(root);
+    timing("recovery-snapshot");
     const capsuleTargets: Array<{
       dir: string;
       capsule: string;
@@ -252,17 +207,13 @@ async function main() {
     const existingTargets = capsuleTargets.filter(({ dir }) =>
       fs.existsSync(path.resolve(root, dir)),
     );
-    const cpuCount = os.cpus().length || 1;
-    const concurrentPackCount = existingTargets.length || 1;
-    const perJobThreads = Math.max(
-      1,
-      Math.floor(cpuCount / concurrentPackCount),
-    );
+    const cpuCount = effectiveCapacity().cpus;
+    const { concurrency, threads: perJobThreads } = compressionPlan(cpuCount, existingTargets.length);
     console.log(
-      `==> Packing ${existingTargets.length} capsule(s) concurrently across ${cpuCount} CPU(s) → ${perJobThreads} zstd thread(s) each`,
+      `==> Packing ${existingTargets.length} capsule(s), at most ${concurrency} concurrently across ${cpuCount} effective CPU(s) → ${perJobThreads} zstd thread(s) each`,
     );
-    capsuleResults = await Promise.all(
-      capsuleTargets.map(({ dir, capsule, requiredMembers, excludePaths }) =>
+    capsuleResults = await runDeploymentJobs(
+      capsuleTargets, concurrency, ({ dir, capsule, requiredMembers, excludePaths }) =>
         packCapsule({
           root,
           dir,
@@ -271,8 +222,8 @@ async function main() {
           requiredMembers,
           excludePaths,
         }),
-      ),
     );
+    timing("primary-capsules");
   }
 
   // external/pdim is no longer deleted from the image — per user directive
@@ -319,12 +270,14 @@ async function main() {
       root,
       members: remainingMembers,
       capsule: "app_remainder.pdim",
-      threads: Math.max(1, os.cpus().length || 1),
+      threads: compressionPlan(effectiveCapacity().cpus, 1).threads,
     });
   }
+  timing("application-capsule");
 
   // Finish cache-producing subprocess work BEFORE physical cleanup/measurement.
   const nix = isDeployBuild ? getNixClosureSize() : null;
+  timing("nix-accounting");
   let publishingMeasurement: ReturnType<typeof measurePublishingPayload> | undefined;
 
   // The Repl-layer uploader can traverse dockerignored workspace state anyway.
@@ -415,6 +368,8 @@ async function main() {
   if (isDeployBuild && isDisposablePublishingCopy(process.env, root)) {
     assertPublishingPayloadClean(root, publishingDockerignore);
   }
+  timing("payload-cleanup-and-image-verification");
+  console.log("==> Build and all applicable deployment checks complete.");
 }
 
 /** `du -sb` on one path; returns null (never a silent 0) when it can't be measured, so a

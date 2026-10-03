@@ -156,3 +156,4 @@
 - [Publishing build authorization](publishing-build-authorization.md) — runtime indicators are not build evidence; explicit disposable-root consent must align recovery and cleanup.
 - [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
 - [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.
+- [Deployment concurrency boundaries](deployment-concurrency-boundaries.md) — size against container quotas; drain active destructive jobs before failure returns to recovery.
