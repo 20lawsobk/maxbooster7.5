@@ -23,6 +23,7 @@ import os from "os";
 import { randomUUID } from "crypto";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
+import { safeFetchBuffer } from "./safeUrlFetch.js";
 
 export interface ResolvedAudioSource {
   /** Absolute local path to the audio bytes. */
@@ -85,13 +86,13 @@ export async function resolveAudioUrlToLocalFile(
 
   // Remote URL
   if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) {
-    const resp = await fetch(audioUrl);
-    if (!resp.ok) {
+    const resp = await safeFetchBuffer(audioUrl, { maxBytes: 64 * 1024 * 1024, timeoutMs: 30_000 });
+    if (resp.status < 200 || resp.status >= 300) {
       throw new Error(
         `resolveAudioUrlToLocalFile: fetch failed (${resp.status}) for ${audioUrl}`,
       );
     }
-    const buf = Buffer.from(await resp.arrayBuffer());
+    const buf = resp.body;
     const localPath = await writeToTemp(buf, audioUrl);
     return {
       localPath,

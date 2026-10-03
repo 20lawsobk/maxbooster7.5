@@ -170,28 +170,39 @@ interface ParsedPacket {
   additional: RR[];
 }
 
-function parseName(buf: Buffer, offset: number): [string, number] {
+export function parseName(buf: Buffer, offset: number): [string, number] {
   const labels: string[] = [];
   let jumped = false;
   let jumpedOffset = 0;
   let i = offset;
+  const visited = new Set<number>();
+  let wireLength = 1;
+  let terminated = false;
 
   while (i < buf?.length) {
+    if (i < 0 || visited.has(i) || visited.size >= 128) throw new Error("Invalid DNS compression chain");
+    visited.add(i);
     const len = buf[i];
     if (len === 0) {
+      terminated = true;
       i++;
       break;
     }
     if ((len & 0xc0) === 0xc0) {
+      if (i + 1 >= buf.length) throw new Error("Truncated DNS pointer");
       // Pointer
       if (!jumped) jumpedOffset = i + 2;
       i = ((len & 0x3f) << 8) | buf[i + 1];
       jumped = true;
     } else {
+      if ((len & 0xc0) !== 0 || i + 1 + len >= buf.length) throw new Error("Invalid DNS label");
+      wireLength += len + 1;
+      if (wireLength > 255) throw new Error("DNS name too long");
       labels?.push(buf?.slice(i + 1, i + 1 + len).toString("ascii"));
       i += 1 + len;
     }
   }
+  if (!terminated) throw new Error("Truncated DNS name");
 
   const end = jumped ? jumpedOffset : i;
   return [labels?.join(".").toLowerCase(), end];
@@ -200,21 +211,21 @@ function parseName(buf: Buffer, offset: number): [string, number] {
 function parseRR(buf: Buffer, offset: number): [RR | null, number] {
   try {
     const [name, nameEnd] = parseName(buf, offset);
-    if (nameEnd + 10 > buf?.length) return [null, nameEnd];
+    if (nameEnd + 10 > buf?.length) throw new Error("Truncated DNS record");
     const type = buf?.readUInt16BE(nameEnd);
     const cls = buf?.readUInt16BE(nameEnd + 2);
     const ttl = buf?.readUInt32BE(nameEnd + 4);
     const rdlen = buf?.readUInt16BE(nameEnd + 8);
     const rdEnd = nameEnd + 10 + rdlen;
-    if (rdEnd > buf?.length) return [null, rdEnd];
+    if (rdEnd > buf?.length) throw new Error("Truncated DNS record data");
     const rdata = buf?.slice(nameEnd + 10, rdEnd);
     return [{ name, type, class: cls, ttl, rdata }, rdEnd];
   } catch {
-    return [null, offset + 1];
+    throw new Error("Malformed DNS record");
   }
 }
 
-function parsePacket(buf: Buffer): ParsedPacket | null {
+export function parsePacket(buf: Buffer): ParsedPacket | null {
   try {
     if (buf?.length < 12) return null;
     const id = buf?.readUInt16BE(0);
@@ -232,7 +243,7 @@ function parsePacket(buf: Buffer): ParsedPacket | null {
 
     let offset = 12;
     const questions: ParsedPacket["questions"] = [];
-    for (let i = 0; i < qdcount && offset < buf?.length; i++) {
+    for (let i = 0; i < qdcount; i++) {
       const [name, nameEnd] = parseName(buf, offset);
       const type = buf?.readUInt16BE(nameEnd);
       const cls = buf?.readUInt16BE(nameEnd + 2);
@@ -244,17 +255,17 @@ function parsePacket(buf: Buffer): ParsedPacket | null {
     const authority: RR[] = [];
     const additional: RR[] = [];
 
-    for (let i = 0; i < ancount && offset < buf?.length; i++) {
+    for (let i = 0; i < ancount; i++) {
       const [rr, end] = parseRR(buf, offset);
       if (rr) answers?.push(rr);
       offset = end;
     }
-    for (let i = 0; i < nscount && offset < buf?.length; i++) {
+    for (let i = 0; i < nscount; i++) {
       const [rr, end] = parseRR(buf, offset);
       if (rr) authority?.push(rr);
       offset = end;
     }
-    for (let i = 0; i < arcount && offset < buf?.length; i++) {
+    for (let i = 0; i < arcount; i++) {
       const [rr, end] = parseRR(buf, offset);
       if (rr && rr?.type !== TYPE_OPT) additional?.push(rr); // skip OPT
       offset = end;
@@ -327,6 +338,7 @@ function udpQuery(
 
     sock.on("message", (msg) => {
       if (settled) return;
+      if (msg.length < 12 || msg.readUInt16BE(0) !== id || !(msg[2] & 0x80)) return;
       const pkt = parsePacket(msg);
       if (!pkt || pkt.id !== id) return;
       settled = true;

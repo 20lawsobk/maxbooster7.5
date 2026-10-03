@@ -1,4 +1,5 @@
 import { storage } from "../storage";
+import { bandcampSlug, fetchBandcampPage } from "./bandcampUrl.js";
 import { logger } from "../logger";
 import { z } from "zod";
 import { createHash } from "crypto";
@@ -1172,6 +1173,7 @@ class DistributionDataTransferService {
   }
 
   private extractArtistIdFromUrl(platformId: string, url: string): string {
+    if (platformId === "bandcamp") return bandcampSlug(url);
     const patterns: Record<string, RegExp> = {
       spotify: /artist\/([a-zA-Z0-9]+)/,
       apple_music: /(?:artist\/[^/]*\/|artist\/)(\d+)/,
@@ -2158,11 +2160,7 @@ class DistributionDataTransferService {
   ): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker("bandcamp");
     const fetcher = async () => {
-      const resp = await timedFetch(`https://${slug}.bandcamp.com`, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)" },
-      });
-      if (!resp.ok) throw new Error(`Bandcamp returned ${resp.status}`);
-      const html = await resp.text();
+      const html = await fetchBandcampPage(slug);
 
       const nameMatch = html.match(/<title>([^|<]+)/);
       const bioMatch = html.match(
@@ -3043,11 +3041,7 @@ class DistributionDataTransferService {
     artistName: string,
   ): Promise<ScannedRelease[]> {
     try {
-      const resp = await timedFetch(`https://${slug}.bandcamp.com/music`, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)" },
-      });
-      if (!resp?.ok) return [];
-      const html = await resp?.text();
+      const html = await fetchBandcampPage(slug, "/music");
 
       const results: ScannedRelease[] = [];
       const itemRegex = /<li[^>]*data-item-id="[^"]*"[^>]*>[\s\S]*?<\/li>/g;

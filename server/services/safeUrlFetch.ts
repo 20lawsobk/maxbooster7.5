@@ -12,13 +12,22 @@ import axios, { type AxiosResponse } from "axios";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { lookup as dnsLookup, type LookupAddress } from "dns";
-import { isIPv4 as netIsIPv4 } from "net";
+import { isIPv4 as netIsIPv4, BlockList } from "net";
 import type { LookupFunction } from "net";
 
 const PRIVATE_IPV4_RE =
   /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
 
 const PRIVATE_IPV6_RE = /^(::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|::$)/i;
+const reservedRanges = new BlockList();
+for (const [network, prefix] of [
+  ["192.0.0.0", 24], ["192.0.2.0", 24], ["192.88.99.0", 24],
+  ["198.18.0.0", 15], ["198.51.100.0", 24], ["203.0.113.0", 24],
+  ["224.0.0.0", 4], ["240.0.0.0", 4],
+] as const) reservedRanges.addSubnet(network, prefix, "ipv4");
+for (const [network, prefix] of [
+  ["2001::", 23], ["2001:db8::", 32], ["2002::", 16],
+] as const) reservedRanges.addSubnet(network, prefix, "ipv6");
 
 /**
  * Return true if the given IP literal is private / reserved / loopback.
@@ -34,13 +43,20 @@ export function isReservedIp(raw: string): boolean {
   if (addr.startsWith("::ffff:")) {
     const embedded = addr.slice(7);
     if (netIsIPv4(embedded)) {
-      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE.test(embedded);
+      return isReservedIp(embedded);
     }
     // Condensed hex IPv4-mapped form — conservatively block.
     return true;
   }
 
   if (addr === "localhost" || addr === "0.0.0.0") return true;
+  if (netIsIPv4(addr) && reservedRanges.check(addr, "ipv4")) return true;
+  if (addr.includes(":")) {
+    try { addr = new URL(`http://[${addr}]/`).hostname.slice(1, -1); }
+    catch { return true; }
+    // Only global unicast is eligible; exclude transition/documentation ranges.
+    if (!/^[23][0-9a-f]{3}:/.test(addr) || reservedRanges.check(addr, "ipv6")) return true;
+  }
   if (PRIVATE_IPV4_RE.test(addr)) return true;
   if (PRIVATE_IPV6_RE.test(addr)) return true;
   return false;
@@ -69,7 +85,12 @@ const safeDnsLookup: LookupFunction = (hostname, _options, callback) => {
     }
 
     const first = addrs[0];
-    callback(null, first.address, first.family);
+    if (!first) { callback(new Error("DNS returned no addresses"), "", 4); return; }
+    if (typeof _options === "object" && _options.all) {
+      (callback as unknown as (error: NodeJS.ErrnoException | null, addresses: LookupAddress[]) => void)(null, addrs);
+    } else {
+      callback(null, first.address, first.family);
+    }
   });
 };
 
@@ -128,6 +149,7 @@ export interface SafeFetchResult {
 }
 
 export interface SafeFetchOptions {
+  allowedHost?: (hostname: string) => boolean;
   timeoutMs?: number;
   maxBytes?: number;
   headers?: Record<string, string>;
@@ -142,18 +164,29 @@ export async function safeFetchText(
   rawUrl: string,
   opts: SafeFetchOptions = {},
 ): Promise<SafeFetchResult> {
+  const result = await safeFetchBuffer(rawUrl, opts);
+  return { ...result, body: result.body.toString("utf8") };
+}
+
+export async function safeFetchBuffer(
+  rawUrl: string,
+  opts: SafeFetchOptions = {},
+): Promise<Omit<SafeFetchResult, "body"> & { body: Buffer }> {
   const u = assertPublicHttpUrl(rawUrl);
+  if (opts.allowedHost && !opts.allowedHost(u.hostname)) throw new Error("Destination not allowed");
   const timeoutMs = opts.timeoutMs ?? 12_000;
   const maxBytes = opts.maxBytes ?? 1_500_000;
 
-  const res: AxiosResponse<string> = await axios.get(u.href, {
+  const res: AxiosResponse<ArrayBuffer> = await axios.get(u.href, {
+    proxy: false,
+    signal: AbortSignal.timeout(timeoutMs),
     httpAgent: safeHttpAgent,
     httpsAgent: safeHttpsAgent,
     timeout: timeoutMs,
     maxRedirects: 3,
     maxContentLength: maxBytes,
     maxBodyLength: maxBytes,
-    responseType: "text",
+    responseType: "arraybuffer",
     decompress: true,
     validateStatus: () => true,
     headers: {
@@ -173,7 +206,9 @@ export async function safeFetchText(
       }
       const proto = String(options.protocol ?? "https:");
       const hostname = String(options.hostname ?? options.host ?? "");
-      if (hostname) assertPublicHttpUrl(`${proto}//${hostname}`);
+      if (!hostname) throw new Error("Redirect destination missing");
+      const target = assertPublicHttpUrl(`${proto}//${hostname}`);
+      if (opts.allowedHost && !opts.allowedHost(target.hostname)) throw new Error("Redirect destination not allowed");
     },
   });
 
@@ -182,6 +217,6 @@ export async function safeFetchText(
     url: u.href,
     status: res.status,
     contentType,
-    body: typeof res.data === "string" ? res.data : String(res.data ?? ""),
+    body: Buffer.from(res.data),
   };
 }
