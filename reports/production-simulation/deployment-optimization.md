@@ -1,5 +1,52 @@
 # Deployment optimization — verification and remaining limits
 
+## Full-path scope correction
+
+The requested scope is both build entrypoints and startup, from pressing Publish
+to a usable live application—not a bundling-only improvement. Replit's documented
+pipeline is provision → security checks → build → bundle → promote. The repository
+controls its build, payload and runtime work; platform provisioning/security/upload
+durations must be measured from deployment history rather than inferred from a
+local build.
+
+Additional changes across that path:
+
+- The publishing command and legacy build.sh still converge on npm's build
+  implementation. The legacy entry now recovers packed dependencies before npm.
+  npm build uses the installed TS loader directly, with no npx resolution step.
+- Independent Python preparation, compilation and native-runtime preparation run
+  through a bounded scheduler. Python can overlap compilation; native work takes
+  the next slot. Containers below two CPUs or 6 GiB keep serial preparation.
+  These are conservative concurrency estimates, not a measured RSS guarantee.
+- All prerequisite subprocesses are drained before recovery snapshots or capsule
+  packing. Failure never advances the pipeline to packing.
+- Portable Node downloads have connect and overall deadlines. Hash-locked Python
+  installation, isolated interpreter validation and pinned native compilation
+  remain mandatory.
+- The separate workspace production workflow now runs build before start. It is
+  not the Publish command and was not started as part of verification.
+- Startup launches the diffusion gateway while Python validation runs, then
+  checks its actual loopback health response instead of sleeping two seconds.
+  Failure to become healthy aborts startup.
+- Readiness monitoring requires both the SPA boot flag and the real dependency
+  readiness response. It does not count a listening port, the boot stub or a
+  degraded dependency as live. The monitor reports failure after its deadline
+  but does not terminate an otherwise running app.
+- The boot stub retains homepage liveness, but returns 503 for API paths.
+  Owned startup children are cleaned up on failure/shutdown; external or
+  pre-existing processes are not claimed as owned.
+- The readiness helper is explicitly admitted by the payload policy and required
+  in the application capsule before packing.
+
+Current verification: 60 Vitest tests and 22 Node tests passed. This includes real
+concurrent child-process rendezvous, failure propagation, capsule round trips,
+configured publishing-entry fixtures, HTTP readiness transitions and the actual
+boot-stub process. Shell and TypeScript syntax checks passed. It is not a full
+application startup against production services or a successful real publish.
+
+No whole-pipeline percentage improvement is claimed. The unresolved platform
+cache writer described below still prevents declaring publish-to-live complete.
+
 ## End-to-end path examined
 
 The publishing entry authorizes a disposable root, recovers interrupted packing,

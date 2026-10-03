@@ -12,8 +12,9 @@ export function buildPortableNode(root: string): void {
   try {
     const archive = path.join(temp, `${name}.tar.xz`);
     const base = `https://nodejs.org/dist/v${version}`;
-    execFileSync("curl", ["--fail", "--silent", "--show-error", "--location", `${base}/${name}.tar.xz`, "-o", archive]);
-    const sums = execFileSync("curl", ["--fail", "--silent", "--show-error", "--location", `${base}/SHASUMS256.txt`], { encoding: "utf8" });
+    const curlFlags = ["--fail", "--silent", "--show-error", "--location", "--connect-timeout", "15", "--max-time", "180"];
+    execFileSync("curl", [...curlFlags, `${base}/${name}.tar.xz`, "-o", archive]);
+    const sums = execFileSync("curl", [...curlFlags, `${base}/SHASUMS256.txt`], { encoding: "utf8" });
     const expected = sums.split("\n").find((line) => line.trim().endsWith(` ${name}.tar.xz`))?.split(/\s+/)[0];
     const actual = createHash("sha256").update(fs.readFileSync(archive)).digest("hex");
     if (!expected || actual !== expected) throw new Error("Portable Node checksum mismatch");

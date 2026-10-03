@@ -13,3 +13,14 @@ not race them.
 **How to apply:** Bound job concurrency and per-job compression threads together,
 stop admitting queued jobs after failure, and retain independent per-capsule
 integrity checks. Do not infer whole-publish speedup from bundling-only timings.
+
+For deployment optimization, the user explicitly means “through both builds and
+start scripts essentially from the publish button press to it going live.”
+
+**Why:** The user corrected a pass that addressed only a narrow set of build
+operations rather than the full publishing-to-readiness path.
+
+**How to apply:** Cover publishing and legacy build entrypoints, payload
+preparation, restoration, startup and actual application readiness. Keep
+platform-controlled stage timings separate from repository-controlled work,
+and do not treat liveness or a local fixture as proof that publishing succeeded.

@@ -123,6 +123,7 @@ scripts/*
 !scripts/build-boosterstate.sh
 !scripts/boosterstate-toolchain.nix
 !scripts/boot-stub-server.mjs
+!scripts/startup-health.mjs
 !scripts/check-port-contract.ts
 # Build-time sources for the required standalone retained-PDIM worker and the
 # server-bundled private-storage helper. Production executes only dist/*.mjs,

@@ -1,7 +1,8 @@
-import { execFileSync, execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { buildServerBundles } from "./lib/serverBundles.js";
 import { compressionPlan, deploymentTimings, runDeploymentJobs } from "./lib/deploymentExecution.js";
 import { effectiveCapacity } from "../server/computeSizing.js";
+import { preparationConcurrency, runBuildProcess } from "./lib/buildProcess.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -12,13 +13,11 @@ import {
   packCapsuleMembers,
 } from "./lib/capsulePack.js";
 import { assertNoSelectedMaxCoreCandidate } from "./lib/deploymentPreflight.js";
-import { buildPortableNode } from "./lib/portableNode.js";
 import {
   computeRemainingAppMembers,
   BOOTSTRAP_AND_CAPSULE_OWN_PATHS,
 } from "./lib/dockerignoreScan.js";
 import { validateModelRelease } from "./lib/modelRelease.js";
-import { runPortablePython } from "./lib/portablePython.mjs";
 import {
   assertPublishingCleanupExpectation,
   assertPublishingPayloadClean,
@@ -53,20 +52,44 @@ async function main() {
       { cwd: root, stdio: "inherit" });
   }
   timing("recovery-and-preflight");
-  console.log("==> Building frontend with Vite...");
-  execSync("npx vite build", { cwd: root, stdio: "inherit" });
-  console.log("   ✅ Vite build complete → dist/public/");
-  timing("frontend");
+  const isDeployBuild = process.env.DEPLOY_PACK === "1";
+  const capacity = effectiveCapacity();
+  const concurrency = preparationConcurrency(capacity);
+  const prepareRuntime = (phase: string) => runBuildProcess(
+    process.execPath, ["--import", "tsx", "script/prepare-runtime.ts", phase], root,
+    { ...process.env, CARGO_BUILD_JOBS: String(Math.max(1, Math.floor(capacity.cpus / concurrency))) },
+  );
+  const compile = async () => {
+    console.log("==> Building frontend with Vite...");
+    await runBuildProcess(process.execPath, ["node_modules/vite/bin/vite.js", "build"], root);
+    console.log("   ✅ Vite build complete → dist/public/");
 
-  console.log("==> Bundling five server entrypoints in one graph scan...");
-  await buildServerBundles(root);
-  if (!fs.statSync(
-    path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
-  ).isFile()) {
-    throw new Error("Required retained PDIM recovery worker artifact was not built");
-  }
-  timing("server-bundles");
-  console.log("\n✅ Compilation complete; deployment preparation follows.");
+    console.log("==> Bundling five server entrypoints in one graph scan...");
+    await buildServerBundles(root);
+    if (!fs.statSync(
+      path.resolve(root, "dist/retained-pdim-recovery-worker.mjs"),
+    ).isFile()) {
+      throw new Error("Required retained PDIM recovery worker artifact was not built");
+    }
+    console.log("==> Compilation complete");
+  };
+  // Python downloads/install overlap compilation; native work gets the next
+  // free slot. All children finish before snapshotting or packing can start.
+  const preparation = isDeployBuild
+    ? [{ name: "portable-python", run: () => prepareRuntime("python") },
+       { name: "compilation", run: compile },
+       { name: "portable-node-and-native-sidecar", run: () => prepareRuntime("native") }]
+    : [{ name: "compilation", run: compile }];
+  console.log(`==> Preparing build with at most ${concurrency} concurrent phase(s)`);
+  await runDeploymentJobs(preparation, concurrency, async phase => {
+    const started = performance.now();
+    let status = "failed";
+    try { await phase.run(); status = "ok"; }
+    finally {
+      console.log(`[deployment-timing] ${phase.name}: ${((performance.now() - started) / 1000).toFixed(3)}s; status=${status}`);
+    }
+  });
+  timing("all-build-prerequisites");
 
   // ─── Extract & Boot capsules (Pocket Dimension) ────────────────────────────
   // RESTORED 2026-08-14. The old build.sh pipeline packed node_modules (and
@@ -82,70 +105,12 @@ async function main() {
   // command. (REPLIT_DEPLOYMENT_ID is only set at RUNTIME, not in the build
   // container — gating on it silently skipped packing; proven by the
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
-  const isDeployBuild = process.env.DEPLOY_PACK === "1";
   // Capture the policy while it is still on disk: app-remainder packing may
   // remove .dockerignore itself. Missing policy is an explicit build failure.
   const publishingDockerignore = isDeployBuild
     ? fs.readFileSync(path.join(root, ".dockerignore"), "utf8")
     : "";
   let capsuleResults: Array<Awaited<ReturnType<typeof packCapsule>>> = [];
-
-  // ─── Portable Python runtime (video/audio analysis + AI sidecar deps) ─────
-  // Ported from the old build.sh (2026-08-14). The run container is a
-  // Debian-based VM; Nix-store Python paths from the build container don't
-  // exist there, and .pythonlibs/.venv are dockerignored. We download
-  // python-build-standalone (glibc-linked, works in both containers), install
-  // the deps pyproject.toml documents, and pack it as python_runtime.pdim —
-  // dist/pdim-restore.mjs already restores it and start.sh/pythonPath.ts
-  // already prefer ./python_runtime/bin/python3.
-  if (isDeployBuild) {
-    buildPortableNode(root);
-    // Never ship a checked-in executable in place of the current source. The
-    // helper uses a pinned, build-only nix-shell so Rust is not added to the
-    // persistent replit.nix/runtime closure.
-    execFileSync("bash", ["scripts/build-boosterstate.sh"],
-      { cwd: root, stdio: "inherit" });
-    timing("portable-node-and-native-sidecar");
-    const pyDir = path.resolve(root, "python_runtime");
-    const pyBin = path.join(pyDir, "bin", "python3");
-    const PYVER = "3.12.13";
-    const PYDATE = "20260325";
-    const PYURL = `https://github.com/astral-sh/python-build-standalone/releases/download/${PYDATE}/cpython-${PYVER}%2B${PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz`;
-    try {
-      // Rebuild this generated directory, rather than inheriting unrelated
-      // packages or an older interpreter from a workspace cache.
-      fs.rmSync(pyDir, { recursive: true, force: true });
-      if (!fs.existsSync(pyBin)) {
-        console.log(
-          `\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`,
-        );
-        fs.mkdirSync(pyDir, { recursive: true });
-        execSync(
-          `set -o pipefail; curl -fsSL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
-          { cwd: root, stdio: "inherit", shell: "/bin/bash" },
-        );
-      }
-      runPortablePython(pyBin, ["--version"], { stdio: "inherit" });
-      const pythonVerifier = path.join(root, "script/lib/verifyPortablePython.py");
-      runPortablePython(pyBin, [pythonVerifier, pyDir], { stdio: "inherit" });
-      console.log(
-        "   Installing locked app + MaxCore Python deps (including CPU torch)...",
-      );
-      const requirements = path.join(pyDir, "requirements.lock");
-      const maxcoreLock = path.join(
-        root,
-        "external/maxcore/artifacts/ai-training-server/uv.lock",
-      );
-      runPortablePython(pyBin, [path.join(root, "script/lib/pythonRequirements.py"), maxcoreLock, requirements], { stdio: "inherit" });
-      runPortablePython(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements], { cwd: root, stdio: "inherit" });
-      runPortablePython(pyBin, [pythonVerifier, pyDir, "--runtime"], { stdio: "inherit" });
-      console.log("   ✅ Portable Python runtime ready → python_runtime/");
-    } catch (e) {
-      fs.rmSync(pyDir, { recursive: true, force: true });
-      throw new Error("Required portable Python runtime build failed", { cause: e });
-    }
-  }
-  timing("portable-python");
 
   if (isDeployBuild) {
     assertNoSelectedMaxCoreCandidate(root);
@@ -256,11 +221,10 @@ async function main() {
       (member) => member !== RECOVERY_HELPER_PATH &&
         member !== ".deployment-pack-state" && !member.startsWith(".deployment-pack-state/"),
     );
-    const requiredPdimWorker = "dist/retained-pdim-recovery-worker.mjs";
-    if (!remainingMembers.includes(requiredPdimWorker)) {
-      throw new Error(
-        `Required runtime artifact is absent from the app capsule payload: ${requiredPdimWorker}`,
-      );
+    for (const required of ["dist/retained-pdim-recovery-worker.mjs", "scripts/startup-health.mjs"]) {
+      if (!remainingMembers.includes(required)) {
+        throw new Error(`Required runtime artifact is absent from the app capsule payload: ${required}`);
+      }
     }
     console.log(
       `==> Scanned .dockerignore-survivor payload: ${remainingMembers.length} file(s) remaining outside the four existing capsules and the boot bootstrap set (${BOOTSTRAP_AND_CAPSULE_OWN_PATHS.join(", ")})`,

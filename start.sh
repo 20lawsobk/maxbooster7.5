@@ -5,6 +5,28 @@
 # [ -x /path/to/node ] calls stat() and sees NOTHING for lazily-loaded paths.
 # exec /path/to/node triggers the ztoc fetch and the binary becomes available.
 # We MUST verify node by actually running it, not by checking file existence.
+export STARTUP_STARTED_AT_MS="$(date +%s%3N)"
+_STARTUP_SECONDS=$SECONDS
+_startup_mark() {
+  echo "[deployment-timing] startup-$1: $((SECONDS - _STARTUP_SECONDS))s elapsed"
+}
+_GW_PID=""
+_READINESS_PID=""
+_BOOSTER_PID=""
+_LEGACY_PID=""
+_RESTORE_PID=""
+_startup_aux_cleanup() {
+  local pid
+  for pid in "$_GW_PID" "$_READINESS_PID" "${_STUB_PID:-}" "$_BOOSTER_PID" "$_LEGACY_PID" "$_RESTORE_PID"; do
+    if [ -n "$pid" ] && jobs -pr | grep -qx "$pid"; then
+      kill -TERM "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+  done
+}
+trap _startup_aux_cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # ── 1. Locate node ────────────────────────────────────────────────────────────
 # _try_node: attempt to run a candidate binary; sets _NODE_BIN on success.
@@ -116,6 +138,7 @@ else
 fi
 
 # ── 1b. Boot-time liveness stub ───────────────────────────────────────────────
+_startup_mark node-and-port-contract
 # Binds the real port immediately (before node_modules even exists) so the
 # platform's health check against "/" gets a 200 from second one, instead of
 # "connection refused" / a crash-restart loop, while capsule restore + venv +
@@ -147,10 +170,12 @@ if [ -f "dist/pdim-restore.mjs" ]; then
   fi
   echo "[start.sh] Restoring external/maxcore / external/pdim in background..."
   "$_NODE_BIN" dist/pdim-restore.mjs background >> /tmp/pdim-background-restore.log 2>&1 &
-  echo "[start.sh] background PDIM restore pid $!"
+  _RESTORE_PID=$!
+  echo "[start.sh] background PDIM restore pid $_RESTORE_PID"
 else
   echo "[start.sh] dist/pdim-restore.mjs not found — skipping PDIM restore"
 fi
+_startup_mark critical-restore
 
 # A configured loopback REDIS_URL is an owned BullMQ dependency. External Redis
 # remains operator-managed. Start only the local instance, require PONG before
@@ -162,9 +187,21 @@ if ! redis_supervisor_start "$_NODE_BIN" "$_SCRIPT_DIR"; then
 fi
 # Redis is already live while the remaining prerequisites are checked. Ensure
 # any later startup failure stops only the process this launcher owns.
-trap redis_supervisor_cleanup EXIT
+trap '_startup_aux_cleanup; redis_supervisor_cleanup' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+# The gateway needs restored JS, not Python. Warm it while Python dependencies
+# are checked instead of adding its entire startup after those checks.
+if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
+  if [ ! -f "dist/gateway.mjs" ]; then
+    echo "[start.sh] FATAL: required dist/gateway.mjs missing" >&2
+    exit 1
+  fi
+  "$_NODE_BIN" dist/gateway.mjs >> /tmp/diffusion_gateway.log 2>&1 &
+  _GW_PID=$!
+  echo "[start.sh] Diffusion Gateway starting (pid $_GW_PID) on ${VIDEO_DIFFUSION_PORT}"
+fi
 
 # ── 3. Activate Python virtual environment ────────────────────────────────────
 # Check ./python_runtime/ first (build artifact created by build.sh, not in
@@ -189,7 +226,8 @@ if [ "$_PYENV_ACTIVATED" = "0" ]; then
   exit 1
 fi
 export MAXBOOSTER_PYTHON="$_VENV_PY"
-"$_VENV_PY" -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, psycopg2, librosa, sklearn, soundfile, torch; print('[start.sh] MaxCore Python deps ready (torch ' + torch.__version__ + ')')" || exit 1
+"$_VENV_PY" -I -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, psycopg2, librosa, sklearn, soundfile, torch; print('[start.sh] MaxCore Python deps ready (torch ' + torch.__version__ + ')')" || exit 1
+_startup_mark python-and-redis
 
 # Reject aggregate oversubscription before spawning sidecars or app workers.
 _PRIMARY_HEAP_MB="$("$_NODE_BIN" --input-type=module -e '
@@ -212,7 +250,8 @@ if ! pgrep -x boosterstate >/dev/null 2>&1; then
   if [ -n "$_BOOSTER_BIN" ]; then
     _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT}"
     BOOSTERSTATE_PORT="$_SIDECAR_PORT" "$_BOOSTER_BIN" &
-    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT via $_BOOSTER_BIN"
+    _BOOSTER_PID=$!
+    echo "[start.sh] boosterstate started (pid $_BOOSTER_PID) on internal port $_SIDECAR_PORT via $_BOOSTER_BIN"
   else
     echo "[start.sh] FATAL: required Boosterstate executable missing" >&2
     exit 1
@@ -260,7 +299,8 @@ if [ "${ENABLE_LEGACY_AI_SIDECAR:-0}" = "1" ] && ! pgrep -f "ai_content_sidecar.
   if [ -n "$_PY_BIN" ]; then
     PYTHON_AI_PORT="${PYTHON_AI_PORT}" "$_PY_BIN" server/services/ai_content_sidecar.py \
       >> /tmp/ai_content_sidecar.log 2>&1 &
-    echo "[start.sh] Python AI Content Sidecar started (pid $!) on port ${PYTHON_AI_PORT} via $_PY_BIN"
+    _LEGACY_PID=$!
+    echo "[start.sh] Python AI Content Sidecar started (pid $_LEGACY_PID) on port ${PYTHON_AI_PORT} via $_PY_BIN"
   else
     echo "[start.sh] WARNING: Python not found — legacy AI sidecar unavailable"
   fi
@@ -277,19 +317,9 @@ fi
 # Max Booster and MaxCore AI for video/image diffusion training and relay.
 # The gateway is transport/orchestration only. AI inference must remain in
 # MaxCore's Digital GPU/HyperGPU path; local model fallback is not permitted.
-if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
-  if [ -f "dist/gateway.mjs" ]; then
-    "$_NODE_BIN" dist/gateway.mjs >> /tmp/diffusion_gateway.log 2>&1 &
-    _GW_PID=$!
-    echo "[start.sh] MaxCore Diffusion Gateway started (pid $_GW_PID) on port 8008"
-    # Brief pause so the gateway is listening before the cluster boots and checks it
-    sleep 2
-  else
-    echo "[start.sh] FATAL: required dist/gateway.mjs missing" >&2
-    exit 1
-  fi
-else
-  echo "[start.sh] MaxCore Diffusion Gateway already running"
+if ! "$_NODE_BIN" scripts/startup-health.mjs gateway "$VIDEO_DIFFUSION_PORT" ${_GW_PID:+"$_GW_PID"}; then
+  echo "[start.sh] FATAL: Diffusion Gateway did not become healthy" >&2
+  exit 1
 fi
 
 # No TensorFlow.js CPU fallback is configured here. Any model path that cannot
@@ -308,6 +338,7 @@ if [ -n "$_STUB_PID" ] && kill -0 "$_STUB_PID" 2>/dev/null; then
   kill -0 "$_STUB_PID" 2>/dev/null && kill -KILL "$_STUB_PID" 2>/dev/null
   echo "[start.sh] boot-stub liveness server stopped, port ${PORT:-5000} released"
 fi
+_startup_mark cluster-handoff
 
 # ── 5. Launch the cluster ─────────────────────────────────────────────────────
 export UV_THREADPOOL_SIZE="${UV_THREADPOOL_SIZE:-8}"
@@ -325,12 +356,17 @@ if [ -f "dist/cluster.mjs" ]; then
       wait "$_APP_PID" 2>/dev/null || true
     fi
     redis_supervisor_cleanup
+    _startup_aux_cleanup
   }
   trap _shutdown_runtime EXIT
   trap '_shutdown_runtime; exit 130' INT
   trap '_shutdown_runtime; exit 143' TERM
   "$_NODE_BIN" --max-old-space-size="$_PRIMARY_HEAP_MB" dist/cluster.mjs &
   _APP_PID=$!
+  # Observation only: do not mistake an open socket/liveness stub for a usable
+  # SPA plus healthy dependencies. A timeout is logged, never reported as live.
+  "$_NODE_BIN" scripts/startup-health.mjs application "$PORT" "$_APP_PID" &
+  _READINESS_PID=$!
   set +e
   wait "$_APP_PID"
   _APP_STATUS=$?
