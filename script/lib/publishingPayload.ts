@@ -160,6 +160,16 @@ export function measurePublishingPayload(root: string, dockerignore: string): Pa
   return { totalBytes, byTopDir, entries: survivors.length };
 }
 
+/** Read-only final assertion; late writers must fail, not trigger blind retries. */
+export function assertPublishingPayloadClean(root: string, dockerignore: string): void {
+  root = realRoot(root);
+  const { excluded, survivors } = scan(root, dockerignore);
+  validateSurvivingLinks(root, survivors, excluded);
+  if (excluded.length) {
+    throw new Error(`Excluded publishing entries appeared after finalization: ${excluded.join(", ")}`);
+  }
+}
+
 /** User-authorized deletion applies ONLY to the explicitly declared publishing root.
  * All conflicts and surviving links are checked before the first deletion.
  * dockerignore is captured before remainder packing can remove the file itself.

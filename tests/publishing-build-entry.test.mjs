@@ -56,6 +56,16 @@ function fixture(t) {
     import {assertPublishingCleanupExpectation, cleanPublishingPayload, measurePublishingPayload} from ${url("script/lib/publishingPayload.ts")};
     import {computeRemainingAppMembers} from ${url("script/lib/dockerignoreScan.ts")};
     const root=process.cwd();
+    const cacheKeys=["XDG_CACHE_HOME","npm_config_cache","NPM_CONFIG_CACHE","NODE_COMPILE_CACHE","BOOSTERSTATE_CARGO_HOME","PIP_CACHE_DIR","UV_CACHE_DIR"];
+    for (const key of cacheKeys) {
+      const cache=process.env[key];
+      if (!cache || !cache.startsWith("/tmp/maxbooster-publish-cache-") || cache.startsWith(root+"/")) {
+        throw Error("cache not isolated: "+key);
+      }
+      fs.mkdirSync(cache,{recursive:true});
+      fs.writeFileSync(cache+"/during-build","fixture");
+      process.on("exit",()=>fs.writeFileSync(cache+"/on-exit","late writer fixture"));
+    }
     fs.appendFileSync(${JSON.stringify(calls)}, JSON.stringify({
       root, declaredRoot:process.env.PUBLISH_BUILD_ROOT,
       pack:process.env.DEPLOY_PACK, cleanup:process.env.PUBLISH_PAYLOAD_CLEANUP,
@@ -78,7 +88,9 @@ function fixture(t) {
     tx.complete();
   `);
   write(".dockerignore", fs.readFileSync(path.join(repo, ".dockerignore")));
-  const env = { PATH:process.env.PATH, HOME:root, CI:"true" };
+  const env = { PATH:process.env.PATH, HOME:root, CI:"true",
+    XDG_CACHE_HOME:path.join(root,".cache"), npm_config_cache:path.join(root,".cache/npm"),
+    NODE_COMPILE_CACHE:path.join(root,".cache/node"), BOOSTERSTATE_CARGO_HOME:path.join(root,".cache/cargo") };
   const run = (extra = {}, args = ["--publish-disposable-copy", "."]) =>
     spawnSync(process.execPath, [path.join(root,RECOVERY_HELPER_PATH), ...args],
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
@@ -120,6 +132,7 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
       assert.ok(!fs.existsSync(path.join(f.root,"node_modules")));
       assert.ok(!fs.existsSync(path.join(f.root,"fixture-build.mjs")));
       assert.ok(!fs.existsSync(path.join(f.root,"venv")));
+      assert.ok(!fs.existsSync(path.join(f.root,".cache")));
       assert.equal(fs.readFileSync(f.outsideInterpreter,"utf8"), "external interpreter must remain unchanged");
     }
     const restored=f.run({...indicators,...f.authorization},["--recover", "."]);

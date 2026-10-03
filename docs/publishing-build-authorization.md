@@ -88,3 +88,27 @@ env -i PATH="$PATH" HOME=/tmp node node_modules/vitest/vitest.mjs run tests/unit
 
 These fixtures test selection, copying, packing, authorized cleanup and
 measurement. They are not a full application build or successful publication.
+
+## Publishing cache lifecycle
+
+The publishing entry point gives its npm child a private, mode-0700 temporary
+cache directory outside the payload. XDG, npm (both environment spellings),
+Node compile, BoosterState Cargo, pip and uv caches point into that directory.
+The override is child-only: HOME, credentials, workspace cache locations and
+Python environments are not changed. Only the newly allocated directory is
+removed when npm exits, including failure exits.
+
+Nix/Python closure accounting runs before physical cleanup. The image budget
+uses cleanup's returned measurement, and a final read-only exclusion/symlink
+assertion runs after journal completion. A late writer still fails publishing;
+there are no retries, exemptions for `.cache`, or suppressed safety checks.
+
+Cache-isolation and entry-point verification:
+
+```
+env -i PATH="$PATH" HOME=/tmp node --test tests/publishing-cache-isolation.test.mjs tests/publishing-build-entry.test.mjs tests/deployment-recovery-location.test.mjs
+```
+
+The configured-entry fixtures deliberately inherit in-payload cache paths,
+write to redirected caches during the build and on child exit, and inspect the
+payload after npm and the publishing helper have exited.

@@ -20,6 +20,7 @@ import { validateModelRelease } from "./lib/modelRelease.js";
 import { runPortablePython } from "./lib/portablePython.mjs";
 import {
   assertPublishingCleanupExpectation,
+  assertPublishingPayloadClean,
   cleanPublishingPayload,
   isDisposablePublishingCopy,
   measurePublishingPayload,
@@ -322,6 +323,10 @@ async function main() {
     });
   }
 
+  // Finish cache-producing subprocess work BEFORE physical cleanup/measurement.
+  const nix = isDeployBuild ? getNixClosureSize() : null;
+  let publishingMeasurement: ReturnType<typeof measurePublishingPayload> | undefined;
+
   // The Repl-layer uploader can traverse dockerignored workspace state anyway.
   // Enforce the policy physically ONLY on an explicitly authorized disposable copy,
   // after every capsule has finished and before measuring the final payload.
@@ -341,6 +346,7 @@ async function main() {
     const cleaned = cleanPublishingPayload({
       root, env: process.env, dockerignore: publishingDockerignore, requiredPaths,
     });
+    publishingMeasurement = cleaned.measurement;
     console.log(`==> Publishing-copy cleanup: removed ${cleaned.removedPaths.length} excluded path(s); bootstrap, recovery helper, manifests and capsules preserved`);
   } else if (isDeployBuild) {
     console.log("==> Publishing-copy cleanup skipped: no root-scoped publishing authorization (DEPLOY_PACK alone is not authorization)");
@@ -356,12 +362,11 @@ async function main() {
   // any root cannot be accounted for. NAR size is the store's own serialized
   // size metric and is the closest locally available measurement of the Nix
   // layer that the platform creates after this build command exits.
-  if (isDeployBuild) {
+  if (nix) {
     const hardLimitBytes = 8 * 1024 ** 3;
     const budgetBytes = 7.5 * 1024 ** 3;
     const { totalBytes: payloadBytes, byTopDir } =
-      measurePublishingPayload(root, publishingDockerignore);
-    const nix = getNixClosureSize();
+      publishingMeasurement ?? measurePublishingPayload(root, publishingDockerignore);
     const totalBytes = payloadBytes + nix.totalBytes;
     const totalGiB = totalBytes / 1024 ** 3;
 
@@ -407,6 +412,9 @@ async function main() {
     }
   }
   packTransaction?.complete();
+  if (isDeployBuild && isDisposablePublishingCopy(process.env, root)) {
+    assertPublishingPayloadClean(root, publishingDockerignore);
+  }
 }
 
 /** `du -sb` on one path; returns null (never a silent 0) when it can't be measured, so a

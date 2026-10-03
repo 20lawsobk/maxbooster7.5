@@ -55,6 +55,33 @@ export function assertBuildContext(root, env = process.env) {
   }
 }
 
+/** Only publishing children get disposable cache locations. Never remove or
+ * repoint the workspace's caches, HOME, credentials, or Python environments. */
+export function createPublishingCacheEnvironment(root, env) {
+  assertBuildContext(root, env);
+  if (!isPublishingEnvironment(env, root)) throw new Error("Publishing cache isolation requires authorized root");
+  const directory = fs.mkdtempSync("/tmp/maxbooster-publish-cache-");
+  const relative = path.relative(path.resolve(root), directory);
+  if (relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))) {
+    fs.rmdirSync(directory);
+    throw new Error("Publishing caches must be outside the payload");
+  }
+  const cache = (name) => path.join(directory, name);
+  return {
+    directory,
+    env: {
+      ...env,
+      XDG_CACHE_HOME: cache("xdg"),
+      npm_config_cache: cache("npm"),
+      NPM_CONFIG_CACHE: cache("npm"),
+      NODE_COMPILE_CACHE: cache("node"),
+      BOOSTERSTATE_CARGO_HOME: cache("cargo"),
+      PIP_CACHE_DIR: cache("pip"),
+      UV_CACHE_DIR: cache("uv"),
+    },
+  };
+}
+
 export function deploymentPackStateDirectory(root, env = process.env) {
   root = path.resolve(root);
   assertBuildContext(root, env);
@@ -287,7 +314,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       assertBuildContext(root);
       recoverDeploymentPack(root);
       if (process.argv[2] === "--publish-disposable-copy") {
-        execFileSync("npm", ["run", "build"], { cwd: root, env: process.env, stdio: "inherit" });
+        const caches = createPublishingCacheEnvironment(root, process.env);
+        try {
+          execFileSync("npm", ["run", "build"], { cwd: root, env: caches.env, stdio: "inherit" });
+        } finally {
+          // Own mkdtemp only; never delete inherited cache locations.
+          fs.rmSync(caches.directory, { recursive: true, force: true });
+        }
       }
     } catch (error) {
       console.error("Deployment build recovery failed:", error.message);

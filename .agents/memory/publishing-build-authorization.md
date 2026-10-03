@@ -15,6 +15,18 @@ aligned to the same canonical root declaration. Validate with dependency-free
 entry-point fixtures; a passing fixture is not a full build or publication.
 Large disposable builds require a successful allocation probe, not just `df`.
 
+Do not attribute a publishing cache survivor to a specific tool solely from
+workspace cache names or a passing miniature build.
+
+**Why:** A real publish failed after packing with a surviving `.cache`, but a
+small Python startup trace did not reproduce its writer. Fixtures loading tsx
+and imports from the repository retain dependencies absent from the packed tree.
+
+**How to apply:** Distinguish verified cache-location and lifecycle fixes from
+proof of the original writer. Check the payload after child shutdown, retain
+failure for uncontrolled late writes, and reserve publication-success claims
+for an observed real publish.
+
 Exercise the actual configured publishing command in disposable regression
 fixtures, rather than maintaining a separate test-only command.
 

@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   assertPublishingCleanupExpectation,
+  assertPublishingPayloadClean,
   cleanPublishingPayload,
   isDisposablePublishingCopy,
   measurePublishingPayload,
@@ -37,6 +38,17 @@ function fixture() {
 }
 
 describe("disposable publishing payload cleanup", () => {
+  it("final read-only assertion rejects a late cache writer without deleting evidence", () => {
+    const { root, write } = fixture();
+    write("start.sh", "bootstrap");
+    const policy = ".cache/\n";
+    cleanPublishingPayload({ root, env: publishing(root), dockerignore: policy, requiredPaths: ["start.sh"] });
+    assertPublishingPayloadClean(root, policy);
+    write(".cache/late-writer", "evidence");
+    expect(() => assertPublishingPayloadClean(root, policy)).toThrow(/appeared after finalization: .cache/);
+    expect(fs.readFileSync(path.join(root, ".cache/late-writer"), "utf8")).toBe("evidence");
+    expect(fs.readFileSync(path.join(root, "start.sh"), "utf8")).toBe("bootstrap");
+  });
   it("reports a cache recreated during cleanup without reading its contents or bypassing the failure", () => {
     const { root, write } = fixture();
     write(".cache/old-build-cache");
