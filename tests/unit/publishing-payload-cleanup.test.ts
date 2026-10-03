@@ -11,10 +11,20 @@ import {
   PROTECTED_PUBLISHING_PATHS,
 } from "../../script/lib/publishingPayload.js";
 import { RECOVERY_HELPER_PATH } from "../../script/lib/deploymentPackRecovery.mjs";
+import * as recovery from "../../script/lib/deploymentPackRecovery.mjs";
 import { computeRemainingAppMembers } from "../../script/lib/dockerignoreScan.js";
 
 // Every deletion in this suite is confined to mkdtemp fixtures, never the app.
 const fixtures: string[] = [];
+// Keep real native deletion; inject only the independent cache-writer behavior
+// at the cleanup boundary rather than intercepting an obsolete fs.rmSync call.
+function afterRemoval(callback: (target: string) => void) {
+  const remove = recovery.removeBuildPaths;
+  vi.spyOn(recovery, "removeBuildPaths").mockImplementation((targets: string[]) => {
+    remove(targets);
+    targets.forEach(callback);
+  });
+}
 const publishing = (root: string) => ({
   DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1", PUBLISH_BUILD_ROOT: root,
 });
@@ -45,11 +55,9 @@ describe("disposable publishing payload cleanup", () => {
       write(".config/settings", "fixture settings");
       write("start.sh", "bootstrap bytes");
       if (cacheInitiallyPresent) write(".cache/replit/old", "old cache");
-      const remove = fs.rmSync;
       const removals: string[] = [];
-      vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      afterRemoval(target => {
         const relative = path.relative(root, String(target));
-        remove(target, options);
         removals.push(relative);
         // Simulate an independent configuration-cache producer, not a cache
         // write caused by removing the cache itself.
@@ -73,9 +81,7 @@ describe("disposable publishing payload cleanup", () => {
   it("does not delete a non-excluded cache created by input removal", () => {
     const { root, write } = fixture();
     write(".replit", "fixture config");
-    const remove = fs.rmSync;
-    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
-      remove(target, options);
+    afterRemoval(target => {
       if (String(target) === path.join(root, ".replit")) write(".cache/keep", "retained bytes");
     });
     const result = cleanPublishingPayload({
@@ -100,9 +106,7 @@ describe("disposable publishing payload cleanup", () => {
   it("reports a cache recreated during cleanup without reading its contents or bypassing the failure", () => {
     const { root, write } = fixture();
     write(".cache/old-build-cache");
-    const remove = fs.rmSync;
-    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
-      remove(target, options);
+    afterRemoval(target => {
       if (String(target) === path.join(root, ".cache")) {
         write(".cache/replit/private-cache", "sensitive fixture content must not be logged");
       }
@@ -129,9 +133,7 @@ describe("disposable publishing payload cleanup", () => {
     const external = path.join(base, "external");
     fs.mkdirSync(external);
     fs.writeFileSync(path.join(external, "private-name"), "external bytes");
-    const remove = fs.rmSync;
-    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
-      remove(target, options);
+    afterRemoval(target => {
       if (String(target) === path.join(root, ".cache")) fs.symlinkSync(external, target);
     });
     expect(() => cleanPublishingPayload({

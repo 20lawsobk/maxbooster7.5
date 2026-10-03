@@ -6,6 +6,7 @@ import {
   isPublishingEnvironment,
   RECOVERY_HELPER_PATH,
   assertBuildContext,
+  removeBuildPaths,
 } from "./deploymentPackRecovery.mjs";
 
 /** Never treat a local DEPLOY_PACK simulation as a disposable publishing copy.
@@ -218,20 +219,19 @@ export function cleanPublishingPayload(options: {
   // it. Finish input removals before taking the cache-deletion snapshot.
   const isCacheRoot = (relative: string) => path.posix.basename(relative) === ".cache";
   const removedPaths: string[] = [];
-  for (const relative of excluded.filter((relative) => !isCacheRoot(relative))) {
-    // rm of a link unlinks the entry; it does not recurse into its target.
-    fs.rmSync(path.join(root, relative), { recursive: true, force: true });
-    removedPaths.push(relative);
-  }
+  const inputRemovals = excluded.filter((relative) => !isCacheRoot(relative));
+  // All policy/link/protected-path validation above completes before deletion.
+  // One native traversal per tree, without per-file JS syscall overhead.
+  removeBuildPaths(inputRemovals.map(relative => path.join(root, relative)));
+  removedPaths.push(...inputRemovals);
   const afterInputs = scan(root, options.dockerignore);
   validateSurvivingLinks(root, afterInputs.survivors, afterInputs.excluded);
   // Only policy-excluded caches are eligible, including caches first created
   // by input invalidation. This is a single dependency-ordered pass, not a
   // retry loop: a writer after this phase still fails below.
-  for (const relative of afterInputs.excluded.filter(isCacheRoot)) {
-    fs.rmSync(path.join(root, relative), { recursive: true, force: true });
-    removedPaths.push(relative);
-  }
+  const cacheRemovals = afterInputs.excluded.filter(isCacheRoot);
+  removeBuildPaths(cacheRemovals.map(relative => path.join(root, relative)));
+  removedPaths.push(...cacheRemovals);
   // Measure and verify the same snapshot, rather than walking every survivor
   // twice. The separate post-journal assertion still detects later writers.
   const final = scan(root, options.dockerignore);

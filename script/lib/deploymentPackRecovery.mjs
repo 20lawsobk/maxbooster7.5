@@ -13,6 +13,22 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 
 export const RECOVERY_HELPER_PATH = "script/lib/deploymentPackRecovery.mjs";
+/**
+ * Delete only previously admitted build-owned paths. GNU rm avoids Node's
+ * per-entry JS traversal on large dependency/cache trees. Paths are argv, never
+ * shell text; symlinks are unlinked rather than followed. Callers remain
+ * responsible for ownership/policy validation before invoking this helper.
+ */
+export function removeBuildPaths(paths) {
+  for (const target of paths) {
+    if (typeof target !== "string" || !path.isAbsolute(target) ||
+        target !== path.normalize(target) || target === path.parse(target).root ||
+        target.endsWith(path.sep)) {
+      throw new Error("Build cleanup requires normalized absolute non-root paths");
+    }
+  }
+  if (paths.length) execFileSync("rm", ["-rf", "--", ...paths], { stdio: "inherit" });
+}
 const TRANSACTION_PATH = ".deployment-pack-state/transaction";
 const DIRECTORIES = ["python_runtime", "node_modules", "external/maxcore", "external/pdim"];
 
@@ -349,7 +365,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
           phase = "cache-cleanup";
           report("cache-cleanup-started");
           // Own mkdtemp only; never delete inherited cache locations.
-          fs.rmSync(caches.directory, { recursive: true, force: true });
+          removeBuildPaths([caches.directory]);
           report("cache-cleanup-completed");
         }
         phase = "complete";
