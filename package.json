@@ -38,11 +38,12 @@
     "audit": "npm audit fix",
     "verify:dependency-upgrades": "node scripts/verify-dependency-upgrades.mjs",
     "test:dependency-remediation": "node --test tests/http-dependency-consumers.test.mjs tests/dns-dependency-consumers.test.mjs tests/runtime-artifact-gates.test.mjs tests/nested-reconciliation.test.mjs tests/legacy-security-update.test.mjs && vitest run --config vitest.config.ts tests/unit/acmeCrypto.test.ts tests/unit/acmeClientLifecycle.test.ts",
+    "test:dependency-security-paths": "node --test tests/dependency-security-paths.test.mjs && timeout 20 python3 tests/urllib3-security-paths.py && timeout 20 python_runtime/bin/python3 -I tests/urllib3-security-paths.py",
     "verify:dependency-security": "node scripts/verify-runtime-artifacts.mjs dependencies",
     "verify": "npm run audit && npm run typecheck && npm run fix",
     "db:push": "node scripts/db-push.js",
     "electron:dev": "electron .",
-    "electron:build": "electron-builder --projectDir electron",
+    "electron:build": "node scripts/patch-electron-builder-transport.mjs && electron-builder --projectDir electron",
     "build:desktop": "tsx scripts/build-apps.ts desktop",
     "build:desktop:full": "FORCE_FULL_BUILD=true tsx scripts/build-apps.ts desktop",
     "build:mobile": "tsx scripts/build-apps.ts mobile",
@@ -350,6 +351,7 @@
     "@capacitor/cli": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
     "@eslint/js": "^10.0.1",
+    "@maxbooster/electron-download-transport": "file:packages/electron-download-transport",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/connect-pg-simple": "^7.0.3",
@@ -358,9 +360,9 @@
     "@types/express": "5.0.6",
     "@types/express-session": "^1.18.2",
     "@types/howler": "^2.2.12",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/memoizee": "^0.4.12",
     "@types/multer": "^2.0.0",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "25.2.3",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
@@ -375,7 +377,7 @@
     "autoprefixer": "^10.4.24",
     "drizzle-kit": "^0.31.9",
     "electron": "^43.7.7",
-    "electron-builder": "^26.7.0",
+    "electron-builder": "26.15.3",
     "electron-updater": "^6.8.3",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -389,6 +391,8 @@
     "bufferutil": "^4.1.0"
   },
   "overrides": {
+    "@electron/get": "5.1.0",
+    "app-builder-lib": "26.15.3",
     "follow-redirects": ">=1.16.0",
     "minimatch": "^10.2.3",
     "braces": "^3.0.3",
@@ -446,6 +450,6 @@
     }
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   }
 }

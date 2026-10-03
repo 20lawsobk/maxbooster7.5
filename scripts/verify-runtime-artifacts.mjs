@@ -6,16 +6,20 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import ignore from "ignore";
+import { inspectElectronBuilderTransport } from "./patch-electron-builder-transport.mjs";
 
 export const floors = {
   axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.3",
   undici: "7.30.0", electron: "43.7.7",
   // No patched release exists; certificate issuance must not pull this back in.
   "node-forge": null,
+  // Their unpatched consumers have been removed or upgraded.
+  braces: null,
+  "http-cache-semantics": null,
   "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
   multer: "2.4.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
-  orval: "8.33.0", "linkify-it": "5.0.1", sharp: "0.35.4",
+  orval: "8.33.0", "linkify-it": "5.0.2", sharp: "0.35.4",
   postcss: "8.5.23", browserslist: "4.28.7",
   "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
   "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
@@ -118,6 +122,14 @@ export function inspectDependencies(root, scopes) {
 export function inspectDeploymentDependencies(root) {
   const matcher = ignore().add(fs.readFileSync(path.join(root, ".dockerignore"), "utf8"));
   const result = inspectDependencies(root, workspaces);
+  try {
+    const transport = inspectElectronBuilderTransport(root);
+    if (transport.installed && !transport.patched) {
+      result.failures.push("Electron packaging transport is unpatched; run scripts/patch-electron-builder-transport.mjs");
+    }
+  } catch (error) {
+    result.failures.push(`Electron packaging transport: ${error.message}`);
+  }
   for (const scope of legacyWorkspaces) {
     if (!matcher.ignores(`${scope}/`)) {
       result.failures.push(`${scope}: legacy workspace is not excluded from the deployment image`);

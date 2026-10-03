@@ -8,6 +8,7 @@ node scripts/apply-legacy-security-update.mjs --apply --if-present
 
 echo "[post-merge] Installing dependencies..."
 npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -5
+node scripts/patch-electron-builder-transport.mjs
 
 echo "[post-merge] Reconciling locked MaxCore and PDIM dependencies..."
 node scripts/reconcile-nested-dependencies.mjs --apply --online

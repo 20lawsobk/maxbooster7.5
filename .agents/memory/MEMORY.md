@@ -58,7 +58,7 @@
 - [Background daemon-thread work stalls under live server load](maxcore-bg-thread-stall.md) — a function that finishes in seconds standalone can fail to finish in 90s+ when run via a plain daemon thread from a busy FastAPI process (proxy retry storms etc. contend for the GIL/thread scheduling); no py-spy available, MaxCore print()/logger doesn't reach the Node workflow log
 - [PDIM Lua bridge HGETALL array shape](pdim-lua-hgetall-array-shape.md) — Lua-facing HGETALL must return a flat array not an object, or BullMQ jobs look nameless and repeatable jobs silently stop rescheduling after their first run
 - [PDIM Lua command compatibility](pdim-lua-command-compatibility.md) — exercise production scripts through the embedded RedisStore; Lua-compatible command support is a limited surface
-- [8GiB deploy limit is an IMAGE limit](deploy-8gb-live-footprint.md) — Extract & Boot capsules (pack in build, extract in start.sh) are the proven fix; runtime extraction is allowed
+- [Deployment artifacts](deployment-artifact-index.md) — capsule exclusions, compression, image/Nix sizing, restore parallelism, liveness and build controls.
 - [External subsystem reimport sources](external-reimport-sources.md) — GitHub origins for external/maxcore + external/pdim, private-repo blob-fetch recipe, and the 5 PDIM patches that must survive any reimport
 - [MaxCore content composer contract](maxcore-content-composer-contract.md) — topic short/unquoted, instruction = angle phrase, variants share one hook, coalescer key patched to full payload
 - [Drizzle sql undefined params](drizzle-sql-undefined-params.md) — ${undefined} in a sql template emits EMPTY SQL not NULL → syntax error; ?? null every optional
@@ -66,10 +66,6 @@
 - [PDIM capsule build must flush before returning](pdim-capsule-flush-durability.md) — PocketDimension writes chunk blobs immediately but the index/metadata only persist on flush()/close(); same-process verification can pass off the in-memory cache while disk is empty
 - [Webhook honesty patterns](webhook-honesty-patterns.md) — stamp own id pre-call; discriminate multi-creator-path lookups; mocked-service tests hide no-write bugs; buffered audit-log calls aren't a durability guarantee
 - [PnPm hoisted copy reconciliation](pnpm-hoisted-copy-reconciliation.md) — a refreshed lock can coexist with stale top-level hoisted packages; verify runtime resolution and reify those generated copies
-- [pdim-restore.mjs is static, serial-by-default](pdim-restore-parallel-extract.md) — it's a git-committed file, not build-generated; 4 capsules extracting serially at boot can blow the promote-step probe timeout
-- [Sync hash defeats "parallel" restore](pdim-restore-sync-hash-blocks-loop.md) — readFileSync+createHash for checksum verify blocks Node's event loop, serializing supposedly-concurrent Promise.all work; stream the hash instead
-- [Capsule restore double-read bottleneck](pdim-restore-double-read.md) — hashing then extracting a capsule reads it twice; pipe one stream into both hash and tar stdin so large capsules don't blow the boot-time probe window
-- [Capsule liveness vs readiness](pdim-restore-critical-vs-background.md) — Python is now required before consumers start; early liveness must remain independent of heavy restore.
 - [Shared compute-sizing source](shared-compute-sizing.md) — server/computeSizing.ts is the ONE place that reads os.cpus()/freemem() for worker/lane sizing; cluster.ts, maxcoreLocalSupervisor.ts, and HyperGPU (via env) all derive from it
 - [Pocket-backed elastic compute](pocket-elastic-compute.md) — PocketFabric node lifecycles and MaxCore GPU lives are uncapped logical resources backed by compressed pocket state
 - [Awareness conditioning contract](awareness-conditioning-contract.md) — every model seam uses the shared cascade, and media coalescing identities include effective awareness
@@ -84,12 +80,8 @@
 - [MaxCore bootstrap capsule race](maxcore-bootstrap-capsule-race.md) — disambiguate "restore pending" from "never provisioned" before running a one-shot bootstrap; never permanently latch a failed provision with no retry
 - [ShellExec background nesting trap](shellexec-background-nesting.md) — never combine run_in_background:true with an inner &/nohup/disown; the tracked outer task exits immediately and becomes untrackable via Monitor
 - [vitest integration globalSetup server dep](vitest-integration-globalsetup-server-dep.md) — shared globalSetup polls localhost:5000 up to 8min SILENTLY; stopping the dev workflow to "isolate" one test file makes it hang with zero output, looks like a code bug
-- [Deploy runtime helper packaging](deploy-runtime-helper-packaging.md) — launch helpers must survive deployment-context filtering or promote can fail before useful runtime logs appear
-- [Capsule compression benchmarks](capsule-compression-codec-choice.md) — level 6 meets the 2× packing target; measure recovery overhead and image size, not just codec choice.
 - [Live storage codec-mesh integration](live-storage-codec-mesh-integration.md) — PocketDimension wires codecMesh+PDCF directly (not the fuller router); PDCF magic bytes alone gate legacy-vs-new, no schema field needed
 - [AwarenessProfiler detection gaps](awareness-profiler-detection-gaps.md) — RIFF magic collision mislabeled WAV as WebP/already-compressed (fixed); Shannon entropy alone can't see LZ-style repetition (open, follow-up filed)
-- [Deploy autofix coverage gaps](deploy-autofix-coverage-gaps.md) — image checks must add the deduplicated Nix closure to tracked payload bytes and fail closed on unmeasured roots
-- [replit.nix feeds deploy closure too](replit-nix-feeds-deploy-closure.md) — heavy dev-only toolchains must never live in replit.nix; use an on-demand nix-shell wrapper; some module pkgs are unregistered in the sqlite DB and need direct measurement
 - [.replit port-mapping edits](dotreplit-port-mapping-edits.md) — externalPort=80 must map to the app's real PORT localPort or boot FATALs; edit via verifyAndReplaceDotReplit only, never the file-edit tool
 - [Fail-open triage framework](fail-open-vs-unknown-status.md) — a broken gating check (payout risk, IP blacklist, webhook sig, notif prefs) must return a distinguishable "unknown" the caller treats as worst-case, never a fabricated safe verdict
 - [Dev capsule self-restore](dev-capsule-self-restore.md) — external/maxcore, python_runtime, external/pdim can vanish forever in dev (deploy build deletes them after packing); dev now self-heals via attemptDevSelfRestore in maxcoreLocalSupervisor.ts
@@ -131,7 +123,6 @@
 - [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
 - [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
 - [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
-- [Production capsule exclusions](production-capsule-exclusions.md) — whole-directory capsule packing bypasses `.dockerignore`; every capsule needs explicit, tested exclusions.
 - [Production simulation storage limits](production-simulation-resource-sizing.md) — `df` can overstate usable scratch space under hidden quotas; size conservatively and verify path-specific limits.
 - [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.
 - [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.
@@ -149,10 +140,10 @@
 - [Payment test isolation](payment-test-isolation.md) — test keys do not isolate webhook/database effects; confirmed cards can precede provider accounting readiness.
 - [App workflow database side effects](app-workflow-database-side-effects.md) — startup seeds/syncs and preview web-vitals can write to the shared app database; avoid workflow/preview checks in no-write tasks.
 - [Dependency consumer compatibility](dependency-consumer-compatibility.md) — audit-clean global overrides can break startup; validate each real consumer and use patched compatible branches.
+- [Electron downloader migration](electron-download-transport-migration.md) — Fetch ignores the packager's Got timeout/proxy options; verify the real download consumer, not only its version.
 - [Certificate crypto boundary](certificate-crypto-boundary.md) — certificate automation must use native cryptography, not an unpatched crypto dependency hidden under a protocol client.
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.
 - [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.
-- [Capsule build control files](capsule-build-control-files.md) — publishing still needs root manifests after packing; archive removal must not delete package-manager control files.
 - [Publishing script choice](publishing-build-authorization.md) — user chose the unmodified historical scripts as active; retain newer versions and never run destructive builds in the checkout.
 - [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
 - [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.

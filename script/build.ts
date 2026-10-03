@@ -85,11 +85,11 @@ async function main() {
       execSync(`${JSON.stringify(pyBin)} --version`, { stdio: "inherit" });
       console.log("   Installing Python deps (numpy, pillow, scipy, fastapi, uvicorn, pydantic)...");
       execSync(
-        `${JSON.stringify(pyBin)} -m pip install --no-cache-dir --quiet numpy pillow "scipy>=1.11.0" "fastapi>=0.100.0" "uvicorn[standard]>=0.23.0" "pydantic>=2.0.0"`,
+        `${JSON.stringify(pyBin)} -I -m pip install --no-cache-dir --quiet numpy pillow "scipy>=1.11.0" "fastapi>=0.100.0" "uvicorn[standard]>=0.23.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3"`,
         { cwd: root, stdio: "inherit", shell: "/bin/bash" },
       );
       execSync(
-        `${JSON.stringify(pyBin)} -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic"`,
+        `${JSON.stringify(pyBin)} -I -c "import numpy, PIL, scipy, fastapi, uvicorn, pydantic, urllib3; assert tuple(map(int, urllib3.__version__.split('.'))) >= (2,8,0)"`,
         { stdio: "inherit", shell: "/bin/bash" },
       );
       console.log("   ✅ Portable Python runtime ready → python_runtime/");

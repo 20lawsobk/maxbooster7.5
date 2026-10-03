@@ -1,0 +1,7 @@
+{
+  "name": "@maxbooster/electron-download-transport",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.cjs",
+  "description": "Native streaming transport preserving electron-builder download options"
+}

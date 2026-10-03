@@ -75,7 +75,8 @@ test("all security families reject stale nested copies and accept explicitly val
     ["ip-address", "10.5.0", "10.7.3"], ["undici", "7.29.0", "7.30.0"],
     ["undici", "6.28.0", "6.28.1"],
     ["electron", "43.4.0", "43.7.7"],
-    ["orval", "8.5.3", "8.33.0"], ["linkify-it", "5.0.0", "6.1.0"],
+    ["orval", "8.5.3", "8.33.0"], ["linkify-it", "5.0.1", "5.0.2"],
+    ["linkify-it", "5.0.0", "6.1.0"],
     ["sharp", "0.35.3", "0.35.4"], ["dompurify", "3.4.12", "3.4.16"],
     ["postcss", "8.5.16", "8.5.26"], ["browserslist", "4.28.1", "4.28.8"],
     ["baseline-browser-mapping", "2.10.0", "2.11.15"], ["@babel/core", "7.29.0", "7.29.7"],
@@ -98,6 +99,16 @@ test("all security families reject stale nested copies and accept explicitly val
   assert.equal(inspectDependencies(root, ["."]).ready, true);
   write(root, "node_modules/extract-zip/package.json", '{"name":"extract-zip","version":"2.0.1"}');
   assert.match(inspectDependencies(root, ["."]).failures.join("\n"), /no patched release/);
+});
+test("unpatched brace walkers and shared HTTP cache policies cannot be reintroduced", t => {
+  const root = fixture(t);
+  write(root, "package.json", "{}");
+  for (const [name, version] of [["braces", "3.0.3"], ["http-cache-semantics", "4.2.0"]]) {
+    const file = `node_modules/consumer/node_modules/${name}/package.json`;
+    write(root, file, JSON.stringify({ name, version }));
+    assert.match(inspectDependencies(root, ["."]).failures.join("\n"), /no patched release/);
+    fs.rmSync(path.dirname(path.join(root, file)), { recursive: true });
+  }
 });
 test("capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules", async t => {
   const root = fixture(t);

@@ -11,9 +11,12 @@
 import { existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { patchElectronBuilderTransport } from "./patch-electron-builder-transport.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
+// Security transport compatibility is required even for SKIP_POSTINSTALL=1.
+patchElectronBuilderTransport(root);
 
 // Skip everything when running inside CI or explicitly opted out
 if (process.env.SKIP_POSTINSTALL === "1" || process.env.CI === "true") {
