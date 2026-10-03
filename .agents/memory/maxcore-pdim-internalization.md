@@ -7,6 +7,12 @@ User directive: the imported MaxCore and PDIM repos are to run as **internal** s
 
 **Why:** removes the external-server failure class (sleeping peers, crash-on-wake, 429 backoff machinery, keep-alive pinging).
 
+Preserve the internalized storage engine when cleaning or refreshing imported subsystem sources.
+
+**Why:** Replacing it with the standalone implementation removed embedded snapshot, journal, and lifecycle contracts and prevented the app from starting. A dependency install cannot repair that source-level incompatibility.
+
+**How to apply:** Verify the embedded-owner and journal durability tests after subsystem source replacement, not merely package resolution or syntax.
+
 **Durable constraints:**
 - Local integration must not require user-supplied service API keys. Private process-inherited authentication is compatible with this requirement; locality is not permission to disable public authentication.
 - A GPU lifecycle allocation is not proof that inference uses that instance, and lifecycle metadata is not a persisted GPU state. Verify execution ownership and byte-exact VRAM/KV recovery separately.
