@@ -9,6 +9,7 @@ _ROOT="$(cd "${_SCRIPT_DIR}/.." && pwd)"
 _MANIFEST="${_ROOT}/boosterstate/Cargo.toml"
 _LOCKFILE="${_ROOT}/boosterstate/Cargo.lock"
 _TARGET_DIR="${BOOSTERSTATE_TARGET_DIR:-${_ROOT}/boosterstate/target}"
+_OUTPUT_DIR="${BOOSTERSTATE_OUTPUT_DIR:-${_ROOT}/bin}"
 _CARGO_HOME="${BOOSTERSTATE_CARGO_HOME:-${_ROOT}/.cache/boosterstate-cargo}"
 _PINNED_NIXPKGS="https://github.com/NixOS/nixpkgs/archive/650e572363c091045cdbc5b36b0f4c1f614d3058.tar.gz"
 
@@ -25,7 +26,7 @@ command -v nix-shell >/dev/null 2>&1 || {
   exit 1
 }
 
-mkdir -p "$_CARGO_HOME" "$_TARGET_DIR" "${_ROOT}/bin"
+mkdir -p "$_CARGO_HOME" "$_TARGET_DIR" "$_OUTPUT_DIR"
 _RUSTFLAGS="-C link-arg=-static-libgcc -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 -C link-arg=-Wl,-rpath,/lib/x86_64-linux-gnu -C link-arg=-Wl,-rpath,/lib64"
 _COMMAND=(
   env
@@ -45,6 +46,6 @@ _BINARY="${_TARGET_DIR}/release/boosterstate"
   echo "[BoosterStateBuild] FATAL: build completed without executable ${_BINARY}" >&2
   exit 1
 }
-cp "$_BINARY" "${_ROOT}/bin/boosterstate"
-chmod 755 "${_ROOT}/bin/boosterstate"
+cp "$_BINARY" "${_OUTPUT_DIR}/boosterstate"
+chmod 755 "${_OUTPUT_DIR}/boosterstate"
 echo "[BoosterStateBuild] Ready: bin/boosterstate"

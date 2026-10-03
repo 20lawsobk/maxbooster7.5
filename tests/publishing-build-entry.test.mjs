@@ -13,12 +13,11 @@ const url = file => JSON.stringify(pathToFileURL(path.join(repo, file)).href);
 // Read only deployment wiring; never copy workspace userenv into a fixture.
 // The configured build is a single-line TOML array of JSON-compatible strings.
 function configuredBuildCommand() {
-  // Packing is now preparation-only. Exercise the exact command used inside
-  // its isolated copy; Publish uses the independent verified-release installer.
+  // Legacy packing retains recovery coverage, but neither modern preparation
+  // nor Publish invokes this destructive entrypoint.
   const source = fs.readFileSync(path.join(repo, "script/prepare-release.ts"), "utf8");
-  const value = source.match(/\["script\/lib\/deploymentPackRecovery\.mjs", "--publish-disposable-copy", "\."\]/)?.[0];
-  assert.ok(value, "preparation must invoke the authorized packing entrypoint");
-  const command = [process.execPath, ...JSON.parse(value)];
+  assert.ok(!source.includes("--publish-disposable-copy"), "preparation must not authorize destructive packing");
+  const command = [process.execPath, "script/lib/deploymentPackRecovery.mjs", "--publish-disposable-copy", "."];
   assert.ok(Array.isArray(command) && command.length && command.every(v => typeof v === "string"));
   return command;
 }

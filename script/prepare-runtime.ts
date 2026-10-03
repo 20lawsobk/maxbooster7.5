@@ -8,7 +8,7 @@ import { assertPublishingCleanupExpectation } from "./lib/publishingPayload.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-function preparePython() {
+export function preparePython(root: string, sourceRoot = root) {
   const pyDir = path.join(root, "python_runtime");
   const pyBin = path.join(pyDir, "bin/python3");
   const version = "3.12.13", date = "20260325";
@@ -21,11 +21,11 @@ function preparePython() {
     execSync(`set -o pipefail; curl -fsSL --max-time 180 ${JSON.stringify(url)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
       { cwd: root, stdio: "inherit", shell: "/bin/bash" });
     runPortablePython(pyBin, ["--version"], { stdio: "inherit" });
-    const verifier = path.join(root, "script/lib/verifyPortablePython.py");
+    const verifier = path.join(sourceRoot, "script/lib/verifyPortablePython.py");
     runPortablePython(pyBin, [verifier, pyDir], { stdio: "inherit" });
     const requirements = path.join(pyDir, "requirements.lock");
-    runPortablePython(pyBin, [path.join(root, "script/lib/pythonRequirements.py"),
-      path.join(root, "external/maxcore/artifacts/ai-training-server/uv.lock"), requirements], { stdio: "inherit" });
+    runPortablePython(pyBin, [path.join(sourceRoot, "script/lib/pythonRequirements.py"),
+      path.join(sourceRoot, "external/maxcore/artifacts/ai-training-server/uv.lock"), requirements], { stdio: "inherit" });
     runPortablePython(pyBin, ["-m", "pip", "install", "--require-hashes", "--only-binary=:all:", "--no-cache-dir", "-r", requirements],
       { cwd: root, stdio: "inherit" });
     runPortablePython(pyBin, [verifier, pyDir, "--runtime"], { stdio: "inherit" });
@@ -36,12 +36,14 @@ function preparePython() {
   }
 }
 
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 assertPublishingCleanupExpectation(process.env, root);
 if (process.env.DEPLOY_PACK !== "1" || process.cwd() !== root) {
   throw new Error("Runtime preparation requires a deployment build in its own root");
 }
-if (process.argv[2] === "python") preparePython();
+if (process.argv[2] === "python") preparePython(root);
 else if (process.argv[2] === "native") {
   buildPortableNode(root);
   execFileSync("bash", ["scripts/build-boosterstate.sh"], { cwd: root, stdio: "inherit" });
 } else throw new Error("Expected runtime preparation phase: python or native");
+}

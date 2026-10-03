@@ -35,7 +35,7 @@ function sha256File(file: string): string {
   return hash.digest("hex");
 }
 
-export function validateModelRelease(root: string): ModelReleaseRequirement {
+export function validateModelRelease(root: string, options: { readOnly?: boolean } = {}): ModelReleaseRequirement {
   const manifestPath = path.resolve(root, MODEL_RELEASE_MANIFEST);
   if (!fs.existsSync(manifestPath)) {
     throw new Error(`required model release manifest is missing: ${MODEL_RELEASE_MANIFEST}`);
@@ -87,6 +87,7 @@ export function validateModelRelease(root: string): ModelReleaseRequirement {
   const modelPath = path.resolve(root, releasePath);
   let stat = fs.statSync(modelPath, { throwIfNoEntry: false });
   if (!stat) {
+    if (options.readOnly) throw new Error("Required model.pt is missing; read-only release preparation cannot materialize it in the workspace");
     const temporary = `${modelPath}.release-${process.pid}`;
     fs.copyFileSync(sourcePath, temporary, fs.constants.COPYFILE_EXCL);
     try {

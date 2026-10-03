@@ -107,6 +107,10 @@ function zstdCompressArgs(threads: number, level: number): string[] {
 }
 
 export interface PackCapsuleOptions {
+  /** Non-destructive release preparation keeps source trees in place. */
+  preserveSource?: boolean;
+  /** Separate output root; archive member names remain relative to root. */
+  outputRoot?: string;
   /** Absolute path to the root both `dir` and `capsule` are relative to. */
   root: string;
   /** Directory to pack, relative to `root` (e.g. "node_modules"). */
@@ -186,6 +190,8 @@ export function packCapsule({
   compressionLevel = CAPSULE_COMPRESSION_LEVEL,
   requiredMembers = [],
   excludePaths = [],
+  preserveSource = false,
+  outputRoot = root,
 }: PackCapsuleOptions): Promise<PackCapsuleResult | null> {
   const compression = `zstd-${compressionLevel}`;
   const compressArgs = zstdCompressArgs(threads, compressionLevel);
@@ -216,7 +222,11 @@ export function packCapsule({
       }
     }
 
-    const capsulePath = path.resolve(root, capsule);
+    const capsulePath = path.resolve(outputRoot, capsule);
+    if (capsulePath === abs || capsulePath.startsWith(abs + path.sep)) {
+      return rejectOne(new Error("Capsule output must be outside its source tree"));
+    }
+    fs.mkdirSync(path.dirname(capsulePath), { recursive: true });
     console.log(
       `==> Packing ${dir}/ → ${capsule} (${compression}, -T${threads}, Extract & Boot)...`,
     );
@@ -265,7 +275,7 @@ export function packCapsule({
       settled = true;
       const sha256 = hash.digest("hex");
       const manifestPath = path.resolve(
-        root,
+        outputRoot,
         capsule.replace(/\.pdim$/, ".manifest.json"),
       );
       fs.writeFileSync(
@@ -282,10 +292,10 @@ export function packCapsule({
           2,
         ),
       );
-      fs.rmSync(abs, { recursive: true, force: true });
+      if (!preserveSource) fs.rmSync(abs, { recursive: true, force: true });
       const sizeBytes = fs.statSync(capsulePath).size;
       console.log(
-        `   ✅ ${dir}/ packed (${(sizeBytes / 1048576).toFixed(0)}MB) and removed from image`,
+        `   ✅ ${dir}/ packed (${(sizeBytes / 1048576).toFixed(0)}MB); source ${preserveSource ? "preserved" : "removed"}`,
       );
       resolveOne({
         capsulePath,
@@ -309,6 +319,8 @@ export function packCapsule({
 }
 
 export interface PackCapsuleMembersOptions {
+  preserveSource?: boolean;
+  outputRoot?: string;
   /** Absolute path to the root every path below is relative to. */
   root: string;
   /**
@@ -350,6 +362,8 @@ export function packCapsuleMembers({
   capsule,
   threads = 0,
   compressionLevel = CAPSULE_COMPRESSION_LEVEL,
+  preserveSource = false,
+  outputRoot = root,
 }: PackCapsuleMembersOptions): Promise<PackCapsuleResult | null> {
   const compression = `zstd-${compressionLevel}`;
   const compressArgs = zstdCompressArgs(threads, compressionLevel);
@@ -372,9 +386,10 @@ export function packCapsuleMembers({
     );
     if (existingMembers.length === 0) return resolveOne(null);
 
-    const capsulePath = path.resolve(root, capsule);
+    const capsulePath = path.resolve(outputRoot, capsule);
+    fs.mkdirSync(path.dirname(capsulePath), { recursive: true });
     const fileListPath = path.resolve(
-      root,
+      outputRoot,
       `.${capsule.replace(/[\/.]/g, "_")}.filelist`,
     );
     fs.writeFileSync(fileListPath, existingMembers.join("\n") + "\n");
@@ -432,7 +447,7 @@ export function packCapsuleMembers({
       cleanupFileList();
       const sha256 = hash.digest("hex");
       const manifestPath = path.resolve(
-        root,
+        outputRoot,
         capsule.replace(/\.pdim$/, ".manifest.json"),
       );
       fs.writeFileSync(
@@ -448,14 +463,14 @@ export function packCapsuleMembers({
           2,
         ),
       );
-      for (const member of existingMembers) {
+      for (const member of preserveSource ? [] : existingMembers) {
         try {
           fs.rmSync(path.resolve(root, member), { force: true });
         } catch {}
       }
       const sizeBytes = fs.statSync(capsulePath).size;
       console.log(
-        `   ✅ ${existingMembers.length} files packed (${(sizeBytes / 1048576).toFixed(0)}MB) and removed from image`,
+        `   ✅ ${existingMembers.length} files packed (${(sizeBytes / 1048576).toFixed(0)}MB); sources ${preserveSource ? "preserved" : "removed"}`,
       );
       resolveOne({
         capsulePath,
