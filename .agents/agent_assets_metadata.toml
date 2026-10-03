@@ -133,3 +133,17 @@ mtime_ms = 1790859113696
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/d8dedd57-6647-4980-9477-102b9a40e4d7/3954b2a3-147a-42ee-af4a-fa4f3b0af375"
 storage_version_token = "1790859114867417"
 content_type = "text/html"
+
+[[outputs]]
+id = "ovCgDVTX4L-EXrDU5pfCZ"
+uri = "file://.local/audits/2026-10-03-health/REPORT.html"
+type = "html"
+title = "Max Booster Project Health Scan — 2026-10-03"
+description = "Read-only assessment with prioritized findings, evidence, scope, task reconciliation and explicit verification gaps. Structured evidence is under .local/audits/2026-10-03-health/."
+logical_id = "daa39112-1f88-486e-9779-a1455177a92a"
+content_hash = "sha256:1333d3135deb1423825b9571d39897988afab4e469b85a56cbec84a5226becaf"
+size = 46477
+mtime_ms = 1791036625177
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/daa39112-1f88-486e-9779-a1455177a92a/0e32eb41-a13c-4c20-a5f1-af4da68c50a8"
+storage_version_token = "1791036652697243"
+content_type = "text/html"
