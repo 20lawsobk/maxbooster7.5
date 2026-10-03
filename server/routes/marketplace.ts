@@ -143,6 +143,8 @@ const interactionSchema = z.object({
   sessionId: z.string().max(100).optional(),
 });
 
+import { canReadListingStems, stemAssetAccess } from "../services/marketplaceStemAccess";
+
 const PDIM_FILE_URL_PREFIX = "/api/storage/file/";
 
 function getPdimStorageKey(fileUrl: unknown): string | null {
@@ -1944,6 +1946,9 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
       fileKey = fileKey?.substring("uploads/".length);
     }
 
+    if (await stemAssetAccess(fileKey, req.user?.id) === false) {
+      return res.status(req.user ? 403 : 401).json({ error: "Purchase required to access stems" });
+    }
     const ext = path?.extname(fileKey).toLowerCase();
     const mimeTypes: Record<string, string> = {
       ".mp3": "audio/mpeg",
@@ -2112,6 +2117,9 @@ router.get("/cover/*path", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid cover path" });
     }
 
+    if (await stemAssetAccess(fileKey, req.user?.id) === false) {
+      return res.status(req.user ? 403 : 401).json({ error: "Purchase required to access stems" });
+    }
     const exists = await storageService.fileExists(fileKey);
     if (!exists) {
       logger.warn(`Cover image not found: ${fileKey}`);
@@ -2906,19 +2914,9 @@ router.get(
         .where(eq(listingStems.id, stemId))
         .limit(1);
       if (!stem) return res.status(404).json({ error: "Stem not found" });
+      res.setHeader("Cache-Control", "private, no-store");
 
-      const [purchase] = await db
-        .select({ id: orders.id })
-        .from(orders)
-        .where(
-          and(
-            eq(orders.listingId, stem.listingId),
-            eq(orders.userId, req.user!.id),
-            eq(orders.status, "completed"),
-          ),
-        )
-        .limit(1);
-      if (stem.userId !== req.user!.id && !purchase) {
+      if (!await canReadListingStems(stem.listingId, req.user!.id)) {
         return res.status(403).json({ error: "Not authorized to access this stem" });
       }
       res.json(stem);
@@ -2953,18 +2951,7 @@ router.get(
       if (trackId !== stem.id) {
         return res.status(400).json({ error: "Track does not belong to this stem" });
       }
-      const [purchase] = await db
-        .select({ id: orders.id })
-        .from(orders)
-        .where(
-          and(
-            eq(orders.listingId, stem.listingId),
-            eq(orders.userId, req.user!.id),
-            eq(orders.status, "completed"),
-          ),
-        )
-        .limit(1);
-      if (stem.userId !== req.user!.id && !purchase) {
+      if (!await canReadListingStems(stem.listingId, req.user!.id)) {
         return res.status(403).json({ error: "Not authorized to download this stem" });
       }
       const key = getPdimStorageKey(stem.fileUrl);
@@ -2972,6 +2959,7 @@ router.get(
         return res.status(409).json({ error: "Stem is not stored in Pocket Dimension" });
       }
       const downloadUrl = await storageService.getDownloadUrl(key);
+      res.setHeader("Cache-Control", "private, no-store");
       await db
         .update(listingStems)
         .set({ downloadCount: sql`${listingStems.downloadCount} + 1` })
@@ -3008,9 +2996,14 @@ router.get("/my-stems", async (req: Request, res: Response) => {
 
 router.get(
   "/listings/:listingId/stems",
+  requireAuth,
   async (req: Request, res: Response) => {
     try {
       const { listingId } = req.params as { listingId: string };
+      res.setHeader("Cache-Control", "private, no-store");
+      if (!await canReadListingStems(listingId, req.user!.id)) {
+        return res.status(403).json({ error: "Not authorized to access these stems" });
+      }
       const stems = await db
         .select()
         .from(listingStems)
@@ -3061,6 +3054,15 @@ router.post(
         .limit(1);
       if (!listing) {
         return res.status(404).json({ error: "Listing not found" });
+      }
+      // A listing owner cannot attach somebody else's private upload and
+      // thereby turn its key into an entitled marketplace download.
+      const { userStorageFiles } = await import("../../shared/schema");
+      const [fileOwner] = await db.select({
+        userId: userStorageFiles.userId, deletedAt: userStorageFiles.deletedAt,
+      }).from(userStorageFiles).where(eq(userStorageFiles.fileKey, fileKey)).limit(1);
+      if (!fileOwner || fileOwner.userId !== userId || fileOwner.deletedAt) {
+        return res.status(403).json({ error: "Stem file must belong to the listing owner" });
       }
       if (!(await storageService.fileExists(fileKey))) {
         return res.status(400).json({ error: "Stem file not found in Pocket Dimension" });

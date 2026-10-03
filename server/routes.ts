@@ -1554,12 +1554,16 @@ export async function registerRoutes(
         return res.status(400).json({ message: "File key is required" });
       }
 
+      const { stemAssetAccess } = await import("./services/marketplaceStemAccess");
+      const stemAccess = await stemAssetAccess(key, req.user.id);
+      if (stemAccess === false) return res.status(403).json({ message: "Access denied" });
+      res.setHeader("Cache-Control", "private, no-store");
       // Per-user files are keyed "users/<ownerId>/...". Without this check any
       // authenticated user could read any other user's private uploads just by
       // knowing/guessing their storage key.
       if (key.startsWith("users/")) {
         const ownerId = key.split("/")[1];
-        if (ownerId !== req.user.id) {
+        if (ownerId !== req.user.id && stemAccess !== true) {
           return res.status(403).json({ message: "Access denied" });
         }
       }
@@ -1580,7 +1584,7 @@ export async function registerRoutes(
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
-        if (key.startsWith("studio-renders/") && (!row || row.userId !== req.user.id)) {
+        if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
         if (row?.deletedAt) {
@@ -1653,7 +1657,7 @@ export async function registerRoutes(
       // "private" (not "public") — this endpoint now requires auth and gates
       // users/* keys by owner, so a shared/CDN cache must never store a
       // response that was only authorized for one specific requester.
-      res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+      res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "private, max-age=31536000, immutable");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);

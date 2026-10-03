@@ -559,6 +559,13 @@ router.get("/:storefrontId/membership-tiers", async (req, res) => {
     }
 
     const { storefrontId } = req.params as Record<string, string>;
+    const [storefront] = await db.select({ userId: storefronts.userId })
+      .from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
+    if (!storefront) return res.status(404).json({ error: "Storefront not found" });
+    if (storefront.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    res.setHeader("Cache-Control", "private, no-store");
     const tiers = await storefrontService?.getMembershipTiers(storefrontId);
     res.json(tiers);
   } catch (error: unknown) {

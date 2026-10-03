@@ -605,6 +605,11 @@ router.get("/public/*key", async (req: Request, res: Response) => {
         .json({ error: "Only storefront assets are publicly accessible" });
     }
 
+    const { stemAssetAccess } = await import("../services/marketplaceStemAccess");
+    const stemAccess = await stemAssetAccess(key, req.user?.id);
+    if (stemAccess === false) {
+      return res.status(req.user ? 403 : 401).json({ error: "Purchase required to access stems" });
+    }
     const ext = path?.extname(key).toLowerCase();
     const allowedImageExts: Record<string, string> = {
       ".jpg": "image/jpeg",
@@ -623,7 +628,7 @@ router.get("/public/*key", async (req: Request, res: Response) => {
     const buffer = await storageService?.downloadFile(key);
     const contentType = allowedImageExts[ext];
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "public, max-age=86400");
     res.setHeader("Content-Length", buffer?.length);
     res.send(buffer);
   } catch (error) {

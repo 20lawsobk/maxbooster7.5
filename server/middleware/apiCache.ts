@@ -586,6 +586,14 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return;
     }
 
+    // Entitlements and tenant ownership must be re-evaluated on every read,
+    // including previously cached anonymous responses from before hardening.
+    if (/^\/api\/marketplace\/(?:audio\/|covers?\/|stems\/|listings\/[^/]+\/stems(?:\/|$))/.test(req.path) ||
+        /^\/api\/storage\/(?:file|public)\//.test(req.path) ||
+        /^\/api\/storefront\/[^/]+\/membership-tiers$/.test(req.path)) {
+      next();
+      return;
+    }
     // Session/auth bootstrap responses are request-specific even before a user
     // identity exists. In particular, /api/csrf-token binds a freshly generated
     // response body to a Set-Cookie value. Caching it under the shared "anon"
