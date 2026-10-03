@@ -1,12 +1,11 @@
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { randomBytes } from "crypto";
 import type { ContentClass } from "./types.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface TranscodeResult {
   data: Buffer;
@@ -83,17 +82,22 @@ export class MediaTranscoder {
 
   async transcodeVideo(
     data: Buffer,
-    inputExt = ".mp4",
+    _inputExt = ".mp4",
   ): Promise<TranscodeResult> {
     await this.checkFfmpeg();
-    const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
-    const inFile = `${tmp}${inputExt}`;
-    const outFile = `${tmp}out.mp4`;
+    // FFmpeg probes the bytes: upload names must never become paths or options.
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "fabric-media-"));
+    const inFile = path.join(tmp, "input");
+    const outFile = path.join(tmp, "output.mp4");
 
     try {
       await fs?.writeFile(inFile, data);
-      await execAsync(
-        `ffmpeg -y -i "${inFile}" -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 96k -movflags +faststart "${outFile}" 2>/dev/null`,
+      await execFileAsync(
+        "ffmpeg",
+        ["-nostdin", "-loglevel", "error", "-y", "-i", inFile,
+          "-c:v", "libx264", "-crf", "28", "-preset", "fast",
+          "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", outFile],
+        { shell: false },
       );
       const out = await fs?.readFile(outFile);
       return {
@@ -104,24 +108,26 @@ export class MediaTranscoder {
         ratio: data.length / out?.length,
       };
     } finally {
-      await fs?.rm(inFile, { force: true });
-      await fs?.rm(outFile, { force: true });
+      await fs.rm(tmp, { recursive: true, force: true });
     }
   }
 
   async transcodeAudio(
     data: Buffer,
-    inputExt = ".wav",
+    _inputExt = ".wav",
   ): Promise<TranscodeResult> {
     await this.checkFfmpeg();
-    const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
-    const inFile = `${tmp}${inputExt}`;
-    const outFile = `${tmp}out.opus`;
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "fabric-media-"));
+    const inFile = path.join(tmp, "input");
+    const outFile = path.join(tmp, "output.opus");
 
     try {
       await fs?.writeFile(inFile, data);
-      await execAsync(
-        `ffmpeg -y -i "${inFile}" -c:a libopus -b:a 64k "${outFile}" 2>/dev/null`,
+      await execFileAsync(
+        "ffmpeg",
+        ["-nostdin", "-loglevel", "error", "-y", "-i", inFile,
+          "-c:a", "libopus", "-b:a", "64k", outFile],
+        { shell: false },
       );
       const out = await fs?.readFile(outFile);
       return {
@@ -132,8 +138,7 @@ export class MediaTranscoder {
         ratio: data.length / out?.length,
       };
     } finally {
-      await fs?.rm(inFile, { force: true });
-      await fs?.rm(outFile, { force: true });
+      await fs.rm(tmp, { recursive: true, force: true });
     }
   }
 
@@ -155,14 +160,11 @@ export class MediaTranscoder {
   async transcode(
     data: Buffer,
     contentClass: ContentClass,
-    originalName: string,
+    _originalName: string,
   ): Promise<TranscodeResult | null> {
-    const ext =
-      path?.extname(originalName).toLowerCase() || this.classToExt(contentClass);
-
     try {
-      if (contentClass === "video") return await this.transcodeVideo(data, ext);
-      if (contentClass === "audio") return await this.transcodeAudio(data, ext);
+      if (contentClass === "video") return await this.transcodeVideo(data);
+      if (contentClass === "audio") return await this.transcodeAudio(data);
       if (contentClass === "image") return await this.transcodeImage(data);
     } catch {
       return null;
@@ -171,18 +173,11 @@ export class MediaTranscoder {
     return null;
   }
 
-  private classToExt(c: ContentClass): string {
-    if (c === "video") return ".mp4";
-    if (c === "audio") return ".wav";
-    if (c === "image") return ".png";
-    return ".bin";
-  }
-
   private async checkFfmpeg(): Promise<void> {
     if (this.ffmpegAvailable === false) throw new Error("ffmpeg not available");
     if (this.ffmpegAvailable === null) {
       try {
-        await execAsync("ffmpeg -version 2>/dev/null");
+        await execFileAsync("ffmpeg", ["-version"], { shell: false });
         this.ffmpegAvailable = true;
       } catch {
         this.ffmpegAvailable = false;
