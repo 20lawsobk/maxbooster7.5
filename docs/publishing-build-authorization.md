@@ -54,3 +54,10 @@ env -i PATH="$PATH" HOME=/tmp node node_modules/vitest/vitest.mjs run tests/unit
 The entry-point fixture uses real npm, recovery, capsule packing and cleanup,
 with a tiny build script instead of the full application. It is not evidence
 of a successful full application build or publication.
+
+The configured-command regressions read `deployment.build` directly from
+`.replit` and execute that argument array only inside disposable fixtures.
+They verify one npm build per invocation, the canonical root context, absent
+and empty runtime indicators, repeated recovery, and rejection of inherited
+authorization before npm or filesystem mutation. Testing a separately written
+helper command alone does not validate the publishing configuration.

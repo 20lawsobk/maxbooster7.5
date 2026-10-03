@@ -10,13 +10,26 @@ import { deploymentPackStateDirectory, RECOVERY_HELPER_PATH } from "../script/li
 // Real npm, real tar/zstd, real recovery. No app imports, services or credentials.
 const repo = process.cwd();
 const url = file => JSON.stringify(pathToFileURL(path.join(repo, file)).href);
+// Read only deployment wiring; never copy workspace userenv into a fixture.
+// The configured build is a single-line TOML array of JSON-compatible strings.
+function configuredBuildCommand() {
+  const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
+    .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
+  const value = section?.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)?.[1];
+  assert.ok(value, "deployment.build must be an explicit argument array");
+  const command = JSON.parse(value);
+  assert.ok(Array.isArray(command) && command.length && command.every(v => typeof v === "string"));
+  return command;
+}
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-entry-"));
+  const calls = `${root}.npm-calls.jsonl`;
   const authorization = { DEPLOY_PACK:"1", PUBLISH_PAYLOAD_CLEANUP:"1", PUBLISH_BUILD_ROOT:root };
   const state = deploymentPackStateDirectory(root, authorization);
   t.after(() => {
     fs.rmSync(root, {recursive:true, force:true});
     fs.rmSync(state, {recursive:true, force:true});
+    fs.rmSync(calls, {force:true});
   });
   function write(file, value) {
     fs.mkdirSync(path.dirname(path.join(root,file)), {recursive:true});
@@ -37,6 +50,11 @@ function fixture(t) {
     import {assertPublishingCleanupExpectation, cleanPublishingPayload, measurePublishingPayload} from ${url("script/lib/publishingPayload.ts")};
     import {computeRemainingAppMembers} from ${url("script/lib/dockerignoreScan.ts")};
     const root=process.cwd();
+    fs.appendFileSync(${JSON.stringify(calls)}, JSON.stringify({
+      root, declaredRoot:process.env.PUBLISH_BUILD_ROOT,
+      pack:process.env.DEPLOY_PACK, cleanup:process.env.PUBLISH_PAYLOAD_CLEANUP,
+      runtimeIndicator:Boolean(process.env.REPLIT_DEPLOYMENT || process.env.REPLIT_DEPLOYMENT_ID),
+    })+"\\n");
     assertPublishingCleanupExpectation(process.env, root);
     if (!fs.existsSync("node_modules/input")) throw Error("pre-npm recovery missing");
     const tx=beginDeploymentPack(root);
@@ -57,19 +75,38 @@ function fixture(t) {
   const run = (extra = {}, args = ["--publish-disposable-copy", "."]) =>
     spawnSync(process.execPath, [path.join(root,RECOVERY_HELPER_PATH), ...args],
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
-  return {root,state,authorization,write,run};
+  const runConfigured = (extra = {}) => {
+    const [executable, ...args] = configuredBuildCommand();
+    // The executable comes from .replit, not a separately maintained command.
+    return spawnSync(executable, args,
+      {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
+  };
+  return {root,state,calls,authorization,write,run,runConfigured};
 }
+
+test("actual deployment wiring agrees with the documented single publishing entry", () => {
+  const command = configuredBuildCommand();
+  assert.deepEqual(command, ["node", RECOVERY_HELPER_PATH, "--publish-disposable-copy", "."]);
+  assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(command.join(" ")));
+});
 
 for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
   {REPLIT_DEPLOYMENT:"1",REPLIT_DEPLOYMENT_ID:"runtime-present"}]) {
-  test(`actual publishing entry packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
+  test(`configured publishing command packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
     const f = fixture(t);
     const protectedFiles = ["package.json", "start.sh", RECOVERY_HELPER_PATH];
     const before = protectedFiles.map(p => fs.readFileSync(path.join(f.root,p)));
     for (let attempt=0; attempt<2; attempt++) {
-      const result=f.run(indicators);
+      const result=f.runConfigured(indicators);
       assert.equal(result.status,0,result.stderr+result.stdout);
       assert.match(result.stdout,/REAL_FIXTURE_BUILD_COMPLETE/);
+      const calls = fs.readFileSync(f.calls,"utf8").trim().split("\n").map(line => JSON.parse(line));
+      assert.equal(calls.length, attempt + 1, "exactly one npm build per configured invocation");
+      assert.deepEqual(calls.at(-1), {
+        root:fs.realpathSync(f.root), declaredRoot:fs.realpathSync(f.root),
+        pack:"1", cleanup:"1",
+        runtimeIndicator:Boolean(indicators.REPLIT_DEPLOYMENT || indicators.REPLIT_DEPLOYMENT_ID),
+      });
       protectedFiles.forEach((p,i)=>assert.deepEqual(fs.readFileSync(path.join(f.root,p)),before[i]));
       assert.ok(fs.existsSync(path.join(f.state,"journal.json")));
       assert.ok(!fs.existsSync(path.join(f.root,".deployment-pack-state")));
@@ -82,6 +119,24 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
     assert.equal(fs.readFileSync(path.join(f.root,"server/source.ts"),"utf8"),"original source");
   });
 }
+
+test("configured command rejects inherited authorization without npm or filesystem mutation", t => {
+  const f = fixture(t);
+  for (const inherited of [
+    {DEPLOY_PACK:"1"}, {DEPLOY_PACK:""},
+    {PUBLISH_PAYLOAD_CLEANUP:"1"}, {PUBLISH_PAYLOAD_CLEANUP:""},
+    {PUBLISH_BUILD_ROOT:f.root}, {PUBLISH_BUILD_ROOT:""}, f.authorization,
+  ]) {
+    const result = f.runConfigured(inherited);
+    assert.notEqual(result.status,0);
+    assert.match(result.stderr,/Ambiguous inherited build authorization/);
+    assert.ok(!fs.existsSync(f.calls), "npm must not run");
+    assert.ok(!fs.existsSync(f.state), "no recovery state may be created");
+    assert.equal(fs.readFileSync(path.join(f.root,".local/ignored/evidence"),"utf8"),"disposable evidence");
+    assert.deepEqual(fs.readFileSync(path.join(f.root,"node_modules/input")),Buffer.from([0,1,127,255]));
+    assert.equal(fs.readFileSync(path.join(f.root,"server/source.ts"),"utf8"),"original source");
+  }
+});
 
 test("interrupted publishing recovers before npm and preserves later edits", t => {
   const f=fixture(t);

@@ -33,8 +33,9 @@ The user authorized: “Yes—clean only the publishing copy.”
 
 **Why:** Workspace originals and preserved simulation copies must remain intact.
 
-**How to apply:** Cleanup requires a platform publishing indicator as well as
-the deployment-pack flag. A local simulation's pack flag alone is not permission
+**How to apply:** Cleanup requires explicit root-scoped disposable-copy consent,
+not a runtime platform indicator (which may be absent during builds).
+A local simulation's pack flag alone is not permission
 to delete ignored workspace paths. If publishing cannot establish that boundary,
 stop explicitly instead of relaxing the guard. Verify the actual remaining
 payload after cleanup, not a git-tracked approximation.

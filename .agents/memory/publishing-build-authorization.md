@@ -14,3 +14,14 @@ recovery-directory selection inconsistent.
 aligned to the same canonical root declaration. Validate with dependency-free
 entry-point fixtures; a passing fixture is not a full build or publication.
 Large disposable builds require a successful allocation probe, not just `df`.
+
+Exercise the actual configured publishing command in disposable regression
+fixtures, rather than maintaining a separate test-only command.
+
+**Why:** The repaired helper and documentation agreed while the real publishing
+configuration still invoked its obsolete entry point, causing another pre-npm
+failure despite passing helper tests.
+
+**How to apply:** Read the deployment argument array from configuration, verify
+one npm invocation and its root context, and preserve rejection tests through
+that same entry path.

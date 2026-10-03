@@ -6,7 +6,8 @@
   simulation restore failure.
 - Official configuration/publishing documentation guarantees the deployment
   runtime indicator on published apps, not as mandatory build evidence.
-- The configured command now uses the dependency-free publishing entry point.
+- The helper repair documented the new entry point, but the configuration
+  remained on the legacy command until the wiring correction recorded below.
 - Real small-fixture tests run that entry point through real npm and tar/zstd,
   including absent, empty and runtime-present indicators, repeated builds,
   SIGKILL interruption, byte-identical recovery, protected-file preservation,
@@ -31,3 +32,33 @@ simulation copy, user data or working source was deleted to free storage.
 
 The earlier simulation's successful build and quota-limited restore remain
 historical evidence only; they do not validate this publishing command.
+
+## October 3 configuration wiring correction
+
+The screenshot at
+`attached_assets/0_Screenshot_20261003-051856_Chrome_1791019219860.png`
+records a pre-npm root-authorization refusal. The configured legacy command
+exported authorization variables and called `--recover`, rather than using
+the repaired helper's publishing entry point.
+
+The platform configuration was changed to:
+
+```
+["node", "script/lib/deploymentPackRecovery.mjs", "--publish-disposable-copy", "."]
+```
+
+A hash comparison excluding only the deployment build line confirmed that
+all other configuration remained unchanged, including target, run command,
+ports and unrelated settings.
+
+Verification passed: 22 Node tests plus 34 focused Vitest regressions.
+The entry fixtures now derive their command from the actual `.replit` build
+array and exercise real npm, packing, cleanup and recovery. They count exactly
+one npm build per invocation, verify canonical root authorization with absent
+or empty runtime indicators, and verify inherited authorization is rejected
+without npm execution or changes to fixture source/data.
+
+No full application build, workflow start, shared-database access, or
+publication was performed. Fixture results do not establish full-build or
+publication success. Full-build validation remains with its existing
+capacity-gated validation task; no existing copies were deleted for space.
