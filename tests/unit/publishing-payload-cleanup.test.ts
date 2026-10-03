@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   assertPublishingCleanupExpectation,
   cleanPublishingPayload,
@@ -18,6 +18,7 @@ const publishing = (root: string) => ({
   DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1", PUBLISH_BUILD_ROOT: root,
 });
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const fixture of fixtures.splice(0)) fs.rmSync(fixture, { recursive: true, force: true });
 });
 
@@ -36,6 +37,49 @@ function fixture() {
 }
 
 describe("disposable publishing payload cleanup", () => {
+  it("reports a cache recreated during cleanup without reading its contents or bypassing the failure", () => {
+    const { root, write } = fixture();
+    write(".cache/old-build-cache");
+    const remove = fs.rmSync;
+    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      remove(target, options);
+      if (String(target) === path.join(root, ".cache")) {
+        write(".cache/replit/private-cache", "sensitive fixture content must not be logged");
+      }
+    });
+    let error: Error | undefined;
+    try {
+      cleanPublishingPayload({
+        root, env: publishing(root), dockerignore: ".cache/\n", requiredPaths: [],
+      });
+    } catch (cause) {
+      error = cause as Error;
+    }
+    expect(error?.message).toContain("Excluded publishing entries survived cleanup: .cache");
+    expect(error?.message).toContain("was scheduled for removal");
+    expect(error?.message).toContain('"replit"/');
+    expect(error?.message).not.toContain("sensitive fixture content");
+    expect(error?.message).not.toContain("private-cache");
+    expect(fs.existsSync(path.join(root, ".cache/replit/private-cache"))).toBe(true);
+  });
+
+  it("does not inspect a surviving excluded symlink target", () => {
+    const { base, root, write } = fixture();
+    write(".cache/original");
+    const external = path.join(base, "external");
+    fs.mkdirSync(external);
+    fs.writeFileSync(path.join(external, "private-name"), "external bytes");
+    const remove = fs.rmSync;
+    vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      remove(target, options);
+      if (String(target) === path.join(root, ".cache")) fs.symlinkSync(external, target);
+    });
+    expect(() => cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: ".cache\n", requiredPaths: [],
+    })).toThrow(/symlink; was scheduled for removal; target not inspected/);
+    expect(fs.readFileSync(path.join(external, "private-name"), "utf8")).toBe("external bytes");
+  });
+
   for (const env of [
     {}, { DEPLOY_PACK: "1" }, { REPLIT_DEPLOYMENT: "1" },
     { DEPLOY_PACK: "0", REPLIT_DEPLOYMENT: "1" },

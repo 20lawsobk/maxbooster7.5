@@ -86,6 +86,40 @@ function coveredBy(relative: string, paths: string[]): boolean {
     relative === candidate || relative.startsWith(`${candidate}/`));
 }
 
+/** Failure-only diagnostics: names and entry types, never cached contents.
+ * Do not traverse an excluded link or recursively inspect ignored trees.
+ */
+function describeCleanupSurvivor(root: string, relative: string, initiallyExcluded: string[]): string {
+  const absolute = path.join(root, relative);
+  const origin = initiallyExcluded.includes(relative)
+    ? "was scheduled for removal"
+    : "appeared after the initial scan";
+  try {
+    const stat = fs.lstatSync(absolute);
+    if (stat.isSymbolicLink()) return `${JSON.stringify(relative)}: symlink; ${origin}; target not inspected`;
+    if (!stat.isDirectory()) return `${JSON.stringify(relative)}: file; ${stat.size} bytes; ${origin}`;
+    const names: string[] = [];
+    // Bound diagnostic work even if a writer has produced a large cache.
+    const directory = fs.opendirSync(absolute);
+    try {
+      while (names.length < 9) {
+        const entry = directory.readSync();
+        if (!entry) break;
+        names.push(JSON.stringify(entry.name) + (entry.isDirectory() ? "/" : entry.isSymbolicLink() ? " (symlink)" : ""));
+      }
+    } finally {
+      directory.closeSync();
+    }
+    return `${JSON.stringify(relative)}: directory; ${origin}; immediate entries: ${
+      names.slice(0, 8).join(", ") || "(empty)"
+    }${names.length > 8 ? ", … (listing truncated)" : ""}`;
+  } catch (cause) {
+    // Diagnostics must not turn the original cleanup failure into success.
+    const code = (cause as NodeJS.ErrnoException).code || "unknown I/O error";
+    return `${JSON.stringify(relative)}: ${origin}; diagnostic read failed (${code})`;
+  }
+}
+
 function validateSurvivingLinks(root: string, survivors: Entry[], excluded: string[]) {
   for (const { relative, stat } of survivors) {
     if (!stat.isSymbolicLink()) continue;
@@ -172,7 +206,13 @@ export function cleanPublishingPayload(options: {
   const measurement = measurePublishingPayload(root, options.dockerignore);
   const remainingExcluded = scan(root, options.dockerignore).excluded;
   if (remainingExcluded.length) {
-    throw new Error(`Excluded publishing entries survived cleanup: ${remainingExcluded.join(", ")}`);
+    const details = remainingExcluded.slice(0, 8)
+      .map((relative) => describeCleanupSurvivor(root, relative, excluded));
+    throw new Error(
+      `Excluded publishing entries survived cleanup: ${remainingExcluded.join(", ")}\n` +
+      details.join("\n") +
+      "\nCleanup remains blocked. Identify and stop or relocate the writer before publishing; do not bypass this check.",
+    );
   }
   return { removedPaths: excluded, measurement };
 }
