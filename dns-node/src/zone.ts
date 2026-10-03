@@ -120,16 +120,30 @@ async function fetchZoneFromPrimary(): Promise<void> {
   return new Promise((resolve) => {
     const mod = ZONE_SYNC_URL.startsWith("https") ? https : http;
     mod
-      .get(ZONE_SYNC_URL, (res) => {
+      .get(ZONE_SYNC_URL, {
+        headers: process.env.DNS_SYNC_SECRET
+          ? { "X-DNS-Sync-Secret": process.env.DNS_SYNC_SECRET } : {},
+        timeout: 10_000,
+      }, (res) => {
+        if (res.statusCode !== 200) {
+          console.error(`[zone] Sync failed: HTTP ${res.statusCode}`);
+          res.resume();
+          resolve();
+          return;
+        }
         const chunks: Buffer[] = [];
         res.on("data", (c) => chunks.push(c));
         res.on("end", () => {
           try {
             const raw = Buffer.concat(chunks).toString("utf8");
             const data: ZoneData = JSON.parse(raw);
+            if (!data || typeof data.domain !== "string" || !data.domain ||
+                (zoneLoaded && data.domain !== zone.domain) || !Number.isSafeInteger(data.serial) ||
+                !Array.isArray(data.records)) throw new Error("Invalid zone sync response");
             if (data.serial > zone.serial) {
               zone = data;
               compiled = compile(data);
+              zoneLoaded = true;
               console.log(`[zone] Synced from primary: serial=${data.serial}`);
               fs.writeFileSync(ZONE_FILE, raw, "utf8"); // cache locally
             }
@@ -140,7 +154,11 @@ async function fetchZoneFromPrimary(): Promise<void> {
         });
         res.on("error", () => resolve());
       })
-      .on("error", () => resolve());
+      .on("timeout", function () { this.destroy(new Error("Zone sync timed out")); })
+      .on("error", (error) => {
+        console.error(`[zone] Sync failed: ${error.message}`);
+        resolve();
+      });
   });
 }
 

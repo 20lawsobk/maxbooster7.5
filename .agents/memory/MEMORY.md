@@ -148,3 +148,5 @@
 - [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
 - [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.
 - [Deployment concurrency boundaries](deployment-concurrency-boundaries.md) — size against container quotas; drain active destructive jobs before failure returns to recovery.
+- [Snapshot string ceiling](pdim-snapshot-string-limit.md) — verify both read and write beyond V8's single-string limit; preserve checkpoint consistency.
+- [Local DNS enabled](local-dns-enabled.md) — keep the local authoritative service enabled; verify UDP and TCP separately from public delegation.

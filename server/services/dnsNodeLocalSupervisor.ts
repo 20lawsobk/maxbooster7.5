@@ -80,8 +80,11 @@ function spawnChild(): void {
     env: {
       ...process.env,
       DNS_PORT: String(port),
+      DNS_HOST: "127.0.0.1",
       HEALTH_PORT: String(healthPort),
+      HEALTH_HOST: "127.0.0.1",
       DNS_SERVER_ROLE: "local-test",
+      ZONE_FILE: path.join(DNS_NODE_DIR, "data", "zone.json"),
       ZONE_SYNC_URL: `http://127.0.0.1:${config.port}/api/dns/zone/${domain}`,
       ZONE_SYNC_INTERVAL_S: "60",
       DNSSEC_ENABLED: process.env.DNS_NODE_LOCAL_DNSSEC === "true" ? "true" : "false",
