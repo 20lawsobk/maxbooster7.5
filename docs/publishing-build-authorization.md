@@ -1,6 +1,27 @@
 # Publishing build authorization
 
-The configured command is:
+## Active historical configuration
+
+At the user's request, publishing currently uses the unmodified August 26
+historical scripts against the current application:
+
+```
+build: bash build.sh
+run:   bash start.sh
+```
+
+**The historical build is destructive and has no disposable-root CLI guard.
+Never execute it in the working checkout.** It is configured for the publishing
+copy only. The newer script set is preserved under
+`tests/fixtures/deployment-versions/current/`; the historical originals are under
+`tests/fixtures/deployment-versions/historical/`.
+
+The historical set has not been verified end-to-end with the current app.
+See that archive's README for comparison and switch-back instructions.
+
+## Preserved newer flow (inactive)
+
+The newer command was:
 
 ```
 bash build.sh --publish-disposable-copy .

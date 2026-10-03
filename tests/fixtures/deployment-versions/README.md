@@ -1,6 +1,10 @@
 # Deployment script comparison
 
-The active application and publishing configuration remain unchanged.
+The historical script set is now active for the current application, at the
+user's explicit request. Publishing runs `bash build.sh`, then `bash start.sh`.
+Application feature code has not been reverted. The isolated historical build
+test is separate from this configuration change; activation does not establish
+a successful publication or healthy startup.
 
 - `historical/`: byte-for-byte scripts from the August 26, 2026 publishing
   checkpoint `b51a8bcb65b3000b0c21cd1009a5fc94f0480853`.
@@ -61,3 +65,14 @@ historical publishing environment.
 
 No build or publication was performed when creating these copies. This path is
 under `tests/`, already excluded from the current production payload.
+
+## Switching back
+
+Restore the five files from `current/` to their corresponding application paths,
+then configure publishing's build command as
+`bash build.sh --publish-disposable-copy .` and keep `bash start.sh` as its run
+command. Do not run either build in the working checkout. The newer helper
+modules remain in place; the snapshot is not a standalone application.
+
+For a current-script control copy while the historical set is active, explicitly
+overlay the five files from `current/` before step 6 above.

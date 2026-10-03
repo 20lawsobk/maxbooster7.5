@@ -153,7 +153,7 @@
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.
 - [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.
 - [Capsule build control files](capsule-build-control-files.md) — publishing still needs root manifests after packing; archive removal must not delete package-manager control files.
-- [Publishing build authorization](publishing-build-authorization.md) — runtime indicators are not build evidence; explicit disposable-root consent must align recovery and cleanup.
+- [Publishing script choice](publishing-build-authorization.md) — user chose the unmodified historical scripts as active; retain newer versions and never run destructive builds in the checkout.
 - [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
 - [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.
 - [Deployment concurrency boundaries](deployment-concurrency-boundaries.md) — size against container quotas; drain active destructive jobs before failure returns to recovery.

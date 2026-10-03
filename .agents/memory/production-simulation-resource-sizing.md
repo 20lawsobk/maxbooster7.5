@@ -7,6 +7,16 @@ Use a non-recursive filesystem-allocation upper bound for production-simulation 
 
 Mount-wide free space from `df` is not proof that a workspace or scratch path can accept a large write: hidden per-workspace or path-specific quotas can return `EDQUOT` while the mount still reports ample space. Separate mounts such as `/tmp` and `/home/runner` can have different limits, so relocating a multi-gigabyte copy is not automatically a capacity fix.
 
+After freeing user-approved workspace simulations, test allocation on that same
+filesystem rather than assuming `/tmp` benefits. A real 16 GiB allocation passed
+on workspace scratch while `/tmp` still returned EDQUOT. To isolate a
+workspace-backed copy, bind its scratch parent onto an empty `/tmp` mountpoint
+inside a private mount namespace **before** masking the live workspace; use
+the bind-mounted paths for the child cwd, HOME, and caches.
+
+**Why:** Freeing files on one mount does not raise another mount's quota, and
+masking the workspace before binding a nested disposable copy hides the copy too.
+
 **Why:** The full-workspace scan traversed tens of gigabytes and delayed the filtered copy without improving the conservative disk-admission decision. Production restore attempts also hit quota errors on workspace, `/tmp`, and an ephemeral home overlay despite large `df` availability.
 
 **How to apply:** Keep the simulation's existing free-space reserve and estimate scratch conservatively from filesystem allocation. Check path-specific quota using supported controls where possible; otherwise use bounded probes before large copies and preserve failure evidence before cleanup. Do not reintroduce an unfiltered recursive size scan before the copy stage or treat `df` alone as quota headroom.

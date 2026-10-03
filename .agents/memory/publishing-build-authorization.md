@@ -3,8 +3,20 @@ name: Publishing build authorization
 description: Runtime deployment indicators cannot authorize the publishing build.
 ---
 
-Use explicit disposable-copy consent for publishing builds, not runtime platform
-variables. Never invoke the destructive publishing entry point in the checkout.
+The user explicitly chose to activate the unmodified historical deployment
+script set for the current app while retaining the newer versions for switch-back.
+Do not automatically reintroduce the newer publishing architecture as a repair.
+
+**Why:** The user requested testing the historical scripts against today's
+Max Booster and then explicitly requested making those scripts active, accepting
+that they could ask to switch back.
+
+**How to apply:** Preserve that baseline until the user requests changes. Never
+invoke its destructive build in the working checkout. Activation is not proof
+that the historical environment was reconstructed or that publishing succeeded.
+
+The remaining guidance applies to the preserved newer build implementation:
+use explicit disposable-copy consent, not runtime platform variables.
 
 **Why:** Publishing failed before npm because neither runtime deployment
 indicator was available. Changing just the CLI guard would leave cleanup and
