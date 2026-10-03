@@ -122,6 +122,19 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
       const result=f.runConfigured(indicators);
       assert.equal(result.status,0,result.stderr+result.stdout);
       assert.match(result.stdout,/REAL_FIXTURE_BUILD_COMPLETE/);
+      const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
+        .map(line => JSON.parse(line.slice("[publishing-entry] ".length)));
+      assert.deepEqual(events.map(event => event.event), [
+        "started", "recovery-started", "recovery-completed", "npm-started",
+        "npm-exited", "cache-cleanup-started", "cache-cleanup-completed",
+        "command-completed", "process-exit",
+      ]);
+      assert.equal(events.at(-1).code, 0);
+      assert.equal(events.at(-1).phase, "complete");
+      events.forEach((event, i) => {
+        assert.ok(Number.isFinite(Date.parse(event.timestamp)));
+        assert.ok(event.elapsedSeconds >= (events[i - 1]?.elapsedSeconds ?? 0));
+      });
       const calls = fs.readFileSync(f.calls,"utf8").trim().split("\n").map(line => JSON.parse(line));
       assert.equal(calls.length, attempt + 1, "exactly one npm build per configured invocation");
       assert.deepEqual(calls.at(-1), {
@@ -161,6 +174,20 @@ test("configured command rejects inherited authorization without npm or filesyst
     assert.deepEqual(fs.readFileSync(path.join(f.root,"node_modules/input")),Buffer.from([0,1,127,255]));
     assert.equal(fs.readFileSync(path.join(f.root,"server/source.ts"),"utf8"),"original source");
   }
+});
+
+test("outer publishing diagnostics retain npm failure and never claim successful completion", t => {
+  const f = fixture(t);
+  f.write("fixture-build.mjs", "process.exit(7);");
+  const result = f.runConfigured();
+  assert.notEqual(result.status, 0);
+  const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
+    .map(line => JSON.parse(line.slice("[publishing-entry] ".length)));
+  assert.equal(events.find(event => event.event === "npm-failed")?.code, 7);
+  assert.ok(events.some(event => event.event === "cache-cleanup-completed"));
+  assert.ok(!events.some(event => event.event === "command-completed"));
+  assert.equal(events.at(-1).event, "process-exit");
+  assert.equal(events.at(-1).code, 1);
 });
 
 test("interrupted publishing recovers before npm and preserves later edits", t => {

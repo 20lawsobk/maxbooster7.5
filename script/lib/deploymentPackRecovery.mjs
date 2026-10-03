@@ -288,6 +288,24 @@ export function beginDeploymentPack(root) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // Observe the OUTER command, not just build.ts's last message. In particular,
+  // npm exit and private-cache removal occur after "build complete".
+  const started = process.hrtime.bigint();
+  let phase = "authorization";
+  const publishing = process.argv[2] === "--publish-disposable-copy";
+  const report = (event, extra = {}) => {
+    if (!publishing) return;
+    fs.writeSync(2, `[publishing-entry] ${JSON.stringify({
+      event, phase, timestamp: new Date().toISOString(),
+      elapsedSeconds: Number(process.hrtime.bigint() - started) / 1e9,
+      ...extra,
+    })}\n`);
+  };
+  if (publishing) {
+    report("started");
+    // Observes natural exit; never force success or bypass outstanding work.
+    process.once("exit", code => report("process-exit", { code }));
+  }
   if (!["--recover", "--publish-disposable-copy"].includes(process.argv[2]) || process.argv.length > 4) {
     console.error("Usage: node script/lib/deploymentPackRecovery.mjs --recover [root] | --publish-disposable-copy <root>");
     process.exitCode = 1;
@@ -312,15 +330,30 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         });
       }
       assertBuildContext(root);
+      phase = "recovery";
+      report("recovery-started");
       recoverDeploymentPack(root);
+      report("recovery-completed");
       if (process.argv[2] === "--publish-disposable-copy") {
+        phase = "cache-setup";
         const caches = createPublishingCacheEnvironment(root, process.env);
         try {
+          phase = "npm-build";
+          report("npm-started");
           execFileSync("npm", ["run", "build"], { cwd: root, env: caches.env, stdio: "inherit" });
+          report("npm-exited", { code: 0 });
+        } catch (error) {
+          report("npm-failed", { code: error.status ?? null, signal: error.signal ?? null });
+          throw error;
         } finally {
+          phase = "cache-cleanup";
+          report("cache-cleanup-started");
           // Own mkdtemp only; never delete inherited cache locations.
           fs.rmSync(caches.directory, { recursive: true, force: true });
+          report("cache-cleanup-completed");
         }
+        phase = "complete";
+        report("command-completed");
       }
     } catch (error) {
       console.error("Deployment build recovery failed:", error.message);
