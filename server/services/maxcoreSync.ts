@@ -32,8 +32,11 @@ const timedFetch = (
 const AI_SERVER_URL = getMaxcoreOrigin();
 const AI_SERVER_KEY = getMaxcoreGenerationKey();
 const AI_SERVER_ADMIN_HEADERS = getMaxcoreAdminHeaders();
-const PEER_NODE = process.env.PEER_TRAINING_NODE || "";
-const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || "";
+// Local deployments train through the same supervised subsystem, not a
+// historical public peer URL that may point back to the frontend.
+const localTraining = process.env.MAXCORE_LOCAL !== "0";
+const PEER_NODE = localTraining ? AI_SERVER_URL : process.env.PEER_TRAINING_NODE || "";
+const MBS_KEY = localTraining ? AI_SERVER_KEY : process.env.MBS_AI_TRAINING_KEY || "";
 
 // Sync every 10 minutes — aligned with the continuous training session cycle.
 // Each training session takes ~10 real minutes and produces 10 simulated years

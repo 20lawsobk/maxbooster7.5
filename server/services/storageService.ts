@@ -145,6 +145,10 @@ class PocketDimensionStorageProvider implements StorageProvider {
         this.pocket as Record<string, (...a: unknown[]) => Promise<Buffer>>
       ).read(`files/${key}`);
     } catch (err) {
+      if (err instanceof Error &&
+          err.message === `Entry not found in pocket dimension: files/${key}`) {
+        throw Object.assign(new Error(`File not found: ${key}`, { cause: err }), { code: "ENOENT" });
+      }
       const now = Date.now();
       if (now - _lastPdimReadWarnAt >= _STORAGE_WARN_THROTTLE_MS) {
         _lastPdimReadWarnAt = now;
@@ -153,7 +157,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
           `[Storage] PDIM read failed for key=${key} — suppressing repeats for 30 s`,
         );
       }
-      throw new Error(`File not found: ${key}`);
+      throw new Error(`Storage read failed: ${key}`, { cause: err });
     }
   }
 

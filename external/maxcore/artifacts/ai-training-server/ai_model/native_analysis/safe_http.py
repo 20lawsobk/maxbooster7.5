@@ -189,7 +189,7 @@ def fetch_to_file(
                 headers={
                     "Host": host_header,
                     "User-Agent": "MaxCore-NativeAnalysis/1",
-                    "Accept": ", ".join(f"{item}/*" for item in allowed),
+                    "Accept": ", ".join(item if "/" in item else f"{item}/*" for item in allowed),
                     "Connection": "close",
                     **extra_headers,
                 },

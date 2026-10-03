@@ -1449,7 +1449,11 @@ export class SelfEvolutionEngine extends EventEmitter {
           `🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`,
         );
       }
-    } catch {
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        logger.error({ err: error }, "Failed to restore evolution state");
+        throw error;
+      }
       logger.info("🧬 No prior evolution state found — starting fresh");
     }
   }

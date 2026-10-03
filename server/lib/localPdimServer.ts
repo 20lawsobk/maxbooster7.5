@@ -26,6 +26,7 @@ import type { RedisAofRecord, RedisEntry, StreamGroup } from "../../external/pdi
 import { LocalPdimCapsules } from "./localPdimCapsules.js";
 import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
 import { LocalPdimAofJournal } from "./localPdimAofJournal.js";
+import { readSnapshotJson, snapshotJsonChunks } from "./pdimSnapshotJson.js";
 
 const LOCAL_PORT = runtimePorts.localPdim;
 const PERSIST_FILE = path.resolve(
@@ -111,7 +112,7 @@ function saveStoreAsync(): Promise<boolean> {
           value: String(redisBaseline),
         };
         return {
-          serialized: JSON.stringify(obj),
+          serialized: snapshotJsonChunks(obj),
           capsuleBaseline,
           redisBaseline,
         };
@@ -119,7 +120,7 @@ function saveStoreAsync(): Promise<boolean> {
       await fs.promises.mkdir(path.dirname(PERSIST_FILE), { recursive: true });
       const file = await fs.promises.open(temporaryFile, "wx", 0o600);
       try {
-        await file.writeFile(snapshot.serialized, "utf8");
+        for (const chunk of snapshot.serialized) await file.writeFile(chunk, "utf8");
         await file.sync();
       } finally {
         await file.close();
@@ -163,11 +164,11 @@ function saveStore(): boolean {
       type: "string",
       value: String(redisBaseline),
     };
-    fs.writeFileSync(temporaryFile, JSON.stringify(obj), {
-      encoding: "utf8",
-      mode: 0o600,
-      flush: true,
-    });
+    const output = fs.openSync(temporaryFile, "w", 0o600);
+    try {
+      for (const chunk of snapshotJsonChunks(obj)) fs.writeFileSync(output, chunk, "utf8");
+      fs.fsyncSync(output);
+    } finally { fs.closeSync(output); }
     fs.renameSync(temporaryFile, PERSIST_FILE);
     // Durably commit the rename itself, not only the temporary file contents.
     const directory = fs.openSync(path.dirname(PERSIST_FILE), "r");
@@ -325,8 +326,7 @@ function loadStore(): void {
   snapshotAofBaseline = 0;
   if (!fs.existsSync(PERSIST_FILE)) return;
   try {
-    const raw = fs.readFileSync(PERSIST_FILE, "utf8");
-    const data = JSON.parse(raw) as unknown;
+    const data = readSnapshotJson(PERSIST_FILE);
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       throw new Error("persistence root must be a JSON object");
     }

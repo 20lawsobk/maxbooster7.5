@@ -1,5 +1,15 @@
 import type { RequestHandler } from "express";
+import path from "node:path";
 import { enforceMaintenance } from "../services/governancePolicyService.js";
+
+export function isDevDependencyResource(urlPath: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  const prefix = `/@fs${path.resolve("node_modules")}/`;
+  if (!urlPath.startsWith(prefix) || urlPath.includes("%") || urlPath.includes("\\")) return false;
+  const relative = urlPath.slice(prefix.length);
+  return !relative.split("/").some(part => part === "." || part === "..") &&
+    /\.(?:[cm]?js|css|map|woff2?|ttf)$/.test(relative);
+}
 
 const recovery = new Set([
   "GET /", "GET /login", "GET /forgot-password", "GET /reset-password", "GET /favicon.ico",
@@ -19,6 +29,7 @@ export const governanceBoundary: RequestHandler = async (req, res, next) => {
   const path = req.path;
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (recovery.has(`${method} ${path}`)) return next();
+  if (method === "GET" && isDevDependencyResource(path)) return next();
   // Static app-shell resources carry no application data/auth authority.
   if (method === "GET" && ["/assets/", "/js/", "/src/", "/node_modules/.vite/", "/@vite/", "/@react-refresh"]
     .some(prefix => path.startsWith(prefix))) return next();

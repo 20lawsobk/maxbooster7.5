@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
-import { execSync } from "child_process";
 import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
@@ -7688,34 +7687,7 @@ export async function registerRoutes(
     },
   );
 
-  function getStableBuildId(): string {
-    try {
-      return execSync("git rev-parse --short HEAD", {
-        stdio: "pipe",
-        timeout: 3000,
-      })
-        .toString()
-        .trim();
-    } catch {
-      try {
-        const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
-        return crypto
-          .createHash("sha1")
-          .update(pkg.version || "1.0.0")
-          .digest("hex")
-          .slice(0, 8);
-      } catch {
-        return "dev-build";
-      }
-    }
-  }
-  const BUILD_ID = process.env.BUILD_ID || getStableBuildId();
-  const BUILD_TIMESTAMP = new Date().toISOString();
-
-  app.get("/api/version", (_req: Request, res: Response) => {
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
-  });
+  const { BUILD_ID, BUILD_TIMESTAMP } = await import("./buildIdentity.js");
 
   // Liveness — cheap probe used by deployment infra. Always 200 if the
   // process can serve requests, regardless of subsystem state.

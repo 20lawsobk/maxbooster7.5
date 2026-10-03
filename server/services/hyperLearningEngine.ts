@@ -53,7 +53,9 @@ const AB_SIGNIFICANCE_THRESHOLD = 0.8;
 // PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
 // would only apply in an isolated dev environment with no env vars at all.
 const AI_SERVER_URL =
-  process.env.PEER_TRAINING_NODE || getMaxcoreOriginOrDefault();
+  process.env.MAXCORE_LOCAL !== "0"
+    ? getMaxcoreOriginOrDefault()
+    : process.env.PEER_TRAINING_NODE || getMaxcoreOriginOrDefault();
 
 interface MicroPattern {
   id: string;

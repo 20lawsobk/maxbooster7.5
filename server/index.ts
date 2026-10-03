@@ -400,6 +400,12 @@ app.post("/api/errors", (_req: Request, res: Response, next: NextFunction) => {
 // by registerRoutes() (which sits later in the stack) takes over.  This avoids
 // the "bootPhase: true forever" regression where the first-registered stub
 // permanently shadows the real handler.
+app.get("/api/version", async (_req: Request, res: Response) => {
+  const { BUILD_ID, BUILD_TIMESTAMP } = await import("./buildIdentity.js");
+  res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
+});
+
 app.get("/api/auth/me", (_req: Request, res: Response, next: NextFunction) => {
   if (_routesReady) return next();
   // During the boot window we cannot check the session store (PDIM may be cold).

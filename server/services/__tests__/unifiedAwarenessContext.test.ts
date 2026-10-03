@@ -40,6 +40,11 @@ describe("MaxCore unified awareness facade", () => {
     });
     expect(await buildMaxCoreAwarenessPayload("music")).toEqual({ ...receipt, extraContext: "" });
   });
+  it("omits optional conditioning while MaxCore is warming", async () => {
+    request.mockResolvedValue({ ready: false, snapshot_id: null, awareness: "", context: "" });
+    expect(await buildMaxCoreAwarenessPayload("music")).toEqual({ extraContext: "" });
+    expect(await getAwarenessContext("music")).toEqual({});
+  });
   it("forwards authoritative status without inferring provider availability", async () => {
     const status = { ready: false, snapshot_id: "core-123" };
     request.mockResolvedValue(status);

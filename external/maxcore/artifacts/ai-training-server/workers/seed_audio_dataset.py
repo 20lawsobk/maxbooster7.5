@@ -140,7 +140,7 @@ def _http_get(url: str, timeout: float = 90.0, retries: int = 3) -> bytes:
         try:
             data, _ = fetch_bytes(
                 url, max_bytes=64 * 1024 * 1024,
-                allowed_content_types=("application", "audio"),
+                allowed_content_types=("application", "audio", "binary/octet-stream"),
                 deadline_seconds=timeout,
             )
             return data

@@ -10,8 +10,8 @@ export type AwarenessMode = "social" | "ad_copy" | "video_script" | "email" |
   "press_release" | "blog" | "melody" | "music" | "songwriting" | "content" | "advertising";
 
 export interface AwarenessContext {
-  snapshot_id: string;
-  awareness: string | Record<string, unknown>;
+  snapshot_id?: string;
+  awareness?: string | Record<string, unknown>;
   contextString?: string;
   confidence?: number;
   signalCount?: number;
@@ -32,12 +32,15 @@ export interface UnifiedAwarenessReceipt {
 
 export async function getUnifiedAwarenessContext(
   modality: AwarenessMode, platform?: string,
-): Promise<UnifiedAwarenessReceipt> {
+): Promise<UnifiedAwarenessReceipt | undefined> {
   try {
     const receipt = await maxCoreControlTransport.request<UnifiedAwarenessReceipt>(
       "/api/awareness/unified/context",
       { method: "POST", authScope: "generation", body: { platform, modality } },
     );
+    // MaxCore explicitly reports a warming scanner. Do not manufacture a
+    // snapshot or gate generation on optional conditioning.
+    if (receipt.ready === false && receipt.snapshot_id === null) return undefined;
     if (!receipt.snapshot_id || typeof receipt.snapshot_id !== "string" ||
         !receipt.awareness || !["string", "object"].includes(typeof receipt.awareness) ||
         Array.isArray(receipt.awareness)) {
@@ -52,6 +55,7 @@ export async function getUnifiedAwarenessContext(
 /** Never substitutes local, stale, empty, or heuristic context on failure. */
 export async function getAwarenessContext(mode: AwarenessMode): Promise<AwarenessContext> {
   const receipt = await getUnifiedAwarenessContext(mode);
+  if (!receipt) return {};
   return {
     ...receipt,
     contextString: typeof receipt.awareness === "string"
@@ -66,7 +70,7 @@ export async function getUnifiedAwarenessStatus(): Promise<Record<string, unknow
   });
 }
 
-export interface MaxCoreAwarenessPayload extends UnifiedAwarenessReceipt {
+export interface MaxCoreAwarenessPayload extends Partial<UnifiedAwarenessReceipt> {
   /** Explicit caller direction is transported unchanged, never prompt-planned here. */
   extraContext: string;
 }
