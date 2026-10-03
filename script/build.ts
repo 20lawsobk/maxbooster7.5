@@ -2,7 +2,7 @@ import { execFileSync } from "child_process";
 import { buildServerBundles } from "./lib/serverBundles.js";
 import { compressionPlan, deploymentTimings, runDeploymentJobs } from "./lib/deploymentExecution.js";
 import { effectiveCapacity } from "../server/computeSizing.js";
-import { preparationConcurrency, runBuildProcess } from "./lib/buildProcess.js";
+import { runBuildProcess } from "./lib/buildProcess.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -54,10 +54,9 @@ async function main() {
   timing("recovery-and-preflight");
   const isDeployBuild = process.env.DEPLOY_PACK === "1";
   const capacity = effectiveCapacity();
-  const concurrency = preparationConcurrency(capacity);
   const prepareRuntime = (phase: string) => runBuildProcess(
     process.execPath, ["--import", "tsx", "script/prepare-runtime.ts", phase], root,
-    { ...process.env, CARGO_BUILD_JOBS: String(Math.max(1, Math.floor(capacity.cpus / concurrency))) },
+    { ...process.env, CARGO_BUILD_JOBS: String(Math.max(1, Math.floor(capacity.cpus))) },
   );
   const compile = async () => {
     console.log("==> Building frontend with Vite...");
@@ -73,15 +72,15 @@ async function main() {
     }
     console.log("==> Compilation complete");
   };
-  // Python downloads/install overlap compilation; native work gets the next
-  // free slot. All children finish before snapshotting or packing can start.
+  // Historical scaffold: compile first, then prepare the required runtimes,
+  // then capsule-pack. Avoid overlapping compiler and package-install peaks.
   const preparation = isDeployBuild
-    ? [{ name: "portable-python", run: () => prepareRuntime("python") },
-       { name: "compilation", run: compile },
+    ? [{ name: "compilation", run: compile },
+       { name: "portable-python", run: () => prepareRuntime("python") },
        { name: "portable-node-and-native-sidecar", run: () => prepareRuntime("native") }]
     : [{ name: "compilation", run: compile }];
-  console.log(`==> Preparing build with at most ${concurrency} concurrent phase(s)`);
-  await runDeploymentJobs(preparation, concurrency, async phase => {
+  console.log("==> Compile → portable runtimes → capsule packing");
+  await runDeploymentJobs(preparation, 1, async phase => {
     const started = performance.now();
     let status = "failed";
     try { await phase.run(); status = "ok"; }

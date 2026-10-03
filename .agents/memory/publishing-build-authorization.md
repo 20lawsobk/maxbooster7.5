@@ -44,17 +44,17 @@ fixtures, rather than maintaining a separate test-only command.
 configuration still invoked its obsolete entry point, causing another pre-npm
 failure despite passing helper tests.
 
-**How to apply:** Read the deployment argument array from configuration. Publishing
-now installs a prepared release without rebuilding; packing belongs only to the
-isolated preparation step. Verify each real entrypoint against that role and
-preserve rejection-before-mutation tests.
+**How to apply:** Read the deployment argument array from configuration.
+Verify each real entrypoint against its current role and preserve
+rejection-before-mutation tests.
 
-Prepare a fresh production release before deployment, then publish that exact
-verified payload without rebuilding it.
+Use the historical publish-checkpoint build/start scripts as scaffolding,
+updated for the current application and required runtimes.
 
-**Why:** The user explicitly approved moving expensive build work before Publish
-and enforcing freshness rather than relying on remembering a manual convention.
+**Why:** The user superseded the prepare-before-Publish approach by asking to
+use the successful scripts as scaffolding and update them for what is being deployed.
 
-**How to apply:** Keep source/lock identity and payload integrity checks fail-closed.
-Missing or stale releases require another preparation, never an automatic build
-fallback. Do not confuse runtime import checks with full application readiness.
+**How to apply:** Keep the compile/pack → restore/start structure, current model,
+dependency and image-budget gates, and explicit disposable-root authorization.
+Do not reintroduce a mandatory prepared-release prerequisite. Do not confuse
+historical publish markers or runtime import checks with proven live health.

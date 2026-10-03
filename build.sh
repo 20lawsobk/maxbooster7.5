@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Legacy build entrypoint. Keep one deployment implementation: script/build.ts
-# rebuilds the frontend/server, portable Node/Python and Rust sidecar, validates
-# the required model and dependencies, then packs the four independent runtime
-# capsules concurrently and the critical app remainder capsule.
+# Publish scaffold: compile, prepare runtimes, pack; start.sh restores and boots.
+# Updated from the August 26 publishing layout for the current five bundles,
+# native sidecar and model contract. Never authorize cleanup from runtime flags.
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
-export DEPLOY_PACK=1
-# Recovery must precede npm: an interrupted pack may have removed node_modules.
-# This retains the simulation boundary; it does not authorize payload cleanup.
-node script/lib/deploymentPackRecovery.mjs --recover .
-exec npm run build
+if [[ "$#" -ne 2 || "$1" != "--publish-disposable-copy" ]]; then
+  echo "Build refused: use build.sh --publish-disposable-copy <root> only in a disposable publishing copy; npm run build is compile-only." >&2
+  exit 1
+fi
+# Dependency-free recovery runs before npm/tsx; the helper validates the exact
+# root and rejects inherited authorization before any filesystem mutation.
+exec node script/lib/deploymentPackRecovery.mjs "$@"

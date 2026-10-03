@@ -3,15 +3,17 @@
 The configured command is:
 
 ```
-node --import tsx script/publish-release.ts --publish-disposable-copy .
+bash build.sh --publish-disposable-copy .
 ```
 
 **Destructive command: use only in the disposable publishing build copy. Never
 run this command in the working checkout.** It authorizes packing and physical
-installation of the previously verified payload and removal of build inputs in
-the copy. It does not compile or pack. See `prepared-production-releases.md`.
+removal of build inputs in the copy. The August 26 publishing scaffold now
+compiles the current application, prepares portable runtimes and the native
+sidecar, validates dependencies/model, and packs the runtime capsules.
+No `.prepared-release` is required.
 
-The preparation step invokes the existing packer only in its isolated copy:
+The shell entrypoint invokes the dependency-free recovery/authorization helper:
 
 ```
 node script/lib/deploymentPackRecovery.mjs --publish-disposable-copy .

@@ -13,11 +13,9 @@ const url = file => JSON.stringify(pathToFileURL(path.join(repo, file)).href);
 // Read only deployment wiring; never copy workspace userenv into a fixture.
 // The configured build is a single-line TOML array of JSON-compatible strings.
 function configuredBuildCommand() {
-  // Legacy packing retains recovery coverage, but neither modern preparation
-  // nor Publish invokes this destructive entrypoint.
-  const source = fs.readFileSync(path.join(repo, "script/prepare-release.ts"), "utf8");
-  assert.ok(!source.includes("--publish-disposable-copy"), "preparation must not authorize destructive packing");
-  const command = [process.execPath, "script/lib/deploymentPackRecovery.mjs", "--publish-disposable-copy", "."];
+  const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
+    .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
+  const command = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
   assert.ok(Array.isArray(command) && command.length && command.every(v => typeof v === "string"));
   return command;
 }
@@ -38,6 +36,7 @@ function fixture(t) {
     fs.writeFileSync(path.join(root,file), value);
   }
   write(RECOVERY_HELPER_PATH, fs.readFileSync(RECOVERY_HELPER_PATH));
+  write("build.sh", fs.readFileSync("build.sh"));
   // Absolute loader is a harness dependency, not an alternate build entry point.
   const loader = pathToFileURL(path.join(repo,"node_modules/tsx/dist/loader.mjs")).href;
   write("package.json", JSON.stringify({type:"module", scripts:{build:`node --import ${loader} fixture-build.mjs`}}));
@@ -103,13 +102,13 @@ function fixture(t) {
   return {root,state,calls,authorization,write,run,runConfigured,outsideInterpreter};
 }
 
-test("preparation packing and build-free publishing use distinct documented entrypoints", () => {
+test("publishing uses the guarded historical shell scaffold", () => {
   const command = configuredBuildCommand();
-  assert.deepEqual(command, [process.execPath, RECOVERY_HELPER_PATH, "--publish-disposable-copy", "."]);
+  assert.deepEqual(command, ["bash", "build.sh", "--publish-disposable-copy", "."]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
-  assert.deepEqual(publishing, ["node", "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", "."]);
+  assert.deepEqual(publishing, command);
   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });
 

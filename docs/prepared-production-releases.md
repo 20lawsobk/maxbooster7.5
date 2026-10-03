@@ -1,5 +1,11 @@
 # Prepare once, publish verified artifacts
 
+> **Not the configured publishing path.** Publishing now uses the August 26
+> compile/pack → restore/start scaffold, updated for the current application:
+> `bash build.sh --publish-disposable-copy .` followed by `bash start.sh`.
+> The optional preparation/installation tools below are retained for explicit
+> use, but Publish neither requires nor consumes `.prepared-release`.
+
 Before each deployment, run:
 
 ```sh

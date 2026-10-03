@@ -346,7 +346,8 @@ export TF_NUM_INTEROP_THREADS="${TF_NUM_INTEROP_THREADS:-2}"
 export TF_NUM_INTRAOP_THREADS="${TF_NUM_INTRAOP_THREADS:-2}"
 export NODE_ENV="production"
 
-# Prefer cluster entry (multi-worker); fall back to single-process server
+# Keep the historical restore-then-cluster handoff, but require today's
+# cluster topology rather than silently substituting a single-process server.
 if [ -f "dist/cluster.mjs" ]; then
   echo "[start.sh] starting node dist/cluster.mjs"
   _APP_PID=""

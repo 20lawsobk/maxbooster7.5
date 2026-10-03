@@ -4,6 +4,8 @@
  * made available only after runtime restoration.
  */
 export const DEPLOYMENT_CONTROL_FILES = [
+  // Publishing can invoke its entrypoint again after a completed pack.
+  "build.sh",
   "package.json",
   "package-lock.json",
   "npm-shrinkwrap.json",
