@@ -7,6 +7,10 @@ export function markVerifiedJwtFactor(req: Request, userId: string): void {
 /** A challenge-only session never grants application access. JWTs cannot borrow
  * an unrelated browser's assurance. MFA JWT issuance remains a separate gate. */
 export function enforceAssurance(req: Request, res: Response): boolean {
+  if (req.user?.subscriptionStatus === "suspended" || req.user?.subscriptionStatus === "banned") {
+    res.status(403).json({ error: "Account access disabled" });
+    return false;
+  }
   if (!req.user?.twoFactorEnabled) return true;
   if (verifiedJwtFactors.get(req) === req.user.id) return true;
   const session = req.session as unknown as Record<string, unknown> | undefined;

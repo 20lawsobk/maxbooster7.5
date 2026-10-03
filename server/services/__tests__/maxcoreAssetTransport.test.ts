@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import os from "os";
 import path from "path";
 
@@ -28,8 +28,15 @@ describe("MaxCore owner-scoped audio transport", () => {
   it("passes a genuine owner-scoped MaxCore path without re-uploading", async () => {
     const { ensureMaxCoreAudioAsset } = await import("../maxcoreAssetTransport.js");
     const url =
-      "/uploads/audio-inputs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/12345678.wav";
+      `/uploads/audio-inputs/${createHash("sha256").update("user-1").digest("hex")}/12345678.wav`;
     await expect(ensureMaxCoreAudioAsset(url, "user-1")).resolves.toBe(url);
+    expect(mocks.resolve).not.toHaveBeenCalled();
+  });
+
+  it("rejects another user's existing MaxCore upload", async () => {
+    const { ensureMaxCoreAudioAsset } = await import("../maxcoreAssetTransport.js");
+    const url = `/uploads/audio-inputs/${createHash("sha256").update("victim").digest("hex")}/12345678.wav`;
+    await expect(ensureMaxCoreAudioAsset(url, "user-1")).rejects.toThrow("access denied");
     expect(mocks.resolve).not.toHaveBeenCalled();
   });
 

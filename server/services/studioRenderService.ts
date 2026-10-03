@@ -68,10 +68,10 @@ async function ensureRenderDir() {
 // which additionally understands the `/api/storage/file/<key>` form. Render
 // keeps its existing lenient policy of skipping a clip it can't resolve
 // rather than failing the whole mixdown.
-async function resolveClipToLocalFile(audioUrl: string): Promise<string | null> {
+async function resolveClipToLocalFile(audioUrl: string, userId: string): Promise<string | null> {
   if (!audioUrl) return null;
   try {
-    const { localPath } = await resolveAudioUrlToLocalFile(audioUrl);
+    const { localPath } = await resolveAudioUrlToLocalFile(audioUrl, userId);
     return localPath;
   } catch (err) {
     logger.warn({ err, audioUrl }, "[StudioRender] failed to resolve clip audio");
@@ -357,7 +357,7 @@ export async function renderProjectMixdown(
 
   try {
     for (const clip of activeClips) {
-      const localPath = await resolveClipToLocalFile(clip.audioUrl!);
+      const localPath = await resolveClipToLocalFile(clip.audioUrl!, project.userId);
       if (!localPath) continue;
       const isTemp = localPath.startsWith(os.tmpdir());
       if (isTemp) tempFiles.push(localPath);

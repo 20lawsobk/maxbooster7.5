@@ -1,4 +1,5 @@
 import path from "path";
+import { createHash } from "node:crypto";
 import { readFile, realpath, stat } from "fs/promises";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import {
@@ -49,9 +50,14 @@ export async function ensureMaxCoreAudioAsset(
   if (!audioSource) throw new AIUnavailableError("MaxCore audio transfer (source required)");
   if (!userId) throw new AIUnavailableError("MaxCore audio transfer (owner required)");
   const existing = existingMaxCoreAsset(audioSource);
-  if (existing) return existing;
+  if (existing) {
+    if (existing.split("/")[3] !== createHash("sha256").update(userId).digest("hex")) {
+      throw new AIUnavailableError("MaxCore audio source access denied");
+    }
+    return existing;
+  }
 
-  const resolved = await resolveAudioUrlToLocalFile(audioSource).catch((error) => {
+  const resolved = await resolveAudioUrlToLocalFile(audioSource, userId).catch((error) => {
     throw new AIUnavailableError(
       `MaxCore audio transfer: ${(error as Error).message}`,
     );

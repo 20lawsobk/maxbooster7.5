@@ -664,7 +664,7 @@ export class CompingService {
           renderedParts.push(silencePath);
         }
 
-        const source = await resolveAudioUrlToLocalFile(clip.audioUrl);
+        const source = await resolveAudioUrlToLocalFile(clip.audioUrl, _userId);
         sources.push(source);
         const duration = segment.endTime - segment.startTime;
         const sourceOffset = Math.max(0, segment.startTime - (clip.startTime ?? 0));
@@ -701,8 +701,9 @@ export class CompingService {
       }
 
       const clipId = `comp_${randomBytes(8).toString("hex")}`;
-      const storageKey = await storageService.uploadFile(
+      const storageKey = await storageService.uploadGeneratedFile(
         outputBuffer,
+        _userId,
         "studio-comps",
         `${clipId}.wav`,
         "audio/wav",

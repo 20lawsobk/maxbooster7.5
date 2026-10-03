@@ -150,7 +150,8 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
       // Security state is read authoritatively; cross-pod factor changes must
       // not be hidden behind a process-local profile cache.
       const user = await storage.getUser(req.session.userId);
-      if (user) {
+      if (user?.subscriptionStatus === "suspended" || user?.subscriptionStatus === "banned") delete req.user;
+      if (user && user.subscriptionStatus !== "suspended" && user.subscriptionStatus !== "banned") {
         req.user = user;
       } else if (isProduction && isApiRoute) {
         logger.info(
@@ -486,7 +487,8 @@ export async function registerRoutes(
           user = await storage.getUserByUsername(identifier);
         }
         const loginAuthority = await sessionAuthority();
-        const loginGeneration = user ? await loginAuthority.issue(user.id) : undefined;
+        const accountDisabled = user?.subscriptionStatus === "suspended" || user?.subscriptionStatus === "banned";
+        const loginGeneration = user && !accountDisabled ? await loginAuthority.issue(user.id) : undefined;
         // Read credentials after capturing the epoch. A concurrent reset either
         // changes these credentials or invalidates this captured epoch.
         if (user) user = await storage.getUser(user.id);
@@ -505,7 +507,7 @@ export async function registerRoutes(
           isValid = false;
         }
 
-        if (!user || !isValid) {
+        if (!user || !isValid || accountDisabled || user.subscriptionStatus === "suspended" || user.subscriptionStatus === "banned") {
           return res.status(401).json({ message: "Invalid email or password" });
         }
 

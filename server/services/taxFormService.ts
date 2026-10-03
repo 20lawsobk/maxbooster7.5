@@ -472,8 +472,9 @@ class TaxFormService {
     return form;
   }
 
-  getTaxForm(formId: string): GeneratedTaxForm | undefined {
-    return this.taxForms.get(formId);
+  getTaxForm(formId: string, userId: string): GeneratedTaxForm | undefined {
+    const form = this.taxForms.get(formId);
+    return userId && form?.userId === userId ? form : undefined;
   }
 
   getTaxFormsByUser(userId: string): GeneratedTaxForm[] {
@@ -488,8 +489,8 @@ class TaxFormService {
     );
   }
 
-  signTaxForm(formId: string, signatureHash: string): GeneratedTaxForm {
-    const form = this.taxForms.get(formId);
+  signTaxForm(formId: string, signatureHash: string, userId: string): GeneratedTaxForm {
+    const form = this.getTaxForm(formId, userId);
     if (!form) {
       throw new Error("Tax form not found");
     }
@@ -542,8 +543,8 @@ class TaxFormService {
     };
   }
 
-  generateW9PDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
+  generateW9PDF(formId: string, userId: string): Buffer {
+    const form = this.getTaxForm(formId, userId);
     if (!form || form?.formType !== "W-9") {
       throw new Error("W-9 form not found");
     }
@@ -723,8 +724,8 @@ class TaxFormService {
     return Buffer?.from(doc?.output("arraybuffer"));
   }
 
-  generateW8BENPDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
+  generateW8BENPDF(formId: string, userId: string): Buffer {
+    const form = this.getTaxForm(formId, userId);
     if (!form || form?.formType !== "W-8BEN") {
       throw new Error("W-8BEN form not found");
     }
@@ -905,8 +906,8 @@ class TaxFormService {
     return Buffer?.from(doc?.output("arraybuffer"));
   }
 
-  generate1099PDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
+  generate1099PDF(formId: string, userId: string): Buffer {
+    const form = this.getTaxForm(formId, userId);
     if (!form || !form?.formType.startsWith("1099")) {
       throw new Error("1099 form not found");
     }

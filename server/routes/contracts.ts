@@ -1096,7 +1096,7 @@ router.get("/tax-forms/:formId", async (req: Request, res: Response) => {
     }
 
     const { formId } = req.params as Record<string, string>;
-    const form = taxFormService?.getTaxForm(formId);
+    const form = taxFormService?.getTaxForm(formId, req.user!.id);
 
     if (!form) {
       return res.status(404).json({ error: "Tax form not found" });
@@ -1125,7 +1125,10 @@ router.post("/tax-forms/:formId/sign", async (req: Request, res: Response) => {
       )
       .digest("hex");
 
-    const form = taxFormService?.signTaxForm(formId, signatureHash);
+    if (!taxFormService.getTaxForm(formId, req.user!.id)) {
+      return res.status(404).json({ error: "Tax form not found" });
+    }
+    const form = taxFormService?.signTaxForm(formId, signatureHash, req.user!.id);
     return res.json(form);
   } catch (error) {
     logger.warn({ err: error }, "Error signing tax form:");
@@ -1140,7 +1143,7 @@ router.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
     }
 
     const { formId } = req.params as Record<string, string>;
-    const form = taxFormService?.getTaxForm(formId);
+    const form = taxFormService?.getTaxForm(formId, req.user!.id);
 
     if (!form) {
       return res.status(404).json({ error: "Tax form not found" });
@@ -1150,15 +1153,15 @@ router.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
 
     switch (form?.formType) {
       case "W-9":
-        pdfBuffer = taxFormService?.generateW9PDF(formId);
+        pdfBuffer = taxFormService?.generateW9PDF(formId, req.user!.id);
         break;
       case "W-8BEN":
-        pdfBuffer = taxFormService?.generateW8BENPDF(formId);
+        pdfBuffer = taxFormService?.generateW8BENPDF(formId, req.user!.id);
         break;
       case "1099-NEC":
       case "1099-MISC":
       case "1099-K":
-        pdfBuffer = taxFormService?.generate1099PDF(formId);
+        pdfBuffer = taxFormService?.generate1099PDF(formId, req.user!.id);
         break;
       default:
         return res

@@ -485,7 +485,7 @@ router.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
       orderBy: [asc(warpMarkers.beatPosition)],
     });
 
-    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string, req.user!.id);
     const metadata = await timeStretchService.getAudioMetadata(source.localPath);
     const markerData = dbMarkersToWarpMarkerData(
       markerRows,
@@ -509,8 +509,9 @@ router.post("/clips/:clipId/warp/preview", requireAuth, async (req, res) => {
 
     const outputBuffer = await fsPromises.readFile(tempOutput);
     const outputMetadata = await timeStretchService.getAudioMetadata(tempOutput);
-    const storageKey = await storageService.uploadFile(
+    const storageKey = await storageService.uploadGeneratedFile(
       outputBuffer,
+      userId,
       "warp-preview",
       `${clipId}_${Date.now()}.wav`,
       "audio/wav",
@@ -575,7 +576,7 @@ router.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
         .json({ error: "No warp markers found for this clip" });
     }
 
-    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string, req.user!.id);
     const metadata = await timeStretchService.getAudioMetadata(source.localPath);
     const markerData = dbMarkersToWarpMarkerData(
       markerRows,
@@ -597,8 +598,9 @@ router.post("/clips/:clipId/warp/commit", requireAuth, async (req, res) => {
 
     const outputBuffer = await fsPromises.readFile(tempOutput);
     const outputMetadata = await timeStretchService.getAudioMetadata(tempOutput);
-    const storageKey = await storageService.uploadFile(
+    const storageKey = await storageService.uploadGeneratedFile(
       outputBuffer,
+      req.user!.id,
       "warp",
       `${clipId}_${Date.now()}.wav`,
       "audio/wav",
@@ -690,7 +692,7 @@ router.get("/clips/:clipId/warp/transients", requireAuth, async (req, res) => {
 
     const options = transientDetectionSchema.parse(req.query);
 
-    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string, req.user!.id);
     const result = await timeStretchService.detectTransients(source.localPath, {
       sensitivity: options.sensitivity,
       minTransientGap: options.minTransientGap,
@@ -740,7 +742,7 @@ router.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
 
     const options = quantizeSchema.parse(req.body);
 
-    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    source = await resolveAudioUrlToLocalFile(clip.audioUrl as string, req.user!.id);
     const metadata = await timeStretchService.getAudioMetadata(source.localPath);
 
     const detection = await timeStretchService.detectTransients(source.localPath, {

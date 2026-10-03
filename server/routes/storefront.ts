@@ -339,6 +339,9 @@ router.get("/:slug", async (req, res) => {
     const { slug } = req.params as Record<string, string>;
 
     const storefront = await storefrontService?.getStorefrontBySlug(slug);
+    if (!storefront || !storefront.isPublic) {
+      return res.status(404).json({ error: "Storefront not found" });
+    }
     res.json(storefront);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);

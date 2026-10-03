@@ -385,8 +385,9 @@ class StemExportService {
       }
 
       const fileBuffer = await fsPromises?.readFile(outputPath);
-      const storageKey = await storageService?.uploadFile(
+      const storageKey = await storageService?.uploadGeneratedFile(
         fileBuffer,
+        options.userId,
         "stems",
         fileName,
         this.FORMAT_CONTENT_TYPES[options?.format],
@@ -455,8 +456,9 @@ class StemExportService {
     });
 
     const fileBuffer = await fsPromises?.readFile(outputPath);
-    const storageKey = await storageService?.uploadFile(
+    const storageKey = await storageService?.uploadGeneratedFile(
       fileBuffer,
+      options.userId,
       "stems",
       fileName,
       this.FORMAT_CONTENT_TYPES[options?.format],
@@ -521,7 +523,7 @@ class StemExportService {
     if (!clip?.audioUrl) {
       throw new Error("Clip has no audio file");
     }
-    const resolved = await resolveAudioUrlToLocalFile(clip.audioUrl as string);
+    const resolved = await resolveAudioUrlToLocalFile(clip.audioUrl as string, options.userId);
     try {
       await this.encodeLocalFileToOutput(resolved.localPath, outputPath, options);
     } finally {
@@ -547,7 +549,7 @@ class StemExportService {
       const audioUrl = (clip as any)?.audioUrl;
       if (!audioUrl) continue;
       try {
-        resolvedClips?.push(await resolveAudioUrlToLocalFile(audioUrl));
+        resolvedClips?.push(await resolveAudioUrlToLocalFile(audioUrl, options.userId));
       } catch (error: unknown) {
         // Documented lenient-skip: one unresolvable clip among many
         // shouldn't fail the whole track mixdown.
@@ -632,7 +634,7 @@ class StemExportService {
       const audioUrl = (clips[0] as any)?.audioUrl;
       if (clips?.length > 0 && audioUrl) {
         try {
-          const resolved = await resolveAudioUrlToLocalFile(audioUrl);
+          const resolved = await resolveAudioUrlToLocalFile(audioUrl, options.userId);
           trackStemPaths?.push(resolved.localPath);
           trackVolumes?.push(track?.volume || 0.8);
           masterCleanups?.push(resolved.cleanup);
@@ -689,8 +691,9 @@ class StemExportService {
     }
 
     const fileBuffer = await fsPromises?.readFile(outputPath);
-    const storageKey = await storageService?.uploadFile(
+    const storageKey = await storageService?.uploadGeneratedFile(
       fileBuffer,
+      options.userId,
       "stems",
       fileName,
       this.FORMAT_CONTENT_TYPES[options?.format],
@@ -781,8 +784,9 @@ class StemExportService {
     });
 
     const zipBuffer = await fsPromises?.readFile(zipPath);
-    const storageKey = await storageService?.uploadFile(
+    const storageKey = await storageService?.uploadGeneratedFile(
       zipBuffer,
+      _options.userId,
       "exports",
       zipFileName,
       "application/zip",

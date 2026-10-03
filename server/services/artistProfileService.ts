@@ -1539,14 +1539,19 @@ class ArtistProfileService {
   }
 
   async deleteProfile(id: string, userId: string): Promise<boolean> {
-    await db
-      .delete(artistProfileReleases)
-      .where(eq(artistProfileReleases.artistProfileId, id));
-    const result = await db
-      .delete(artistProfiles)
-      .where(and(eq(artistProfiles.id, id), eq(artistProfiles.userId, userId)))
-      .returning({ id: artistProfiles.id });
-    return result?.length > 0;
+    return db.transaction(async (tx) => {
+      const [owned] = await tx.select({ id: artistProfiles.id }).from(artistProfiles)
+        .where(and(eq(artistProfiles.id, id), eq(artistProfiles.userId, userId))).for("update");
+      if (!owned) return false;
+      await tx
+        .delete(artistProfileReleases)
+        .where(eq(artistProfileReleases.artistProfileId, id));
+      const result = await tx
+        .delete(artistProfiles)
+        .where(and(eq(artistProfiles.id, id), eq(artistProfiles.userId, userId)))
+        .returning({ id: artistProfiles.id });
+      return result?.length > 0;
+    });
   }
 
   async linkProfileToRelease(
@@ -1564,7 +1569,7 @@ class ArtistProfileService {
       .onConflictDoNothing();
   }
 
-  async getProfilesByRelease(releaseId: string): Promise<ArtistProfile[]> {
+  async getProfilesByRelease(releaseId: string, userId: string): Promise<ArtistProfile[]> {
     const rows = await db
       .select({ profile: artistProfiles })
       .from(artistProfileReleases)
@@ -1572,7 +1577,7 @@ class ArtistProfileService {
         artistProfiles,
         eq(artistProfileReleases.artistProfileId, artistProfiles.id),
       )
-      .where(eq(artistProfileReleases.releaseId, releaseId))
+      .where(and(eq(artistProfileReleases.releaseId, releaseId), eq(artistProfiles.userId, userId)))
       .limit(50);
     return rows?.map((r) => r?.profile);
   }

@@ -35,6 +35,7 @@ import {
   ProjectNotFoundError,
 } from "../services/projectDuplicationService.js";
 import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
+import { authorizeAudioSource } from "../services/audioSourceAuthorization.js";
 import { promises as fsPromises } from "fs";
 import { analyzeAudio } from "../services/mediaAnalyzerService.js";
 
@@ -2165,7 +2166,7 @@ router.post(
         return res.status(400).json({ error: "Clip has no audio to analyze" });
       }
 
-      source = await resolveAudioUrlToLocalFile(clip.audioUrl);
+      source = await resolveAudioUrlToLocalFile(clip.audioUrl, userId);
       const buffer = await fsPromises.readFile(source.localPath);
       const analysis = await analyzeAudio(
         buffer,
@@ -3013,6 +3014,11 @@ router.post(
       }
       if (!audioUrl || typeof audioUrl !== "string") {
         return res.status(400).json({ error: "audioUrl is required" });
+      }
+      try {
+        await authorizeAudioSource(audioUrl, userId);
+      } catch {
+        return res.status(404).json({ error: "Audio source not found" });
       }
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);

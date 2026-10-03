@@ -17,14 +17,13 @@
  * lenient-skip policy (e.g. mixdown skipping one unresolvable clip among many).
  */
 import path from "path";
-import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
 import { randomUUID } from "crypto";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 import { safeFetchBuffer } from "./safeUrlFetch.js";
-
+import { authorizeAudioSource, authorizedLocalAudioPath } from "./audioSourceAuthorization.js";
 export interface ResolvedAudioSource {
   /** Absolute local path to the audio bytes. */
   localPath: string;
@@ -43,7 +42,14 @@ async function writeToTemp(buf: Buffer, hint: string): Promise<string> {
 
 export async function resolveAudioUrlToLocalFile(
   audioUrl: string,
+  userId: string,
 ): Promise<ResolvedAudioSource> {
+  await authorizeAudioSource(audioUrl, userId);
+  if (/^https?:\/\//.test(audioUrl)) {
+    const url = new URL(audioUrl);
+    if (url.pathname.startsWith("/api/storage/file/") ||
+        /^\/(uploads|samples|attached_assets)\//.test(url.pathname)) audioUrl = url.pathname;
+  }
   if (!audioUrl) {
     throw new Error("resolveAudioUrlToLocalFile: empty audioUrl");
   }
@@ -66,22 +72,7 @@ export async function resolveAudioUrlToLocalFile(
     audioUrl.startsWith("/samples/") ||
     audioUrl.startsWith("/attached_assets/")
   ) {
-    const rel = audioUrl.replace(/^\//, "");
-    const candidates = [
-      path.resolve(".", rel),
-      path.resolve(
-        ".",
-        rel.startsWith("uploads/") ? rel : path.join("client/public", rel),
-      ),
-    ];
-    for (const candidate of candidates) {
-      if (fs.existsSync(candidate)) {
-        return { localPath: candidate, cleanup: NOOP_CLEANUP };
-      }
-    }
-    throw new Error(
-      `resolveAudioUrlToLocalFile: local file not found for ${audioUrl}`,
-    );
+    return { localPath: await authorizedLocalAudioPath(audioUrl, userId), cleanup: NOOP_CLEANUP };
   }
 
   // Remote URL

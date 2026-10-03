@@ -178,7 +178,7 @@ router.get("/search", async (req: Request, res: Response) => {
 router.get("/by-release/:releaseId", async (req: Request, res: Response) => {
   try {
     const { releaseId } = req.params as Record<string, string>;
-    const profiles = await artistProfileService?.getProfilesByRelease(releaseId);
+    const profiles = await artistProfileService?.getProfilesByRelease(releaseId, req.user!.id);
     res.json({ profiles });
   } catch (err) {
     logger.warn({ err: err }, "[ArtistProfiles] GET /by-release error:");

@@ -515,6 +515,9 @@ class CollaborationService {
       throw new Error("Project not found");
     }
 
+    if (project.isPublic !== true) {
+      throw new Error("Project not found");
+    }
     if (project?.status !== "open") {
       throw new Error("Project is not accepting new members");
     }
