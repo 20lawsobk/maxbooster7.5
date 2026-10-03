@@ -1,3 +1,4 @@
+import { billingAccountStatus } from "../../services/billingAccountStatus";
 /**
  * STRIPE WEBHOOK ROUTES
  *
@@ -227,7 +228,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         .update(users)
         .set({
           subscriptionTier: planId,
-          subscriptionStatus: "active",
+          subscriptionStatus: billingAccountStatus("active"),
           ...(planId === "lifetime" ? { subscriptionEndsAt: null } : {}),
           stripeSubscriptionId:
             typeof session?.subscription === "string"
@@ -290,7 +291,7 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
       .update(users)
       .set({
         subscriptionTier: tier,
-        subscriptionStatus: subscription.status,
+        subscriptionStatus: billingAccountStatus(subscription.status),
         subscriptionEndsAt: endsAt,
         stripeSubscriptionId: subscription.id,
       })
@@ -352,7 +353,7 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
       .update(users)
       .set({
         subscriptionTier: tier,
-        subscriptionStatus: subscription.status,
+        subscriptionStatus: billingAccountStatus(subscription.status),
         subscriptionEndsAt: endsAt,
         stripeSubscriptionId: subscription.id,
       })
@@ -420,7 +421,7 @@ registerWebhookHandler("customer.subscription.deleted", async (event) => {
       .update(users)
       .set({
         subscriptionTier: "free",
-        subscriptionStatus: "canceled",
+        subscriptionStatus: billingAccountStatus("canceled"),
         subscriptionEndsAt: subscription.ended_at
           ? new Date(subscription?.ended_at * 1000)
           : new Date(),
@@ -622,7 +623,7 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
       if (!customerId) throw new Error("Lifetime payment has no customer");
       const updated = await db.update(users).set({
         subscriptionTier: "lifetime",
-        subscriptionStatus: "active",
+        subscriptionStatus: billingAccountStatus("active"),
         subscriptionEndsAt: null,
         stripeSubscriptionId: null,
       }).where(and(eq(users.id, userId), eq(users.stripeCustomerId, customerId)))

@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
+import { MerchCheckoutError, validateMerchShippingCountry } from "./merchShippingPolicy";
+export { MerchCheckoutError, validateMerchShippingCountry } from "./merchShippingPolicy";
 
 export interface MerchPaymentAdapter {
+  validateCheckout(input: { currency: "usd"; shippingAddress: Record<string,string> }): Promise<void>;
   createCheckout(input: {
     orderId: string; idempotencyKey: string; buyerEmail: string;
     currency: "usd"; subtotalCents: number;
@@ -14,9 +17,6 @@ let payments: MerchPaymentAdapter | undefined;
 /** Commerce owns processor configuration, tax/shipping quote and signed events. */
 export function installMerchPaymentAdapter(adapter: MerchPaymentAdapter) { payments = adapter; }
 const rows = (r: any): any[] => r.rows ?? r;
-export class MerchCheckoutError extends Error {
-  constructor(public status: number, message: string) { super(message); }
-}
 export function toMerchCents(value: unknown): number {
   if ((typeof value !== "number" && typeof value !== "string") || value === "")
     throw new MerchCheckoutError(400, "Catalog price is required");
@@ -33,6 +33,8 @@ export async function createMerchCheckout(input: {
 }) {
   if (!payments) throw new MerchCheckoutError(503, "Merchandise payment integration is not configured");
   const adapter = payments;
+  validateMerchShippingCountry(input.shippingAddress);
+  await adapter.validateCheckout({currency:"usd",shippingAddress:input.shippingAddress});
   const order = await db.transaction(async tx => {
     // Serialize command creation even when two requests arrive before either insert.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${input.buyerId}:${input.commandKey}`}))`);
@@ -75,6 +77,7 @@ export async function createMerchCheckout(input: {
       await tx.execute(sql`UPDATE merch_items SET inventory=inventory-${requested.quantity},updated_at=now()
         WHERE id=${item.id}`);
     }
+    if (subtotal <= 0) throw new MerchCheckoutError(400, "Physical merchandise checkout requires a positive total");
     const id = randomUUID();
     await tx.execute(sql`INSERT INTO merch_orders
       (id,user_id,buyer_email,buyer_name,items,total,status,shipping_address)

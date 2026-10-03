@@ -30,7 +30,7 @@ const checkoutSchema = z.object({
   shippingAddress: z.object({
     line1: z.string().min(1).max(200), line2: z.string().max(200).optional(),
     city: z.string().min(1).max(100), postalCode: z.string().min(1).max(30),
-    state: z.string().min(1).max(100), country: z.string().length(2),
+    state: z.string().min(1).max(100), country: z.string().regex(/^[A-Za-z]{2}$/),
   }),
   items: z.array(z.object({ itemId: z.string().uuid(), quantity: z.number().int().min(1).max(100) })).min(1).max(50),
 });

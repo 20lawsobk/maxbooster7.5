@@ -84,8 +84,8 @@ describe("Capsule cross-process build, verify, and restore", () => {
       `,
     );
     const { stdout: buildOut } = await execFileAsync(
-      "npx",
-      ["tsx", buildScriptPath],
+      process.execPath,
+      [path.resolve("node_modules/tsx/dist/cli.mjs"), buildScriptPath],
       { cwd: process.cwd() },
     );
     capsuleId = buildOut.trim().split("\n").pop()!.trim();
@@ -107,8 +107,8 @@ describe("Capsule cross-process build, verify, and restore", () => {
       `,
     );
     const { stdout: verifyOut } = await execFileAsync(
-      "npx",
-      ["tsx", verifyScriptPath],
+      process.execPath,
+      [path.resolve("node_modules/tsx/dist/cli.mjs"), verifyScriptPath],
       { cwd: process.cwd() },
     );
     const lines = verifyOut.trim().split("\n");
@@ -132,7 +132,7 @@ describe("Capsule cross-process build, verify, and restore", () => {
       console.log(count);
       `,
     );
-    await execFileAsync("npx", ["tsx", extractScriptPath], {
+    await execFileAsync(process.execPath, [path.resolve("node_modules/tsx/dist/cli.mjs"), extractScriptPath], {
       cwd: process.cwd(),
     });
     await fs.rm(scriptsDir, { recursive: true, force: true });

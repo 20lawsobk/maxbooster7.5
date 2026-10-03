@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { billingAccountStatus } from "./services/billingAccountStatus";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { logger } from "./logger.js";
@@ -85,7 +86,7 @@ export async function initializeAdmin() {
           password: hashedPassword,
           role: "admin",
           subscriptionTier: "lifetime",
-          subscriptionStatus: "active",
+          subscriptionStatus: billingAccountStatus("active"),
           onboardingCompleted: true,
           onboardingStep: 100,
           emailVerified: true,

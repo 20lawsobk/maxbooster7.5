@@ -467,7 +467,8 @@ export async function syncPlatformData(
               profilePictureUrl: bestIgAccount.profile_picture_url,
             };
             logger.info(
-              `[SocialSync] Instagram: @${bestIgAccount.username}, followers=${bestIgAccount?.followers_count}`,
+              { username: bestIgAccount.username, followers: bestIgAccount?.followers_count },
+              "[SocialSync] Instagram profile synchronized",
             );
           }
         } else {

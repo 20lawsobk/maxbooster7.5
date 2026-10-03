@@ -15,7 +15,7 @@ export async function reconcileCharge(chargeId:string,dispute?:Stripe.Dispute) {
     const plan=pi.metadata.planId||pi.metadata.planName||pi.metadata.tier;
     if(plan==="lifetime" && (charge.amount_refunded===charge.amount || (dispute && !["won","warning_closed"].includes(dispute.status)))) {
       const customer=typeof charge.customer==="string"?charge.customer:charge.customer?.id;
-      await pool.query("UPDATE users SET subscription_tier='free',subscription_status='refunded' WHERE stripe_customer_id=$1 AND subscription_tier='lifetime'",[customer]);
+      await pool.query("UPDATE users SET subscription_tier='free',subscription_status=CASE WHEN subscription_status IN ('suspended','banned') THEN subscription_status ELSE 'refunded' END WHERE stripe_customer_id=$1 AND subscription_tier='lifetime'",[customer]);
       return;
     }
     if(plan==="lifetime" && charge.paid && charge.amount_refunded===0 && dispute?.status==="won") {

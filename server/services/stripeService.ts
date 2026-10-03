@@ -1,3 +1,4 @@
+import { billingAccountStatus } from "./billingAccountStatus";
 import Stripe from "stripe";
 import { validateCustomerRefund } from "./commercePolicy";
 import { initiateCommerceRefund } from "./commerce/compensation";
@@ -277,10 +278,10 @@ export class StripeService {
 
     if (tier === "lifetime" && userId) {
       // Update user subscription status
-      await storage.updateUser(userId, {
+      await db.update(users).set({
         subscriptionTier: "lifetime",
-        subscriptionStatus: "active",
-      });
+        subscriptionStatus: billingAccountStatus("active"),
+      }).where(eq(users.id, userId));
     } else if (
       type === "stem_purchase" &&
       stemId &&
@@ -341,10 +342,10 @@ export class StripeService {
           subscription?.items?.data[0].price?.recurring?.interval === "year"
             ? "yearly"
             : "monthly";
-        await storage.updateUser(user?.id, {
+        await db.update(users).set({
           subscriptionTier: tier,
-          subscriptionStatus: subscription.status,
-        });
+          subscriptionStatus: billingAccountStatus(subscription.status),
+        }).where(eq(users.id, user.id));
       }
     }
   }
@@ -358,9 +359,9 @@ export class StripeService {
       .limit(1);
 
     if (user) {
-      await storage.updateUser(user?.id, {
-        subscriptionStatus: "canceled",
-      });
+      await db.update(users).set({
+        subscriptionStatus: billingAccountStatus("canceled"),
+      }).where(eq(users.id, user.id));
     }
   }
 

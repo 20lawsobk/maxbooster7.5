@@ -7,12 +7,14 @@ import { readFile } from "node:fs/promises";
 
 test("real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs", async () => {
   let epoch = "1";
+  let cutoff = 0;
+  let onTokenInsert = () => {};
   const tokens = new Map();
   const refresh = new Map();
   const user = { id: "u", role: "user", twoFactorEnabled: true };
   const storage = {
     getUser: async () => user,
-    createJWTToken: async data => { tokens.set(data.id, data); return data; },
+    createJWTToken: async data => { onTokenInsert(); tokens.set(data.id, data); return data; },
     verifyJWTToken: async id => tokens.has(id) && !tokens.get(id).revoked,
     createRefreshToken: async data => {
       const row = { ...data, id: data.token }; refresh.set(data.token, row); return row;
@@ -23,6 +25,7 @@ test("real signed JWT chain carries MFA, rotates refresh, and rejects revoked ep
   const authority = {
     issue: async () => epoch,
     validate: async (_id, candidate) => candidate === epoch,
+    validateBearer: async (_id, issuedAt) => Number.isSafeInteger(issuedAt) && issuedAt > cutoff,
     revoke: async () => { epoch = String(Number(epoch) + 1); },
   };
   const output = await build({
@@ -75,6 +78,13 @@ test("real signed JWT chain carries MFA, rotates refresh, and rejects revoked ep
   await assert.rejects(service.issueTokens("u", "user", true, "1"), /revoked/);
   const fresh = await service.issueTokens("u", "user", true, "2");
   assert.ok(await service.verifyAccessToken(fresh.accessToken));
+  onTokenInsert = () => { cutoff = Date.now(); };
+  const raced = await service.refreshAccessToken(fresh.refreshToken);
+  assert.ok(raced, "simulate rotation that inserts its successor after revocation");
+  assert.equal(await service.verifyAccessToken(raced.accessToken), null);
+  assert.equal(await service.refreshAccessToken(raced.refreshToken), null);
+  assert.equal(await service.verifyAccessToken(fresh.accessToken), null);
+  assert.equal(await service.refreshAccessToken(fresh.refreshToken), null);
 });
 
 test("shared auth integration keeps atomic password epoch changes and mandatory hydration guard", async () => {

@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 import type { MerchPaymentAdapter } from "../merchCheckoutService";
 import { applyVerifiedMerchPayment, installMerchPaymentAdapter } from "../merchCheckoutService";
+import { validateMerchShippingCountry } from "../merchShippingPolicy";
 import { pool } from "../../db";
 import { commerceRepository, commerceStripe } from "./runtime";
 import { verifiedPayment } from "./verification";
@@ -11,16 +12,23 @@ import { getBaseUrl } from "../../config/defaults";
  * invented rates or a silently free-shipping fallback.
  */
 export const stripeMerchPaymentAdapter:MerchPaymentAdapter={
+  async validateCheckout(input) {
+    validateMerchShippingCountry(input.shippingAddress);
+    const shippingRateId=process.env.STRIPE_MERCH_SHIPPING_RATE_ID;
+    if(!shippingRateId) throw new Error("Configure STRIPE_MERCH_SHIPPING_RATE_ID before selling physical merchandise");
+    const shipping=await commerceStripe().shippingRates.retrieve(shippingRateId);
+    if(!shipping.active || shipping.type!=="fixed_amount" || shipping.fixed_amount?.currency!==input.currency)
+      throw new Error("Merchandise shipping rate is inactive or has the wrong currency");
+    const feeRate=Number(process.env.PLATFORM_FEE_PERCENTAGE ?? 10);
+    if(!Number.isFinite(feeRate)||feeRate<0||feeRate>=100) throw new Error("Invalid merchandise platform fee");
+  },
   async createCheckout(input) {
+    const country=validateMerchShippingCountry(input.shippingAddress);
     const stripe=commerceStripe();
     const shippingRateId=process.env.STRIPE_MERCH_SHIPPING_RATE_ID;
     if(!shippingRateId) throw new Error("Configure STRIPE_MERCH_SHIPPING_RATE_ID before selling physical merchandise");
     const shipping=await stripe.shippingRates.retrieve(shippingRateId);
     if(!shipping.active || shipping.type!=="fixed_amount" || shipping.fixed_amount?.currency!==input.currency) throw new Error("Merchandise shipping rate is inactive or has the wrong currency");
-    const country=input.shippingAddress.country?.toUpperCase();
-    if(!country || !/^[A-Z]{2}$/.test(country)) throw new Error("A valid shipping destination country is required");
-    const countries=(process.env.STRIPE_MERCH_SHIPPING_COUNTRIES||"").split(",").map(c=>c.trim().toUpperCase());
-    if(!countries.includes(country)) throw new Error("Shipping is not configured for this destination");
     const order=(await pool.query(`SELECT o.user_id,p.buyer_id,p.created_at,p.checkout_id FROM merch_orders o
       JOIN growth_merch_payments p ON p.order_id=o.id WHERE o.id=$1`,[input.orderId])).rows[0];
     if(!order) throw new Error("Reserved merchandise order does not exist");

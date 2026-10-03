@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { pool } from "../../db";
 import { snapshotMarketplaceTerms } from "./settlement";
 import { majorUnits } from "./contract";
+import { assertSettlementAuthorization } from "./settlementAuthorization";
 
 /** Reuse a pending purchase, including across a lost checkout-create response.
  * The DB order is the immutable contract; provider metadata carries only identity.
@@ -34,6 +35,8 @@ export async function createMarketplaceCheckout(stripe:Stripe,input:{
     await client.query("COMMIT");
   } catch(error) {await client.query("ROLLBACK");throw error;} finally {client.release();}
   if(!order.metadata?.settlementTerms) throw new Error("Checkout requires historical reconciliation");
+  assertSettlementAuthorization(order.metadata.settlementTerms,input.sellerId,input.beatId);
+  if(order.seller_id!==input.sellerId) throw new Error("Checkout seller changed; reconciliation is required");
   const identity={commerceKind:"marketplace",commerceVersion:"1",orderId:order.id,
     buyerId:order.user_id,sellerId:order.seller_id,beatId:order.listing_id,licenseType:order.license_type};
   const remember=async(session:Stripe.Checkout.Session)=>{

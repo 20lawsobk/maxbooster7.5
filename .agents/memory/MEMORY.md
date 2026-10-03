@@ -154,3 +154,5 @@
 - [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.
 - [Capsule build control files](capsule-build-control-files.md) — publishing still needs root manifests after packing; archive removal must not delete package-manager control files.
 - [Publishing build authorization](publishing-build-authorization.md) — runtime indicators are not build evidence; explicit disposable-root consent must align recovery and cleanup.
+- [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
+- [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.

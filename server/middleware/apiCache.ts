@@ -62,47 +62,6 @@ function extractUserIdFromRequest(req: Request): string {
   if (user && typeof user === "object" && "id" in user)
     return String((user as { id: unknown }).id);
 
-  const sess = req.session as unknown as Record<string, unknown> | undefined;
-  const sessionUid =
-    sess?.userId ??
-    (sess?.passport as Record<string, unknown> | undefined)?.user;
-  if (sessionUid) return String(sessionUid);
-
-  const auth = req.headers.authorization;
-  if (auth?.startsWith("Bearer ")) {
-    try {
-      const parts = auth?.slice(7).split(".");
-      if (parts?.length === 3) {
-        const payload = JSON.parse(
-          Buffer?.from(parts[1], "base64url").toString("utf8"),
-        );
-        if (payload?.userId) return String(payload?.userId);
-        if (payload?.sub) return String(payload?.sub);
-      }
-    } catch {
-      /* ignore malformed tokens */
-    }
-  }
-
-  const cookieHeader = req.headers.cookie || "";
-  const tokenMatch = cookieHeader?.match(
-    /(?:^|;\s*)(?:token|access_token|jwt)=([^;]+)/,
-  );
-  if (tokenMatch) {
-    try {
-      const parts = tokenMatch[1].split(".");
-      if (parts?.length === 3) {
-        const payload = JSON.parse(
-          Buffer?.from(parts[1], "base64url").toString("utf8"),
-        );
-        if (payload?.userId) return String(payload?.userId);
-        if (payload?.sub) return String(payload?.sub);
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-
   return "anon";
 }
 
@@ -116,6 +75,9 @@ interface CacheEntry {
 }
 
 interface CacheOptions {
+  /** Must recheck the full endpoint/resource authorization on EVERY request.
+   * Blanket pre-router mounts have no such policy and must execute the route. */
+  authorize?: (req: Request) => Promise<boolean>;
   ttlSeconds?: number;
   varyByUser?: boolean;
   varyByQuery?: boolean;
@@ -609,6 +571,17 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     next: NextFunction,
   ): Promise<void> => {
     if (req.method !== "GET") {
+      next();
+      return;
+    }
+    if (!varyByUser || !options.authorize || extractUserIdFromRequest(req) === "anon") {
+      next();
+      return;
+    }
+    try {
+      if (!await options.authorize(req)) { next(); return; }
+    } catch {
+      // Never serve private cached data on an unavailable authorization check.
       next();
       return;
     }

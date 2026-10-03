@@ -130,11 +130,11 @@ function isSource(file) {
 
 async function trackedFiles(root) {
   try {
-    const { stdout } = await execFileAsync("git", ["-C", root, "ls-files", "-z"], {
+    const { stdout } = await execFileAsync("git", ["-C", root, "ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
       encoding: "buffer",
       maxBuffer: 64 * 1024 * 1024,
     });
-    return stdout.toString("utf8").split("\0").filter(Boolean);
+    return [...new Set(stdout.toString("utf8").split("\0").filter(Boolean))];
   } catch (error) {
     throw new Error(`Unable to inventory tracked source: ${error.message}`);
   }

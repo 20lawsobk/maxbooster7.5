@@ -2,15 +2,15 @@ import { Router, Request, Response } from "express";
 import { db } from "../db.js";
 import {
   users,
-  sessions,
   securityThreats,
   socialAccounts,
 } from "../../shared/schema.js";
-import { eq, and, desc, ne, gte, sql } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import { emailService } from "../services/emailService.js";
+import { listOwnedSessions, revokeOwnedSessions, ownsLiveSession, ownedSessionStatus, setDeviceTrust } from "../services/remoteSessions.js";
 
 const router = Router();
 
@@ -42,13 +42,7 @@ router.post(
         });
       }
 
-      const existingSession = await db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.id, sessionId))
-        .limit(1);
-
-      if (existingSession?.length === 0) {
+      if (!await ownsLiveSession(req.user!.id, sessionId)) {
         return res.status(401).json({
           success: false,
           error: "session_not_found",
@@ -68,13 +62,8 @@ router.post(
       const actualExtend = Math.min(parsedMinutes, maxExtendMinutes);
       const newExpiresAt = new Date(Date?.now() + actualExtend * 60 * 1000);
 
-      await db
-        .update(sessions)
-        .set({
-          lastActivity: new Date(),
-          expiresAt: newExpiresAt,
-        })
-        .where(eq(sessions.id, sessionId));
+      req.session.cookie.expires = newExpiresAt;
+      await new Promise<void>((resolve, reject) => req.session.save(error => error ? reject(error) : resolve()));
 
       res.json({
         success: true,
@@ -102,14 +91,7 @@ router.get(
       const userId = req.user!.id;
       const currentSessionId = req.session?.id;
 
-      const userSessions = await db
-        .select()
-        .from(sessions)
-        .where(
-          and(eq(sessions.userId, userId), gte(sessions.expiresAt, new Date())),
-        )
-        .orderBy(desc(sessions.lastActivity))
-        .limit(50);
+      const userSessions = await listOwnedSessions(userId);
 
       const formattedSessions = userSessions?.map((session) => {
         const userAgent = session?.userAgent || "";
@@ -171,6 +153,7 @@ router.get(
 
 router.delete(
   "/sessions/:sessionId",
+  (req, _res, next) => req.params.sessionId === "other" ? next("route") : next(),
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -186,21 +169,14 @@ router.delete(
         });
       }
 
-      const sessionToDelete = await db
-        .select()
-        .from(sessions)
-        .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId)))
-        .limit(1);
-
-      if (sessionToDelete?.length === 0) {
+      const terminatedCount = await revokeOwnedSessions(userId, currentSessionId || "", sessionId);
+      if (terminatedCount === 0) {
         return res.status(404).json({
           success: false,
           error: "session_not_found",
           message: "Session not found or already terminated",
         });
       }
-
-      await db.delete(sessions).where(eq(sessions.id, sessionId));
 
       await db.insert(securityThreats).values({
         threatType: "remote_session_terminated",
@@ -236,27 +212,7 @@ router.delete(
       const userId = req.user!.id;
       const currentSessionId = req.session?.id;
 
-      const otherSessions = await db
-        .select({ id: sessions.id })
-        .from(sessions)
-        .where(
-          and(
-            eq(sessions.userId, userId),
-            ne(sessions.id, currentSessionId || ""),
-          ),
-        )
-        .limit(500);
-
-      const terminatedCount = otherSessions?.length;
-
-      await db
-        .delete(sessions)
-        .where(
-          and(
-            eq(sessions.userId, userId),
-            ne(sessions.id, currentSessionId || ""),
-          ),
-        );
+      const terminatedCount = await revokeOwnedSessions(userId, currentSessionId || "");
 
       await db.insert(securityThreats).values({
         threatType: "all_other_sessions_logged_out",
@@ -301,24 +257,16 @@ router.post(
         });
       }
 
-      const session = await db
-        .select()
-        .from(sessions)
-        .where(and(eq(sessions.id, deviceId), eq(sessions.userId, userId)))
-        .limit(1);
-
-      if (session?.length === 0) {
+      if (typeof deviceId !== "string" || typeof trusted !== "boolean") {
+        return res.status(400).json({ error: "Device ID and boolean trusted value are required" });
+      }
+      if (!await setDeviceTrust(userId, deviceId, trusted)) {
         return res.status(404).json({
           success: false,
           error: "device_not_found",
           message: "Device/session not found",
         });
       }
-
-      await db
-        .update(sessions)
-        .set({ trusted: !!trusted })
-        .where(and(eq(sessions.id, deviceId), eq(sessions.userId, userId)));
 
       const outcome = trusted ? "device_trusted" : "device_untrusted";
 
@@ -359,13 +307,8 @@ router.get(
         });
       }
 
-      const session = await db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.id, currentSessionId))
-        .limit(1);
-
-      if (session?.length === 0) {
+      const session = await ownedSessionStatus(userId, currentSessionId);
+      if (!session) {
         return res.json({
           valid: false,
           expiresAt: null,
@@ -374,7 +317,7 @@ router.get(
         });
       }
 
-      const expiresAt = session[0].expiresAt;
+      const expiresAt = session.expiresAt;
       const now = new Date();
       const isValid = expiresAt ? new Date(expiresAt) > now : true;
       const secondsRemaining = expiresAt
@@ -384,16 +327,11 @@ router.get(
           )
         : null;
 
-      const sessionCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(sessions)
-        .where(and(eq(sessions.userId, userId), gte(sessions.expiresAt, now)));
-
       res.json({
         valid: isValid,
         expiresAt: expiresAt!.toISOString(),
         secondsRemaining,
-        concurrentSessions: Number(sessionCount[0]?.count || 1),
+        concurrentSessions: session.concurrentSessions,
         outcome: isValid ? "session_valid" : "session_expired",
       });
     } catch (error) {

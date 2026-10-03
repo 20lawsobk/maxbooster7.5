@@ -418,6 +418,7 @@ export async function renderProjectMixdown(
     const projectDir = path.join(RENDER_DIR, projectId);
     await fsPromises.mkdir(projectDir, { recursive: true });
     const finalPath = path.join(projectDir, `${renderId}.${ext}`);
+    tempFiles.push(finalPath);
 
     await encodeFinal(finalPcm, options.sampleRate, options.format, options.bitDepth, finalPath);
 
@@ -438,8 +439,9 @@ export async function renderProjectMixdown(
       ogg: "audio/ogg",
     };
     const finalBuffer = await fsPromises.readFile(finalPath);
-    const storageKey = await storageService.uploadFile(
+    const storageKey = await storageService.uploadGeneratedFile(
       finalBuffer,
+      project.userId,
       "studio-renders",
       `${renderId}.${ext}`,
       contentTypeMap[options.format] || "application/octet-stream",

@@ -50,7 +50,7 @@ test("simulated beta: reports include new withdrawals by currency and keep legac
 test("simulated beta: frozen checkout allocations survive later split changes; missing terms require review", async () => {
   let splits=[{user_id:"seller",percentage:75},{user_id:"collaborator",percentage:25}];
   let booked;
-  globalThis.__commerceSnapshotPool={query:async sql=>({rows:sql.includes("royalty_splits")?splits:[{metadata:{}}]})};
+  globalThis.__commerceSnapshotPool={query:async sql=>({rows:sql.includes("royalty_splits")?splits:[{user_id:"seller",metadata:{}}]})};
   globalThis.__commerceSnapshotRepo={sourceByPayment:async()=>null,book:async sale=>{booked=sale;}};
   const settlement=await subject("server/services/commerce/settlement.ts",{
     "../../db":"export const pool=globalThis.__commerceSnapshotPool;",
@@ -83,7 +83,7 @@ test("simulated beta: actual purchase producer -> registered webhook -> settleme
   let order,insertions=0,bookings=0,source=null,providerCreates=0,lostResponse=true;
   const sessions=[];
   const query=async(sql,args=[])=>{
-    if(sql.includes("FROM listings")) return {rows:[{metadata:{}}]};
+    if(sql.includes("FROM listings")) return {rows:[{user_id:"seller",metadata:{}}]};
     if(sql.includes("FROM royalty_splits")) return {rows:[]};
     if(sql.startsWith("SELECT * FROM orders")) return {rows:order?[order]:[]};
     if(sql.startsWith("INSERT INTO orders")) {

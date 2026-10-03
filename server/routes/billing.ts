@@ -25,6 +25,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from "express";
+import { billingAccountStatus } from "../services/billingAccountStatus";
 import Stripe from "stripe";
 import { db, pool } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
@@ -882,7 +883,7 @@ router.post(
 
         await db
           .update(users)
-          .set({ subscriptionStatus: "canceled" })
+          .set({ subscriptionStatus: billingAccountStatus("canceled") })
           .where(eq(users.id, userId));
 
         logger.info(
@@ -1015,7 +1016,7 @@ router.post(
 
       await db
         .update(users)
-        .set({ subscriptionStatus: "active" })
+        .set({ subscriptionStatus: billingAccountStatus("active") })
         .where(eq(users.id, userId));
 
       logger.info(
@@ -1398,7 +1399,7 @@ router.post(
         if (paidInvoice?.status === "paid") {
           await db
             .update(users)
-            .set({ subscriptionStatus: "active" })
+            .set({ subscriptionStatus: billingAccountStatus("active") })
             .where(eq(users.id, userId));
 
           logger.info(`[Billing] Payment retry successful for user ${userId}`);
@@ -2021,7 +2022,7 @@ router.get(
         return res.json({
           inGracePeriod: false,
           gracePeriodActive: false,
-          subscriptionStatus: "active",
+          subscriptionStatus: billingAccountStatus("active"),
           tier: "lifetime",
           message: "Lifetime subscription - no grace period applicable",
         });

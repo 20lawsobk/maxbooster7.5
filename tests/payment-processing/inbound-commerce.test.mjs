@@ -45,7 +45,7 @@ test("marketplace checkout freezes database pricing, metadata identity, and prov
     "server/services/commerce/marketplaceCheckout.ts",
     {
       "../../db": "export const pool=globalThis.__inboundMarketplacePool;",
-      "./settlement": "export async function snapshotMarketplaceTerms(input){globalThis.__inboundTermsCalls.push(input);return {grossCents:input.metadata.amountCents,feeCents:100};}",
+      "./settlement": "export async function snapshotMarketplaceTerms(input){globalThis.__inboundTermsCalls.push(input);return {version:2,sellerId:input.sellerId,listingId:input.listingId,grossCents:input.metadata.amountCents,feeCents:100};}",
       "./contract": "export function majorUnits(cents){return cents/100;}",
     },
   );
@@ -80,6 +80,13 @@ test("marketplace checkout freezes database pricing, metadata identity, and prov
   storedOrder.metadata.sessionId = "cs_market";
   await createMarketplaceCheckout(stripe, input);
   assert.deepEqual(stripeCalls.retrieves, ["cs_market"]);
+  const providerCallsBefore = JSON.stringify(stripeCalls);
+  storedOrder.metadata.settlementTerms = {
+    version:1,grossCents:1299,feeCents:100,currency:"usd",
+    allocations:[{userId:"attacker",cents:1199}],
+  };
+  await assert.rejects(createMarketplaceCheckout(stripe,input),/authorization reconciliation/);
+  assert.equal(JSON.stringify(stripeCalls),providerCallsBefore,"unsafe legacy orders must not reach Stripe");
   assert.equal(stripeCalls.creates.length, 1);
   await assert.rejects(createMarketplaceCheckout(stripe, { ...input, buyerId: "seller" }), /own beat/);
   await assert.rejects(createMarketplaceCheckout(stripe, { ...input, amountCents: 0 }), /Invalid checkout amount/);
@@ -194,6 +201,11 @@ test("growth merchandise checkout validates shipping and immutable subtotal befo
     "../../config/defaults": "export const getBaseUrl=()=> 'https://app.invalid';",
   });
   const { stripeMerchPaymentAdapter, handleGrowthMerchCheckout } = module;
+  await stripeMerchPaymentAdapter.validateCheckout({currency:"usd",shippingAddress:{country:"US"}});
+  await assert.rejects(stripeMerchPaymentAdapter.validateCheckout({currency:"usd",shippingAddress:{country:"!!"}}),/valid shipping/);
+  delete process.env.STRIPE_MERCH_SHIPPING_RATE_ID;
+  await assert.rejects(stripeMerchPaymentAdapter.validateCheckout({currency:"usd",shippingAddress:{country:"US"}}),/Configure/);
+  process.env.STRIPE_MERCH_SHIPPING_RATE_ID="shr_test";
   const adapterInput = {
     orderId: "growth-order", idempotencyKey: "merch:growth-order", buyerEmail: "buyer@example.invalid",
     currency: "usd", subtotalCents: 2400, lines: [{ name: "Tee", quantity: 2, unitAmountCents: 1200 }],
@@ -241,7 +253,13 @@ test("growth merchandise checkout validates shipping and immutable subtotal befo
   else process.env.STRIPE_MERCH_SHIPPING_COUNTRIES = envBefore.countries;
 });
 
-test("growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once", async () => {
+test("growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once", async t => {
+  const originalCountries = process.env.STRIPE_MERCH_SHIPPING_COUNTRIES;
+  process.env.STRIPE_MERCH_SHIPPING_COUNTRIES = "US";
+  t.after(() => {
+    if (originalCountries === undefined) delete process.env.STRIPE_MERCH_SHIPPING_COUNTRIES;
+    else process.env.STRIPE_MERCH_SHIPPING_COUNTRIES = originalCountries;
+  });
   const records = { sql: [], adapter: [], paymentEvents: new Set(), item: {
     id: "physical-tee", user_id: "artist", name: "Tour Tee", is_active: true, is_digital: false,
     inventory: 4, price: "20.00", sale_price: "12.00", variants: [],
@@ -305,6 +323,7 @@ test("growth merchandise reservation prices from catalog, fences command replay,
     },
   );
   installMerchPaymentAdapter({
+    validateCheckout: async () => {},
     createCheckout: async input => {
       records.adapter.push(input);
       return { checkoutId: "cs_reserved_merch", checkoutUrl: "https://checkout.invalid/merch" };
@@ -314,6 +333,14 @@ test("growth merchandise reservation prices from catalog, fences command replay,
     buyerId: "fan", commandKey: "command-1", buyerEmail: "fan@example.invalid", buyerName: "Fan",
     shippingAddress: { country: "US", postal: "10001" }, items: [{ itemId: "physical-tee", quantity: 2 }],
   };
+  for (const country of ["!!", "CA", "", "USA"]) {
+    const sqlBefore = records.sql.length;
+    const stockBefore = records.item.inventory;
+    await assert.rejects(createMerchCheckout({...command,shippingAddress:{country}}), /shipping|Shipping/);
+    assert.equal(records.sql.length,sqlBefore,"invalid destination must not begin a transaction");
+    assert.equal(records.item.inventory,stockBefore);
+    assert.equal(records.adapter.length,0);
+  }
   await assert.rejects(createMerchCheckout({ ...command, items: [{ itemId: "physical-tee", quantity: 5 }] }), /Insufficient stock/);
   assert.equal(records.adapter.length, 0);
   const checkout = await createMerchCheckout(command);

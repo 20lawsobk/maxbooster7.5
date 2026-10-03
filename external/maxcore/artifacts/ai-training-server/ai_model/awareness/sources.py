@@ -6,7 +6,7 @@ An observation timestamp means fetched now, not necessarily published now.
 import functools
 import json
 import os
-import xml.etree.ElementTree as ET
+from ai_model.safe_feed_xml import parse_feed_xml
 from workers import quality_harvester as legacy
 
 
@@ -40,7 +40,7 @@ def social():
 
 
 def rss(url):
-    root = ET.fromstring(legacy._fetch(url))
+    root = parse_feed_xml(legacy._fetch(url))
     rows = []
     for entry in root.findall(".//item")[:30]:
         rows.append(_row(entry.findtext("title"), entry.findtext("link"), 1,

@@ -79,6 +79,46 @@ describe("CSRF response cache isolation", () => {
     apiCache.clear();
   });
 
+  it("never trusts unsigned bearer/cookie identity, even with a warm private response", async () => {
+    const get = vi.spyOn(apiCache, "get").mockResolvedValue({
+      body: { private: "victim" }, headers: {}, statusCode: 200,
+      timestamp: Date.now(), etag: '"private"',
+    });
+    try {
+      const token = `x.${Buffer.from(JSON.stringify({ sub: "victim" })).toString("base64url")}.x`;
+      for (const headers of [{ authorization: `Bearer ${token}` }, { cookie: `jwt=${token}` }]) {
+        const req = requestFixture("/api/merch/orders");
+        req.headers = headers;
+        const fixture = responseFixture();
+        const next = vi.fn();
+        await cacheMiddleware({ authorize: async () => true })(req, fixture.res, next);
+        expect(next).toHaveBeenCalledOnce();
+        expect(fixture.body()).toBeUndefined();
+      }
+      expect(get).not.toHaveBeenCalled();
+    } finally { get.mockRestore(); }
+  });
+
+  it("requires a successful resource policy before every private cache lookup", async () => {
+    const get = vi.spyOn(apiCache, "get").mockResolvedValue(undefined);
+    try {
+      for (const options of [{}, { authorize: async () => false },
+        { authorize: async () => { throw new Error("Unavailable authority"); } },
+        { authorize: async () => true, varyByUser: false }]) {
+        const req = requestFixture("/api/merch/orders");
+        req.user = { id: "victim" } as Request["user"];
+        const next = vi.fn();
+        await cacheMiddleware(options)(req, responseFixture().res, next);
+        expect(next).toHaveBeenCalledOnce();
+      }
+      expect(get).not.toHaveBeenCalled();
+      const req = requestFixture("/api/merch/orders");
+      req.user = { id: "owner" } as Request["user"];
+      await cacheMiddleware({ authorize: async () => true })(req, responseFixture().res, vi.fn());
+      expect(get).toHaveBeenCalledWith("u:owner:/api/merch/orders:{}", "owner");
+    } finally { get.mockRestore(); }
+  });
+
   it("keeps canonical CSRF cookie/body bindings distinct across anonymous sessions", async () => {
     const firstReq = requestFixture("/api/csrf-token");
     const first = responseFixture();

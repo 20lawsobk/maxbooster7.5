@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "SCAN-05-independent-local-sast",
+  "generatedAt": "2026-10-03T10:28:27.423Z",
+  "complete": true,
+  "incompleteReasons": [],
+  "scanner": {
+    "name": "semgrep",
+    "version": "1.172.0",
+    "commandPolicy": {
+      "metrics": "off",
+      "versionCheck": "disabled",
+      "codeUpload": false,
+      "autofix": false,
+      "outerTimeoutSeconds": 1800,
+      "perRuleTimeoutSeconds": 90,
+      "timeoutThreshold": 3,
+      "maxMemoryMb": 4096,
+      "jobs": 2,
+      "targets": "explicit immutable inventory manifest"
+    }
+  },
+  "rules": [
+    {
+      "name": "p/security-audit",
+      "source": "https://semgrep.dev/c/p/security-audit",
+      "sha256": "b109a039df712f30c6d3e25e1e8358053fd0f1c91b92d0e8d2871cd141fe602f",
+      "etag": "W/\"eba951b81c18bf273fd189807814713b13bff45e\"",
+      "lastModified": null,
+      "ruleCount": 225
+    },
+    {
+      "name": "local/inventory-coverage-probes",
+      "source": "scanner-built-in",
+      "sha256": "a500f2d2090d18a56e98052badff524492c27be6ce451c607726f049685bcd9d",
+      "etag": null,
+      "lastModified": null,
+      "ruleCount": 11
+    }
+  ],
+  "inventory": {
+    "fileCount": 5,
+    "byteCount": 82541,
+    "sha256": "361b743a28b226478b3fae91042d39755371716f3d3f7df8ec882fd119fd4f44",
+    "files": [
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py",
+        "bytes": 11907,
+        "sha256": "8acd1ac23aee24c3aaf16b1333b72071a13b04e00c6f4f17c014f89b0c980570",
+        "language": "python"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/ai_model/safe_feed_xml.py",
+        "bytes": 1184,
+        "sha256": "228bd4e0b6692aa330b12459d7ca444c15ac92631b8d820df290d97afa57d905",
+        "language": "python"
+      },
+      {
+        "path": "external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py",
+        "bytes": 1161,
+        "sha256": "bbc85863828c8d272071e277a75e64f4863bd6b1b62fd3be5db4767e5c91f042",
+        "language": "python"
+      },
+      {
+        "path": "server/routes/notifications.ts",
+        "bytes": 38675,
+        "sha256": "b216bf7a9ec82c9c55386dcdcfe1872a4e9016c7af6b775a0f4f1e8cf4a97c3d",
+        "language": "typescript"
+      },
+      {
+        "path": "server/services/socialSyncService.ts",
+        "bytes": 29614,
+        "sha256": "fee392e8dc9ed9b3934c345c34973592657e3f4d9edf39ac17d5abd77002ad13",
+        "language": "typescript"
+      }
+    ],
+    "exclusions": {}
+  },
+  "coverage": {
+    "scannedCount": 5,
+    "scanned": [
+      "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py",
+      "external/maxcore/artifacts/ai-training-server/ai_model/safe_feed_xml.py",
+      "external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py",
+      "server/routes/notifications.ts",
+      "server/services/socialSyncService.ts"
+    ],
+    "omitted": [],
+    "unexpected": [],
+    "languages": {
+      "python": {
+        "inventory": 3,
+        "scanned": 3,
+        "omitted": 0
+      },
+      "typescript": {
+        "inventory": 2,
+        "scanned": 2,
+        "omitted": 0
+      }
+    }
+  },
+  "findings": [
+    {
+      "ruleId": "python.lang.security.use-defused-xml.use-defused-xml",
+      "severity": "ERROR",
+      "path": "external/maxcore/artifacts/ai-training-server/ai_model/safe_feed_xml.py",
+      "start": {
+        "line": 2,
+        "column": 1
+      },
+      "end": {
+        "line": 2,
+        "column": 30
+      },
+      "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential data and \"XML bombs\" can cause denial of service.",
+      "cwe": [
+        "CWE-611: Improper Restriction of XML External Entity Reference"
+      ],
+      "confidence": "LOW",
+      "fingerprint": "10f6a7ed1428b1aa81548bd9c606d42372937346c1b53b1cd6cc4cead6cddb59"
+    },
+    {
+      "ruleId": "python.lang.security.use-defused-xml.use-defused-xml",
+      "severity": "ERROR",
+      "path": "external/maxcore/artifacts/ai-training-server/ai_model/safe_feed_xml.py",
+      "start": {
+        "line": 3,
+        "column": 1
+      },
+      "end": {
+        "line": 3,
+        "column": 34
+      },
+      "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential data and \"XML bombs\" can cause denial of service.",
+      "cwe": [
+        "CWE-611: Improper Restriction of XML External Entity Reference"
+      ],
+      "confidence": "LOW",
+      "fingerprint": "3e8223ae98a62ee37c33a00b0fee2e3f7780a847af2e19a4d220c673bd6c6d9e"
+    }
+  ],
+  "errors": [],
+  "skipped": [],
+  "summary": {
+    "severityCounts": {
+      "ERROR": 2
+    }
+  },
+  "gateEffect": "none; existing production-readiness and SCAN-05 contracts remain authoritative"
+}

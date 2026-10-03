@@ -5,6 +5,13 @@ export interface AuthorityDatabase {
 
 export function createSessionAuthority(database: AuthorityDatabase) {
   return {
+    async validateBearer(userId: string, issuedAt: unknown): Promise<boolean> {
+      if (typeof issuedAt !== "number" || !Number.isSafeInteger(issuedAt) || issuedAt <= 0) return false;
+      const result = await database.query(
+        `SELECT (sess::jsonb->>'revokedBefore')::bigint AS cutoff
+         FROM pg_sessions WHERE sid = $1`, [`bearer-revocation:${userId}`]);
+      return !result.rows.length || issuedAt > Number(result.rows[0].cutoff);
+    },
     async issue(userId: string): Promise<string> {
       const result = await database.query(
         `INSERT INTO auth_session_epochs (user_id, generation)

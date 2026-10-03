@@ -536,15 +536,14 @@ router.post("/sms/verify", async (req: Request, res: Response) => {
         : { to: phoneNumber, from: twilioPhone as string, body: smsBody };
       await client.messages.create(msgParams);
       smsDelivered = true;
-      const sender = messagingServiceSid
-        ? `MessagingService(${messagingServiceSid.slice(0, 6)}***)`
-        : `from(${twilioPhone})`;
       logger.info(
-        `[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`,
+        { userId: req.user.id, phoneNumber, messagingService: Boolean(messagingServiceSid) },
+        "[SMS] Verification code sent",
       );
     } else {
       logger.info(
-        `[SMS DEV] Max Booster verification code for ${phoneNumber.slice(0, 5)}***: ${verificationCode}`,
+        { userId: req.user.id },
+        "[SMS DEV] Verification generated without a delivery provider",
       );
     }
 

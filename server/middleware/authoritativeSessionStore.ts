@@ -12,7 +12,7 @@ export class AuthoritativeSessionStore extends session.Store {
         if (!Array.isArray(rows)) throw new Error("Invalid session database response");
         return rows.length ? JSON.parse(rows[0].sess) : null;
       }).then(async data => {
-        if (!data) return null;
+        if (!data || data.revoked === true) return null;
         const passportUser = data.passport?.user;
         const userId = data.userId ??
           (passportUser && typeof passportUser === "object" ? passportUser.id : passportUser);
@@ -29,11 +29,16 @@ export class AuthoritativeSessionStore extends session.Store {
     let serialized: string;
     try { serialized = JSON.stringify(data); } catch (err) { cb?.(err); return; }
     db.execute(sql`INSERT INTO pg_sessions(sid,sess,expire) VALUES(${sid},${serialized},${expires})
-      ON CONFLICT(sid) DO UPDATE SET sess=EXCLUDED.sess,expire=EXCLUDED.expire`)
+      ON CONFLICT(sid) DO UPDATE SET sess=(EXCLUDED.sess::jsonb ||
+        jsonb_build_object('trusted',COALESCE(pg_sessions.sess::jsonb->'trusted','false'::jsonb)))::text,
+        expire=EXCLUDED.expire
+      WHERE pg_sessions.sess::jsonb->>'revoked' IS DISTINCT FROM 'true'`)
       .then(() => cb?.(), err => cb?.(err));
   }
   destroy(sid: string, cb?: (err?: unknown) => void): void {
-    db.execute(sql`DELETE FROM pg_sessions WHERE sid=${sid}`)
+    db.execute(sql`INSERT INTO pg_sessions(sid,sess,expire)
+      VALUES(${sid},'{"revoked":true}',9007199254740991)
+      ON CONFLICT(sid) DO UPDATE SET sess=EXCLUDED.sess,expire=EXCLUDED.expire`)
       .then(() => cb?.(), err => cb?.(err));
   }
   touch(sid: string, data: session.SessionData, cb?: (err?: unknown) => void): void {
@@ -42,7 +47,8 @@ export class AuthoritativeSessionStore extends session.Store {
       : Date.now() + (data.cookie?.maxAge ?? 86_400_000);
     if (!Number.isFinite(expires)) { cb?.(new Error("Invalid session expiry")); return; }
     // UPDATE only: an in-flight touch must not recreate a destroyed session.
-    db.execute(sql`UPDATE pg_sessions SET expire=${expires} WHERE sid=${sid} AND expire>${Date.now()}`)
+    db.execute(sql`UPDATE pg_sessions SET expire=${expires} WHERE sid=${sid} AND expire>${Date.now()}
+      AND sess::jsonb->>'revoked' IS DISTINCT FROM 'true'`)
       .then(() => cb?.(), err => cb?.(err));
   }
 }

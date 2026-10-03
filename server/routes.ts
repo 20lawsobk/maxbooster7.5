@@ -6,6 +6,7 @@ import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db, pool } from "./db.js";
+import { createOwnedRoyaltySplit, updateOwnedRoyaltySplit, RoyaltySplitError } from "./services/royaltySplitOwnership.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits } from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
@@ -1574,11 +1575,14 @@ export async function registerRoutes(
         const { userStorageFiles } = await import("../shared/schema.js");
         const { eq, sql: dsql } = await import("drizzle-orm");
         const [row] = await db
-          .select({ deletedAt: userStorageFiles.deletedAt })
+          .select({ deletedAt: userStorageFiles.deletedAt, userId: userStorageFiles.userId })
           .from(userStorageFiles)
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
+        if (key.startsWith("studio-renders/") && (!row || row.userId !== req.user.id)) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         if (row?.deletedAt) {
           logger.warn(
             { key, deletedAt: row.deletedAt },
@@ -1946,14 +1950,18 @@ export async function registerRoutes(
       }
 
       // Ensure demo user always has active subscription so they can access all protected routes
+      if (["suspended", "banned"].includes(demoUser.subscriptionStatus ?? "")) {
+        return res.status(403).json({ message: "Account disabled" });
+      }
       if (
         demoUser.subscriptionStatus !== "active" ||
         demoUser.subscriptionTier !== "pro"
       ) {
-        const updated = await storage.updateUser(demoUser.id, {
-          subscriptionStatus: "active",
+        const { billingAccountStatus } = await import("./services/billingAccountStatus");
+        const [updated] = await db.update(users).set({
+          subscriptionStatus: billingAccountStatus("active"),
           subscriptionTier: "pro",
-        });
+        }).where(eq(users.id, demoUser.id)).returning();
         if (updated) demoUser = updated;
       }
 
@@ -6229,28 +6237,17 @@ export async function registerRoutes(
           .json({ message: "Percentage must be between 1 and 100" });
       }
       const releaseId = projectId || "general";
-      const existing = await db.select({ percentage: royaltySplits.percentage })
-        .from(royaltySplits)
-        .where(and(eq(royaltySplits.userId, req.user.id), eq(royaltySplits.releaseId, releaseId)));
-      if (existing.reduce((total, split) => total + split.percentage, 0) + normalizedPercentage > 100.0001) {
-        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
-      }
-
-      const [split] = await db
-        .insert(royaltySplits)
-        .values({
+      const split = await createOwnedRoyaltySplit(req.user.id, {
           releaseId,
-          userId: req.user.id,
           collaboratorEmail,
           collaboratorName: collaboratorName || collaboratorEmail.split("@")[0],
           role,
           percentage: normalizedPercentage,
-          status: "pending",
-        })
-        .returning();
+        });
 
       return res.json(split);
     } catch (error) {
+      if (error instanceof RoyaltySplitError) return res.status(error.status).json({message:error.message});
       logger.warn({ err: error }, "Create split error");
       return res
         .status(500)
@@ -6276,20 +6273,15 @@ export async function registerRoutes(
       if (name !== undefined && (typeof name !== "string" || !name.trim())) {
         return res.status(400).json({ message: "Collaborator name must be a non-empty string" });
       }
-      const siblings = await db.select({ percentage: royaltySplits.percentage }).from(royaltySplits)
-        .where(and(eq(royaltySplits.userId, req.user.id), eq(royaltySplits.releaseId, existing.releaseId)));
-      if (siblings.reduce((total, split) => total + split.percentage, 0) - existing.percentage + normalizedPercentage > 100.0001) {
-        return res.status(400).json({ message: "Royalty splits cannot exceed 100%" });
-      }
-      const [split] = await db.update(royaltySplits).set({
-        percentage: normalizedPercentage,
+      const split = await updateOwnedRoyaltySplit(req.user.id, splitId, {
+        ...(percentage === undefined ? {} : {percentage:normalizedPercentage}),
         ...(name === undefined ? {} : { collaboratorName: name.trim() }),
         ...(email === undefined ? {} : { collaboratorEmail: email.trim() }),
         ...(role === undefined ? {} : { role }),
-        updatedAt: new Date(),
-      }).where(eq(royaltySplits.id, splitId)).returning();
+      });
       return res.json(split);
     } catch (error) {
+      if (error instanceof RoyaltySplitError) return res.status(error.status).json({message:error.message});
       logger.warn({ err: error }, "Update split error");
       return res.status(500).json({ message: "Failed to update royalty split" });
     }

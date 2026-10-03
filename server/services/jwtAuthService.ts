@@ -72,6 +72,7 @@ export class JWTAuthService {
   }
 
   async issueTokens(userId: string, role: string = "user", mfaVerified = false, expectedGeneration?: string): Promise<TokenPair> {
+    const authIssuedAt = Date.now();
     const user = await storage.getUser(userId);
     if (!user || (user.twoFactorEnabled && !mfaVerified)) throw new Error("MFA assurance required for token issuance");
     const authority = await sessionAuthority();
@@ -79,7 +80,7 @@ export class JWTAuthService {
     if (!await authority.validate(userId, generation)) throw new Error("Token issuance session revoked");
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const refreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.${crypto.randomBytes(32).toString("hex")}`;
+    const refreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.t${authIssuedAt}.${crypto.randomBytes(32).toString("hex")}`;
     const tokenVersion = await this.getUserTokenVersion(userId);
 
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
@@ -94,6 +95,7 @@ export class JWTAuthService {
         role,
         ver: tokenVersion,
         generation,
+        authIssuedAt,
         mfa: mfaVerified,
       },
       JWT_SECRET,
@@ -148,9 +150,12 @@ export class JWTAuthService {
         role: string;
         ver?: number;
         generation?: string;
+        authIssuedAt?: number;
+        iat?: number;
         mfa?: boolean;
       };
       if (!await (await sessionAuthority()).validate(decoded.sub, decoded.generation)) return null;
+      if (!await (await sessionAuthority()).validateBearer(decoded.sub, decoded.authIssuedAt ?? (decoded.iat ?? 0) * 1000)) return null;
       const account = await storage.getUser(decoded.sub);
       if (!account || (account.twoFactorEnabled && decoded.mfa !== true)) return null;
 
@@ -200,6 +205,10 @@ export class JWTAuthService {
       return null;
     }
     const generation = refreshTokenValue.split(".")[0];
+    const timePart = refreshTokenValue.split(".")[2];
+    const authIssuedAt = timePart?.startsWith("t")
+      ? Number(timePart.slice(1)) : new Date(refreshToken.createdAt).getTime();
+    if (!await (await sessionAuthority()).validateBearer(user.id, authIssuedAt)) return null;
     const mfaVerified = refreshTokenValue.split(".")[1] === "mfa";
     if (!refreshTokenValue.includes(".") ||
         !await (await sessionAuthority()).validate(user.id, generation)) return null;
@@ -210,7 +219,7 @@ export class JWTAuthService {
     const tokenVersion = await this.getUserTokenVersion(user?.id);
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const newRefreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.${crypto.randomBytes(32).toString("hex")}`;
+    const newRefreshTokenValue = `${generation}.${mfaVerified ? "mfa" : "pwd"}.t${authIssuedAt}.${crypto.randomBytes(32).toString("hex")}`;
     const accessTokenExpiresAt = new Date(Date.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
       Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
@@ -223,6 +232,7 @@ export class JWTAuthService {
         role: user.role || "user",
         ver: tokenVersion,
         generation,
+        authIssuedAt,
         mfa: mfaVerified,
       },
       JWT_SECRET,
