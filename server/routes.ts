@@ -7653,6 +7653,7 @@ export async function registerRoutes(
 
   for (const { path, platform } of oauthCallbackPaths) {
     app.get(path, (req: Request, res: Response) => {
+      res.setHeader("Cache-Control", "no-store");
       // Preserve the raw query string exactly as received — re-serialising via
       // URLSearchParams can corrupt OAuth codes/state that contain '+' or other
       // characters that round-trip differently through qs.parse → URLSearchParams.

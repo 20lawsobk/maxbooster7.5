@@ -10,6 +10,7 @@ import { syncPlatformData } from "../services/socialSyncService";
 import { socialOAuth as socialOAuthService } from "../services/socialOAuthService";
 import { env } from "../config/env.js";
 import { encryptSocialCredential } from "../services/socialCredentialCodec.js";
+import { createSocialOAuthState, consumeSocialOAuthState } from "../services/socialOAuthState";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -236,65 +237,6 @@ const PLATFORMS = {
 
 
 
-const _rawOAuthSecret = env.SESSION_SECRET || process.env.SECRET_KEY;
-if (
-  !_rawOAuthSecret &&
-  (process.env.NODE_ENV === "production" || process.env.REPLIT_DEPLOYMENT)
-) {
-  throw new Error(
-    "SESSION_SECRET or SECRET_KEY must be set in production (required for OAuth state HMAC)",
-  );
-}
-const OAUTH_STATE_SECRET =
-  _rawOAuthSecret || "max-booster-oauth-state-secret-dev-only";
-const OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
-
-function createOAuthState(
-  userId: string,
-  platform: string,
-  codeVerifier?: string,
-): string {
-  const payload = {
-    u: userId,
-    p: platform,
-    cv: codeVerifier,
-    exp: Date.now() + OAUTH_STATE_TTL_MS,
-    n: crypto.randomBytes(8).toString("hex"),
-  };
-  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = crypto
-    .createHmac("sha256", OAUTH_STATE_SECRET)
-    .update(encoded)
-    .digest("base64url");
-  return `${encoded}~${sig}`;
-}
-
-function verifyOAuthState(
-  rawState: string,
-): { userId: string; platform: string; codeVerifier?: string } | null {
-  try {
-    const tilde = rawState.lastIndexOf("~");
-    if (tilde < 0) return null;
-    const encoded = rawState.slice(0, tilde);
-    const sig = rawState.slice(tilde + 1);
-    const expectedSig = crypto
-      .createHmac("sha256", OAUTH_STATE_SECRET)
-      .update(encoded)
-      .digest("base64url");
-    if (sig.length !== expectedSig.length) return null;
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig)))
-      return null;
-    const payload = JSON.parse(
-      Buffer.from(encoded, "base64url").toString("utf-8"),
-    );
-    if (!payload.u || !payload.p || !payload.exp) return null;
-    if (Date.now() > payload.exp) return null;
-    return { userId: payload.u, platform: payload.p, codeVerifier: payload.cv };
-  } catch {
-    return null;
-  }
-}
-
 function getBaseUrl(): string {
   return process.env.DOMAIN || process.env.APP_URL || "https://maxbooster.replit.app";
 }
@@ -391,7 +333,10 @@ router.post(
           .createHash("sha256")
           .update(codeVerifier)
           .digest("base64url");
-        state = createOAuthState(userId, platform, codeVerifier);
+        if (!req.sessionID || req.session?.userId !== userId) {
+          return res.status(401).json({ error: "Authenticated browser session required" });
+        }
+        state = await createSocialOAuthState(userId, req.sessionID, platform, codeVerifier);
         params.set("response_type", "code");
         params.set(
           platformConfig.clientIdParam || "client_id",
@@ -402,7 +347,10 @@ router.post(
         params.set("code_challenge", codeChallenge);
         params.set("code_challenge_method", "S256");
       } else {
-        state = createOAuthState(userId, platform);
+        if (!req.sessionID || req.session?.userId !== userId) {
+          return res.status(401).json({ error: "Authenticated browser session required" });
+        }
+        state = await createSocialOAuthState(userId, req.sessionID, platform);
         params.set(
           platformConfig.clientIdParam || "client_id",
           config.clientId!,
@@ -433,6 +381,14 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
     let platform = String(req.params.platform).toLowerCase();
     const { code, state, error, error_description } = req.query;
 
+    res.setHeader("Cache-Control", "no-store");
+    if (!req.user?.id || req.session?.userId !== req.user.id) {
+      return res.redirect("/social-media?error=invalid_state");
+    }
+    const stateData = await consumeSocialOAuthState(state, req.user.id, req.sessionID, platform);
+    if (!stateData) {
+      return res.redirect("/social-media?error=invalid_state");
+    }
     if (error) {
       // Provider descriptions are untrusted input; record only presence and
       // the provider error code, never arbitrary callback text.
@@ -442,19 +398,6 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       );
       return res.redirect(
         `/social-media?error=oauth_denied&platform=${platform}`,
-      );
-    }
-
-    const stateData = state
-      ? verifyOAuthState(decodeURIComponent(state as string))
-      : null;
-    if (!stateData) {
-      logger.warn(
-        { hasState: !!state },
-        `[OAuth] Invalid or expired state for ${platform}`,
-      );
-      return res.redirect(
-        `/social-media?error=invalid_state&platform=${platform}`,
       );
     }
 

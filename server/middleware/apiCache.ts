@@ -599,7 +599,8 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     // response body to a Set-Cookie value. Caching it under the shared "anon"
     // key can pair one client's cached body with another client's new cookie.
     // Keep the whole auth namespace out of this general response cache.
-    if (req.path === "/api/csrf-token" || req.path.startsWith("/api/auth/")) {
+    if (req.path === "/api/csrf-token" || req.path.startsWith("/api/auth/") ||
+        req.path.startsWith("/api/social/callback/")) {
       next();
       return;
     }
