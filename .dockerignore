@@ -20,6 +20,7 @@ node_modules/.cache
 .next
 .pythonlibs
 .venv
+/venv/
 __pycache__
 .config/
 .replit

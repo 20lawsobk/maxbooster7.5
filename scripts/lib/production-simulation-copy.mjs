@@ -14,6 +14,7 @@ const EXCLUDED_TOP_LEVEL = new Set([
   ".pythonlibs",
   ".pytest_cache",
   ".venv",
+  "venv",
   "__pycache__",
   "ai_model",
   "android",

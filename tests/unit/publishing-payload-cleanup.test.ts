@@ -10,6 +10,7 @@ import {
   PROTECTED_PUBLISHING_PATHS,
 } from "../../script/lib/publishingPayload.js";
 import { RECOVERY_HELPER_PATH } from "../../script/lib/deploymentPackRecovery.mjs";
+import { computeRemainingAppMembers } from "../../script/lib/dockerignoreScan.js";
 
 // Every deletion in this suite is confined to mkdtemp fixtures, never the app.
 const fixtures: string[] = [];
@@ -132,6 +133,62 @@ describe("disposable publishing payload cleanup", () => {
     expect(result.removedPaths).toContain(".local");
     expect(result.removedPaths).toContain(".config");
     for (const file of required) expect(fs.existsSync(path.join(root, file)), file).toBe(true);
+  });
+
+  it("cleans the excluded root workspace venv without following its external Python wrapper", () => {
+    const { base, root, write } = fixture();
+    const external = path.join(base, "external-wrapper");
+    fs.mkdirSync(path.join(external, "bin"), { recursive: true });
+    const interpreter = path.join(external, "bin", "python-wrapped");
+    fs.writeFileSync(interpreter, "external interpreter bytes");
+    fs.symlinkSync("python-wrapped", path.join(external, "bin", ".python-wrapped"));
+
+    write("venv/bin/python", "workspace-only interpreter");
+    const wrapper = path.join(root, "venv/bin/.python-wrapped");
+    const outsideLink = path.join(external, "bin/.python-wrapped");
+    fs.symlinkSync(path.relative(path.dirname(wrapper), outsideLink), wrapper);
+    write("venv/pyvenv.cfg");
+    write("external/pdim/venv/lib/site-packages/nested-dependency.py");
+
+    for (const relative of [
+      "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+      "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
+      "scripts/check-port-contract.ts", RECOVERY_HELPER_PATH,
+      "python_runtime.pdim", "python_runtime.manifest.json",
+      "node_modules.pdim", "node_modules.manifest.json",
+      "external_maxcore.pdim", "external_maxcore.manifest.json",
+      "external_pdim.pdim", "external_pdim.manifest.json",
+      "app_remainder.pdim", "app_remainder.manifest.json",
+    ]) write(relative);
+
+    const targetBytes = fs.readFileSync(interpreter);
+    const outsideLinkValue = fs.readlinkSync(outsideLink);
+    const policy = fs.readFileSync(".dockerignore", "utf8");
+    const beforeMembers = computeRemainingAppMembers(root);
+    expect(beforeMembers.some((member) => member === "venv" || member.startsWith("venv/"))).toBe(false);
+    expect(beforeMembers).toContain("python_runtime.pdim");
+    expect(beforeMembers).toContain("python_runtime.manifest.json");
+    expect(beforeMembers).toContain("start.sh");
+
+    const required = [
+      "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+      "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
+      "scripts/check-port-contract.ts", RECOVERY_HELPER_PATH,
+      "python_runtime.pdim", "python_runtime.manifest.json",
+      "node_modules.pdim", "node_modules.manifest.json",
+      "external_maxcore.pdim", "external_maxcore.manifest.json",
+      "external_pdim.pdim", "external_pdim.manifest.json",
+      "app_remainder.pdim", "app_remainder.manifest.json",
+    ];
+    const result = cleanPublishingPayload({
+      root, env: publishing(root), dockerignore: policy, requiredPaths: required,
+    });
+    expect(result.removedPaths).toContain("venv");
+    expect(fs.existsSync(path.join(root, "venv"))).toBe(false);
+    for (const file of required) expect(fs.existsSync(path.join(root, file)), file).toBe(true);
+    expect(fs.existsSync(path.join(root, "external/pdim/venv/lib/site-packages/nested-dependency.py"))).toBe(true);
+    expect(fs.readFileSync(interpreter)).toEqual(targetBytes);
+    expect(fs.readlinkSync(outsideLink)).toBe(outsideLinkValue);
   });
 
   for (const conflictingPattern of ["start.sh", "script/", "*.pdim", "*.manifest.json", "pyproject.toml", ".node_bin/"]) {

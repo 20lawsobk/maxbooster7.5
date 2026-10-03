@@ -40,6 +40,8 @@ describe("production simulation filtered copy", () => {
       [".capsule-temp/partial.pdim", "temporary capsule fixture"],
       [".github/workflows/deploy.yml", "workspace workflow fixture"],
       [".pythonlibs/lib/python3.12/site-packages/large-cache", "local Python cache"],
+      ["venv/bin/python", "workspace interpreter fixture"],
+      ["venv/pyvenv.cfg", "workspace environment fixture"],
       ["ai_model/weights/model.pt", "legacy workspace model fixture"],
       ["boosterstate-data/state.bin", "runtime data fixture"],
       ["tests/unit/example.test.ts", "test fixture"],
@@ -93,6 +95,7 @@ describe("production simulation filtered copy", () => {
       ],
       ["external/pdim/.npmrc", "PDIM credential fixture"],
       ["external/pdim/src/index.py", "PDIM source fixture"],
+      ["external/pdim/venv/lib/site-packages/nested-dependency.py", "nested dependency environment fixture"],
       ["node_modules/example/.npmrc", "dependency package fixture"],
       ["server/index.ts", "application source fixture"],
     ]);
@@ -102,6 +105,21 @@ describe("production simulation filtered copy", () => {
       await fs.mkdir(path.dirname(absoluteFile), { recursive: true });
       await fs.writeFile(absoluteFile, contents);
     }
+    const outsideInterpreter = path.join(temporaryRoot, "external-wrapper", "python-wrapped");
+    await fs.mkdir(path.dirname(outsideInterpreter), { recursive: true });
+    await fs.writeFile(outsideInterpreter, "unchanged external interpreter fixture");
+    await fs.symlink(
+      "python-wrapped",
+      path.join(temporaryRoot, "external-wrapper", ".python-wrapped"),
+    );
+    const workspaceWrapper = path.join(sourceRoot, "venv", "bin", ".python-wrapped");
+    await fs.mkdir(path.dirname(workspaceWrapper), { recursive: true });
+    await fs.symlink(
+      path.relative(path.dirname(workspaceWrapper), path.join(temporaryRoot, "external-wrapper", ".python-wrapped")),
+      workspaceWrapper,
+    );
+    const wrapperTargetBefore = await fs.readlink(workspaceWrapper);
+    const externalInterpreterBefore = await fs.readFile(outsideInterpreter);
     await fs.chmod(path.join(sourceRoot, "server/index.ts"), 0o640);
     await fs.symlink(
       "index.ts",
@@ -131,6 +149,8 @@ describe("production simulation filtered copy", () => {
       "boosterstate-data/state.bin",
       "tests/unit/example.test.ts",
       "docs/deployment.md",
+      "venv/bin/python",
+      "venv/pyvenv.cfg",
       "client/public/videos/sample.mp4",
       "dist/public/assets/app.js.br",
       "public/generated-content/item.json",
@@ -150,6 +170,7 @@ describe("production simulation filtered copy", () => {
       "external/maxcore/artifacts/ai-training-server/training/combined_training_data.json",
       "external/maxcore/artifacts/ai-training-server/ai_model/training/candidate_registry/selected.json",
       "external/pdim/src/index.py",
+      "external/pdim/venv/lib/site-packages/nested-dependency.py",
       "external/maxcore/nested/.npmrc",
       "node_modules/example/.npmrc",
       ...REQUIRED_SIMULATION_TEST_PATHS,
@@ -165,6 +186,11 @@ describe("production simulation filtered copy", () => {
     expect(
       await fs.readlink(path.join(destinationRoot, "server/current.ts")),
     ).toBe("index.ts");
+    await expect(fs.access(path.join(destinationRoot, "venv"))).rejects.toThrow();
+    expect(await fs.readlink(workspaceWrapper)).toBe(wrapperTargetBefore);
+    expect(await fs.readFile(outsideInterpreter)).toEqual(externalInterpreterBefore);
+    expect(shouldCopyProductionSimulationPath("venv/bin/python")).toBe(false);
+    expect(shouldCopyProductionSimulationPath("external/pdim/venv/lib/site-packages/nested-dependency.py")).toBe(true);
 
     expect(shouldCopyProductionSimulationPath("node_modules/example/.npmrc")).toBe(
       true,
