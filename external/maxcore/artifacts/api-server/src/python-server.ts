@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import net from "net";
 import { Agent, request as undiciRequest } from "undici";
 import { setPythonRestarting } from "./server-state.js";
+import { ownedSingleFlight } from "./owned-single-flight.js";
 
 const PYTHON_PORT = parseInt(process.env.MODEL_API_PORT || "9878", 10);
 
@@ -261,19 +262,22 @@ async function probeHttpHealth(): Promise<"healthy" | "hung" | "down"> {
 // the very first request hits a hot path, not a cold one.
 
 async function waitForModelReady(maxMs = 180_000): Promise<boolean> {
+  const owner = pythonProcess;
   const deadline = Date.now() + maxMs;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (ADMIN_KEY) headers["X-Admin-Key"] = ADMIN_KEY;
 
   while (Date.now() < deadline) {
+    if (shuttingDown || owner !== pythonProcess) return false;
     try {
       const { statusCode, body } = await undiciRequest(
         `http://localhost:${PYTHON_PORT}/health`,
         { method: "GET", dispatcher: _warmPool, headers,
+          signal: AbortSignal.timeout(Math.max(1, Math.min(10_000, deadline - Date.now()))),
           headersTimeout: 0, bodyTimeout: 0 },
       );
       const raw = await body.text();
-      if (statusCode === 200) {
+      if (statusCode === 200 && owner === pythonProcess && !shuttingDown) {
         const parsed = JSON.parse(raw) as { model_loaded?: boolean };
         if (parsed.model_loaded === true) return true;
       }
@@ -285,7 +289,10 @@ async function waitForModelReady(maxMs = 180_000): Promise<boolean> {
   return false;
 }
 
-async function fireWarmPass(): Promise<void> {
+const fireWarmPass = ownedSingleFlight(() => pythonProcess, async (owner): Promise<void> => {
+  const releaseCurrent = () => {
+    if (owner === pythonProcess && !shuttingDown) setPythonRestarting(false);
+  };
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (ADMIN_KEY) headers["X-Admin-Key"] = ADMIN_KEY;
 
@@ -298,6 +305,7 @@ async function fireWarmPass(): Promise<void> {
         dispatcher: _warmPool,
         headers,
         body: "{}",
+        signal: AbortSignal.timeout(180_000),
         headersTimeout: 0,
         bodyTimeout: 0,
       },
@@ -316,18 +324,29 @@ async function fireWarmPass(): Promise<void> {
       } catch { /* ignore parse errors */ }
       console.log(`[Python] Warm-up pass complete — ${summary || "ok"}`);
       // Signal the proxy that Python is fully ready — held requests will drain
-      setPythonRestarting(false);
+      releaseCurrent();
     } else {
       console.warn(`[Python] Warm-up pass returned ${statusCode}: ${raw.slice(0, 300)}`);
       // Still mark ready so requests aren't held indefinitely; keepalive re-warms
-      setPythonRestarting(false);
+      releaseCurrent();
     }
   } catch (err) {
     // Never fatal — keepalive will re-warm on next deep-warm cycle
     console.warn(`[Python] Warm-up pass failed (non-fatal): ${err}`);
+    releaseCurrent();
+  }
+});
+
+const scheduleWarmup = ownedSingleFlight(() => pythonProcess, async (owner) => {
+  const ready = await waitForModelReady(180_000);
+  if (owner !== pythonProcess || shuttingDown) return;
+  if (ready) await fireWarmPass();
+  else {
+    console.warn("[Python] Model did not become ready within 3 min — readiness remains unavailable");
+    // Release the hold, not readiness: actual model probes still decide health.
     setPythonRestarting(false);
   }
-}
+});
 
 // ─── Core spawn logic ─────────────────────────────────────────────────────────
 
@@ -427,14 +446,7 @@ function spawnPython() {
       // After each crash-restart, re-run the warm-up pass once Python is back.
       // fireWarmPass() calls setPythonRestarting(false) on completion (success or
       // failure) so held requests are always eventually released.
-      waitForModelReady(180_000).then((ready) => {
-        if (ready) {
-          fireWarmPass().catch(() => {});
-        } else {
-          console.warn("[Python] Model did not report ready within 3 min after restart — releasing held requests anyway");
-          setPythonRestarting(false);
-        }
-      });
+      void scheduleWarmup().catch(err => console.error("[Python] Warm-up scheduling failed", err));
     }, delay);
   };
   // ENOENT and other launcher failures emit `error`, often without `exit`.
@@ -461,10 +473,11 @@ function spawnPython() {
 
 function startHealthMonitor() {
   if (healthTimer) return;
-  healthTimer = setInterval(async () => {
+  const check = ownedSingleFlight(() => pythonProcess, async (owner) => {
     if (shuttingDown || restartScheduled) return;
 
     const status = await probeHttpHealth();
+    if (shuttingDown || restartScheduled || owner !== pythonProcess) return;
 
     if (status === "healthy") {
       consecutiveHungProbes = 0;
@@ -477,10 +490,7 @@ function startHealthMonitor() {
       console.log("[Python] Health monitor: server is down — restarting...");
       setPythonRestarting(true);
       spawnPython();
-      waitForModelReady(180_000).then((ready) => {
-        if (ready) fireWarmPass().catch(() => {});
-        else { console.warn("[Python] Model not ready after monitor-triggered restart"); setPythonRestarting(false); }
-      });
+      void scheduleWarmup().catch(err => console.error("[Python] Warm-up scheduling failed", err));
       return;
     }
 
@@ -522,6 +532,9 @@ function startHealthMonitor() {
         }
       }
     }
+  });
+  healthTimer = setInterval(() => {
+    void check().catch(err => console.error("[Python] Health monitor failed", err));
   }, HEALTH_POLL_INTERVAL_MS);
   healthTimer.unref();
 }
@@ -567,13 +580,7 @@ export async function ensurePythonServer(): Promise<void> {
   // (success or failure) so requests are never held indefinitely.
   // Runs in background — never blocks startKeepalive() or worker fork.
   setPythonRestarting(true);
-  waitForModelReady(180_000).then((ready): Promise<void> | void => {
-    if (ready) {
-      return fireWarmPass();
-    }
-    console.warn("[Python] Model did not become ready within 3 min — warm pass skipped; keepalive will retry on next deep-warm cycle");
-    setPythonRestarting(false);
-  }).catch(() => { setPythonRestarting(false); });
+  void scheduleWarmup().catch(err => console.error("[Python] Warm-up scheduling failed", err));
 }
 
 export function stopPythonServer() {
