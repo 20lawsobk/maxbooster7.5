@@ -5,25 +5,20 @@ import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
 import {
   isPublishingEnvironment,
   RECOVERY_HELPER_PATH,
+  assertBuildContext,
 } from "./deploymentPackRecovery.mjs";
 
 /** Never treat a local DEPLOY_PACK simulation as a disposable publishing copy.
  * Platform docs only guarantee REPLIT_DEPLOYMENT on published apps, not builds.
- * If neither platform indicator is present during build, cleanup MUST stay off.
+ * Authorization is the explicit publishing entry point's exact root declaration.
  */
-export function isDisposablePublishingCopy(env: NodeJS.ProcessEnv): boolean {
-  return env.DEPLOY_PACK === "1" && isPublishingEnvironment(env);
+export function isDisposablePublishingCopy(env: NodeJS.ProcessEnv, root = process.cwd()): boolean {
+  return isPublishingEnvironment(env, root);
 }
 
-/** An explicit publishing-command expectation fails BEFORE recovery or build.
- * This flag is NOT authorization and can never replace the platform indicator.
- */
-export function assertPublishingCleanupExpectation(env: NodeJS.ProcessEnv): void {
-  if (env.PUBLISH_PAYLOAD_CLEANUP === "1" && !isDisposablePublishingCopy(env)) {
-    throw new Error(
-      "Publishing cleanup expected but refused: requires DEPLOY_PACK=1 AND REPLIT_DEPLOYMENT=1 or a nonempty REPLIT_DEPLOYMENT_ID; no recovery/build mutations were authorized",
-    );
-  }
+/** Reject partial or mismatched declarations BEFORE recovery or build. */
+export function assertPublishingCleanupExpectation(env: NodeJS.ProcessEnv, root = process.cwd()): void {
+  assertBuildContext(root, env);
 }
 
 export const PROTECTED_PUBLISHING_PATHS = [
@@ -131,7 +126,7 @@ export function measurePublishingPayload(root: string, dockerignore: string): Pa
   return { totalBytes, byTopDir, entries: survivors.length };
 }
 
-/** User-authorized deletion applies ONLY to a platform-marked publishing copy.
+/** User-authorized deletion applies ONLY to the explicitly declared publishing root.
  * All conflicts and surviving links are checked before the first deletion.
  * dockerignore is captured before remainder packing can remove the file itself.
  */
@@ -141,8 +136,8 @@ export function cleanPublishingPayload(options: {
   dockerignore: string;
   requiredPaths: string[];
 }): { removedPaths: string[]; measurement: PayloadMeasurement } {
-  if (!isDisposablePublishingCopy(options.env)) {
-    throw new Error("Publishing cleanup refused: requires DEPLOY_PACK=1 AND a platform deployment indicator");
+  if (!isDisposablePublishingCopy(options.env, options.root)) {
+    throw new Error("Publishing cleanup refused: requires DEPLOY_PACK=1 AND root-scoped publishing entry point");
   }
   const root = realRoot(options.root);
   const { excluded, survivors } = scan(root, options.dockerignore);

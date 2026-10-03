@@ -34,17 +34,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
-  // Publishing commands opt into a fail-closed expectation, not authorization.
+  // Publishing commands declare an exact disposable root.
   // Check before recovery (which mutates inputs), Vite, or any pack operation.
-  assertPublishingCleanupExpectation(process.env);
+   assertPublishingCleanupExpectation(process.env, root);
   // The deployment command also invokes this dependency-free helper BEFORE
   // npm/tsx, because packing can remove node_modules and build.ts itself.
   recoverDeploymentPack(root);
   let packTransaction: ReturnType<typeof beginDeploymentPack> | null = null;
-  const modelRelease = process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID
+  const modelRelease = process.env.DEPLOY_PACK === "1"
     ? validateModelRelease(root)
     : null;
-  if (process.env.DEPLOY_PACK === "1" || process.env.REPLIT_DEPLOYMENT_ID) {
+  if (process.env.DEPLOY_PACK === "1") {
     // Reject stale nested/hoisted installs before expensive work or destructive packing.
     execFileSync(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "deployment-dependencies", root],
       { cwd: root, stdio: "inherit" });
@@ -129,8 +129,7 @@ async function main() {
   // command. (REPLIT_DEPLOYMENT_ID is only set at RUNTIME, not in the build
   // container — gating on it silently skipped packing; proven by the
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
-  const isDeployBuild =
-    process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID;
+  const isDeployBuild = process.env.DEPLOY_PACK === "1";
   // Capture the policy while it is still on disk: app-remainder packing may
   // remove .dockerignore itself. Missing policy is an explicit build failure.
   const publishingDockerignore = isDeployBuild
@@ -324,10 +323,10 @@ async function main() {
   }
 
   // The Repl-layer uploader can traverse dockerignored workspace state anyway.
-  // Enforce the policy physically ONLY on a platform-marked disposable copy,
+  // Enforce the policy physically ONLY on an explicitly authorized disposable copy,
   // after every capsule has finished and before measuring the final payload.
   // DEPLOY_PACK alone is used by preserved simulations and MUST NOT delete it.
-  if (isDeployBuild && isDisposablePublishingCopy(process.env)) {
+  if (isDeployBuild && isDisposablePublishingCopy(process.env, root)) {
     const requiredPaths = [
       "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
       "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
@@ -344,7 +343,7 @@ async function main() {
     });
     console.log(`==> Publishing-copy cleanup: removed ${cleaned.removedPaths.length} excluded path(s); bootstrap, recovery helper, manifests and capsules preserved`);
   } else if (isDeployBuild) {
-    console.log("==> Publishing-copy cleanup skipped: platform deployment indicator absent (DEPLOY_PACK alone is not authorization)");
+    console.log("==> Publishing-copy cleanup skipped: no root-scoped publishing authorization (DEPLOY_PACK alone is not authorization)");
   }
 
   // ─── Pre-flight image size check ───────────────────────────────────────

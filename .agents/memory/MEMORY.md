@@ -153,3 +153,4 @@
 - [Retained gitlink updates](retained-gitlink-updates.md) — legacy files without submodule Git metadata need durable parent-tracked updates, not just successful local edits.
 - [Portable Python host contamination](portable-python-host-contamination.md) — a portable executable still inherits host Python paths without isolated mode; verify package origins before packing.
 - [Capsule build control files](capsule-build-control-files.md) — publishing still needs root manifests after packing; archive removal must not delete package-manager control files.
+- [Publishing build authorization](publishing-build-authorization.md) — runtime indicators are not build evidence; explicit disposable-root consent must align recovery and cleanup.

@@ -41,16 +41,26 @@ function assertRealParents(root, relative) {
   }
 }
 
-export function isPublishingEnvironment(env = process.env) {
-  return env.REPLIT_DEPLOYMENT === "1" ||
-    (typeof env.REPLIT_DEPLOYMENT_ID === "string" && env.REPLIT_DEPLOYMENT_ID.trim().length > 0);
+// This is an explicit destructive-build declaration, not platform attestation.
+// Only the publishing entry point supplies it. Never export it in dev settings.
+export function isPublishingEnvironment(env = process.env, root = process.cwd()) {
+  return env.DEPLOY_PACK === "1" && env.PUBLISH_PAYLOAD_CLEANUP === "1" &&
+    env.PUBLISH_BUILD_ROOT === path.resolve(root);
+}
+
+export function assertBuildContext(root, env = process.env) {
+  if ((env.PUBLISH_BUILD_ROOT !== undefined || env.PUBLISH_PAYLOAD_CLEANUP === "1") &&
+      !isPublishingEnvironment(env, root)) {
+    throw new Error("Publishing authorization refused: requires DEPLOY_PACK=1 AND root-scoped publishing entry point; no recovery/build mutations were authorized");
+  }
 }
 
 export function deploymentPackStateDirectory(root, env = process.env) {
   root = path.resolve(root);
-  if (!isPublishingEnvironment(env)) return path.join(root, TRANSACTION_PATH);
-  const identity = createHash("sha256").update(root).update("\0")
-    .update(env.REPLIT_DEPLOYMENT_ID || "publishing").digest("hex");
+  assertBuildContext(root, env);
+  if (!isPublishingEnvironment(env, root)) return path.join(root, TRANSACTION_PATH);
+  if (fs.realpathSync(root) !== root) throw new Error("Publishing root must not be a symlink");
+  const identity = createHash("sha256").update(root).digest("hex");
   const directory = path.join("/tmp", `maxbooster-build-recovery-${identity}`);
   if (directory === root || directory.startsWith(`${root}${path.sep}`)) {
     throw new Error("Publishing recovery must be outside the uploaded workspace");
@@ -67,6 +77,12 @@ function transactionDirectory(root) {
   assertRealParents(root, `${TRANSACTION_PATH}/journal.json`);
   const directory = deploymentPackStateDirectory(root);
   const legacy = path.join(root, TRANSACTION_PATH);
+  // A local simulation must not start a second transaction while an external
+  // publishing snapshot for the same root awaits recovery.
+  const publishing = path.join("/tmp", `maxbooster-build-recovery-${createHash("sha256").update(root).digest("hex")}`);
+  if (directory === legacy && fs.existsSync(publishing)) {
+    throw new Error("Publishing recovery exists for this root; use the publishing entry point, not a local simulation");
+  }
   // A prior workspace-local journal must be recovered, never silently removed
   // by payload cleanup. Do not guess which transaction wins if both exist.
   if (directory !== legacy && fs.existsSync(legacy)) {
@@ -170,6 +186,12 @@ export function recoverDeploymentPack(root) {
         throw new Error(`Deployment pack recovery backup missing: ${relative}`);
       }
       assertRealParents(root, relative);
+      if (journal.directories.includes(relative)) {
+        const destination = fs.lstatSync(path.join(root, relative), { throwIfNoEntry: false });
+        if (destination && (!destination.isDirectory() || destination.isSymbolicLink())) {
+          throw new Error(`Unsafe recovery directory destination: ${relative}`);
+        }
+      }
     }
     console.log("==> Recovering build inputs from interrupted/completed capsule packing...");
     for (const dir of journal.directories) {
@@ -239,16 +261,34 @@ export function beginDeploymentPack(root) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv[2] !== "--recover") {
-    console.error("Usage: node script/lib/deploymentPackRecovery.mjs --recover [root]");
+  if (!["--recover", "--publish-disposable-copy"].includes(process.argv[2]) || process.argv.length > 4) {
+    console.error("Usage: node script/lib/deploymentPackRecovery.mjs --recover [root] | --publish-disposable-copy <root>");
     process.exitCode = 1;
   } else {
     try {
-      if (process.env.PUBLISH_PAYLOAD_CLEANUP === "1" &&
-          !(process.env.DEPLOY_PACK === "1" && isPublishingEnvironment())) {
-        throw new Error("Publishing recovery refused: no platform deployment indicator; workspace left unchanged");
+      const root = path.resolve(process.argv[3] || process.cwd());
+      if (process.argv[2] === "--publish-disposable-copy") {
+        // Explicit CLI consent applies only to the copy containing this helper,
+        // from that copy's cwd. Reject inherited/mismatched declarations first.
+        const helperRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+        if (!process.argv[3] || root !== helperRoot || root !== process.cwd() ||
+            fs.realpathSync(root) !== root) {
+          throw new Error("Publishing entry point requires its own real root and matching cwd");
+        }
+        if (process.env.PUBLISH_BUILD_ROOT !== undefined ||
+            process.env.PUBLISH_PAYLOAD_CLEANUP !== undefined ||
+            process.env.DEPLOY_PACK !== undefined) {
+          throw new Error("Ambiguous inherited build authorization; workspace left unchanged");
+        }
+        Object.assign(process.env, {
+          DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1", PUBLISH_BUILD_ROOT: root,
+        });
       }
-      recoverDeploymentPack(process.argv[3] || process.cwd());
+      assertBuildContext(root);
+      recoverDeploymentPack(root);
+      if (process.argv[2] === "--publish-disposable-copy") {
+        execFileSync("npm", ["run", "build"], { cwd: root, env: process.env, stdio: "inherit" });
+      }
     } catch (error) {
       console.error("Deployment build recovery failed:", error.message);
       process.exitCode = 1;

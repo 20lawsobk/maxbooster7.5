@@ -13,7 +13,9 @@ import { RECOVERY_HELPER_PATH } from "../../script/lib/deploymentPackRecovery.mj
 
 // Every deletion in this suite is confined to mkdtemp fixtures, never the app.
 const fixtures: string[] = [];
-const publishing = { DEPLOY_PACK: "1", REPLIT_DEPLOYMENT: "1" };
+const publishing = (root: string) => ({
+  DEPLOY_PACK: "1", PUBLISH_PAYLOAD_CLEANUP: "1", PUBLISH_BUILD_ROOT: root,
+});
 afterEach(() => {
   for (const fixture of fixtures.splice(0)) fs.rmSync(fixture, { recursive: true, force: true });
 });
@@ -60,9 +62,9 @@ describe("disposable publishing payload cleanup", () => {
     })).toThrow(/requires DEPLOY_PACK/);
     expect(() => assertPublishingCleanupExpectation({ DEPLOY_PACK: "1" })).not.toThrow();
     expect(() => assertPublishingCleanupExpectation({
-      ...publishing, PUBLISH_PAYLOAD_CLEANUP: "1",
+      ...publishing(process.cwd()),
     })).not.toThrow();
-    expect(isDisposablePublishingCopy({ DEPLOY_PACK: "1", REPLIT_DEPLOYMENT_ID: "fixture-id" })).toBe(true);
+    expect(isDisposablePublishingCopy({ DEPLOY_PACK: "1", REPLIT_DEPLOYMENT_ID: "fixture-id" })).toBe(false);
   });
 
   it("physically removes ignored roots and dangling links without touching their targets or outside state", () => {
@@ -77,7 +79,7 @@ describe("disposable publishing payload cleanup", () => {
     fs.symlinkSync(outside, path.join(root, "excluded-source-link"));
     fs.symlinkSync(path.join(outside, "missing"), path.join(root, "excluded-dangling-link"));
     const result = cleanPublishingPayload({
-      root, env: publishing,
+      root, env: publishing(root),
       dockerignore: ".local/\n.config/\n.git\nexcluded-*\n", requiredPaths: [],
     });
     expect(result.removedPaths).toEqual([
@@ -102,7 +104,7 @@ describe("disposable publishing payload cleanup", () => {
     write("scripts/ignored-development-helper");
     const required = ["start.sh", ".node_bin/node", RECOVERY_HELPER_PATH, "app_remainder.pdim", "app_remainder.manifest.json"];
     cleanPublishingPayload({
-      root, env: publishing,
+      root, env: publishing(root),
       dockerignore: ".config/\nscripts/*\n!scripts/boot-stub-server.mjs\n!scripts/port-contract.sh\n!scripts/check-port-contract.ts\n",
       requiredPaths: required,
     });
@@ -124,7 +126,7 @@ describe("disposable publishing payload cleanup", () => {
     write(".config/pulse/evidence");
     const required = PROTECTED_PUBLISHING_PATHS.filter(p => p !== ".node_bin").concat(".node_bin/node");
     const result = cleanPublishingPayload({
-      root, env: publishing, dockerignore: fs.readFileSync(".dockerignore", "utf8"),
+      root, env: publishing(root), dockerignore: fs.readFileSync(".dockerignore", "utf8"),
       requiredPaths: required,
     });
     expect(result.removedPaths).toContain(".local");
@@ -143,7 +145,7 @@ describe("disposable publishing payload cleanup", () => {
       write(".node_bin/node");
       const archived = write(".local/archived/evidence");
       expect(() => cleanPublishingPayload({
-        root, env: publishing, dockerignore: `.local/\n${conflictingPattern}\n`, requiredPaths: [],
+        root, env: publishing(root), dockerignore: `.local/\n${conflictingPattern}\n`, requiredPaths: [],
       })).toThrow(/conflicts with protected/);
       expect(fs.existsSync(archived)).toBe(true);
     });
@@ -153,7 +155,7 @@ describe("disposable publishing payload cleanup", () => {
     const { root, write } = fixture();
     const archived = write(".local/evidence");
     expect(() => cleanPublishingPayload({
-      root, env: publishing, dockerignore: ".local/\n", requiredPaths: ["start.sh"],
+      root, env: publishing(root), dockerignore: ".local/\n", requiredPaths: ["start.sh"],
     })).toThrow(/Required publishing runtime path is missing/);
     expect(fs.existsSync(archived)).toBe(true);
   });
@@ -168,7 +170,7 @@ describe("disposable publishing payload cleanup", () => {
         ? outside : kind === "excluded" ? ".local/evidence" : "surviving-link";
       fs.symlinkSync(target, path.join(root, "surviving-link"));
       expect(() => cleanPublishingPayload({
-        root, env: publishing, dockerignore: ".local/\n", requiredPaths: [],
+        root, env: publishing(root), dockerignore: ".local/\n", requiredPaths: [],
       })).toThrow(/publishing payload symlink/i);
       expect(fs.existsSync(archived)).toBe(true);
       expect(fs.readFileSync(outside, "utf8")).toBe("untouched outside bytes");
@@ -197,7 +199,7 @@ describe("disposable publishing payload cleanup", () => {
     write(".deployment-pack-state/transaction/journal.json", "fixture undo journal");
     write(".local/evidence");
     const options = {
-      root, env: publishing, dockerignore: ".deployment-pack-state/\n.local/\n", requiredPaths: [],
+      root, env: publishing(root), dockerignore: ".deployment-pack-state/\n.local/\n", requiredPaths: [],
     };
     expect(() => cleanPublishingPayload(options)).toThrow(/recovery state must be outside/);
     expect(fs.existsSync(path.join(root, ".local/evidence"))).toBe(true);
@@ -212,7 +214,7 @@ describe("disposable publishing payload cleanup", () => {
     const linkedRoot = path.join(base, "linked-root");
     fs.symlinkSync(root, linkedRoot);
     expect(() => cleanPublishingPayload({
-      root: linkedRoot, env: publishing, dockerignore: ".local/\n", requiredPaths: [],
+      root: linkedRoot, env: publishing(linkedRoot), dockerignore: ".local/\n", requiredPaths: [],
     })).toThrow(/root must be a real directory/);
     expect(fs.existsSync(evidence)).toBe(true);
   });

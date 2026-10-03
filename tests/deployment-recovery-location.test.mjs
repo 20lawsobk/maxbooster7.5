@@ -12,7 +12,7 @@ test("DEPLOY_PACK alone cannot relocate local recovery", () => {
     "/example/workspace/.deployment-pack-state/transaction");
 });
 
-test("publishing CLI refuses recovery mutations without a platform indicator", t => {
+test("publishing CLI refuses recovery mutations without root authorization", t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-cli-guard-"));
   t.after(() => fs.rmSync(root,{recursive:true,force:true}));
   const env = {...process.env, REPLIT_DEPLOYMENT:"0", REPLIT_DEPLOYMENT_ID:"",
@@ -23,19 +23,21 @@ test("publishing CLI refuses recovery mutations without a platform indicator", t
   execFileSync(process.execPath,["--input-type=module","-e",`
     import {beginDeploymentPack} from ${JSON.stringify(helper.href)};
     beginDeploymentPack(${JSON.stringify(root)}).complete();
-  `],{env});
+  `],{env: {...env, PUBLISH_PAYLOAD_CLEANUP: "0"}});
   fs.rmSync(path.join(root,"node_modules"),{recursive:true});
   const result = spawnSync(process.execPath,[fileURLToPath(helper),"--recover",root],
     {env,encoding:"utf8"});
   assert.equal(result.status,1);
-  assert.match(result.stderr,/no platform deployment indicator/);
+  assert.match(result.stderr,/root-scoped publishing entry point/);
   assert.equal(fs.existsSync(path.join(root,"node_modules")),false);
   assert.equal(fs.existsSync(path.join(root,".deployment-pack-state/transaction/journal.json")),true);
 });
 
 test("publishing snapshots survive removal of ignored build-copy state and recover in fresh Node", t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-recovery-fixture-"));
-  const env = {...process.env, REPLIT_DEPLOYMENT:"1", REPLIT_DEPLOYMENT_ID:"isolated-fixture"};
+  const env = {...process.env, DEPLOY_PACK:"1", PUBLISH_PAYLOAD_CLEANUP:"1", PUBLISH_BUILD_ROOT:root};
+  delete env.REPLIT_DEPLOYMENT;
+  delete env.REPLIT_DEPLOYMENT_ID;
   const recovery = deploymentPackStateDirectory(root, env);
   t.after(() => {
     fs.rmSync(root,{recursive:true,force:true});
@@ -62,7 +64,9 @@ test("publishing snapshots survive removal of ignored build-copy state and recov
 test("real pack, publishing cleanup and fresh-process recovery preserve build inputs", t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-clean-pack-"));
   const env = {...process.env, DEPLOY_PACK:"1", PUBLISH_PAYLOAD_CLEANUP:"1",
-    REPLIT_DEPLOYMENT:"1", REPLIT_DEPLOYMENT_ID:"isolated-clean-pack-fixture"};
+    PUBLISH_BUILD_ROOT:root};
+  delete env.REPLIT_DEPLOYMENT;
+  delete env.REPLIT_DEPLOYMENT_ID;
   const recovery = deploymentPackStateDirectory(root, env);
   t.after(() => {
     fs.rmSync(root,{recursive:true,force:true});
