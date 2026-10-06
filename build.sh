@@ -368,32 +368,22 @@ fi
 # Everything large is compressed into content-addressed .pdim capsules and
 # restored on first startup by dist/pdim-restore.mjs.
 #
-# Compression: auto-selects best available algorithm
-#   xz -6, at most two threads and 256 MiB compressor memory
-#   GZIP=-9     (gzip maximum level)          fallback
+# Compression: gzip level 1, favoring build time over maximum compression.
+# The 1.8 GB Python runtime was measured with this codec in disposable storage.
 # Integrity:   SHA-256 checksum written alongside each capsule
 # Format:      pdim-v2
 echo "==> PDIM: Creating Pocket Dimension capsules..."
 
-# ── Compression algorithm auto-detection ─────────────────────────────────────
-_PDIM_FORMAT="gzip-9"
-if command -v xz >/dev/null 2>&1; then
-  _PDIM_FORMAT="xz-6"
-  unset XZ_DEFAULTS
-  export XZ_OPT="-6 -T2 --memlimit-compress=256MiB"
-  echo "   Compressor: xz $(xz --version 2>/dev/null | head -1) (XZ_OPT=${XZ_OPT})"
-else
-  echo "   Compressor: gzip-9 (xz not found)"
-fi
+# ── Explicit bounded-memory, fast compression ──────────────────────────────
+_PDIM_FORMAT="gzip-1"
+unset GZIP XZ_OPT XZ_DEFAULTS
+echo "   Compressor: gzip -1 (single-threaded, low-memory)"
 
 # Internal: run tar with the selected compressor
 _pdim_tar_create() {
   # Usage: _pdim_tar_create <output.pdim> [tar-paths...]
   local out="$1"; shift
-  case "$_PDIM_FORMAT" in
-    xz*)   tar -cJf "$out.partial" "$@" ;;
-    *)     GZIP=-9 tar -czf "$out.partial" "$@" ;;
-  esac
+  tar -I 'gzip -1' -cf "$out.partial" "$@"
   local status=$?
   if [ "$status" -ne 0 ]; then
     echo "ERROR: capsule compression failed for $out (exit $status); source retained." >&2
@@ -455,7 +445,7 @@ _pdim_pack() {
     echo "   SKIP ${label}: directory not found"
     return 0
   fi
-  local raw_size
+  local raw_size pack_started=$SECONDS
   raw_size=$(du -sh "$dir" 2>/dev/null | cut -f1)
   echo "   Packing ${label} (${raw_size}) → ${capsule} [${_PDIM_FORMAT}]..."
   _pdim_tar_create "$capsule" "$dir/" || return $?
@@ -477,7 +467,7 @@ _pdim_pack() {
 }
 MANIFEST_EOF
   rm -rf "${dir:?}/"
-  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}...)"
+  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}..., elapsed=$((SECONDS-pack_started))s)"
 }
 
 # Pre-prune node_modules, then pack all capsules

@@ -123,7 +123,7 @@ async function main() {
 
     // Pack all capsules CONCURRENTLY instead of one after another. Each
     // targets an independent source directory and writes its own .pdim file,
-    // so there is no shared state to race on. `tar | gzip -9` is otherwise
+    // so there is no shared state to race on. Fast gzip is otherwise
     // single-threaded per capsule; running the (up to) four packs in parallel
     // spreads them across the build container's cores instead of serializing
     // ~4 single-core jobs back to back, which was blowing the build-step time
@@ -132,30 +132,42 @@ async function main() {
       new Promise<void>((resolveOne, rejectOne) => {
         const abs = path.resolve(root, dir);
         if (!fs.existsSync(abs)) return resolveOne();
-        console.log(`==> Packing ${dir}/ → ${capsule} (gzip-9, Extract & Boot)...`);
+        console.log(`==> Packing ${dir}/ → ${capsule} (gzip-1, Extract & Boot)...`);
         const child = spawn(
           "bash",
-          ["-c", `tar -cf - ${JSON.stringify(dir)} | gzip -9 > ${JSON.stringify(capsule)}`],
+          ["-c", `unset GZIP; tar -I 'gzip -1' -cf ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(dir)} && mv -f ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(capsule)}`],
           { cwd: root, stdio: "inherit" },
         );
         child.on("error", rejectOne);
-        child.on("exit", (code) => {
+        child.on("exit", async (code) => {
           if (code !== 0) return rejectOne(new Error(`packing ${dir} exited with code ${code}`));
-          const sha256 = createHash("sha256")
-            .update(fs.readFileSync(path.resolve(root, capsule)))
-            .digest("hex");
-          fs.writeFileSync(
-            path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
-            JSON.stringify({ compression: "gzip-9", sha256, dir }, null, 2),
-          );
-          fs.rmSync(abs, { recursive: true, force: true });
-          const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
-          console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);
-          resolveOne();
+          try {
+            const hash = createHash("sha256");
+            for await (const chunk of fs.createReadStream(path.resolve(root, capsule))) {
+              hash.update(chunk);
+            }
+            const sha256 = hash.digest("hex");
+            fs.writeFileSync(
+              path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
+              JSON.stringify({ compression: "gzip-1", sha256, dir }, null, 2),
+            );
+            fs.rmSync(abs, { recursive: true, force: true });
+            const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
+            console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);
+            resolveOne();
+          } catch (error) {
+            rejectOne(error);
+          }
         });
       });
 
-    await Promise.all(capsuleTargets.map(packOne));
+    const outcomes = await Promise.allSettled(capsuleTargets.map(packOne));
+    const failures = outcomes.filter(
+      (outcome): outcome is PromiseRejectedResult => outcome.status === "rejected",
+    );
+    if (failures.length) {
+      throw new AggregateError(failures.map(failure => failure.reason), "Capsule packing failed");
+    }
   }
 
   // external/pdim is no longer deleted from the image — per user directive
