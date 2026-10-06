@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getToolostRedirectUri } from "../services/toolostRuntimeConfig";
+import { getToolostRedirectUri, getDistributionToolostService } from "../services/toolostRuntimeConfig";
 import { createHash, randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import type { Request, Response } from "express";
@@ -147,18 +147,6 @@ async function getCatalogToolostConnection(userId: string): Promise<{
   }
 
   return null;
-}
-
-async function getDistributionToolostService(userId: string) {
-  const catalogConnection = await getCatalogToolostConnection(userId);
-  if (!catalogConnection?.connection) {
-    throw new Error(
-      "Too Lost is not connected. Connect a Too Lost distribution account before submitting releases.",
-    );
-  }
-  return toolostService.forUser(
-    catalogConnection.connection.connectedByUserId,
-  );
 }
 
 // Too Lost grants distribution access to the user who authorizes this flow.

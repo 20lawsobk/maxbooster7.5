@@ -3,13 +3,11 @@ import { db } from "../db";
 import {
   dspAnalytics,
   dspUserPlatformStatus,
-  releases,
   DspAnalytic,
   DspUserPlatformStatus,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
-import { labelGridService } from "./labelgrid-service";
 
 type InsertDspAnalytics = typeof dspAnalytics.$inferInsert;
 type DspAnalytics = DspAnalytic;
@@ -212,10 +210,10 @@ class DSPAnalyticsService {
   ]);
 
   /**
-   * Fetch Spotify analytics via LabelGrid — no per-user OAuth required.
-   * Queries the local DB for this user's releases that have been distributed
-   * to Spotify via LabelGrid, then aggregates the 'spotify' platform slice
-   * from each release's analytics response.
+   * Spotify artist-level metrics were sourced from the retired distributor.
+   * Release totals are not artist listeners, saves or popularity. Until an
+   * authenticated supported source supplies those metrics, do not overwrite
+   * preserved historical snapshots with invented zero-valued observations.
    */
   async fetchSpotifyAnalytics(
     userId: string,
@@ -223,88 +221,11 @@ class DSPAnalyticsService {
     _startDate: Date,
     _endDate: Date,
   ): Promise<SpotifyArtistAnalytics | null> {
-    try {
-      logger.info(
-        `Fetching Spotify analytics for user ${userId} via LabelGrid`,
-      );
-
-      // 1. Find user's releases that have been submitted to LabelGrid
-      const userReleases = await db
-        .select({ id: releases.id, metadata: releases.metadata })
-        .from(releases)
-        .where(
-          and(
-            eq(releases.userId, userId),
-            sql`${releases.metadata}->>'labelGridReleaseId' IS NOT NULL`,
-          ),
-        );
-
-      if (userReleases.length === 0) {
-        logger.info(
-          `No LabelGrid-distributed releases found for user ${userId} — no Spotify data`,
-        );
-        return {
-          streams: 0,
-          listeners: 0,
-          saves: 0,
-          popularity: 0,
-          demographics: [],
-          topCities: [],
-        };
-      }
-
-      // 2. Fetch analytics for each release in parallel, then extract the spotify slice
-      let totalStreams = 0;
-      let totalListeners = 0;
-      let totalRevenue = 0;
-
-      await Promise.all(
-        userReleases.map(async (release) => {
-          try {
-            const meta = release.metadata as Record<string, unknown> | null;
-            const lgReleaseId = meta!.labelGridReleaseId as string | undefined;
-            if (!lgReleaseId) return;
-
-            const analytics =
-              await labelGridService.getReleaseAnalytics(lgReleaseId);
-
-            // Prefer the per-platform spotify slice; fall back to totals
-            const spotifySlice =
-              analytics.platforms["spotify"] ??
-              analytics.platforms["Spotify"];
-            if (spotifySlice) {
-              totalStreams += spotifySlice.streams || 0;
-              totalListeners += spotifySlice.listeners || 0;
-              totalRevenue += spotifySlice.revenue || 0;
-            } else {
-              // Release has no platform breakdown — use totals as a proxy
-              totalStreams += analytics.totalStreams || 0;
-              totalRevenue += analytics.totalRevenue || 0;
-            }
-          } catch (err) {
-            logger.warn(
-              { err, releaseId: release.id },
-              "LabelGrid analytics fetch failed for one release — skipping",
-            );
-          }
-        }),
-      );
-
-      return {
-        streams: totalStreams,
-        listeners: totalListeners,
-        saves: 0, // LabelGrid does not expose playlist saves
-        popularity: 0, // LabelGrid does not expose a popularity score
-        demographics: [],
-        topCities: [],
-      };
-    } catch (error) {
-      logger.warn(
-        { err: error },
-        "Error fetching Spotify analytics via LabelGrid:",
-      );
-      return null;
-    }
+    logger.warn(
+      { userId, capability: "spotify_artist_analytics", status: "unavailable" },
+      "Live Spotify artist analytics unavailable; historical snapshots retained",
+    );
+    return null;
   }
 
   async fetchAppleMusicAnalytics(

@@ -678,20 +678,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  // Historical LabelGrid reconciliation service. Its start method is now an
-  // intentional no-op: retired-provider reads and ledger writes are disabled.
-  if (isBgWorker) {
-    try {
-      const { labelGridRoyaltySync } = await import(
-        "./services/labelGridRoyaltySync.js"
-      );
-      labelGridRoyaltySync.start();
-    } catch (e) {
-      logger.warn(
-        `[LabelGridRoyaltySync] Failed to start: ${(e as any)?.message}`,
-      );
-    }
-  }
+  // LabelGrid is historical data only. Never load its SDK or start its sync.
 
   // Post-deploy self-test — activates DURING deployment boot, not after.
   // The first run starts immediately (non-blocking) so a bad deploy is caught

@@ -15,7 +15,6 @@ import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
 import { env } from "../config/env.js";
 import { require2FA } from "../middleware/auth.js";
 import { systemIntelligence } from "../services/systemIntelligence.js";
-import { labelGridService } from "../services/labelgrid-service.js";
 import { moderate } from "../services/moderationDecisionService.js";
 import { issueAdminApiToken, revokeAdminApiToken } from "../services/adminApiTokenService.js";
 
@@ -474,9 +473,8 @@ adminRouter?.get("/system-health", async (_req, res) => {
       env?.STRIPE_SECRET_KEY
         ? pingApi("https://api.stripe.com/v1")
         : Promise.resolve({ status: "unknown" as const, latency: null }),
-      labelGridService.isApiConfigured()
-        ? pingApi("https://api.labelgrid.com")
-        : Promise.resolve({ status: "unknown" as const, latency: null }),
+      // Configuration alone is not evidence of authenticated provider health.
+      Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.SPOTIFY_CLIENT_ID
         ? pingApi("https://api.spotify.com/v1")
         : Promise.resolve({ status: "unknown" as const, latency: null }),
@@ -504,7 +502,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
 
     const externalApis = {
       stripe: getResult(apiChecks[0]),
-      labelgrid: getResult(apiChecks[1]),
+      toolost: getResult(apiChecks[1]),
       spotify: getResult(apiChecks[2]),
       apple_music: getResult(apiChecks[3]),
       youtube: getResult(apiChecks[4]),

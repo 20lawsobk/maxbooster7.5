@@ -8,9 +8,9 @@
  *
  * Pipeline
  * ────────
- *   1. AUTHORITY CHECK — LabelGrid API (GET /v1/releases + GET /v1/releases/:id)
- *        When LabelGrid returns releases, they are the authoritative source.
- *        All output fields are seeded from LabelGrid first.
+ *   1. HISTORICAL DATA — preserved, owner-scoped local LabelGrid records.
+ *        No LabelGrid API is contacted. Historical provider IDs and source
+ *        tags stay in the export and are not treated as Too Lost IDs.
  *
  *   2. PRIMARY DATA SOURCE — Linked streaming platform profiles
  *        When LabelGrid is empty, the user's linked streaming profiles
@@ -38,11 +38,11 @@
  */
 
 import { logger } from "../logger.js";
-import { labelGridService } from "./labelgrid-service.js";
+import { getHistoricalLabelGridCatalog } from "./legacyDistributionCatalog.js";
 import type {
   LabelGridCatalogRelease,
   LabelGridCatalogTrack,
-} from "./labelgrid-service.js";
+} from "./legacyDistributionCatalog.js";
 import type { ScannedRelease } from "./distributionDataTransferService.js";
 import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
 
@@ -623,11 +623,7 @@ async function hydrateLabelGridRelease(
   const artistName = lgRelease?.artist;
 
   // Ensure we have the full track listing.
-  let lgTracks: LabelGridCatalogTrack[] = lgRelease?.tracks ?? [];
-  if (lgTracks?.length === 0 && lgRelease?.id) {
-    const detail = await labelGridService?.getReleaseDetail(lgRelease?.id);
-    if (detail!.tracks.length) lgTracks = detail?.tracks;
-  }
+  const lgTracks: LabelGridCatalogTrack[] = lgRelease?.tracks ?? [];
 
   let upc = lgRelease?.upc ?? null;
   let artwork = lgRelease?.coverUrl
@@ -682,11 +678,8 @@ async function hydrateLabelGridRelease(
   if (!artwork && amResult.artwork) artwork = amResult.artwork;
   if (!genre && amResult.genre) genre = amResult.genre;
 
-  // ── Platform presence (LabelGrid is the authority for all 100 DSPs) ──────
-  // When LabelGrid's API returns a `platforms` list for this release, that list
-  // is the authoritative record of which of the 100 distribution system
-  // platforms the release is live on. Deezer and Apple Music public-API
-  // verification adds additional confirmed entries on top of LabelGrid's list.
+  // Preserved provider destinations are historical evidence, not a fresh
+  // distributor status check. Public DSP validation is recorded separately.
   const lgPlatforms = lgRelease.platforms.length ? lgRelease.platforms : [];
   const platformPresence: string[] = [...lgPlatforms];
   if (!platformPresence.includes("deezer") && deezerResult.validation.found) {
@@ -1064,8 +1057,8 @@ export async function buildMigrationPayload(
 
   // ── Step 1: LabelGrid authority check ────────────────────────────────────
   // When LabelGrid returns releases they are the definitive catalog source.
-  logger.info("[CatalogMigration] Querying LabelGrid authority layer");
-  const lgReleases = await labelGridService?.getUserCatalog();
+  logger.info("[CatalogMigration] Reading preserved historical catalog");
+  const lgReleases = userId ? await getHistoricalLabelGridCatalog(userId) : [];
   logger.info(
     `[CatalogMigration] LabelGrid returned ${lgReleases?.length} release(s)`,
   );

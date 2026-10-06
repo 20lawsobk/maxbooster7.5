@@ -4,6 +4,26 @@ interface ToolostEnvironment {
   TOOLOST_SANDBOX_REDIRECT_URI?: string;
 }
 
+/** Shared authenticated distributor selection for HTTP and background callers.
+ * Credentials remain owned by the authorizing account; release ownership is
+ * checked by each caller before using this connection.
+ */
+export async function getDistributionToolostService(userId: string) {
+  const [{ storage }, { toolostService }] = await Promise.all([
+    import("../storage.js"),
+    import("./toolost-service.js"),
+  ]);
+  const connection =
+    (await storage.getToolostConnection(userId)) ??
+    (await storage.getAdminToolostConnection());
+  if (!connection) {
+    throw new Error(
+      "Too Lost is not connected. Connect a Too Lost distribution account before submitting releases.",
+    );
+  }
+  return toolostService.forUser(connection.connectedByUserId);
+}
+
 export function getToolostRedirectUri(
   env: ToolostEnvironment = process.env as ToolostEnvironment,
 ): string {
