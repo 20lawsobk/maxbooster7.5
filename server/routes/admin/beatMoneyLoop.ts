@@ -118,7 +118,8 @@ export default router;
 //   1. Success Rate        (40 pts) — successfulCycles / totalCycles
 //   2. Revenue Momentum    (25 pts) — trailing-7-day revenue vs prior 7 days
 //   3. Catalog Freshness   (20 pts) — cycles in last 7 days vs expected cadence
-//   4. Payout Velocity     (15 pts) — plays→downloads conversion in recent cycles
+//   4. Marketplace Sale Velocity (15 pts) — completed marketplace orders in
+//      the trailing week compared with the prior week
 //
 // Each dimension returns a 0–1 signal which is multiplied by its max points.
 // Returns score, per-dimension breakdown, dragging factors, and fix actions.
@@ -183,27 +184,43 @@ router.get("/health-score", async (_req, res) => {
     // ── Dimension 3: Catalog Freshness (20 pts) ──
     // Expected: at least 1 successful cycle every 6 hours (4/day = 28/week)
     const expectedCyclesPerWeek = 28;
-    const last7Successful = last7.filter((c) => c.status === "completed").length;
+    const listingSuccessStatuses = new Set([
+      "completed", // historical status: promotion completed, sale unverified
+      "listed",
+      "awaiting_sale",
+      "sold",
+    ]);
+    const last7Successful = last7.filter((c) =>
+      listingSuccessStatuses.has(c.status ?? ""),
+    ).length;
     const freshnessSignal = Math.min(
       last7Successful / expectedCyclesPerWeek,
       1,
     );
     const freshnessScore = Math.round(freshnessSignal * 20);
 
-    // ── Dimension 4: Payout Velocity (15 pts) ──
-    // plays → downloads conversion across last 14 days
+    // ── Dimension 4: Completed marketplace sales (15 pts) ──
+    // Only cycles linked to a settled marketplace order count as sales.
     const totalPlays = recentCycles.reduce((s, c) => s + (c.plays ?? 0), 0);
     const totalDownloads = recentCycles.reduce(
       (s, c) => s + (c.downloads ?? 0),
       0,
     );
-    const conversionRate =
-      totalPlays > 0
-        ? Math.min(totalDownloads / (totalPlays || 1), 0.1) / 0.1
-        : 0;
-    const velocityScore = Math.round(conversionRate * 15);
+    const last7CompletedSales = last7.filter((c) => c.status === "sold").length;
+    const prev7CompletedSales = prev7.filter((c) => c.status === "sold").length;
+    let saleVelocitySignal: number;
+    if (last7CompletedSales === 0 && prev7CompletedSales === 0) {
+      saleVelocitySignal = 0;
+    } else if (prev7CompletedSales === 0) {
+      saleVelocitySignal = 1;
+    } else {
+      saleVelocitySignal =
+        Math.min(last7CompletedSales / prev7CompletedSales, 2) / 2;
+    }
+    const saleVelocityScore = Math.round(saleVelocitySignal * 15);
 
-    const totalScore = successScore + momentumScore + freshnessScore + velocityScore;
+    const totalScore =
+      successScore + momentumScore + freshnessScore + saleVelocityScore;
 
     // ── Dragging factors + fix actions ──
     const draggingFactors: Array<{ dimension: string; message: string; fix: string; fixAction: string }> = [];
@@ -212,7 +229,7 @@ router.get("/health-score", async (_req, res) => {
       const failCount = (state?.consecutiveFailures ?? 0);
       draggingFactors.push({
         dimension: "Success Rate",
-        message: `Only ${Math.round(successRate * 100)}% of cycles complete (${failCount} consecutive failures)`,
+        message: `Only ${Math.round(successRate * 100)}% of cycles create a marketplace listing (${failCount} consecutive failures)`,
         fix: "Run a manual cycle to reset failures",
         fixAction: "run-now",
       });
@@ -236,12 +253,15 @@ router.get("/health-score", async (_req, res) => {
         fixAction: "enable",
       });
     }
-    if (velocityScore < 9) {
+    if (saleVelocityScore < 9) {
       draggingFactors.push({
-        dimension: "Payout Velocity",
-        message: `${Math.round(conversionRate * 10)}% plays→downloads conversion (target: 10%)`,
-        fix: "Adjust pricing tiers — beats may be over-priced for current audience",
-        fixAction: "run-now",
+        dimension: "Marketplace Sale Velocity",
+        message:
+          last7CompletedSales > 0 || prev7CompletedSales > 0
+            ? `${last7CompletedSales} completed marketplace sale${last7CompletedSales === 1 ? "" : "s"} this week; ${prev7CompletedSales} the prior week`
+            : "No completed marketplace sales in the last 14 days",
+        fix: "Review marketplace listing visibility and pricing; another generation cycle cannot guarantee a buyer",
+        fixAction: "review-marketplace",
       });
     }
 
@@ -280,10 +300,10 @@ router.get("/health-score", async (_req, res) => {
           label: "Catalog Freshness",
         },
         payoutVelocity: {
-          score: velocityScore,
+          score: saleVelocityScore,
           max: 15,
-          signal: conversionRate,
-          label: "Payout Velocity",
+          signal: saleVelocitySignal,
+          label: "Marketplace Sale Velocity",
         },
       },
       draggingFactors,
@@ -294,6 +314,8 @@ router.get("/health-score", async (_req, res) => {
         last7RevenueCents: last7Revenue,
         prev7RevenueCents: prev7Revenue,
         last7Successful,
+        last7CompletedSales,
+        prev7CompletedSales,
         totalPlays,
         totalDownloads,
       },

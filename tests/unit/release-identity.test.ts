@@ -5,7 +5,22 @@ import {
   normalizedUpc,
   releaseArtistTitleKey,
   mergeTrackMetadata,
+  buildCrossTableBackfillPatch,
 } from "../../server/services/releaseIdentity.js";
+
+describe("catalog backfill enrichment", () => {
+  it("persists new track details even without gaining a track or any other field", () => {
+    const existing = { metadata: {
+      tracks: [{ title: "Track", trackNumber: 1 }],
+    } };
+    const patch = buildCrossTableBackfillPatch(existing, {
+      tracks: [{ title: "Track", trackNumber: 1, isrc: "USABC2400001", duration: 123 }],
+    });
+    expect(patch?.metadata.tracks).toEqual([
+      { title: "Track", trackNumber: 1, isrc: "USABC2400001", duration: 123 },
+    ]);
+  });
+});
 
 // Pure-function tests, no mocking: releaseIdentity.ts is the single shared
 // source of truth every catalog-import entry point uses to decide "is this

@@ -99,8 +99,11 @@ PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.mjs"
 PREBUILT_CLUSTER="dist/cluster.mjs"
 
-if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
-  echo "==> FAST PATH: all pre-built artifacts present"
+# A checked-in dist/ can predate source fixes. File existence is not evidence
+# of freshness: compile whenever source is available. Keep the historical
+# artifact-only path for images deliberately shipped without source.
+if [ ! -d client ] && [ ! -d server ] && [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
+  echo "==> FAST PATH: artifact-only input (no application source present)"
   echo "   dist/public/, dist/index.mjs, dist/cluster.mjs ready."
 
   # ── Binary assets ──────────────────────────────────────────────────────────
@@ -148,7 +151,7 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
 
 else
   # ─── SLOW PATH: full compile (matches original `npm run build` behaviour) ───
-  echo "==> SLOW PATH: one or more pre-built artifacts missing — running full build"
+  echo "==> COMPILE PATH: source present or pre-built artifacts missing — building current application"
   [ ! -f "$PREBUILT_FRONTEND" ] && echo "   missing: $PREBUILT_FRONTEND"
   [ ! -f "$PREBUILT_SERVER"   ] && echo "   missing: $PREBUILT_SERVER"
   [ ! -f "$PREBUILT_CLUSTER"  ] && echo "   missing: $PREBUILT_CLUSTER"

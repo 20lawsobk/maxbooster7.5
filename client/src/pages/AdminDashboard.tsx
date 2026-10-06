@@ -2169,22 +2169,28 @@ function BeatMoneyLoopTab() {
         toast({
           title: "Beat Money Loop cycle started",
           description:
-            "Generation is running in the background. This page refreshes automatically with its progress.",
+            "Beat generation, marketplace listing, and organic social promotion are running. This page refreshes with their status; only a completed marketplace order counts as a sale.",
         });
         refetch();
         return;
       }
       const r = data?.result;
       const title =
-        r?.status === "completed"
-          ? "Cycle completed — beat listed & ads posted"
-          : r?.status === "listed"
-            ? "Beat listed — ads NOT posted"
-            : "Cycle finished";
+        r?.status === "sold"
+          ? "Marketplace sale completed"
+          : r?.status === "awaiting_sale"
+            ? "Beat listed — awaiting marketplace sale"
+            : r?.status === "failed"
+              ? "Cycle failed"
+              : "Cycle finished";
+      const promotionSummary =
+        r?.advertised === true
+          ? `Social promotion posted${r.campaignId ? ` (campaign ${r.campaignId.slice(0, 8)})` : ""}.`
+          : r?.advertised === false
+            ? `Social promotion not posted: ${r.note || "no successful post was confirmed"}.`
+            : "Social promotion status not confirmed.";
       const description = r?.beatId
-        ? r.status === "listed"
-          ? `Beat ${r.beatId.slice(0, 8)} listed in ${r.durationMs}ms. Ads not sent: ${r.note || "no connected social accounts"}`
-          : `Beat ${r.beatId.slice(0, 8)} listed${r.campaignId ? `, campaign ${r.campaignId.slice(0, 8)} posted` : ""} in ${r.durationMs}ms`
+        ? `${r.status === "sold" ? "A completed marketplace order was recorded for" : "No completed marketplace sale has been recorded for"} beat ${r.beatId.slice(0, 8)}. ${promotionSummary} Cycle duration: ${r.durationMs}ms.${r.error ? ` Cycle warning: ${r.error}.` : ""}`
         : r?.error || "See cycles table for details";
       toast({
         title,
@@ -2275,9 +2281,10 @@ function BeatMoneyLoopTab() {
           <Alert className="mb-4">
             <AlertDescription>
               Autonomous: scan trending music context → generate beat → list on
-              marketplace at competitive price → trigger organic ad campaign
-              (MaxCore/PDIM, no paid spend) → analyse → repeat. Cadence adapts
-              to industry confidence. Admin-only.
+              the marketplace at a competitive price → optional organic
+              promotion (MaxCore/PDIM, no paid spend) → wait for a completed
+              marketplace order before marking the cycle sold → analyse →
+              repeat. Listing or promotion alone is not a sale. Admin-only.
             </AlertDescription>
           </Alert>
 
@@ -2291,7 +2298,8 @@ function BeatMoneyLoopTab() {
                 {status.totalCycles}
               </div>
               <div className="text-xs text-gray-500">
-                {status.successfulCycles} ok · {status.failedCycles} failed
+                {status.successfulCycles} listings created ·{" "}
+                {status.failedCycles} failed
               </div>
             </div>
             <div>
@@ -2352,13 +2360,14 @@ function BeatMoneyLoopTab() {
                 <TableRow>
                   <TableHead>Started</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Social promotion</TableHead>
                   <TableHead>Trigger</TableHead>
                   <TableHead>Beat</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Plays / DLs</TableHead>
+                  <TableHead>Marketplace plays / DLs</TableHead>
                   <TableHead>Revenue</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Error</TableHead>
+                  <TableHead>Cycle / promotion issue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2370,15 +2379,40 @@ function BeatMoneyLoopTab() {
                     <TableCell>
                       <Badge
                         variant={
-                          c.status === "completed"
+                          c.status === "sold"
                             ? "default"
                             : c.status === "failed"
                               ? "destructive"
                               : "secondary"
                         }
                       >
-                        {c.status}
+                        {c.status === "sold"
+                          ? "Marketplace sale completed"
+                          : c.status === "awaiting_sale"
+                            ? "Awaiting marketplace sale"
+                            : c.status === "completed"
+                              ? "Promotion finished — sale unverified"
+                              : c.status === "listed"
+                                ? "Listed — sale unverified"
+                                : c.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {c.errorMessage?.startsWith(
+                        "Social promotion not posted:",
+                      )
+                        ? "Not posted"
+                        : c.status === "completed"
+                          ? "Posted (historical)"
+                          : c.status === "listed"
+                            ? "Not posted (historical)"
+                          : c.status === "advertising"
+                            ? "In progress"
+                            : c.campaignId
+                              ? "Posted"
+                              : c.status === "failed"
+                                ? "Not confirmed"
+                                : "Pending"}
                     </TableCell>
                     <TableCell className="text-xs">{c.triggeredBy}</TableCell>
                     <TableCell className="text-xs max-w-xs truncate">

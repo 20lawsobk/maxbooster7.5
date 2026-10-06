@@ -61,6 +61,25 @@ vi.mock("../../server/services/advancedUrlParser.js", () => ({
     toContentBrief: mockToContentBrief,
   },
 }));
+const { mockGetKnowledgeContext } = vi.hoisted(() => ({
+  mockGetKnowledgeContext: vi.fn(),
+}));
+vi.mock("../../server/services/autopilotKnowledgeBaseService.js", () => ({
+  autopilotKnowledgeBaseService: {
+    getGenerationContext: mockGetKnowledgeContext,
+  },
+  attachKnowledgeContext: (context: unknown, knowledge: unknown) => {
+    if (!knowledge) return context;
+    return {
+      ...(context && typeof context === "object" && !Array.isArray(context)
+        ? context
+        : context === undefined
+          ? {}
+          : { callerContext: context }),
+      userKnowledgeBase: knowledge,
+    };
+  },
+}));
 
 import { AutopilotEngine } from "../../server/autopilot-engine.js";
 
@@ -111,6 +130,7 @@ const JOB = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGetKnowledgeContext.mockResolvedValue(undefined);
   mockGenerate.mockResolvedValue({
     scoring: { overall: 8.5 },
     viralPotential: { score: 7.2 },
@@ -170,6 +190,34 @@ describe("AutopilotEngine generateAdvancedContent request — URL-brief additivi
     expect(obj.promotionContext).toBe("new release out now");
     expect(obj.topic).toBe("Brief Topic");
     expect(obj.contentType).toBe("promotional");
+  });
+
+  it("passes the current user's saved reference context to MaxCore without replacing existing context", async () => {
+    const priv = newEngine();
+    const userKnowledgeBase = {
+      purpose: "private reference facts",
+      sources: [{ title: "Brand guide", referenceText: "Use an energetic voice." }],
+    };
+    mockGetKnowledgeContext.mockResolvedValueOnce(userKnowledgeBase);
+
+    await priv.generateContentForAutopilot({
+      topic: "new single",
+      platform: "Instagram",
+      brandVoice: "energetic",
+      contentType: "announcements",
+      targetAudience: "fans",
+      businessGoals: ["brand awareness"],
+      context: { campaignId: "campaign-1" },
+    });
+
+    expect(mockGetKnowledgeContext).toHaveBeenCalledWith("test-user", {
+      topic: "new single",
+      platform: "Instagram",
+    });
+    expect(lastGenObj().context).toEqual({
+      campaignId: "campaign-1",
+      userKnowledgeBase,
+    });
   });
 });
 

@@ -145,6 +145,20 @@ describe("mounted Social Media URL UI wiring", () => {
     expect(source).toContain("data.generatedContent");
     expect(source).toContain("data.failedPlatforms");
 
+    const urlMutationStart = source.indexOf(
+      'apiRequest("POST", "/api/social/generate-from-url"',
+    );
+    const urlMutationEnd = source.indexOf(
+      "const mediaResult = await mediaResponse.json()",
+      urlMutationStart,
+    );
+    const urlMutation = source.slice(urlMutationStart, urlMutationEnd);
+    expect(urlMutation).toContain('modality: "text"');
+    expect(urlMutation).toContain("socialResult.generatedContent");
+    expect(urlMutation).toContain("socialResult.metadata");
+    expect(urlMutation).not.toContain('modality: "url"');
+    expect(urlMutation).not.toContain("payload: data.url");
+
     const backendSource = await import("node:fs/promises").then((fs) =>
       fs.readFile("server/routes/socialMedia.ts", "utf8"),
     );
@@ -155,7 +169,11 @@ describe("mounted Social Media URL UI wiring", () => {
     );
     const handler = backendSource.slice(handlerStart, handlerEnd);
     expect(handler).toContain("generateSocialUrlWithMaxCore");
+    expect(handler).toContain("verifiedSourceContext");
+    expect(handler).toContain("Untrusted source-page metadata");
     expect(handler).toContain("failedPlatforms");
+    expect(handler).not.toContain("firstPartySource && format !==");
+    expect(handler).not.toContain("supports text drafts only");
     expect(handler).not.toContain("getUnifiedAI()");
   });
 });

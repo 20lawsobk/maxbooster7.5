@@ -18,3 +18,13 @@ Nix package copies can inherit read-only directory permissions, preventing clean
 make temporary copies writable without modifying the store. Run pnpm version
 checks outside this npm-managed workspace: project-manager enforcement can reject
 even `pnpm --version` here. Runtime VM sizing is not proof of build CPU/RAM.
+
+Avoid unbounded shell glob expansion over the lazy-mounted Nix store before
+probing the known PATH executable. Resolve explicit immutable exec targets in
+package-manager wrappers before treating them as package roots.
+
+**Why:** Bootstrap hung before its first Node probe while expanding the store;
+bounding that search then exposed a working npm hidden behind a shell wrapper.
+
+**How to apply:** Probe known tools first, bound fallback discovery in a child
+process with a kill deadline, and verify actual package versions before cleanup.

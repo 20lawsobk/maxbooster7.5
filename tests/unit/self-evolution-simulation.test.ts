@@ -57,8 +57,23 @@ vi.mock("../../server/services/autopilotLearningService.js", () => ({
   },
 }));
 vi.mock("../../server/platform-apis.js", () => ({ platformAPI: {} }));
+const { generationMocks } = vi.hoisted(() => ({
+  generationMocks: {
+    generateAdvancedContent: vi.fn(),
+    getKnowledgeContext: vi.fn(),
+  },
+}));
 vi.mock("../../server/services/advancedSocialAIService.js", () => ({
-  advancedSocialAIService: { generateAdvancedContent: vi.fn() },
+  advancedSocialAIService: {
+    generateAdvancedContent: generationMocks.generateAdvancedContent,
+  },
+}));
+vi.mock("../../server/services/autopilotKnowledgeBaseService.js", () => ({
+  autopilotKnowledgeBaseService: {
+    getGenerationContext: generationMocks.getKnowledgeContext,
+  },
+  attachKnowledgeContext: (context: unknown, knowledge: unknown) =>
+    knowledge ? { ...(context as object), userKnowledgeBase: knowledge } : context,
 }));
 vi.mock("../../server/services/adaptiveGenerationEngine.js", () => ({
   recordOutcome: vi.fn(),
@@ -139,6 +154,15 @@ function upgrade(
 beforeEach(() => {
   resetSingletons();
   learnedTimes.mockResolvedValue([]);
+  generationMocks.getKnowledgeContext.mockReset().mockResolvedValue(undefined);
+  generationMocks.generateAdvancedContent.mockReset().mockResolvedValue({
+    primary: {
+      body: "A post about the new release.",
+      hashtags: ["#newmusic"],
+      hook: "New music is here",
+      callToAction: "Listen now",
+    },
+  });
   vi.restoreAllMocks();
 });
 
@@ -147,6 +171,37 @@ afterEach(() => {
 });
 
 describe("isolated real self-evolution simulation", () => {
+  it("uses the requesting autonomous account's saved knowledge for generation", async () => {
+    const privateReferences = {
+      purpose: "private reference context",
+      sources: [{ title: "Brand guide", referenceText: "Use an energetic tone." }],
+    };
+    generationMocks.getKnowledgeContext.mockResolvedValueOnce(privateReferences);
+    const autonomous = new AutonomousAutopilot("autonomous-owner") as any;
+
+    await autonomous.autonomousContentGeneration({
+      platform: "Instagram",
+      topic: "new single",
+      brandPersonality: "energetic",
+      targetAudience: "fans",
+      businessVertical: "music",
+      objectives: ["brand awareness"],
+    });
+
+    expect(generationMocks.getKnowledgeContext).toHaveBeenCalledWith(
+      "autonomous-owner",
+      { topic: "new single", platform: "Instagram" },
+    );
+    expect(
+      generationMocks.generateAdvancedContent,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "autonomous-owner",
+        context: { userKnowledgeBase: privateReferences },
+      }),
+    );
+  });
+
   it("rejects a broken scheduler before issuing a health probe", async () => {
     const engine = selfEvolution as unknown as InternalEngine;
     const candidate = upgrade("broken-schedule", "posting_optimization", {

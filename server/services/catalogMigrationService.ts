@@ -623,7 +623,7 @@ async function hydrateLabelGridRelease(
   const artistName = lgRelease?.artist;
 
   // Ensure we have the full track listing.
-  const lgTracks: LabelGridCatalogTrack[] = lgRelease?.tracks ?? [];
+  let lgTracks: LabelGridCatalogTrack[] = lgRelease?.tracks ?? [];
 
   let upc = lgRelease?.upc ?? null;
   let artwork = lgRelease?.coverUrl

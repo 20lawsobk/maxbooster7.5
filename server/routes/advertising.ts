@@ -2216,15 +2216,18 @@ router.post(
               (value) => typeof value === "string" && value.trim(),
             ) as string)
           : "instagram";
+      const campaignGoal =
+        typeof goal === "string" &&
+        ["streams", "merch", "fanbase", "tickets", "downloads", "conversions"].includes(
+          goal,
+        )
+          ? goal
+          : ["beat", "storefront"].includes(source.contentType)
+            ? "conversions"
+            : "streams";
       const campaignRequest = buildAdGenerationRequest(userId, source, {
         platform: selectedPlatform,
-        goal:
-          typeof goal === "string" &&
-          ["streams", "merch", "fanbase", "tickets", "downloads", "conversions"].includes(
-            goal,
-          )
-            ? goal
-            : "streams",
+        goal: campaignGoal,
         adType:
           typeof ad_type === "string" && ad_type.trim() ? ad_type : "video",
         instruction: [brand_notes, campaign_notes]
@@ -2256,9 +2259,163 @@ router.post(
         );
       }
 
+      const rawCreatives = (campaign as Record<string, unknown>).creatives;
+      if (
+        !Array.isArray(rawCreatives) ||
+        rawCreatives.length === 0 ||
+        rawCreatives.length > 20
+      ) {
+        throw new AIUnavailableError(
+          "advertising campaign generation returned an invalid creative count",
+        );
+      }
+      const creatives = rawCreatives.map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw new AIUnavailableError(
+            "advertising campaign generation returned an invalid creative",
+          );
+        }
+        const creative = item as Record<string, unknown>;
+        const textField = (value: unknown, name: string) => {
+          if (value == null || value === "") return "";
+          if (typeof value !== "string" || value.length > 4000) {
+            throw new AIUnavailableError(
+              `advertising campaign generation returned invalid ${name}`,
+            );
+          }
+          return value.trim();
+        };
+        const hook = textField(creative.hook, "creative hook");
+        const headline = textField(creative.headline, "creative headline");
+        const body = textField(creative.body, "creative body");
+        const cta = textField(creative.cta, "creative call to action");
+        const sourceLabel = textField(creative.source, "creative source");
+        if (![hook, headline, body, cta].some(Boolean)) {
+          throw new AIUnavailableError(
+            "advertising campaign generation returned empty creative copy",
+          );
+        }
+        if (!sourceLabel || /template|fallback|heuristic/i.test(sourceLabel)) {
+          throw new AIUnavailableError(
+            "advertising campaign generation did not return model-generated copy",
+          );
+        }
+        return {
+          hook,
+          headline,
+          body,
+          cta,
+          source: sourceLabel,
+          contentType:
+            typeof creative.content_type === "string"
+              ? creative.content_type.slice(0, 80)
+              : typeof (campaign as any).ad_type === "string"
+                ? (campaign as any).ad_type.slice(0, 80)
+                : "text",
+        };
+      });
+      const creativeTextBytes = creatives.reduce(
+        (total, creative) =>
+          total +
+          Buffer.byteLength(
+            `${creative.hook}\n${creative.headline}\n${creative.body}\n${creative.cta}\n${creative.source}`,
+            "utf8",
+          ),
+        0,
+      );
+      if (creativeTextBytes > 48 * 1024) {
+        throw new AIUnavailableError(
+          "advertising campaign generation returned too much creative text",
+        );
+      }
+      const campaignNameValue =
+        (campaign as any).name ??
+        (campaign as any).campaign_name ??
+        (campaign as any).title;
+      const campaignName =
+        typeof campaignNameValue === "string" && campaignNameValue.trim()
+          ? campaignNameValue.trim().slice(0, 160)
+          : `${source.title} campaign`.slice(0, 160);
+      const generatedCampaign = {
+        platform: selectedPlatform,
+        goal: campaignGoal,
+        creatives,
+      };
+
+      // Keep the generated campaign inactive until the user reviews and
+      // explicitly activates it. Persist both the campaign and its model copy
+      // so the Generate button produces a durable result instead of a toast.
+      const saved = await db.transaction(async (tx) => {
+        const [savedCampaign] = await tx
+          .insert(adCampaigns)
+          .values({
+            userId,
+            name: campaignName,
+            platform: selectedPlatform,
+            objective: campaignGoal,
+            budget: 0,
+            dailyBudget: null,
+            startDate: null,
+            endDate: null,
+            targetAudience: null,
+            creativeIds: [],
+            status: "draft",
+            metadata: {
+              sourceSystem: "MaxCoreAI",
+              sourceContentType: source.contentType,
+              sourceContentId: source.contentId,
+              sourceTitle: source.title,
+              generatedCampaign,
+            },
+          })
+          .returning();
+        if (!savedCampaign) {
+          throw new Error("Campaign draft could not be saved");
+        }
+
+        const savedCreatives = await tx
+          .insert(adCreatives)
+          .values(
+            creatives.map((creative, index) => ({
+              userId,
+              campaignId: savedCampaign.id,
+              name:
+                creative.headline ||
+                creative.hook ||
+                `${campaignName} — creative ${index + 1}`,
+              type: creative.contentType,
+              headline: creative.headline || creative.hook || null,
+              description: [creative.body, creative.cta]
+                .filter(Boolean)
+                .join("\n\n") || null,
+              callToAction: creative.cta || null,
+              landingUrl: source.sourceUrl,
+              status: "draft",
+              variants: {
+                hook: creative.hook,
+                source: creative.source,
+              },
+            }))
+          )
+          .returning();
+        const creativeIds = savedCreatives.map((creative) => creative.id);
+        const [linkedCampaign] = await tx
+          .update(adCampaigns)
+          .set({ creativeIds })
+          .where(eq(adCampaigns.id, savedCampaign.id))
+          .returning();
+        if (!linkedCampaign) {
+          throw new Error("Generated creatives could not be linked to campaign");
+        }
+        return { campaign: linkedCampaign, creatives: savedCreatives };
+      });
+
       return res.json({
         success: true,
-        campaign,
+        campaign: saved.campaign,
+        creatives: saved.creatives,
+        generatedCampaign,
+        savedAsDraft: true,
         contentType: source.contentType,
         source: source.summary,
         sourceSystem: "MaxCoreAI",

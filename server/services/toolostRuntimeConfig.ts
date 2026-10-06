@@ -1,7 +1,12 @@
-interface ToolostEnvironment {
+import {
+  getToolostApiEnvironment,
+  type ToolostApiEnvironment,
+} from "./toolostEnvironment.js";
+
+interface ToolostRuntimeEnvironment extends NodeJS.ProcessEnv {
   TOOLOST_ENVIRONMENT?: string;
   TOOLOST_REDIRECT_URI?: string;
-  TOOLOST_SANDBOX_REDIRECT_URI?: string;
+  TOOLOST_SANDBOX_REDIRECT_URL?: string;
 }
 
 /** Shared authenticated distributor selection for HTTP and background callers.
@@ -13,9 +18,10 @@ export async function getDistributionToolostService(userId: string) {
     import("../storage.js"),
     import("./toolost-service.js"),
   ]);
+  const environment = getToolostApiEnvironment();
   const connection =
-    (await storage.getToolostConnection(userId)) ??
-    (await storage.getAdminToolostConnection());
+    (await storage.getToolostConnection(userId, environment)) ??
+    (await storage.getAdminToolostConnection(environment));
   if (!connection) {
     throw new Error(
       "Too Lost is not connected. Connect a Too Lost distribution account before submitting releases.",
@@ -25,20 +31,47 @@ export async function getDistributionToolostService(userId: string) {
 }
 
 export function getToolostRedirectUri(
-  env: ToolostEnvironment = process.env as ToolostEnvironment,
+  env: ToolostRuntimeEnvironment = process.env,
 ): string {
-  const configured =
-    env.TOOLOST_ENVIRONMENT === "sandbox"
-      ? env.TOOLOST_SANDBOX_REDIRECT_URI?.trim()
-      : env.TOOLOST_REDIRECT_URI?.trim();
-
-  if (configured) return configured;
-
+  const environment: ToolostApiEnvironment = getToolostApiEnvironment(env);
   const variable =
-    env.TOOLOST_ENVIRONMENT === "sandbox"
-      ? "TOOLOST_SANDBOX_REDIRECT_URI"
+    environment === "sandbox"
+      ? "TOOLOST_SANDBOX_REDIRECT_URL"
       : "TOOLOST_REDIRECT_URI";
-  throw new Error(
-    `Too Lost OAuth callback URL is not configured for the selected API environment (${variable}).`,
-  );
+  const configured = env[variable]?.trim();
+
+  if (!configured) {
+    throw new Error(
+      `Too Lost OAuth callback URL is not configured for the selected API environment (${variable}).`,
+    );
+  }
+
+  if (environment === "sandbox") {
+    let callback: URL;
+    try {
+      callback = new URL(configured);
+    } catch {
+      throw new Error(
+        `Too Lost sandbox OAuth callback URL (${variable}) must be a valid HTTPS URL.`,
+      );
+    }
+    const callbackPath = callback.pathname.replace(/\/+$/, "");
+    if (callback.protocol !== "https:") {
+      throw new Error(
+        `Too Lost sandbox OAuth callback URL (${variable}) must use HTTPS.`,
+      );
+    }
+    if (callbackPath !== "/api/distribution/toolost/callback") {
+      throw new Error(
+        `Too Lost sandbox OAuth callback URL (${variable}) must use /api/distribution/toolost/callback.`,
+      );
+    }
+    if (callback.hash) {
+      throw new Error(
+        `Too Lost sandbox OAuth callback URL (${variable}) cannot include a fragment.`,
+      );
+    }
+  }
+
+  return configured;
 }

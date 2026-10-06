@@ -36,6 +36,7 @@ import {
   ThreadsIcon,
 } from "@/components/ui/brand-icons";
 import { AutopilotPreferences } from "./AutopilotPreferences";
+import { AutopilotKnowledgeBase } from "./AutopilotKnowledgeBase";
 
 interface AutopilotConfig {
   enabled: boolean;
@@ -429,11 +430,12 @@ export function AutopilotDashboard() {
             </CardHeader>
             <CardContent>
               <Tabs value={activeConfigTab} onValueChange={setActiveConfigTab}>
-                <TabsList className="grid grid-cols-5 mb-4">
+                <TabsList className="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
                   <TabsTrigger value="basic">Basic</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="platforms">Platforms</TabsTrigger>
                   <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                  <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
                   <TabsTrigger value="preferences">My Preferences</TabsTrigger>
                 </TabsList>
 
@@ -868,6 +870,10 @@ export function AutopilotDashboard() {
 
                 <TabsContent value="preferences" className="space-y-4">
                   <AutopilotPreferences />
+                </TabsContent>
+
+                <TabsContent value="knowledge" className="space-y-4">
+                  <AutopilotKnowledgeBase />
                 </TabsContent>
               </Tabs>
             </CardContent>

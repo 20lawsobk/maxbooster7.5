@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { build as esBuild } from "esbuild";
+import { buildServerBundles } from "./lib/serverBundles.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,33 +18,9 @@ async function main() {
   execSync("npx vite build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
 
-  console.log("==> Bundling server with esbuild → dist/index.mjs...");
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/index.ts")],
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    outfile: path.resolve(root, "dist/index.mjs"),
-    packages: "external",
-    sourcemap: false,
-    minify: false,
-  });
-  console.log("   ✅ Server bundle → dist/index.mjs");
-
-  console.log("==> Bundling cluster entry with esbuild → dist/cluster.mjs...");
-  await esBuild({
-    entryPoints: [path.resolve(root, "server/cluster.ts")],
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    outfile: path.resolve(root, "dist/cluster.mjs"),
-    packages: "external",
-    sourcemap: false,
-    minify: false,
-  });
-  console.log("   ✅ Cluster bundle → dist/cluster.mjs");
+  console.log("==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...");
+  await buildServerBundles(root);
+  console.log("   ✅ All runtime entry bundles built from current source");
 
   console.log("\n✅ Build complete.");
 

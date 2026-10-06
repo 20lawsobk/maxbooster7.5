@@ -30,6 +30,20 @@ describe("Advertisement generation wiring", () => {
     expect(routeSource).not.toContain("unifiedAIController");
   });
 
+  it("persists generated campaign copy as an inactive draft and renders it", () => {
+    expect(routeSource).toContain(".insert(adCampaigns)");
+    expect(routeSource).toContain(".insert(adCreatives)");
+    expect(routeSource).toContain("status: \"draft\"");
+    expect(routeSource).toContain("savedAsDraft: true");
+    expect(routeSource).toContain("db.transaction(async (tx)");
+    expect(pageSource).toContain('data-testid="generated-campaign-preview"');
+    expect(pageSource).toContain("setCreatedCampaign(data)");
+    expect(pageSource).toContain("Draft — not active");
+    expect(pageSource).toContain(
+      "The campaign and copy are saved. Nothing has been published or",
+    );
+  });
+
   it("requires complete MaxCore output for each requested text variant", () => {
     expect(routeSource).toContain(
       "advertising campaign generation returned no campaign",

@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getToolostRedirectUri, getDistributionToolostService } from "../services/toolostRuntimeConfig";
+import {
+  getDistributionToolostService,
+  getToolostRedirectUri,
+} from "../services/toolostRuntimeConfig";
+import { getToolostApiEnvironment } from "../services/toolostEnvironment.js";
 import { createHash, randomBytes } from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import type { Request, Response } from "express";
@@ -136,12 +140,17 @@ async function getCatalogToolostConnection(userId: string): Promise<{
   connection: Awaited<ReturnType<typeof storage.getToolostConnection>>;
   source: "user" | "admin";
 } | null> {
-  const userConnection = await storage.getToolostConnection(userId);
+  const environment = getToolostApiEnvironment();
+  const userConnection = await storage.getToolostConnection(
+    userId,
+    environment,
+  );
   if (userConnection) {
     return { connection: userConnection, source: "user" };
   }
 
-  const adminConnection = await storage.getAdminToolostConnection();
+  const adminConnection =
+    await storage.getAdminToolostConnection(environment);
   if (adminConnection) {
     return { connection: adminConnection, source: "admin" };
   }
@@ -219,11 +228,23 @@ router.get("/toolost/status", requireAuth, async (req: Request, res: Response) =
     const userId = (req.user as AuthenticatedUser).id;
     const catalogConnection = await getCatalogToolostConnection(userId);
     const connection = catalogConnection?.connection;
+    let configurationError = toolostService.getOAuthConfigurationError();
+    if (!configurationError) {
+      try {
+        getToolostRedirectUri();
+      } catch (error) {
+        configurationError =
+          error instanceof Error
+            ? error.message
+            : "Too Lost OAuth callback URL is not configured for this environment.";
+      }
+    }
     res.json({
-      configured: toolostService.isOAuthConfigured(),
+      configured: configurationError === null,
+      configurationError,
       connected: !!connection,
       connectionSource: catalogConnection?.source ?? null,
-      environment: connection?.environment ?? null,
+      environment: getToolostApiEnvironment(),
       scope: connection?.scope ?? null,
       connectedAt: connection?.connectedAt ?? null,
       updatedAt: connection?.updatedAt ?? null,

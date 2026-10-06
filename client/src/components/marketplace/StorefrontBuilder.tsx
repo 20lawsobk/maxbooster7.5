@@ -762,10 +762,8 @@ export default function StorefrontBuilder() {
 
   // Sync claimed domain into state when query resolves
   useEffect(() => {
-    if (existingPlatformData.domain) {
-      setClaimedPlatformDomain(existingPlatformData.domain);
-    }
-  }, [existingPlatformData]);
+    setClaimedPlatformDomain(existingPlatformData?.domain ?? null);
+  }, [existingPlatformData, selectedStorefront?.id]);
 
   const claimPlatformDomainMutation = useMutation({
     mutationFn: (data: { sld: string; tld: string; storefrontId: string }) =>
@@ -2726,46 +2724,49 @@ export default function StorefrontBuilder() {
       )}
 
       <Dialog
-        open={showDeleteDialog}
+        open={showDeleteDialog && storefrontToDelete !== null}
         onOpenChange={(open) => {
           setShowDeleteDialog(open);
           if (!open) setStorefrontToDelete(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Storefront</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{storefrontToDelete.name}"? This
-              will permanently remove the storefront, all its customization, and
-              associated data. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setStorefrontToDelete(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (storefrontToDelete) {
-                  deleteStorefrontMutation.mutate(storefrontToDelete.id);
-                }
-              }}
-              disabled={deleteStorefrontMutation.isPending}
-            >
-              {deleteStorefrontMutation.isPending
-                ? "Deleting..."
-                : "Delete Storefront"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        {storefrontToDelete && (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Storefront</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{storefrontToDelete.name}"?
+                This will permanently remove the storefront, all its
+                customization, and associated data. This action cannot be
+                undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setStorefrontToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (storefrontToDelete) {
+                    deleteStorefrontMutation.mutate(storefrontToDelete.id);
+                  }
+                }}
+                disabled={deleteStorefrontMutation.isPending}
+              >
+                {deleteStorefrontMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Storefront"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
       </Dialog>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -2872,7 +2873,7 @@ export default function StorefrontBuilder() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {templates.map((template) => {
-                    const colors = template.configuration?.colors;
+                    const colors = template.configuration?.colors ?? {};
                     const isSelected = createForm.templateId === template.id;
                     return (
                       <button

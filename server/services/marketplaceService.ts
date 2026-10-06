@@ -466,6 +466,38 @@ export class MarketplaceService {
   }
 
   /**
+   * A completed marketplace checkout closes a Beat Money Loop cycle only when
+   * its listing has this service's provenance marker. The service revalidates
+   * the order, settlement source, and listing before changing cycle state.
+   */
+  private async _recordBeatMoneyLoopSale(
+    orderId: string,
+    orderRow: Record<string, any>,
+  ): Promise<void> {
+    const listingId =
+      typeof orderRow.listingId === "string" ? orderRow.listingId : null;
+    if (!listingId) return;
+
+    const listing = await storage.getBeatListing(listingId);
+    if (!listing) {
+      logger.warn(
+        { orderId, listingId },
+        "[Marketplace] Completed order has no listing row; Beat Money Loop sale reconciliation skipped",
+      );
+      return;
+    }
+    const metadata =
+      listing.metadata && typeof listing.metadata === "object"
+        ? listing.metadata
+        : null;
+    if (metadata?.source !== "beat-money-loop") return;
+
+    const { beatMoneyLoopService } =
+      await import("./beatMoneyLoopService.js");
+    await beatMoneyLoopService.recordMarketplaceSale(orderId);
+  }
+
+  /**
    * Browse marketplace listings with filters
    */
   async browseListings(filters: {
@@ -566,6 +598,7 @@ export class MarketplaceService {
         logger.info(
           `[Marketplace] processPayment: order ${orderId} already completed — reconciling notifications (idempotent replay)`,
         );
+        await this._recordBeatMoneyLoopSale(orderId, dbOrder);
         await this._deliverSaleNotifications(orderId, dbOrder);
         return toServiceOrder(dbOrder);
       }
@@ -660,6 +693,8 @@ export class MarketplaceService {
       // Completion is a fulfillment marker, not merely a provider payment marker.
       const updatedDBOrder = await storage.getOrder(orderId);
       if(!updatedDBOrder) throw new Error("Settled order disappeared");
+
+      await this._recordBeatMoneyLoopSale(orderId, updatedDBOrder);
 
       // Notifications are handled by _deliverSaleNotifications — non-fatal.
       await this._deliverSaleNotifications(orderId, updatedDBOrder);

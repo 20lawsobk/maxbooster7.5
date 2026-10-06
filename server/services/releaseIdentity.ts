@@ -256,14 +256,23 @@ export async function findExistingReleaseAcrossTables(
  * `upsertCatalogReleaseInTransaction`.
  */
 export function buildCrossTableBackfillPatch(
-  existing: { artworkUrl?: string | null; metadata: unknown },
+  existing: { artworkUrl?: string | null; releaseDate?: Date | string | null; metadata: unknown },
   incoming: {
     upc?: string | null;
     coverUrl?: string | null;
     platforms?: string[];
     tracks?: Array<Record<string, unknown>>;
+    artistName?: string;
+    releaseType?: string;
+    releaseDate?: string | null;
+    genre?: string;
+    trackCount?: number;
+    platformId?: string;
+    platformUrl?: string;
+    externalId?: string;
+    streamingStats?: Record<string, unknown>;
   },
-): { artworkUrl?: string; metadata: Record<string, unknown> } | null {
+): { artworkUrl?: string; releaseDate?: Date; metadata: Record<string, unknown> } | null {
   const existingMetadata = (existing.metadata || {}) as Record<
     string,
     unknown
@@ -296,27 +305,7 @@ export function buildCrossTableBackfillPatch(
   const incomingUpc = normalizedUpc(incoming.upc ?? undefined);
 
   const gainedCoverArt = Boolean(coverUrl) && !existing.artworkUrl;
-  const gainedPlatforms =
-    mergedPlatforms.length >
-    dedupeStrings([
-      ...(Array.isArray(existingMetadata.distributionPlatforms)
-        ? existingMetadata.distributionPlatforms
-        : []),
-      ...(Array.isArray(existingMetadata.platforms)
-        ? existingMetadata.platforms
-        : []),
-    ]).length;
-  const gainedTracks =
-    tracks !== null &&
-    tracks.length >
-      (Array.isArray(existingMetadata.tracks)
-        ? existingMetadata.tracks.length
-        : 0);
   const gainedUpc = !existingUpc && Boolean(incomingUpc);
-
-  if (!gainedCoverArt && !gainedPlatforms && !gainedTracks && !gainedUpc) {
-    return null;
-  }
 
   const patchMetadata: Record<string, unknown> = { ...existingMetadata };
   if (coverUrl) {
@@ -333,9 +322,61 @@ export function buildCrossTableBackfillPatch(
   if (gainedUpc) {
     patchMetadata.upc = incomingUpc;
   }
+  for (const [key, value] of Object.entries({
+    artistName: incoming.artistName,
+    releaseType: incoming.releaseType,
+    primaryGenre: incoming.genre,
+  })) {
+    if (value && (!patchMetadata[key] ||
+        (key === "primaryGenre" && patchMetadata[key] === "Other"))) {
+      patchMetadata[key] = value;
+    }
+  }
+  if (incoming.trackCount || tracks?.length) {
+    patchMetadata.trackCount = Math.max(
+      Number(existingMetadata.trackCount) || 0,
+      incoming.trackCount || 0,
+      tracks?.length || 0,
+    );
+  }
+  if (incoming.platformId) {
+    for (const key of ["originalPlatformLinks", "distributionPlatformLinks"]) {
+      if (incoming.platformUrl) {
+        patchMetadata[key] = {
+          [incoming.platformId]: incoming.platformUrl,
+          ...((existingMetadata[key] || {}) as Record<string, unknown>),
+        };
+      }
+    }
+    if (incoming.externalId) {
+      patchMetadata.sourceExternalIds = {
+        ...((existingMetadata.sourceExternalIds || {}) as Record<string, unknown>),
+        [incoming.platformId]: incoming.externalId,
+      };
+    }
+  }
+  if (incoming.streamingStats) {
+    const previous = (existingMetadata.streamingStats || {}) as Record<string, unknown>;
+    patchMetadata.streamingStats = {
+      ...incoming.streamingStats,
+      ...previous,
+      platforms: {
+        ...((incoming.streamingStats.platforms || {}) as Record<string, unknown>),
+        ...((previous.platforms || {}) as Record<string, unknown>),
+      },
+    };
+  }
+  const releaseDate = !existing.releaseDate && incoming.releaseDate
+    ? new Date(incoming.releaseDate)
+    : undefined;
+  const gainedDate = releaseDate && Number.isFinite(releaseDate.getTime());
+  // An existing track gaining an ISRC/duration matters even when the count is unchanged.
+  if (!gainedCoverArt && !gainedDate &&
+      JSON.stringify(patchMetadata) === JSON.stringify(existingMetadata)) return null;
 
   return {
     ...(gainedCoverArt ? { artworkUrl: coverUrl as string } : {}),
+    ...(gainedDate ? { releaseDate } : {}),
     metadata: patchMetadata,
   };
 }

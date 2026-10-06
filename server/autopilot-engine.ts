@@ -13,6 +13,10 @@ import {
 import {
   recordOutcome,
 } from "./services/adaptiveGenerationEngine.js";
+import {
+  attachKnowledgeContext,
+  autopilotKnowledgeBaseService,
+} from "./services/autopilotKnowledgeBaseService.js";
 
 interface AutopilotJob {
   id: string;
@@ -648,6 +652,11 @@ export class AutopilotEngine extends EventEmitter {
       } = evolutionConsumers.contentRequest(
         evolutionRegistry, params.platform, this.mapGoalsToObjective(params.businessGoals),
       );
+      const userKnowledgeBase =
+        await autopilotKnowledgeBaseService.getGenerationContext(this.userId, {
+          topic: params.topic,
+          platform: params.platform,
+        });
 
       // Use Advanced Social AI for GPT-5.2 level content generation
       const advancedResult =
@@ -678,7 +687,7 @@ export class AutopilotEngine extends EventEmitter {
           callToActionStrength,
           intent: params.intent,
           direction: params.direction,
-          context: params.context,
+          context: attachKnowledgeContext(params.context, userKnowledgeBase),
           awareness: params.awareness,
         });
 

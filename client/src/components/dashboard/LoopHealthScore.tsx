@@ -6,7 +6,7 @@
  *
  * Score dimensions:
  *   Success Rate (40 pts) · Revenue Momentum (25 pts) ·
- *   Catalog Freshness (20 pts) · Payout Velocity (15 pts)
+ *   Catalog Freshness (20 pts) · Marketplace Sale Velocity (15 pts)
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -56,6 +56,8 @@ interface HealthScoreData {
     last7RevenueCents: number;
     prev7RevenueCents: number;
     last7Successful: number;
+    last7CompletedSales: number;
+    prev7CompletedSales: number;
     totalPlays: number;
     totalDownloads: number;
   };

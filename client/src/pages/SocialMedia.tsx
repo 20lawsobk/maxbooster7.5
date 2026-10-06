@@ -353,6 +353,32 @@ interface CalendarStats {
   totalPublished?: number;
 }
 
+function getCalendarPostText(
+  content: CalendarPost["content"],
+): string {
+  if (typeof content === "string") {
+    try {
+      const parsed: unknown = JSON.parse(content);
+      if (parsed && typeof parsed === "object") {
+        const record = parsed as { text?: unknown; caption?: unknown };
+        if (typeof record.text === "string") return record.text;
+        if (typeof record.caption === "string") return record.caption;
+      }
+    } catch {
+      // Plain text is the normal representation; preserve it unchanged.
+    }
+    return content;
+  }
+  return content?.text ?? content?.caption ?? "";
+}
+
+function toDateTimeLocalInput(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 // Social Media Platforms
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
   {
@@ -672,14 +698,20 @@ export default function SocialMedia() {
     });
 
   // Calendar queries
-  const { data: calendarPosts = [] } = useQuery<
+  const {
+    data: calendarPosts = [],
+    isError: calendarPostsError,
+  } = useQuery<
     CalendarPost[] | { posts: CalendarPost[] }
   >({
     queryKey: ["/api/social/calendar"],
     enabled: !!user,
   });
 
-  const { data: calendarStats } =
+  const {
+    data: calendarStats,
+    isError: calendarStatsError,
+  } =
     useQuery<CalendarStats>({
       queryKey: ["/api/social/calendar/stats"],
       enabled: !!user,
@@ -1053,11 +1085,61 @@ export default function SocialMedia() {
       );
       const mediaResponse = await apiRequest("POST", "/api/multimodal/generate", {
         input: {
-          modality: "url",
-          payload: data.url,
+          modality: "text",
+          payload: (() => {
+            const sourceMetadata =
+              socialResult.metadata &&
+              typeof socialResult.metadata === "object"
+                ? socialResult.metadata
+                : {};
+            const copy = (Array.isArray(socialResult.generatedContent)
+              ? socialResult.generatedContent
+              : []
+            )
+              .map((item: any) =>
+                [
+                  `Platform: ${item.platform || "social"}`,
+                  item.extractedTitle
+                    ? `Source title: ${item.extractedTitle}`
+                    : "",
+                  item.hook ? `Hook: ${item.hook}` : "",
+                  item.body ? `Copy: ${item.body}` : "",
+                  item.cta ? `Call to action: ${item.cta}` : "",
+                  item.caption ? `Caption: ${item.caption}` : "",
+                  Array.isArray(item.hashtags) && item.hashtags.length
+                    ? `Hashtags: ${item.hashtags.join(" ")}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+              )
+              .join("\n\n");
+            const prompt = [
+              `Create a ${outputModality} social media asset from this verified page summary and MaxCore-generated copy. Keep factual details consistent; do not add claims that are not present.`,
+              `Source URL: ${data.url}`,
+              typeof sourceMetadata.title === "string"
+                ? `Source title: ${sourceMetadata.title}`
+                : "",
+              typeof sourceMetadata.description === "string"
+                ? `Source description: ${sourceMetadata.description}`
+                : "",
+              data.targetAudience
+                ? `Target audience: ${data.targetAudience}`
+                : "",
+              copy,
+            ]
+              .filter(Boolean)
+              .join("\n\n");
+            if (prompt.length > 12000) {
+              throw new Error(
+                "The generated source context is too large for one media request. Generate for fewer platforms or use text format.",
+              );
+            }
+            return prompt;
+          })(),
         },
         platforms: multimodalPlatforms,
-        intent: data.targetAudience || undefined,
+        intent: data.intent,
         direction: data.direction,
         context: data.context,
         awareness: data.awareness,
@@ -1282,15 +1364,16 @@ export default function SocialMedia() {
       postId: string;
       data: Partial<SchedulePostData>;
     }) => {
+      const { scheduledFor, ...postData } = data;
       const scheduledAt =
-        data.status === "scheduled" && data.scheduledFor
-          ? new Date(data.scheduledFor).toISOString()
+        data.status === "scheduled" && scheduledFor
+          ? new Date(scheduledFor).toISOString()
           : null;
       const response = await apiRequest(
         "PUT",
         `/api/social/calendar/${postId}`,
         {
-          ...data,
+          ...postData,
           platforms: data.platforms,
           scheduledAt,
           mediaType:
@@ -3344,6 +3427,23 @@ export default function SocialMedia() {
 
             {/* Calendar Tab */}
             <TabsContent value="calendar" className="space-y-6">
+              {calendarPostsError && (
+                <div
+                  role="alert"
+                  className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200"
+                >
+                  Calendar posts could not be loaded. Your calendar data has not
+                  been replaced with an empty result; refresh to retry.
+                </div>
+              )}
+              {calendarStatsError && (
+                <div
+                  role="alert"
+                  className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+                >
+                  Calendar statistics are temporarily unavailable.
+                </div>
+              )}
               {/* Batch Edit Panel — visible when posts are selected */}
               <BatchEditPanel
                 selectedCount={selectedCalendarPostIds.size}
@@ -3370,7 +3470,9 @@ export default function SocialMedia() {
                           This Week
                         </p>
                         <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                          {calendarStats?.upcomingThisWeek || 0}
+                          {calendarStatsError
+                            ? "—"
+                            : (calendarStats?.upcomingThisWeek ?? 0)}
                         </p>
                       </div>
                       <Calendar className="w-8 h-8 text-blue-600" />
@@ -3385,7 +3487,9 @@ export default function SocialMedia() {
                           Scheduled
                         </p>
                         <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                          {calendarStats?.totalScheduled || 0}
+                          {calendarStatsError
+                            ? "—"
+                            : (calendarStats?.totalScheduled ?? 0)}
                         </p>
                       </div>
                       <Clock className="w-8 h-8 text-green-600" />
@@ -3400,7 +3504,9 @@ export default function SocialMedia() {
                           Published
                         </p>
                         <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                          {calendarStats?.totalPublished || 0}
+                          {calendarStatsError
+                            ? "—"
+                            : (calendarStats?.totalPublished ?? 0)}
                         </p>
                       </div>
                       <CheckCircle className="w-8 h-8 text-purple-600" />
@@ -3451,22 +3557,14 @@ export default function SocialMedia() {
                   editingCalendarPost
                     ? {
                         title: editingCalendarPost.title,
-                        scheduledFor:
+                        scheduledFor: toDateTimeLocalInput(
                           editingCalendarPost.scheduledFor ||
-                          editingCalendarPost.scheduledAt
-                            ? new Date(
-                                editingCalendarPost.scheduledFor ||
-                                  editingCalendarPost.scheduledAt!,
-                              )
-                                .toISOString()
-                                .slice(0, 16)
-                            : new Date().toISOString().slice(0, 16),
+                            editingCalendarPost.scheduledAt ||
+                            new Date(),
+                        ),
                         platforms: editingCalendarPost.platforms || [],
                         postType: editingCalendarPost.postType || "post",
-                        content:
-                          typeof editingCalendarPost.content === "string"
-                            ? editingCalendarPost.content
-                            : "",
+                        content: getCalendarPostText(editingCalendarPost.content),
                         mediaUrls: editingCalendarPost.mediaUrls || [],
                         hashtags: editingCalendarPost.hashtags || [],
                         mentions: editingCalendarPost.mentions || [],

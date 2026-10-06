@@ -13,11 +13,12 @@
  *               same genre) × 0.95 (5 % undercut). Falls back to $29.99.
  *   4. UPLOAD — insert a row into `beats` (admin-owned, published) and upload
  *               the WAV bytes to PDIM via storageService.uploadFile.
- *   5. ADVERTISE — call autonomousService.launchCampaign() with the beat as
- *               asset. Budget=0; the ad system uses MaxCore/PDIM custom AI
- *               for organic distribution, no paid spend.
- *   6. RECORD — write a beatMoneyLoopCycles row tracking everything.
- *   7. ANALYSE — next cadence is computed from current industry confidence
+ *   5. PROMOTE — generate and dispatch an organic social campaign for the
+ *               marketplace listing (zero paid-ad budget).
+ *   6. WAIT FOR SALE — social promotion points buyers to the marketplace;
+ *               only a completed marketplace order marks the beat sold.
+ *   7. RECORD — track listing, promotion outcome and verified sale state.
+ *   8. ANALYSE — next cadence is computed from current industry confidence
  *               and recent cycle outcomes (consecutive failures back off).
  *
  * Heartbeat: the scheduler ticks every 30 min and calls `tick()`. A new cycle
@@ -48,20 +49,22 @@ import {
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 import { distributedCache } from "../infrastructure/distributedCache.js";
+import { MaxCoreAIClient } from "./unifiedAIController.js";
+import {
+  getAwarenessContext,
+  buildMaxCoreAwarenessPayload,
+} from "./awarenessContext.js";
 import {
   normalizeHashtags,
   cleanMaxCoreContent,
   selectBestVariant,
 } from "../lib/contentPostProcessor.js";
-import { MaxCoreAIClient } from "./unifiedAIController.js";
-import { getAwarenessContext, buildMaxCoreAwarenessPayload } from "./awarenessContext.js";
 import { beatAudioInputs, beatAudioObservation, type BeatAudioContext } from "./beatAudioContext.js";
 import { recordGeneration } from "./adaptiveGenerationEngine.js";
-import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
 import fsPromises from "fs/promises";
@@ -85,12 +88,6 @@ const PRICE_UNDERCUT_FACTOR = 0.95;
 const TRENDING_GENRE_FALLBACK = "trap";
 const TRENDING_MOOD_FALLBACK = "dark";
 
-// All platforms the admin account can have connected. Expired tokens are
-// filtered out at the storage layer (getUserSocialToken), so this list is
-// safe to include broadly — platforms without valid tokens skip gracefully.
-// Single source of truth for the buyer-facing beat link every ad/caption
-// generator embeds. The client route accepts a listing ID at
-// /marketplace/beat/:listingId; it is not the source beat's database ID.
 function getPublicAppOrigin(): string {
   const origin =
     process.env.PUBLIC_BASE_URL ||
@@ -111,7 +108,12 @@ function getBeatLandingUrl(listingId: string): string {
 }
 
 const PLATFORMS_FOR_CAMPAIGN = [
-  "instagram", "facebook", "tiktok", "twitter", "threads", "linkedin",
+  "instagram",
+  "facebook",
+  "tiktok",
+  "twitter",
+  "threads",
+  "linkedin",
 ] as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
@@ -130,8 +132,6 @@ export interface BeatMoneyLoopStatus {
   recentCycles: BeatMoneyLoopCycle[];
 }
 
-/** Honest outcome of the advertise step. `posted` is true ONLY when at least
- *  one social post was actually created; otherwise `reason` explains why not. */
 interface AdvertiseOutcome {
   campaignId: string | null;
   posted: boolean;
@@ -140,10 +140,9 @@ interface AdvertiseOutcome {
 
 export interface RunCycleResult {
   cycleId: string;
-  // 'completed' = beat listed AND ads actually posted.
-  // 'listed'    = beat listed but ads were NOT posted (see error/reason).
-  // 'failed'    = the cycle failed before the beat was listed.
-  status: "completed" | "listed" | "failed";
+  // Social promotion is independent from the sale: only a completed
+  // marketplace order can move status from awaiting_sale to sold.
+  status: "awaiting_sale" | "sold" | "failed";
   beatId?: string;
   campaignId?: string;
   advertised?: boolean;
@@ -295,6 +294,76 @@ class BeatMoneyLoopService {
     return created;
   }
 
+  /**
+   * Idempotently mark a cycle sold only when the order has a completed
+   * marketplace settlement for a listing created by this loop. The evidence is
+   * re-read here instead of trusting checkout input from the caller.
+   */
+  async recordMarketplaceSale(orderId: string): Promise<boolean> {
+    const beatIdExpression = sql<string>`${listings.metadata}->>'beatId'`;
+    const [sale] = await db
+      .select({
+        beatId: beatIdExpression,
+        settledAt: commerceSources.createdAt,
+      })
+      .from(orders)
+      .innerJoin(
+        commerceSources,
+        and(
+          eq(commerceSources.id, orders.id),
+          eq(commerceSources.kind, "marketplace"),
+        ),
+      )
+      .innerJoin(listings, eq(listings.id, orders.listingId))
+      .where(
+        and(
+          eq(orders.id, orderId),
+          eq(orders.status, "completed"),
+          sql`${listings.metadata}->>'source' = 'beat-money-loop'`,
+          sql`${beatIdExpression} IS NOT NULL`,
+        ),
+      )
+      .limit(1);
+    if (!sale?.beatId || !sale.settledAt) return false;
+
+    const [cycle] = await db
+      .select({
+        id: beatMoneyLoopCycles.id,
+        startedAt: beatMoneyLoopCycles.startedAt,
+        status: beatMoneyLoopCycles.status,
+      })
+      .from(beatMoneyLoopCycles)
+      .where(eq(beatMoneyLoopCycles.beatId, sale.beatId))
+      .orderBy(asc(beatMoneyLoopCycles.startedAt))
+      .limit(1);
+    if (!cycle) {
+      // Payment can race the beatId checkpoint by a few milliseconds. The
+      // periodic analyzer reconciles the durable completed order afterward.
+      logger.warn(
+        { orderId, beatId: sale.beatId },
+        "[BeatMoneyLoop] Completed marketplace sale has no visible cycle checkpoint yet",
+      );
+      return false;
+    }
+    if (cycle.status === "sold") return true;
+
+    const [updated] = await db
+      .update(beatMoneyLoopCycles)
+      .set({
+        status: "sold",
+        completedAt: new Date(sale.settledAt),
+      })
+      .where(eq(beatMoneyLoopCycles.id, cycle.id))
+      .returning({ id: beatMoneyLoopCycles.id });
+    if (updated) {
+      logger.info(
+        { orderId, beatId: sale.beatId, cycleId: cycle.id },
+        "[BeatMoneyLoop] Confirmed completed marketplace sale",
+      );
+    }
+    return Boolean(updated);
+  }
+
   async getStatus(): Promise<BeatMoneyLoopStatus> {
     const state = await this._ensureStateRow();
     const recent = await db
@@ -320,7 +389,7 @@ class BeatMoneyLoopService {
     };
   }
 
-  /** Turn the loop on. Also whitelists admin in autonomousService so campaigns auto-approve. */
+  /** Turn the marketplace listing loop on. */
   async enable(): Promise<BeatMoneyLoopStatus> {
     await this._ensureStateRow();
     // Ensure we can resolve the admin before enabling the loop.
@@ -331,18 +400,6 @@ class BeatMoneyLoopService {
       );
       throw new Error(
         "Cannot enable Beat Money Loop: ADMIN_EMAIL is unset or does not identify an admin user",
-      );
-    }
-    // Whitelist admin so launchCampaign() auto-approves rather than routing through approvals.
-    try {
-      await autonomousService.setAutonomousMode(adminId, true);
-    } catch (err) {
-      logger.warn(
-        { err },
-        "[BeatMoneyLoop] Failed to enable autonomous mode for loop admin",
-      );
-      throw new Error(
-        `Cannot enable Beat Money Loop: autonomous campaign mode could not be enabled (${(err as Error).message})`,
       );
     }
     const nextRunAt = new Date(Date.now() + MIN_CADENCE_MS); // first cycle fires within ~1 h
@@ -493,6 +550,8 @@ class BeatMoneyLoopService {
     const startedAt = Date.now();
     let scratchDir: string | null = null;
     let cycleId = "";
+    let listedBeatId: string | null = null;
+    let promotionOutcome: AdvertiseOutcome | null = null;
     let lockClient: PoolClient | null = null;
     let databaseLockAcquired = false;
     let databaseLockHealthy = true;
@@ -634,7 +693,7 @@ class BeatMoneyLoopService {
 
       // 4. UPLOAD (persist beat record + upload bytes to hybrid storage)
       assertCycleLock();
-      const { beatId, listingId, audioUrl } = await this._createBeatRecord({
+      const { beatId, listingId } = await this._createBeatRecord({
         scan: concreteScan,
         price,
         audioAbsPath,
@@ -642,9 +701,14 @@ class BeatMoneyLoopService {
         title,
         musicalKey,
       });
+      listedBeatId = beatId;
       await db
         .update(beatMoneyLoopCycles)
-        .set({ status: "advertising", beatId, price })
+        .set({
+          status: sql<string>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN 'sold' ELSE 'awaiting_sale' END`,
+          beatId,
+          price,
+        })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
       logger.info(
         `[BeatMoneyLoop] ${cycleId} beat ${beatId} listed at $${price.toFixed(2)}`,
@@ -669,22 +733,43 @@ class BeatMoneyLoopService {
         );
       }
 
-      // 5. ADVERTISE (organic, MaxCore/PDIM-driven — budget=0)
-      assertCycleLock();
-      const ad = await this._launchCampaign({
-        beatId,
-        listingId,
-        scan: concreteScan,
-        price,
-        title,
-        audioUrl,
-        audioAbsPath,
-      });
+      // 5. PROMOTE the listed beat through organic social accounts. Promotion
+      // is part of the loop, but never counts as a completed sale.
+      await db
+        .update(beatMoneyLoopCycles)
+        .set({
+          status: sql<string>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN 'sold' ELSE 'advertising' END`,
+        })
+        .where(eq(beatMoneyLoopCycles.id, cycleId));
 
-      // 6. RECORD outcome + schedule next.
-      // Be HONEST: only mark the cycle 'completed' when ads were actually posted.
-      // If the beat is listed but ads could not be sent (e.g. no connected social
-      // accounts), record 'listed' with the reason instead of a false 'completed'.
+      let ad: AdvertiseOutcome = {
+        campaignId: null,
+        posted: false,
+        reason: "Social promotion was not attempted",
+      };
+      try {
+        assertCycleLock();
+        ad = await this._launchCampaign({
+          cycleId,
+          beatId,
+          listingId,
+          scan: concreteScan,
+          price,
+          title,
+          audioAbsPath,
+        });
+      } catch (err) {
+        ad = {
+          campaignId: null,
+          posted: false,
+          reason: (err as Error).message || "Social promotion failed",
+        };
+        logger.warn({ err }, `[BeatMoneyLoop] ${cycleId} promotion step failed`);
+      }
+      promotionOutcome = ad;
+
+      // 6. Record sale state and promotion outcome independently. A post can
+      // advertise the listing; only the marketplace order hook can mark sold.
       const durationMs = Date.now() - startedAt;
       const nextCadence = this._computeNextCadenceMs(
         scan,
@@ -692,29 +777,34 @@ class BeatMoneyLoopService {
         /* state */ null,
       );
       const nextRunAt = new Date(Date.now() + nextCadence);
-      const finalStatus = ad.posted ? "completed" : "listed";
-      await db
+      const [recordedCycle] = await db
         .update(beatMoneyLoopCycles)
         .set({
-          status: finalStatus,
+          status: sql<string>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN 'sold' ELSE 'awaiting_sale' END`,
           campaignId: ad.campaignId,
           errorMessage: ad.posted
             ? null
-            : `Beat listed; ads not sent: ${ad.reason}`.slice(0, 1000),
+            : `Social promotion not posted: ${ad.reason}`.slice(0, 1000),
           durationMs,
-          completedAt: new Date(),
+          completedAt: sql<Date | null>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN ${beatMoneyLoopCycles.completedAt} ELSE NULL END`,
         })
-        .where(eq(beatMoneyLoopCycles.id, cycleId));
-      // The beat IS live for sale regardless of ad delivery, so the cycle counts
-      // as a success for cadence/backoff purposes — the ad sub-status is tracked
-      // per-cycle (status + errorMessage), not as a failure.
+        .where(eq(beatMoneyLoopCycles.id, cycleId))
+        .returning({ status: beatMoneyLoopCycles.status });
+      if (!recordedCycle) {
+        throw new Error(
+          `Beat Money Loop cycle ${cycleId} disappeared before finalization`,
+        );
+      }
+      const finalStatus = recordedCycle.status as "awaiting_sale" | "sold";
+      // The marketplace listing is live regardless of whether it has sold yet,
+      // so it advances cadence without being misreported as a completed sale.
       await this._updateStateAfterCycle({
         success: true,
         nextRunAt,
         cadence: nextCadence,
       });
       logger.info(
-        `[BeatMoneyLoop] ${ad.posted ? "✅" : "⚠️"} Cycle ${cycleId} ${finalStatus} in ${durationMs}ms (ads ${ad.posted ? "posted" : "NOT posted: " + ad.reason}) — next in ${Math.round(nextCadence / 60000)} min`,
+        `[BeatMoneyLoop] Cycle ${cycleId} ${finalStatus}; social promotion ${ad.posted ? "posted" : `not posted: ${ad.reason}`} in ${durationMs}ms — next in ${Math.round(nextCadence / 60000)} min`,
       );
 
       // Backfill revenue metrics on this cycle immediately so the dashboard
@@ -758,21 +848,55 @@ class BeatMoneyLoopService {
         null,
       );
       const nextRunAt = new Date(Date.now() + nextCadence);
-      await db
+      const [failureCycle] = await db
         .update(beatMoneyLoopCycles)
         .set({
-          status: "failed",
-          errorMessage: msg.slice(0, 1000),
+          status: sql<string>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN 'sold' ELSE ${listedBeatId ? "awaiting_sale" : "failed"} END`,
+          ...(listedBeatId ? { beatId: listedBeatId } : {}),
+          ...(promotionOutcome
+            ? { campaignId: promotionOutcome.campaignId }
+            : {}),
+          errorMessage: listedBeatId
+            ? promotionOutcome?.posted
+              ? msg.slice(0, 1000)
+              : `Social promotion not posted: ${promotionOutcome?.reason || msg}`.slice(
+                  0,
+                  1000,
+                )
+            : msg.slice(0, 1000),
           durationMs,
-          completedAt: new Date(),
+          completedAt: sql<Date | null>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN ${beatMoneyLoopCycles.completedAt} ELSE ${listedBeatId ? null : new Date()} END`,
         })
         .where(eq(beatMoneyLoopCycles.id, cycleId));
+      const failureStatus =
+        failureCycle?.status === "sold"
+          ? "sold"
+          : listedBeatId
+            ? "awaiting_sale"
+            : "failed";
       await this._updateStateAfterCycle({
-        success: false,
+        success: listedBeatId !== null,
         nextRunAt,
         cadence: nextCadence,
       });
-      return { cycleId, status: "failed", durationMs, error: msg };
+      return {
+        cycleId,
+        status: failureStatus,
+        ...(listedBeatId ? { beatId: listedBeatId } : {}),
+        ...(promotionOutcome?.campaignId
+          ? { campaignId: promotionOutcome.campaignId }
+          : {}),
+        ...(promotionOutcome
+          ? {
+              advertised: promotionOutcome.posted,
+              ...(!promotionOutcome.posted
+                ? { note: promotionOutcome.reason }
+                : {}),
+            }
+          : {}),
+        durationMs,
+        error: msg,
+      };
     } finally {
       if (scratchDir) {
         try {
@@ -1319,64 +1443,6 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Extract the beat's audio into a postable waveform MP4 (the ad content
-   * IS the beat). Clipped to 45 s for cross-platform limits (Twitter 140 s,
-   * IG feed ≥60 s reels rules, TikTok minimums) and encoded H.264/AAC.
-   */
-  private async _renderAdVideo(
-    audioAbsPath: string,
-  ): Promise<{ absPath: string; storageUrl: string }> {
-    const { execFile } = await import("child_process");
-    const { promisify } = await import("util");
-    const run = promisify(execFile);
-
-    const outDir = path.dirname(audioAbsPath);
-    const filename = `beat_ad_${Date.now()}_${randomBytes(6).toString("hex")}.mp4`;
-    const absPath = path.join(outDir, filename);
-
-    await run(
-      "ffmpeg",
-      [
-        "-y",
-        "-i", audioAbsPath,
-        "-filter_complex",
-        "color=c=0x0e0e16:s=720x720:d=45[bg];" +
-          "[0:a]showwaves=s=720x600:mode=cline:colors=0x8b5cf6|0x22d3ee[w];" +
-          "[bg][w]overlay=(W-w)/2:(H-h)/2[v]",
-        "-map", "[v]",
-        "-map", "0:a",
-        "-t", "45",
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-b:a", "192k",
-        "-shortest",
-        absPath,
-      ],
-      { timeout: 120_000 },
-    );
-
-    const st = await fsPromises.stat(absPath);
-    if (st.size < 10_240) {
-      throw new Error(`rendered ad video too small (${st.size} bytes)`);
-    }
-
-    // PDIM is the only durable/public media store. Keep the local MP4 only
-    // through the synchronous dispatcher call (Twitter consumes its path);
-    // runCycle removes the containing scratch directory afterwards.
-    const storageKey = await storageService.uploadFile(
-      await fsPromises.readFile(absPath),
-      "beat-ad-videos",
-      filename,
-      "video/mp4",
-    );
-    const publicUrl =
-      getPublicAppOrigin() + (await storageService.getDownloadUrl(storageKey));
-    return { absPath, storageUrl: publicUrl };
-  }
-
-  /**
    * Median price of the 50 most-recent published beats in the same genre × 0.95.
    * Falls back to $29.99 if no comparable listings.
    */
@@ -1453,7 +1519,12 @@ class BeatMoneyLoopService {
       .from(beatMoneyLoopCycles)
       .where(
         and(
-          inArray(beatMoneyLoopCycles.status, ["completed", "listed"]),
+          inArray(beatMoneyLoopCycles.status, [
+            "completed",
+            "listed",
+            "awaiting_sale",
+            "sold",
+          ]),
           gte(
             beatMoneyLoopCycles.startedAt,
             new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
@@ -1497,8 +1568,6 @@ class BeatMoneyLoopService {
   }): Promise<{
     beatId: string;
     listingId: string;
-    audioUrl: string;
-    previewUrl: string;
   }> {
     const adminId = await this._requireAdminId();
     const keyDisplay = args.musicalKey || "C Minor";
@@ -1719,7 +1788,7 @@ class BeatMoneyLoopService {
         `[BeatMoneyLoop] Marketplace listing ${listingId} and 100% royalty split created for beat ${beatId}`,
       );
 
-      return { beatId, listingId, audioUrl, previewUrl };
+      return { beatId, listingId };
     } catch (createErr) {
       await Promise.allSettled([
         storageService.deleteFile(storageKey),
@@ -1732,36 +1801,86 @@ class BeatMoneyLoopService {
     }
   }
 
+  /** Render the beat itself as postable video for connected social platforms. */
+  private async _renderAdVideo(
+    audioAbsPath: string,
+  ): Promise<{ absPath: string; storageUrl: string }> {
+    const { execFile } = await import("child_process");
+    const { promisify } = await import("util");
+    const run = promisify(execFile);
+    const outDir = path.dirname(audioAbsPath);
+    const filename = `beat_ad_${Date.now()}_${randomBytes(6).toString("hex")}.mp4`;
+    const absPath = path.join(outDir, filename);
+
+    await run(
+      "ffmpeg",
+      [
+        "-y",
+        "-i",
+        audioAbsPath,
+        "-filter_complex",
+        "color=c=0x0e0e16:s=720x720:d=45[bg];" +
+          "[0:a]showwaves=s=720x600:mode=cline:colors=0x8b5cf6|0x22d3ee[w];" +
+          "[bg][w]overlay=(W-w)/2:(H-h)/2[v]",
+        "-map",
+        "[v]",
+        "-map",
+        "0:a",
+        "-t",
+        "45",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-shortest",
+        absPath,
+      ],
+      { timeout: 120_000 },
+    );
+
+    const st = await fsPromises.stat(absPath);
+    if (st.size < 10_240) {
+      throw new Error(`rendered ad video too small (${st.size} bytes)`);
+    }
+
+    // PDIM is the durable media store. The local file is used only for this
+    // synchronous dispatch; runCycle removes the containing scratch directory.
+    const storageKey = await storageService.uploadFile(
+      await fsPromises.readFile(absPath),
+      "beat-ad-videos",
+      filename,
+      "video/mp4",
+    );
+    const publicUrl =
+      getPublicAppOrigin() + (await storageService.getDownloadUrl(storageKey));
+    return { absPath, storageUrl: publicUrl };
+  }
+
   /**
-   * Launch an autonomous ad campaign for the beat. Uses budget=0 because the
-   * advertising system runs on MaxCore/PDIM custom AI models for organic
-   * distribution — no paid ad spend is incurred.
-   *
-   * We create ONE campaign per cycle initially (instagram); the metadata
-   * notes additional platforms so the advertising dispatch service can
-   * fan out to tiktok / youtube via its own platform-rotation logic.
+   * Create and dispatch a zero-budget organic campaign for this cycle's
+   * marketplace listing. A campaign is never treated as evidence of a sale.
    */
   private async _launchCampaign(args: {
+    cycleId: string;
     beatId: string;
     listingId: string;
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
     price: number;
     title: string;
-    audioUrl: string;
-    audioAbsPath?: string;
+    audioAbsPath: string;
   }): Promise<AdvertiseOutcome> {
-    const adminId = await this._requireAdminId();
     let campaignId: string | null = null;
     try {
-      // MaxCore is the only ad-copy source. If it cannot produce a usable
-      // caption, leave the beat listed and report the advertising failure.
+      const adminId = await this._requireAdminId();
       const hashtags = normalizeHashtags([], args.scan.genre, "instagram");
       const caption = await this._generateMaxCoreCaption(args, hashtags);
 
-      // 1. Create the campaign first so the creative can reference its id.
-      //    budget=0: organic distribution only (no paid spend). metadata carries
-      //    the fan-out platforms that activateCampaign reads (adCampaigns only has
-      //    a singular `platform` column).
       const [campaign] = await db
         .insert(adCampaigns)
         .values({
@@ -1780,6 +1899,7 @@ class BeatMoneyLoopService {
           },
           metadata: {
             source: "beat-money-loop",
+            cycleId: args.cycleId,
             beatId: args.beatId,
             listingId: args.listingId,
             price: args.price,
@@ -1788,35 +1908,30 @@ class BeatMoneyLoopService {
         })
         .returning({ id: adCampaigns.id });
       campaignId = campaign.id;
+      await db
+        .update(beatMoneyLoopCycles)
+        .set({ campaignId: campaign.id })
+        .where(eq(beatMoneyLoopCycles.id, args.cycleId));
 
-      // 1b. Extract the beat's audio into postable media: render a waveform
-      //     MP4 that plays the beat itself. Social platforms cannot post raw
-      //     WAV audio, so the campaign content carries the beat as video.
-      let mediaUrl = args.audioUrl;
-      let mediaLocalPath: string | null = null;
-      let videoRenderFailed = false;
-      if (args.audioAbsPath) {
-        try {
-          const vid = await this._renderAdVideo(args.audioAbsPath);
-          mediaLocalPath = vid.absPath;
-          mediaUrl = vid.storageUrl;
-          logger.info(
-            `[BeatMoneyLoop] Ad video rendered and uploaded to PDIM`,
-          );
-        } catch (err) {
-          // Social platforms cannot accept raw WAV audio — skip the dispatch
-          // entirely rather than posting an unplayable media URL.
-          videoRenderFailed = true;
-          logger.warn(
-            `[BeatMoneyLoop] Ad video render failed (${(err as Error).message}) — skipping social dispatch (raw WAV not postable)`,
-          );
-        }
+      let video: { absPath: string; storageUrl: string };
+      try {
+        video = await this._renderAdVideo(args.audioAbsPath);
+      } catch (err) {
+        // Do not post a raw WAV or a text-only substitute when the intended
+        // creative is the beat itself.
+        await db
+          .update(adCampaigns)
+          .set({ status: "paused" })
+          .where(eq(adCampaigns.id, campaign.id));
+        return {
+          campaignId: campaign.id,
+          posted: false,
+          reason: `Ad video render failed; social dispatch skipped: ${(err as Error).message}`,
+        };
       }
+      const mediaUrl = video.storageUrl;
+      const mediaLocalPath = video.absPath;
 
-      // 2. Create the creative linked to the campaign (activateCampaign reads
-      //    adCreatives by campaignId and posts description/headline + mediaUrl).
-      //    variants.localMediaPath lets the dispatcher hand platforms a local
-      //    file (Twitter uploads need a path, not a URL).
       const [creative] = await db
         .insert(adCreatives)
         .values({
@@ -1830,9 +1945,10 @@ class BeatMoneyLoopService {
           callToAction: "License This Beat",
           landingUrl: getBeatLandingUrl(args.listingId),
           status: "active",
-          ...(mediaLocalPath
-            ? { variants: { localMediaPath: mediaLocalPath, kind: "beat-audio-video" } }
-            : {}),
+          variants: {
+            localMediaPath: mediaLocalPath,
+            kind: "beat-audio-video",
+          },
         })
         .returning({ id: adCreatives.id });
       await db
@@ -1840,38 +1956,6 @@ class BeatMoneyLoopService {
         .set({ creativeIds: [creative.id] })
         .where(eq(adCampaigns.id, campaign.id));
 
-      // 3. Dispatch to the connected social accounts. Skip entirely when the
-      //    video render failed — social platforms reject raw WAV audio, so
-      //    dispatching would produce zero successful posts.
-      if (videoRenderFailed) {
-        // Mark the campaign and creative as paused so they don't show up as
-        // "active" campaigns with 0 posts — they were never dispatched.
-        try {
-          await db
-            .update(adCampaigns)
-            .set({ status: "paused" })
-            .where(eq(adCampaigns.id, campaign.id));
-          await db
-            .update(adCreatives)
-            .set({ status: "draft" })
-            .where(eq(adCreatives.id, creative.id));
-        } catch (cleanupErr) {
-          logger.warn(
-            { err: cleanupErr },
-            "[BeatMoneyLoop] Could not mark failed-media campaign/creative as paused",
-          );
-        }
-        logger.warn(
-          `[BeatMoneyLoop] campaign ${campaign.id} paused — video render failed, no postable media`,
-        );
-        return {
-          campaignId: campaign.id,
-          posted: false,
-          reason: "Ad video render failed — dispatch skipped (no postable media)",
-        };
-      }
-      // This ACTUALLY posts when the admin has connected accounts; otherwise
-      // it returns a clear reason and the cycle records the truth.
       const result = await advertisingDispatchService.activateCampaign(
         campaign.id,
         adminId,
@@ -1887,23 +1971,115 @@ class BeatMoneyLoopService {
           reason: result.message,
         };
       }
-      // Surface per-platform errors so the cycle errorMessage is actionable.
+
       const platformErrors = result.results?.errors ?? [];
-      const errSummary = platformErrors.length
-        ? ` | per-platform: ${platformErrors.join("; ")}`
-        : "";
-      const reason =
-        (result.error || result.message || "Ad dispatch reported no posts") +
-        errSummary;
+      const details = platformErrors.length
+        ? platformErrors.join("; ")
+        : result.error || result.message || "No social posts were created";
+      const reason = `No social posts were created: ${details}`;
       logger.warn(
-        `[BeatMoneyLoop] campaign ${campaign.id} created but NOT posted: ${reason}`,
+        `[BeatMoneyLoop] campaign ${campaign.id} was not posted: ${reason}`,
       );
       return { campaignId: campaign.id, posted: false, reason };
     } catch (err) {
-      const reason = (err as Error).message ?? String(err);
-      logger.warn({ err }, "[BeatMoneyLoop] advertise step threw");
+      const reason = (err as Error).message || String(err);
+      logger.warn({ err }, "[BeatMoneyLoop] advertise step failed");
       return { campaignId, posted: false, reason };
     }
+  }
+
+  /** Generate MaxCore-backed, listing-specific copy for the campaign. */
+  private async _generateMaxCoreCaption(
+    args: {
+      beatId: string;
+      listingId: string;
+      scan: { genre: string; mood: string; tempo: number; hooks: string[] };
+      price: number;
+      title: string;
+    },
+    hashtags: string[],
+  ): Promise<string> {
+    const listenUrl = getBeatLandingUrl(args.listingId);
+    const awareness = await getAwarenessContext("music");
+    const mcRaw = await MaxCoreAIClient.infer<{
+      hook?: string;
+      body?: string;
+      cta?: string;
+      caption?: string;
+      hashtags?: string[];
+      variants?: Array<{
+        hook?: string;
+        body?: string;
+        cta?: string;
+        hashtags?: string[];
+      }>;
+    }>("/api/generate/content", {
+      ...awareness,
+      platform: "instagram",
+      content_type: "post",
+      topic: args.title,
+      tone: "hype",
+      quality: "professional",
+      content_tier: "peak",
+      genre: args.scan.genre,
+      mood: args.scan.mood,
+      include_hashtags: true,
+      goal: "drive_purchase",
+      cta: "License this beat — link in bio",
+      beat_context: {
+        title: args.title,
+        bpm: args.scan.tempo,
+        price: args.price,
+        license_type: "non-exclusive",
+        marketplace: "MaxBooster",
+        action: "license_beat",
+        production_details:
+          args.scan.hooks.slice(0, 3).join("; ") || args.scan.mood,
+        listen_url: listenUrl,
+        ...(awareness?.contextString
+          ? { trend_context: awareness.contextString }
+          : {}),
+      },
+      platform_constraints: {
+        allow_link_in_bio: true,
+        cta_style: "direct_sale",
+      },
+    });
+
+    if (!mcRaw) throw new Error("MaxCore returned no caption");
+    const candidate =
+      mcRaw.variants && mcRaw.variants.length > 0
+        ? selectBestVariant(mcRaw.variants)
+        : mcRaw;
+    const candidateCaption = (candidate as { caption?: string } | null)
+      ?.caption;
+    if (!candidate || (!candidate.hook && !candidateCaption)) {
+      throw new Error("MaxCore returned no usable caption content");
+    }
+
+    const cleaned = cleanMaxCoreContent({
+      body: candidate.body || candidateCaption || "",
+      hook: candidate.hook || "",
+      cta: candidate.cta || "",
+      hashtags: Array.isArray(candidate.hashtags)
+        ? candidate.hashtags
+        : hashtags,
+      genre: args.scan.genre,
+      platform: "instagram",
+      mood: args.scan.mood,
+      title: args.title,
+      isBeatPost: true,
+    });
+    const tagStr = normalizeHashtags(
+      cleaned.hashtags,
+      args.scan.genre,
+      "instagram",
+    ).join(" ");
+
+    return [cleaned.hook, cleaned.body, cleaned.cta, tagStr]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
   }
 
   /**
@@ -1979,119 +2155,6 @@ class BeatMoneyLoopService {
 
     const cleanPrice = Math.round(price);
     return `${emotionalLead} ${productionDetail} ${artistType} Non-exclusive lease from $${cleanPrice} — exclusive rights available on request.`;
-  }
-
-  /**
-   * Build a real social ad caption — no raw hook-type labels leaked into copy.
-   * Converts scan signals into marketing language a human would actually write.
-   */
-  /**
-   * Call MaxCore /api/generate/content with beat_context + goal=drive_purchase
-   * and run our post-processor over the result to produce a clean, conversion-
-   * optimised caption. Throws when MaxCore returns no usable content so the
-   * caller records an advertising failure if no usable copy is returned.
-   */
-  private async _generateMaxCoreCaption(
-    args: {
-      beatId: string;
-      listingId: string;
-      scan: { genre: string; mood: string; tempo: number; hooks: string[] };
-      price: number;
-      title: string;
-      audioUrl: string;
-    },
-    hashtags: string[],
-  ): Promise<string> {
-    const listenUrl = getBeatLandingUrl(args.listingId);
-
-    // Live trend/industry awareness — CTA library, emotional triggers, and
-    // trending hooks feed the caption so beat drops read like current market
-    // signal, not a static template. Best-effort: never blocks generation.
-    const awareness = await getAwarenessContext("music");
-
-    const mcRaw = await MaxCoreAIClient.infer<{
-      hook?: string;
-      body?: string;
-      cta?: string;
-      caption?: string;
-      hashtags?: string[];
-      variants?: Array<{ hook?: string; body?: string; cta?: string; hashtags?: string[] }>;
-    }>("/api/generate/content", {
-      ...awareness,
-      platform: "instagram",
-      content_type: "post",
-      // SHORT topic = beat title only. When the full "145BPM $29 non-exclusive…"
-      // phrase is used, MaxCore jams the entire string into hashtag slot [0],
-      // producing a broken 80-char tag. Price/BPM context lives in beat_context
-      // where MaxCore reads it without embedding it in hashtag strings.
-      topic: args.title,
-      tone: "hype",
-      quality: "professional",  // request peak, industry-standard copy
-      content_tier: "peak",     // signal highest output tier to MaxCore
-      genre: args.scan.genre,
-      mood: args.scan.mood,
-      include_hashtags: true,
-      goal: "drive_purchase",
-      // Explicit CTA instruction — MaxCore respects this field in most cases
-      cta: "License this beat — link in bio",
-      beat_context: {
-        title: args.title,
-        bpm: args.scan.tempo,
-        price: args.price,
-        license_type: "non-exclusive",
-        marketplace: "MaxBooster",
-        action: "license_beat",
-        production_details: args.scan.hooks.slice(0, 3).join("; ") || args.scan.mood,
-        listen_url: listenUrl,
-        ...(awareness?.contextString ? { trend_context: awareness.contextString } : {}),
-      },
-      // Allow "link in bio" CTAs — this post is the beat-sale call-to-action
-      platform_constraints: { allow_link_in_bio: true, cta_style: "direct_sale" },
-    });
-
-    if (!mcRaw) throw new Error("MaxCore returned null for caption");
-
-    const candidate =
-      mcRaw.variants && mcRaw.variants.length > 0
-        ? selectBestVariant(mcRaw.variants)
-        : mcRaw;
-
-    // Some MaxCore content endpoints return `caption` instead of `hook`;
-    // cast to access it without breaking the stricter variant type.
-    const candidateCaption = (candidate as { caption?: string }).caption;
-    if (!candidate || (!candidate.hook && !candidateCaption)) {
-      throw new Error("MaxCore returned no usable caption content");
-    }
-
-    const cleaned = cleanMaxCoreContent({
-      body: candidate.body || "",
-      hook: candidate.hook || "",
-      cta: candidate.cta || "",
-      hashtags: Array.isArray(candidate.hashtags) ? candidate.hashtags : hashtags,
-      genre: args.scan.genre,
-      platform: "instagram",
-      // Pass mood + title so stale hooks are replaced with mood-matched originals
-      mood: args.scan.mood,
-      title: args.title,
-      // This is always a beat-sale post — replace generic CTAs with licensing language
-      isBeatPost: true,
-    });
-
-    const tagStr = normalizeHashtags(
-      cleaned.hashtags,
-      args.scan.genre,
-      "instagram",
-    ).join(" ");
-
-    return [
-      cleaned.hook,
-      cleaned.body,
-      cleaned.cta,
-      tagStr,
-    ]
-      .filter(Boolean)
-      .join("\n")
-      .trim();
   }
 
   /**
@@ -2196,6 +2259,37 @@ class BeatMoneyLoopService {
     const beatsById = new Map(beatRows.map((beat) => [beat.id, beat]));
 
     const beatIdExpression = sql<string>`${listings.metadata}->>'beatId'`;
+    const completedMarketplaceSales = beatIds.length
+      ? await db
+          .select({
+            beatId: beatIdExpression,
+            settledAt: commerceSources.createdAt,
+          })
+          .from(listings)
+          .innerJoin(orders, eq(orders.listingId, listings.id))
+          .innerJoin(
+            commerceSources,
+            and(
+              eq(commerceSources.id, orders.id),
+              eq(commerceSources.kind, "marketplace"),
+            ),
+          )
+          .where(
+            and(
+              sql`${listings.metadata}->>'source' = 'beat-money-loop'`,
+              inArray(beatIdExpression, beatIds),
+              eq(orders.status, "completed"),
+            ),
+          )
+          .orderBy(asc(commerceSources.createdAt))
+      : [];
+    const settledAtByBeatId = new Map<string, Date>();
+    for (const sale of completedMarketplaceSales) {
+      if (sale.beatId && sale.settledAt && !settledAtByBeatId.has(sale.beatId)) {
+        settledAtByBeatId.set(sale.beatId, new Date(sale.settledAt));
+      }
+    }
+
     const sellerEarnings = beatIds.length
       ? await db
           .select({
@@ -2290,10 +2384,18 @@ class BeatMoneyLoopService {
         isPrimaryCycle && cycle.beatId
           ? earningsByBeatId.get(cycle.beatId) ?? 0
           : 0;
+      const saleAt =
+        isPrimaryCycle && cycle.beatId
+          ? settledAtByBeatId.get(cycle.beatId)
+          : undefined;
+      const sold = Boolean(saleAt);
+      const shouldUpdateStatus = sold && cycle.status !== "sold";
       if (
         plays !== cycle.plays ||
         downloads !== cycle.downloads ||
-        revenueCents !== cycle?.revenueCents
+        revenueCents !== cycle?.revenueCents ||
+        shouldUpdateStatus ||
+        (saleAt && cycle.completedAt?.getTime() !== saleAt.getTime())
       ) {
         await db
           .update(beatMoneyLoopCycles)
@@ -2301,6 +2403,12 @@ class BeatMoneyLoopService {
             plays,
             downloads,
             revenueCents,
+            ...(saleAt
+              ? {
+                  status: "sold",
+                  completedAt: saleAt,
+                }
+              : {}),
           })
           .where(eq(beatMoneyLoopCycles.id, cycle.id));
         updated++;

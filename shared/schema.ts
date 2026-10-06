@@ -943,7 +943,7 @@ export const beatMoneyLoopCycles = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     triggeredBy: text("triggered_by").notNull(), // 'schedule' | 'manual'
-    status: text("status").default("pending").notNull(), // pending|generating|uploading|advertising|completed|failed
+    status: text("status").default("pending").notNull(), // pending|generating|uploading|advertising|awaiting_sale|sold|failed; completed/listed are historical
     scanContext: jsonb("scan_context"), // { genre, mood, tempo, confidence, hooks }
     audioGenBackend: text("audio_gen_backend"), // 'ts-native' | 'maxcore' | 'audio-synth-v2'
     beatId: varchar("beat_id"), // → beats.id (no FK so the row survives if beat is deleted)
@@ -3517,9 +3517,10 @@ export const dspSyncStatus = pgTable("dsp_sync_status", {
 });
 
 // ============================================================================
-// TOO LOST CONNECTION (one OAuth connection per artist account).
+// TOO LOST CONNECTION (one OAuth connection per artist account and environment).
 // Too Lost access is granted to the account that authorized the distribution
 // flow, so connections must never be shared across Max Booster users.
+// Development/sandbox and production connections coexist in the shared app DB.
 // ============================================================================
 export const toolostConnection = pgTable("toolost_connection", {
   id: varchar("id")

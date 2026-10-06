@@ -65,6 +65,12 @@ vi.mock("../../server/services/advancedSocialAIService.js", () => ({
     generateAdvancedContent: mockGenerateAdvancedContent,
   },
 }));
+vi.mock("../../server/services/autopilotKnowledgeBaseService.js", () => ({
+  autopilotKnowledgeBaseService: {
+    getGenerationContext: vi.fn().mockResolvedValue(undefined),
+  },
+  attachKnowledgeContext: (context: unknown) => context,
+}));
 
 // The adaptive content-type bandit (selectArm/recordOutcome) persists to a
 // real Postgres table and is stateful/exploratory by design — exactly the

@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -1639,6 +1640,7 @@ export default function Distribution() {
 
   const { data: toolostStatus } = useQuery<{
     configured: boolean;
+    configurationError: string | null;
     connected: boolean;
     connectionSource: "user" | "admin" | null;
     environment: string | null;
@@ -4024,15 +4026,23 @@ export default function Distribution() {
                       ? "Max Booster's configured distributor account is ready for new users."
                       : "Connect the Too Lost account you want to use for your own releases and earnings."}
                   </p>
+                  {toolostStatus?.configurationError && (
+                    <p
+                      role="alert"
+                      className="mt-2 text-sm text-red-600 dark:text-red-400"
+                    >
+                      {toolostStatus.configurationError}
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <Badge variant={toolostStatus?.connected ? "default" : "outline"}>
                       {toolostStatus?.connected ? "Connected" : "Not connected"}
                     </Badge>
-                    {toolostStatus?.connected && toolostStatus.environment && (
+                    {toolostStatus?.environment && (
                       <span className="text-sm text-gray-500">
-                        {toolostStatus.environment}
+                        API environment: {toolostStatus.environment}
                       </span>
                     )}
                   </div>

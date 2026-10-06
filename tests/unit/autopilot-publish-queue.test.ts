@@ -20,6 +20,12 @@ vi.mock("../../server/services/evolutionRegistry.js", () => ({
 vi.mock("../../server/services/advancedUrlParser.js", () => ({
   advancedUrlParser: {},
 }));
+vi.mock("../../server/services/autopilotKnowledgeBaseService.js", () => ({
+  autopilotKnowledgeBaseService: {
+    getGenerationContext: vi.fn().mockResolvedValue(undefined),
+  },
+  attachKnowledgeContext: (context: unknown) => context,
+}));
 vi.mock("../../server/services/adaptiveGenerationEngine.js", () => ({
   recordOutcome: vi.fn(),
 }));

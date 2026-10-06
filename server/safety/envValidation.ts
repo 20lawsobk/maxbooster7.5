@@ -783,11 +783,11 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     validator: (v) => v?.startsWith("http"),
   },
   {
-    name: "TOOLOST_SANDBOX_REDIRECT_URI",
+    name: "TOOLOST_SANDBOX_REDIRECT_URL",
     required: false,
     category: "distribution",
     description: "Too Lost sandbox OAuth callback URL",
-    validator: (v) => v?.startsWith("http"),
+    validator: (v) => v?.startsWith("https://"),
   },
 ];
 

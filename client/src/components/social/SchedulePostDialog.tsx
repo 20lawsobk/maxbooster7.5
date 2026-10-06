@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -82,24 +82,43 @@ const POST_TYPES = [
   { value: "video", label: "Video" },
 ];
 
+function createScheduleFormData(
+  initialData?: Partial<SchedulePostData>,
+): SchedulePostData {
+  return {
+    title: initialData?.title ?? "",
+    scheduledFor: initialData?.scheduledFor ?? "",
+    platforms: [...(initialData?.platforms ?? [])],
+    postType: initialData?.postType ?? "post",
+    content: initialData?.content ?? "",
+    mediaUrls: [...(initialData?.mediaUrls ?? [])],
+    hashtags: [...(initialData?.hashtags ?? [])],
+    mentions: [...(initialData?.mentions ?? [])],
+    location: initialData?.location ?? "",
+    status: initialData?.status === "scheduled" ? "scheduled" : "draft",
+  };
+}
+
 export function SchedulePostDialog({
   open,
   onOpenChange,
   onSchedule,
   initialData,
 }: SchedulePostDialogProps) {
-  const [formData, setFormData] = useState<SchedulePostData>({
-    title: initialData.title || "",
-    scheduledFor: initialData.scheduledFor || "",
-    platforms: initialData.platforms || [],
-    postType: initialData.postType || "post",
-    content: initialData.content || "",
-    mediaUrls: initialData.mediaUrls || [],
-    hashtags: initialData.hashtags || [],
-    mentions: initialData.mentions || [],
-    location: initialData.location || "",
-    status: initialData.status || "draft",
-  });
+  const [formData, setFormData] = useState<SchedulePostData>(() =>
+    createScheduleFormData(initialData),
+  );
+  const initialDataKey = JSON.stringify(initialData ?? null);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(
+        createScheduleFormData(
+          JSON.parse(initialDataKey) ?? undefined,
+        ),
+      );
+    }
+  }, [open, initialDataKey]);
 
   const [hashtagInput, setHashtagInput] = useState("");
   const [mentionInput, setMentionInput] = useState("");
@@ -154,20 +173,11 @@ export function SchedulePostDialog({
   };
 
   const handleSubmit = (status: "draft" | "scheduled") => {
+    if (!formData.content.trim() || formData.platforms.length === 0) return;
+    if (status === "scheduled" && (!formData.title.trim() || !formData.scheduledFor)) return;
     onSchedule({ ...formData, status });
     onOpenChange(false);
-    setFormData({
-      title: "",
-      scheduledFor: "",
-      platforms: [],
-      postType: "post",
-      content: "",
-      mediaUrls: [],
-      hashtags: [],
-      mentions: [],
-      location: "",
-      status: "draft",
-    });
+    setFormData(createScheduleFormData());
   };
 
   const characterCount = formData.content.length;
@@ -398,7 +408,11 @@ export function SchedulePostDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => handleSubmit("draft")}>
+          <Button
+            variant="outline"
+            onClick={() => handleSubmit("draft")}
+            disabled={!formData.content.trim() || formData.platforms.length === 0}
+          >
             Save Draft
           </Button>
           <Button
@@ -406,6 +420,7 @@ export function SchedulePostDialog({
             disabled={
               !formData.title ||
               !formData.scheduledFor ||
+              !formData.content.trim() ||
               formData.platforms.length === 0
             }
           >

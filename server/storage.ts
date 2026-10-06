@@ -1,6 +1,10 @@
 // @ts-nocheck
 import { logger } from "./logger";
 import { decryptSocialCredential } from "./services/socialCredentialCodec.js";
+import {
+  getToolostApiEnvironment,
+  type ToolostApiEnvironment,
+} from "./services/toolostEnvironment.js";
 import { randomBytes } from "crypto";
 import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, artistProfiles, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, systemLogs, toolostConnection, youtubeConnections, youtubeUploads, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot, type ToolostConnection, type InsertToolostConnection, type YoutubeConnection, type InsertYoutubeConnection, type YoutubeUpload, type InsertYoutubeUpload } from "@shared/schema";
 import { db, dbRead } from "./db";
@@ -36,17 +40,26 @@ export interface IStorage {
   updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getDistributionProvider(slug: string): Promise<DSPProvider | undefined>;
-  getToolostConnection(userId: string): Promise<ToolostConnection | undefined>;
-  getAdminToolostConnection(): Promise<ToolostConnection | undefined>;
+  getToolostConnection(
+    userId: string,
+    environment?: ToolostApiEnvironment,
+  ): Promise<ToolostConnection | undefined>;
+  getAdminToolostConnection(
+    environment?: ToolostApiEnvironment,
+  ): Promise<ToolostConnection | undefined>;
   upsertToolostConnection(
     data: Partial<InsertToolostConnection> & {
       accessToken: string;
       refreshToken: string;
       tokenExpiresAt: Date;
       connectedByUserId: string;
+      environment?: ToolostApiEnvironment;
     },
   ): Promise<ToolostConnection>;
-  deleteToolostConnection(userId: string): Promise<boolean>;
+  deleteToolostConnection(
+    userId: string,
+    environment?: ToolostApiEnvironment,
+  ): Promise<boolean>;
   getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   getReleasesByUserId(userId: string): Promise<Release[]>;
@@ -253,11 +266,17 @@ export class DatabaseStorage implements IStorage {
 
   async getToolostConnection(
     userId: string,
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
   ): Promise<ToolostConnection | undefined> {
     const [connection] = await dbRead
       .select()
       .from(toolostConnection)
-      .where(eq(toolostConnection.connectedByUserId, userId))
+      .where(
+        and(
+          eq(toolostConnection.connectedByUserId, userId),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
       .orderBy(desc(toolostConnection.updatedAt))
       .limit(1);
     return connection || undefined;
@@ -269,12 +288,19 @@ export class DatabaseStorage implements IStorage {
    * connection may be used for this fallback; artist connections never cross
    * user boundaries.
    */
-  async getAdminToolostConnection(): Promise<ToolostConnection | undefined> {
+  async getAdminToolostConnection(
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
+  ): Promise<ToolostConnection | undefined> {
     const rows = await dbRead
       .select()
       .from(toolostConnection)
       .innerJoin(users, eq(toolostConnection.connectedByUserId, users.id))
-      .where(eq(users.role, "admin"))
+      .where(
+        and(
+          eq(users.role, "admin"),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
       .orderBy(desc(toolostConnection.updatedAt))
       .limit(1);
     return rows[0]?.toolost_connection;
@@ -288,26 +314,43 @@ export class DatabaseStorage implements IStorage {
       connectedByUserId: string;
     },
   ): Promise<ToolostConnection> {
-    const existing = await this.getToolostConnection(data.connectedByUserId);
+    const environment = data.environment ?? getToolostApiEnvironment();
+    const scopedData = { ...data, environment };
+    const existing = await this.getToolostConnection(
+      data.connectedByUserId,
+      environment,
+    );
     if (existing) {
       const [updated] = await db
         .update(toolostConnection)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...scopedData, updatedAt: new Date() })
         .where(eq(toolostConnection.id, existing.id))
         .returning();
       return updated;
     }
     const [created] = await db
       .insert(toolostConnection)
-      .values({ ...data, connectedAt: new Date(), updatedAt: new Date() })
+      .values({
+        ...scopedData,
+        connectedAt: new Date(),
+        updatedAt: new Date(),
+      })
       .returning();
     return created;
   }
 
-  async deleteToolostConnection(userId: string): Promise<boolean> {
+  async deleteToolostConnection(
+    userId: string,
+    environment: ToolostApiEnvironment = getToolostApiEnvironment(),
+  ): Promise<boolean> {
     const result = await db
       .delete(toolostConnection)
-      .where(eq(toolostConnection.connectedByUserId, userId))
+      .where(
+        and(
+          eq(toolostConnection.connectedByUserId, userId),
+          eq(toolostConnection.environment, environment),
+        ),
+      )
       .returning({ id: toolostConnection.id });
     return result?.length > 0;
   }
@@ -1145,11 +1188,10 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(posts.userId, userId),
-            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`,
-            isNotNull(posts.scheduledAt),
+            sql`${posts.status} IN ('draft', 'scheduled', 'pending', 'published', 'completed', 'failed')`,
           ),
         )
-        .orderBy(desc(posts.scheduledAt))
+        .orderBy(desc(sql`COALESCE(${posts.scheduledAt}, ${posts.createdAt})`))
         .limit(500),
     ]);
 
@@ -1185,7 +1227,7 @@ export class DatabaseStorage implements IStorage {
             ? "scheduled"
             : p?.status === "completed"
               ? "published"
-              : (p?.status ?? "scheduled");
+              : (p?.status ?? "draft");
         return {
           id: p.id,
           userId: p.userId,
@@ -1207,8 +1249,8 @@ export class DatabaseStorage implements IStorage {
       });
 
     const merged = [...calendarEntries, ...normalizedPosts].sort((a, b) => {
-      const aTime = a?.scheduledAt ? new Date(a?.scheduledAt).getTime() : 0;
-      const bTime = b?.scheduledAt ? new Date(b?.scheduledAt).getTime() : 0;
+      const aTime = new Date(a?.scheduledAt || a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.scheduledAt || b?.createdAt || 0).getTime();
       return bTime - aTime;
     });
 
@@ -1235,7 +1277,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(posts.userId, userId),
-            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`,
+            sql`${posts.status} IN ('draft', 'scheduled', 'pending', 'published', 'completed', 'failed')`,
           ),
         )
         .groupBy(posts.status),
@@ -1265,14 +1307,17 @@ export class DatabaseStorage implements IStorage {
       calendarRows?.map((r) => [r?.status, r?.count]),
     );
     const postStatusMap: Record<string, string> = {
+      draft: "draft",
       scheduled: "scheduled",
       pending: "scheduled",
       published: "published",
       completed: "published",
+      failed: "failed",
     };
     const postCounts: Record<string, number> = {};
     for (const row of postRows) {
-      const mapped = postStatusMap[row?.status ?? ""] ?? "scheduled";
+      const mapped = postStatusMap[row?.status ?? ""];
+      if (!mapped) continue;
       postCounts[mapped] = (postCounts[mapped] ?? 0) + row?.count;
     }
 
@@ -1288,7 +1333,7 @@ export class DatabaseStorage implements IStorage {
       published: totalPublished,
       totalPublished,
       upcomingThisWeek,
-      drafts: calendarCounts["draft"] ?? 0,
+      drafts: (calendarCounts["draft"] ?? 0) + (postCounts["draft"] ?? 0),
     };
   }
 

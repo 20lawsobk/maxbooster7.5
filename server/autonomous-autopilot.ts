@@ -11,6 +11,10 @@ import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
 import { maxCoreControlTransport } from "./services/maxcoreControlTransport.js";
+import {
+  attachKnowledgeContext,
+  autopilotKnowledgeBaseService,
+} from "./services/autopilotKnowledgeBaseService.js";
 
 import {
   advancedUrlParser,
@@ -657,6 +661,11 @@ export class AutonomousAutopilot extends EventEmitter {
     // UCB1-selected params.topic is preserved for learning; the URL brief only
     // feeds generation. Undefined ⇒ unchanged topic-only behavior.
     const urlBrief = await this.resolveUrlBrief(params.platform);
+    const userKnowledgeBase =
+      await autopilotKnowledgeBaseService.getGenerationContext(this.userId, {
+        topic: params.topic,
+        platform: params.platform,
+      });
 
     const advancedResult =
       await advancedSocialAIService?.generateAdvancedContent({
@@ -677,6 +686,7 @@ export class AutonomousAutopilot extends EventEmitter {
         includeHashtags: true,
         includeEmojis: true,
         variantCount: 3,
+        context: attachKnowledgeContext(undefined, userKnowledgeBase),
       });
 
     return {

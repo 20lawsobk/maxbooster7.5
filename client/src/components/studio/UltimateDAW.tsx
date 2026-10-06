@@ -34,6 +34,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useProjectSync } from "@/hooks/useProjectSync";
 import { useDAWAudioPlayback } from "@/hooks/useDAWAudioPlayback";
+import { resolveStudioGenerationResponse } from "./studioAudioDelivery";
 import "./FlowStateTheme.css";
 
 type WorkspaceView = "arrange" | "mixer" | "edit" | "spatial" | "launcher";
@@ -313,26 +314,110 @@ export function UltimateDAW({
     }
   }, [projectId, toast]);
 
-  const handleGenerateMelody = useCallback(
-    async (params?: { key?: string; scale?: string; tempo?: number }) => {
+  const addGeneratedStudioResult = useCallback(
+    (result: {
+      name: string;
+      audioFilePath?: string;
+      duration?: number;
+      generatedNotes?: unknown;
+    }) => {
+      const notes = Array.isArray(result.generatedNotes)
+        ? result.generatedNotes
+        : [];
+      if (!result.audioFilePath && notes.length === 0) {
+        throw new Error("Generation returned no playable audio or MIDI notes.");
+      }
+
+      if (result.audioFilePath) {
+        const audioTrackId = store.addTrack("audio", `${result.name} Audio`);
+        store.addAudioClip(audioTrackId, {
+          trackId: audioTrackId,
+          startTime: 0,
+          duration: result.duration || 0,
+          sourceUrl: result.audioFilePath,
+          name: `${result.name} Audio`,
+          offset: 0,
+          gain: 1,
+          fadeIn: 0,
+          fadeOut: 0,
+          color: "#3b82f6",
+          muted: false,
+          locked: false,
+        });
+      }
+
+      if (notes.length > 0) {
+        const midiTrackId = store.addTrack("midi", `${result.name} MIDI`);
+        const duration = Math.max(
+          ...notes.map((note) => note.startTime + note.duration),
+        );
+        store.addMidiClip(midiTrackId, {
+          trackId: midiTrackId,
+          name: `${result.name} MIDI`,
+          startTime: 0,
+          duration,
+          notes: notes.map((note) => ({
+            ...note,
+            id: crypto.randomUUID(),
+          })),
+          color: "#8b5cf6",
+          muted: false,
+          locked: false,
+        });
+      }
+      return {
+        audioAdded: Boolean(result.audioFilePath),
+        midiAdded: notes.length > 0,
+      };
+    },
+    [store],
+  );
+
+  const generateStudioTextTrack = useCallback(
+    async (options: {
+      label: string;
+      text: string;
+      instrumentType: string;
+      instrumentCategory: "melodic" | "drums" | "percussion";
+      tempo?: number;
+      key?: string;
+      scale?: string;
+      genre?: string;
+    }) => {
       try {
+        if (!projectId) {
+          throw new Error("Open a project before generating audio.");
+        }
+        const tempo = options.tempo || transport.tempo;
         const res = await apiRequest("POST", "/api/studio/generation/text", {
-          text: "melodic synthesizer",
+          text: options.text,
+          instrumentType: options.instrumentType,
+          instrumentCategory: options.instrumentCategory,
           projectId,
           bars: 8,
-          instrumentType: "synth",
-          instrumentCategory: "melodic",
-          tempo: params.tempo || transport.tempo,
-          key: params.key || musicalKey,
-          scale: params.scale || scale,
+          tempo,
+          key: options.key || musicalKey,
+          scale: options.scale || scale,
+          genre: options.genre,
         });
-        const response = await res.json();
-        if (response.audioFilePath) {
-          toast({
-            title: "Melody Generated",
-            description: "New melody track has been created.",
-          });
-        }
+        const submitted = (await res.json()) as Record<string, unknown>;
+        const generated = await resolveStudioGenerationResponse(submitted);
+        const added = addGeneratedStudioResult({
+          name: options.label,
+          audioFilePath: generated.audioFilePath,
+          duration: generated.duration || (8 * 4 * 60) / tempo,
+          generatedNotes: generated.generatedNotes,
+        });
+        toast({
+          title: `${options.label} Generated`,
+          description: generated.midiError
+            ? `Audio was added, but MIDI could not be retrieved: ${generated.midiError}`
+            : added.audioAdded && added.midiAdded
+              ? "Generated audio and MIDI were added to the timeline."
+              : added.midiAdded
+                ? "Generated MIDI was added to the timeline."
+                : "Generated audio was added to the timeline.",
+        });
       } catch (error) {
         toast({
           title: "Generation Failed",
@@ -341,94 +426,66 @@ export function UltimateDAW({
         });
       }
     },
-    [projectId, transport.tempo, musicalKey, scale, toast],
+    [
+      addGeneratedStudioResult,
+      musicalKey,
+      projectId,
+      scale,
+      toast,
+      transport.tempo,
+    ],
+  );
+
+  const handleGenerateMelody = useCallback(
+    (params?: { key?: string; scale?: string; tempo?: number }) =>
+      generateStudioTextTrack({
+        label: "AI Melody",
+        text: "melodic synthesizer",
+        instrumentType: "synth",
+        instrumentCategory: "melodic",
+        tempo: params?.tempo,
+        key: params?.key,
+        scale: params?.scale,
+      }),
+    [generateStudioTextTrack],
   );
 
   const handleGenerateDrums = useCallback(
-    async (params?: { genre?: string; tempo?: number }) => {
-      try {
-        const res = await apiRequest("POST", "/api/studio/generation/text", {
-          text: `${params?.genre || "trap"} drums`,
-          projectId,
-          bars: 8,
-          instrumentType: "drums",
-          instrumentCategory: "drums",
-          tempo: params.tempo || transport.tempo,
-        });
-        const response = await res.json();
-        if (response.audioFilePath) {
-          toast({
-            title: "Drums Generated",
-            description: "New drum pattern has been created.",
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Generation Failed",
-          description: (error as Error).message,
-          variant: "destructive",
-        });
-      }
-    },
-    [projectId, transport.tempo, toast],
+    (params?: { genre?: string; tempo?: number }) =>
+      generateStudioTextTrack({
+        label: "AI Drums",
+        text: `${params?.genre || "trap"} drums`,
+        instrumentType: "drums",
+        instrumentCategory: "drums",
+        tempo: params?.tempo,
+        genre: params?.genre,
+      }),
+    [generateStudioTextTrack],
   );
 
   const handleGenerateBass = useCallback(
-    async (params?: { key?: string; scale?: string }) => {
-      try {
-        const res = await apiRequest("POST", "/api/studio/generation/text", {
-          text: "bass 808",
-          projectId,
-          bars: 8,
-          instrumentType: "bass",
-          instrumentCategory: "melodic",
-          tempo: transport.tempo,
-          key: params.key || musicalKey,
-          scale: params.scale || scale,
-        });
-        const response = await res.json();
-        if (response.audioFilePath) {
-          toast({
-            title: "Bass Generated",
-            description: "New bass line has been created.",
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Generation Failed",
-          description: (error as Error).message,
-          variant: "destructive",
-        });
-      }
-    },
-    [projectId, transport.tempo, musicalKey, scale, toast],
+    (params?: { key?: string; scale?: string }) =>
+      generateStudioTextTrack({
+        label: "AI Bass",
+        text: "bass 808",
+        instrumentType: "bass",
+        instrumentCategory: "melodic",
+        key: params?.key,
+        scale: params?.scale,
+      }),
+    [generateStudioTextTrack],
   );
 
-  const handleGeneratePercussion = useCallback(async () => {
-    try {
-      const res = await apiRequest("POST", "/api/studio/generation/text", {
+  const handleGeneratePercussion = useCallback(
+    () =>
+      generateStudioTextTrack({
+        label: "AI Percussion",
         text: "percussion shakers hi-hats",
-        projectId,
-        bars: 8,
         instrumentType: "percussion",
         instrumentCategory: "percussion",
-        tempo: transport.tempo,
-      });
-      const response = await res.json();
-      if (response.audioFilePath) {
-        toast({
-          title: "Percussion Generated",
-          description: "New percussion pattern has been created.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Generation Failed",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    }
-  }, [projectId, transport.tempo, toast]);
+      }),
+    [generateStudioTextTrack],
+  );
 
   const handleAnalyzeAudio = useCallback(async () => {
     return {
@@ -1087,30 +1144,21 @@ export function UltimateDAW({
                 initialTempo={transport.tempo}
                 onTrackGenerated={(track) => {
                   const trackName = track.name || "AI Generated Track";
-                  const trackType = track.type || "audio";
-                  const newTrackId = store.addTrack(
-                    trackType as Record<string, unknown>,
-                    trackName,
-                  );
-                  if (track.audioFilePath && newTrackId) {
-                    store.addAudioClip(newTrackId, {
-                      trackId: newTrackId,
-                      startTime: 0,
-                      duration: track.duration || 30,
-                      sourceUrl: track.audioFilePath,
-                      name: trackName,
-                      offset: 0,
-                      gain: 1,
-                      fadeIn: 0,
-                      fadeOut: 0,
-                      color: track.color || "#8B5CF6",
-                      muted: false,
-                      locked: false,
-                    });
-                  }
+                  const added = addGeneratedStudioResult({
+                    name: trackName,
+                    audioFilePath: track.audioFilePath,
+                    duration: track.duration,
+                    generatedNotes: track.generatedNotes,
+                  });
                   toast({
                     title: "Track Added",
-                    description: `"${trackName}" added to project.`,
+                    description: `"${trackName}" added to the timeline${
+                      added.audioAdded && added.midiAdded
+                        ? " with audio and MIDI"
+                        : added.midiAdded
+                          ? " as MIDI"
+                          : ""
+                    }.`,
                   });
                 }}
                 onClose={() => setShowMusicGenerator(false)}

@@ -244,6 +244,12 @@ function DashboardContent({ user }: { user: User }) {
     useAnalyticsInvalidation();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showContentOptimizer, setShowContentOptimizer] = useState(false);
+  const [optimizerContent, setOptimizerContent] = useState("");
+  const [optimizerPlatform, setOptimizerPlatform] = useState("instagram");
+  const [optimizerPostId, setOptimizerPostId] = useState("");
+  const [optimizerOriginalContent, setOptimizerOriginalContent] = useState("");
+  const [optimizedDraft, setOptimizedDraft] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userLevel, setUserLevel] = useState<
     "beginner" | "intermediate" | "advanced"
@@ -321,15 +327,62 @@ function DashboardContent({ user }: { user: User }) {
     },
   });
 
+  const { data: socialPosts = [] } = useQuery<any[]>({
+    queryKey: ["/api/social/posts"],
+    enabled: showContentOptimizer && hasPaidSubscription,
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/social/posts");
+      const result = await response.json();
+      return Array.isArray(result) ? result : [];
+    },
+  });
+  const optimizableDrafts = socialPosts.filter(
+    (post) =>
+      post?.status === "draft" &&
+      post?.approvalStatus === "draft" &&
+      typeof post?.content === "string" &&
+      post.content.trim(),
+  );
+
   const optimizeContentMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/ai/optimize-content");
+    mutationFn: async (input: {
+      content: string;
+      platform: string;
+      postId?: string;
+      expectedContent?: string;
+    }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/ai/optimize-content",
+        input,
+      );
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (!data?.success || !data?.draft?.id || !data?.draft?.content) {
+        toast({
+          title: "Optimization Was Not Saved",
+          description:
+            "The response did not include a persisted optimized draft.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setOptimizedDraft(data.draft);
+      if (data.updatedExisting) {
+        setOptimizerContent(data.draft.content);
+        setOptimizerOriginalContent(data.draft.content);
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["/api/social/posts"],
+      });
       toast({
-        title: "Content Optimized",
-        description: "AI has optimized your content for maximum reach.",
+        title: data.updatedExisting
+          ? "Existing Draft Updated"
+          : "Optimized Draft Saved",
+        description: data.updatedExisting
+          ? "The selected unpublished draft now contains the MaxCore rewrite."
+          : "Review the new draft in Social Media before scheduling or publishing.",
       });
       invalidateDashboard();
     },
@@ -418,10 +471,10 @@ function DashboardContent({ user }: { user: User }) {
     {
       title: "AI Content Optimization",
       description: hasPaidSubscription
-        ? "Optimize your content for maximum reach"
+        ? "Generate a MaxCore rewrite and save it as an unpublished draft"
         : "Upgrade to access AI features",
       icon: Brain,
-      action: () => {
+        action: () => {
         if (!hasPaidSubscription) {
           toast({
             title: "Subscription Required",
@@ -431,7 +484,8 @@ function DashboardContent({ user }: { user: User }) {
           });
           return;
         }
-        optimizeContentMutation.mutate();
+          setShowContentOptimizer(true);
+          setOptimizedDraft(null);
       },
       color: hasPaidSubscription
         ? "bg-purple-600 hover:bg-purple-700"
@@ -736,6 +790,175 @@ function DashboardContent({ user }: { user: User }) {
             </div>
           </CardContent>
         </Card>
+
+        {showContentOptimizer && (
+          <Card data-testid="dashboard-content-optimizer">
+            <CardHeader>
+              <CardTitle>Optimize a social post</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Choose one of your unreviewed drafts to update it in place, or
+                paste text to create a new draft. Nothing is scheduled or
+                published.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="dashboard-optimizer-existing-draft"
+                  className="text-sm font-medium"
+                >
+                  Existing draft (optional)
+                </label>
+                <select
+                  id="dashboard-optimizer-existing-draft"
+                  value={optimizerPostId}
+                  onChange={(event) => {
+                    const postId = event.target.value;
+                    const selected = optimizableDrafts.find(
+                      (post) => String(post.id) === postId,
+                    );
+                    setOptimizerPostId(selected ? String(selected.id) : "");
+                    setOptimizerOriginalContent(
+                      selected && typeof selected.content === "string"
+                        ? selected.content
+                        : "",
+                    );
+                    setOptimizerContent(
+                      selected && typeof selected.content === "string"
+                        ? selected.content
+                        : "",
+                    );
+                    if (selected?.platform) {
+                      setOptimizerPlatform(selected.platform);
+                    }
+                    setOptimizedDraft(null);
+                  }}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Create a new optimized draft</option>
+                  {optimizableDrafts.map((post) => (
+                    <option key={post.id} value={String(post.id)}>
+                      {post.platform} — {post.content.slice(0, 90)}
+                    </option>
+                  ))}
+                </select>
+                {optimizableDrafts.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No unreviewed drafts are available; enter text below to
+                    create a new draft.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="dashboard-optimizer-content"
+                  className="text-sm font-medium"
+                >
+                  Content to optimize
+                </label>
+                <textarea
+                  id="dashboard-optimizer-content"
+                  value={optimizerContent}
+                  onChange={(event) => setOptimizerContent(event.target.value)}
+                  maxLength={5000}
+                  rows={5}
+                  readOnly={Boolean(optimizerPostId)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  placeholder={
+                    optimizerPostId
+                      ? "Selected draft content"
+                      : "Paste the post you want MaxCore to improve..."
+                  }
+                  aria-describedby="dashboard-optimizer-count"
+                />
+                <p
+                  id="dashboard-optimizer-count"
+                  className="text-xs text-muted-foreground"
+                >
+                  {optimizerContent.length}/5000
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="dashboard-optimizer-platform"
+                  className="text-sm font-medium"
+                >
+                  Platform
+                </label>
+                <select
+                  id="dashboard-optimizer-platform"
+                  value={optimizerPlatform}
+                  onChange={(event) => setOptimizerPlatform(event.target.value)}
+                  disabled={Boolean(optimizerPostId)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="instagram">Instagram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="twitter">X / Twitter</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="threads">Threads</option>
+                  <option value="google_business">Google Business</option>
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() =>
+                    optimizeContentMutation.mutate({
+                      content: optimizerContent,
+                      platform: optimizerPlatform,
+                      ...(optimizerPostId
+                        ? {
+                            postId: optimizerPostId,
+                            expectedContent: optimizerOriginalContent,
+                          }
+                        : {}),
+                    })
+                  }
+                  disabled={
+                    !optimizerContent.trim() || optimizeContentMutation.isPending
+                  }
+                  data-testid="button-optimize-content"
+                >
+                  {optimizeContentMutation.isPending
+                    ? "Generating…"
+                    : "Generate optimized draft"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowContentOptimizer(false)}
+                >
+                  Close
+                </Button>
+              </div>
+              {optimizedDraft && (
+                <section
+                  className="space-y-3 rounded-md border bg-muted/30 p-4"
+                  aria-live="polite"
+                  data-testid="dashboard-optimized-draft"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold">
+                      {optimizedDraft.updatedExisting ? "Updated" : "Saved"}{" "}
+                      {optimizedDraft.platform} draft
+                    </h3>
+                    <Badge variant="secondary">Not published</Badge>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm">
+                    {optimizedDraft.content}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation("/social-media")}
+                  >
+                    Open Social Media drafts
+                  </Button>
+                </section>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Tabs */}
         <Tabs

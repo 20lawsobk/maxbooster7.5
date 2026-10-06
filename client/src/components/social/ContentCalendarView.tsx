@@ -124,7 +124,8 @@ export function ContentCalendarView({
       if (!rawDate) return false;
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return false;
-      return d.toISOString().split("T")[0] === dateStr;
+      const localDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return localDateStr === dateStr;
     });
   };
 

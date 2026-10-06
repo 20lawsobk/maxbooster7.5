@@ -106,15 +106,19 @@ const transaction = vi.hoisted(() => {
           update = value;
           return {
             where(condition: { field: string; value: unknown }) {
-              return {
-                returning: async () => {
+              const execute = () => {
                   const rows =
-                    table === distroReleasesTable ? releaseRows : trackRows;
+                    table === distroReleasesTable ? releaseRows :
+                      table === legacyReleasesTable ? legacyReleaseRows : trackRows;
                   const updated = rows
                     .filter((row) => matches(row, condition))
                     .map((row) => Object.assign(row, update));
                   return updated;
-                },
+              };
+              return {
+                returning: async () => execute(),
+                then: (resolve: any, reject: any) =>
+                  Promise.resolve().then(execute).then(resolve, reject),
               };
             },
           };
@@ -210,6 +214,21 @@ afterEach(() => {
 });
 
 describe("catalog import release identity and metadata merging", () => {
+  it("later discovery replaces an unknown genre placeholder without erasing collected fields", async () => {
+    await distributionDataTransferService.importProfileCatalog(
+      "user-1", "spotify", [release()], "Canonical Artist",
+    );
+    releaseRows[0].metadata.primaryGenre = "Other";
+    await distributionDataTransferService.importProfileCatalog(
+      "user-1", "deezer", [release({ genre: "Hip-Hop", coverUrl: undefined })],
+      "Canonical Artist",
+    );
+    expect(releaseRows).toHaveLength(1);
+    expect(releaseRows[0].metadata.primaryGenre).toBe("Hip-Hop");
+    expect(releaseRows[0].artworkUrl).toBe("https://cdn.example/cover.jpg");
+    expect(releaseRows[0].metadata.tracks).toHaveLength(2);
+  });
+
   it("repeating an import is idempotent and preserves artwork, tracks, and DSP data", async () => {
     await distributionDataTransferService.importProfileCatalog(
       "user-1",
@@ -336,6 +355,39 @@ describe("catalog import release identity and metadata merging", () => {
 });
 
 describe("cross-table duplicate detection (legacy `releases` table)", () => {
+  it("auto-discovery enriches an existing title-only legacy release without duplicating it", async () => {
+    legacyReleaseRows.push({
+      id: "legacy-release-1", userId: "user-1", title: "First Light",
+      metadata: { artistName: "Canonical Artist", tracks: [
+        { title: "First Light", trackNumber: 1 },
+        { title: "Afterglow", trackNumber: 2 },
+      ] },
+    });
+    const discovered = release({ genre: "Hip-Hop", streamingStats: {
+      totalStreams: 120, platforms: { spotify: { streams: 120, revenue: 1.2 } },
+    } });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const job = await distributionDataTransferService.importProfileCatalog(
+        "user-1", "spotify", [discovered], "Canonical Artist",
+      );
+      expect(job.failedItems).toBe(0);
+    }
+    expect(releaseRows).toHaveLength(0);
+    expect(legacyReleaseRows[0]).toMatchObject({
+      artworkUrl: "https://cdn.example/cover.jpg",
+      releaseDate: new Date("2024-01-01"),
+      metadata: {
+        upc: "123456789012", releaseType: "single", primaryGenre: "Hip-Hop",
+        trackCount: 2,
+        distributionPlatformLinks: { spotify: "https://open.spotify.com/album/1" },
+        sourceExternalIds: { spotify: "spotify-release-1" },
+        streamingStats: { totalStreams: 120 },
+      },
+    });
+    expect(legacyReleaseRows[0].metadata.tracks[0].isrc).toBe("US-MXB-24-00001");
+    expect(legacyReleaseRows[0].metadata.tracks[0].duration).toBe(210);
+  });
+
   it("importProfileCatalog skips a release that already exists in the legacy releases table instead of duplicating it", async () => {
     legacyReleaseRows.push({
       id: "legacy-release-1",

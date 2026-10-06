@@ -230,8 +230,10 @@ interface PromotableItem {
 
 function PromoteContentCard() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [contentType, setContentType] = useState<string>("beat");
   const [contentId, setContentId] = useState<string>("");
+  const [createdCampaign, setCreatedCampaign] = useState<any>(null);
 
   const { data: itemsData, isLoading: itemsLoading } = useQuery<{
     items: PromotableItem[];
@@ -249,7 +251,14 @@ function PromoteContentCard() {
       );
       return response.json();
     },
-    onSuccess: (data: { success?: boolean; message?: string }) => {
+    onSuccess: (data: {
+      success?: boolean;
+      campaign?: Record<string, any>;
+      creatives?: Array<Record<string, any>>;
+      savedAsDraft?: boolean;
+      error?: string;
+      message?: string;
+    }) => {
       if (data?.success === false) {
         toast({
           title: "Promotion Failed",
@@ -259,10 +268,27 @@ function PromoteContentCard() {
         });
         return;
       }
+      if (
+        !data?.savedAsDraft ||
+        !data?.campaign?.id ||
+        !Array.isArray(data.creatives) ||
+        data.creatives.length === 0
+      ) {
+        toast({
+          title: "Campaign Was Not Saved",
+          description:
+            "The response did not include a saved campaign draft and its generated copy.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setCreatedCampaign(data);
+      void queryClient.invalidateQueries({
+        queryKey: ["/api/advertising/campaigns"],
+      });
       toast({
-        title: "Ad Campaign Generated",
-        description:
-          "Your AI-generated campaign is ready — check your campaigns below.",
+        title: "Campaign Draft Saved",
+        description: "Review the generated copy before activating the campaign.",
       });
     },
     onError: (error: Error) => {
@@ -305,6 +331,7 @@ function PromoteContentCard() {
               onValueChange={(v) => {
                 setContentType(v);
                 setContentId("");
+                setCreatedCampaign(null);
               }}
             >
               <SelectTrigger data-testid="select-promote-content-type">
@@ -323,7 +350,13 @@ function PromoteContentCard() {
             <Label>
               {requiresItemPick ? "Which one?" : "Which one? (optional)"}
             </Label>
-            <Select value={contentId} onValueChange={setContentId}>
+            <Select
+              value={contentId}
+              onValueChange={(value) => {
+                setContentId(value);
+                setCreatedCampaign(null);
+              }}
+            >
               <SelectTrigger data-testid="select-promote-content-item">
                 <SelectValue
                   placeholder={
@@ -376,6 +409,59 @@ function PromoteContentCard() {
             </>
           )}
         </Button>
+        {createdCampaign && (
+          <section
+            className="space-y-3 rounded-lg border bg-muted/30 p-4"
+            aria-live="polite"
+            data-testid="generated-campaign-preview"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="font-semibold">
+                  {createdCampaign.campaign.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {createdCampaign.campaign.platform} ·{" "}
+                  {createdCampaign.campaign.objective || "Campaign"}
+                </p>
+              </div>
+              <Badge variant="secondary">Draft — not active</Badge>
+            </div>
+            {createdCampaign.creatives.map((creative: any, index: number) => (
+              <article
+                key={creative.id}
+                className="space-y-1 rounded-md border bg-background p-3"
+              >
+                <p className="text-xs text-muted-foreground">
+                  Creative {index + 1}
+                </p>
+                {creative.headline && (
+                  <h4 className="font-medium">{creative.headline}</h4>
+                )}
+                {creative.variants?.hook &&
+                  creative.variants.hook !== creative.headline && (
+                    <p className="text-sm font-medium">
+                      {creative.variants.hook}
+                    </p>
+                  )}
+                {creative.description && (
+                  <p className="whitespace-pre-wrap text-sm">
+                    {creative.description}
+                  </p>
+                )}
+                {creative.callToAction && (
+                  <p className="text-sm font-medium">
+                    Call to action: {creative.callToAction}
+                  </p>
+                )}
+              </article>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              The campaign and copy are saved. Nothing has been published or
+              activated.
+            </p>
+          </section>
+        )}
       </CardContent>
     </Card>
   );

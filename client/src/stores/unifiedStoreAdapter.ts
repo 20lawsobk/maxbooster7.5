@@ -65,6 +65,7 @@ export interface UnifiedStoreState {
   reorderTracks: (fromIndex: number, toIndex: number) => void;
 
   addAudioClip: (trackId: string, clip: Omit<AudioClip, "id">) => string;
+  addMidiClip: (trackId: string, clip: Omit<MidiClip, "id">) => string;
   updateAudioClip: (
     trackId: string,
     clipId: string,
@@ -302,6 +303,7 @@ export function useUnifiedStore(): UnifiedStoreState {
     reorderTracks: newStore.reorderTracks,
 
     addAudioClip: newStore.addAudioClip,
+    addMidiClip: newStore.addMidiClip,
     updateAudioClip: newStore.updateAudioClip,
     removeAudioClip: newStore.removeAudioClip,
 

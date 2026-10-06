@@ -2,6 +2,10 @@ import { storage } from "../storage";
 import { logger } from "../logger.js";
 import { CircuitBreaker } from "../infrastructure/circuitBreaker";
 import { collectToolostPages } from "./toolostPagination";
+import {
+  getToolostApiEnvironment,
+  type ToolostApiEnvironment,
+} from "./toolostEnvironment.js";
 
 /**
  * Too Lost's confirmed failure envelope is `{status:false, error:"..."}`;
@@ -356,7 +360,7 @@ class ToolostService {
   private readonly userId?: string;
   private clientId: string | undefined;
   private clientSecret: string | undefined;
-  private environment: "production" | "sandbox";
+  private environment: ToolostApiEnvironment;
   private baseUrl: string;
   private authBaseUrl: string;
   private tokenUrl: string;
@@ -377,12 +381,10 @@ class ToolostService {
   constructor(userId?: string) {
     this.userId = userId;
     this.clientId = process.env.TOOLOST_CLIENT_ID;
-    this.environment =
-      process.env.TOOLOST_ENVIRONMENT === "sandbox" ? "sandbox" : "production";
+    this.environment = getToolostApiEnvironment();
     this.clientSecret =
       this.environment === "sandbox"
-        ? process.env.TOOLOST_SANDBOX_CLIENT_SECRET ??
-          process.env.TOOLOST_CLIENT_SECRET
+        ? process.env.TOOLOST_SANDBOX_CLIENT_SECRET
         : process.env.TOOLOST_CLIENT_SECRET;
     this.baseUrl =
       this.environment === "sandbox"
@@ -408,10 +410,10 @@ class ToolostService {
       resetTimeout: 60000,
     });
 
-    if (!this.clientId || !this.clientSecret) {
+    const configurationError = this.getOAuthConfigurationError();
+    if (configurationError) {
       logger.warn(
-          "⚠️  Too Lost OAuth app credentials not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET). " +
-          "Distribution features are unavailable until the user completes the Too Lost OAuth connect flow.",
+        `${configurationError} Distribution features are unavailable until the required Too Lost OAuth configuration is present.`,
       );
     }
 
@@ -425,7 +427,10 @@ class ToolostService {
   private async loadConnection(): Promise<void> {
     if (!this.userId) return;
     try {
-      const row = await storage.getToolostConnection(this.userId);
+      const row = await storage.getToolostConnection(
+        this.userId,
+        this.environment,
+      );
       if (row) {
         this.connection = {
           accessToken: row.accessToken,
@@ -457,10 +462,8 @@ class ToolostService {
   }
 
   /**
-   * Synchronous, matches LabelGridService.isApiConfigured()'s contract so
-   * every existing call site keeps working unmodified. This is a fast
-   * advisory check only, reflecting whatever loadConnection()/refresh last
-   * cached — not a live DB read. Real API methods independently verify via
+   * Fast advisory check based on the current environment's cached connection.
+   * Real API methods independently verify the stored grant via
    * ensureValidToken() before use.
    */
   isApiConfigured(): boolean {
@@ -468,7 +471,30 @@ class ToolostService {
   }
 
   isOAuthConfigured(): boolean {
-    return !!(this.clientId && this.clientSecret);
+    return this.getOAuthConfigurationError() === null;
+  }
+
+  private getOAuthCredentials(): {
+    clientId: string;
+    clientSecret: string;
+  } {
+    const configurationError = this.getOAuthConfigurationError();
+    if (configurationError) throw new Error(configurationError);
+    const clientId = this.clientId;
+    const clientSecret = this.clientSecret;
+    if (!clientId || !clientSecret) {
+      throw new Error("Too Lost OAuth credentials are unavailable.");
+    }
+    return { clientId, clientSecret };
+  }
+
+  getOAuthConfigurationError(): string | null {
+    if (this.clientId && this.clientSecret) return null;
+    const variables =
+      this.environment === "sandbox"
+        ? "TOOLOST_CLIENT_ID / TOOLOST_SANDBOX_CLIENT_SECRET"
+        : "TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET";
+    return `Too Lost OAuth app credentials are not configured for the ${this.environment} environment (${variables}).`;
   }
 
   /**
@@ -478,14 +504,10 @@ class ToolostService {
    * grant.
    */
   getOAuthAuthorizationUrl(redirectUri: string, state: string): string {
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error(
-        "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
-      );
-    }
+    const { clientId } = this.getOAuthCredentials();
     const url = new URL(`${this.authBaseUrl}/authorize`);
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", this.clientId);
+    url.searchParams.set("client_id", clientId);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("state", state);
     url.searchParams.set(
@@ -514,17 +536,13 @@ class ToolostService {
         "Too Lost OAuth code exchange requires an authenticated user.",
       );
     }
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error(
-        "Too Lost OAuth app credentials are not configured (TOOLOST_CLIENT_ID / TOOLOST_CLIENT_SECRET).",
-      );
-    }
+    const { clientId, clientSecret } = this.getOAuthCredentials();
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code,
       redirect_uri: redirectUri,
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
+      client_id: clientId,
+      client_secret: clientSecret,
     });
     const res = await fetch(this.tokenUrl, {
       method: "POST",

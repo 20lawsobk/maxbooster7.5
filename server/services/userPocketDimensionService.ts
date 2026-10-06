@@ -13,9 +13,9 @@ import {
   userStorageFiles,
   type UserStorage,
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes, randomUUID } from "crypto";
 import { env } from "../config/env.js";
 
 const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
@@ -96,6 +96,7 @@ export class UserPocketDimensionService {
         "stems",
         "exports",
         "ai-journey",
+        "autopilot-knowledge",
       ];
       for (const folder of defaultFolders) {
         await pocket?.write(`${folder}/.gitkeep`, "");
@@ -179,52 +180,95 @@ export class UserPocketDimensionService {
       metadata?: Record<string, any>;
     },
   ): Promise<{ fileKey: string; sizeBytes: number; compressedSize: number }> {
-    const pocket = await this.getUserPocket(userId);
-    if (!pocket) {
-      throw new Error(`Storage not initialized for user ${userId}`);
-    }
+    const release = await this.acquireWriteLock(userId);
+    try {
+      const pocket = await this.getUserPocket(userId);
+      if (!pocket) {
+        throw new Error(`Storage not initialized for user ${userId}`);
+      }
 
-    const folder = options?.folder || "uploads";
-    const fileKey = `${folder}/${Date.now()}-${fileName}`;
+      const folder = (options?.folder || "uploads")
+        .replace(/\\/g, "/")
+        .replace(/^\/+|\/+$/g, "");
+      const folderParts = folder.split("/");
+      if (
+        !folder ||
+        folderParts.some(
+          (part) =>
+            !part ||
+            part === "." ||
+            part === ".." ||
+            !/^[a-zA-Z0-9._-]{1,100}$/.test(part),
+        )
+      ) {
+        throw new Error("Invalid storage folder");
+      }
 
-    const entry = await pocket?.write(fileKey, data);
+      const safeFileName = fileName
+        .replace(/[\\/]/g, "_")
+        .replace(/[\u0000-\u001f\u007f]/g, "_")
+        .trim()
+        .slice(0, 180);
+      if (!safeFileName || safeFileName === "." || safeFileName === "..") {
+        throw new Error("Invalid file name");
+      }
+      const fileKey = `${folder}/${randomUUID()}-${safeFileName}`;
 
-    const [storage] = await db
-      .select()
-      .from(userStorage)
-      .where(eq(userStorage.userId, userId))
-      .limit(1);
+      const [storage] = await db
+        .select()
+        .from(userStorage)
+        .where(eq(userStorage.userId, userId))
+        .limit(1);
+      if (!storage || !storage.isActive) {
+        throw new Error(`Storage not initialized for user ${userId}`);
+      }
 
-    if (storage) {
-      await db.insert(userStorageFiles).values({
-        userId,
-        storageId: storage.id,
-        fileName,
+      let entry: Awaited<ReturnType<typeof pocket.write>>;
+      try {
+        entry = await pocket.write(fileKey, data);
+        await db.transaction(async (tx) => {
+          await tx.insert(userStorageFiles).values({
+            userId,
+            storageId: storage.id,
+            fileName: safeFileName,
+            fileKey,
+            mimeType: options?.mimeType ?? "application/octet-stream",
+            sizeBytes: data.length,
+            folder,
+            isPublic: options?.isPublic ?? false,
+            metadata: options?.metadata ?? {},
+          });
+
+          await tx
+            .update(userStorage)
+            .set({
+              totalBytes: sql`COALESCE(${userStorage.totalBytes}, 0) + ${data.length}`,
+              fileCount: sql`COALESCE(${userStorage.fileCount}, 0) + 1`,
+              lastAccessedAt: new Date(),
+            })
+            .where(eq(userStorage.id, storage.id));
+        });
+      } catch (error) {
+        try {
+          await pocket.delete(fileKey);
+        } catch (cleanupError) {
+          logger.error(
+            { err: cleanupError, userId, fileKey },
+            "[PocketDimension] Failed to remove an untracked file after storage failure",
+          );
+        }
+        throw error;
+      }
+
+      logger.info(`[PocketDimension] Stored file ${fileKey} for user ${userId}`);
+      return {
         fileKey,
-        mimeType: options!.mimeType,
-        sizeBytes: data.length,
-        folder,
-        isPublic: options!.isPublic || false,
-        metadata: options!.metadata || {},
-      });
-
-      await db
-        .update(userStorage)
-        .set({
-          totalBytes: (storage?.totalBytes || 0) + data?.length,
-          fileCount: (storage?.fileCount || 0) + 1,
-          lastAccessedAt: new Date(),
-        })
-        .where(eq(userStorage.id, storage?.id));
+        sizeBytes: entry.size,
+        compressedSize: entry.compressedSize,
+      };
+    } finally {
+      release();
     }
-
-    logger.info(`[PocketDimension] Stored file ${fileKey} for user ${userId}`);
-
-    return {
-      fileKey,
-      sizeBytes: entry.size,
-      compressedSize: entry.compressedSize,
-    };
   }
 
   /**
@@ -248,15 +292,42 @@ export class UserPocketDimensionService {
       return false;
     }
 
-    const deleted = await pocket?.delete(fileKey);
+    const [trackedFile] = await db
+      .select()
+      .from(userStorageFiles)
+      .where(
+        and(
+          eq(userStorageFiles.userId, userId),
+          eq(userStorageFiles.fileKey, fileKey),
+        ),
+      )
+      .limit(1);
+    const deleted = await pocket.delete(fileKey);
 
-    if (deleted) {
-      await db
-        .delete(userStorageFiles)
-        .where(eq(userStorageFiles.fileKey, fileKey));
+    if (trackedFile) {
+      await db.transaction(async (tx) => {
+        const [removedRecord] = await tx
+          .delete(userStorageFiles)
+          .where(
+            and(
+              eq(userStorageFiles.userId, userId),
+              eq(userStorageFiles.fileKey, fileKey),
+            ),
+          )
+          .returning({ id: userStorageFiles.id });
+        if (!removedRecord) return;
+        await tx
+          .update(userStorage)
+          .set({
+            totalBytes: sql`GREATEST(0, COALESCE(${userStorage.totalBytes}, 0) - ${trackedFile.sizeBytes ?? 0})`,
+            fileCount: sql`GREATEST(0, COALESCE(${userStorage.fileCount}, 0) - 1)`,
+            lastAccessedAt: new Date(),
+          })
+          .where(eq(userStorage.userId, userId));
+      });
     }
 
-    return deleted;
+    return deleted || Boolean(trackedFile);
   }
 
   /**

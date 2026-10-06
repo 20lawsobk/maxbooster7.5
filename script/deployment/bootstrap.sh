@@ -10,7 +10,9 @@ trap 'echo "[bootstrap] Interrupted by INT" >&2; exit 130' INT
 export DEPLOY_EXECUTIVE_STARTED_SECONDS
 DEPLOY_EXECUTIVE_STARTED_SECONDS=$(date +%s)
 node_bin=""
-for candidate in .node_bin/node "$(command -v node || true)" /nix/store/*nodejs*/bin/node; do
+# Do not eagerly glob the entire lazy-mounted Nix store before probing PATH.
+# Shell glob expansion is unbounded and happens before the first loop body.
+for candidate in .node_bin/node "$(command -v node || true)"; do
   [ -x "$candidate" ] || continue
   echo "[bootstrap] Probing Node: $candidate"
   if [ -x "$candidate" ] && timeout 10 "$candidate" --version >/dev/null 2>&1; then
@@ -35,11 +37,13 @@ export PATH="$tools:$PATH"
 for manager in npm pnpm; do
   echo "[bootstrap] Resolving compatible $manager"
   if [ "$manager" = npm ]; then
-    candidates=(/nix/store/*nodejs*/lib/node_modules/npm/bin/npm-cli.js)
+    mapfile -t candidates < <(timeout --kill-after=2s 10 bash -c \
+      'printf "%s\n" /nix/store/*nodejs*/lib/node_modules/npm/bin/npm-cli.js' || true)
     cli=npm-cli.js
     expected=$(timeout 10 "$tools/node" -p "require('./package.json').packageManager.replace(/^npm@/,'')")
   else
-    candidates=(/nix/store/*pnpm*/libexec/pnpm/bin/pnpm.cjs /nix/store/*pnpm*/lib/node_modules/pnpm/bin/pnpm.cjs)
+    mapfile -t candidates < <(timeout --kill-after=2s 10 bash -c \
+      'printf "%s\n" /nix/store/*pnpm*/libexec/pnpm/bin/pnpm.cjs /nix/store/*pnpm*/lib/node_modules/pnpm/bin/pnpm.cjs' || true)
     cli=pnpm.cjs
     expected=""
   fi
@@ -51,9 +55,20 @@ const fs = require("node:fs");
 const path = require("node:path");
 const [expected, preferred, ...candidates] = process.argv.slice(2);
 const matches = [];
-for (const file of candidates) {
+for (let file of candidates) {
   if (!file) continue;
   try {
+    // Replit's PATH npm may be a Nix shell wrapper rather than the npm CLI
+    // symlink. Follow only an explicit immutable exec target; never execute or
+    // source wrapper text during discovery.
+    for (let hop = 0; hop < 4; hop++) {
+      file = fs.realpathSync(file);
+      if (!file.startsWith("/nix/store/")) break;
+      const text = fs.readFileSync(file, "utf8");
+      const target = text.match(/^exec\s+"(\/nix\/store\/[^"\n]+)"\s+"\$@"\s*$/m)?.[1];
+      if (!target) break;
+      file = target;
+    }
     if (!fs.statSync(file).isFile()) continue;
     const pkg = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(file)), "package.json"), "utf8"));
     if (typeof pkg.version !== "string" || (expected && pkg.version !== expected)) continue;

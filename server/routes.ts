@@ -7,7 +7,7 @@ import { storage } from "./storage.js";
 import { db, pool } from "./db.js";
 import { createOwnedRoyaltySplit, updateOwnedRoyaltySplit, RoyaltySplitError } from "./services/royaltySplitOwnership.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits } from "../shared/schema.js";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits, posts } from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
@@ -34,6 +34,7 @@ import {
   loginRateLimiter,
   registerRateLimiter,
   forgotPasswordRateLimiter,
+  aiRateLimiter,
 } from "./middleware/rateLimiter.js";
 import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.js";
 import { requestIdMiddleware } from "./middleware/requestId.js";
@@ -43,6 +44,8 @@ import {
 } from "./middleware/apiCache.js";
 import { blockDemoWrite } from "./auth.js";
 import { requireAuth, requireAdmin, require2FA } from "./middleware/auth.js";
+import { AIUnavailableError } from "./lib/aiSource.js";
+import { generateSocialDirect } from "./services/maxcoreDomainAdapter.js";
 
 import { emailService } from "./services/emailService.js";
 import { upload, createHardenedUpload } from "./middleware/uploadHandler.js";
@@ -6931,58 +6934,264 @@ export async function registerRoutes(
   app.use("/api/undo", undoRouter);
   app.use("/api/batch", batchRouter);
 
-  // AI: Optimize content
-  app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    try {
-      // Check if user has paid subscription
-      if (
-        !req.user.subscriptionTier ||
-        req.user.subscriptionTier === "free" ||
-        req.user.subscriptionTier === "trial"
-      ) {
-        return res.status(403).json({
-          message:
-            "AI content optimization requires an active paid subscription",
-          requiresUpgrade: true,
-        });
+  // Generate and persist an optimized social draft. This does not publish or
+  // schedule content; the user reviews the saved draft in Social Media first.
+  app.post(
+    "/api/ai/optimize-content",
+    requireAuth,
+    aiRateLimiter,
+    async (req: Request, res: Response) => {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
       }
+      try {
+        if (
+          !req.user?.subscriptionTier ||
+          req.user.subscriptionTier === "free" ||
+          req.user.subscriptionTier === "trial"
+        ) {
+          return res.status(403).json({
+            message:
+              "AI content optimization requires an active paid subscription",
+            requiresUpgrade: true,
+          });
+        }
 
-      // Simulate AI optimization response
-      return res.json({
-        success: true,
-        optimizations: [
-          {
-            type: "metadata",
-            title: "Metadata Optimization",
-            description:
-              "Enhanced track titles and descriptions for better discoverability",
-            applied: true,
-          },
-          {
-            type: "social",
-            title: "Social Media Optimization",
-            description:
-              "Optimized posting times and hashtags for maximum engagement",
-            applied: true,
-          },
-          {
-            type: "distribution",
-            title: "Distribution Optimization",
-            description: "Recommended platform-specific optimizations applied",
-            applied: true,
-          },
-        ],
-        message:
-          "Your content has been optimized for maximum reach and engagement.",
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "AI optimize content error");
-      return res.status(500).json({ message: "Failed to optimize content" });
-    }
-  });
+        const body =
+          req.body && typeof req.body === "object" && !Array.isArray(req.body)
+            ? (req.body as Record<string, unknown>)
+            : {};
+        const postId =
+          typeof body.postId === "string" && body.postId.trim()
+            ? body.postId.trim()
+            : null;
+        if (body.postId !== undefined && (!postId || postId.length > 128)) {
+          return res.status(400).json({ message: "Invalid draft post ID" });
+        }
+        let content =
+          typeof body.content === "string" ? body.content.trim() : "";
+        let platform =
+          typeof body.platform === "string" ? body.platform.trim() : "";
+        const allowedPlatforms = new Set([
+          "instagram",
+          "twitter",
+          "facebook",
+          "tiktok",
+          "youtube",
+          "linkedin",
+          "threads",
+          "google_business",
+        ]);
+        let existingDraft:
+          | {
+              id: string;
+              platform: string;
+              content: string;
+              status: string | null;
+              approvalStatus: string | null;
+            }
+          | undefined;
+        if (postId) {
+          if (typeof body.expectedContent !== "string") {
+            return res.status(400).json({
+              message: "The selected draft version is required for safe updates",
+            });
+          }
+          const [ownedPost] = await db
+            .select({
+              id: posts.id,
+              platform: posts.platform,
+              content: posts.content,
+              status: posts.status,
+              approvalStatus: posts.approvalStatus,
+              engagement: posts.engagement,
+            })
+            .from(posts)
+            .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+            .limit(1);
+          if (!ownedPost) {
+            return res.status(404).json({ message: "Draft post not found" });
+          }
+          if (
+            ownedPost.status !== "draft" ||
+            ownedPost.approvalStatus !== "draft"
+          ) {
+            return res.status(409).json({
+              message: "Only an unreviewed draft can be optimized in place",
+            });
+          }
+          if (typeof ownedPost.content !== "string") {
+            return res.status(400).json({
+              message: "The selected draft has no text to optimize",
+            });
+          }
+          let parsedContent: Record<string, unknown> = {};
+          try {
+            const decoded = JSON.parse(ownedPost.content);
+            if (decoded && typeof decoded === "object") {
+              parsedContent = decoded as Record<string, unknown>;
+            }
+          } catch {
+            // Plain-text post bodies are stored without JSON encoding.
+          }
+          const engagement =
+            ownedPost.engagement && typeof ownedPost.engagement === "object"
+              ? (ownedPost.engagement as Record<string, unknown>)
+              : {};
+          const selectedContent =
+            engagement._autopilotMeta === true &&
+            engagement.content &&
+            typeof engagement.content === "object"
+              ? (engagement.content as Record<string, unknown>)
+              : parsedContent;
+          const originalContent =
+            (typeof selectedContent.text === "string" &&
+              selectedContent.text) ||
+            (typeof selectedContent.caption === "string" &&
+              selectedContent.caption) ||
+            ownedPost.content;
+          if (body.expectedContent !== originalContent) {
+            return res.status(409).json({
+              message:
+                "This draft changed since it was loaded. Refresh the draft list before optimizing it.",
+            });
+          }
+          content = originalContent.trim();
+          platform = ownedPost.platform;
+          existingDraft = {
+            id: ownedPost.id,
+            platform: ownedPost.platform,
+            content: ownedPost.content,
+            status: ownedPost.status,
+            approvalStatus: ownedPost.approvalStatus,
+          };
+        }
+        if (!content || content.length > 5000) {
+          return res.status(400).json({
+            message: "Content is required and must be 5,000 characters or fewer",
+          });
+        }
+        if (!allowedPlatforms.has(platform)) {
+          return res.status(400).json({ message: "Unsupported social platform" });
+        }
+
+        const generated = await generateSocialDirect({
+          userId,
+          platform:
+            platform === "google_business" ? "googlebusiness" : platform,
+          topic: content,
+          tone: "professional",
+          goal: "engagement",
+          includeHashtags: true,
+          numVariants: 1,
+          instruction:
+            "Optimize the supplied existing social post for clarity, relevance, and engagement. Preserve its factual claims, intent, names, dates, and prices. Do not invent new facts or change what the post promises. Return a review-ready draft, not a publishing action.",
+        });
+        const variant = generated.variants?.[0];
+        if (!variant) {
+          throw new AIUnavailableError(
+            "MaxCore returned no optimized social draft",
+          );
+        }
+        const optimizedContent =
+          variant.caption ||
+          [variant.hook, variant.body, variant.cta]
+            .filter(Boolean)
+            .join("\n\n");
+        if (!optimizedContent.trim()) {
+          throw new AIUnavailableError("MaxCore returned empty optimized copy");
+        }
+        if (optimizedContent.length > 5000) {
+          throw new AIUnavailableError(
+            "MaxCore returned optimized copy over the 5,000-character limit",
+          );
+        }
+
+        let draft:
+          | {
+              id: string;
+              platform: string;
+              content: string | null;
+              status: string | null;
+              approvalStatus: string | null;
+              createdAt: Date | null;
+            }
+          | undefined;
+        let updatedExisting = false;
+        if (existingDraft) {
+          const [updated] = await db
+            .update(posts)
+            .set({ content: optimizedContent })
+            .where(
+              and(
+                eq(posts.id, existingDraft.id),
+                eq(posts.userId, userId),
+                eq(posts.status, "draft"),
+                eq(posts.approvalStatus, "draft"),
+                eq(posts.content, existingDraft.content),
+              ),
+            )
+            .returning({
+              id: posts.id,
+              platform: posts.platform,
+              content: posts.content,
+              status: posts.status,
+              approvalStatus: posts.approvalStatus,
+              createdAt: posts.createdAt,
+            });
+          if (!updated) {
+            return res.status(409).json({
+              message:
+                "This draft changed while MaxCore was optimizing it. Reload it and try again.",
+            });
+          }
+          draft = updated;
+          updatedExisting = true;
+        } else {
+          const [created] = await db
+            .insert(posts)
+            .values({
+              userId,
+              platform,
+              content: optimizedContent,
+              status: "draft",
+              approvalStatus: "draft",
+            })
+            .returning({
+              id: posts.id,
+              platform: posts.platform,
+              content: posts.content,
+              status: posts.status,
+              approvalStatus: posts.approvalStatus,
+              createdAt: posts.createdAt,
+            });
+          draft = created;
+        }
+        if (!draft) {
+          throw new Error("Optimized content draft was not persisted");
+        }
+
+        return res.status(201).json({
+          success: true,
+          source: "MaxCoreAI",
+          published: false,
+          updatedExisting,
+          draft,
+        });
+      } catch (error) {
+        if (error instanceof AIUnavailableError) {
+          return res.status(error.statusCode).json({
+            success: false,
+            code: error.code,
+            message: "MaxCore content optimization is temporarily unavailable",
+          });
+        }
+        logger.warn({ err: error }, "AI optimize content error");
+        return res.status(500).json({ message: "Failed to optimize content" });
+      }
+    },
+  );
 
   // Direct registration for socialMedia — bypasses the lazy module loader entirely.
   // In production CJS bundles, the lazy-init ordering can cause socialMedia's
@@ -7201,6 +7410,11 @@ export async function registerRoutes(
       path: "/api/autopilot/preferences",
       name: "autopilotPreferences",
       loader: () => import("./routes/autopilotPreferences"),
+    },
+    {
+      path: "/api/autopilot/knowledge",
+      name: "autopilotKnowledge",
+      loader: () => import("./routes/autopilotKnowledge"),
     },
 
     // Studio/DAW Routes

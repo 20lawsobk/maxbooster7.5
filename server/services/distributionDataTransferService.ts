@@ -988,6 +988,7 @@ class DistributionDataTransferService {
                   spTx,
                   crossTableMatch.id,
                   {
+                    ...scanned,
                     upc: scanned.upc,
                     coverUrl: scanned.coverUrl,
                     platforms: scanned.platforms,
@@ -3538,6 +3539,7 @@ class DistributionDataTransferService {
       uniqueReleases[existingIndex] = {
         ...existing,
         coverUrl: existing.coverUrl || scopedRelease.coverUrl,
+        releaseDate: existing.releaseDate || scopedRelease.releaseDate,
         platformUrl: existing.platformUrl || scopedRelease.platformUrl,
         upc: existing.upc || scopedRelease.upc,
         genre: existing.genre || scopedRelease.genre,
@@ -3605,6 +3607,7 @@ class DistributionDataTransferService {
                 spTx,
                 crossTableMatch.id,
                 {
+                  ...release,
                   upc: release.upc,
                   coverUrl: release.coverUrl,
                   platforms: release.platforms,
@@ -3851,12 +3854,7 @@ class DistributionDataTransferService {
   private async backfillLegacyReleaseFromScan(
     tx: any,
     matchId: string,
-    incoming: {
-      upc?: string | null;
-      coverUrl?: string | null;
-      platforms?: string[];
-      tracks?: Array<Record<string, unknown>>;
-    },
+    incoming: Parameters<typeof buildCrossTableBackfillPatch>[1],
   ): Promise<void> {
     const [existingRow] = await tx
       .select()
@@ -3865,7 +3863,7 @@ class DistributionDataTransferService {
     if (!existingRow) return;
 
     const patch = buildCrossTableBackfillPatch(
-      { artworkUrl: existingRow.artworkUrl, metadata: existingRow.metadata },
+      { artworkUrl: existingRow.artworkUrl, releaseDate: existingRow.releaseDate, metadata: existingRow.metadata },
       incoming,
     );
     if (!patch) return;
@@ -3980,7 +3978,9 @@ class DistributionDataTransferService {
       releaseType:
         existingMetadata.releaseType || release.releaseType || "single",
       primaryGenre:
-        existingMetadata.primaryGenre || release.genre || "Other",
+        existingMetadata.primaryGenre && existingMetadata.primaryGenre !== "Other"
+          ? existingMetadata.primaryGenre
+          : release.genre || existingMetadata.primaryGenre || null,
       upc: existingMetadata.upc || release.upc || null,
       originalPlatformLinks: platformLinks,
       distributionPlatformLinks: platformLinks,
