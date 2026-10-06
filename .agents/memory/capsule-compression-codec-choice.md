@@ -32,6 +32,21 @@ A naive `zstd -T0 -d | tar -x` or `tar -xzf` CLI pipe has measurably different p
 
 Net result after switching to zstd-19 and measuring through the real restore path both times: node_modules decompression went from 25.7s (gzip-9) to 15.2s (zstd-19) — faster, not just smaller.
 
+## Small-file source capsules: process overhead matters
+
+Preserve compression quality while avoiding one CLI process per small source
+file and per verification read.
+
+**Why:** A publishing attempt was interrupted with only 2,769 of 11,768 files
+packed. A local 30-file encode/decode comparison measured 5.81s via CLI versus
+0.075s with native Node Zstandard, at the same level/window and comparable size.
+The interruption's sender was not identified; this measurement establishes a
+bottleneck, not proof of the platform's timeout policy.
+
+**How to apply:** Keep large-file adaptive compression separate. Verify native
+frames with the existing CLI decoder, old frames with the native decoder, and
+reopen/extract a persisted capsule in a fresh process.
+
 ## Verification technique: hardlink copies for destructive-operation testing
 The real capsule packer deletes its source directory after packing (by design, to avoid double-shipping the bytes). To verify a real production directory survives a pack→restore round trip byte-identically without risking the live directory, snapshot it first with `cp -al <src> <scratch>` (hardlink copy, same filesystem). This is near-instant and uses no extra disk (inodes are shared) since it doesn't duplicate file content — only when the pack step later deletes ITS copy do the hardlinks to the original's inodes keep the real data safe. Confirmed safe and fast on multi-GB real trees (`node_modules`, `external/maxcore`, `external/pdim`).
 
