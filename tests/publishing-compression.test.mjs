@@ -3,146 +3,127 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { pathToFileURL } from "node:url";
+import { buildSync } from "esbuild";
 import { inspectArtifacts } from "../scripts/verify-runtime-artifacts.mjs";
-import { transformSync } from "esbuild";
 
-// Exercise the actual publishing compressor without invoking build.sh's
-// source deletion, installs, providers, or deployment operations.
 function setup(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "publishing-compression-"));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const build = fs.readFileSync("build.sh", "utf8");
-  const start = build.indexOf('_PDIM_FORMAT="gzip-1"');
-  const end = build.indexOf("# ── node_modules pre-pruning", start);
-  assert.ok(start >= 0 && end > start);
-  fs.writeFileSync(path.join(root, "compress.sh"), build.slice(start, end));
-  const packStart = build.indexOf("_pdim_pack() {");
-  const packEnd = build.indexOf("# Pre-prune node_modules, then pack all capsules", packStart);
-  assert.ok(packStart >= 0 && packEnd > packStart);
-  fs.writeFileSync(path.join(root, "pack.sh"), build.slice(packStart, packEnd));
-  fs.mkdirSync(path.join(root, "fixture"));
-  fs.writeFileSync(path.join(root, "fixture/data.txt"), "capsule fixture\n".repeat(65536));
-  return {
-    root,
-    run: command => spawnSync("bash", ["-c", `${build.slice(0, build.indexOf("# ─── Purge"))}\nsource ./compress.sh; ${command}`], {
-      cwd: root, encoding: "utf8",
-      env: { ...process.env, GZIP: "-9", XZ_DEFAULTS: "-9e -T0", XZ_OPT: "-9e -T0" },
-    }),
-  };
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "publish-zstd-"));
+  t.after(() => fs.rmSync(root, {recursive:true, force:true}));
+  fs.mkdirSync(path.join(root, "dist"));
+  buildSync({entryPoints:["script/publish-capsules.ts"], bundle:true, platform:"node",
+    format:"esm", outfile:path.join(root,"dist/publish-capsules.mjs")});
+  fs.copyFileSync("dist/pdim-restore.mjs", path.join(root,"dist/pdim-restore.mjs"));
+  fs.mkdirSync(path.join(root,"fixture"));
+  fs.writeFileSync(path.join(root,"fixture/data.txt"), "capsule fixture\n".repeat(65536));
+  const run = (...args) => spawnSync(process.execPath, ["dist/publish-capsules.mjs", ...args],
+    {cwd:root,encoding:"utf8"});
+  return {root,run};
 }
 
-test("publishing refuses failed or malformed checksums without deleting source", t => {
-  const { root, run } = setup(t);
-  for (const implementation of ['return 1', 'echo unavailable']) {
-    const result = run(`source ./pack.sh; sha256sum() { ${implementation}; }; _pdim_pack fixture fixture.pdim Fixture`);
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /checksum.*source retained/);
-    assert.equal(fs.existsSync(path.join(root, "fixture/data.txt")), true);
-    assert.equal(fs.existsSync(path.join(root, "fixture.manifest.json")), false);
-  }
+test("shared packer removes source only after a gate-valid zstd capsule and real restore round-trips", async t => {
+  const {root,run}=setup(t);
+  const original=fs.readFileSync(path.join(root,"fixture/data.txt"));
+  const packed=run("directory","fixture.pdim","fixture");
+  assert.equal(packed.status,0,packed.stderr);
+  assert.equal(fs.existsSync(path.join(root,"fixture")),false);
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,"fixture.manifest.json")));
+  assert.equal(manifest.compression,"zstd-6");
+  assert.equal(manifest.sha256,createHash("sha256").update(fs.readFileSync(path.join(root,"fixture.pdim"))).digest("hex"));
+  assert.equal((await inspectArtifacts(root,["fixture"])).ready,true);
+  const {restoreCapsule}=await import(pathToFileURL(path.join(root,"dist/pdim-restore.mjs")));
+  assert.equal(await restoreCapsule("fixture.pdim","fixture.manifest.json","fixture"),true);
+  assert.deepEqual(fs.readFileSync(path.join(root,"fixture/data.txt")),original);
+  fs.appendFileSync(path.join(root,"fixture.pdim"),"corrupt");
+  assert.equal(await restoreCapsule("fixture.pdim","fixture.manifest.json","fixture"),false);
 });
 
-test("publishing reports each pack phase and writes a valid manifest before cleanup", t => {
-  const { root, run } = setup(t);
-  const result = run("source ./pack.sh; _pdim_pack fixture fixture.pdim Fixture");
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /compression starting:[\s\S]*compression complete:[\s\S]*checksum starting:[\s\S]*checksum complete; writing manifest:[\s\S]*manifest written; source cleanup starting:/);
-  assert.equal(fs.existsSync(path.join(root, "fixture")), false);
-  const manifest = JSON.parse(fs.readFileSync(path.join(root, "fixture.manifest.json")));
-  assert.equal(manifest.sha256, createHash("sha256").update(fs.readFileSync(path.join(root, "fixture.pdim"))).digest("hex"));
+test("missing required directory fails instead of claiming a successful capsule", t => {
+  const {run}=setup(t);
+  assert.notEqual(run("directory","missing.pdim","missing").status,0);
 });
 
-test("large archive writes emit progress before compression completes", t => {
-  const { root, run } = setup(t);
-  const large = path.join(root, "fixture/large.bin");
-  fs.writeFileSync(large, "");
-  fs.truncateSync(large, 110 * 1024 * 1024);
-  const result = run("_pdim_tar_create fixture.pdim fixture || exit $?");
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stderr, /Capsule progress: 10000 records/);
+test("GNU tar also restores zstd capsules when bsdtar is unavailable", t => {
+  const {root,run}=setup(t);
+  const bytes=fs.readFileSync(path.join(root,"fixture/data.txt"));
+  assert.equal(run("directory","fixture.pdim","fixture").status,0);
+  const bin=path.join(root,"bin"); fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin,"bsdtar"),"#!/bin/sh\nexit 127\n",{mode:0o755});
+  const restore=pathToFileURL(path.join(root,"dist/pdim-restore.mjs")).href;
+  const result=spawnSync(process.execPath,["--input-type=module","-e",
+    `import {restoreCapsule} from ${JSON.stringify(restore)}; if(!await restoreCapsule('fixture.pdim','fixture.manifest.json','fixture')) process.exit(1);`],
+    {encoding:"utf8",cwd:root,env:{...process.env,PATH:bin+":"+process.env.PATH}});
+  assert.equal(result.status,0,result.stderr);
+  assert.match(result.stdout,/GNU tar/);
+  assert.deepEqual(fs.readFileSync(path.join(root,"fixture/data.txt")),bytes);
 });
 
-test("archive replacement failure cannot be reported as successful compression", t => {
-  const { run } = setup(t);
-  const result = run("mv() { return 31; }; _pdim_tar_create fixture.pdim fixture || exit $?");
-  assert.equal(result.status, 31);
-  assert.doesNotMatch(result.stdout, /compression complete/);
+test("source-tree packing preserves files until the shell performs cleanup", t => {
+  const {root,run}=setup(t);
+  const result=run("paths","source.pdim","fixture");
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-6");
 });
 
-test("publishing reports failing line and status without exposing command arguments", () => {
-  const build = fs.readFileSync("build.sh", "utf8");
-  const end = build.indexOf("# ─── Purge");
-  assert.ok(end > 0);
-  const result = spawnSync("bash", ["-c", `${build.slice(0, end)}\nfalse sensitive-fixture-argument`], {encoding: "utf8"});
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /build.sh failed at line \d+ \(exit 1\)/);
-  assert.doesNotMatch(result.stderr, /sensitive-fixture-argument/);
+test("compressor failure retains source and the previous archive", t => {
+  const {root}=setup(t);
+  fs.writeFileSync(path.join(root,"fixture.pdim"),"previous");
+  const bin=path.join(root,"bin");
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin,"zstd"),"#!/bin/sh\nexit 23\n",{mode:0o755});
+  const result=spawnSync(process.execPath,["dist/publish-capsules.mjs","directory","fixture.pdim","fixture"],
+    {cwd:root,encoding:"utf8",env:{...process.env,PATH:bin+":"+process.env.PATH}});
+  assert.notEqual(result.status,0);
+  assert.equal(fs.readFileSync(path.join(root,"fixture.pdim"),"utf8"),"previous");
+  assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
 });
 
-test("publishing uses bounded compression and produces a gate-compatible restorable archive", async t => {
-  const { root, run } = setup(t);
-  const result = run(`
-    test "$_PDIM_FORMAT" = "gzip-1"
-    test -z "\${GZIP:-}"
-    test -z "\${XZ_OPT:-}"
-    test -z "\${XZ_DEFAULTS:-}"
-    _pdim_tar_create fixture.pdim fixture || exit $?
-    printf '%s' "$_PDIM_FORMAT" > codec
-    mkdir extracted
-    tar -xzf fixture.pdim -C extracted
-  `);
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(fs.existsSync(path.join(root, "fixture.pdim.partial")), false);
-  assert.deepEqual(fs.readFileSync(path.join(root, "extracted/fixture/data.txt")),
-    fs.readFileSync(path.join(root, "fixture/data.txt")));
-  const sha256 = createHash("sha256").update(fs.readFileSync(path.join(root, "fixture.pdim"))).digest("hex");
-  fs.writeFileSync(path.join(root, "fixture.manifest.json"), JSON.stringify({
-    sha256, compression: fs.readFileSync(path.join(root, "codec"), "utf8"),
-  }));
-  const gate = await inspectArtifacts(root, ["fixture"]);
-  assert.equal(gate.ready, true, gate.failures.join("\n"));
+test("both publishing paths use shared deployment packing while retaining adaptive app-capsule generation", () => {
+  const shell=fs.readFileSync("build.sh","utf8"), build=fs.readFileSync("script/build.ts","utf8");
+  assert.match(shell,/script\/build-capsule\.ts/);
+  assert.match(shell,/script\/publish-capsules\.ts --bundle/);
+  assert.match(shell,/node dist\/publish-capsules\.mjs directory/);
+  assert.match(shell,/PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build/);
+  assert.match(build,/await publishCapsule/);
+  assert.match(build,/PUBLISH_SHELL_PACKS_CAPSULES !== "1"/);
+  assert.doesNotMatch(build,/gzip -1/);
+  const source = fs.readFileSync("script/build-capsule.ts","utf8");
+  assert.match(source,/compressionCodec: adaptiveCapsuleCodec/);
+  assert.match(source,/loader.load\(metadata.id, OUTPUT_DIR, adaptiveCapsuleCodec\)/);
 });
 
-test("compression failure remains visible and preserves source and previous capsule", t => {
-  const { root, run } = setup(t);
-  fs.writeFileSync(path.join(root, "fixture.pdim"), "previous valid capsule");
-  const result = run("_pdim_tar_create fixture.pdim missing-source || exit $?");
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /missing-source/);
-  assert.match(result.stderr, /capsule compression failed/);
-  assert.equal(fs.readFileSync(path.join(root, "fixture.pdim"), "utf8"), "previous valid capsule");
-  assert.equal(fs.existsSync(path.join(root, "fixture.pdim.partial")), false);
-  assert.equal(fs.existsSync(path.join(root, "fixture/data.txt")), true);
-});
-
-function compilePacker(root) {
-  const source = fs.readFileSync("script/build.ts", "utf8");
-  const start = source.indexOf("const packOne =");
-  const end = source.indexOf("const outcomes = await Promise.allSettled", start);
-  assert.ok(start >= 0 && end > start);
-  const { code } = transformSync(source.slice(start, end), { loader: "ts", format: "cjs" });
-  return new Function("root", "fs", "path", "spawn", "createHash", `${code}; return packOne;`)(
-    root, fs, path, spawn, createHash,
-  );
-}
-
-test("compiling build packs with the same codec and commits its manifest before source cleanup", async t => {
-  const { root } = setup(t);
-  await compilePacker(root)({ dir: "fixture", capsule: "fixture.pdim" });
-  const manifest = JSON.parse(fs.readFileSync(path.join(root, "fixture.manifest.json")));
-  assert.equal(manifest.compression, "gzip-1");
-  assert.equal(fs.existsSync(path.join(root, "fixture")), false);
-  const gate = await inspectArtifacts(root, ["fixture"]);
-  assert.equal(gate.ready, true, gate.failures.join("\n"));
-});
-
-test("compiling build reports pack failure without deleting source or writing a manifest", async t => {
-  const { root } = setup(t);
-  await assert.rejects(compilePacker(root)({
-    dir: "fixture", capsule: "missing-parent/fixture.pdim",
-  }), /packing fixture exited/);
-  assert.equal(fs.existsSync(path.join(root, "fixture/data.txt")), true);
-  assert.equal(fs.existsSync(path.join(root, "missing-parent/fixture.manifest.json")), false);
+test("adaptive application capsule is verified by a fresh reader; legacy gzip pockets remain readable", t => {
+  const {root}=setup(t);
+  const platform=pathToFileURL(path.resolve("external/pdim/artifacts/api-server/src/pocket-dimension/platform-capsule.ts")).href;
+  const core=pathToFileURL(path.resolve("external/pdim/artifacts/api-server/src/pocket-dimension/index.ts")).href;
+  const adapter=pathToFileURL(path.resolve("script/lib/adaptiveCapsuleCodec.ts")).href;
+  const result=spawnSync(process.execPath,["--import","tsx","--input-type=module","-e",`
+    import assert from 'node:assert/strict';
+    process.chdir(${JSON.stringify(root)});
+    const {PlatformCapsuleBuilder,PlatformCapsuleLoader}=await import(${JSON.stringify(platform)});
+    const {PocketDimension}=await import(${JSON.stringify(core)});
+    const {adaptiveCapsuleCodec}=await import(${JSON.stringify(adapter)});
+    let calls=0;
+    const codec={...adaptiveCapsuleCodec,compress:async data=>{
+      calls++; const packed=await adaptiveCapsuleCodec.compress(data);
+      assert.equal(packed.subarray(0,4).toString(),'PDCF'); return packed;
+    }};
+    const builder=new PlatformCapsuleBuilder(${JSON.stringify(path.join(root,"fixture"))});
+    const storagePath=${JSON.stringify(path.join(root,"capsules"))};
+    const meta=await builder.build({version:'test',platformName:'Fixture',storagePath,compressionCodec:codec,encrypt:false});
+    assert.ok(calls>0);
+    const reader=new PlatformCapsuleLoader();
+    await reader.load(meta.id,storagePath,adaptiveCapsuleCodec);
+    assert.equal(await reader.verify(),true);
+    const legacy=new PocketDimension({id:'legacy',name:'legacy',storagePath});
+    await legacy.open(); await legacy.write('sample',Buffer.from('legacy payload')); await legacy.close();
+    const reopened=new PocketDimension({id:'legacy',name:'legacy',storagePath,compressionCodec:adaptiveCapsuleCodec});
+    await reopened.open(); assert.equal((await reopened.read('sample')).toString(),'legacy payload'); await reopened.close();
+    console.log('ADAPTIVE_AND_LEGACY_VERIFIED');
+  `],{cwd:process.cwd(),encoding:"utf8",timeout:120000,maxBuffer:1024*1024});
+  assert.equal(result.status,0,result.stderr + result.stdout);
+  assert.match(result.stdout,/ADAPTIVE_AND_LEGACY_VERIFIED/);
 });

@@ -43,6 +43,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { adaptiveCapsuleCodec } from "./lib/adaptiveCapsuleCodec.js";
 import {
   PlatformCapsuleBuilder,
   PlatformCapsuleLoader,
@@ -193,10 +194,8 @@ async function main() {
     encrypt: false,
     excludePatterns,
     storagePath: OUTPUT_DIR,
-    // Max real compression effort (zlib level 9) — see the note in this
-    // script's header about why this can't be pushed further into a
-    // "TB-to-MB" regime for arbitrary/incompressible data.
-    compressionLevel: 9,
+    // Use the same adaptive PDCF codec contract as live PocketDimension.
+    compressionCodec: adaptiveCapsuleCodec,
   });
 
   console.log(
@@ -208,7 +207,7 @@ async function main() {
 
   console.log(`[build-capsule] Verifying capsule integrity...`);
   const loader = new PlatformCapsuleLoader();
-  await loader.load(metadata.id, OUTPUT_DIR);
+  await loader.load(metadata.id, OUTPUT_DIR, adaptiveCapsuleCodec);
   const ok = await loader.verify();
   if (!ok) {
     throw new Error(

@@ -3,6 +3,7 @@ import { build as esBuild } from "esbuild";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { publishCapsule } from "./publish-capsules.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -62,7 +63,8 @@ async function main() {
   // container — gating on it silently skipped packing; proven by the
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
   const isDeployBuild =
-    process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID;
+    process.env.PUBLISH_SHELL_PACKS_CAPSULES !== "1" &&
+    (process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID);
 
   // ─── Portable Python runtime (video/audio analysis + AI sidecar deps) ─────
   // Ported from the old build.sh (2026-08-14). The run container is a
@@ -118,58 +120,9 @@ async function main() {
       // rather than deleted from the image.
       { dir: "external/pdim", capsule: "external_pdim.pdim" },
     ];
-    const { createHash } = await import("crypto");
-    const { spawn } = await import("child_process");
-
-    // Pack all capsules CONCURRENTLY instead of one after another. Each
-    // targets an independent source directory and writes its own .pdim file,
-    // so there is no shared state to race on. Fast gzip is otherwise
-    // single-threaded per capsule; running the (up to) four packs in parallel
-    // spreads them across the build container's cores instead of serializing
-    // ~4 single-core jobs back to back, which was blowing the build-step time
-    // budget as more capsules were added.
-    const packOne = ({ dir, capsule }: { dir: string; capsule: string }) =>
-      new Promise<void>((resolveOne, rejectOne) => {
-        const abs = path.resolve(root, dir);
-        if (!fs.existsSync(abs)) return resolveOne();
-        console.log(`==> Packing ${dir}/ → ${capsule} (gzip-1, Extract & Boot)...`);
-        const child = spawn(
-          "bash",
-          ["-c", `unset GZIP; tar --checkpoint=10000 --checkpoint-action='echo=Capsule progress: %u records; %T' -I 'gzip -1' -cf ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(dir)} && mv -f ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(capsule)}`],
-          { cwd: root, stdio: "inherit" },
-        );
-        child.on("error", rejectOne);
-        child.on("exit", async (code) => {
-          if (code !== 0) return rejectOne(new Error(`packing ${dir} exited with code ${code}`));
-          try {
-            console.log(`[capsule] compression complete; checksum starting: ${capsule}`);
-            const hash = createHash("sha256");
-            for await (const chunk of fs.createReadStream(path.resolve(root, capsule))) {
-              hash.update(chunk);
-            }
-            const sha256 = hash.digest("hex");
-            console.log(`[capsule] checksum complete; writing manifest: ${capsule}`);
-            fs.writeFileSync(
-              path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
-              JSON.stringify({ compression: "gzip-1", sha256, dir }, null, 2),
-            );
-            console.log(`[capsule] manifest written; source cleanup starting: ${dir}`);
-            fs.rmSync(abs, { recursive: true, force: true });
-            const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
-            console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);
-            resolveOne();
-          } catch (error) {
-            rejectOne(error);
-          }
-        });
-      });
-
-    const outcomes = await Promise.allSettled(capsuleTargets.map(packOne));
-    const failures = outcomes.filter(
-      (outcome): outcome is PromiseRejectedResult => outcome.status === "rejected",
-    );
-    if (failures.length) {
-      throw new AggregateError(failures.map(failure => failure.reason), "Capsule packing failed");
+    // Same packer as the historical shell path; one bounded job at a time.
+    for (const { dir, capsule } of capsuleTargets) {
+      await publishCapsule(root, "directory", capsule, [dir]);
     }
   }
 

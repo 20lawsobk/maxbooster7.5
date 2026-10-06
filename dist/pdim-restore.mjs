@@ -7,6 +7,7 @@
  * node_modules/.pdim-restored already exists.
  *
  * Reads compression format from *.manifest.json written by build.sh:
+ *   "zstd-6" / "zstd-19" → bsdtar auto-detection or GNU tar --zstd -xf
  *   "xz-9e"  → tar -xJf  (XZ)
  *   "gzip-9" → tar -xzf  (gzip, fallback)
  */
@@ -123,7 +124,7 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
 
   const manifest = readManifest(manifestPath);
   if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 || "") ||
-      !/^(gzip(-[1-9])?|xz(-[0-9]e?)?)$/.test(manifest?.compression || "")) {
+      !/^(gzip(-[1-9])?|xz(-[0-9]e?)?|zstd-(6|19))$/.test(manifest?.compression || "")) {
     console.error(`[pdim-restore] Invalid manifest for ${capsuleName}`);
     return false;
   }
@@ -158,7 +159,9 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
   }
 
   const compression = manifest.compression;
-  const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
+  const tarFlags = compression.startsWith("zstd")
+    ? ["--zstd", "-xf"]
+    : [compression.startsWith("xz") ? "-xJf" : "-xzf"];
 
   // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
   // isn't a warning-tolerance workaround — libarchive ships a real fix for
@@ -255,7 +258,7 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
       ? spawn(bsdtarBin, ["-x", "-f", "-", "-C", scratchDir], {
           stdio: ["pipe", "inherit", "pipe"],
         })
-      : spawn("tar", [tarFlag, "-", "-C", scratchDir], {
+      : spawn("tar", [...tarFlags, "-", "-C", scratchDir], {
           stdio: ["pipe", "inherit", "pipe"],
         });
     if (usingBsdtar) {

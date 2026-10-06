@@ -61,17 +61,18 @@ Verify each real entrypoint against its current role and preserve
 rejection-before-mutation tests.
 
 The user clarified that “original successful start and build scripts” means
-the unmodified shell scripts from the August 26, 2026 publishing checkpoint,
-not the recently edited scripts or a newly adapted scaffold.
+the shell scripts from the August 26, 2026 publishing checkpoint.
+After restoring that baseline, the user explicitly authorized connecting the
+newer deployment compression and added “Both,” including adaptive compression.
 
-**Why:** After repeated publishing repairs, the user explicitly requested the
-scripts used roughly two months earlier. This supersedes the earlier instruction
-to adapt that scaffold automatically.
+**Why:** The user wants the original pack/remove/restore design with the newer
+compression systems actually wired into it, not another replacement architecture.
 
-**How to apply:** Keep those two shell files byte-for-byte historical unless the
-user authorizes changes; do not roll back unrelated application or helper files.
-The historical archive identifies the source checkpoint. Keep newer versions
-recoverable and do not run the destructive build in the working checkout.
+**How to apply:** Keep the historical shell structure; compression integration
+and matching restore support are authorized. Do not roll back unrelated
+application files or revive a mandatory prepared-release prerequisite.
+Keep the historical archive intact and never run the destructive build in the
+working checkout.
 Preserve removal of successfully packed directories from the shipped image
 and restoration of required runtimes at startup; the user explicitly reiterated
 that this image-size reduction is part of the original design.

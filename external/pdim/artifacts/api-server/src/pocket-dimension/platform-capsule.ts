@@ -9,7 +9,7 @@
  */
 
 import { logger } from "../logger.js";
-import { pocketManager, PocketDimension } from "./index.js";
+import { pocketManager, PocketDimension, type PocketDimensionConfig } from "./index.js";
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
@@ -86,6 +86,7 @@ export interface CapsuleBuildOptions {
   /** zlib compression level, 1-9. Defaults to 9 (max ratio, slowest). Lower
    * values trade some compression ratio for faster build-time packaging. */
   compressionLevel?: number;
+  compressionCodec?: PocketDimensionConfig["compressionCodec"];
 }
 
 const FILE_TYPES: Record<
@@ -184,10 +185,12 @@ export class PlatformCapsuleBuilder {
         compressionLevel: opts.compressionLevel ?? 9,
         enableDeduplication: true,
         storagePath: opts.storagePath,
+        ...(opts.compressionCodec ? { compressionCodec: opts.compressionCodec } : {}),
       });
       await this.pocket.open();
     } else {
       this.pocket = await pocketManager.openPocket(capsuleId, {
+        ...(opts.compressionCodec ? { compressionCodec: opts.compressionCodec } : {}),
         encryptionKey: opts.encrypt ? opts.encryptionKey : undefined,
         compressionLevel: opts.compressionLevel ?? 9,
         enableDeduplication: true,
@@ -364,16 +367,19 @@ export class PlatformCapsuleLoader {
 
   /** @param storagePath must match whatever `storagePath` (if any) the
    * capsule was built with — see CapsuleBuildOptions.storagePath. */
-  async load(capsuleId: string, storagePath?: string): Promise<CapsuleMetadata> {
+  async load(capsuleId: string, storagePath?: string, compressionCodec?: PocketDimensionConfig["compressionCodec"]): Promise<CapsuleMetadata> {
     if (storagePath) {
       this.pocket = new PocketDimension({
         id: capsuleId,
         name: capsuleId,
         storagePath,
+        ...(compressionCodec ? { compressionCodec } : {}),
       });
       await this.pocket.open();
     } else {
-      this.pocket = await pocketManager.openPocket(capsuleId);
+      this.pocket = await pocketManager.openPocket(capsuleId, {
+        ...(compressionCodec ? { compressionCodec } : {}),
+      });
     }
 
     const metaRaw = await this.pocket.read("metadata.json");

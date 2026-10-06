@@ -138,6 +138,7 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
     echo "   INFO: security-fix.ts not available — patches already baked into pre-built dist/"
   fi
 
+  bash script/sync-subsystem-dependencies.sh
   FAST_PATH=1
 
 else
@@ -164,7 +165,7 @@ else
   # Full build: security-fix → Vite frontend → esbuild server bundle
   # This mirrors the original deployment build command exactly.
   echo "==> Building application (security-fix + Vite frontend + esbuild server bundle)..."
-  npm run build
+  PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build
 
   # Source tree is kept — PDIM will compress it below.
   rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
@@ -350,11 +351,12 @@ if [ -f "script/build-capsule.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
   if node_modules/.bin/tsx script/build-capsule.ts "$_APP_CAPSULE_VERSION"; then
     echo "   ✅ App capsule built → deploy-capsule/ ($(du -sh deploy-capsule 2>/dev/null | cut -f1))"
   else
-    echo "   WARNING: app capsule build failed — deployment continues without it (non-fatal)"
-    rm -rf deploy-capsule 2>/dev/null || true
+    echo "   ERROR: adaptive app capsule build failed; refusing incomplete publishing output" >&2
+    exit 1
   fi
 else
-  echo "   INFO: script/build-capsule.ts or tsx not available — skipping app capsule"
+  echo "   ERROR: script/build-capsule.ts and tsx are required for the adaptive app capsule" >&2
+  exit 1
 fi
 
 # ─── PDIM Capsule: pack large runtime directories ────────────────────────────
@@ -364,31 +366,24 @@ fi
 # Everything large is compressed into content-addressed .pdim capsules and
 # restored on first startup by dist/pdim-restore.mjs.
 #
-# Compression: auto-selects best available algorithm
-#   xz -9e -T0  (XZ extreme, multi-threaded) if xz is present   ← preferred
-#   GZIP=-9     (gzip maximum level)          fallback
+# Compression: existing Zstandard deployment packer, shared with script/build.ts.
 # Integrity:   SHA-256 checksum written alongside each capsule
 # Format:      pdim-v2
 echo "==> PDIM: Creating Pocket Dimension capsules..."
 
-# ── Compression algorithm auto-detection ─────────────────────────────────────
-_PDIM_FORMAT="gzip-9"
-if command -v xz >/dev/null 2>&1; then
-  _PDIM_FORMAT="xz-9e"
-  export XZ_OPT="-9e -T0"   # extreme preset + all CPU cores
-  echo "   Compressor: xz $(xz --version 2>/dev/null | head -1) (XZ_OPT=${XZ_OPT})"
-else
-  echo "   Compressor: gzip-9 (xz not found)"
-fi
+# Use the existing deployment packer; keep the adaptive app capsule above.
+# Compile the dependency-free CLI before node_modules is removed.
+command -v zstd >/dev/null || { echo "ERROR: zstd is required for publishing" >&2; exit 1; }
+node_modules/.bin/esbuild script/publish-capsules.ts --bundle --platform=node \
+  --target=node22 --format=esm --outfile=dist/publish-capsules.mjs
+_PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
+echo "   Compressor: existing deployment capsule packer (${_PDIM_FORMAT})"
 
 # Internal: run tar with the selected compressor
 _pdim_tar_create() {
   # Usage: _pdim_tar_create <output.pdim> [tar-paths...]
   local out="$1"; shift
-  case "$_PDIM_FORMAT" in
-    xz*)   tar -cJf "$out" "$@" 2>/dev/null ;;
-    *)     GZIP=-9 tar -czf "$out" "$@" 2>/dev/null ;;
-  esac
+  node dist/publish-capsules.mjs paths "$out" "$@"
 }
 
 # ── node_modules pre-pruning ─────────────────────────────────────────────────
@@ -439,33 +434,8 @@ _pdim_prune_nm() {
 # ── Capsule pack function ─────────────────────────────────────────────────────
 _pdim_pack() {
   local dir="$1" capsule="$2" label="$3"
-  if [ ! -d "$dir" ]; then
-    echo "   SKIP ${label}: directory not found"
-    return 0
-  fi
-  local raw_size
-  raw_size=$(du -sh "$dir" 2>/dev/null | cut -f1)
-  echo "   Packing ${label} (${raw_size}) → ${capsule} [${_PDIM_FORMAT}]..."
-  _pdim_tar_create "$capsule" "$dir/"
-  local packed_size checksum
-  packed_size=$(du -sh "$capsule" 2>/dev/null | cut -f1)
-  checksum=$(sha256sum "$capsule" 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
-  cat > "${capsule%.pdim}.manifest.json" << MANIFEST_EOF
-{
-  "capsule": "${capsule}",
-  "directory": "${dir}",
-  "label": "${label}",
-  "rawSize": "${raw_size}",
-  "packedSize": "${packed_size}",
-  "sha256": "${checksum}",
-  "compression": "${_PDIM_FORMAT}",
-  "format": "pdim-v2",
-  "restore": "node dist/pdim-restore.mjs",
-  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-MANIFEST_EOF
-  rm -rf "${dir:?}/"
-  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}...)"
+  echo "   Packing ${label}..."
+  node dist/publish-capsules.mjs directory "$capsule" "$dir"
 }
 
 # Pre-prune node_modules, then pack all capsules
@@ -479,6 +449,8 @@ echo "   Sentinel written: node_modules/.pdim-restored"
 
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
+_pdim_pack "external/maxcore" "external_maxcore.pdim" "MaxCore server"
+_pdim_pack "external/pdim" "external_pdim.pdim" "PDIM server"
 
 # ── Source tree capsule ───────────────────────────────────────────────────────
 # Compress instead of delete — nothing is lost.  Restored manually when needed
@@ -499,7 +471,7 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   # shellcheck disable=SC2086
   _SRC_RAW=$(du -sh ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null | awk '{sum+=$1} END{print sum}' || echo "?")
   # shellcheck disable=SC2086
-  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || true
+  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || exit $?
   if [ -f source.pdim ]; then
     _SRC_PACKED=$(du -sh source.pdim 2>/dev/null | cut -f1)
     _SRC_CKSUM=$(sha256sum source.pdim 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
@@ -513,7 +485,7 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   "compression": "${_PDIM_FORMAT}",
   "format": "pdim-v2",
   "autoRestore": false,
-  "note": "Not needed at runtime — restore manually: bsdtar -xf source.pdim (auto-detects xz/gzip), or GNU tar -xJf/-xzf as a fallback",
+  "note": "Not needed at runtime — restore manually: bsdtar -xf source.pdim, or tar --zstd -xf source.pdim",
   "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 MANIFEST_EOF

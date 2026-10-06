@@ -243,16 +243,23 @@ export function packCapsule({
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
 
-    const out = fs.createWriteStream(capsulePath);
+    const out = fs.createWriteStream(capsulePath + ".partial");
     const hash = createHash("sha256");
     let settled = false;
+    const progress = setInterval(() => {
+      console.log(`[capsule] ${capsule}: ${out.bytesWritten} compressed bytes written`);
+    }, 30_000);
+    progress.unref();
 
     const fail = (err: Error) => {
       if (settled) return;
       settled = true;
+      clearInterval(progress);
       try {
         child.kill("SIGKILL");
       } catch {}
+      out.destroy();
+      fs.rmSync(capsulePath + ".partial", { force: true });
       rejectOne(err);
     };
 
@@ -272,14 +279,15 @@ export function packCapsule({
           new Error(`packing ${dir} exited with code ${childExitCode}`),
         );
       }
-      settled = true;
+      try {
+      console.log(`[capsule] ${capsule}: compression finished; committing checksum and manifest`);
       const sha256 = hash.digest("hex");
       const manifestPath = path.resolve(
         outputRoot,
         capsule.replace(/\.pdim$/, ".manifest.json"),
       );
       fs.writeFileSync(
-        manifestPath,
+        manifestPath + ".partial",
         JSON.stringify(
           {
             compression,
@@ -292,11 +300,16 @@ export function packCapsule({
           2,
         ),
       );
+      fs.renameSync(capsulePath + ".partial", capsulePath);
+      fs.renameSync(manifestPath + ".partial", manifestPath);
+      console.log(`[capsule] ${capsule}: manifest committed; source ${preserveSource ? "retained" : "cleanup starting"}`);
       if (!preserveSource) fs.rmSync(abs, { recursive: true, force: true });
       const sizeBytes = fs.statSync(capsulePath).size;
       console.log(
         `   ✅ ${dir}/ packed (${(sizeBytes / 1048576).toFixed(0)}MB); source ${preserveSource ? "preserved" : "removed"}`,
       );
+      settled = true;
+      clearInterval(progress);
       resolveOne({
         capsulePath,
         manifestPath,
@@ -304,6 +317,9 @@ export function packCapsule({
         sha256,
         compression,
       });
+      } catch (error) {
+        fail(error as Error);
+      }
     };
 
     child.on("exit", (code) => {
@@ -413,7 +429,7 @@ export function packCapsuleMembers({
       { cwd: root, stdio: ["ignore", "pipe", "inherit"] },
     );
 
-    const out = fs.createWriteStream(capsulePath);
+    const out = fs.createWriteStream(capsulePath + ".partial");
     const hash = createHash("sha256");
     let settled = false;
 
@@ -424,6 +440,8 @@ export function packCapsuleMembers({
       try {
         child.kill("SIGKILL");
       } catch {}
+      out.destroy();
+      fs.rmSync(capsulePath + ".partial", { force: true });
       rejectOne(err);
     };
 
@@ -443,7 +461,7 @@ export function packCapsuleMembers({
           new Error(`packing app remainder exited with code ${childExitCode}`),
         );
       }
-      settled = true;
+      try {
       cleanupFileList();
       const sha256 = hash.digest("hex");
       const manifestPath = path.resolve(
@@ -451,7 +469,7 @@ export function packCapsuleMembers({
         capsule.replace(/\.pdim$/, ".manifest.json"),
       );
       fs.writeFileSync(
-        manifestPath,
+        manifestPath + ".partial",
         JSON.stringify(
           {
             compression,
@@ -463,15 +481,16 @@ export function packCapsuleMembers({
           2,
         ),
       );
+      fs.renameSync(capsulePath + ".partial", capsulePath);
+      fs.renameSync(manifestPath + ".partial", manifestPath);
       for (const member of preserveSource ? [] : existingMembers) {
-        try {
-          fs.rmSync(path.resolve(root, member), { force: true });
-        } catch {}
+        fs.rmSync(path.resolve(root, member), { force: true });
       }
       const sizeBytes = fs.statSync(capsulePath).size;
       console.log(
         `   ✅ ${existingMembers.length} files packed (${(sizeBytes / 1048576).toFixed(0)}MB); sources ${preserveSource ? "preserved" : "removed"}`,
       );
+      settled = true;
       resolveOne({
         capsulePath,
         manifestPath,
@@ -479,6 +498,9 @@ export function packCapsuleMembers({
         sha256,
         compression,
       });
+      } catch (error) {
+        fail(error as Error);
+      }
     };
 
     child.on("exit", (code) => {

@@ -90,6 +90,11 @@ export interface PocketStats {
 }
 
 export interface PocketDimensionConfig {
+  compressionCodec?: {
+    compress(data: Buffer): Promise<Buffer>;
+    canDecode(data: Buffer): boolean;
+    decompress(data: Buffer): Promise<Buffer>;
+  };
   id: string;
   name: string;
   encryptionKey?: string;
@@ -106,6 +111,7 @@ export interface PocketDimensionConfig {
 // ============================================================================
 
 export class PocketDimension extends EventEmitter {
+  private compressionCodec?: PocketDimensionConfig["compressionCodec"];
   private id: string;
   private name: string;
   private encryptionKey: Buffer | null = null;
@@ -137,6 +143,7 @@ export class PocketDimension extends EventEmitter {
 
   constructor(config: PocketDimensionConfig) {
     super();
+    this.compressionCodec = config.compressionCodec;
 
     this.id = config.id;
     this.name = config.name;
@@ -781,6 +788,7 @@ export class PocketDimension extends EventEmitter {
   // ============================================================================
 
   private async compress(data: Buffer): Promise<Buffer> {
+    if (this.compressionCodec) return this.compressionCodec.compress(data);
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       const gzip = createGzip({
@@ -806,6 +814,10 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async decompress(data: Buffer): Promise<Buffer> {
+    if (this.compressionCodec?.canDecode(data)) return this.compressionCodec.decompress(data);
+    if (data.subarray(0, 4).toString() === "PDCF") {
+      throw new Error("This pocket requires a PDCF compression codec");
+    }
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       const gunzip = createGunzip();
