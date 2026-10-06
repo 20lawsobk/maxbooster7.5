@@ -1,44 +1,52 @@
 <!doctype html>
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Max Booster — Endpoint-only audit: initial findings</title>
-<style>body{font:16px/1.55 system-ui,sans-serif;color:#172033;max-width:1000px;margin:40px auto;padding:0 24px}h1,h2{line-height:1.2}h2{margin-top:32px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border:1px solid #d6dce5;text-align:left;vertical-align:top}th{background:#f1f4f8}.alert{padding:18px;background:#fff2df;border-left:4px solid #ba6500}code{background:#f1f4f8;padding:2px 4px}small{color:#536174}</style>
-<h1>Endpoint-only audit: initial findings</h1>
-<p>Scope: public HTTP behavior only. Production origin: <code>https://maxbooster.replit.app</code>. Observed October 6, 2026.</p>
-<div class="alert"><strong>Verdict: production is not accessible; full audit is blocked.</strong> All ten production probes returned HTTP 404 with the platform page titled “This app isn’t live yet.” This is an availability finding, not evidence that application authorization passed.</div>
+<title>Max Booster — Endpoint-only audit findings</title>
+<style>body{font:16px/1.55 system-ui,sans-serif;color:#172033;max-width:1080px;margin:40px auto;padding:0 24px}h1,h2{line-height:1.2}h2{margin-top:32px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border:1px solid #d6dce5;text-align:left;vertical-align:top}th{background:#f1f4f8}.alert{padding:18px;background:#fff2df;border-left:4px solid #ba6500}code{background:#f1f4f8;padding:2px 4px}small{color:#536174}</style>
+<h1>Endpoint-only security and functionality audit</h1>
+<p>Evidence gathered October 6, 2026. Public HTTP only; no application source, database, internal RPC, provider console, or private service was inspected. All requests in this audit were GETs. No releases, payouts, payments, or publishing operations were triggered.</p>
+<div class="alert"><strong>Verdict: incomplete; readiness cannot be approved.</strong> Production returned Replit’s “This app isn’t live yet” 404 page for every probe. The preview intermittently responded, then began returning 502s. Consequently the authenticated and state-changing surface could not be comprehensively audited.</div>
 <h2>1. Endpoint audit map</h2>
-<p>These are <strong>probed paths, not a confirmed route inventory</strong>. No application route could be established in production. Expected payloads, authentication requirements, side effects and provider interactions remain unknown.</p>
-<table><tr><th>Method / path</th><th>Result</th><th>Application contract established?</th></tr>
-<tr><td>GET /</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/health</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/ready</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/csrf-token</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/openapi.json</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /openapi.json</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/docs</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /robots.txt</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /sitemap.xml</td><td>404, HTML platform page</td><td>No</td></tr>
-<tr><td>GET /api/__endpoint_audit_nonexistent__</td><td>404, HTML platform page</td><td>No; negative control</td></tr></table>
-<p>All production probes returned <code>text/html; charset=utf-8</code>, the same title, and 8,257 decoded response characters. The sampled responses lacked HSTS, CSP, X-Content-Type-Options and X-Frame-Options headers. Because these are platform error responses rather than application responses, their headers do not establish the application's security configuration.</p>
+<p>This is a map of paths probed, not a complete route inventory. API documentation did not yield a machine-readable endpoint contract. Side effects, request schemas, and provider interactions are therefore unknown. “Earlier response” records an observation during this audit; the later 502s mean it should not be treated as a stable result.</p>
+<table><tr><th>Public GET path</th><th>Observed preview response</th><th>Scope/contract conclusion</th></tr>
+<tr><td><code>/</code>, <code>/login</code></td><td>Shell HTTP client once received 200 HTML; headless Chromium later received 502.</td><td>Unstable; login UI not verified.</td></tr>
+<tr><td><code>/api/health</code></td><td>200 JSON, status <code>ok</code>.</td><td>Liveness responded once; not readiness.</td></tr>
+<tr><td><code>/api/ready</code></td><td>503 JSON, status <code>down</code>, error <code>health check failed</code>; a later request returned 502.</td><td>Not ready during the first response; now unstable.</td></tr>
+<tr><td><code>/api/csrf-token</code></td><td>200 JSON with a <code>csrfToken</code> field.</td><td>Token value intentionally not recorded. No mutation request followed.</td></tr>
+<tr><td><code>/api/auth/me</code></td><td>200 JSON while unauthenticated; a later request returned 502.</td><td>Body deliberately not retained; whether it represents a null user or exposes account data is unresolved.</td></tr>
+<tr><td><code>/api/distribution/releases</code></td><td>401 JSON, <code>Authentication required</code>; later 502.</td><td>Anonymous GET was rejected once; ownership and authenticated access untested.</td></tr>
+<tr><td><code>/api/analytics</code></td><td>401 JSON, <code>Authentication required</code>; later 502.</td><td>Anonymous GET was rejected once; response correctness and data access untested.</td></tr>
+<tr><td><code>/api/admin</code>, <code>/api/admin/dashboard</code></td><td>401 JSON, <code>Authentication required</code>; later 502.</td><td>Anonymous GET was rejected once; ordinary-user and administrator boundaries untested.</td></tr>
+<tr><td><code>/api/royalties</code></td><td>401 JSON, <code>Not authenticated</code>.</td><td>Anonymous GET was rejected once; historical records untested.</td></tr>
+<tr><td><code>/api/distribution</code>, <code>/api/distribution/submissions</code></td><td>404 JSON, route-not-found message.</td><td>These exact paths were not exposed as routes to the anonymous GET probes.</td></tr>
+<tr><td><code>/api/catalog</code>, <code>/api/catalog/releases</code></td><td>404 JSON, route-not-found message.</td><td>These exact paths were not exposed as routes to the anonymous GET probes.</td></tr>
+<tr><td><code>/api/too-lost/status</code></td><td>404 JSON, route-not-found message.</td><td>That guessed status path is not a discovered route; Too Lost isolation remains unverified.</td></tr>
+<tr><td><code>/api/auth/user</code>, <code>/api/user</code>, <code>/api/docs</code>, <code>/api/swagger.json</code></td><td>404 JSON.</td><td>No contract established at these exact paths.</td></tr>
+<tr><td><code>/api-docs</code>, <code>/api-docs/swagger.json</code></td><td>200 HTML titled “Max Booster API Docs”; both returned HTML with a Swagger UI signature.</td><td>The suffixed path did not return a JSON document; the usable API specification was not obtained.</td></tr>
+<tr><td><code>/openapi.json</code>, <code>/swagger.json</code></td><td>500 HTML titled “Error”.</td><td>No API schema obtained; do not infer its underlying cause from the response.</td></tr>
+<tr><td><code>/robots.txt</code>, <code>/sitemap.xml</code></td><td>200; the sitemap listed 72 public page URLs.</td><td>Public crawl metadata only; not an API inventory or proof of data exposure.</td></tr>
+<tr><td><code>/api/__endpoint_audit_nonexistent__</code></td><td>404 HTML at the published origin.</td><td>Negative control also hit the platform page, not the application.</td></tr></table>
+<p>The sitemap includes public marketplace/detail, login, and storefront page URLs. These are public navigation entries, not proof that their backing data is private or exposed. Their page data was not crawled.</p>
 <h2>2. Security findings</h2>
-<p><strong>Not assessed:</strong> application authentication, expired/tampered token handling, regular-user versus admin authorization, cross-user resource access, validation and application data leakage. Credentials were not sent to the unavailable published site. No application security pass or failure is claimed.</p>
+<ul>
+<li><strong>Positive but narrow:</strong> unauthenticated GETs to the sampled distribution-release, analytics, admin, admin-dashboard, and royalties paths received 401 JSON once. This does not test tampered/expired session handling, authenticated authorization, cross-user object access, or other verbs.</li>
+<li><strong>Investigate:</strong> <code>GET /api/auth/me</code> returned 200 while unauthenticated. The body was not retained, so this is an ambiguous response—not a confirmed disclosure. Verify that an anonymous response contains no user identity or private account fields.</li>
+<li><strong>Unverified:</strong> input validation, role separation, cross-account isolation, CSRF enforcement on writes, sensitive-data leakage on successful account requests, and rate limits.</li>
+</ul>
 <h2>3. Functionality findings</h2>
-<p><strong>Confirmed availability blocker:</strong> the published homepage and API discovery paths do not serve the application. Distribution, catalog, analytics, release submission and unsupported-capability behavior could not be exercised. No happy-path state transition has been verified.</p>
+<p>Health returned 200 once while readiness returned 503. Later preview requests returned 502. This demonstrates that a liveness response is not a readiness pass and the target was not stable enough to exercise normal user workflows. No release, catalog, analytics, or payout workflow was completed.</p>
 <h2>4. Provider isolation findings</h2>
-<p><strong>Unverified:</strong> Too Lost exclusivity and absence of LabelGrid execution. Endpoint responses alone cannot prove that a dependency is absent from internal artifacts. No provider submission, release, payout or takedown was triggered, and no internal runtime artifact gate was executed.</p>
+<p><strong>Unverified:</strong> public GET responses do not establish that Too Lost is the only active distributor or that LabelGrid cannot run on a submission path. No provider submission or other external write was made. These claims cannot be verified from the observed anonymous responses.</p>
 <h2>5. Historical data integrity findings</h2>
-<p><strong>Unverified:</strong> historical identifiers, tags, royalties and exports were not accessible. No historical records were read, modified or deleted by this audit. No integrity guarantee follows from the absence of visible records.</p>
+<p><strong>Unverified:</strong> no historical LabelGrid record was read. No data was written or deleted by this audit; preservation, identifiers, royalties, tags, and exports remain untested.</p>
 <h2>6. Runtime stability findings</h2>
-<p>The public origin is unavailable. No publishing request was triggered; build, restoration, module resolution and stale-capsule rejection cannot be determined from these responses.</p>
-<p>A separate, already-running preview was checked as a possible alternate target:</p>
-<table><tr><th>Preview probe</th><th>Observed result</th><th>Interpretation</th></tr>
-<tr><td>GET /</td><td>200 HTML, “Max Booster - AI Music Career Management Platform”</td><td>Preview frontend responds.</td></tr>
-<tr><td>GET /api/health</td><td>200 JSON; status “ok”</td><td>Liveness responds.</td></tr>
-<tr><td>GET /api/ready</td><td>503 JSON; status “down”; keys status, timestamp, error</td><td>Preview is not reporting ready. Internal cause was not inspected.</td></tr>
-<tr><td>GET /api/openapi.json</td><td>404 JSON; keys error, message, status</td><td>No API catalog was obtained at this path. Other discovery paths remain untested in preview.</td></tr></table>
-<p><strong>Environment separation:</strong> preview responses do not prove production readiness. HTTP 200 liveness must not be substituted for successful readiness.</p>
+<ul>
+<li><strong>Production:</strong> the homepage and nine additional discovery/health probes returned HTTP 404 with the platform page “This app isn’t live yet.” The app runtime was not reached.</li>
+<li><strong>Preview:</strong> early HTTP requests reached application responses; later HTTP requests to admin, distribution, analytics, royalties, and auth paths all returned 502. Headless Chromium also received 502 for the preview homepage. The preview therefore could not support stable end-user verification.</li>
+<li>Build, capsule restore, module resolution, and readiness after startup are not provable through these HTTP observations. No publish or restart was triggered.</li>
+</ul>
 <h2>7. Adversarial findings</h2>
-<p><strong>Not assessed:</strong> rate limits, duplicate-release protection, malformed/oversized input, Too Lost token rejection and resource enumeration. No destructive fuzzing, rapid submissions or hostile write requests were sent to production.</p>
+<p>Invalid-bearer and malformed-query GET probes reached 502 rather than an application response. They establish no validation or token-rejection behavior. Large request bodies, repeated submissions, mutation endpoints, and rate-limit behavior were not tested. No fuzzing or write requests were sent.</p>
 <h2>8. Final readiness verdict</h2>
-<p><strong>Production: unavailable; security/functionality approval withheld.</strong> <strong>Preview: frontend and liveness respond, readiness fails.</strong> A complete endpoint audit needs a reachable application target, externally supplied or discoverable API contracts, normal test identities with appropriate roles, and isolated fixtures for operations that create data or contact providers.</p>
-<p>This is a partial HTTP evidence report, not a completed project-wide audit. No application source, database, internal RPC or private provider service was inspected. No workflow was started or restarted during these probes.</p>
+<p><strong>Not ready for audit sign-off.</strong> The published site did not serve the app, and the selected preview became unavailable. The sampled anonymous 401s are limited positive evidence, not a full security pass. Authentication, authorization roles, functionality, provider isolation, historical-data integrity, and adversarial write handling remain unresolved.</p>
+<p>To finish this audit, a stable public target and usable route/API documentation are needed. Authenticated tests require a working ordinary test account and, for admin-boundary checks, a separate known-role test identity. State-changing tests additionally require isolated disposable records. Until then, report the above as partial endpoint evidence, not complete project coverage.</p>
 </html>
