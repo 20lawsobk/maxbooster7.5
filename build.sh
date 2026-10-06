@@ -5,13 +5,10 @@ set -e
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
 # Replit's repl-layer packager may use different glob semantics than Docker.
 # Deleting here is a belt-and-suspenders guarantee: even if every .dockerignore
-# pattern fails, this single rm prevents the 15 GB from entering the image.
+# pattern fails, cleanup prevents agent state from entering the image.
 # Safe: this runs ONLY in the deployment build container, never in dev.
 echo "==> Purging agent state / platform caches from build container..."
-rm -rf \
-  .local/ .agents/ \
-  .cache/ node_modules/.vite/ node_modules/.cache/ \
-  2>/dev/null || true
+bash script/parallel-build-cleanup.sh "$PWD"
 echo "   Done (agent state purged)."
 
 # ─── Bundle portable Node.js for the deployment container ────────────────────

@@ -54,3 +54,13 @@ operations rather than the full publishing-to-readiness path.
 preparation, restoration, startup and actual application readiness. Keep
 platform-controlled stage timings separate from repository-controlled work,
 and do not treat liveness or a local fixture as proof that publishing succeeded.
+
+The user authorized parallel cache cleanup and consideration of broader
+publishing parallelism after the initial silent purge appeared stuck.
+
+**Why:** Large agent/cache trees can consume minutes before compression starts.
+Removing the purge would increase image size rather than resolve that work.
+
+**How to apply:** Keep cleanup bounded and observable; overlap disjoint targets,
+surface failures, stop queued work on failure and drain active deletions before
+returning. Never benchmark destructive cleanup in the working checkout.
