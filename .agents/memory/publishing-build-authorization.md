@@ -68,5 +68,8 @@ use the successful scripts as scaffolding and update them for what is being depl
 
 **How to apply:** Keep the compile/pack → restore/start structure, current model,
 dependency and image-budget gates, and explicit disposable-root authorization.
+Preserve removal of successfully packed directories from the shipped image
+and restoration of required runtimes at startup; the user explicitly reiterated
+that this image-size reduction is part of the original design.
 Do not reintroduce a mandatory prepared-release prerequisite. Do not confuse
 historical publish markers or runtime import checks with proven live health.
