@@ -8,6 +8,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  execSync("bash script/sync-subsystem-dependencies.sh", {
+    cwd: root,
+    stdio: "inherit",
+    shell: "/bin/bash",
+  });
   console.log("==> Building frontend with Vite...");
   execSync("npx vite build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");

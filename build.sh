@@ -138,6 +138,10 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
     echo "   INFO: security-fix.ts not available — patches already baked into pre-built dist/"
   fi
 
+  # Root npm ci does not refresh these independent pnpm workspaces.
+  # Never ship their old installed trees inside subsystem capsules.
+  bash script/sync-subsystem-dependencies.sh
+
   FAST_PATH=1
 
 else
@@ -479,6 +483,8 @@ echo "   Sentinel written: node_modules/.pdim-restored"
 
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
+_pdim_pack "external/maxcore" "external_maxcore.pdim" "Current MaxCore workspace dependencies"
+_pdim_pack "external/pdim" "external_pdim.pdim" "Current PDIM workspace dependencies"
 
 # ── Source tree capsule ───────────────────────────────────────────────────────
 # Compress instead of delete — nothing is lost.  Restored manually when needed
