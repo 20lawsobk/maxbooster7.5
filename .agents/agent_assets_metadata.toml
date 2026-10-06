@@ -147,3 +147,17 @@ mtime_ms = 1791036625177
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/daa39112-1f88-486e-9779-a1455177a92a/0e32eb41-a13c-4c20-a5f1-af4da68c50a8"
 storage_version_token = "1791036652697243"
 content_type = "text/html"
+
+[[outputs]]
+id = "C6FisHxeXJt8hLyEjGx0O"
+uri = "file://reports/endpoint-audit/initial-http-findings.html"
+type = "html"
+title = "Endpoint-only audit — initial HTTP findings"
+description = "Eight requested finding categories, tested paths, production availability blocker, preview readiness failure, and explicit untested coverage."
+logical_id = "58fcc82a-c80c-4c6f-8b07-c5b0bcc6b154"
+content_hash = "sha256:c6774a1a5933ed3c6da70e37e76bbacb74da1a8e5873e2dc55dba9c167db8c9d"
+size = 6119
+mtime_ms = 1791308167342
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:fc1db3b3-f80f-4f80-acf9-220d6d6fe70a/58fcc82a-c80c-4c6f-8b07-c5b0bcc6b154/a18429df-b8b8-4344-9ff4-b30c24b6b8df"
+storage_version_token = "1791308189788352"
+content_type = "text/html"

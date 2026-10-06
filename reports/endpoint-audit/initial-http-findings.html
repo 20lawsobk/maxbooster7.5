@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Max Booster — Endpoint-only audit: initial findings</title>
+<style>body{font:16px/1.55 system-ui,sans-serif;color:#172033;max-width:1000px;margin:40px auto;padding:0 24px}h1,h2{line-height:1.2}h2{margin-top:32px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border:1px solid #d6dce5;text-align:left;vertical-align:top}th{background:#f1f4f8}.alert{padding:18px;background:#fff2df;border-left:4px solid #ba6500}code{background:#f1f4f8;padding:2px 4px}small{color:#536174}</style>
+<h1>Endpoint-only audit: initial findings</h1>
+<p>Scope: public HTTP behavior only. Production origin: <code>https://maxbooster.replit.app</code>. Observed October 6, 2026.</p>
+<div class="alert"><strong>Verdict: production is not accessible; full audit is blocked.</strong> All ten production probes returned HTTP 404 with the platform page titled “This app isn’t live yet.” This is an availability finding, not evidence that application authorization passed.</div>
+<h2>1. Endpoint audit map</h2>
+<p>These are <strong>probed paths, not a confirmed route inventory</strong>. No application route could be established in production. Expected payloads, authentication requirements, side effects and provider interactions remain unknown.</p>
+<table><tr><th>Method / path</th><th>Result</th><th>Application contract established?</th></tr>
+<tr><td>GET /</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/health</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/ready</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/csrf-token</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/openapi.json</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /openapi.json</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/docs</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /robots.txt</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /sitemap.xml</td><td>404, HTML platform page</td><td>No</td></tr>
+<tr><td>GET /api/__endpoint_audit_nonexistent__</td><td>404, HTML platform page</td><td>No; negative control</td></tr></table>
+<p>All production probes returned <code>text/html; charset=utf-8</code>, the same title, and 8,257 decoded response characters. The sampled responses lacked HSTS, CSP, X-Content-Type-Options and X-Frame-Options headers. Because these are platform error responses rather than application responses, their headers do not establish the application's security configuration.</p>
+<h2>2. Security findings</h2>
+<p><strong>Not assessed:</strong> application authentication, expired/tampered token handling, regular-user versus admin authorization, cross-user resource access, validation and application data leakage. Credentials were not sent to the unavailable published site. No application security pass or failure is claimed.</p>
+<h2>3. Functionality findings</h2>
+<p><strong>Confirmed availability blocker:</strong> the published homepage and API discovery paths do not serve the application. Distribution, catalog, analytics, release submission and unsupported-capability behavior could not be exercised. No happy-path state transition has been verified.</p>
+<h2>4. Provider isolation findings</h2>
+<p><strong>Unverified:</strong> Too Lost exclusivity and absence of LabelGrid execution. Endpoint responses alone cannot prove that a dependency is absent from internal artifacts. No provider submission, release, payout or takedown was triggered, and no internal runtime artifact gate was executed.</p>
+<h2>5. Historical data integrity findings</h2>
+<p><strong>Unverified:</strong> historical identifiers, tags, royalties and exports were not accessible. No historical records were read, modified or deleted by this audit. No integrity guarantee follows from the absence of visible records.</p>
+<h2>6. Runtime stability findings</h2>
+<p>The public origin is unavailable. No publishing request was triggered; build, restoration, module resolution and stale-capsule rejection cannot be determined from these responses.</p>
+<p>A separate, already-running preview was checked as a possible alternate target:</p>
+<table><tr><th>Preview probe</th><th>Observed result</th><th>Interpretation</th></tr>
+<tr><td>GET /</td><td>200 HTML, “Max Booster - AI Music Career Management Platform”</td><td>Preview frontend responds.</td></tr>
+<tr><td>GET /api/health</td><td>200 JSON; status “ok”</td><td>Liveness responds.</td></tr>
+<tr><td>GET /api/ready</td><td>503 JSON; status “down”; keys status, timestamp, error</td><td>Preview is not reporting ready. Internal cause was not inspected.</td></tr>
+<tr><td>GET /api/openapi.json</td><td>404 JSON; keys error, message, status</td><td>No API catalog was obtained at this path. Other discovery paths remain untested in preview.</td></tr></table>
+<p><strong>Environment separation:</strong> preview responses do not prove production readiness. HTTP 200 liveness must not be substituted for successful readiness.</p>
+<h2>7. Adversarial findings</h2>
+<p><strong>Not assessed:</strong> rate limits, duplicate-release protection, malformed/oversized input, Too Lost token rejection and resource enumeration. No destructive fuzzing, rapid submissions or hostile write requests were sent to production.</p>
+<h2>8. Final readiness verdict</h2>
+<p><strong>Production: unavailable; security/functionality approval withheld.</strong> <strong>Preview: frontend and liveness respond, readiness fails.</strong> A complete endpoint audit needs a reachable application target, externally supplied or discoverable API contracts, normal test identities with appropriate roles, and isolated fixtures for operations that create data or contact providers.</p>
+<p>This is a partial HTTP evidence report, not a completed project-wide audit. No application source, database, internal RPC or private provider service was inspected. No workflow was started or restarted during these probes.</p>
+</html>

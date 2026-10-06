@@ -1,11 +1,15 @@
 # Deployment task executive
 
 `bash build.sh` runs the build graph through `script/deployment/executive.mjs`.
-Before cleanup, bootstrap copies Node and compatible npm/pnpm packages into
-temporary storage outside the workspace caches. npm must match the project's
-declared version. Verification occurs outside the project because pnpm rejects
-even its version command inside an npm-managed project. The copies are writable
-and removed after the executive exits; they are not added to the deployment image.
+Before cleanup, bootstrap preserves Node and compatible npm/pnpm using temporary
+launchers outside the workspace caches. Immutable Nix store installations are
+referenced directly; other installations are copied with explicit deadlines.
+npm must match the project's declared version. Verification occurs outside the
+project because pnpm rejects even its version command inside an npm-managed
+project. Temporary launchers/copies are removed after the executive exits and
+are not added to the deployment image. Bootstrap logs selection, preservation,
+verification and handoff stages before the executive starts. A lost connection
+without an exit error does not establish which operation failed.
 The packer preparation task copies the dependency-free executive and startup
 controls to `dist/deployment/` before source removal. `bash start.sh` locates
 Node, validates ports, starts the liveness stub, then enters the startup graph.
