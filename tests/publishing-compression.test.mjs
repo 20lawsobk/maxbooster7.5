@@ -18,16 +18,68 @@ function setup(t) {
   const end = build.indexOf("# ── node_modules pre-pruning", start);
   assert.ok(start >= 0 && end > start);
   fs.writeFileSync(path.join(root, "compress.sh"), build.slice(start, end));
+  const packStart = build.indexOf("_pdim_pack() {");
+  const packEnd = build.indexOf("# Pre-prune node_modules, then pack all capsules", packStart);
+  assert.ok(packStart >= 0 && packEnd > packStart);
+  fs.writeFileSync(path.join(root, "pack.sh"), build.slice(packStart, packEnd));
   fs.mkdirSync(path.join(root, "fixture"));
   fs.writeFileSync(path.join(root, "fixture/data.txt"), "capsule fixture\n".repeat(65536));
   return {
     root,
-    run: command => spawnSync("bash", ["-c", `set -e; source ./compress.sh; ${command}`], {
+    run: command => spawnSync("bash", ["-c", `${build.slice(0, build.indexOf("# ─── Purge"))}\nsource ./compress.sh; ${command}`], {
       cwd: root, encoding: "utf8",
       env: { ...process.env, GZIP: "-9", XZ_DEFAULTS: "-9e -T0", XZ_OPT: "-9e -T0" },
     }),
   };
 }
+
+test("publishing refuses failed or malformed checksums without deleting source", t => {
+  const { root, run } = setup(t);
+  for (const implementation of ['return 1', 'echo unavailable']) {
+    const result = run(`source ./pack.sh; sha256sum() { ${implementation}; }; _pdim_pack fixture fixture.pdim Fixture`);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /checksum.*source retained/);
+    assert.equal(fs.existsSync(path.join(root, "fixture/data.txt")), true);
+    assert.equal(fs.existsSync(path.join(root, "fixture.manifest.json")), false);
+  }
+});
+
+test("publishing reports each pack phase and writes a valid manifest before cleanup", t => {
+  const { root, run } = setup(t);
+  const result = run("source ./pack.sh; _pdim_pack fixture fixture.pdim Fixture");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /compression starting:[\s\S]*compression complete:[\s\S]*checksum starting:[\s\S]*checksum complete; writing manifest:[\s\S]*manifest written; source cleanup starting:/);
+  assert.equal(fs.existsSync(path.join(root, "fixture")), false);
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "fixture.manifest.json")));
+  assert.equal(manifest.sha256, createHash("sha256").update(fs.readFileSync(path.join(root, "fixture.pdim"))).digest("hex"));
+});
+
+test("large archive writes emit progress before compression completes", t => {
+  const { root, run } = setup(t);
+  const large = path.join(root, "fixture/large.bin");
+  fs.writeFileSync(large, "");
+  fs.truncateSync(large, 110 * 1024 * 1024);
+  const result = run("_pdim_tar_create fixture.pdim fixture || exit $?");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /Capsule progress: 10000 records/);
+});
+
+test("archive replacement failure cannot be reported as successful compression", t => {
+  const { run } = setup(t);
+  const result = run("mv() { return 31; }; _pdim_tar_create fixture.pdim fixture || exit $?");
+  assert.equal(result.status, 31);
+  assert.doesNotMatch(result.stdout, /compression complete/);
+});
+
+test("publishing reports failing line and status without exposing command arguments", () => {
+  const build = fs.readFileSync("build.sh", "utf8");
+  const end = build.indexOf("# ─── Purge");
+  assert.ok(end > 0);
+  const result = spawnSync("bash", ["-c", `${build.slice(0, end)}\nfalse sensitive-fixture-argument`], {encoding: "utf8"});
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /build.sh failed at line \d+ \(exit 1\)/);
+  assert.doesNotMatch(result.stderr, /sensitive-fixture-argument/);
+});
 
 test("publishing uses bounded compression and produces a gate-compatible restorable archive", async t => {
   const { root, run } = setup(t);

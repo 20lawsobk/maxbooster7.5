@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+set -Ee
+# Report failures without printing shell commands, which may contain credentials.
+trap 'status=$?; printf "ERROR: build.sh failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
 
 # ─── Purge agent/platform state from the build container ─────────────────────
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
@@ -383,14 +385,17 @@ echo "   Compressor: gzip -1 (single-threaded, low-memory)"
 _pdim_tar_create() {
   # Usage: _pdim_tar_create <output.pdim> [tar-paths...]
   local out="$1"; shift
-  tar -I 'gzip -1' -cf "$out.partial" "$@"
+  echo "   [capsule] compression starting: $out"
+  df -Pk . | tail -1
+  tar --checkpoint=10000 --checkpoint-action='echo=Capsule progress: %u records; %T' -I 'gzip -1' -cf "$out.partial" "$@"
   local status=$?
   if [ "$status" -ne 0 ]; then
     echo "ERROR: capsule compression failed for $out (exit $status); source retained." >&2
     rm -f "$out.partial"
     return "$status"
   fi
-  mv -f "$out.partial" "$out"
+  mv -f "$out.partial" "$out" || return $?
+  echo "   [capsule] compression complete: $out"
 }
 
 # ── node_modules pre-pruning ─────────────────────────────────────────────────
@@ -451,7 +456,18 @@ _pdim_pack() {
   _pdim_tar_create "$capsule" "$dir/" || return $?
   local packed_size checksum
   packed_size=$(du -sh "$capsule" 2>/dev/null | cut -f1)
-  checksum=$(sha256sum "$capsule" 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
+  echo "   [capsule] checksum starting: $capsule"
+  if checksum=$(sha256sum "$capsule"); then
+    checksum=${checksum%% *}
+  else
+    echo "ERROR: checksum failed for $capsule; source retained." >&2
+    return 1
+  fi
+  if [[ ! "$checksum" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "ERROR: invalid checksum for $capsule; source retained." >&2
+    return 1
+  fi
+  echo "   [capsule] checksum complete; writing manifest: $capsule"
   cat > "${capsule%.pdim}.manifest.json" << MANIFEST_EOF
 {
   "capsule": "${capsule}",
@@ -466,6 +482,7 @@ _pdim_pack() {
   "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 MANIFEST_EOF
+  echo "   [capsule] manifest written; source cleanup starting: $dir"
   rm -rf "${dir:?}/"
   echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}..., elapsed=$((SECONDS-pack_started))s)"
 }

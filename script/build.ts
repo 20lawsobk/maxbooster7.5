@@ -135,22 +135,25 @@ async function main() {
         console.log(`==> Packing ${dir}/ → ${capsule} (gzip-1, Extract & Boot)...`);
         const child = spawn(
           "bash",
-          ["-c", `unset GZIP; tar -I 'gzip -1' -cf ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(dir)} && mv -f ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(capsule)}`],
+          ["-c", `unset GZIP; tar --checkpoint=10000 --checkpoint-action='echo=Capsule progress: %u records; %T' -I 'gzip -1' -cf ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(dir)} && mv -f ${JSON.stringify(capsule + ".partial")} ${JSON.stringify(capsule)}`],
           { cwd: root, stdio: "inherit" },
         );
         child.on("error", rejectOne);
         child.on("exit", async (code) => {
           if (code !== 0) return rejectOne(new Error(`packing ${dir} exited with code ${code}`));
           try {
+            console.log(`[capsule] compression complete; checksum starting: ${capsule}`);
             const hash = createHash("sha256");
             for await (const chunk of fs.createReadStream(path.resolve(root, capsule))) {
               hash.update(chunk);
             }
             const sha256 = hash.digest("hex");
+            console.log(`[capsule] checksum complete; writing manifest: ${capsule}`);
             fs.writeFileSync(
               path.resolve(root, capsule.replace(/\.pdim$/, ".manifest.json")),
               JSON.stringify({ compression: "gzip-1", sha256, dir }, null, 2),
             );
+            console.log(`[capsule] manifest written; source cleanup starting: ${dir}`);
             fs.rmSync(abs, { recursive: true, force: true });
             const sizeMB = (fs.statSync(path.resolve(root, capsule)).size / 1048576).toFixed(0);
             console.log(`   ✅ ${dir}/ packed (${sizeMB}MB) and removed from image`);

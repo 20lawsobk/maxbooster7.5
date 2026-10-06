@@ -18,6 +18,16 @@ validate compression choices for these runtime trees.
 **How to apply:** Keep this tradeoff when tuning publishing time; verify actual
 pack/restore and codec gates together in disposable fixtures.
 
+A last log saying “Packing” does not establish that compression itself failed:
+the same step can still be hashing the archive or deleting its source tree.
+
+**Why:** Published logs stopped at that label while the same full-size archive
+packed successfully in isolation. Guessing the failing subphase led to repeated
+compression tuning without identifying the remaining failure.
+
+**How to apply:** Log phase boundaries and progress, preserve stderr and failure
+statuses, and never claim an OOM or timeout without supporting evidence.
+
 Size build compression from shared effective container capacity, and drain active
 destructive jobs before returning a failure to recovery or process exit.
 
