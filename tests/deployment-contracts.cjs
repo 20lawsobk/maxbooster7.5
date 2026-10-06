@@ -193,9 +193,21 @@ test("capsule restoration reuses only the matching generation and rejects corrup
     assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), false);
     assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "two");
     fs.writeFileSync(archive, goodArchive);
+    // Preserve compatibility with the historical publishing codec as well as
+    // the bounded compressor used by the current build.
+    for (const compression of ["xz-9e", "xz-6"]) {
+      fs.writeFileSync(path.join(root, "fixture/data.txt"), compression);
+      execFileSync("tar", ["-cJf", archive, "fixture"], {
+        cwd: root, env: { ...process.env, XZ_OPT: "-0 -T1", XZ_DEFAULTS: "" },
+      });
+      const sha256 = createHash("sha256").update(fs.readFileSync(archive)).digest("hex");
+      fs.writeFileSync(manifest, JSON.stringify({ sha256, compression }));
+      assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), true);
+      assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), compression);
+    }
     fs.writeFileSync(manifest, JSON.stringify({ sha256: "0".repeat(64), compression: "gzip-9" }));
     assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), false);
-    assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "two");
+    assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "xz-6");
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

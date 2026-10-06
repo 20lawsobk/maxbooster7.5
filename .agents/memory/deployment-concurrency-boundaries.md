@@ -3,6 +3,17 @@ name: Deployment concurrency boundaries
 description: Resource limits and failure draining for destructive build phases
 ---
 
+The historical publishing scaffold should use bounded, moderate compression,
+not maximum compression with automatic host-wide threading. Preserve compressor
+stderr and finish a staged archive before replacing its previous generation.
+
+**Why:** A publish stopped at compression of a 640 MB dependency tree, with no
+diagnostic because tar stderr was discarded. The logs did not establish OOM;
+bounded resource use and visible errors address the risks without claiming it.
+
+**How to apply:** Keep this tradeoff when tuning publishing time; verify actual
+pack/restore and codec gates together in disposable fixtures.
+
 Size build compression from shared effective container capacity, and drain active
 destructive jobs before returning a failure to recovery or process exit.
 

@@ -159,7 +159,7 @@ export async function inspectArtifacts(root, capsules = ["node_modules", "python
       }
       const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
       if (!/^[a-f0-9]{64}$/.test(manifest.sha256)) throw new Error("invalid sha256");
-      if (!["zstd-6", "zstd-19", "gzip-9", "xz-9", "xz-9e"].includes(manifest.compression)) throw new Error(`unsupported codec ${manifest.compression}`);
+      if (!["zstd-6", "zstd-19", "gzip-9", "xz-6", "xz-9", "xz-9e"].includes(manifest.compression)) throw new Error(`unsupported codec ${manifest.compression}`);
       if (!fs.statSync(archive).size) throw new Error("empty capsule");
       const actual = await digest(archive);
       if (actual !== manifest.sha256) throw new Error("capsule checksum mismatch");

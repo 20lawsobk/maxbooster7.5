@@ -123,7 +123,7 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
 
   const manifest = readManifest(manifestPath);
   if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 || "") ||
-      !/^(gzip|xz)(-\d+)?$/.test(manifest?.compression || "")) {
+      !/^(gzip(-[1-9])?|xz(-[0-9]e?)?)$/.test(manifest?.compression || "")) {
     console.error(`[pdim-restore] Invalid manifest for ${capsuleName}`);
     return false;
   }

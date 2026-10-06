@@ -369,7 +369,7 @@ fi
 # restored on first startup by dist/pdim-restore.mjs.
 #
 # Compression: auto-selects best available algorithm
-#   xz -9e -T0  (XZ extreme, multi-threaded) if xz is present   ← preferred
+#   xz -6, at most two threads and 256 MiB compressor memory
 #   GZIP=-9     (gzip maximum level)          fallback
 # Integrity:   SHA-256 checksum written alongside each capsule
 # Format:      pdim-v2
@@ -378,8 +378,9 @@ echo "==> PDIM: Creating Pocket Dimension capsules..."
 # ── Compression algorithm auto-detection ─────────────────────────────────────
 _PDIM_FORMAT="gzip-9"
 if command -v xz >/dev/null 2>&1; then
-  _PDIM_FORMAT="xz-9e"
-  export XZ_OPT="-9e -T0"   # extreme preset + all CPU cores
+  _PDIM_FORMAT="xz-6"
+  unset XZ_DEFAULTS
+  export XZ_OPT="-6 -T2 --memlimit-compress=256MiB"
   echo "   Compressor: xz $(xz --version 2>/dev/null | head -1) (XZ_OPT=${XZ_OPT})"
 else
   echo "   Compressor: gzip-9 (xz not found)"
@@ -390,9 +391,16 @@ _pdim_tar_create() {
   # Usage: _pdim_tar_create <output.pdim> [tar-paths...]
   local out="$1"; shift
   case "$_PDIM_FORMAT" in
-    xz*)   tar -cJf "$out" "$@" 2>/dev/null ;;
-    *)     GZIP=-9 tar -czf "$out" "$@" 2>/dev/null ;;
+    xz*)   tar -cJf "$out.partial" "$@" ;;
+    *)     GZIP=-9 tar -czf "$out.partial" "$@" ;;
   esac
+  local status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "ERROR: capsule compression failed for $out (exit $status); source retained." >&2
+    rm -f "$out.partial"
+    return "$status"
+  fi
+  mv -f "$out.partial" "$out"
 }
 
 # ── node_modules pre-pruning ─────────────────────────────────────────────────
@@ -450,7 +458,7 @@ _pdim_pack() {
   local raw_size
   raw_size=$(du -sh "$dir" 2>/dev/null | cut -f1)
   echo "   Packing ${label} (${raw_size}) → ${capsule} [${_PDIM_FORMAT}]..."
-  _pdim_tar_create "$capsule" "$dir/"
+  _pdim_tar_create "$capsule" "$dir/" || return $?
   local packed_size checksum
   packed_size=$(du -sh "$capsule" 2>/dev/null | cut -f1)
   checksum=$(sha256sum "$capsule" 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
@@ -505,7 +513,7 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   # shellcheck disable=SC2086
   _SRC_RAW=$(du -sh ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null | awk '{sum+=$1} END{print sum}' || echo "?")
   # shellcheck disable=SC2086
-  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || true
+  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || exit $?
   if [ -f source.pdim ]; then
     _SRC_PACKED=$(du -sh source.pdim 2>/dev/null | cut -f1)
     _SRC_CKSUM=$(sha256sum source.pdim 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
