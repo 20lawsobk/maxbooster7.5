@@ -221,6 +221,7 @@ export class PlatformCapsuleBuilder {
 
     let totalSize = 0;
     const contentHasher = createHash("sha256");
+    let lastProgress = Date.now();
 
     for (const filePath of allFiles) {
       try {
@@ -241,8 +242,12 @@ export class PlatformCapsuleBuilder {
 
         totalSize += stat.size;
         contentHasher.update(hash);
-      } catch {
-        // Skip unreadable files
+        if (Date.now() - lastProgress > 15000) {
+          logger.info(`[Capsule] Processed ${manifest.files.length}/${allFiles.length} files (${Math.round(totalSize / 1048576)} MiB input)`);
+          lastProgress = Date.now();
+        }
+      } catch (error) {
+        throw new Error(`Capsule could not include ${path.relative(this.projectRoot, filePath)}: ${(error as Error).message}`);
       }
     }
 

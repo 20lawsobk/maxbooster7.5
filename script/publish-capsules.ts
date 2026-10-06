@@ -13,7 +13,9 @@ export async function publishCapsule(root: string, mode: string, capsule: string
       throw new Error("Capsule paths must stay inside the build root");
     }
   }
-  const threads = Math.max(1, Math.min(2, Math.floor(effectiveCapacity().cpus)));
+  const assigned = Number(process.env.DEPLOY_TASK_CPU ?? 2);
+  if (!Number.isFinite(assigned) || assigned < 1) throw new Error("Invalid task CPU allocation");
+  const threads = Math.max(1, Math.min(Math.floor(effectiveCapacity().cpus), Math.floor(assigned)));
   if (mode === "directory") {
     if (inputs.length !== 1 || !fs.statSync(path.join(root, inputs[0])).isDirectory()) {
       throw new Error("Required capsule directory is missing");

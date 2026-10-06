@@ -18,6 +18,7 @@ _try_node() {
   return 1
 }
 
+if [ "${1:-}" != "--executive-application" ]; then
 _NODE_BIN=""
 
 # Resolve the directory containing start.sh so we can find .node_bin/
@@ -93,20 +94,21 @@ echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 # This must happen before the liveness stub or any sidecar starts. A duplicate
 # assignment is a configuration failure, never something to "work around" by
 # letting one process silently take another service's socket.
-source "$_SCRIPT_DIR/scripts/port-contract.sh"
+source "$_SCRIPT_DIR/dist/deployment/port-contract.sh"
 
 # ── 1a-2. Cross-check against .replit's own [[ports]] table ──────────────────
 # Runs once node_modules is confirmed present (tsx is a production dependency);
 # node_modules is guaranteed to exist by this point because deploy builds run
 # `npm ci` ahead of start.sh. Deferred until after the port-contract.sh env
 # vars above are exported so the check observes the exact values the app will.
-if [ -d "$_SCRIPT_DIR/node_modules/.bin" ] && [ -x "$_SCRIPT_DIR/node_modules/.bin/tsx" ]; then
-  if ! "$_NODE_BIN" "$_SCRIPT_DIR/node_modules/.bin/tsx" "$_SCRIPT_DIR/scripts/check-port-contract.ts"; then
+if [ -f "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs" ]; then
+  if ! "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"; then
     echo "[start.sh] FATAL: port contract check failed against .replit; aborting startup" >&2
     exit 1
   fi
 else
-  echo "[start.sh] WARNING: tsx not found — skipping .replit port-contract cross-check (internal port validation above still applies)"
+  echo "[start.sh] FATAL: compiled port-contract check missing" >&2
+  exit 1
 fi
 
 # ── 1b. Boot-time liveness stub ───────────────────────────────────────────────
@@ -115,41 +117,34 @@ fi
 # "connection refused" / a crash-restart loop, while capsule restore + venv +
 # sidecars finish below. Pure Node core-module script — needs zero deps.
 _STUB_PID=""
-if [ -f "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" ]; then
-  PORT="${PORT:-5000}" "$_NODE_BIN" "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" &
+if [ -f "$_SCRIPT_DIR/dist/deployment/boot-stub-server.mjs" ]; then
+  PORT="${PORT:-5000}" "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/boot-stub-server.mjs" &
   _STUB_PID=$!
   echo "[start.sh] boot-stub liveness server started (pid $_STUB_PID) on port ${PORT:-5000}"
 else
   echo "[start.sh] WARNING: scripts/boot-stub-server.mjs not found — health check will 500 until real server binds"
 fi
 
+export DEPLOY_NODE_BIN="$_NODE_BIN" DEPLOY_BOOT_STUB_PID="$_STUB_PID"
+if [ ! -f "$_SCRIPT_DIR/dist/deployment/executive.mjs" ]; then
+  echo "[start.sh] FATAL: deployment executive missing; rebuild runtime artifacts" >&2
+  exit 1
+fi
+exec "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/executive.mjs" start
+fi
+_NODE_BIN="${DEPLOY_NODE_BIN:?Startup executive must supply the Node executable}"
+_STUB_PID="${DEPLOY_BOOT_STUB_PID:-}"
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # ── 2. PDIM restore (Extract & Boot) ─────────────────────────────────────────
 # Extracts node_modules.pdim (and friends) on first startup. No-op on
 # subsequent restarts (directories already present, sentinel files found).
-# Reads compression format from *.manifest.json — handles xz and gzip capsules.
-#
-# Only node_modules blocks boot — Node cannot import anything without it.
-# python_runtime / external/maxcore / external/pdim restore in the
-# BACKGROUND, in parallel with the app itself starting: those subsystems
-# already start async and degrade gracefully (Python sidecar warns and
-# falls back, MaxCore's supervisor reports degraded/unreachable, pdim isn't
-# imported by the running app at all). Blocking on all four here delays port
-# binding past the deployment's startup-probe timeout on a cold boot when
-# their combined extraction time is large.
-if [ -f "dist/pdim-restore.mjs" ]; then
-  echo "[start.sh] Running PDIM capsule restore (critical: node_modules)..."
-  "$_NODE_BIN" dist/pdim-restore.mjs critical
-  _RESTORE_RC=$?
-  if [ $_RESTORE_RC -ne 0 ]; then
-    echo "[start.sh] FATAL: critical PDIM restore (node_modules) failed" >&2
-    exit 1
-  fi
-  echo "[start.sh] Restoring python_runtime / external/maxcore / external/pdim in background..."
-  "$_NODE_BIN" dist/pdim-restore.mjs background >> /tmp/pdim-background-restore.log 2>&1 &
-  echo "[start.sh] background PDIM restore pid $!"
-else
-  echo "[start.sh] dist/pdim-restore.mjs not found — skipping PDIM restore"
-fi
+# Reads compression formats from manifests, including zstd.
+# Independent restores are resource-scheduled while the boot stub provides
+# liveness. Application launch waits for their verified completion; the stub
+# does not represent application readiness.
+# The executive has validated and restored all prerequisites before admitting
+# this application task. Do not launch detached, unobserved restore work here.
 
 # ── 3. Activate Python virtual environment ────────────────────────────────────
 # Check ./python_runtime/ first (build artifact created by build.sh, not in

@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+phase_cleanup() {
 
 # ─── Purge agent/platform state from the build container ─────────────────────
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
@@ -10,8 +11,10 @@ set -e
 echo "==> Purging agent state / platform caches from build container..."
 bash script/parallel-build-cleanup.sh "$PWD"
 echo "   Done (agent state purged)."
+}
 
 # ─── Bundle portable Node.js for the deployment container ────────────────────
+phase_node() {
 # The Replit deployment (VM) container has a MINIMAL Nix store: bash, coreutils,
 # xz, tar — but ZERO nodejs.  The node binary must travel with the project files.
 # start.sh strategy [a] looks for .node_bin/node first — that is what we produce.
@@ -47,6 +50,7 @@ else
   fi
 fi
 echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm --version 2>/dev/null || echo n/a)"
+}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FAST PATH vs SLOW PATH
@@ -69,6 +73,7 @@ echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm -
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ─── Copy Python diffusion server (before server/ may be deleted) ────────────
+phase_diffusion() {
 echo "==> Preserving Python diffusion server files in services/diffusion/..."
 mkdir -p services/diffusion
 if [ -d "server/services/diffusion" ]; then
@@ -87,6 +92,9 @@ else
   echo "   WARNING: server/services/diffusion/ not found — Python server unavailable in production"
 fi
 
+PREBUILT_FRONTEND="dist/public/index.html"
+}
+phase_dependencies() {
 PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.mjs"
 PREBUILT_CLUSTER="dist/cluster.mjs"
@@ -175,6 +183,7 @@ else
 fi
 
 # ─── TF native binaries (preserved for production LD_LIBRARY_PATH) ───────────
+printf '%s' "$FAST_PATH" > "$DEPLOY_STATE_DIR/build-path"
 echo "==> Keeping TF native libraries from tfjs-node postinstall..."
 # NOTE: node_modules/@tensorflow/tfjs-node/deps/ is intentionally KEPT.
 # It contains libtensorflow.so.2.9.1 (~242 MB) which start.sh adds to LD_LIBRARY_PATH.
@@ -182,8 +191,10 @@ echo "==> Keeping TF native libraries from tfjs-node postinstall..."
 # warning and degrades native TF acceleration for all ML inference in production.
 # The binding/ C++ source is also kept — it is harmless and may be needed for native builds.
 echo "   TF native libraries preserved (libtensorflow.so will be available in production)."
+}
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
+phase_rust() {
 echo "==> Rust sidecar: compiling release binary..."
 mkdir -p bin
 _CARGO_OK=0
@@ -209,8 +220,11 @@ else
 fi
 rm -rf boosterstate/target/ 2>/dev/null || true
 [ "$_CARGO_OK" = "0" ] && echo "   App will run without boosterstate sidecar (graceful fallback active)."
+return 0
+}
 
 # ─── node_modules stripping (both paths) ─────────────────────────────────────
+phase_strip() {
 echo "==> Stripping node_modules..."
 
 rm -rf \
@@ -281,8 +295,10 @@ find node_modules -maxdepth 3 -type f \
 echo "   Removed: changelog/readme files inside node_modules"
 
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
+}
 
 # ─── Portable Python runtime ─────────────────────────────────────────────────
+phase_python() {
 # The run container is a Debian-based VM.  The Nix-installed Python in the
 # build container embeds Nix store paths that don't exist in the run container.
 # We download python-build-standalone which links against standard glibc and
@@ -332,8 +348,11 @@ else
   fi
 fi
 [ "$_PYENV_OK" = "0" ] && echo "   Python runtime unavailable — audio/image analysis disabled in production."
+test "$_PYENV_OK" = "1"
+}
 
 # ─── App deployment capsule (Pocket Dimension engine) ─────────────────────────
+phase_app_capsule() {
 # Distinct from the .pdim tar capsules below (which only shrink the deployed
 # image and auto-restore via dist/pdim-restore.mjs). This produces a
 # checksummed, portable snapshot of the app's OWN source using the same
@@ -357,6 +376,8 @@ else
 fi
 
 # ─── PDIM Capsule: pack large runtime directories ────────────────────────────
+}
+phase_packer() {
 # Implements the Pocket Dimension Storage Engine "Extract & Boot" mode.
 #
 # Philosophy: nothing is permanently deleted (except .local/ agent state).
@@ -375,6 +396,12 @@ node_modules/.bin/esbuild script/publish-capsules.ts --bundle --platform=node \
   --target=node22 --format=esm --outfile=dist/publish-capsules.mjs
 _PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
 echo "   Compressor: existing deployment capsule packer (${_PDIM_FORMAT})"
+mkdir -p dist/deployment
+cp script/deployment/*.mjs dist/deployment/
+cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
+node_modules/.bin/esbuild scripts/check-port-contract.ts --bundle --platform=node \
+  --format=esm --outfile=dist/deployment/check-port-contract.mjs
+}
 
 # Internal: run tar with the selected compressor
 _pdim_tar_create() {
@@ -436,6 +463,7 @@ _pdim_pack() {
 }
 
 # Pre-prune node_modules, then pack all capsules
+phase_prune() {
 _pdim_prune_nm
 
 # Write PDIM sentinel file into node_modules BEFORE packing.
@@ -443,13 +471,24 @@ _pdim_prune_nm
 # node_modules from a stale directory left over by a prior deployment.
 touch node_modules/.pdim-restored
 echo "   Sentinel written: node_modules/.pdim-restored"
+}
 
+phase_pack_node() {
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
+}
+phase_pack_python() {
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
+}
+phase_pack_maxcore() {
 _pdim_pack "external/maxcore" "external_maxcore.pdim" "MaxCore server"
+}
+phase_pack_pdim() {
 _pdim_pack "external/pdim" "external_pdim.pdim" "PDIM server"
+}
 
 # ── Source tree capsule ───────────────────────────────────────────────────────
+phase_source() {
+_PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
 # Compress instead of delete — nothing is lost.  Restored manually when needed
 # (debugging, SLOW PATH rebuild).  Not auto-restored at startup since the server
 # runs entirely from pre-compiled dist/ artifacts.
@@ -497,13 +536,17 @@ else
 fi
 
 echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
+}
 
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────
+phase_assets() {
 echo "==> Removing pre-compressed assets (.gz/.br) from dist/public/..."
 find dist/public -type f \( -name '*.gz' -o -name '*.br' \) -delete 2>/dev/null || true
 echo "   Done."
+}
 
 # ─── Non-UTF-8 filename cleanup ──────────────────────────────────────────────
+phase_finalize() {
 echo "==> Removing files with non-UTF-8 filenames from workspace root..."
 python3 - << 'PYEOF' || true
 import os, sys
@@ -530,6 +573,7 @@ except Exception as ex:
 PYEOF
 
 # ─── Final summary ────────────────────────────────────────────────────────────
+FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")
 echo ""
 echo "==> Build image size summary:"
 for _item in dist/ services/ bin/ *.pdim *.manifest.json; do
@@ -545,3 +589,14 @@ else
 fi
 echo ""
 echo "==> Build complete. PDIM capsules restore on first startup via dist/pdim-restore.mjs"
+}
+
+if [ "${1:-}" = "--executive-task" ]; then
+  case "${2:-}" in
+    cleanup|node|diffusion|dependencies|rust|strip|python|app_capsule|packer|prune|pack_node|pack_python|pack_maxcore|pack_pdim|source|assets|finalize)
+      "phase_$2" ;;
+    *) echo "Unknown build task" >&2; exit 1 ;;
+  esac
+else
+  exec bash script/deployment/bootstrap.sh
+fi

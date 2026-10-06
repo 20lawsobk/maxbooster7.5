@@ -80,11 +80,12 @@ class ParallelBlockCompressorPool {
       return;
     }
 
-    const { workerCount } = computeWorkerSizing({
-      memPerWorkerGB: 0.25,
-      maxWorkers: 8,
-    });
-    const poolSize = Math.max(1, workerCount);
+    const workerCount = process.env.DEPLOY_TASK_CPU === undefined
+      ? computeWorkerSizing({memPerWorkerGB: 0.25, maxWorkers: 8}).workerCount
+      : Number(process.env.DEPLOY_TASK_CPU);
+    const allocation = Number(process.env.DEPLOY_TASK_CPU ?? Math.max(1, workerCount));
+    if (!Number.isInteger(allocation) || allocation < 1) throw new Error("Invalid deployment CPU allocation");
+    const poolSize = Math.max(1, Math.min(8, workerCount, allocation));
 
     const startWorker = (index: number): Promise<WorkerState> =>
       new Promise((resolve, reject) => {

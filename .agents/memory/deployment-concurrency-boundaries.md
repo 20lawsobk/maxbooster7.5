@@ -64,3 +64,14 @@ Removing the purge would increase image size rather than resolve that work.
 **How to apply:** Keep cleanup bounded and observable; overlap disjoint targets,
 surface failures, stop queued work on failure and drain active deletions before
 returning. Never benchmark destructive cleanup in the working checkout.
+
+The user explicitly requested a proactive adapting task executive instead of
+the sequence-based model, to transition smoothly without indefinite waits.
+
+**Why:** Quiet, unbounded individual stages made publishing appear permanently
+stuck. This authorization supersedes keeping the fixed historical step order,
+but not the requirement to retain pack/remove/restore.
+
+**How to apply:** Preserve dependency barriers and dynamic resource admission,
+report waits, enforce task/overall deadlines, and never advance past a failed
+prerequisite. Local safety budgets must not be represented as platform limits.

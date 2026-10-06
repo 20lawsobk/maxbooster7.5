@@ -24,7 +24,14 @@ function load(file, mocks, extras = {}) {
   return module.exports;
 }
 function sizing(memory, cpus = 8, env = {}, files = {}) {
+  const disk = { readFileSync(file) {
+    if (file in files) return files[file];
+    throw Object.assign(new Error("not found"), { code: "ENOENT" });
+  } };
+  const osMock = { availableParallelism: () => cpus, totalmem: () => memory * 1024 ** 3 };
+  const capacity = load("script/deployment/capacity.mjs", {"node:os":osMock,"node:fs":disk});
   return load("server/computeSizing.ts", {
+    "../script/deployment/capacity.mjs": capacity,
     os: { availableParallelism: () => cpus, totalmem: () => memory * 1024 ** 3 },
     "node:fs": { readFileSync(file) {
       if (file in files) return files[file];

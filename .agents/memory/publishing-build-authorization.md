@@ -73,6 +73,10 @@ and matching restore support are authorized. Do not roll back unrelated
 application files or revive a mandatory prepared-release prerequisite.
 Keep the historical archive intact and never run the destructive build in the
 working checkout.
+The user subsequently authorized replacing the fixed sequence with a proactive
+adapting task executive across build/start, explicitly to avoid indefinite waits.
+Dependency-aware scheduling is now authorized; the original pack/remove/restore
+behavior, historical archive, and no-destructive-build-in-checkout rule remain.
 Preserve removal of successfully packed directories from the shipped image
 and restoration of required runtimes at startup; the user explicitly reiterated
 that this image-size reduction is part of the original design.

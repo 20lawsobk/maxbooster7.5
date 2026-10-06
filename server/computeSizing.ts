@@ -11,30 +11,8 @@
 // each caller apply its own constraints (memory ceiling, a hard cap for a
 // single-caller loopback service, an env override for debugging).
 import os from "os";
-import fs from "node:fs";
-
-function limitFile(file: string): string | null {
-  try { return fs.readFileSync(file, "utf8").trim(); }
-  catch (error) {
-    if (["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) return null;
-    throw error;
-  }
-}
-
-/** Effective cgroup v2/v1 limits, bounded by process affinity and physical RAM. */
-export function effectiveCapacity(): { cpus: number; memoryGB: number } {
-  let cpus = os.availableParallelism();
-  let memory = os.totalmem();
-  const cpuMax = limitFile("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota = cpuMax ? Number(cpuMax[0]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period = cpuMax ? Number(cpuMax[1]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
-  if (quota > 0 && period > 0) cpus = Math.min(cpus, quota / period);
-  for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n = Number(limitFile(file));
-    if (n > 0 && Number.isFinite(n)) memory = Math.min(memory, n);
-  }
-  return { cpus, memoryGB: memory / 1024 ** 3 };
-}
+import { effectiveCapacity } from "../script/deployment/capacity.mjs";
+export { effectiveCapacity } from "../script/deployment/capacity.mjs";
 
 export interface ComputeSizingOptions {
   /** Optional caller minimum RSS estimate. Role-specific configured minima
