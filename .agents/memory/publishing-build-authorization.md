@@ -60,14 +60,18 @@ failure despite passing helper tests.
 Verify each real entrypoint against its current role and preserve
 rejection-before-mutation tests.
 
-Use the historical publish-checkpoint build/start scripts as scaffolding,
-updated for the current application and required runtimes.
+The user clarified that “original successful start and build scripts” means
+the unmodified shell scripts from the August 26, 2026 publishing checkpoint,
+not the recently edited scripts or a newly adapted scaffold.
 
-**Why:** The user superseded the prepare-before-Publish approach by asking to
-use the successful scripts as scaffolding and update them for what is being deployed.
+**Why:** After repeated publishing repairs, the user explicitly requested the
+scripts used roughly two months earlier. This supersedes the earlier instruction
+to adapt that scaffold automatically.
 
-**How to apply:** Keep the compile/pack → restore/start structure, current model,
-dependency and image-budget gates, and explicit disposable-root authorization.
+**How to apply:** Keep those two shell files byte-for-byte historical unless the
+user authorizes changes; do not roll back unrelated application or helper files.
+The historical archive identifies the source checkpoint. Keep newer versions
+recoverable and do not run the destructive build in the working checkout.
 Preserve removal of successfully packed directories from the shipped image
 and restoration of required runtimes at startup; the user explicitly reiterated
 that this image-size reduction is part of the original design.

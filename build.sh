@@ -1,7 +1,5 @@
 #!/bin/bash
-set -Ee
-# Report failures without printing shell commands, which may contain credentials.
-trap 'status=$?; printf "ERROR: build.sh failed at line %s (exit %s)\n" "$LINENO" "$status" >&2; exit "$status"' ERR
+set -e
 
 # ─── Purge agent/platform state from the build container ─────────────────────
 # .dockerignore already excludes .local/ (15 GB of Replit agent state) but
@@ -139,10 +137,6 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   else
     echo "   INFO: security-fix.ts not available — patches already baked into pre-built dist/"
   fi
-
-  # Root npm ci does not refresh these independent pnpm workspaces.
-  # Never ship their old installed trees inside subsystem capsules.
-  bash script/sync-subsystem-dependencies.sh
 
   FAST_PATH=1
 
@@ -309,13 +303,13 @@ if curl -sL --max-time 120 "${_PYURL}" \
     _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
     echo "   Portable Python installed: ${_PY_VER_STR}"
     echo "   Installing numpy, pillow, fastapi, uvicorn, pydantic ..."
-    "${_PYRUNTIME}/bin/python3" -I -m pip install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" "fsspec>=2026.6.0" \
+    "${_PYRUNTIME}/bin/pip3" install --no-cache-dir \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
       --quiet 2>&1 || \
-      "${_PYRUNTIME}/bin/python3" -I -m pip install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" "fsspec>=2026.6.0" \
+      "${_PYRUNTIME}/bin/python3" -m pip install --no-cache-dir \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
       --quiet 2>&1 || true
-    if "${_PYRUNTIME}/bin/python3" -I -c "import numpy, PIL, fastapi, uvicorn, pydantic, urllib3, fsspec; assert tuple(map(int, urllib3.__version__.split('.'))) >= (2,8,0); assert tuple(map(int, fsspec.__version__.split('.'))) >= (2026,6,0)" 2>/dev/null; then
+    if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL, fastapi, uvicorn, pydantic" 2>/dev/null; then
       echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
       _PYENV_OK=1
     else
@@ -370,32 +364,31 @@ fi
 # Everything large is compressed into content-addressed .pdim capsules and
 # restored on first startup by dist/pdim-restore.mjs.
 #
-# Compression: gzip level 1, favoring build time over maximum compression.
-# The 1.8 GB Python runtime was measured with this codec in disposable storage.
+# Compression: auto-selects best available algorithm
+#   xz -9e -T0  (XZ extreme, multi-threaded) if xz is present   ← preferred
+#   GZIP=-9     (gzip maximum level)          fallback
 # Integrity:   SHA-256 checksum written alongside each capsule
 # Format:      pdim-v2
 echo "==> PDIM: Creating Pocket Dimension capsules..."
 
-# ── Explicit bounded-memory, fast compression ──────────────────────────────
-_PDIM_FORMAT="gzip-1"
-unset GZIP XZ_OPT XZ_DEFAULTS
-echo "   Compressor: gzip -1 (single-threaded, low-memory)"
+# ── Compression algorithm auto-detection ─────────────────────────────────────
+_PDIM_FORMAT="gzip-9"
+if command -v xz >/dev/null 2>&1; then
+  _PDIM_FORMAT="xz-9e"
+  export XZ_OPT="-9e -T0"   # extreme preset + all CPU cores
+  echo "   Compressor: xz $(xz --version 2>/dev/null | head -1) (XZ_OPT=${XZ_OPT})"
+else
+  echo "   Compressor: gzip-9 (xz not found)"
+fi
 
 # Internal: run tar with the selected compressor
 _pdim_tar_create() {
   # Usage: _pdim_tar_create <output.pdim> [tar-paths...]
   local out="$1"; shift
-  echo "   [capsule] compression starting: $out"
-  df -Pk . | tail -1
-  tar --checkpoint=10000 --checkpoint-action='echo=Capsule progress: %u records; %T' -I 'gzip -1' -cf "$out.partial" "$@"
-  local status=$?
-  if [ "$status" -ne 0 ]; then
-    echo "ERROR: capsule compression failed for $out (exit $status); source retained." >&2
-    rm -f "$out.partial"
-    return "$status"
-  fi
-  mv -f "$out.partial" "$out" || return $?
-  echo "   [capsule] compression complete: $out"
+  case "$_PDIM_FORMAT" in
+    xz*)   tar -cJf "$out" "$@" 2>/dev/null ;;
+    *)     GZIP=-9 tar -czf "$out" "$@" 2>/dev/null ;;
+  esac
 }
 
 # ── node_modules pre-pruning ─────────────────────────────────────────────────
@@ -450,24 +443,13 @@ _pdim_pack() {
     echo "   SKIP ${label}: directory not found"
     return 0
   fi
-  local raw_size pack_started=$SECONDS
+  local raw_size
   raw_size=$(du -sh "$dir" 2>/dev/null | cut -f1)
   echo "   Packing ${label} (${raw_size}) → ${capsule} [${_PDIM_FORMAT}]..."
-  _pdim_tar_create "$capsule" "$dir/" || return $?
+  _pdim_tar_create "$capsule" "$dir/"
   local packed_size checksum
   packed_size=$(du -sh "$capsule" 2>/dev/null | cut -f1)
-  echo "   [capsule] checksum starting: $capsule"
-  if checksum=$(sha256sum "$capsule"); then
-    checksum=${checksum%% *}
-  else
-    echo "ERROR: checksum failed for $capsule; source retained." >&2
-    return 1
-  fi
-  if [[ ! "$checksum" =~ ^[0-9a-f]{64}$ ]]; then
-    echo "ERROR: invalid checksum for $capsule; source retained." >&2
-    return 1
-  fi
-  echo "   [capsule] checksum complete; writing manifest: $capsule"
+  checksum=$(sha256sum "$capsule" 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
   cat > "${capsule%.pdim}.manifest.json" << MANIFEST_EOF
 {
   "capsule": "${capsule}",
@@ -482,9 +464,8 @@ _pdim_pack() {
   "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 MANIFEST_EOF
-  echo "   [capsule] manifest written; source cleanup starting: $dir"
   rm -rf "${dir:?}/"
-  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}..., elapsed=$((SECONDS-pack_started))s)"
+  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (${_PDIM_FORMAT}, sha256=${checksum:0:16}...)"
 }
 
 # Pre-prune node_modules, then pack all capsules
@@ -498,8 +479,6 @@ echo "   Sentinel written: node_modules/.pdim-restored"
 
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
-_pdim_pack "external/maxcore" "external_maxcore.pdim" "Current MaxCore workspace dependencies"
-_pdim_pack "external/pdim" "external_pdim.pdim" "Current PDIM workspace dependencies"
 
 # ── Source tree capsule ───────────────────────────────────────────────────────
 # Compress instead of delete — nothing is lost.  Restored manually when needed
@@ -520,7 +499,7 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
   # shellcheck disable=SC2086
   _SRC_RAW=$(du -sh ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null | awk '{sum+=$1} END{print sum}' || echo "?")
   # shellcheck disable=SC2086
-  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || exit $?
+  _pdim_tar_create source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} || true
   if [ -f source.pdim ]; then
     _SRC_PACKED=$(du -sh source.pdim 2>/dev/null | cut -f1)
     _SRC_CKSUM=$(sha256sum source.pdim 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
