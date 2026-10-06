@@ -152,3 +152,4 @@
 - [Local DNS enabled](local-dns-enabled.md) — keep the local authoritative service enabled; verify UDP and TCP separately from public delegation.
 - [MaxCore lifecycle IPC](maxcore-cluster-lifecycle-state.md) — process-local restart flags cannot gate clustered HTTP workers; verify primary-to-worker readiness propagation.
 - [Awareness before training](awareness-training-prerequisite.md) — user intends awareness to support use before training; investigate the active path before prescribing retraining.
+- [Advisory test reachability](advisory-test-reachability.md) — validate benign equivalents first; a skipped operation can falsely appear to block an exploit.

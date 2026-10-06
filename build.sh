@@ -304,12 +304,12 @@ if curl -sL --max-time 120 "${_PYURL}" \
     echo "   Portable Python installed: ${_PY_VER_STR}"
     echo "   Installing numpy, pillow, fastapi, uvicorn, pydantic ..."
     "${_PYRUNTIME}/bin/python3" -I -m pip install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" "fsspec>=2026.6.0" \
       --quiet 2>&1 || \
       "${_PYRUNTIME}/bin/python3" -I -m pip install --no-cache-dir \
-      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" "urllib3>=2.8.0,<3" "fsspec>=2026.6.0" \
       --quiet 2>&1 || true
-    if "${_PYRUNTIME}/bin/python3" -I -c "import numpy, PIL, fastapi, uvicorn, pydantic, urllib3; assert tuple(map(int, urllib3.__version__.split('.'))) >= (2,8,0)" 2>/dev/null; then
+    if "${_PYRUNTIME}/bin/python3" -I -c "import numpy, PIL, fastapi, uvicorn, pydantic, urllib3, fsspec; assert tuple(map(int, urllib3.__version__.split('.'))) >= (2,8,0); assert tuple(map(int, fsspec.__version__.split('.'))) >= (2026,6,0)" 2>/dev/null; then
       echo "   ✅ Python runtime ready: ${_PY_VER_STR} → ./${_PYRUNTIME}/"
       _PYENV_OK=1
     else

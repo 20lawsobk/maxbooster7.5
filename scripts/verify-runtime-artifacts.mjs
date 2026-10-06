@@ -9,6 +9,10 @@ import ignore from "ignore";
 import { inspectElectronBuilderTransport } from "./patch-electron-builder-transport.mjs";
 
 export const floors = {
+  "proxy-addr": "2.0.8", "source-map-js": "1.2.2", compression: "1.8.2",
+  "fast-copy": "4.1.0", "postcss-selector-parser": "7.1.6",
+  "@capacitor/android": "8.5.1", "@capacitor/ios": "8.5.1",
+  "sprintf-js": null,
   axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.3",
   undici: "7.30.0", electron: "43.7.7",
   // No patched release exists; certificate issuance must not pull this back in.

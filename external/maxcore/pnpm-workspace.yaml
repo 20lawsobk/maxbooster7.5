@@ -40,6 +40,10 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  proxy-addr: ^2.0.8
+  source-map-js: ^1.2.2
+  fast-copy: ^4.1.0
+  postcss-selector-parser: ^7.1.6
   '@babel/core': ^7.29.6
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   brace-expansion: 2.1.7
