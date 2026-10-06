@@ -111,7 +111,7 @@ function readManifest(manifestPath) {
   return null;
 }
 
-async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
+export async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const capsulePath = resolve(ROOT, capsuleName);
   const manifestPath = resolve(ROOT, manifestName);
   const sentinelPath = resolve(ROOT, targetDir, sentinel || ".pdim-restored");
@@ -121,7 +121,29 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
     return true;
   }
 
-  if (existsSync(sentinelPath)) {
+  const manifest = readManifest(manifestPath);
+  if (!/^[a-f0-9]{64}$/i.test(manifest?.sha256 || "") ||
+      !/^(gzip|xz)(-\d+)?$/.test(manifest?.compression || "")) {
+    console.error(`[pdim-restore] Invalid manifest for ${capsuleName}`);
+    return false;
+  }
+  const generation = manifest.sha256.toLowerCase();
+  // Verify even a warm capsule: a sentinel cannot authenticate archive bytes.
+  const digest = createHash("sha256");
+  try {
+    for await (const chunk of createReadStream(capsulePath)) digest.update(chunk);
+    if (digest.digest("hex") !== generation) {
+      console.error(`[pdim-restore] Checksum mismatch for ${capsuleName}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`[pdim-restore] Cannot verify ${capsuleName}: ${error.message}`);
+    return false;
+  }
+  const matchesGeneration = () =>
+    existsSync(sentinelPath) && readFileSync(sentinelPath, "utf8").trim() === generation;
+
+  if (matchesGeneration()) {
     console.log(`[pdim-restore] ${targetDir}/ already restored — skipping`);
     return true;
   }
@@ -129,14 +151,13 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
   const releaseLock = await acquireRestoreLock(targetDir);
   // Another process may have finished the restore while we were waiting on
   // the lock — re-check the sentinel before starting a redundant extraction.
-  if (existsSync(sentinelPath)) {
+  if (matchesGeneration()) {
     releaseLock();
     console.log(`[pdim-restore] ${targetDir}/ restored while waiting on lock — skipping`);
     return true;
   }
 
-  const manifest = readManifest(manifestPath);
-  const compression = manifest?.compression || "gzip-9";
+  const compression = manifest.compression;
   const tarFlag = compression.startsWith("xz") ? "-xJf" : "-xzf";
 
   // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
@@ -367,7 +388,7 @@ async function restoreCapsule(capsuleName, manifestName, targetDir, sentinel) {
       // Write the sentinel only after a fully successful extraction+swap so
       // subsequent boots skip re-extraction (idempotent restore).
       try {
-        writeFileSync(sentinelPath, new Date().toISOString());
+        writeFileSync(sentinelPath, generation);
       } catch (e) {
         console.error(
           `[pdim-restore] WARN: could not write sentinel ${sentinelPath}: ${e.message}`,
@@ -427,6 +448,8 @@ const CAPSULES = {
     ),
 };
 
+// Importing the restore API must never start extraction or exit the caller.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 const mode = process.argv[2] || "all";
 
 if (mode === "critical") {
@@ -465,4 +488,5 @@ if (mode === "critical") {
   }
 
   console.log("[pdim-restore] All capsules processed.");
+}
 }

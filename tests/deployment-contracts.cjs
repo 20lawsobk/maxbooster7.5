@@ -187,6 +187,12 @@ test("capsule restoration reuses only the matching generation and rejects corrup
     assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), true);
     assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "two");
     assert.equal(fs.readFileSync(path.join(root, "fixture/.pdim-restored"), "utf8"), second);
+    // A matching warm sentinel must not hide changed/corrupt capsule bytes.
+    const goodArchive = fs.readFileSync(archive);
+    fs.appendFileSync(archive, "corrupt");
+    assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), false);
+    assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "two");
+    fs.writeFileSync(archive, goodArchive);
     fs.writeFileSync(manifest, JSON.stringify({ sha256: "0".repeat(64), compression: "gzip-9" }));
     assert.equal(await restoreCapsule("fixture.pdim", "fixture.manifest.json", "fixture"), false);
     assert.equal(fs.readFileSync(path.join(root, "fixture/data.txt"), "utf8"), "two");
