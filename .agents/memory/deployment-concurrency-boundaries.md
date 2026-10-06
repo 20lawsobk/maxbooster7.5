@@ -3,7 +3,8 @@ name: Deployment concurrency boundaries
 description: Resource limits and failure draining for destructive build phases
 ---
 
-The historical publishing scaffold should use bounded, fast compression,
+The historical publishing scaffold should use bounded compression evaluated
+against total shipped image size, build time, and restore time together,
 not maximum compression with automatic host-wide threading. Preserve compressor
 stderr and finish a staged archive before replacing its previous generation.
 
@@ -12,11 +13,15 @@ diagnostic because tar stderr was discarded. A subsequent bounded-xz build
 passed that step but stopped packing the 1.8 GB Python runtime. Neither log
 established OOM or a documented platform timeout. Full-size gzip-1 packing and
 restoration succeeded in disposable storage, with identical restored content.
-Favor publishing speed over minimum archive size; tiny fixtures alone do not
-validate compression choices for these runtime trees.
+The user subsequently corrected the speed-first tradeoff: increases accumulate
+across capsules, especially the MaxCore server exceeding a GB before compression.
+Do not treat faster packing alone as success or justify a blanket low-compression
+default from one smaller capsule. Tiny fixtures alone do not validate compression
+choices for these runtime trees.
 
-**How to apply:** Keep this tradeoff when tuning publishing time; verify actual
-pack/restore and codec gates together in disposable fixtures.
+**How to apply:** Compare aggregate payload sizes and full-size pack/restore
+timings before choosing compression settings. Preserve pack → remove from image
+→ restore and verify codec gates together in disposable fixtures.
 
 A last log saying “Packing” does not establish that compression itself failed:
 the same step can still be hashing the archive or deleting its source tree.
