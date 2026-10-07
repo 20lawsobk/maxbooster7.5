@@ -51,3 +51,13 @@ test("large generated video assets remain excluded from the published workspace"
   const dockerignore = fs.readFileSync(".dockerignore", "utf8");
   assert.match(dockerignore, /^public\/generated-content\/$/m);
 });
+
+test("the configured publishing build runs the image-size gate before reporting success", () => {
+  const repl = fs.readFileSync(".replit", "utf8");
+  const build = fs.readFileSync("build.sh", "utf8");
+  assert.match(repl, /build\s*=\s*\[\s*"bash"\s*,\s*"build\.sh"\s*\]/);
+  assert.match(repl, /run\s*=\s*\[\s*"bash"\s*,\s*"start\.sh"\s*\]/);
+  const finalize = build.slice(build.indexOf("phase_finalize()"));
+  assert.match(finalize, /image-size-gate\.sh/);
+  assert.ok(finalize.indexOf("image-size-gate.sh") < finalize.indexOf("Build complete"));
+});
