@@ -44,6 +44,21 @@ not race them.
 stop admitting queued jobs after failure, and retain independent per-capsule
 integrity checks. Do not infer whole-publish speedup from bundling-only timings.
 
+An `[executive] FAILED: Executive interrupted` log means the coordinator
+received an interrupt; it does not identify the initiator or prove that an
+individual task deadline expired. A closed pipe while Replit copies a generated
+media file is likewise an image-layer upload failure, not evidence that capsule
+compression failed.
+
+**Why:** Historical publish records ended with these messages at different
+stages, without a code-level cause. Misclassifying either as a compressor bug
+leads to changes that cannot prevent the observed failure.
+
+**How to apply:** Compare task progress and signal records with the platform's
+build record. Treat Replit image-layer and container interruptions as external
+until project-side evidence proves otherwise; preserve generated media while
+investigating which snapshot path includes it.
+
 For deployment optimization, the user explicitly means “through both builds and
 start scripts essentially from the publish button press to it going live.”
 
