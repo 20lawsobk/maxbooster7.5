@@ -577,6 +577,7 @@ PYEOF
 
 # ─── Final summary ────────────────────────────────────────────────────────────
 FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")
+bash "$(dirname "$0")/script/deployment/image-size-gate.sh" .
 echo ""
 echo "==> Build image size summary:"
 for _item in dist/ services/ bin/ *.pdim *.manifest.json; do
