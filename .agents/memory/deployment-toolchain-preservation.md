@@ -38,3 +38,14 @@ after a publish skipped the sidecar because ambient Cargo was unavailable.
 **How to apply:** Keep Rust build-only, using the existing pinned toolchain rather
 than enlarging the runtime image with a Rust installation. Fail on build errors;
 verify a freshly compiled binary, not a previously existing binary.
+
+Parallel compilation must own scratch/cache directories outside every concurrent
+task's cleanup domain, not merely wait for the initial cleanup phase.
+
+**Why:** The dependency phase clears workspace `.cache` again during compilation;
+Cargo previously kept crate sources there while Rust ran in parallel. An isolated
+Rust build passed but publishing lost compilation inputs.
+
+**How to apply:** Test the real compiler concurrently with workspace cache removal.
+Keep temporary compiler sources and outputs private, remove them when finished,
+and retain only the resulting executable for packaging.

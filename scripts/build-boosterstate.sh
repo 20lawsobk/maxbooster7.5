@@ -8,9 +8,7 @@ _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _ROOT="$(cd "${_SCRIPT_DIR}/.." && pwd)"
 _MANIFEST="${_ROOT}/boosterstate/Cargo.toml"
 _LOCKFILE="${_ROOT}/boosterstate/Cargo.lock"
-_TARGET_DIR="${BOOSTERSTATE_TARGET_DIR:-${_ROOT}/boosterstate/target}"
 _OUTPUT_DIR="${BOOSTERSTATE_OUTPUT_DIR:-${_ROOT}/bin}"
-_CARGO_HOME="${BOOSTERSTATE_CARGO_HOME:-${_ROOT}/.cache/boosterstate-cargo}"
 _PINNED_NIXPKGS="https://github.com/NixOS/nixpkgs/archive/650e572363c091045cdbc5b36b0f4c1f614d3058.tar.gz"
 
 [[ -f "$_MANIFEST" ]] || {
@@ -26,6 +24,13 @@ command -v nix-shell >/dev/null 2>&1 || {
   exit 1
 }
 
+# Dependency installation clears workspace caches concurrently with this phase.
+# Give every invocation private scratch paths outside that cleanup domain.
+# Explicit paths remain supported for the isolated release-preparation workspace.
+_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/boosterstate-build.XXXXXX")"
+trap 'rm -rf -- "$_WORK_DIR"' EXIT
+_TARGET_DIR="${BOOSTERSTATE_TARGET_DIR:-${_WORK_DIR}/target}"
+_CARGO_HOME="${BOOSTERSTATE_CARGO_HOME:-${_WORK_DIR}/cargo}"
 mkdir -p "$_CARGO_HOME" "$_TARGET_DIR" "$_OUTPUT_DIR"
 _RUSTFLAGS="-C link-arg=-static-libgcc -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 -C link-arg=-Wl,-rpath,/lib/x86_64-linux-gnu -C link-arg=-Wl,-rpath,/lib64"
 _COMMAND=(
