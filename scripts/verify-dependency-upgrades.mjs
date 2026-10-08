@@ -60,12 +60,21 @@ const work = mkdtempSync(join(tmpdir(), "dep-verify-"));
 await check("sharp: version and native binary", async () => {
   const sharp = (await import("sharp")).default;
   const v = installedVersion("sharp");
-  if (!v.startsWith("0.35.")) throw new Error(`expected sharp 0.35.x, got ${v}`);
+  if (!v.startsWith("0.35.") || Number(v.split(".")[2]) < 5) {
+    throw new Error(`expected patched sharp >=0.35.5 within 0.35.x, got ${v}`);
+  }
+  const rsvg = sharp.versions?.rsvg;
+  const rsvgParts = rsvg?.split(".").map(Number);
+  if (!rsvgParts || rsvgParts[0] < 2 ||
+      (rsvgParts[0] === 2 && (rsvgParts[1] < 63 ||
+        (rsvgParts[1] === 63 && rsvgParts[2] < 2)))) {
+    throw new Error(`expected patched librsvg >=2.63.2, got ${rsvg}`);
+  }
   // Touching the native layer proves the prebuilt binary resolved after the
   // 0.35 removal of the install script.
   const libvips = sharp.versions?.vips;
   if (!libvips) throw new Error("sharp.versions.vips missing — native binary did not load");
-  return `sharp ${v}, libvips ${libvips}`;
+  return `sharp ${v}, libvips ${libvips}, librsvg ${rsvg}`;
 });
 
 await check("sharp: SVG rasterise + resize + encode", async () => {

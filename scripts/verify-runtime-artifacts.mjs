@@ -23,7 +23,7 @@ export const floors = {
   "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
   multer: "2.4.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
-  orval: "8.33.0", "linkify-it": "5.0.2", sharp: "0.35.4",
+  orval: "8.33.0", "linkify-it": "5.0.2", sharp: "0.35.5",
   postcss: "8.5.23", browserslist: "4.28.7",
   "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
   "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
