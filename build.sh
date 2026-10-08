@@ -290,6 +290,20 @@ _PYVER="3.12.13"
 _PYDATE="20260325"
 _PYURL="https://github.com/astral-sh/python-build-standalone/releases/download/${_PYDATE}/cpython-${_PYVER}%2B${_PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz"
 
+if [ -x "${_PYRUNTIME}/bin/python3" ] && "${_PYRUNTIME}/bin/python3" -I -B - <<'PY'
+import pathlib, sys
+import numpy, PIL, fastapi, uvicorn, pydantic
+root = pathlib.Path(sys.executable).resolve().parent.parent
+assert sys.version_info[:3] == (3, 12, 13)
+assert pathlib.Path(sys.prefix).resolve() == root
+for module in (numpy, PIL, fastapi, uvicorn, pydantic):
+    assert pathlib.Path(module.__file__).resolve().is_relative_to(root), module.__name__
+PY
+then
+  echo "   Verified existing isolated Python ${_PYVER}; preserving prepared runtime"
+  return
+fi
+
 echo "==> Downloading portable Python ${_PYVER} (x86_64-linux-gnu) ..."
 mkdir -p "${_PYRUNTIME}"
 _PYENV_OK=0
@@ -343,7 +357,8 @@ phase_app_capsule() {
 # packed/deleted below (tsx needs it) and before the source-tree capsule step
 # deletes client/server/etc.
 echo "==> App capsule: building portable Pocket Dimension snapshot of app source..."
-rm -rf deploy-capsule 2>/dev/null || true
+# The builder validates source identity and every stored file before reuse.
+# Do not delete that verified cache before asking it to perform those checks.
 if [ -f "script/build-capsule.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
   _APP_CAPSULE_VERSION="${REPLIT_DEPLOYMENT_ID:-$(date -u +%Y%m%d%H%M%S)}"
   if node_modules/.bin/tsx script/build-capsule.ts "$_APP_CAPSULE_VERSION"; then

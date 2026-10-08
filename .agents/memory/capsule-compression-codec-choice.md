@@ -43,6 +43,17 @@ the caller's extra patterns. Keep root-only exclusions scoped to the root.
 that the actual capsule engine excluded; disappearing temporary snapshots
 then failed preparation and added unnecessary multi-gigabyte reads.
 
+Validate reuse through the configured shell phases, including runtime preparation,
+not only through the cache helper.
+
+**Why:** Standalone archive verification passed while publishing still deleted
+the source cache and downloaded Python over the prepared tree. Wildcard-excluded
+Python cache files also invalidated fingerprints even though they were not archived.
+
+**How to apply:** Preserve healthy prepared runtimes, align fingerprints with
+archive membership, and require actual shell-phase cache-hit evidence before
+claiming that preparation avoids repeated compression.
+
 ## Historical codec comparison
 zstd at level 19 with a long-distance-matching window (`--long=27 -T0`) beats both gzip-9 and xz-9e simultaneously on ratio, compress time, AND decompress time for this project's actual capsule content (dependency trees / vendored subsystem checkouts). xz's small ratio edge (~5%) was not worth ~5x the compress time. Do not re-litigate this by guessing — the numbers below are real, on this project's real directories.
 

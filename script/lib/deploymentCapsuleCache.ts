@@ -23,8 +23,14 @@ export async function capsuleInputIdentity(options: PackCapsuleOptions) {
   const jobs: { absolute: string; record: unknown[] }[] = [];
   function walk(relative: string) {
     const within = path.relative(options.dir, relative).split(path.sep).join("/");
-    if ((options.excludePaths ?? []).some(pattern =>
-      !/[*?]/.test(pattern) && (within === pattern || within.startsWith(pattern + "/")))) return;
+    if ((options.excludePaths ?? []).some(pattern => {
+      // GNU tar's exclusion wildcards match slashes too. Excluding a directory
+      // also excludes its descendants; walk returns before visiting them.
+      const expression = pattern.split(/([*?])/g).map(part =>
+        part === "*" ? ".*" : part === "?" ? "." :
+        part.replace(/[.+^${}()|[\]\\]/g, "\\$&")).join("");
+      return new RegExp(`^${expression}(?:/.*)?$`).test(within);
+    })) return;
     const absolute = path.join(options.root, relative);
     const stat = fs.lstatSync(absolute);
     const record: unknown[] = [relative, stat.mode & 0o7777];
@@ -54,6 +60,7 @@ export async function packCachedDeploymentCapsule(options: PackCapsuleOptions) {
   fs.mkdirSync(cache, { recursive: true });
   const key = await capsuleInputIdentity(options);
   const entry = path.join(cache, key);
+  console.log(`[capsule-cache] ${options.capsule}: ${fs.existsSync(entry) ? "hit" : "miss"} ${key}`);
   const name = path.basename(options.capsule);
   const manifestName = name.replace(/\.pdim$/, ".manifest.json");
   if (!fs.existsSync(entry)) {

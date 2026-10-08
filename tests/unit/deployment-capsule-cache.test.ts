@@ -4,6 +4,24 @@ import os from "node:os";
 import path from "node:path";
 import { packCachedDeploymentCapsule, capsuleInputIdentity } from "../../script/lib/deploymentCapsuleCache";
 
+it("does not invalidate archives for excluded nested Python cache files", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "capsule-exclusions-"));
+  try {
+    fs.mkdirSync(path.join(root, "runtime/pkg/__pycache__"), { recursive: true });
+    fs.writeFileSync(path.join(root, "runtime/pkg/module.py"), "value = 1");
+    const options = { root, dir: "runtime", capsule: "runtime.pdim", threads: 1,
+      preserveSource: true, excludePaths: ["**/__pycache__", "**/*.pyc"] };
+    const key = await capsuleInputIdentity(options);
+    const packed = await packCachedDeploymentCapsule(options);
+    fs.writeFileSync(path.join(root, "runtime/pkg/__pycache__/module.pyc"), "runtime cache");
+    fs.writeFileSync(path.join(root, "runtime/pkg/loose.pyc"), "another runtime cache");
+    expect(await capsuleInputIdentity(options)).toBe(key);
+    expect((await packCachedDeploymentCapsule(options)).sha256).toBe(packed.sha256);
+    fs.writeFileSync(path.join(root, "runtime/pkg/module.py"), "value = 2");
+    expect(await capsuleInputIdentity(options)).not.toBe(key);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 it("reuses only matching verified archives, rejects tampering, and retains changed source", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "capsule-cache-contract-"));
   try {
