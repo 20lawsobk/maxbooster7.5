@@ -149,6 +149,7 @@ python_runtime/
 *.manifest.json
 node_modules.pdim
 python_runtime.pdim
+.deployment-capsule-cache/
 
 # Archive capsules ARE committed, unlike the build-time capsules above: they
 # are the only remaining copy of their source content (originals were

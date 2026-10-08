@@ -22,6 +22,27 @@ overhead. Keep the full image-size gate; faster packing increases archive
 size. The older measurements below establish codec/restore behavior, not a
 requirement to retain level 19.
 
+## Publishing interruption and artifact reuse
+
+Keep level 19, but prepare and verify reusable artifacts before publishing when
+the payload is large. An internal executive budget is not a grant of extra
+publishing time; an interruption near ten minutes does not identify its sender.
+
+**Why:** A real publishing attempt spent almost five minutes on its adaptive
+source capsule and was interrupted shortly after runtime compression began,
+despite reporting substantial internal budget remaining.
+
+**How to apply:** Bind reuse to content and packing policy, not timestamps or
+lockfiles alone. Validate actual archive contents before cache admission and
+checksums on reuse. Keep cold-build behavior and the original shell scaffold.
+
+Include the archive engine's default exclusions in cache admission, not just
+the caller's extra patterns. Keep root-only exclusions scoped to the root.
+
+**Why:** The new identity scanner initially hashed live PDIM snapshot files
+that the actual capsule engine excluded; disappearing temporary snapshots
+then failed preparation and added unnecessary multi-gigabyte reads.
+
 ## Historical codec comparison
 zstd at level 19 with a long-distance-matching window (`--long=27 -T0`) beats both gzip-9 and xz-9e simultaneously on ratio, compress time, AND decompress time for this project's actual capsule content (dependency trees / vendored subsystem checkouts). xz's small ratio edge (~5%) was not worth ~5x the compress time. Do not re-litigate this by guessing — the numbers below are real, on this project's real directories.
 

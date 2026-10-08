@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { packCapsule, packCapsuleMembers, CAPSULE_COMPRESSION_ID, MAXCORE_CAPSULE_EXCLUDE_PATHS, PDIM_CAPSULE_EXCLUDE_PATHS } from "./lib/capsulePack.js";
+import { packCapsuleMembers, CAPSULE_COMPRESSION_ID, MAXCORE_CAPSULE_EXCLUDE_PATHS, PDIM_CAPSULE_EXCLUDE_PATHS } from "./lib/capsulePack.js";
 import { effectiveCapacity } from "../server/computeSizing.js";
+import { packCachedDeploymentCapsule } from "./lib/deploymentCapsuleCache.js";
 
 // Bundle into dist before node_modules is packed. The resulting CLI uses only
 // Node built-ins and the installed zstd executable, not the removed source tree.
@@ -16,13 +17,16 @@ export async function publishCapsule(root: string, mode: string, capsule: string
   const assigned = Number(process.env.DEPLOY_TASK_CPU ?? 2);
   if (!Number.isFinite(assigned) || assigned < 1) throw new Error("Invalid task CPU allocation");
   const threads = Math.max(1, Math.min(Math.floor(effectiveCapacity().cpus), Math.floor(assigned)));
-  if (mode === "directory") {
+  if (mode === "directory" || mode === "prepare") {
     if (inputs.length !== 1 || !fs.statSync(path.join(root, inputs[0])).isDirectory()) {
       throw new Error("Required capsule directory is missing");
     }
     const excludePaths = inputs[0] === "external/maxcore" ? MAXCORE_CAPSULE_EXCLUDE_PATHS
       : inputs[0] === "external/pdim" ? PDIM_CAPSULE_EXCLUDE_PATHS : [];
-    return packCapsule({ root, dir: inputs[0], capsule, threads, excludePaths });
+    return packCachedDeploymentCapsule({
+      root, dir: inputs[0], capsule, threads, excludePaths,
+      preserveSource: mode === "prepare",
+    });
   }
   if (mode !== "paths") throw new Error("Unknown capsule operation");
   const members: string[] = [];

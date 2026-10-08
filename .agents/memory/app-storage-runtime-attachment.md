@@ -17,3 +17,17 @@ persistence guarantees; confirm a non-sensitive canary is readable authenticated
 and denied anonymously. Keep generation-bound CRC/SHA readback and isolated restore
 checks. Describe retention as until explicit deletion, not WORM or a locked duration.
 Do not demand GCS IAM/PAP/retention-policy reads or screenshots from the user.
+
+## Large filesystem recovery
+
+Stream backups directly to private storage and compare the generation-pinned
+download against quiesced originals. Do not stage both a compressed archive and
+an extracted verification copy on local disk.
+
+**Why:** Local staging exhausted a hidden quota despite ample reported free space;
+streaming and readback comparison verified the full filesystem backup without
+that extra allocation.
+
+**How to apply:** Keep root runtime data separate from unencrypted source capsules,
+without excluding nested source datasets by accident. A release bootstrap snapshot
+is not continuous backup of later production writes; never describe it as such.

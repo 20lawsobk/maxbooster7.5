@@ -64,6 +64,8 @@ export interface CapsuleBuildOptions {
   encrypt?: boolean;
   encryptionKey?: string;
   excludePatterns?: string[];
+  /** Bare-name patterns applied only to direct children of projectRoot. */
+  rootExcludePatterns?: string[];
   /** Human-readable name of the project being packaged. Defaults to the
    * PDIM storage server's own name so existing callers are unaffected. */
   platformName?: string;
@@ -125,7 +127,7 @@ const FILE_TYPES: Record<
   ".dll": "binary",
 };
 
-const DEFAULT_EXCLUDE = [
+export const DEFAULT_EXCLUDE = [
   "node_modules",
   ".git",
   "dist",
@@ -203,7 +205,7 @@ export class PlatformCapsuleBuilder {
     ];
 
     // Collect files
-    const allFiles = await this.collectFiles(this.projectRoot, excludePatterns);
+    const allFiles = await this.collectFiles(this.projectRoot, excludePatterns, opts.rootExcludePatterns ?? []);
     logger.info(`[Capsule] Collected ${allFiles.length} file(s)`);
 
     const manifest: CapsuleManifest = {
@@ -337,6 +339,7 @@ export class PlatformCapsuleBuilder {
   private async collectFiles(
     dir: string,
     exclude: string[],
+    rootExclude: string[] = [],
   ): Promise<string[]> {
     const results: string[] = [];
     let entries: import("fs").Dirent[];
@@ -350,11 +353,12 @@ export class PlatformCapsuleBuilder {
 
     for (const entry of entries) {
       const entryName = String(entry.name);
+      if (dir === this.projectRoot && rootExclude.some(p => this.matchesExcludePattern(entryName, p))) continue;
       if (exclude.some((p) => this.matchesExcludePattern(entryName, p)))
         continue;
       const full = path.join(dir, entryName);
       if (entry.isDirectory()) {
-        results.push(...(await this.collectFiles(full, exclude)));
+        results.push(...(await this.collectFiles(full, exclude, rootExclude)));
       } else if (entry.isFile()) {
         results.push(full);
       }

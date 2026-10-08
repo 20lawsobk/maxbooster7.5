@@ -44,8 +44,10 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { adaptiveCapsuleCodec } from "./lib/adaptiveCapsuleCodec.js";
+import { sourceCapsuleIdentity } from "./lib/sourceCapsuleIdentity.js";
 import {
   PlatformCapsuleBuilder,
+  DEFAULT_EXCLUDE,
   PlatformCapsuleLoader,
 } from "../external/pdim/artifacts/api-server/src/pocket-dimension/platform-capsule.js";
 
@@ -66,6 +68,7 @@ const projectRoot = path.resolve(__dirname, "..");
 // runtime imports it — only this build tool does, and that tool must already
 // be present on any machine that would extract/build a capsule anyway.
 const APP_EXCLUDE_PATTERNS = [
+  ".deployment-capsule-cache", // verified archive reuse, not application source
   "pdim", // external/pdim only — no other directory in this repo is named "pdim"
   "attached_assets",
   "screenshots",
@@ -164,6 +167,8 @@ async function excludesFromGitignore(root: string): Promise<string[]> {
 }
 
 const OUTPUT_DIR = path.join(projectRoot, "deploy-capsule");
+const ROOT_EXCLUDES = ["data", "uploads", "deploy-capsule", "maxbooster7.5",
+  ".pythonlibs", "hardware", "reports", ".pdim-scratch-*"];
 
 async function main() {
   const version = process.argv[2] ?? new Date().toISOString().slice(0, 10);
@@ -173,13 +178,22 @@ async function main() {
 
   const gitignoreExcludes = await excludesFromGitignore(projectRoot);
   const excludePatterns = [
+    ...DEFAULT_EXCLUDE,
     ...APP_EXCLUDE_PATTERNS,
     ...SECRET_DENYLIST_PATTERNS,
     ...gitignoreExcludes,
   ];
 
   const builder = new PlatformCapsuleBuilder(projectRoot);
-  const metadata = await builder.build({
+  const inputIdentity = await sourceCapsuleIdentity(projectRoot, excludePatterns, ROOT_EXCLUDES);
+  const cachePath = path.join(OUTPUT_DIR, ".source-cache.json");
+  let cached;
+  try { cached = JSON.parse(await fs.readFile(cachePath, "utf8")); }
+  catch (error: any) { if (error.code !== "ENOENT") throw error; }
+  if (cached?.inputIdentity === inputIdentity) {
+    console.log("[build-capsule] Reusing matching source capsule; verifying all stored file hashes");
+  }
+  const metadata = cached?.inputIdentity === inputIdentity ? cached.metadata : await builder.build({
     version,
     platformName: "Max Booster App",
     description: `Max Booster app source capsule v${version}`,
@@ -193,6 +207,7 @@ async function main() {
     },
     encrypt: false,
     excludePatterns,
+    rootExcludePatterns: ROOT_EXCLUDES,
     storagePath: OUTPUT_DIR,
     // Use the same adaptive PDCF codec contract as live PocketDimension.
     compressionCodec: adaptiveCapsuleCodec,
@@ -223,6 +238,9 @@ async function main() {
   // success. This catches drift between the exclude list and reality rather
   // than silently shipping a capsule with secrets in it.
   const manifest = loader.getManifest();
+  if ((manifest?.files ?? []).some(entry => ["data", "uploads"].includes(entry.path.split("/")[0]))) {
+    throw new Error("Source capsule contains runtime data; private backup is the only permitted release source for those roots");
+  }
   const leaked = (manifest?.files ?? [])
     .map((f) => f.path)
     .filter(isSecretLikePath);
@@ -237,6 +255,10 @@ async function main() {
     `[build-capsule] ✅ Secret scan clean: no credential-shaped files in the manifest`,
   );
 
+  if (inputIdentity !== await sourceCapsuleIdentity(projectRoot, excludePatterns, ROOT_EXCLUDES)) {
+    throw new Error("Source changed during capsule preparation; refusing cache publication");
+  }
+  await fs.writeFile(cachePath, JSON.stringify({ inputIdentity, metadata }));
   console.log(`[build-capsule] Capsule id: ${metadata.id}`);
 }
 

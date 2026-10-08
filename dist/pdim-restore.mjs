@@ -21,6 +21,10 @@ import {
   renameSync,
   readdirSync,
   createReadStream,
+  lstatSync,
+  cpSync,
+  mkdtempSync,
+  readlinkSync,
 } from "fs";
 import { createHash } from "crypto";
 import { spawn, spawnSync } from "child_process";
@@ -29,6 +33,95 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
+
+export function tarFlagsForCompression(compression) {
+  if (compression?.startsWith("zstd-")) return ["--zstd", "-xf"];
+  if (compression?.startsWith("xz-")) return ["-xJf"];
+  return ["-xzf"];
+}
+
+// Scattered source/application members must merge into the destination: a
+// directory replacement would delete unrelated siblings such as existing tests.
+export async function restoreAppRemainderCapsule(capsuleName, manifestName, sentinel) {
+  const inside = name => {
+    const absolute = resolve(ROOT, name);
+    if (!absolute.startsWith(ROOT + "/")) throw new Error("Remainder path escapes application root");
+    return absolute;
+  };
+  let stage;
+  try {
+    const archive = inside(capsuleName);
+    const marker = inside(sentinel);
+    const manifest = JSON.parse(readFileSync(inside(manifestName), "utf8"));
+    if (!/^[a-f0-9]{64}$/.test(manifest.sha256) ||
+        !/^(gzip(-[1-9])?|xz(-[0-9]e?)?|zstd-(6|19))$/.test(manifest.compression)) {
+      throw new Error("Invalid remainder manifest");
+    }
+    const hash = createHash("sha256");
+    for await (const chunk of createReadStream(archive)) hash.update(chunk);
+    if (hash.digest("hex") !== manifest.sha256) throw new Error("Remainder checksum mismatch");
+    if (existsSync(marker) && readFileSync(marker, "utf8").trim() === manifest.sha256) return true;
+    stage = mkdtempSync(resolve(ROOT, ".remainder-stage-"));
+    await new Promise((accept, reject) => {
+      const child = spawn("tar", [...tarFlagsForCompression(manifest.compression), archive, "-C", stage],
+        { stdio: ["ignore", "ignore", "pipe"] });
+      let errorText = "";
+      const timer = setTimeout(() => child.kill("SIGKILL"), 900000);
+      child.stderr.on("data", chunk => { errorText = (errorText + chunk).slice(-65536); });
+      child.once("error", error => { clearTimeout(timer); reject(error); });
+      child.once("close", code => {
+        clearTimeout(timer);
+        code === 0 ? accept() : reject(new Error(`Remainder extraction failed (${code}): ${errorText}`));
+      });
+    });
+    const members = [];
+    async function digest(file) {
+      const hash = createHash("sha256");
+      for await (const chunk of createReadStream(file)) hash.update(chunk);
+      return hash.digest("hex");
+    }
+    async function inspect(source, target) {
+      const stat = lstatSync(source);
+      if (!stat.isFile() && !stat.isDirectory() && !stat.isSymbolicLink()) throw new Error("Unsupported remainder member");
+      if (stat.isSymbolicLink()) {
+        const link = readlinkSync(source);
+        if (link.startsWith("/") || !resolve(dirname(target), link).startsWith(ROOT + "/")) {
+          throw new Error("Remainder symlink escapes application root");
+        }
+      }
+      const dest = lstatSync(target, { throwIfNoEntry: false });
+      if (dest) {
+        if ((dest.isSymbolicLink() && !stat.isSymbolicLink()) || stat.isDirectory() !== dest.isDirectory()) {
+          throw new Error("Unsafe remainder destination");
+        }
+        if (!stat.isDirectory()) {
+          if (stat.isSymbolicLink() ? !dest.isSymbolicLink() || readlinkSync(source) !== readlinkSync(target) :
+              !dest.isFile() || await digest(source) !== await digest(target)) {
+            throw new Error("Existing remainder content differs; refusing overwrite");
+          }
+          return;
+        }
+      }
+      members.push([source, target, stat.isDirectory()]);
+      if (stat.isDirectory()) for (const name of readdirSync(source)) await inspect(resolve(source, name), resolve(target, name));
+    }
+    for (const name of readdirSync(stage)) await inspect(resolve(stage, name), resolve(ROOT, name));
+    for (const [source, target, directory] of members) {
+      if (directory) mkdirSync(target, { recursive: true });
+      else {
+        mkdirSync(dirname(target), { recursive: true });
+        if (lstatSync(source).isSymbolicLink() && lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink()) rmSync(target);
+        cpSync(source, target, { dereference: false, verbatimSymlinks: true });
+      }
+    }
+    mkdirSync(dirname(marker), { recursive: true });
+    writeFileSync(marker, manifest.sha256);
+    return true;
+  } catch (error) {
+    console.error(`[pdim-restore] Remainder restore failed: ${error.message}`);
+    return false;
+  } finally { if (stage) rmSync(stage, { recursive: true, force: true }); }
+}
 
 // Resolve bsdtar once per process. bsdtar (libarchive) sets
 // ARCHIVE_EXTRACT_ATOMIC by default, which is libarchive's actual fix for
@@ -159,9 +252,7 @@ export async function restoreCapsule(capsuleName, manifestName, targetDir, senti
   }
 
   const compression = manifest.compression;
-  const tarFlags = compression.startsWith("zstd")
-    ? ["--zstd", "-xf"]
-    : [compression.startsWith("xz") ? "-xJf" : "-xzf"];
+  const tarFlags = tarFlagsForCompression(compression);
 
   // Prefer bsdtar (libarchive) over GNU tar for the actual extraction. This
   // isn't a warning-tolerance workaround — libarchive ships a real fix for

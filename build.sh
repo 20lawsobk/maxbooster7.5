@@ -382,6 +382,16 @@ mkdir -p dist/deployment
 cp script/deployment/*.mjs dist/deployment/
 cp script/deployment/image-size-gate.sh dist/deployment/
 cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
+if [ -f runtime-data.manifest.json ]; then
+  cp runtime-data.manifest.json dist/deployment/runtime-data-backup.json
+  node_modules/.bin/esbuild scripts/restore-runtime-data.mjs --bundle --packages=external \
+    --platform=node --target=node22 --format=esm --outfile=dist/deployment/restore-runtime-data.mjs
+  node dist/deployment/restore-runtime-data.mjs --verify-backup
+  printf 'required\n' > dist/deployment/runtime-data-required
+  # Delete only from the disposable build copy, after authenticated object
+  # verification. The development originals remain untouched.
+  rm -rf data uploads
+fi
 node_modules/.bin/esbuild scripts/check-port-contract.ts --bundle --platform=node \
   --format=esm --outfile=dist/deployment/check-port-contract.mjs
 }
@@ -530,6 +540,12 @@ echo "   Done."
 
 # ─── Non-UTF-8 filename cleanup ──────────────────────────────────────────────
 phase_finalize() {
+# Only the disposable publishing copy is finalized. Verified capsules already
+# reside at their runtime paths; shipping duplicate cache copies defeats sizing.
+rm -rf .deployment-capsule-cache
+# These paths are already explicitly excluded by .dockerignore. Apply that
+# policy inside the disposable historical build, where they were surviving.
+rm -rf maxbooster7.5 .pythonlibs hardware reports .pdim-scratch-*
 echo "==> Removing files with non-UTF-8 filenames from workspace root..."
 python3 - << 'PYEOF' || true
 import os, sys
