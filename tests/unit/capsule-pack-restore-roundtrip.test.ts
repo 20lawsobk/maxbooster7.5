@@ -134,7 +134,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     // guards against CAPSULE_COMPRESSION_ID silently regressing to
     // something else while every self-referential assertion below would
     // still trivially pass.
-    expect(CAPSULE_COMPRESSION_ID).toMatch(/^zstd-\d+$/);
+    expect(CAPSULE_COMPRESSION_ID).toBe("zstd-19");
 
     const packResult = await packCapsule({
       root: projectRoot,

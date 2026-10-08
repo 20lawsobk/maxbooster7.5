@@ -6,8 +6,8 @@
  * (tests/unit/capsule-pack-restore-roundtrip.test.ts) so both exercise the
  * exact same real tar+codec pipeline — no mocks on either side.
  *
- * Codec: zstd. Production uses level 6 for build throughput; the historical
- * level-19 measurements below explain the codec choice, not today's level.
+ * Codec: zstd. Production uses the historical level 19 and long match window,
+ * with the current scheduler's bounded concurrency and verification intact.
  * Reproduce the level comparison with script/benchmark-capsule-packing.ts.
  * zstd was chosen from a real benchmark against this project's actual
  * capsule directories, all measured through the real pack/restore code
@@ -45,7 +45,7 @@ import fs from "fs";
 import path from "path";
 import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
 
-export const CAPSULE_COMPRESSION_LEVEL = 6;
+export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
 export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [

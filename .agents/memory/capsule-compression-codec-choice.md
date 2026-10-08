@@ -6,11 +6,13 @@ description: Real zstd/xz/gzip benchmark results for this project's deploy capsu
 # Deploy capsule compression: codec choice + verification method
 
 ## The decision
-Current priority is the user's explicit at-least-2× packing-speed target. Use
-the measured throughput-oriented zstd setting, not the historical level-19
-default below.
+The user subsequently explicitly requested fusing historical Zstandard level 19
+with the current configuration. Keep level 19 plus the long match window for
+deployment archives, while preserving adaptive source compression and bounded
+scheduler concurrency.
 
-**Why:** On the real four-payload, four-CPU workload, level 19 was still
+**Why:** The user requested this integration after the image-size failure.
+There is a known speed tradeoff: on the real four-payload, four-CPU workload, level 19 was still
 unfinished after 503 seconds; level 6 completed in 221 seconds including
 reentry backup creation. Codec comparisons alone had hidden the cost of the
 chosen compression level.
