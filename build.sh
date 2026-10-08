@@ -401,6 +401,7 @@ _PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
 echo "   Compressor: existing deployment capsule packer (${_PDIM_FORMAT})"
 mkdir -p dist/deployment
 cp script/deployment/*.mjs dist/deployment/
+cp script/deployment/image-size-gate.sh dist/deployment/
 cp scripts/port-contract.sh scripts/boot-stub-server.mjs dist/deployment/
 node_modules/.bin/esbuild scripts/check-port-contract.ts --bundle --platform=node \
   --format=esm --outfile=dist/deployment/check-port-contract.mjs
@@ -577,7 +578,7 @@ PYEOF
 
 # ─── Final summary ────────────────────────────────────────────────────────────
 FAST_PATH=$(cat "$DEPLOY_STATE_DIR/build-path")
-bash "$(dirname "$0")/script/deployment/image-size-gate.sh" .
+bash "$(dirname "$0")/dist/deployment/image-size-gate.sh" .
 echo ""
 echo "==> Build image size summary:"
 for _item in dist/ services/ bin/ *.pdim *.manifest.json; do

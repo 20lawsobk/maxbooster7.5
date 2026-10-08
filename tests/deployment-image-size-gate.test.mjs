@@ -43,7 +43,7 @@ test("image size gate rejects invalid limits and roots explicitly", () => {
   assert.match(missingRoot.stderr, /root does not exist/);
 });
 
-test("large generated video assets remain excluded from the published workspace", () => {
+test("generated video exclusion rules remain configured (not proof of platform behavior)", () => {
   const tracked = spawnSync("git", [
     "check-ignore", "--no-index", "-q", "public/generated-content/videos/beat_ad_publish_guard.mp4",
   ]);
@@ -52,12 +52,38 @@ test("large generated video assets remain excluded from the published workspace"
   assert.match(dockerignore, /^public\/generated-content\/$/m);
 });
 
+test("the actual finalize phase runs after source removal and rejects an oversized sparse payload", (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "deployment-finalize-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, "dist/deployment"), { recursive: true });
+  fs.mkdirSync(path.join(root, ".local/state"), { recursive: true });
+  fs.copyFileSync(gate, path.join(root, "dist/deployment/image-size-gate.sh"));
+  fs.copyFileSync("build.sh", path.join(root, "build.sh"));
+  fs.writeFileSync(path.join(root, ".local/state/build-path"), "0");
+  const options = { cwd: root, encoding: "utf8", timeout: 15000,
+    env: { ...process.env, DEPLOY_STATE_DIR: path.join(root, ".local/state") } };
+  assert.equal(fs.existsSync(path.join(root, "script")), false);
+  const success = spawnSync("bash", ["build.sh", "--executive-task", "finalize"], options);
+  assert.equal(success.status, 0, success.stderr);
+  assert.match(success.stdout, /Build complete/);
+
+  const payload = fs.openSync(path.join(root, "oversized.pdim"), "w");
+  try { fs.ftruncateSync(payload, 8_000_000_001); } finally { fs.closeSync(payload); }
+  const failure = spawnSync("bash", ["build.sh", "--executive-task", "finalize"], options);
+  assert.equal(failure.status, 1, failure.stderr);
+  assert.match(failure.stderr, /BLOCKED/);
+  assert.doesNotMatch(failure.stdout, /Build complete/);
+  assert.equal(fs.statSync(path.join(root, "oversized.pdim")).size, 8_000_000_001);
+});
+
 test("the configured publishing build runs the image-size gate before reporting success", () => {
   const repl = fs.readFileSync(".replit", "utf8");
   const build = fs.readFileSync("build.sh", "utf8");
   assert.match(repl, /build\s*=\s*\[\s*"bash"\s*,\s*"build\.sh"\s*\]/);
   assert.match(repl, /run\s*=\s*\[\s*"bash"\s*,\s*"start\.sh"\s*\]/);
   const finalize = build.slice(build.indexOf("phase_finalize()"));
+  assert.match(build, /cp script\/deployment\/image-size-gate\.sh dist\/deployment\//);
+  assert.match(finalize, /dist\/deployment\/image-size-gate\.sh/);
   assert.match(finalize, /image-size-gate\.sh/);
   assert.ok(finalize.indexOf("image-size-gate.sh") < finalize.indexOf("Build complete"));
 });

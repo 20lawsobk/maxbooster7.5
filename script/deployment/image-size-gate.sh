@@ -15,7 +15,9 @@ if [[ ! -d "$root" ]]; then
   exit 2
 fi
 
-image_bytes="$(du -s --block-size=1 --exclude=.git --exclude=.local "$root" | awk '{print $1}')"
+# Count logical bytes, including each hard-linked path: a layer copier need not
+# preserve sparse extents or hard links. Allocated disk blocks undercount both.
+image_bytes="$(du -s --apparent-size --count-links --block-size=1 --exclude=.git --exclude=.local "$root" | awk '{print $1}')"
 if [[ ! "$image_bytes" =~ ^[0-9]+$ ]]; then
   echo "[image-size-gate] FATAL: could not measure image footprint for $root" >&2
   exit 2
@@ -25,7 +27,7 @@ if (( image_bytes > limit )); then
   printf '[image-size-gate] BLOCKED: release footprint is %s bytes; Replit VM limit is %s bytes.\n' \
     "$image_bytes" "$limit" >&2
   echo "[image-size-gate] Largest top-level paths (bytes):" >&2
-  du -x --block-size=1 --max-depth=1 --exclude=.git --exclude=.local "$root" \
+  du -x --apparent-size --count-links --block-size=1 --max-depth=1 --exclude=.git --exclude=.local "$root" \
     | sort -nr | head -n 12 >&2 || true
   echo "[image-size-gate] Reduce or move the listed payloads before publishing; no files were removed." >&2
   exit 1
