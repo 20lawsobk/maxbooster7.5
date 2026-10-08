@@ -28,3 +28,13 @@ bounding that search then exposed a working npm hidden behind a shell wrapper.
 
 **How to apply:** Probe known tools first, bound fallback discovery in a child
 process with a kill deadline, and verify actual package versions before cleanup.
+
+BoosterState is required in the publishing build; missing Rust tooling is not
+permission to publish without the sidecar.
+
+**Why:** The user approved replacing the historical warning-and-success behavior
+after a publish skipped the sidecar because ambient Cargo was unavailable.
+
+**How to apply:** Keep Rust build-only, using the existing pinned toolchain rather
+than enlarging the runtime image with a Rust installation. Fail on build errors;
+verify a freshly compiled binary, not a previously existing binary.
