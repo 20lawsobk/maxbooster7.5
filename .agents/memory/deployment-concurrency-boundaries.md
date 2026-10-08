@@ -59,6 +59,20 @@ build record. Treat Replit image-layer and container interruptions as external
 until project-side evidence proves otherwise; preserve generated media while
 investigating which snapshot path includes it.
 
+A completed capsule verification can still leave its CLI hung on idle worker
+threads. Distinguish the eventual interrupt from the project-side hang that
+preceded it.
+
+**Why:** A later publish verified every file and printed its final capsule ID,
+but never returned to the shell. A standalone reproduction printed success and
+remained alive on compression workers. Tiny-file benchmarks did not start that
+pool, and ordinary test-runner completion did not prove natural process exit.
+
+**How to apply:** Test compression and verification in a separate process that
+must exit naturally, including the worker-backed path. Idle workers must not
+retain the process; dispatched work must retain it until completion. Do not
+force a successful process exit or weaken capsule integrity checks.
+
 For deployment optimization, the user explicitly means “through both builds and
 start scripts essentially from the publish button press to it going live.”
 

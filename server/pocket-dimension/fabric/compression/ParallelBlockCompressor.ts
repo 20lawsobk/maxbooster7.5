@@ -100,6 +100,9 @@ class ParallelBlockCompressorPool {
         worker.once("message", (msg: Record<string, unknown>) => {
           if (msg?.ready) {
             clearTimeout(timeout);
+            // An idle pool must not keep build/verification CLIs alive.
+            // dispatch() takes a reference again before assigning real work.
+            worker.unref();
             resolve(state);
           }
         });
@@ -111,6 +114,7 @@ class ParallelBlockCompressorPool {
           clearTimeout(job.timeout);
           this.pending.delete(msg.id!);
           state.busy = false;
+          worker.unref();
           if (msg.error) job.reject(new Error(msg.error));
           else job.resolve(Buffer.from(msg.result as unknown as Uint8Array));
           this.dispatch();
@@ -156,6 +160,7 @@ class ParallelBlockCompressorPool {
 
     const job = this.queue.shift()!;
     idleWorker.busy = true;
+    idleWorker.worker.ref();
     const id = `${Date.now()}-${randomBytes(4).toString("hex")}`;
 
     const timeout = setTimeout(() => {
