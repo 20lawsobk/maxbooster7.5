@@ -40,7 +40,11 @@ for (const name of fs.readdirSync(root)) {
     mode: fs.constants.COPYFILE_FICLONE,
     filter(source, destination) {
       const base = path.basename(source);
-      if (/^\.env(?:\.|$)|\.(pem|key)$/.test(base)) return false;
+      const publicPythonTrustBundle =
+        source.replaceAll("\\", "/").endsWith("/site-packages/certifi/cacert.pem") ||
+        source.replaceAll("\\", "/").endsWith("/pip/_vendor/certifi/cacert.pem");
+      if (/^\.env(?:\.|$)|\.key$/.test(base)) return false;
+      if (base.endsWith(".pem") && !publicPythonTrustBundle) return false;
       if ([".vite", ".cache"].includes(base)) return false;
       const current = fs.lstatSync(source);
       const old = fs.lstatSync(destination, { throwIfNoEntry: false });

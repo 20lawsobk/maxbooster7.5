@@ -177,7 +177,7 @@ class SocialQueueService {
       );
     } catch (error) {
       logger.warn({ err: error }, "Error checking rate limit:");
-      return true;
+      throw new Error("Social publishing rate-limit state is unavailable", { cause: error });
     }
   }
 
@@ -294,7 +294,7 @@ class SocialQueueService {
       return { inBackoff: false };
     } catch (error) {
       logger.warn({ err: error }, "Error checking backoff state:");
-      return { inBackoff: false };
+      throw new Error("Social publishing backoff state is unavailable", { cause: error });
     }
   }
 
@@ -457,7 +457,7 @@ class SocialQueueService {
     return true;
   }
 
-  async getQueueStats(): Promise<{
+  async getQueueStats(userId: string): Promise<{
     socialPosts: {
       waiting: number;
       active: number;
@@ -471,42 +471,37 @@ class SocialQueueService {
       failed: number;
     };
   }> {
-    return {
-      socialPosts: { waiting: 0, active: 0, completed: 0, failed: 0 },
-      batches: { waiting: 0, active: 0, completed: 0, failed: 0 },
+    if (!userId) throw new Error("A user is required to read social work statistics");
+    // These are durable work states, not fabricated process-local queue counts.
+    // Both queries are owner-scoped; a user's dashboard must not expose another
+    // account's publishing activity.
+    const [postCounts, batchCounts] = await Promise.all([
+      db.select({ status: posts.status, total: sql<number>`count(*)::integer` })
+        .from(posts).where(eq(posts.userId, userId)).groupBy(posts.status),
+      db.select({ status: scheduledPostBatches.status, total: sql<number>`count(*)::integer` })
+        .from(scheduledPostBatches).where(eq(scheduledPostBatches.userId, userId))
+        .groupBy(scheduledPostBatches.status),
+    ]);
+    const summarize = (rows: Array<{ status: string | null; total: number }>) => {
+      const sum = (...states: string[]) =>
+        rows.filter(row => states.includes(row.status ?? ""))
+          .reduce((total, row) => total + Number(row.total), 0);
+      return {
+        waiting: sum("pending", "scheduled"),
+        active: sum("posting", "publishing", "processing"),
+        completed: sum("published", "completed"),
+        failed: sum("failed", "partially_failed"),
+      };
     };
+    return { socialPosts: summarize(postCounts), batches: summarize(batchCounts) };
   }
 
   /**
-   * schedulePost — mark a post's DB scheduledAt timestamp and enqueue it for
-   * the given scheduled time.  Used by autonomousService when it wants to
-   * queue a post that was just created.
+   * Schedule through the common delivery-state/consent validator. Never reset
+   * a post's status before it checks existing provider receipts.
    */
   async schedulePost(postId: string, scheduledAt: Date): Promise<void> {
-    await db
-      .update(posts)
-      .set({ scheduledAt, status: "scheduled" })
-      .where(eq(posts.id, postId));
-
-    // Re-fetch to build the queue payload
-    const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
-    if (!post) return;
-
-    const platform = (post.platform as string) || "twitter";
-    const socialAccountId = ((post as any).socialAccountId as string) ?? post.userId ?? "unknown";
-
-    await this.addSocialPostJob(
-      {
-        postId,
-        platform,
-        content: (post.content as string) || "",
-        socialAccountId,
-        scheduledAt,
-        campaignId: (post.campaignId as string) ?? postId,
-        mediaUrls: (post.mediaUrls as string[] | undefined) ?? [],
-      },
-      Math.max(0, scheduledAt.getTime() - Date.now()),
-    );
+    await autoPostingServiceV2.scheduleExistingPost(postId, { scheduledAt });
   }
 
   /**

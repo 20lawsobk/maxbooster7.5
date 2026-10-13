@@ -13,6 +13,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFile } from "node:fs/promises";
 
+vi.mock("../../server/instrument.js", () => ({ captureSentryException: vi.fn() }));
+
 // ── Mock the DB layer (chainable drizzle stub) ─────────────────────────────
 vi.mock("../../server/db.js", () => {
   const chain: Record<string, any> = {};
@@ -188,6 +190,29 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     expect(result.advertised).toBe(false);
     expect(result.campaignId).toBe("campaign-2");
     expect(result.note).toBe("No connected social accounts");
+  });
+
+  it("requests the updated status while recording a generation failure", async () => {
+    svc._generateBeat = vi.fn(async () => { throw new Error("Generation rejected"); });
+    const result = await svc.runCycle("manual", {});
+    expect(result.status).toBe("failed");
+    expect(result.error).toBe("Generation rejected");
+    const { db } = await import("../../server/db.js");
+    const update = vi.mocked(db.update).mock.results.at(-1)!.value;
+    expect(update.returning).toHaveBeenCalledWith({ status: expect.anything() });
+  });
+
+  it("preserves a concurrently completed sale when campaign work fails", async () => {
+    svc._launchCampaign = vi.fn(async () => {
+      const { db } = await import("../../server/db.js");
+      const chain = vi.mocked(db.insert).mock.results.at(-1)!.value;
+      vi.mocked(chain.returning).mockResolvedValueOnce([{ status: "sold" }]);
+      throw new Error("Promotion rejected");
+    });
+    const result = await svc.runCycle("manual", {});
+    expect(result.status).toBe("sold");
+    expect(result.beatId).toBe("beat-1");
+    expect(result.error).toBe("Promotion rejected");
   });
 
   it("dispatches the real BML campaign path and confirms posting only after posts exist", async () => {

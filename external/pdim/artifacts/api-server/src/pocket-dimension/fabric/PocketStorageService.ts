@@ -290,6 +290,23 @@ export class PocketStorageService {
     return data;
   }
 
+  /** Remove named versions only within the owner's existing pocket. */
+  async deleteNamedObject(
+    ownerId: string,
+    pocketName: string,
+    name: string,
+  ): Promise<void> {
+    const container = await this.getOrCreateContainer(ownerId, pocketName, false);
+    if (!container) return;
+    const versions = (await this.objectIndex.listObjects(container.volumeId))
+      .filter(object => object.originalName === name);
+    for (const object of versions) {
+      // Use the authoritative reference-counted deletion path, never delete
+      // physical chunks directly: other objects may still own those chunks.
+      await this.deleteObject(object.id);
+    }
+  }
+
   // ── Object store / retrieve ───────────────────────────────────────────────
 
   /** Compress the payload with zstd unless it doesn't help or is disabled. */

@@ -287,7 +287,7 @@ var init_lua_pool = __esm({
           pw.pending.clear();
           pw.active = 0;
         });
-        worker.on("exit", () => {
+        worker.on("exit", (code) => {
           const idx = this.workers.indexOf(pw);
           if (idx !== -1) {
             this.workers.splice(idx, 1);
@@ -641,10 +641,10 @@ var init_store = __esm({
       getEmbeddedAofSequence() {
         return this.aofSeq;
       }
-      async captureEmbeddedCheckpoint(capture) {
+      async captureEmbeddedCheckpoint(capture2) {
         return this.runEmbeddedCommand(async () => {
           await this.commitEmbeddedAof();
-          return capture(this.aofSeq);
+          return capture2(this.aofSeq);
         });
       }
       compactEmbeddedAof(baseline) {
@@ -1718,7 +1718,7 @@ var init_store = __esm({
         }
         return results;
       }
-      waitForResult(read, timeoutMs, signal) {
+      waitForResult(read2, timeoutMs, signal) {
         if (signal?.aborted) {
           return Promise.reject(
             signal.reason instanceof Error ? signal.reason : new Error("PDIM blocking command aborted")
@@ -1755,7 +1755,7 @@ var init_store = __esm({
               return;
             }
             checking = true;
-            void Promise.resolve().then(() => read(() => !settled)).then((value) => {
+            void Promise.resolve().then(() => read2(() => !settled)).then((value) => {
               checking = false;
               if (settled) return;
               if (value !== null) {
@@ -6941,30 +6941,37 @@ var init_XzEngine = __esm({
   }
 });
 
-// server/computeSizing.ts
-import os3 from "os";
+// script/deployment/capacity.mjs
+import os3 from "node:os";
 import fs2 from "node:fs";
-function limitFile(file) {
+function read(file) {
   try {
     return fs2.readFileSync(file, "utf8").trim();
   } catch (error) {
-    if (["ENOENT", "ENOTDIR"].includes(error.code ?? "")) return null;
+    if (["ENOENT", "ENOTDIR"].includes(error.code)) return null;
     throw error;
   }
 }
 function effectiveCapacity() {
-  let cpus = os3.availableParallelism();
-  let memory = os3.totalmem();
-  const cpuMax = limitFile("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota = cpuMax ? Number(cpuMax[0]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period = cpuMax ? Number(cpuMax[1]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
+  let cpus = os3.availableParallelism(), memory = os3.totalmem();
+  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
+  const quota = max ? Number(max[0]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
+  const period = max ? Number(max[1]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
   if (quota > 0 && period > 0) cpus = Math.min(cpus, quota / period);
   for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n = Number(limitFile(file));
+    const n = Number(read(file));
     if (n > 0 && Number.isFinite(n)) memory = Math.min(memory, n);
   }
   return { cpus, memoryGB: memory / 1024 ** 3 };
 }
+var init_capacity = __esm({
+  "script/deployment/capacity.mjs"() {
+    "use strict";
+  }
+});
+
+// server/computeSizing.ts
+import os4 from "os";
 function positiveConfig(name, defaultValue) {
   const value = process.env[name] === void 0 ? defaultValue : Number(process.env[name]);
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} must be a positive finite number`);
@@ -7002,7 +7009,7 @@ function computeWorkerSizing(opts = {}) {
     throw new Error("APP_WORKER_CPU_SHARE must be at most 1");
   }
   const cpuLimit = Math.min(
-    os3.availableParallelism(),
+    os4.availableParallelism(),
     Math.max(1, Math.floor(cpuBudget / workerCpuShare))
   );
   const memoryPerWorker = opts.memPerWorkerGB ?? (maxcore && local ? maxcoreMinimumMB : appMinimumMB) / 1024;
@@ -7051,6 +7058,8 @@ function computeWorkerSizing(opts = {}) {
 var init_computeSizing = __esm({
   "server/computeSizing.ts"() {
     "use strict";
+    init_capacity();
+    init_capacity();
   }
 });
 
@@ -7102,11 +7111,10 @@ var init_ParallelBlockCompressor = __esm({
           );
           return;
         }
-        const { workerCount } = computeWorkerSizing({
-          memPerWorkerGB: 0.25,
-          maxWorkers: 8
-        });
-        const poolSize = Math.max(1, workerCount);
+        const workerCount = process.env.DEPLOY_TASK_CPU === void 0 ? computeWorkerSizing({ memPerWorkerGB: 0.25, maxWorkers: 8 }).workerCount : Number(process.env.DEPLOY_TASK_CPU);
+        const allocation = Number(process.env.DEPLOY_TASK_CPU ?? Math.max(1, workerCount));
+        if (!Number.isInteger(allocation) || allocation < 1) throw new Error("Invalid deployment CPU allocation");
+        const poolSize = Math.max(1, Math.min(8, workerCount, allocation));
         const startWorker = (index) => new Promise((resolve, reject) => {
           const worker = new Worker3(workerPath);
           const state2 = { worker, busy: false };
@@ -7117,6 +7125,7 @@ var init_ParallelBlockCompressor = __esm({
           worker.once("message", (msg) => {
             if (msg?.ready) {
               clearTimeout(timeout);
+              worker.unref();
               resolve(state2);
             }
           });
@@ -7127,6 +7136,7 @@ var init_ParallelBlockCompressor = __esm({
             clearTimeout(job.timeout);
             this.pending.delete(msg.id);
             state2.busy = false;
+            worker.unref();
             if (msg.error) job.reject(new Error(msg.error));
             else job.resolve(Buffer.from(msg.result));
             this.dispatch();
@@ -7167,6 +7177,7 @@ var init_ParallelBlockCompressor = __esm({
         if (!idleWorker) return;
         const job = this.queue.shift();
         idleWorker.busy = true;
+        idleWorker.worker.ref();
         const id = `${Date.now()}-${randomBytes(4).toString("hex")}`;
         const timeout = setTimeout(() => {
           this.pending.delete(id);
@@ -8501,6 +8512,198 @@ var init_localPdimAofJournal = __esm({
   }
 });
 
+// server/lib/pdimSnapshotJson.ts
+import fs5 from "node:fs";
+import { StringDecoder } from "node:string_decoder";
+function snapshotJsonChunks(entries) {
+  const chunks = ["{"];
+  let first = true;
+  for (const [key, value] of Object.entries(entries)) {
+    chunks.push(`${first ? "" : ","}${JSON.stringify(key)}:${JSON.stringify(value)}`);
+    first = false;
+  }
+  chunks.push("}");
+  return chunks;
+}
+function readSnapshotJson(file, chunkBytes = 1024 * 1024) {
+  const result = /* @__PURE__ */ Object.create(null);
+  const fd = fs5.openSync(file, "r");
+  const decoder = new StringDecoder("utf8");
+  const buffer = Buffer.alloc(chunkBytes);
+  let begun = false, ended = false, quoted = false, escaped = false;
+  let depth = 0, afterComma = false;
+  let parts = [];
+  const member = (allowEmpty) => {
+    const raw = parts.join("").trim();
+    parts = [];
+    if (!raw && allowEmpty) return;
+    if (!raw) throw new Error("Empty snapshot member");
+    const parsed = JSON.parse(`{${raw}}`);
+    const keys = Object.keys(parsed);
+    if (keys.length !== 1 || Object.hasOwn(result, keys[0])) throw new Error("Invalid or duplicate snapshot member");
+    result[keys[0]] = parsed[keys[0]];
+  };
+  const consume = (text) => {
+    let start = 0;
+    const stringTokens = /["\\]/g;
+    for (let i = 0; i < text.length; i++) {
+      let char = text[i];
+      if (!begun) {
+        start = i + 1;
+        if (/\s/.test(char)) continue;
+        if (char !== "{") throw new Error("Snapshot must be a JSON object");
+        begun = true;
+        depth = 1;
+        continue;
+      }
+      if (ended) {
+        if (!/\s/.test(char)) throw new Error("Trailing snapshot content");
+        start = i + 1;
+        continue;
+      }
+      if (quoted) {
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        stringTokens.lastIndex = i;
+        const token = stringTokens.exec(text);
+        if (!token) break;
+        i = token.index;
+        char = token[0];
+        if (char === "\\") escaped = true;
+        else quoted = false;
+        continue;
+      }
+      if (char === '"') {
+        quoted = true;
+        continue;
+      }
+      if (char === "{" || char === "[") depth++;
+      if (char === "}" || char === "]") depth--;
+      if (char === "," && depth === 1 || char === "}" && depth === 0) {
+        parts.push(text.slice(start, i));
+        member(char === "}" && !afterComma);
+        afterComma = char === ",";
+        ended = char === "}";
+        start = i + 1;
+      }
+    }
+    if (start < text.length) parts.push(text.slice(start));
+  };
+  try {
+    let count;
+    while ((count = fs5.readSync(fd, buffer, 0, buffer.length, null)) > 0) consume(decoder.write(buffer.subarray(0, count)));
+    consume(decoder.end());
+    if (!begun || !ended || quoted || depth !== 0) throw new Error("Incomplete snapshot JSON");
+    return result;
+  } finally {
+    fs5.closeSync(fd);
+  }
+}
+var init_pdimSnapshotJson = __esm({
+  "server/lib/pdimSnapshotJson.ts"() {
+    "use strict";
+  }
+});
+
+// server/lib/pdimSnapshotWriter.ts
+import { Worker as Worker4 } from "node:worker_threads";
+function capture(value, seen = /* @__PURE__ */ new Map()) {
+  if (value === null || typeof value !== "object") return value;
+  if (seen.has(value)) return seen.get(value);
+  if (value instanceof Date) return new Date(value);
+  const result = Array.isArray(value) ? [] : /* @__PURE__ */ Object.create(null);
+  seen.set(value, result);
+  for (const [key, item] of Object.entries(value)) result[key] = capture(item, seen);
+  return result;
+}
+function transferSize(value, seen = /* @__PURE__ */ new Set()) {
+  if (typeof value === "string") return value.length * 2;
+  if (!value || typeof value !== "object" || seen.has(value)) return 8;
+  seen.add(value);
+  return Object.entries(value).reduce((size, [key, item]) => size + key.length * 2 + transferSize(item, seen), 0);
+}
+function writeSnapshotOffThread(file, entries) {
+  const captured = Object.entries(capture(entries));
+  const worker = new Worker4(writer, { eval: true, execArgv: [], workerData: { file } });
+  return new Promise((resolve, reject) => {
+    let completed = false;
+    let failure;
+    let offset = 0;
+    worker.on("message", (message) => {
+      if (message?.ok) completed = true;
+      if (message?.ready) setImmediate(() => {
+        try {
+          if (offset === captured.length) {
+            worker.postMessage(null);
+            return;
+          }
+          const batch = [];
+          let bytes = 0;
+          while (offset < captured.length && bytes < 1024 * 1024 && batch.length < 64) {
+            const entry = captured[offset++];
+            batch.push(entry);
+            bytes += transferSize(entry);
+          }
+          worker.postMessage(batch);
+        } catch (error) {
+          failure = error instanceof Error ? error : new Error(String(error));
+          void worker.terminate();
+        }
+      });
+    });
+    worker.once("error", (error) => {
+      failure = error;
+    });
+    worker.once("exit", (code) => {
+      if (code === 0 && completed && !failure) resolve();
+      else reject(failure ?? new Error(`Snapshot worker exited without a durable result (code ${code})`));
+    });
+  });
+}
+var writer;
+var init_pdimSnapshotWriter = __esm({
+  "server/lib/pdimSnapshotWriter.ts"() {
+    "use strict";
+    writer = `
+const fs = require("node:fs");
+const { parentPort, workerData } = require("node:worker_threads");
+let fd;
+let first = true;
+try {
+  fd = fs.openSync(workerData.file, "wx", 0o600);
+  fs.writeFileSync(fd, "{");
+  parentPort.on("message", rows => {
+    try {
+      if (rows === null) {
+        fs.writeFileSync(fd, "}");
+        fs.fsyncSync(fd);
+        fs.closeSync(fd);
+        fd = undefined;
+        parentPort.postMessage({ ok: true });
+        parentPort.close();
+      } else {
+        for (const [key, value] of rows) {
+          fs.writeFileSync(fd, (first ? "" : ",") + JSON.stringify(key) + ":" + JSON.stringify(value));
+          first = false;
+        }
+        parentPort.postMessage({ ready: true });
+      }
+    } catch (error) {
+      if (fd !== undefined) fs.closeSync(fd);
+      throw error;
+    }
+  });
+  parentPort.postMessage({ ready: true });
+} catch (error) {
+  if (fd !== undefined) fs.closeSync(fd);
+  throw error;
+}
+`;
+  }
+});
+
 // server/lib/localPdimServer.ts
 var localPdimServer_exports = {};
 __export(localPdimServer_exports, {
@@ -8512,7 +8715,7 @@ __export(localPdimServer_exports, {
   stopLocalPdimServer: () => stopLocalPdimServer
 });
 import http from "http";
-import fs5 from "fs";
+import fs6 from "fs";
 import path7 from "path";
 import cluster from "node:cluster";
 function expired(e) {
@@ -8523,6 +8726,8 @@ function saveStoreAsync() {
     const publication = snapshotPublication;
     const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
     try {
+      await fs6.promises.mkdir(path7.dirname(PERSIST_FILE), { recursive: true });
+      let writeFailure;
       const snapshot = await canonicalStore.captureEmbeddedCheckpoint((redisBaseline) => {
         const capsuleBaseline = capsuleJournal.publishedSeq;
         const obj = {};
@@ -8538,25 +8743,23 @@ function saveStoreAsync() {
           value: String(redisBaseline)
         };
         return {
-          serialized: JSON.stringify(obj),
+          // Attach the rejection handler immediately, even while the capture
+          // boundary is unwinding, without concealing an unsuccessful write.
+          writing: writeSnapshotOffThread(temporaryFile, obj).catch((error) => {
+            writeFailure = error;
+          }),
           capsuleBaseline,
           redisBaseline
         };
       });
-      await fs5.promises.mkdir(path7.dirname(PERSIST_FILE), { recursive: true });
-      const file = await fs5.promises.open(temporaryFile, "wx", 384);
-      try {
-        await file.writeFile(snapshot.serialized, "utf8");
-        await file.sync();
-      } finally {
-        await file.close();
-      }
+      await snapshot.writing;
+      if (writeFailure) throw writeFailure;
       if (snapshotPublication !== publication) {
-        await fs5.promises.rm(temporaryFile, { force: true });
+        await fs6.promises.rm(temporaryFile, { force: true });
         return true;
       }
-      fs5.renameSync(temporaryFile, PERSIST_FILE);
-      const directory = await fs5.promises.open(path7.dirname(PERSIST_FILE), "r");
+      fs6.renameSync(temporaryFile, PERSIST_FILE);
+      const directory = await fs6.promises.open(path7.dirname(PERSIST_FILE), "r");
       try {
         await directory.sync();
       } finally {
@@ -8568,7 +8771,7 @@ function saveStoreAsync() {
       await capsuleJournal.compact(snapshot.capsuleBaseline);
       return true;
     } catch (err) {
-      await fs5.promises.rm(temporaryFile, { force: true }).catch(() => {
+      await fs6.promises.rm(temporaryFile, { force: true }).catch(() => {
       });
       logger.error({ err }, `[LocalPDIM] Failed to persist store to ${PERSIST_FILE}`);
       return false;
@@ -8580,7 +8783,7 @@ function saveStoreAsync() {
 function saveStore() {
   const temporaryFile = `${PERSIST_FILE}.tmp-${process.pid}`;
   try {
-    fs5.mkdirSync(path7.dirname(PERSIST_FILE), { recursive: true });
+    fs6.mkdirSync(path7.dirname(PERSIST_FILE), { recursive: true });
     const redisBaseline = canonicalStore.getEmbeddedAofSequence();
     const obj = {};
     for (const [k, v] of store) {
@@ -8591,23 +8794,25 @@ function saveStore() {
       type: "string",
       value: String(redisBaseline)
     };
-    fs5.writeFileSync(temporaryFile, JSON.stringify(obj), {
-      encoding: "utf8",
-      mode: 384,
-      flush: true
-    });
-    fs5.renameSync(temporaryFile, PERSIST_FILE);
-    const directory = fs5.openSync(path7.dirname(PERSIST_FILE), "r");
+    const output = fs6.openSync(temporaryFile, "w", 384);
     try {
-      fs5.fsyncSync(directory);
+      for (const chunk of snapshotJsonChunks(obj)) fs6.writeFileSync(output, chunk, "utf8");
+      fs6.fsyncSync(output);
     } finally {
-      fs5.closeSync(directory);
+      fs6.closeSync(output);
+    }
+    fs6.renameSync(temporaryFile, PERSIST_FILE);
+    const directory = fs6.openSync(path7.dirname(PERSIST_FILE), "r");
+    try {
+      fs6.fsyncSync(directory);
+    } finally {
+      fs6.closeSync(directory);
     }
     snapshotPublication++;
     return true;
   } catch (err) {
     try {
-      fs5.rmSync(temporaryFile, { force: true });
+      fs6.rmSync(temporaryFile, { force: true });
     } catch {
     }
     logger.error({ err }, `[LocalPDIM] Failed to persist store to ${PERSIST_FILE}`);
@@ -8699,10 +8904,9 @@ function validatePersistedEntry(key, value) {
 }
 function loadStore() {
   snapshotAofBaseline = 0;
-  if (!fs5.existsSync(PERSIST_FILE)) return;
+  if (!fs6.existsSync(PERSIST_FILE)) return;
   try {
-    const raw = fs5.readFileSync(PERSIST_FILE, "utf8");
-    const data = JSON.parse(raw);
+    const data = readSnapshotJson(PERSIST_FILE);
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       throw new Error("persistence root must be a JSON object");
     }
@@ -8770,14 +8974,14 @@ function openConsistentLocalPdimSnapshot() {
     expectedSourcePath: path7.resolve("./data/local-pdim-store.json")
   });
   if (!saveStore()) throw new Error("Could not commit the local PDIM recovery point");
-  const link = fs5.lstatSync(PERSIST_FILE);
+  const link = fs6.lstatSync(PERSIST_FILE);
   if (!link.isFile() || link.isSymbolicLink()) {
     throw new Error("Committed local PDIM snapshot is not a regular owned file");
   }
-  const fd = fs5.openSync(PERSIST_FILE, fs5.constants.O_RDONLY);
+  const fd = fs6.openSync(PERSIST_FILE, fs6.constants.O_RDONLY);
   try {
-    const pinned = fs5.fstatSync(fd);
-    const current = fs5.statSync(PERSIST_FILE);
+    const pinned = fs6.fstatSync(fd);
+    const current = fs6.statSync(PERSIST_FILE);
     if (!pinned.isFile() || pinned.dev !== current.dev || pinned.ino !== current.ino || pinned.size !== current.size) {
       throw new Error("Committed local PDIM snapshot inode could not be pinned");
     }
@@ -8790,7 +8994,7 @@ function openConsistentLocalPdimSnapshot() {
       recoveryPoint: "synchronous-event-loop-linearized"
     };
   } catch (error) {
-    fs5.closeSync(fd);
+    fs6.closeSync(fd);
     throw error;
   }
 }
@@ -9074,6 +9278,8 @@ var init_localPdimServer = __esm({
     init_localPdimCapsules();
     init_localPdimCapsuleJournal();
     init_localPdimAofJournal();
+    init_pdimSnapshotJson();
+    init_pdimSnapshotWriter();
     LOCAL_PORT = runtimePorts.localPdim;
     PERSIST_FILE = path7.resolve(
       process.env.LOCAL_PDIM_STORE_FILE ?? "./data/local-pdim-store.json"

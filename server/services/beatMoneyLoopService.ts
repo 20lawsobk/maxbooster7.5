@@ -867,7 +867,8 @@ class BeatMoneyLoopService {
           durationMs,
           completedAt: sql<Date | null>`CASE WHEN ${beatMoneyLoopCycles.status} = 'sold' THEN ${beatMoneyLoopCycles.completedAt} ELSE ${listedBeatId ? null : new Date()} END`,
         })
-        .where(eq(beatMoneyLoopCycles.id, cycleId));
+        .where(eq(beatMoneyLoopCycles.id, cycleId))
+        .returning({ status: beatMoneyLoopCycles.status });
       const failureStatus =
         failureCycle?.status === "sold"
           ? "sold"

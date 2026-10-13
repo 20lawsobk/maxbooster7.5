@@ -90,7 +90,9 @@ export function writeSnapshotOffThread(file: string, entries: Record<string, unk
         }
       });
     });
-    worker.once("error", error => { failure = error; });
+    worker.once("error", error => {
+      failure = error instanceof Error ? error : new Error(String(error));
+    });
     worker.once("exit", code => {
       if (code === 0 && completed && !failure) resolve();
       else reject(failure ?? new Error(`Snapshot worker exited without a durable result (code ${code})`));

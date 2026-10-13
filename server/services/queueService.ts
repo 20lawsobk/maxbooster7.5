@@ -86,9 +86,9 @@ export class BoosterQueue<TData = any, TResult = any> {
     },
   ): Promise<{ id: string; name: string; data: TData }> {
     const job = await this.queue.add(jobName, data, {
-      priority: opts!.priority,
-      delay: opts!.delay,
-      jobId: opts!.jobId,
+      priority: opts?.priority,
+      delay: opts?.delay,
+      jobId: opts?.jobId,
     });
     return { id: job.id ?? `${Date.now()}`, name: jobName, data };
   }

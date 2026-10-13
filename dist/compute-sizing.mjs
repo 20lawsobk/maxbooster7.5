@@ -1,27 +1,31 @@
 // server/computeSizing.ts
-import os from "os";
+import os2 from "os";
+
+// script/deployment/capacity.mjs
+import os from "node:os";
 import fs from "node:fs";
-function limitFile(file) {
+function read(file) {
   try {
     return fs.readFileSync(file, "utf8").trim();
   } catch (error) {
-    if (["ENOENT", "ENOTDIR"].includes(error.code ?? "")) return null;
+    if (["ENOENT", "ENOTDIR"].includes(error.code)) return null;
     throw error;
   }
 }
 function effectiveCapacity() {
-  let cpus = os.availableParallelism();
-  let memory = os.totalmem();
-  const cpuMax = limitFile("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
-  const quota = cpuMax ? Number(cpuMax[0]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
-  const period = cpuMax ? Number(cpuMax[1]) : Number(limitFile("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
+  let cpus = os.availableParallelism(), memory = os.totalmem();
+  const max = read("/sys/fs/cgroup/cpu.max")?.split(/\s+/);
+  const quota = max ? Number(max[0]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"));
+  const period = max ? Number(max[1]) : Number(read("/sys/fs/cgroup/cpu/cpu.cfs_period_us"));
   if (quota > 0 && period > 0) cpus = Math.min(cpus, quota / period);
   for (const file of ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"]) {
-    const n = Number(limitFile(file));
+    const n = Number(read(file));
     if (n > 0 && Number.isFinite(n)) memory = Math.min(memory, n);
   }
   return { cpus, memoryGB: memory / 1024 ** 3 };
 }
+
+// server/computeSizing.ts
 function positiveConfig(name, defaultValue) {
   const value = process.env[name] === void 0 ? defaultValue : Number(process.env[name]);
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} must be a positive finite number`);
@@ -59,7 +63,7 @@ function computeWorkerSizing(opts = {}) {
     throw new Error("APP_WORKER_CPU_SHARE must be at most 1");
   }
   const cpuLimit = Math.min(
-    os.availableParallelism(),
+    os2.availableParallelism(),
     Math.max(1, Math.floor(cpuBudget / workerCpuShare))
   );
   const memoryPerWorker = opts.memPerWorkerGB ?? (maxcore && local ? maxcoreMinimumMB : appMinimumMB) / 1024;

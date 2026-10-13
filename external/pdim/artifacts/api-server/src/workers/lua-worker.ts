@@ -10,13 +10,12 @@
  * binary is compiled only once per thread (not once per script invocation).
  */
 
-import { parentPort, workerData } from "worker_threads";
-import { LuaFactory, type LuaEngine } from "wasmoon";
+import { parentPort } from "worker_threads";
+import { LuaFactory } from "wasmoon";
 import {
   encode as msgpackEncode,
   decode as msgpackDecode,
 } from "@msgpack/msgpack";
-import { createHash } from "crypto";
 
 if (!parentPort) throw new Error("lua-worker must run inside a worker_thread");
 
@@ -80,21 +79,6 @@ function luaTableToJs(val: unknown): unknown {
   return result;
 }
 
-function valToLuaLiteral(val: unknown): string {
-  if (val === null || val === undefined) return "nil";
-  if (typeof val === "boolean") return val ? "true" : "false";
-  if (typeof val === "number") return isFinite(val) ? String(val) : "0";
-  if (typeof val === "string") return luaQuoteStr(val);
-  if (Array.isArray(val)) return `{${val.map(valToLuaLiteral).join(", ")}}`;
-  if (typeof val === "object") {
-    const pairs = Object.entries(val as Record<string, unknown>)
-      .map(([k, v]) => `[${luaQuoteStr(k)}] = ${valToLuaLiteral(v)}`)
-      .join(", ");
-    return `{${pairs}}`;
-  }
-  return "nil";
-}
-
 function bytesToLuaStr(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("hex");
 }
@@ -108,36 +92,6 @@ function luaStrToBytes(str: unknown): Buffer {
   return Buffer.from(s, "binary");
 }
 
-function buildLuaSequence(arr: unknown[], lua: LuaEngine): unknown {
-  if (arr.length === 0) return lua.doStringSync("return {}");
-  const elems = arr
-    .map((v) => {
-      if (v === null || v === undefined || v === false) return "false";
-      if (typeof v === "number") return String(v);
-      if (typeof v === "string") return luaQuoteStr(v);
-      return "false";
-    })
-    .join(", ");
-  return lua.doStringSync(`return {${elems}}`);
-}
-
-function redisReplyToLua(result: unknown, lua: LuaEngine): unknown {
-  if (result === null || result === undefined) return false;
-  if (typeof result === "string" || typeof result === "number") return result;
-  if (typeof result === "boolean") return result ? 1 : 0;
-  if (Array.isArray(result)) {
-    const safe = result.map((v) => (v === null || v === undefined ? false : v));
-    return buildLuaSequence(safe, lua);
-  }
-  if (typeof result === "object") {
-    const flat: string[] = [];
-    for (const [k, v] of Object.entries(result as Record<string, string>))
-      flat.push(k, v ?? "");
-    return buildLuaSequence(flat, lua);
-  }
-  return result;
-}
-
 // ── Message handler ───────────────────────────────────────────────────────────
 
 parentPort.on("message", async (req: LuaRequest) => {
@@ -148,14 +102,6 @@ parentPort.on("message", async (req: LuaRequest) => {
     const keysLit = keys.map(luaQuoteStr).join(", ");
     const argvLit = argv.map(luaQuoteStr).join(", ");
     lua.doStringSync(`KEYS = {${keysLit}}; ARGV = {${argvLit}}`);
-
-    const toStrArgs = (args: unknown[]): string[] =>
-      args.map((a) => {
-        if (a === null || a === undefined) return "";
-        if (a instanceof Uint8Array || Buffer.isBuffer(a))
-          return Buffer.from(a).toString("binary");
-        return String(a);
-      });
 
     // Note: redis.call() in a worker thread cannot call back into the main
     // thread's store because there's no shared memory.  The worker is intended

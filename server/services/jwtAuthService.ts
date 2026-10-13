@@ -191,7 +191,8 @@ export class JWTAuthService {
   ): Promise<RotatedTokenResult | null> {
     const refreshToken = await storage.getRefreshToken(refreshTokenValue);
 
-    if (!refreshToken || (refreshToken as any)?.revoked) {
+    if (!refreshToken || typeof refreshToken !== "object" ||
+        Array.isArray(refreshToken) || (refreshToken as any)?.revoked) {
       return null;
     }
 
@@ -206,8 +207,15 @@ export class JWTAuthService {
     }
     const generation = refreshTokenValue.split(".")[0];
     const timePart = refreshTokenValue.split(".")[2];
+    const createdAt = "createdAt" in refreshToken ? refreshToken.createdAt : undefined;
     const authIssuedAt = timePart?.startsWith("t")
-      ? Number(timePart.slice(1)) : new Date(refreshToken.createdAt).getTime();
+      ? Number(timePart.slice(1))
+      : createdAt instanceof Date
+        ? createdAt.getTime()
+        : typeof createdAt === "string" || typeof createdAt === "number"
+          ? new Date(createdAt).getTime()
+          : NaN;
+    if (!Number.isFinite(authIssuedAt)) return null;
     if (!await (await sessionAuthority()).validateBearer(user.id, authIssuedAt)) return null;
     const mfaVerified = refreshTokenValue.split(".")[1] === "mfa";
     if (!refreshTokenValue.includes(".") ||

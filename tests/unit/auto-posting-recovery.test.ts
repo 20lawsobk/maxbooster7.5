@@ -16,6 +16,10 @@ const state = vi.hoisted(() => ({
   recoverStrandedSocialPosts: vi.fn(),
   getScheduledPosts: vi.fn(),
   getScheduledPostById: vi.fn(),
+  updateScheduledPost: vi.fn(),
+  claimSocialPost: vi.fn(),
+  checkpointSocialPost: vi.fn(),
+  recordPerformance: vi.fn(),
 }));
 
 vi.mock("bullmq", () => {
@@ -91,6 +95,7 @@ vi.mock("../../server/storage.js", () => ({
   storage: {
     getScheduledPosts: state.getScheduledPosts,
     getScheduledPostById: state.getScheduledPostById,
+    updateScheduledPost: state.updateScheduledPost,
   },
 }));
 
@@ -110,7 +115,7 @@ vi.mock("axios", () => ({
 }));
 
 vi.mock("../../server/services/autopilotLearningService.js", () => ({
-  autopilotLearningService: {},
+  autopilotLearningService: { recordPerformance: state.recordPerformance },
 }));
 
 vi.mock("../../server/services/postingUtils.js", () => ({
@@ -122,13 +127,23 @@ vi.mock("../../server/services/notificationService.js", () => ({
 }));
 
 vi.mock("../../server/services/socialPostingRepository.js", () => ({
-  claimSocialPost: vi.fn(),
-  checkpointSocialPost: vi.fn(),
+  claimSocialPost: state.claimSocialPost,
+  checkpointSocialPost: state.checkpointSocialPost,
   recoverStrandedSocialPosts: state.recoverStrandedSocialPosts,
 }));
 
 vi.mock("../../server/services/socialOAuthService.js", () => ({
   socialOAuth: {},
+}));
+
+vi.mock("../../server/db", () => ({
+  db: {
+    update: () => { throw new Error("Scheduling wrapper must not overwrite delivery state"); },
+    select: () => { throw new Error("Scheduling wrapper must use the shared publisher"); },
+  },
+}));
+vi.mock("../../server/lib/boosterStateClient.js", () => ({
+  getBoosterStateClient: () => { throw new Error("No external cache in delivery guard tests"); },
 }));
 
 const POST_ID = "scheduled-post-1";
@@ -166,6 +181,10 @@ function resetFakes() {
   state.queues.length = 0;
   state.workers.length = 0;
   state.queueCloseCount = 0;
+  state.updateScheduledPost.mockReset().mockResolvedValue(undefined);
+  state.claimSocialPost.mockReset().mockResolvedValue({ id: POST_ID });
+  state.checkpointSocialPost.mockReset().mockResolvedValue(undefined);
+  state.recordPerformance.mockReset().mockResolvedValue(undefined);
   state.recoverStrandedSocialPosts.mockReset().mockResolvedValue([]);
   state.getScheduledPosts
     .mockReset()
@@ -181,6 +200,60 @@ describe("scheduled social post recovery", () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     resetFakes();
+  });
+
+  it("retains successful delivery without a nonexistent secondary storage write", async () => {
+    state.pendingRows = [];
+    const service = await loadService();
+    const receipt = { platform: "twitter", success: true, outcome: "confirmed", postId: "provider-receipt" };
+    vi.spyOn(service as any, "executePost").mockResolvedValue([receipt]);
+    await (service as any).processSinglePost(state.posts.get(POST_ID));
+    expect(state.checkpointSocialPost).toHaveBeenCalledWith(POST_ID, [receipt], "completed");
+    expect(state.updateScheduledPost).not.toHaveBeenCalled();
+  });
+
+  it("does not relabel confirmed delivery as failed when a follow-up throws", async () => {
+    state.pendingRows = [];
+    const service = await loadService();
+    const receipt = { platform: "twitter", success: true, outcome: "confirmed", postId: "provider-receipt" };
+    vi.spyOn(service as any, "executePost").mockResolvedValue([receipt]);
+    state.recordPerformance.mockImplementation(() => { throw new Error("Follow-up unavailable"); });
+    await (service as any).processSinglePost(state.posts.get(POST_ID));
+    expect(state.checkpointSocialPost).toHaveBeenCalledWith(POST_ID, [receipt], "completed");
+    expect(state.updateScheduledPost).not.toHaveBeenCalled();
+    const { logger } = await import("../../server/logger.js");
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ deliveryCheckpointed: true }),
+      expect.stringContaining("preserved durable delivery outcome"),
+    );
+  });
+
+  it.each([
+    { status: "published", results: [] },
+    { status: "completed", results: [] },
+    { status: "posting", results: [] },
+    { status: "pending", results: [{ outcome: "unknown", success: false }] },
+    { status: "pending", results: [{ outcome: "started", success: false }] },
+    { status: "pending", results: [{ outcome: "confirmed", success: true }] },
+  ])("autonomous wrapper preserves the real delivery guard for %j", async delivery => {
+    state.pendingRows = [];
+    state.posts.set(POST_ID, { ...state.posts.get(POST_ID), ...delivery });
+    await loadService();
+    const { socialQueueService } = await import("../../server/services/socialQueueService");
+    await expect(socialQueueService.schedulePost(POST_ID, SCHEDULED_AT))
+      .rejects.toThrow(/delivery has started|provider receipt or an uncertain delivery/);
+    expect(state.addAttempts).toHaveLength(0);
+    expect(state.posts.get(POST_ID).status).toBe(delivery.status);
+  });
+
+  it("autonomous wrapper rejects a missing persisted post", async () => {
+    state.pendingRows = [];
+    state.posts.clear();
+    await loadService();
+    const { socialQueueService } = await import("../../server/services/socialQueueService");
+    await expect(socialQueueService.schedulePost(POST_ID, SCHEDULED_AT))
+      .rejects.toThrow("Scheduled post not found");
+    expect(state.addAttempts).toHaveLength(0);
   });
 
   afterEach(async () => {

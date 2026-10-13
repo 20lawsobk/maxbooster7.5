@@ -372,7 +372,7 @@ router.get("/status/:batchId", requireAuth, async (req, res) => {
       {} as Record<string, number>,
     );
 
-    const queueStats = await socialQueueService?.getQueueStats();
+    const queueStats = await socialQueueService.getQueueStats(req.user!.id);
 
     return res.json({
       batchId: batch.id,
@@ -463,13 +463,14 @@ router.get("/batches", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/status", requireAuth, async (_req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   try {
-    const queueStats = await socialQueueService?.getQueueStats();
+    const queueStats = await socialQueueService.getQueueStats(req.user!.id);
     return res.json({
       status: "ready",
-      queuedPosts: (queueStats as any).waiting ?? 0,
-      processingPosts: (queueStats as any).active ?? 0,
+      queuedPosts: queueStats.socialPosts.waiting,
+      processingPosts: queueStats.socialPosts.active,
+      source: "persisted-work",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Get bulk status error:");

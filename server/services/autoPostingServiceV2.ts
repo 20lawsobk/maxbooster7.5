@@ -236,6 +236,7 @@ class AutoPostingServiceV2 {
   }
 
   private async processSinglePost(post: ScheduledPost): Promise<void> {
+    let deliveryCheckpointed = false;
     logger.info(
       `🚀 Processing auto-post job ${post?.id} for user ${post?.userId}`,
     );
@@ -260,6 +261,7 @@ class AutoPostingServiceV2 {
 
       await checkpointSocialPost(post.id, results,
         results.length > 0 && results.every((r) => r.success) ? "completed" : "failed");
+      deliveryCheckpointed = true;
 
       for (const result of results) {
         if (result?.success) {
@@ -299,14 +301,6 @@ class AutoPostingServiceV2 {
         }
       }
 
-      await (storage as any)?.trackSocialPost({
-        userId: post.userId,
-        content: post.content,
-        mediaType: post.content.mediaType,
-        createdBy: post.createdBy,
-        results,
-      });
-
       const successfulPlatforms = results
         .filter((r) => r?.success)
         .map((r) => r?.platform);
@@ -331,8 +325,13 @@ class AutoPostingServiceV2 {
           );
       }
     } catch (error) {
-      logger.warn({ err: error }, `Failed to process auto-post ${post?.id}:`);
-      await storage.updateScheduledPost(post?.id, { status: "failed" });
+      logger.warn({ err: error, postId: post?.id, deliveryCheckpointed },
+        deliveryCheckpointed
+          ? "Social post follow-up failed; preserved durable delivery outcome"
+          : "Failed to process auto-post");
+      if (!deliveryCheckpointed) {
+        await storage.updateScheduledPost(post?.id, { status: "failed" });
+      }
     }
   }
 

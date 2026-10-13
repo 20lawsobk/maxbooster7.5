@@ -21,7 +21,7 @@
 - [Codemod debris bug classes](codemod-debris-bug-classes.md) — `?.` inside literal SQL text and `let _x`/bare `x=` broken renames both fail silently; scanner script + detection recipes
 - [TS error mass-cleanup codemods](ts-error-cleanup-codemods.md) — DOMPurify-nest unwrap is behavior-preserving BUT codemod debris can also be an active crasher (floating stmt w/ throwing subexpr); unused-family rules (imports/params/locals), side-effect-import guardrail, clear `.cache/tsbuildinfo.*` before re-measuring
 - [Sectioned server typecheck](sectioned-typecheck.md) — full tsc exceeds the shell window & container recycles lose it; use scripts/typecheck-sections.sh (resumable sections); never 2 tsc + app concurrently
-- [typecheck OOM → split configs](typecheck-oom.md) — monolithic tsc OOMs ~4GB; split into tsconfig.server/client.json (each ~3.4GB, fits) run via npm run check standalone; never fold typecheck into the app run cmd (memory is additive → guaranteed OOM)
+- [Resource-bounded typechecks](typecheck-oom.md) — isolate whole-program checks from the app; constrain native Go GC when needed; historical failure counts are not current evidence.
 - [TS2339 drift vs unbuilt feature](ts2339-drift-vs-unbuilt.md) — "property X on {drizzle row}" is ambiguous: add to schema ONLY if NEON DB has the column, else it is unbuilt feature (schema-add → runtime crash); check NEON per table first
 - [tsx vs esbuild standalone scanner](tsx-vs-esbuild-scanner.md) — esbuild --bundle=false MISSES syntax errors inside generic type args (Promise<X?.Y>); use tsx's own esbuild transform API as the authoritative scanner
 - [Mobile video playback](video-blob-mime-type.md) — use a blob's real MIME type and a native video poster; see [thumbnail details](video-poster-thumbnail.md) for mobile behavior
@@ -154,3 +154,4 @@
 - [MaxCore lifecycle IPC](maxcore-cluster-lifecycle-state.md) — process-local restart flags cannot gate clustered HTTP workers; verify primary-to-worker readiness propagation.
 - [Awareness before training](awareness-training-prerequisite.md) — user intends awareness to support use before training; investigate the active path before prescribing retraining.
 - [Advisory test reachability](advisory-test-reachability.md) — validate benign equivalents first; a skipped operation can falsely appear to block an exploit.
+- [Unified automation scope](unified-automation-scope.md) — social, advertising, beat revenue, and music workflows must share orchestration and data-integrity boundaries.

@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
-import fs from "fs";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db, pool } from "./db.js";
@@ -7901,7 +7900,7 @@ export async function registerRoutes(
     },
   );
 
-  const { BUILD_ID, BUILD_TIMESTAMP } = await import("./buildIdentity.js");
+  const { BUILD_ID } = await import("./buildIdentity.js");
 
   // Liveness — cheap probe used by deployment infra. Always 200 if the
   // process can serve requests, regardless of subsystem state.
