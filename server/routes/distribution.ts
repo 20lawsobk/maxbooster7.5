@@ -1136,21 +1136,39 @@ router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/distribution/platforms/verify - Verify local DSP catalog status
+// POST /api/distribution/platforms/verify - Verify the connected Too Lost catalog.
 router.post(
   "/platforms/verify",
   requireAuth,
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const result = await labelGridService.verifyDSPCatalog();
+      const userId = (req.user as AuthenticatedUser).id;
+      const catalogConnection = await getCatalogToolostConnection(userId);
+      if (!catalogConnection?.connection) {
+        return res.status(409).json({
+          error: "Too Lost distributor connection required",
+          requiresConnection: true,
+        });
+      }
+
+      const response = await toolostService
+        .forUser(catalogConnection.connection.connectedByUserId)
+        .getAvailableDSPs();
+      const active = response.dsps.filter((dsp) => dsp.isActive).length;
       res.json({
         success: true,
-        ...result,
-        message: `DSP catalog verified: ${result.total} platforms (${result.active} active)`,
+        total: response.dsps.length,
+        active,
+        source: "toolost_api",
+        syncedAt: response.syncedAt,
+        message: `Too Lost catalog verified: ${response.dsps.length} platforms (${active} active)`,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error verifying platforms:");
-      res.status(500).json({ error: "Failed to verify platforms" });
+      logger.warn({ err: error }, "Error verifying Too Lost platforms:");
+      res.status(502).json({
+        error: "Too Lost platform catalog unavailable",
+        details: error instanceof Error ? error.message : "Provider request failed",
+      });
     }
   },
 );
@@ -7113,11 +7131,15 @@ router.post(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      logger.info({ type, data }, `Retrying outcome ${type} for release ${id}`);
-
-      res.json({
-        success: true,
-        message: `Retry initiated for ${type}`,
+      logger.warn(
+        { releaseId: id, outcomeType: type },
+        "Distribution outcome retry requested, but no durable retry worker is configured",
+      );
+      return res.status(501).json({
+        success: false,
+        error: "distribution_retry_unavailable",
+        message:
+          "No retry job was created and no provider request was sent. Retry execution is unavailable until a durable worker is configured.",
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error retrying outcome:");
