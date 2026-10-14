@@ -7148,16 +7148,19 @@ router.post(
       const isrcCode = fallback.code;
       const isOfficiallyRegistered = false;
 
-      if (isOfficiallyRegistered && trackId && trackId !== `temp_${Date.now()}`) {
-        try {
-          await codeGenerationService?.generateISRC(
-            userId,
-            trackId,
-            artist,
-            title,
-          );
-        } catch (storeErr) {
-          logger.warn({ err: storeErr }, "Failed to store ISRC in database:");
+      if (trackId && !trackId.startsWith("temp_")) {
+        const [track] = await db
+          .select()
+          .from(distroTracks)
+          .where(eq(distroTracks.id, trackId))
+          .limit(1);
+        if (!track) return res.status(404).json({ error: "Track not found" });
+        const release = await storage.getDistroRelease(track.releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Track not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateISRC(userId, trackId, artist, title);
         }
       }
 
@@ -7197,11 +7200,13 @@ router.post(
       const upcCode = fallback.code;
       const isOfficiallyRegistered = false;
 
-      if (isOfficiallyRegistered && releaseId && releaseId !== `temp_${Date.now()}`) {
-        try {
-          await codeGenerationService?.generateUPC(userId, releaseId, title);
-        } catch (storeErr) {
-          logger.warn({ err: storeErr }, "Failed to store UPC in database:");
+      if (releaseId && !releaseId.startsWith("temp_")) {
+        const release = await storage.getDistroRelease(releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Release not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateUPC(userId, releaseId, title);
         }
       }
 
