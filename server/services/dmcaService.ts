@@ -99,7 +99,7 @@ export class DMCAService {
         status: "pending",
         contentId: submission.contentId,
         contentType: submission.contentType,
-        contentOwnerId: contentOwner!.id,
+        contentOwnerId: contentOwner?.id ?? null,
         claimantName: submission.claimantName,
         claimantEmail: submission.claimantEmail,
         claimantAddress: submission.claimantAddress,
@@ -134,7 +134,19 @@ export class DMCAService {
       throw new Error("Can only counter a takedown notice");
     }
 
-    if (originalNotice?.status !== "processed") {
+    const [existingCounterNotice] = await db
+      .select()
+      .from(dmcaNotices)
+      .where(and(
+        eq(dmcaNotices.relatedNoticeId, originalNotice.id),
+        eq(dmcaNotices.type, "counter"),
+      ))
+      .limit(1);
+
+    if (
+      originalNotice.status !== "processed" &&
+      !(originalNotice.status === "disputed" && existingCounterNotice)
+    ) {
       throw new Error("Can only counter a processed takedown notice");
     }
 
@@ -142,14 +154,14 @@ export class DMCAService {
       throw new Error("All required statements must be affirmed");
     }
 
-    const [counterNotice] = await db
+    const counterNotice = existingCounterNotice ?? (await db
       .insert(dmcaNotices)
       .values({
         type: "counter",
         status: "pending",
         contentId: originalNotice.contentId,
         contentType: originalNotice.contentType,
-        contentOwnerId: (originalNotice as any).contentOwnerId,
+        contentOwnerId: (originalNotice as any).contentOwnerId ?? null,
         claimantName: submission.claimantName,
         claimantEmail: submission.claimantEmail,
         claimantAddress: submission.claimantAddress,
@@ -160,18 +172,25 @@ export class DMCAService {
         relatedNoticeId: originalNotice.id,
         counterNoticeReason: submission.counterNoticeReason,
       } as any)
-      .returning();
+      .returning())[0];
+
+    if (!counterNotice) {
+      throw new Error("Counter-notice could not be persisted");
+    }
+
+    // The stable provider idempotency key and persisted attempt state make this
+    // safe to retry if the database update below fails after provider acceptance.
+    await this.notifyOriginalClaimant(counterNotice, originalNotice);
 
     await db
       .update(dmcaNotices)
       .set({ status: "disputed" })
-      .where(eq(dmcaNotices.id, originalNotice?.id));
+      .where(eq(dmcaNotices.id, originalNotice.id));
 
     logger.info(
-      `Counter-notice submitted: ${counterNotice?.id} for original: ${originalNotice?.id}`,
+      `Counter-notice submitted: ${counterNotice.id} for original: ${originalNotice.id}`,
     );
 
-    await this.notifyOriginalClaimant(counterNotice, originalNotice);
     await this.notifyAdministrators(counterNotice);
     await this.scheduleContentRestoration(counterNotice);
 
@@ -342,8 +361,10 @@ export class DMCAService {
       .orderBy(desc(dmcaStrikes.createdAt));
 
     const now = new Date();
-    const activeStrikes = allStrikes?.filter(
-      (s) => !s?.expiresAt || s?.expiresAt > now,
+    const activeStrikes = allStrikes.filter(
+      (strike) =>
+        strike.isActive !== false &&
+        (!strike.expiresAt || strike.expiresAt > now),
     );
 
     const activeCount = activeStrikes?.length;
@@ -395,11 +416,11 @@ export class DMCAService {
       .values({
         contentId: request.contentId,
         contentType: request.contentType,
-        holdReason: request.holdReason,
+        reason: request.holdReason,
         holdType: request.holdType,
         dmcaNoticeId: request.dmcaNoticeId,
-        isActive: true,
-        // legalHolds requires userId (notNull); derive from context or use placeholder
+        status: "active",
+        // Legal holds without an associated owner are retained under the system identity.
         userId: "system",
       } as any)
       .returning();
@@ -415,7 +436,7 @@ export class DMCAService {
     const [hold] = await db
       .update(legalHolds)
       .set({
-        isActive: false,
+        status: "released",
         releasedAt: new Date(),
         releasedBy: adminId,
       } as any)
@@ -620,41 +641,106 @@ export class DMCAService {
   }
 
   private async notifyOriginalClaimant(
-    _counterNotice: DMCANotice,
+    counterNotice: DMCANotice,
     originalNotice: DMCANotice,
   ): Promise<void> {
-    try {
-      const sent = await emailService.send({
-        to: originalNotice.claimantEmail,
-        subject: "Counter-Notification Received for Your DMCA Claim",
-        html: `
-          <h2>Counter-Notification Received</h2>
-          <p>Dear ${escapeHtml(originalNotice?.claimantName)},</p>
-          <p>A counter-notification has been filed in response to your DMCA takedown request.</p>
-          <p>Under the DMCA, you have ${COUNTER_NOTICE_WAIT_DAYS} business days to file legal action to prevent restoration of the content.</p>
-          <p>If no legal action is filed, the content may be restored after this period.</p>
-        `,
-      });
-      if (!sent) {
-        throw new Error("Email provider did not accept the counter-notification email");
-      }
-    } catch (error) {
-      logger.error(
-        { err: error, noticeId: originalNotice.id },
-        "Counter-notification email failed; content restoration was not scheduled",
-      );
-      throw new Error("Counter-notification email could not be sent; restoration was not scheduled");
+    if (
+      counterNotice.counterNoticeEmailState === "accepted" &&
+      counterNotice.counterNoticeEmailMessageId
+    ) {
+      return;
     }
+
+    const now = new Date();
+    const priorAttempt = counterNotice.counterNoticeEmailAttemptedAt
+      ? new Date(counterNotice.counterNoticeEmailAttemptedAt)
+      : null;
+    const uncertain =
+      counterNotice.counterNoticeEmailState === "sending" ||
+      counterNotice.counterNoticeEmailState === "unknown";
+
+    // Resend idempotency keys are valid for 24 hours. Never retry an unknown
+    // outcome beyond that window because it could send a duplicate legal notice.
+    if (
+      uncertain &&
+      priorAttempt &&
+      now.getTime() - priorAttempt.getTime() >= 23 * 60 * 60 * 1000
+    ) {
+      throw new Error(
+        "Counter-notice email outcome is still unknown after the safe idempotency window; reconcile the provider receipt before retrying",
+      );
+    }
+
+    const operationKey = `dmca-counter-notice:${counterNotice.id}`;
+    const attemptAt = uncertain && priorAttempt ? priorAttempt : now;
+    await db
+      .update(dmcaNotices)
+      .set({
+        counterNoticeEmailState: "sending",
+        counterNoticeEmailAttemptedAt: attemptAt,
+      })
+      .where(eq(dmcaNotices.id, counterNotice.id));
+
+    const appFrom = process.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const result = await emailService.sendOnce({
+      operationKey,
+      to: originalNotice.claimantEmail,
+      from: appFrom,
+      subject: "Counter-Notification Received for Your DMCA Claim",
+      html: `
+        <h2>Counter-Notification Received</h2>
+        <p>Dear ${escapeHtml(originalNotice.claimantName)},</p>
+        <p>A counter-notification has been filed in response to your DMCA takedown request.</p>
+        <p>Under the DMCA, you have ${COUNTER_NOTICE_WAIT_DAYS} business days to file legal action to prevent restoration of the content.</p>
+        <p>If no legal action is filed, the content may be restored after this period, subject to legal review. This system does not automatically restore content.</p>
+      `,
+      text: `A counter-notification has been filed in response to your DMCA takedown request. Under the DMCA, you have ${COUNTER_NOTICE_WAIT_DAYS} business days to file legal action to prevent restoration. Any restoration requires legal review; this system does not automatically restore content.`,
+    });
+
+    if (result.status === "accepted") {
+      await db
+        .update(dmcaNotices)
+        .set({
+          counterNoticeEmailState: "accepted",
+          counterNoticeEmailMessageId: result.messageId,
+        })
+        .where(eq(dmcaNotices.id, counterNotice.id));
+      return;
+    }
+
+    await db
+      .update(dmcaNotices)
+      .set({
+        counterNoticeEmailState: result.status,
+        counterNoticeEmailAttemptedAt: attemptAt,
+      })
+      .where(eq(dmcaNotices.id, counterNotice.id));
+
+    logger.error(
+      { noticeId: originalNotice.id, emailStatus: result.status, error: result.error },
+      "Counter-notification email was not confirmed accepted; original notice remains retryable",
+    );
+    throw new Error(
+      result.status === "unknown"
+        ? "Counter-notification email outcome is unknown; retry safely within the provider idempotency window"
+        : "Counter-notification email was rejected; fix email configuration and retry",
+    );
   }
 
   private async scheduleContentRestoration(notice: DMCANotice): Promise<void> {
-    const restorationDate = new Date();
-    restorationDate?.setDate(
-      restorationDate?.getDate() + COUNTER_NOTICE_WAIT_DAYS,
-    );
+    const reviewAfter = new Date();
+    reviewAfter.setDate(reviewAfter.getDate() + COUNTER_NOTICE_WAIT_DAYS);
 
-    logger.info(
-      `Content ${notice?.contentId} scheduled for restoration on ${restorationDate?.toISOString()} unless legal action is filed`,
+    // This service has no durable scheduler for legal restoration. Be explicit:
+    // the date is a review target, not a scheduled automatic content restoration.
+    logger.warn(
+      {
+        noticeId: notice.id,
+        contentId: notice.contentId,
+        legalReviewAfter: reviewAfter.toISOString(),
+        automaticRestorationScheduled: false,
+      },
+      "Counter-notice requires legal review; no automatic restoration job is configured",
     );
   }
 
