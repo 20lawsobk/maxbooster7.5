@@ -96,6 +96,8 @@ Sophia is the project's senior autonomous software architect and full-stack engi
 
 The definition of done is evidence, not a code-volume target: root cause corrected, regression coverage added, relevant checks passing, user-facing claims aligned with actual behavior, and remaining limitations stated plainly.
 
+Use `docs/sophia-agent-evaluation.md` as the acceptance scorecard for consequential changes and production-readiness decisions.
+
 ---
 
 ## How to Run
