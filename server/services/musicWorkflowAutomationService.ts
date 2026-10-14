@@ -238,13 +238,14 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       postToSocial: {
         label: "Auto-post pre-save link to social",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until provider-backed post scheduling is configured",
       },
       sendToEmailList: {
         label: "Notify email subscribers",
         type: "boolean",
         default: false,
-        description: "Send a pre-save announcement to your mailing list",
+        description: "Unavailable until verified subscriber selection and bulk-email dispatch are configured",
       },
       customMessage: {
         label: "Custom pre-save caption",
@@ -254,7 +255,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       },
     },
     defaultConfig: {
-      postToSocial: true,
+      postToSocial: false,
       sendToEmailList: false,
       customMessage: "",
     },
@@ -275,24 +276,26 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       notifyTeam: {
         label: "Notify project collaborators",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until collaborator targeting is connected",
       },
       sendConfirmationEmail: {
         label: "Send submission confirmation email",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until a verified recipient list is connected",
       },
       setFollowUpReminder: {
         label: "Set follow-up reminder",
         type: "boolean",
-        default: true,
+        default: false,
         description: "Remind you to check DSP approval status after 48 hours",
       },
     },
     defaultConfig: {
-      notifyTeam: true,
-      sendConfirmationEmail: true,
-      setFollowUpReminder: true,
+      notifyTeam: false,
+      sendConfirmationEmail: false,
+      setFollowUpReminder: false,
     },
     enabledByDefault: true,
   },
@@ -301,8 +304,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "release-day-social-blast",
     name: "Release Day Social Media Blast",
-    description:
-      "The moment your release goes live, automatically post to all connected social platforms with platform-optimized captions, artwork, and streaming links.",
+    description: "Unavailable: release-day provider-backed social publishing is not configured.",
+    unavailableReason: "Release-day social publishing is unavailable: this handler has no verified provider scheduling operation. No social posts are published or queued.",
     phase: "release-day",
     icon: "🎉",
     trigger: {
@@ -349,13 +352,13 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       includeArtwork: true,
       postTime: "immediate",
     },
-    enabledByDefault: true,
+    enabledByDefault: false,
   },
   {
     id: "release-day-newsletter",
     name: "Release Day Fan Newsletter",
-    description:
-      "Automatically send a beautifully formatted email to your subscribers when your release drops, with a personal message, streaming links, and a call to share.",
+    description: "Unavailable: verified subscriber selection and bulk-email dispatch are not configured.",
+    unavailableReason: "Release-day newsletter delivery is unavailable: no verified subscriber selection and bulk-email dispatch operation is configured. No newsletter is sent.",
     phase: "release-day",
     icon: "📧",
     trigger: {
@@ -399,8 +402,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "release-day-push-notify",
     name: "Release Day Push Notification",
-    description:
-      "Send an instant push notification to all your Max Booster followers and anyone who opted in to release alerts.",
+    description: "Unavailable: follower-wide release-alert targeting is not configured.",
+    unavailableReason: "Follower-wide release-alert delivery is unavailable: the handler can notify only the automation owner, not a verified follower/opt-in audience.",
     phase: "release-day",
     icon: "🔔",
     trigger: {
@@ -423,15 +426,15 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       },
     },
     defaultConfig: { notifyFollowers: true, message: "" },
-    enabledByDefault: true,
+    enabledByDefault: false,
   },
 
   // ── PHASE 4: POST-RELEASE ────────────────────────────────────────────────
   {
     id: "weekly-performance-digest",
     name: "Weekly Performance Digest",
-    description:
-      "Every Monday morning, receive a curated performance summary: streams, revenue, top markets, playlist adds, and AI-powered suggestions for what to do next.",
+    description: "Unavailable: verified streaming/revenue aggregation and recommendation data are not connected.",
+    unavailableReason: "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest is generated.",
     phase: "post-release",
     icon: "📊",
     trigger: {
@@ -474,13 +477,12 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       includeAISuggestions: true,
       deliveryMethod: "both",
     },
-    enabledByDefault: true,
+    enabledByDefault: false,
   },
   {
     id: "streaming-milestone-celebrate",
     name: "Streaming Milestone Celebration Posts",
-    description:
-      "When your track hits key streaming milestones (1K, 10K, 100K, 1M plays), automatically post a celebration graphic to your social media with the milestone stats.",
+    description: "Notify the account owner about a supplied streaming milestone. Automatic social posting is not configured.",
     phase: "post-release",
     icon: "🏆",
     trigger: {
@@ -498,7 +500,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       postToSocial: {
         label: "Auto-post to social media",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until provider-backed social scheduling is configured",
       },
       includeStats: {
         label: "Include streaming stats in post",
@@ -508,7 +511,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     },
     defaultConfig: {
       milestones: "all",
-      postToSocial: true,
+      postToSocial: false,
       includeStats: true,
     },
     enabledByDefault: true,
@@ -552,8 +555,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "low-engagement-rescue",
     name: "Low Engagement Auto-Response",
-    description:
-      "If a track's engagement drops below your threshold for 3 consecutive days, automatically trigger an A/B content test — new caption variations, different posting times, or a fresh visual format.",
+    description: "Alert-only until A/B testing and durable posting-time changes are implemented.",
     phase: "post-release",
     icon: "📉",
     trigger: {
@@ -572,12 +574,14 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       triggerABTest: {
         label: "Launch A/B content variation test",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until durable experiment execution is configured",
       },
       tryNewPostingTime: {
         label: "Try different posting time slot",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until provider-backed rescheduling is configured",
       },
       notifyUser: {
         label: "Notify me of the rescue attempt",
@@ -587,8 +591,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     },
     defaultConfig: {
       engagementThresholdPct: 30,
-      triggerABTest: true,
-      tryNewPostingTime: true,
+      triggerABTest: false,
+      tryNewPostingTime: false,
       notifyUser: true,
     },
     enabledByDefault: false,
@@ -640,8 +644,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "royalty-collection-reminder",
     name: "Monthly Royalty Collection Check",
-    description:
-      "On the 1st of every month, automatically audit your registered works against your PRO account, flag any unclaimed royalties, and generate a royalty collection summary report.",
+    description: "Send a reminder to review royalty statements. External PRO balance checks and report generation are unavailable.",
     phase: "revenue",
     icon: "💰",
     trigger: {
@@ -652,12 +655,14 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       checkPROBalance: {
         label: "Check PRO (ASCAP/BMI/SESAC) balance",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until a verified PRO API integration is configured",
       },
       generateReport: {
         label: "Generate monthly royalty report",
         type: "boolean",
-        default: true,
+        default: false,
+        description: "Unavailable until verified royalty data aggregation is configured",
       },
       notifyThreshold: {
         label: "Notify if uncollected royalties exceed ($)",
@@ -673,8 +678,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       },
     },
     defaultConfig: {
-      checkPROBalance: true,
-      generateReport: true,
+      checkPROBalance: false,
+      generateReport: false,
       notifyThreshold: 50,
       deliveryMethod: "email",
     },
@@ -829,7 +834,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     id: "venue-booking-followup",
     name: "Venue Booking Follow-Up",
     description:
-      "When you log a new venue contact outreach in your booking CRM, automatically schedule a follow-up reminder 5 days later if there's been no response — so you never let a gig opportunity go cold.",
+      "When you log venue outreach, record a follow-up date in the booking CRM. Automatic reminders are not scheduled by this workflow.",
     phase: "revenue",
     icon: "🎤",
     trigger: {
@@ -838,10 +843,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     },
     configSchema: {
       followUpDays: {
-        label: "Follow-up reminder after (days)",
+        label: "Record follow-up date offset (days)",
         type: "number",
         default: 5,
-        description: "Days to wait before sending a reminder if no response",
+        description: "The date is recorded in CRM notes; no automatic reminder is sent",
       },
       reminderMessage: {
         label: "Custom reminder note",
@@ -850,10 +855,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         description: "Leave empty for a default follow-up suggestion",
       },
       sendEmail: {
-        label: "Send follow-up email draft",
+        label: "Send follow-up email now",
         type: "boolean",
         default: false,
-        description: "Auto-draft a follow-up email ready to review and send",
+        description: "Sends immediately to the saved contact email; no draft is saved",
       },
     },
     defaultConfig: { followUpDays: 5, reminderMessage: "", sendEmail: false },
@@ -862,8 +867,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "sync-license-pitch",
     name: "Auto-Pitch New Tracks for Sync",
-    description:
-      "When a new track is approved and live, automatically scan your sync licensing contacts and queue personalized pitch emails to music supervisors and sync libraries that match the track's genre and mood.",
+    description: "Create draft tracker entries for suggested sync targets. Automated email delivery is disabled until verified user-owned contacts are integrated.",
     phase: "revenue",
     icon: "🎬",
     trigger: {
@@ -882,7 +886,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         label: "Auto-send pitch emails",
         type: "boolean",
         default: false,
-        description: "Disable to review pitch drafts before sending",
+        description: "Unavailable: the current workflow does not use a verified user-owned recipient list",
       },
       maxPitchesPerRelease: {
         label: "Max pitches per release",
@@ -1010,6 +1014,10 @@ class MusicWorkflowAutomationService {
         ),
       )
       .limit(1);
+
+    if (template.unavailableReason) {
+      throw new WorkflowUnavailableError(template.unavailableReason);
+    }
 
     const mergedConfig = {
       ...(existing?.length > 0
@@ -1392,9 +1400,9 @@ class MusicWorkflowAutomationService {
     const { releaseTitle = "New Release", releaseId } = eventData;
     // Pre-save pages are created via /api/distribution/hyperfollow during the release wizard,
     // not here. Do not report social delivery until a real queue operation exists.
-    if (config.postToSocial) {
+    if (config.postToSocial || config.sendToEmailList) {
       throw new WorkflowUnavailableError(
-        "Automatic pre-save social posting is unavailable: no verified post creation and scheduling operation is configured. No social post was queued.",
+        "Automatic pre-save social/email delivery is unavailable: no verified post scheduler or subscriber email dispatcher is configured. No social post or email was queued.",
       );
     }
     const actions: string[] = ["Pre-save campaign event acknowledged"];
@@ -1416,7 +1424,7 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { releaseTitle = "New Release", platforms = [] } = eventData;
-    if (config.notifyTeam || config.setFollowUpReminder) {
+    if (config.notifyTeam || config.sendConfirmationEmail || config.setFollowUpReminder) {
       throw new WorkflowUnavailableError(
         "Team-wide distribution notifications and durable follow-up reminders are not configured. No team notification or reminder was created.",
       );
