@@ -22,6 +22,31 @@ import { scheduleReleaseCountdown } from "./releaseCountdownWorkflow.js";
 import { repurposePublishedCaption } from "./captionRepurposeWorkflow.js";
 import { BIO_UPDATE_UNAVAILABLE, WorkflowUnavailableError } from "./workflowCapabilities.js";
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+}
+
+function safeHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? parsed.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type WorkflowPhase =
@@ -224,9 +249,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   },
   {
     id: "pre-save-campaign",
-    name: "Auto-Launch Pre-Save Campaign",
-    description:
-      "When a release is scheduled, automatically create a pre-save landing page, generate the shareable link, and post it to your social accounts with a call to action.",
+    name: "Pre-Save Campaign Event Alert",
+    description: "Notify the account owner when a pre-save event is received. Landing-page creation occurs in the release wizard; automatic social and email delivery are unavailable.",
     phase: "pre-release",
     icon: "🔗",
     trigger: {
@@ -689,9 +713,9 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   // ── ADDITIONAL: CREATION ─────────────────────────────────────────────────
   {
     id: "pro-track-registration",
-    name: "Auto-Prompt PRO Track Registration",
+    name: "PRO Track Registration Reminder",
     description:
-      'When a track moves to "mastered" status, automatically remind you to register it with your PRO (ASCAP, BMI, SESAC) and pre-fill the registration form with your metadata so you never miss a royalty.',
+      'When a track is marked mastered, create or update a local publishing-rights record and optionally remind you to register with your PRO. No external PRO registration is submitted.',
     phase: "creation",
     icon: "📋",
     trigger: {
@@ -707,7 +731,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         description: "Your performing rights organization",
       },
       autoFillMetadata: {
-        label: "Pre-fill registration form with track metadata",
+        label: "Copy supplied metadata into the local record",
         type: "boolean",
         default: true,
       },
@@ -1334,11 +1358,11 @@ class MusicWorkflowAutomationService {
           subject: `You've been added to "${projectName}"`,
           html: `
             <h2>Welcome to the project!</h2>
-            <p>Hi ${String(newMemberName)}</p>
-            <p>You've been added as a collaborator on <strong>${String(projectName)}</strong>.</p>
+            <p>Hi ${escapeHtml(newMemberName)}</p>
+            <p>You've been added as a collaborator on <strong>${escapeHtml(projectName)}</strong>.</p>
             ${
               config?.includeProjectBrief && eventData?.projectBrief
-                ? `<h3>Project Brief</h3><p>${String(eventData.projectBrief)}</p>`
+                ? `<h3>Project Brief</h3><p>${escapeHtml(eventData.projectBrief)}</p>`
                 : ""
             }
             <p>Log in to Max Booster to get started.</p>
@@ -1369,14 +1393,18 @@ class MusicWorkflowAutomationService {
     const actions: string[] = [];
 
     if (config?.notifyTeam) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: "Mix Complete — Mastering Phase",
         message: `"${trackName}" mix is approved. Please create the mastering task in Projects; this workflow does not persist tasks or schedule reminders.`,
         link: "/projects",
       });
-      actions?.push("Account owner notified of mix completion");
+      actions.push(
+        delivery.delivered
+          ? "Account owner notification delivered"
+          : "Account owner notification suppressed or not delivered",
+      );
     }
 
     if (config?.createMasteringTask) {
@@ -1707,16 +1735,17 @@ class MusicWorkflowAutomationService {
         const note =
           config?.personalNote ||
           "Thank you for your purchase! I appreciate your support.";
+        const safeDownloadUrl = safeHttpUrl(downloadUrl);
         thankYouEmailSent = await emailService.send({
           to: String(buyerEmail),
           subject: `Thank you for purchasing "${String(productName)}"`,
           html: `
-            <h2>Thank you, ${String(buyerName)}!</h2>
-            <p>${String(note)}</p>
-            ${downloadUrl ? `<p><a href="${String(downloadUrl)}">Download your files here</a></p>` : ""}
+            <h2>Thank you, ${escapeHtml(buyerName)}!</h2>
+            <p>${escapeHtml(note)}</p>
+            ${safeDownloadUrl ? `<p><a href="${escapeHtml(safeDownloadUrl)}">Download your files here</a></p>` : ""}
             <p>Feel free to reach out if you have any questions about the license or file usage.</p>
           `,
-          text: `Thank you, ${String(buyerName)}! Thank you for purchasing "${String(productName)}". ${String(note)}${downloadUrl ? ` Download: ${String(downloadUrl)}` : ""}`,
+          text: `Thank you, ${String(buyerName)}! Thank you for purchasing "${String(productName)}". ${String(note)}${safeDownloadUrl ? ` Download: ${safeDownloadUrl}` : ""}`,
         });
         actions.push(
           thankYouEmailSent
@@ -1732,7 +1761,7 @@ class MusicWorkflowAutomationService {
     }
 
     if (config?.notifySeller) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: `Sale: "${productName}"`,
@@ -1741,7 +1770,11 @@ class MusicWorkflowAutomationService {
           : `${buyerName} purchased "${productName}". A thank-you email was not confirmed as sent.`,
         link: "/marketplace",
       });
-      actions?.push("Sale notification sent to you");
+      actions.push(
+        delivery.delivered
+          ? "Sale notification delivered"
+          : "Sale notification suppressed or not delivered",
+      );
     }
 
     return { actions, productName, buyerName };
@@ -1860,21 +1893,28 @@ class MusicWorkflowAutomationService {
     }
 
     if (config?.sendReminder) {
-      const registrationUrl =
-        pro === "ASCAP"
-          ? "ascap.com/register"
-          : pro === "BMI"
-            ? "bmi.com/register"
-            : "sesac.com/register";
-
-      await notificationService?.send({
+      const registrationUrls: Record<string, string> = {
+        ASCAP: "https://www.ascap.com/music-creators",
+        BMI: "https://www.bmi.com/join",
+        SESAC: "https://www.sesac.com/",
+        SOCAN: "https://www.socan.com/",
+        PRS: "https://www.prsformusic.com/",
+      };
+      const registrationUrl = registrationUrls[pro];
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: "Publishing Rights Record Ready",
-        message: `"${trackName}" has been logged in your Publishing Rights. Complete your ${pro} registration at ${registrationUrl}.`,
+        message: registrationUrl
+          ? `"${trackName}" has been logged in your Publishing Rights. Complete your ${pro} registration at ${registrationUrl}.`
+          : `"${trackName}" has been logged in your Publishing Rights. Visit your performing-rights organization's official website to register it.`,
         link: "/publishing",
       });
-      actions?.push(`PRO registration reminder sent (${pro})`);
+      actions.push(
+        delivery.delivered
+          ? `PRO registration reminder delivered (${pro})`
+          : `PRO registration reminder suppressed or not delivered (${pro})`,
+      );
     }
 
     return { actions, pro };
@@ -1994,14 +2034,18 @@ class MusicWorkflowAutomationService {
     }
 
     if (config?.notifyOnReady) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: "Press Release Ready to Review",
         message: `Your press release for "${releaseTitle}" is drafted and saved to your Press Kit. Review, customize, and send to media contacts.`,
         link: "/press-kit",
       });
-      actions?.push("Notification sent");
+      actions.push(
+        delivery.delivered
+          ? "Press release notification delivered"
+          : "Press release notification suppressed or not delivered",
+      );
     }
 
     return { actions, releaseTitle, artistName };
@@ -2158,8 +2202,8 @@ class MusicWorkflowAutomationService {
           to: String(contactEmail),
           subject: `Booking Inquiry Follow-Up — ${String(venueName)}`,
           html: `
-            <p>Hi ${String(contactName)},</p>
-            <p>I'm following up on my recent booking inquiry for ${String(venueName)}. I'm very interested in performing at your venue and would love to discuss available dates and terms.</p>
+            <p>Hi ${escapeHtml(contactName)},</p>
+            <p>I'm following up on my recent booking inquiry for ${escapeHtml(venueName)}. I'm very interested in performing at your venue and would love to discuss available dates and terms.</p>
             <p>Please let me know if you need any additional information such as an EPK, rider, or audio/video samples.</p>
             <p>Looking forward to hearing from you,</p>
             <p>[Your Name]</p>
