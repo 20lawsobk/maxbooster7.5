@@ -5,6 +5,11 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
 import { notificationService } from "./notificationService.js";
+import {
+  isActiveDmcaStrike,
+  planCounterNoticeEmailAttempt,
+  type CounterNoticeEmailState,
+} from "./dmcaRules.js";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -364,10 +369,8 @@ export class DMCAService {
       .orderBy(desc(dmcaStrikes.createdAt));
 
     const now = new Date();
-    const activeStrikes = allStrikes.filter(
-      (strike) =>
-        strike.isActive !== false &&
-        (!strike.expiresAt || strike.expiresAt > now),
+    const activeStrikes = allStrikes.filter((strike) =>
+      isActiveDmcaStrike(strike, now),
     );
 
     const activeCount = activeStrikes?.length;
@@ -688,27 +691,19 @@ export class DMCAService {
     }
 
     const now = new Date();
-    const priorAttempt = counterNotice.counterNoticeEmailAttemptedAt
-      ? new Date(counterNotice.counterNoticeEmailAttemptedAt)
-      : null;
-    const uncertain =
-      counterNotice.counterNoticeEmailState === "sending" ||
-      counterNotice.counterNoticeEmailState === "unknown";
-
-    // Resend idempotency keys are valid for 24 hours. Never retry an unknown
-    // outcome beyond that window because it could send a duplicate legal notice.
-    if (
-      uncertain &&
-      priorAttempt &&
-      now.getTime() - priorAttempt.getTime() >= 23 * 60 * 60 * 1000
-    ) {
+    const attemptPlan = planCounterNoticeEmailAttempt(
+      counterNotice.counterNoticeEmailState as CounterNoticeEmailState,
+      counterNotice.counterNoticeEmailAttemptedAt,
+      now,
+    );
+    if (attemptPlan.action === "manual_review") {
       throw new Error(
-        "Counter-notice email outcome is still unknown after the safe idempotency window; reconcile the provider receipt before retrying",
+        `Counter-notice email requires manual reconciliation: ${attemptPlan.reason}`,
       );
     }
 
     const operationKey = `dmca-counter-notice:${counterNotice.id}`;
-    const attemptAt = uncertain && priorAttempt ? priorAttempt : now;
+    const attemptAt = attemptPlan.attemptedAt;
     await db
       .update(dmcaNotices)
       .set({
