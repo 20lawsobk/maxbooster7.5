@@ -965,7 +965,7 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       ...(isOfficiallyRegistered
         ? {}
         : {
-            note: "This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.",
+            note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
           }),
     });
   } catch (error: unknown) {
@@ -7169,7 +7169,7 @@ router.post(
         ...(isOfficiallyRegistered
           ? {}
           : {
-              note: "This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.",
+              note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
             }),
       });
     } catch (error: unknown) {
@@ -7844,7 +7844,7 @@ router.post(
           ...(isOfficiallyRegistered
             ? {}
             : {
-                note: "These ISRCs were generated internally and are not yet registered with a national ISRC agency. Connect a distributor account to obtain officially registered codes.",
+                note: "These are provisional local placeholders, not assigned or registered ISRCs. They are not stored or sent to a distributor. Obtain codes from a registered agency or your distributor before release submission.",
               }),
         });
       } else {
@@ -7871,7 +7871,7 @@ router.post(
           ...(isOfficiallyRegistered
             ? {}
             : {
-                note: "These UPCs were generated internally and do not use a GS1-registered company prefix. Connect a distributor account to obtain officially registered barcodes.",
+                note: "These are provisional local placeholders, not GS1-assigned UPCs. They are not stored or sent to a distributor. Obtain valid barcodes from an authorized source before release submission.",
               }),
         });
       }
