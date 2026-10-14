@@ -1,4 +1,3 @@
-import { storage } from "../storage";
 import { logger } from "../logger.js";
 
 interface SubmissionResult {
