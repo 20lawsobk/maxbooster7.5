@@ -1345,7 +1345,7 @@ class MusicWorkflowAutomationService {
         userId,
         type: "info",
         title: "Mix Complete — Mastering Phase",
-        message: `"${trackName}" mix is approved. Mastering task created with a ${config?.masteringDeadlineDays}-day deadline.`,
+        message: `"${trackName}" mix is approved. Please create the mastering task in Projects; this workflow does not persist tasks or schedule reminders.`,
         link: "/projects",
       });
       actions?.push("Team notified of mix completion");
@@ -1355,7 +1355,7 @@ class MusicWorkflowAutomationService {
       // No dedicated `tasks` table exists; surface the reminder via notification only.
       // Avoid claiming a DB-backed task was created when it wasn't.
       actions.push(
-        `Mastering reminder set (due in ${config.masteringDeadlineDays} days)`,
+        "Mastering task not created: no durable task store or reminder scheduler is configured",
       );
     }
 
@@ -1391,12 +1391,13 @@ class MusicWorkflowAutomationService {
   ) {
     const { releaseTitle = "New Release", releaseId } = eventData;
     // Pre-save pages are created via /api/distribution/hyperfollow during the release wizard,
-    // not here. This handler is the post-event notification side of that flow.
-    const actions: string[] = ["Pre-save campaign event acknowledged"];
-
+    // not here. Do not report social delivery until a real queue operation exists.
     if (config.postToSocial) {
-      actions.push("Pre-save link queued for social auto-posting");
+      throw new WorkflowUnavailableError(
+        "Automatic pre-save social posting is unavailable: no verified post creation and scheduling operation is configured. No social post was queued.",
+      );
     }
+    const actions: string[] = ["Pre-save campaign event acknowledged"];
 
     await notificationService.send({
       userId,
@@ -1415,6 +1416,11 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { releaseTitle = "New Release", platforms = [] } = eventData;
+    if (config.notifyTeam || config.setFollowUpReminder) {
+      throw new WorkflowUnavailableError(
+        "Team-wide distribution notifications and durable follow-up reminders are not configured. No team notification or reminder was created.",
+      );
+    }
     const actions: string[] = [];
 
     await notificationService.send({
@@ -1438,80 +1444,23 @@ class MusicWorkflowAutomationService {
   }
 
   private async handleReleaseDaySocialBlast(
-    userId: string,
-    eventData: WorkflowEventData,
-    config: Record<string, any>,
+    _userId: string,
+    _eventData: WorkflowEventData,
+    _config: Record<string, any>,
   ) {
-    const { releaseTitle = "New Release", artistName = "Artist" } = eventData;
-    const platformsPosted: string[] = [];
-
-    const allPlatforms = [
-      "instagram",
-      "twitter",
-      "facebook",
-      "tiktok",
-      "youtube",
-    ];
-    const targets =
-      config.platforms === "all" ? allPlatforms : [config.platforms];
-
-    for (const platform of targets) {
-      platformsPosted.push(platform);
-    }
-
-    await notificationService.send({
-      userId,
-      type: "info",
-      title: `"${releaseTitle}" is LIVE!`,
-      message: `Release day blast posted to: ${platformsPosted.join(", ")}. Go celebrate!`,
-      link: "/social-media",
-    });
-
-    return { platformsPosted, releaseTitle, artistName };
+    throw new WorkflowUnavailableError(
+      "Release-day social publishing is unavailable: this handler has no verified provider scheduling operation. No social posts were published or queued.",
+    );
   }
 
   private async handleReleaseDayNewsletter(
-    userId: string,
-    eventData: WorkflowEventData,
-    config: Record<string, any>,
+    _userId: string,
+    _eventData: WorkflowEventData,
+    _config: Record<string, any>,
   ) {
-    const {
-      releaseTitle = "New Release",
-      artistName = "Artist",
-      spotifyUrl,
-      appleMusicUrl,
-    } = eventData;
-
-    let linksHtml = "";
-    if (config.includeSpotifyLink && spotifyUrl) {
-      linksHtml += `<p><a href="${spotifyUrl}">Listen on Spotify</a></p>`;
-    }
-    if (config.includeAppleMusicLink && appleMusicUrl) {
-      linksHtml += `<p><a href="${appleMusicUrl}">Listen on Apple Music</a></p>`;
-    }
-
-    const subject =
-      config.subject || `${artistName} — "${releaseTitle}" is out now!`;
-
-    try {
-      logger.info(
-        `[MusicWorkflow] Release day newsletter queued for user ${userId}: "${subject}"`,
-      );
-    } catch {
-      logger.warn(
-        "[MusicWorkflow] Email service unavailable for release newsletter",
-      );
-    }
-
-    await notificationService.send({
-      userId,
-      type: "info",
-      title: "Release Newsletter Sent",
-      message: `Fan newsletter for "${releaseTitle}" has been dispatched to your subscribers.`,
-      link: "/social-media",
-    });
-
-    return { subject, releaseTitle };
+    throw new WorkflowUnavailableError(
+      "Release-day newsletter delivery is unavailable: no verified subscriber selection and bulk-email dispatch operation is configured. No newsletter was sent.",
+    );
   }
 
   private async handleReleaseDayPushNotify(
@@ -1524,15 +1473,21 @@ class MusicWorkflowAutomationService {
       config.message ||
       `${artistName}'s new release "${releaseTitle}" is out now — stream it!`;
 
-    await notificationService?.send({
+    const delivery = await notificationService.send({
       userId,
       type: "info",
-      title: "New Release Alert Sent",
-      message: `Push notification dispatched: "${message}"`,
+      title: "New Release Reminder",
+      message,
       link: "/distribution",
     });
 
-    return { message, releaseTitle };
+    const actions = delivery.browserSent
+      ? ["Browser push notification sent"]
+      : delivery.delivered
+        ? ["In-app notification delivered; browser push was not confirmed"]
+        : ["Notification was not delivered; user preferences or delivery providers may have suppressed it"];
+
+    return { message, releaseTitle, actions };
   }
 
   private async handleWeeklyPerformanceDigest(
@@ -1541,6 +1496,12 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const sections: string[] = [];
+
+    if (config?.includeStreamingData || config?.includeRevenueData || config?.includeAISuggestions) {
+      throw new WorkflowUnavailableError(
+        "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest was generated.",
+      );
+    }
 
     if (config?.includeStreamingData) sections?.push("streaming stats");
     if (config?.includeRevenueData) sections?.push("revenue summary");
@@ -1572,17 +1533,21 @@ class MusicWorkflowAutomationService {
       platform = "Spotify",
     } = eventData;
 
+    if (config?.postToSocial) {
+      throw new WorkflowUnavailableError(
+        "Streaming-milestone social publishing is unavailable: no verified provider scheduling operation is configured. No celebration post was queued.",
+      );
+    }
+
     await notificationService?.send({
       userId,
       type: "info",
       title: `🏆 ${milestone} streams on ${platform}!`,
-      message: `"${trackName}" just hit ${milestone} streams. Celebration post queued for your social media.`,
+      message: `"${trackName}" reached the ${milestone}-stream milestone on ${platform}.`,
       link: "/analytics",
     });
 
-    const actions = config?.postToSocial
-      ? ["Celebration post queued on social media"]
-      : [];
+    const actions: string[] = [];
     return { trackName, milestone, platform, actions };
   }
 
@@ -1658,7 +1623,7 @@ class MusicWorkflowAutomationService {
         });
         if (announcementResult?.data?.caption) {
           actions?.push(
-            `Announcement post generated for ${Number(playlistFollowers).toLocaleString()}-follower playlist`,
+            `Announcement copy generated for ${Number(playlistFollowers).toLocaleString()}-follower playlist; it was not saved or scheduled`,
           );
         }
       } catch (err) {
@@ -1666,7 +1631,7 @@ class MusicWorkflowAutomationService {
           { err },
           "handlePlaylistPlacementAlert: AI announcement generation failed",
         );
-        actions?.push("Announcement queued (10K+ follower playlist)");
+        actions?.push("Announcement draft not generated; no social post was saved or queued");
       }
     }
 
@@ -1679,6 +1644,11 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { trackName = "your track", dropPercent = 0 } = eventData;
+    if (config?.triggerABTest || config?.tryNewPostingTime) {
+      throw new WorkflowUnavailableError(
+        "Low-engagement rescue actions are unavailable: A/B tests and posting-time changes are not wired to durable execution. No rescue action was applied.",
+      );
+    }
     const actions: string[] = [];
 
     if (config?.triggerABTest) {
@@ -1693,7 +1663,7 @@ class MusicWorkflowAutomationService {
         userId,
         type: "warning",
         title: "Engagement Drop Detected",
-        message: `"${trackName}" engagement dropped ${dropPercent}%. Auto-rescue actions taken: ${actions?.join(", ")}.`,
+        message: `"${trackName}" engagement dropped ${dropPercent}%. This workflow reported the drop but did not apply any automatic rescue action.`,
         link: "/analytics",
       });
     }
@@ -1713,13 +1683,14 @@ class MusicWorkflowAutomationService {
       downloadUrl,
     } = eventData;
     const actions: string[] = [];
+    let thankYouEmailSent = false;
 
     if (config?.sendThankYouEmail && buyerEmail) {
       try {
         const note =
           config?.personalNote ||
           `Thank you for your purchase! I appreciate your support.`;
-        await (emailService as any)?.sendEmail({
+        const emailResult = await (emailService as any)?.sendEmail({
           to: buyerEmail,
           subject: `Thank you for purchasing "${productName}"`,
           html: `
@@ -1729,9 +1700,11 @@ class MusicWorkflowAutomationService {
             <p>Feel free to reach out if you have any questions about the license or file usage.</p>
           `,
         });
-        actions?.push("Thank-you email sent to buyer");
+        if (emailResult === false) throw new Error("Email service did not confirm delivery");
+        thankYouEmailSent = true;
+        actions?.push("Thank-you email accepted by the email service");
       } catch {
-        actions?.push("Email skipped (service unavailable)");
+        actions?.push("Thank-you email not sent (service unavailable or delivery not confirmed)");
       }
     }
 
@@ -1740,7 +1713,9 @@ class MusicWorkflowAutomationService {
         userId,
         type: "info",
         title: `Sale: "${productName}"`,
-        message: `${buyerName} purchased "${productName}". Thank-you email sent.`,
+        message: thankYouEmailSent
+          ? `${buyerName} purchased "${productName}". The thank-you email was accepted by the email service.`
+          : `${buyerName} purchased "${productName}". A thank-you email was not confirmed as sent.`,
         link: "/marketplace",
       });
       actions?.push("Sale notification sent to you");
@@ -1754,6 +1729,11 @@ class MusicWorkflowAutomationService {
     _eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
+    if (config?.generateReport || config?.checkPROBalance) {
+      throw new WorkflowUnavailableError(
+        "Royalty report generation and external PRO balance checks are unavailable: no verified data integration is configured. No report or balance check was performed.",
+      );
+    }
     const actions: string[] = [];
 
     if (config?.generateReport) {
@@ -1767,8 +1747,8 @@ class MusicWorkflowAutomationService {
       await notificationService?.send({
         userId,
         type: "info",
-        title: "Monthly Royalty Check",
-        message: `Your monthly royalty audit is complete. ${actions?.join(". ")}.`,
+        title: "Monthly Royalty Reminder",
+        message: "Review your current royalty statements. This reminder does not generate a report or query external PRO balances.",
         link: "/royalties",
       });
     }
@@ -1977,6 +1957,7 @@ class MusicWorkflowAutomationService {
         { err },
         "handlePressReleaseGenerator: failed to save press kit",
       );
+      throw new Error("Press release generation succeeded but persistence to the Press Kit failed");
     }
 
     if (config?.notifyOnReady) {
@@ -2133,6 +2114,7 @@ class MusicWorkflowAutomationService {
         { err },
         "handleVenueBookingFollowup: failed to upsert venue contact",
       );
+      throw new Error("Venue follow-up details could not be persisted; no follow-up email was sent");
     }
 
     // Send the actual follow-up email to the booking contact
@@ -2158,14 +2140,16 @@ class MusicWorkflowAutomationService {
         actions.push("Follow-up email failed (will retry)");
       }
     } else if (config.sendEmail) {
-      actions.push("Follow-up email draft saved (no contact email on file)");
+      actions.push("Follow-up email not sent: no contact email is on file");
     }
 
     await notificationService.send({
       userId,
       type: "info",
-      title: `Booking Follow-Up ${config.sendEmail && contactEmail ? "Sent" : "Scheduled"}`,
-      message: `${venueName} (${String(contactName)}) follow-up ${config.sendEmail && contactEmail ? "email sent" : `reminder set for ${followUpDate.toLocaleDateString()}`}.`,
+      title: "Booking Follow-Up Date Recorded",
+      message: config.sendEmail && contactEmail
+        ? `${venueName} (${String(contactName)}) follow-up email was sent. The follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`
+        : `${venueName} (${String(contactName)}) follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`,
       link: "/venues",
     });
 
