@@ -294,7 +294,9 @@ export class DistributionService {
   }
 
   /**
-   * Submit release to DSP providers via LabelGrid
+   * Legacy distribution adapter intentionally fails closed. New submissions
+   * must use the Too Lost-backed route and its durable idempotency/reconciliation
+   * path; this adapter has no verified provider contract and must not call LabelGrid.
    */
   async submitToProvider(
     releaseId: string,
@@ -306,115 +308,16 @@ export class DistributionService {
     estimatedLiveDate?: Date;
     reason?: string;
   }> {
-    try {
-      const release = await this.getRelease(releaseId, userId);
-      if (!release) {
-        throw new Error("Release not found");
-      }
+    const release = await this.getRelease(releaseId, userId);
+    if (!release) throw new Error("Release not found");
 
-      // Check if LabelGrid is configured
-      if (labelGrid.isApiConfigured()) {
-        // PRODUCTION: Use LabelGrid API for real distribution
-        try {
-          // Prepare release data for LabelGrid
-          const labelGridRelease = {
-            title: release.title,
-            artist: release.artist,
-            releaseDate:
-              release.releaseDate?.toISOString() || new Date().toISOString(),
-            upc: release.upc || undefined,
-            tracks: [],
-            artwork: release.coverArt || "",
-            genre: release.genre || "General",
-            platforms: [providerId], // Submit to specific platform
-            label: release.label,
-            copyrightYear: new Date().getFullYear(),
-            copyrightOwner: release.copyrightHolder || release.artist,
-          };
-
-          // Submit to LabelGrid (it handles database updates internally)
-          const result = await labelGrid.createRelease(labelGridRelease);
-          const platformResult = result.platforms?.find(
-            (platform) =>
-              platform.platform === providerId ||
-              platform.platform.replace(/_/g, "-") === providerId ||
-              platform.platform.replace(/-/g, "_") ===
-                providerId.replace(/-/g, "_"),
-          );
-          const accepted = [
-            "queued",
-            "pending",
-            "processing",
-            "submitted",
-            "accepted",
-            "success",
-            "delivered",
-            "live",
-          ].includes(
-            platformResult?.status?.toLowerCase() || "",
-          );
-          if (!accepted) {
-            return {
-              success: false,
-              reason:
-                platformResult?.errorMessage ||
-                (platformResult
-                  ? `LabelGrid reported ${platformResult.status} for ${providerId}`
-                  : `LabelGrid did not report acceptance for ${providerId}`),
-            };
-          }
-
-          return {
-            success: true,
-            dispatchId: result.releaseId,
-            estimatedLiveDate: result.estimatedLiveDate
-              ? new Date(result.estimatedLiveDate)
-              : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          };
-        } catch (error: unknown) {
-          logger.warn({ err: error }, "LabelGrid distribution failed:");
-          throw error;
-        }
-      } else {
-        // NO DISTRIBUTION PROVIDER CONFIGURED: nothing was actually submitted
-        // anywhere — no external API call happened, no real DSP will ever see
-        // this release. Recording a "processing" row here previously let
-        // callers report success for a release that will NEVER go live.
-        // Honest contract: this is a failure (provider not configured), not a
-        // successful dispatch. We still persist a demo/local-only marker on
-        // the release so operators can see what was attempted, but callers
-        // must not count this as a real distribution.
-        logger.warn(
-          "⚠️  LabelGrid API token not configured — cannot distribute for real; reporting failure, not success",
-        );
-        logger.warn(
-          "   Set LABELGRID_API_TOKEN in environment to enable real distribution",
-        );
-
-        const dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
-
-        // Update release platforms with an explicit "not_configured" marker
-        // (never "processing" — that implies a real submission is in flight).
-        const platforms = (release.platforms as unknown[]) || [];
-        platforms.push({
-          providerId,
-          status: "not_configured",
-          dispatchId,
-          submittedAt: new Date(),
-          note: "No distribution provider configured — not actually submitted",
-        });
-
-        await storage.updateRelease(releaseId, userId, { platforms });
-
-        return {
-          success: false,
-          reason: "No distribution provider configured (LABELGRID_API_TOKEN unset)",
-        };
-      }
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error submitting to provider:");
-      throw new Error("Failed to submit to provider");
-    }
+    const reason =
+      "Legacy provider submission is disabled. No provider request was sent; use the Too Lost-backed distribution submission route.";
+    logger.warn(
+      { releaseId, providerId, userId },
+      reason,
+    );
+    return { success: false, reason };
   }
 
   /**
@@ -644,88 +547,21 @@ export class DistributionService {
   }
 
   /**
-   * Distribute release to all selected platforms
+   * Legacy bulk distribution is disabled until it can route through the
+   * verified Too Lost submission flow. Never fabricate a distribution ID.
    */
   async distributeRelease(releaseId: string, userId: string) {
-    try {
-      const release = await this.getRelease(releaseId, userId);
-      if (!release) {
-        throw new Error("Release not found");
-      }
+    const release = await this.getRelease(releaseId, userId);
+    if (!release) throw new Error("Release not found");
 
-      // The locally advertised DSP catalog is intentionally not a LabelGrid
-      // capability allowlist. LabelGrid is our gateway and must receive every
-      // advertised active platform; it returns the authoritative per-platform
-      // acceptance or rejection.
-      const platforms = (await storage.getAllDSPProviders())
-        .filter((platform) => platform.isActive !== false)
-        .map((platform) => platform.slug);
-      if (platforms.length === 0) {
-        throw new Error("No advertised distribution platforms are available");
-      }
-
-      // Actually submit to each provider (via the same submitToProvider path
-      // used elsewhere) instead of fabricating "processing" rows with no
-      // underlying dispatch — this previously reported success for every
-      // platform without making a single real submission or DB write.
-      const distributionResults = await Promise.all(
-        platforms.map(async (platform) => {
-          try {
-            const result = await this.submitToProvider(
-              releaseId,
-              platform,
-              userId,
-            );
-            // Propagate submitToProvider's own success flag rather than
-            // assuming every non-throwing call succeeded.
-            if (!result.success) {
-              return {
-                platform,
-                status: "failed" as const,
-                success: false,
-                error: result.reason || "Provider declined submission",
-              };
-            }
-            return {
-              platform,
-              status: "processing" as const,
-              dispatchId: result.dispatchId,
-              estimatedLiveDate: result.estimatedLiveDate,
-              success: true,
-            };
-          } catch (err) {
-            logger.warn(
-              { err },
-              `Distribution submission failed for platform ${platform}:`,
-            );
-            return {
-              platform,
-              status: "failed" as const,
-              success: false,
-              error: err instanceof Error ? err.message : String(err),
-            };
-          }
-        }),
-      );
-
-      const succeeded = distributionResults.filter((r) => r.success);
-      if (succeeded.length === 0) {
-        return {
-          success: false,
-          distributionId: `dist_${releaseId}`,
-          platforms: distributionResults,
-        };
-      }
-
-      return {
-        success: true,
-        distributionId: `dist_${releaseId}`,
-        platforms: distributionResults,
-      };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Distribution error:");
-      throw new Error("Failed to distribute release");
-    }
+    const error =
+      "Legacy bulk distribution is unavailable. No provider requests were sent; use the Too Lost-backed distribution submission route.";
+    logger.warn({ releaseId, userId }, error);
+    return {
+      success: false,
+      error,
+      platforms: [],
+    };
   }
 
   /**
