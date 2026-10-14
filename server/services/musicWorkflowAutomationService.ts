@@ -10,12 +10,17 @@ import {
   syncSubmissions,
   publishingRights,
   venueContacts,
+  releases,
+  posts,
 } from "../../shared/schema.js";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { notificationService } from "./notificationService.js";
 import { emailService } from "./emailService.js";
 import { unifiedAIController } from "./unifiedAIController.js";
+import { scheduleReleaseCountdown } from "./releaseCountdownWorkflow.js";
+import { repurposePublishedCaption } from "./captionRepurposeWorkflow.js";
+import { BIO_UPDATE_UNAVAILABLE, WorkflowUnavailableError } from "./workflowCapabilities.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +49,7 @@ export interface WorkflowTemplate {
   configSchema: Record<string, ConfigField>;
   defaultConfig: Record<string, any>;
   enabledByDefault: boolean;
+  unavailableReason?: string;
 }
 
 export interface WorkflowEventData {
@@ -172,7 +178,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     id: "release-countdown-posts",
     name: "Auto-Schedule Release Countdown Posts",
     description:
-      "When you set a release date, automatically queue social media countdown posts at 7 days, 3 days, 1 day, and release morning across all connected platforms.",
+      "Queue release countdown posts at 7 days, 3 days, 1 day, and the release time on connected platforms with compatible media. Requires auto-publish consent.",
     phase: "pre-release",
     icon: "📅",
     trigger: {
@@ -203,7 +209,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         default: true,
       },
       postReleaseDay: {
-        label: "Post on release morning",
+        label: "Post at the release time",
         type: "boolean",
         default: true,
       },
@@ -752,8 +758,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: "social-bio-update",
     name: "Auto-Update Social Bios on Release",
-    description:
-      "When a release goes live, automatically update your Instagram, Twitter/X, and TikTok bios to highlight your latest single/album with a streaming link — then revert to your standard bio 30 days later.",
+    description: BIO_UPDATE_UNAVAILABLE,
+    unavailableReason: BIO_UPDATE_UNAVAILABLE,
     phase: "release-day",
     icon: "✏️",
     trigger: {
@@ -939,6 +945,7 @@ class MusicWorkflowAutomationService {
   ): Promise<void> {
     const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
     if (!template) throw new Error(`Unknown template: ${templateId}`);
+    if (template.unavailableReason) throw new WorkflowUnavailableError(template.unavailableReason);
 
     const existing = await db
       .select()
@@ -1360,31 +1367,21 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const { releaseTitle = "New Release" } = eventData;
-    const scheduled: string[] = [];
-
-    const countdowns = [
-      { enabled: config.post7Day, days: 7, label: "7-day" },
-      { enabled: config.post3Day, days: 3, label: "3-day" },
-      { enabled: config.post1Day, days: 1, label: "1-day" },
-      { enabled: config.postReleaseDay, days: 0, label: "Release day" },
-    ];
-
-    for (const cd of countdowns) {
-      if (cd.enabled) {
-        scheduled.push(`${cd.label} countdown post queued`);
-      }
-    }
-
-    await notificationService.send({
-      userId,
-      type: "info",
-      title: "Release Countdown Posts Scheduled",
-      message: `${scheduled.length} countdown posts queued for "${releaseTitle}". Check your social calendar to review.`,
-      link: "/social-media",
+    const { storage } = await import("../storage.js");
+    const { autoPostingServiceV2, normalizePublishingPlatform } = await import("./autoPostingServiceV2.js");
+    return scheduleReleaseCountdown(userId, eventData.releaseId, config, {
+      loadRelease: async (owner, id) => {
+        const [release] = await db.select().from(releases)
+          .where(and(eq(releases.id, id), eq(releases.userId, owner)));
+        return release;
+      },
+      platforms: async owner => (await storage.getSocialAccounts(owner))
+        .filter(account => account.isActive).map(account => normalizePublishingPlatform(account.platform)),
+      schedule: (owner, platform, content, at, key) =>
+        autoPostingServiceV2.schedulePost(
+          owner, [platform], content, at, "social_autopilot", undefined, key,
+        ),
     });
-
-    return { scheduled };
   }
 
   private async handlePreSaveCampaign(
@@ -2001,26 +1998,7 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const { releaseTitle = "New Release" } = eventData;
-    const platforms =
-      config?.platforms === "all"
-        ? ["instagram", "twitter", "tiktok"]
-        : [config?.platforms];
-    const actions = platforms?.map((p: string) => `Bio updated on ${p}`);
-
-    if (config?.revertAfterDays > 0) {
-      actions?.push(`Auto-revert scheduled in ${config?.revertAfterDays} days`);
-    }
-
-    await notificationService?.send({
-      userId,
-      type: "info",
-      title: "Social Bios Updated",
-      message: `Your bios on ${platforms?.join(", ")} now feature "${releaseTitle}". They'll revert to your standard bio in ${config.revertAfterDays} days.`,
-      link: "/social-media",
-    });
-
-    return { actions };
+    throw new WorkflowUnavailableError(BIO_UPDATE_UNAVAILABLE);
   }
 
   private async handleSmartCaptionRepurpose(
@@ -2028,28 +2006,53 @@ class MusicWorkflowAutomationService {
     eventData: WorkflowEventData,
     config: Record<string, any>,
   ) {
-    const { originalPlatform = "Instagram" } = eventData;
-    const targets =
-      config.targetPlatforms === "all"
-        ? ["instagram", "tiktok", "twitter", "facebook"].filter(
-            (p) => p !== String(originalPlatform).toLowerCase(),
-          )
-        : [config.targetPlatforms];
-
-    const actions = targets.map((p: string) => `Caption adapted for ${p}`);
-    if (config.autoSchedule) {
-      actions.push(`Posts staggered every ${config.staggerHours}h`);
-    }
-
-    await notificationService.send({
-      userId,
-      type: "info",
-      title: "Post Repurposed Across Platforms",
-      message: `Your ${originalPlatform} post has been adapted and ${config.autoSchedule ? "scheduled" : "queued"} for ${targets.join(", ")}.`,
-      link: "/social-media",
+    const { storage } = await import("../storage.js");
+    const { autoPostingServiceV2, normalizePostContent, normalizePublishingPlatform } = await import("./autoPostingServiceV2.js");
+    return repurposePublishedCaption(userId, eventData.postId, config, {
+      source: async (owner, id) => {
+        const [post] = await db.select().from(posts)
+          .where(and(eq(posts.id, id), eq(posts.userId, owner)));
+        if (!post) return null;
+        if (post.mediaUrls?.length > 1) {
+          throw new Error("Multi-asset repurposing is unavailable; source media will not be silently dropped");
+        }
+        const content = normalizePostContent(post.content, post.mediaUrls || []);
+        return { userId: post.userId, platform: normalizePublishingPlatform(post.platform), status: post.status,
+          publishedAt: post.publishedAt, text: content.text,
+          mediaUrl: content.mediaUrl, mediaType: content.mediaType === "photo" ? "image" : content.mediaType };
+      },
+      platforms: async owner => (await storage.getSocialAccounts(owner))
+        .filter(account => account.isActive).map(account => normalizePublishingPlatform(account.platform)),
+      existing: id => storage.getScheduledPostById(id),
+      generate: async (owner, platform, text, seed) => {
+        const generated = await unifiedAIController.generateContent({
+          userId: owner, platform, topic: "Repurpose a published post",
+          extraContext: `Adapt the following source for ${platform}. Preserve its facts; do not invent claims.\n${text}`,
+          seed,
+        });
+        if (!generated.success || !generated.data?.caption?.trim()) {
+          throw new Error(generated.error || "MaxCore returned no usable caption");
+        }
+        return generated.data.caption;
+      },
+      persist: async ({ userId: owner, platform, content, at, key, autoSchedule }) => {
+        if (autoSchedule) return autoPostingServiceV2.schedulePost(
+          owner, [platform], content, at, "social_autopilot", undefined, key,
+        );
+        const id = `post_${key}`;
+        const existing = await storage.getScheduledPostById(id);
+        if (existing) {
+          if (existing.userId !== owner || existing.status !== "draft") {
+            throw new Error("Repurposed draft conflicts with an existing post");
+          }
+          return existing;
+        }
+        return storage.createScheduledPost({
+          id, userId: owner, platforms: [platform], content, scheduledTime: at,
+          status: "draft", createdBy: "social_autopilot", reviewRequired: true,
+        });
+      },
     });
-
-    return { actions, targets };
   }
 
   private async handleVenueBookingFollowup(

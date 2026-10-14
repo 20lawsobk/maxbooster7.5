@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
+import { WorkflowUnavailableError } from "../services/workflowCapabilities.js";
 import {
   musicWorkflowAutomationService,
   WORKFLOW_TEMPLATES,
@@ -58,8 +59,8 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
       const userState = userAutomations[template?.id];
       return {
         ...template,
-        enabled: userState.enabled ?? false,
-        config: userState.config ?? template?.defaultConfig,
+        enabled: userState?.enabled ?? false,
+        config: userState?.config ?? template?.defaultConfig,
       };
     });
 
@@ -100,6 +101,9 @@ router.post(
       );
       res.json({ success: true, templateId, enabled: true });
     } catch (err) {
+      if (err instanceof WorkflowUnavailableError) {
+        return res.status(err.status).json({ error: err.message, code: err.code });
+      }
       logger.warn({ err: err }, "[MusicWorkflow] Error enabling automation:");
       res.status(500).json({ error: "Failed to enable automation" });
     }

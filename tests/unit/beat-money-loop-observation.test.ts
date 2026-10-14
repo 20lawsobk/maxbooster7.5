@@ -212,7 +212,8 @@ describe("Beat Money Loop — MaxCore observation propagation", () => {
     const result = await svc.runCycle("manual", {});
     expect(result.status).toBe("sold");
     expect(result.beatId).toBe("beat-1");
-    expect(result.error).toBe("Promotion rejected");
+    expect(result.advertised).toBe(false);
+    expect(result.note).toBe("Promotion rejected");
   });
 
   it("dispatches the real BML campaign path and confirms posting only after posts exist", async () => {

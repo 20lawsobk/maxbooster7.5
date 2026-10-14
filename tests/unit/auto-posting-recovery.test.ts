@@ -202,6 +202,28 @@ describe("scheduled social post recovery", () => {
     resetFakes();
   });
 
+  it("repairs a persisted-but-unqueued idempotent post without creating another job", async () => {
+    state.pendingRows = [];
+    const row = { ...state.posts.get(POST_ID), id: "post_retry", platforms: ["twitter"], createdBy: "manual" };
+    state.posts.set(row.id, row);
+    const service = await loadService();
+    await service.schedulePost("user-1", ["twitter"], row.content, row.scheduledTime, "manual", undefined, "retry");
+    await service.schedulePost("user-1", ["twitter"], row.content, row.scheduledTime, "manual", undefined, "retry");
+    expect(state.queuedJobs.size).toBe(1);
+    expect(state.queuedJobs.has("post_retry")).toBe(true);
+  });
+
+  it("does not repair an idempotent post with an uncertain delivery receipt", async () => {
+    state.pendingRows = [];
+    const row = { ...state.posts.get(POST_ID), id: "post_retry", platforms: ["twitter"],
+      results: [{ outcome: "unknown" }] };
+    state.posts.set(row.id, row);
+    const service = await loadService();
+    await expect(service.schedulePost("user-1", ["twitter"], row.content, row.scheduledTime,
+      "manual", undefined, "retry")).rejects.toThrow("uncertain delivery");
+    expect(state.queuedJobs.size).toBe(0);
+  });
+
   it("retains successful delivery without a nonexistent secondary storage write", async () => {
     state.pendingRows = [];
     const service = await loadService();

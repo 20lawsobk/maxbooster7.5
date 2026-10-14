@@ -428,6 +428,13 @@ class AutoPostingServiceV2 {
         logger.info(
           `📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`,
         );
+        if (["draft", "pending", "scheduled"].includes(existingPost.status)) {
+          // A prior attempt may have persisted the row and then failed to
+          // enqueue it. Reconcile the same stable job, not a second post.
+          await this.scheduleExistingPost(postId, { scheduledAt: scheduledTime });
+        } else if (existingPost.status === "failed") {
+          throw new Error("Existing post failed; review its delivery receipts before retrying");
+        }
         return existingPost as ScheduledPost;
       }
     }
