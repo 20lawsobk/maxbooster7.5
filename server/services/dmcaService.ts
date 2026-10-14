@@ -5,6 +5,16 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}
+
 export type DMCANoticeType = "takedown" | "counter";
 export type DMCANoticeStatus =
   | "pending"
@@ -583,19 +593,20 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await (emailService as any)?.sendEmail({
+        const sent = await emailService.send({
           to: user.email,
           subject: "DMCA Notice Received for Your Content",
           html: `
             <h2>DMCA Notice Received</h2>
-            <p>Dear ${user?.firstName || "Content Owner"},</p>
+            <p>Dear ${escapeHtml(user?.firstName || "Content Owner")},</p>
             <p>We have received a DMCA takedown notice for content associated with your account.</p>
-            <p><strong>Content ID:</strong> ${notice?.contentId}</p>
-            <p><strong>Claimant:</strong> ${notice?.claimantName}</p>
+            <p><strong>Content ID:</strong> ${escapeHtml(notice?.contentId)}</p>
+            <p><strong>Claimant:</strong> ${escapeHtml(notice?.claimantName)}</p>
             <p>You may file a counter-notification if you believe this notice was sent in error.</p>
             <p>Please log in to your account to view the full details and respond.</p>
           `,
         });
+        if (!sent) logger.warn({ noticeId: notice.id }, "DMCA content-owner email was not sent");
       }
     } catch (error) {
       logger.warn({ err: error }, "Error notifying content owner:");
@@ -613,19 +624,26 @@ export class DMCAService {
     originalNotice: DMCANotice,
   ): Promise<void> {
     try {
-      await (emailService as any)?.sendEmail({
+      const sent = await emailService.send({
         to: originalNotice.claimantEmail,
         subject: "Counter-Notification Received for Your DMCA Claim",
         html: `
           <h2>Counter-Notification Received</h2>
-          <p>Dear ${originalNotice?.claimantName},</p>
+          <p>Dear ${escapeHtml(originalNotice?.claimantName)},</p>
           <p>A counter-notification has been filed in response to your DMCA takedown request.</p>
           <p>Under the DMCA, you have ${COUNTER_NOTICE_WAIT_DAYS} business days to file legal action to prevent restoration of the content.</p>
           <p>If no legal action is filed, the content may be restored after this period.</p>
         `,
       });
+      if (!sent) {
+        throw new Error("Email provider did not accept the counter-notification email");
+      }
     } catch (error) {
-      logger.warn({ err: error }, "Error notifying original claimant:");
+      logger.error(
+        { err: error, noticeId: originalNotice.id },
+        "Counter-notification email failed; content restoration was not scheduled",
+      );
+      throw new Error("Counter-notification email could not be sent; restoration was not scheduled");
     }
   }
 
@@ -649,16 +667,17 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await (emailService as any)?.sendEmail({
+        const sent = await emailService.send({
           to: user.email,
           subject: "Final Warning: Account Termination Risk",
           html: `
             <h2>Final Warning - DMCA Strikes</h2>
-            <p>Dear ${user?.firstName || "User"},</p>
+            <p>Dear ${escapeHtml(user?.firstName || "User")},</p>
             <p>Your account has received ${MAX_STRIKES - 1} DMCA strikes. One more strike will result in account termination under our repeat infringer policy.</p>
             <p>Please ensure all content you upload is properly licensed or owned by you.</p>
           `,
         });
+        if (!sent) logger.warn({ userId }, "DMCA final-warning email was not sent");
       }
     } catch (error) {
       logger.warn({ err: error }, "Error sending final warning:");
@@ -674,17 +693,18 @@ export class DMCAService {
         .limit(1);
 
       if (user?.email) {
-        await (emailService as any)?.sendEmail({
+        const sent = await emailService.send({
           to: user.email,
           subject: "Account Terminated - Repeat Infringer Policy",
           html: `
             <h2>Account Termination Notice</h2>
-            <p>Dear ${user?.firstName || "User"},</p>
+            <p>Dear ${escapeHtml(user?.firstName || "User")},</p>
             <p>Your account has been terminated due to repeated copyright infringement under our repeat infringer policy.</p>
             <p>All your content has been placed on legal hold and is no longer accessible.</p>
             <p>If you believe this action was taken in error, please contact our legal department.</p>
           `,
         });
+        if (!sent) logger.warn({ userId }, "DMCA repeat-infringer email was not sent");
       }
     } catch (error) {
       logger.warn({ err: error }, "Error notifying repeat infringer:");
