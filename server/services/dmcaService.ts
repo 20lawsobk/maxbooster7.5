@@ -481,31 +481,31 @@ export class DMCAService {
   }
 
   async getNoticesByUser(userId: string): Promise<DMCANotice[]> {
-    // Since the schema doesn't have contentOwnerId, we query by matching
-    // the user's email to the claimant email (notices filed by this user)
-    // or by joining through content ownership (notices against user's content)
     try {
-      // First get the user's email
       const [user] = await db
         .select({ email: users.email })
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user) {
-        return [];
-      }
+      if (!user) return [];
 
-      // Return notices where user is the claimant (filed the claim)
+      // Notices filed by this user's email.
       const noticesAsClaimant = await db
         .select()
         .from(dmcaNotices)
-        .where(eq(dmcaNotices.claimantEmail, user?.email))
+        .where(eq(dmcaNotices.claimantEmail, user.email))
         .orderBy(desc(dmcaNotices.submittedAt));
 
-      // Also get notices where user's content was claimed
-      // Join through projects table where contentId matches project id
+      // New notices use the explicit content-owner identity. Preserve the
+      // project join for older rows created before that column was populated.
       const noticesAgainstContent = await db
+        .select()
+        .from(dmcaNotices)
+        .where(eq(dmcaNotices.contentOwnerId, userId))
+        .orderBy(desc(dmcaNotices.submittedAt));
+
+      const legacyNoticesAgainstContent = await db
         .select({
           id: dmcaNotices.id,
           contentType: dmcaNotices.contentType,
@@ -523,8 +523,12 @@ export class DMCAService {
         .where(eq(projects.userId, userId))
         .orderBy(desc(dmcaNotices.submittedAt));
 
-      // Combine and deduplicate
-      const allNotices = [...noticesAsClaimant, ...noticesAgainstContent];
+      // Combine and deduplicate rows that may match both ownership paths.
+      const allNotices = [
+        ...noticesAsClaimant,
+        ...noticesAgainstContent,
+        ...legacyNoticesAgainstContent,
+      ];
       const uniqueNotices = allNotices?.filter(
         (notice, index, self) =>
           index === self?.findIndex((n) => n?.id === notice?.id),
