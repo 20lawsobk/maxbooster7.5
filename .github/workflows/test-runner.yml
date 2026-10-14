@@ -67,7 +67,7 @@ jobs:
           SKIP_BOOSTERSTATE: "1"
 
       - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
+        run: npm audit --audit-level=moderate
 
       - name: Run security audit script
         run: npm run security:audit
@@ -75,7 +75,6 @@ jobs:
           DATABASE_URL: postgresql://maxbooster:testpassword@localhost:5432/maxbooster_test
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
-        continue-on-error: true
 
       - name: Upload security report
         uses: actions/upload-artifact@v4
@@ -149,7 +148,6 @@ jobs:
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
           TARGET_URL: http://localhost:5000
-        continue-on-error: true
 
       - name: Shutdown server
         if: always()
@@ -213,7 +211,6 @@ jobs:
           DATABASE_URL: postgresql://maxbooster:testpassword@localhost:5432/maxbooster_test
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
-        continue-on-error: true
 
   test-summary:
     name: Test Summary
@@ -236,3 +233,11 @@ jobs:
           echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Load Tests | ${{ needs.load-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Pre-launch Check | ${{ needs.prelaunch-check.result }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.security-tests.result }}" == "failure" || "${{ needs.security-tests.result }}" == "cancelled" || "${{ needs.load-tests.result }}" == "failure" || "${{ needs.load-tests.result }}" == "cancelled" || "${{ needs.prelaunch-check.result }}" == "failure" || "${{ needs.prelaunch-check.result }}" == "cancelled" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ One or more required checks failed or were cancelled." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All checks that were selected for this run passed." >> $GITHUB_STEP_SUMMARY
