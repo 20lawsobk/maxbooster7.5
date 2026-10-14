@@ -11,6 +11,16 @@ import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}
+
 export type ServiceStatus =
   | "operational"
   | "degraded_performance"
@@ -618,10 +628,10 @@ export class StatusPageService {
           to: subscriber.email,
           subject,
           html: `
-            <h2>${String(incident?.title ?? "")}</h2>
-            <p><strong>Status:</strong> ${String(statusLabel)}</p>
-            <p><strong>Impact:</strong> ${String((incident as any)?.impact ?? "")}</p>
-            <p>${String((incident as any)?.message ?? "")}</p>
+            <h2>${escapeHtml(incident?.title)}</h2>
+            <p><strong>Status:</strong> ${escapeHtml(statusLabel)}</p>
+            <p><strong>Impact:</strong> ${escapeHtml((incident as any)?.impact)}</p>
+            <p>${escapeHtml((incident as any)?.message)}</p>
             <hr>
             <p><small>
               <a href="${unsubscribeUrl}">Unsubscribe</a> from status updates
