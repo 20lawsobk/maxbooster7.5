@@ -198,19 +198,10 @@ interface DistributionStorage {
 // this service actually uses (see note above).
 const storage = baseStorage as unknown as DistributionStorage;
 
-// LabelGrid integration surface consumed here. The runtime `labelGridService`
-// instance is reached through this typed view; see POSSIBLE UNBUILT FEATURES.
-interface DistributionLabelGrid {
-  isApiConfigured(): boolean;
-  createRelease(release: Record<string, unknown>): Promise<{
-    releaseId: string;
-    estimatedLiveDate?: string | Date;
-    platforms: Array<{
-      platform: string;
-      status: string;
-      errorMessage?: string;
-    }>;
-  }>;
+// Read-only legacy LabelGrid surface retained only to inspect historical
+// dispatch records. New submissions must use the Too Lost-backed route.
+interface LegacyLabelGridReadOnly {
+  isConfigured(): boolean;
   getDeliveryStatus(releaseId: string): Promise<{
     status?: string;
     platforms?: Array<{
@@ -220,7 +211,7 @@ interface DistributionLabelGrid {
     }>;
   }>;
 }
-const labelGrid = labelGridService as unknown as DistributionLabelGrid;
+const labelGrid = labelGridService as unknown as LegacyLabelGridReadOnly;
 
 // Notification surface consumed here (see POSSIBLE UNBUILT FEATURES).
 interface DistributionNotifier {
