@@ -7,10 +7,9 @@
  *   workflow service's publish() call reports success:false — previously
  *   the scheduler awaited publish() and unconditionally marked the action
  *   completed regardless of what it returned.
- * - A "platform_publish" action has no real distribution call wired up yet
- *   (see distributionService.submitToProvider, which is a separate,
- *   manually-triggered flow). It must be marked "unsupported" instead of
- *   "completed" after only a log line.
+ * - A "platform_publish" action must remain "unsupported" until the scheduler
+ *   is wired to the verified Too Lost submission flow. It must never call the
+ *   retired LabelGrid adapter or mark a release completed without provider evidence.
  * - An unrecognized action type must be marked "failed", not "completed".
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
