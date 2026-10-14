@@ -32,6 +32,24 @@ CREATE TABLE IF NOT EXISTS "dmca_notices" (
   "created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "content_type" text NOT NULL DEFAULT 'other';
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "content_id" varchar NOT NULL DEFAULT '';
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "claimant_name" text NOT NULL DEFAULT '';
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "claimant_email" text NOT NULL DEFAULT '';
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "description" text;
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "status" text DEFAULT 'pending';
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "submitted_at" timestamp DEFAULT now();
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "resolved_at" timestamp;
+--> statement-breakpoint
+ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "created_at" timestamp DEFAULT now();
+--> statement-breakpoint
 ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "type" text NOT NULL DEFAULT 'takedown';
 --> statement-breakpoint
 ALTER TABLE "dmca_notices" ADD COLUMN IF NOT EXISTS "content_owner_id" varchar;
