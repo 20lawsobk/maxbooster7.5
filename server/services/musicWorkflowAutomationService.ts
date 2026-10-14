@@ -1134,6 +1134,9 @@ class MusicWorkflowAutomationService {
     let error: string | null = null;
 
     try {
+      if (template.unavailableReason) {
+        throw new WorkflowUnavailableError(template.unavailableReason);
+      }
       result = await this.dispatch(template?.id, userId, eventData, config);
       await db
         .update(musicWorkflowAutomations)
@@ -1930,18 +1933,18 @@ class MusicWorkflowAutomationService {
         await db.insert(pressKits).values({
           userId,
           artistName: String(artistName),
-          bio: bio ? String(bio) : pressReleaseDraft,
+          bio: bio ? String(bio) : "",
           contactEmail: contactEmail ? String(contactEmail) : null,
           bookingEmail: bookingEmail ? String(bookingEmail) : null,
           website: website ? String(website) : null,
-          pressQuotes: config.includeQuote
-            ? [
-                {
-                  source: "Self",
-                  quote: `[Add your quote about "${releaseTitle}" here]`,
-                },
-              ]
-            : [],
+          pressQuotes: [
+            {
+              source: "Press Release",
+              release: String(releaseTitle),
+              content: pressReleaseDraft,
+              generatedAt: new Date().toISOString(),
+            },
+          ],
           isPublic: false,
         });
         actions?.push("Press kit created with press release content");
