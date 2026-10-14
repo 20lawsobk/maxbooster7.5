@@ -7124,7 +7124,10 @@ router.post(
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const { type, data } = req.body;
+      const { type } = req.body ?? {};
+      if (typeof type !== "string" || !type.trim()) {
+        return res.status(400).json({ error: "outcome type is required" });
+      }
 
       const release = await storage.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
