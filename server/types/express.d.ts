@@ -9,6 +9,14 @@
  * TS2339 on those properties.
  */
 import "express-session";
+
+// Keep session-specific fields in a declaration file included by both server
+// and bounded TypeScript checks, instead of hiding them inside server/index.ts.
+declare module "express-session" {
+  interface SessionData {
+    userId: string;
+  }
+}
 // Pulls in multer's global Express.Multer.File / req.file / req.files
 // augmentation for graphs that use uploads without importing multer directly.
 import "multer";
