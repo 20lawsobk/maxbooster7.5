@@ -63,9 +63,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   // ── PHASE 1: CREATION ────────────────────────────────────────────────────
   {
     id: "track-upload-analysis",
-    name: "Auto-Analyze Uploaded Tracks",
-    description:
-      "When you upload a track, automatically detect BPM, key, energy level, and generate metadata suggestions so you skip tedious manual entry.",
+    name: "Track Upload Follow-up",
+    description: "Assign an ISRC placeholder and notify the account owner when configured. Audio feature and genre/mood analysis are not implemented by this workflow.",
     phase: "creation",
     icon: "🎵",
     trigger: {
@@ -76,8 +75,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       suggestGenre: {
         label: "Suggest genre tags",
         type: "boolean",
-        default: true,
-        description: "Use AI to suggest genre and mood tags based on the audio",
+        default: false,
+        description: "Unavailable: this workflow does not analyze audio or generate genre/mood tags",
       },
       generateISRC: {
         label: "Auto-generate ISRC placeholder",
@@ -93,7 +92,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       },
     },
     defaultConfig: {
-      suggestGenre: true,
+      suggestGenre: false,
       generateISRC: true,
       notifyOnComplete: true,
     },
@@ -1250,6 +1249,11 @@ class MusicWorkflowAutomationService {
         : "your track";
     const trackId =
       typeof eventData.trackId === "string" ? eventData.trackId : undefined;
+    if (config?.suggestGenre) {
+      throw new WorkflowUnavailableError(
+        "Audio feature and genre/mood analysis are unavailable in this workflow. No analysis or suggestions were generated.",
+      );
+    }
     const actions: string[] = [];
 
     if (config?.generateISRC && trackId) {
@@ -1274,23 +1278,24 @@ class MusicWorkflowAutomationService {
           { err, trackId },
           "ISRC generation failed in workflow handler",
         );
-        actions?.push("ISRC generation failed (will retry on next event)");
+        actions?.push("ISRC generation failed; retry must be triggered manually");
       }
     } else if (config?.generateISRC) {
       actions?.push("ISRC generation skipped (no track id)");
     }
-    if (config?.suggestGenre) {
-      actions?.push("Genre/mood tag suggestions queued for next AI cycle");
-    }
     if (config?.notifyOnComplete) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
-        title: "Track Analysis Complete",
-        message: `"${trackName}" has been analyzed. BPM, key, and metadata suggestions are ready.`,
-        link: trackId ? `/projects` : "/projects",
+        title: "Track Upload Processed",
+        message: `Upload follow-up ran for "${trackName}". This workflow does not analyze BPM, key, energy, or genre/mood.`,
+        link: "/projects",
       });
-      actions?.push("Push notification sent");
+      actions.push(
+        delivery.delivered
+          ? "Track upload notification delivered"
+          : "Track upload notification suppressed or not delivered",
+      );
     }
 
     return { actions };
@@ -1308,37 +1313,48 @@ class MusicWorkflowAutomationService {
     const actions: string[] = [];
 
     if (config?.sendPush) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: "Collaborator Added",
-        message: `${newMemberName} joined ${projectName}. ${config?.includeProjectBrief ? "Project brief included in their welcome email." : ""}`,
+        message: `${newMemberName} joined ${projectName}. View the collaboration workspace for project details.`,
         link: "/collaborations",
       });
-      actions?.push("Project owner notified");
+      actions.push(
+        delivery.delivered
+          ? "Account owner notification delivered"
+          : "Account owner notification suppressed or not delivered",
+      );
     }
 
     if (config?.sendEmail && eventData?.newMemberEmail) {
       try {
-        await (emailService as any)?.sendEmail({
-          to: eventData.newMemberEmail,
+        const emailSent = await emailService.send({
+          to: String(eventData.newMemberEmail),
           subject: `You've been added to "${projectName}"`,
           html: `
             <h2>Welcome to the project!</h2>
-            <p>Hi ${newMemberName},</p>
-            <p>You've been added as a collaborator on <strong>${projectName}</strong>.</p>
+            <p>Hi ${String(newMemberName)}</p>
+            <p>You've been added as a collaborator on <strong>${String(projectName)}</strong>.</p>
             ${
               config?.includeProjectBrief && eventData?.projectBrief
-                ? `<h3>Project Brief</h3><p>${eventData?.projectBrief}</p>`
+                ? `<h3>Project Brief</h3><p>${String(eventData.projectBrief)}</p>`
                 : ""
             }
             <p>Log in to Max Booster to get started.</p>
           `,
+          text: `You've been added as a collaborator on "${String(projectName)}". Log in to Max Booster to get started.`,
         });
-        actions?.push("Welcome email sent to new collaborator");
+        actions.push(
+          emailSent
+            ? "Welcome email accepted by the email service"
+            : "Welcome email not sent: email service unavailable",
+        );
       } catch {
-        actions?.push("Email skipped (service unavailable)");
+        actions.push("Welcome email not sent: email service failed");
       }
+    } else if (config?.sendEmail) {
+      actions.push("Welcome email not sent: no collaborator email address was supplied");
     }
 
     return { actions };
@@ -1690,23 +1706,29 @@ class MusicWorkflowAutomationService {
       try {
         const note =
           config?.personalNote ||
-          `Thank you for your purchase! I appreciate your support.`;
-        const emailResult = await (emailService as any)?.sendEmail({
-          to: buyerEmail,
-          subject: `Thank you for purchasing "${productName}"`,
+          "Thank you for your purchase! I appreciate your support.";
+        thankYouEmailSent = await emailService.send({
+          to: String(buyerEmail),
+          subject: `Thank you for purchasing "${String(productName)}"`,
           html: `
-            <h2>Thank you, ${buyerName}!</h2>
-            <p>${note}</p>
-            ${downloadUrl ? `<p><a href="${downloadUrl}">Download your files here</a></p>` : ""}
+            <h2>Thank you, ${String(buyerName)}!</h2>
+            <p>${String(note)}</p>
+            ${downloadUrl ? `<p><a href="${String(downloadUrl)}">Download your files here</a></p>` : ""}
             <p>Feel free to reach out if you have any questions about the license or file usage.</p>
           `,
+          text: `Thank you, ${String(buyerName)}! Thank you for purchasing "${String(productName)}". ${String(note)}${downloadUrl ? ` Download: ${String(downloadUrl)}` : ""}`,
         });
-        if (emailResult === false) throw new Error("Email service did not confirm delivery");
-        thankYouEmailSent = true;
-        actions?.push("Thank-you email accepted by the email service");
+        actions.push(
+          thankYouEmailSent
+            ? "Thank-you email accepted by the email service"
+            : "Thank-you email not sent (service unavailable or delivery not confirmed)",
+        );
       } catch {
-        actions?.push("Thank-you email not sent (service unavailable or delivery not confirmed)");
+        thankYouEmailSent = false;
+        actions.push("Thank-you email not sent (email service failed)");
       }
+    } else if (config?.sendThankYouEmail) {
+      actions.push("Thank-you email not sent: buyer email address is missing");
     }
 
     if (config?.notifySeller) {
@@ -2129,11 +2151,12 @@ class MusicWorkflowAutomationService {
     }
 
     // Send the actual follow-up email to the booking contact
+    let followUpEmailSent = false;
     if (config.sendEmail && contactEmail) {
       try {
-        await (emailService as any).sendEmail({
+        followUpEmailSent = await emailService.send({
           to: String(contactEmail),
-          subject: `Booking Inquiry Follow-Up — ${venueName}`,
+          subject: `Booking Inquiry Follow-Up — ${String(venueName)}`,
           html: `
             <p>Hi ${String(contactName)},</p>
             <p>I'm following up on my recent booking inquiry for ${String(venueName)}. I'm very interested in performing at your venue and would love to discuss available dates and terms.</p>
@@ -2141,14 +2164,19 @@ class MusicWorkflowAutomationService {
             <p>Looking forward to hearing from you,</p>
             <p>[Your Name]</p>
           `,
+          text: `Hi ${String(contactName)}, I'm following up on my recent booking inquiry for ${String(venueName)}. Please let me know if you need any additional information.`,
         });
-        actions.push(`Follow-up email sent to ${String(contactEmail)}`);
+        actions.push(
+          followUpEmailSent
+            ? `Follow-up email accepted by the email service for ${String(contactEmail)}`
+            : "Follow-up email not sent: email service unavailable",
+        );
       } catch (err) {
         logger.warn(
           { err },
           "handleVenueBookingFollowup: failed to send follow-up email",
         );
-        actions.push("Follow-up email failed (will retry)");
+        actions.push("Follow-up email not sent: email service failed");
       }
     } else if (config.sendEmail) {
       actions.push("Follow-up email not sent: no contact email is on file");
@@ -2158,9 +2186,9 @@ class MusicWorkflowAutomationService {
       userId,
       type: "info",
       title: "Booking Follow-Up Date Recorded",
-      message: config.sendEmail && contactEmail
-        ? `${venueName} (${String(contactName)}) follow-up email was sent. The follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`
-        : `${venueName} (${String(contactName)}) follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`,
+      message: followUpEmailSent
+        ? `${venueName} (${String(contactName)}) follow-up email was accepted by the email service. The follow-up date was recorded as ${followUpDate.toLocaleDateString()}, but no automatic reminder was scheduled.`
+        : `${venueName} (${String(contactName)}) follow-up date was recorded as ${followUpDate.toLocaleDateString()}; no email delivery or automatic reminder was confirmed.`,
       link: "/venues",
     });
 
