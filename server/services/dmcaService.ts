@@ -4,6 +4,7 @@ import { dmcaNotices, dmcaStrikes, legalHolds, users, projects, type DmcaNotice 
 import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
+import { notificationService } from "./notificationService.js";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -67,6 +68,7 @@ export interface LegalHoldRequest {
   holdReason: string;
   holdType: "dmca" | "legal" | "investigation" | "preservation";
   dmcaNoticeId?: string;
+  userId?: string;
 }
 
 const MAX_STRIKES = 3;
@@ -252,6 +254,7 @@ export class DMCAService {
       holdReason: `DMCA takedown notice ${notice?.id}`,
       holdType: "dmca",
       dmcaNoticeId: notice.id,
+      userId: notice.contentOwnerId ?? undefined,
     });
 
     logger.info(
@@ -406,6 +409,7 @@ export class DMCAService {
         contentType: "project",
         holdReason: "Repeat infringer policy - account terminated",
         holdType: "legal",
+        userId,
       });
     }
   }
@@ -420,8 +424,8 @@ export class DMCAService {
         holdType: request.holdType,
         dmcaNoticeId: request.dmcaNoticeId,
         status: "active",
-        // Legal holds without an associated owner are retained under the system identity.
-        userId: "system",
+        // Legacy legal holds without an associated owner use a stable system identity.
+        userId: request.userId ?? "system",
       } as any)
       .returning();
 
@@ -635,9 +639,41 @@ export class DMCAService {
   }
 
   private async notifyAdministrators(notice: DMCANotice): Promise<void> {
-    logger.info(
-      `Admin notification: New DMCA ${notice?.type} notice ${notice?.id} requires review`,
+    const administrators = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.role, "admin"));
+
+    if (administrators.length === 0) {
+      logger.error(
+        { noticeId: notice.id },
+        "DMCA notice persisted but no administrator account exists to notify",
+      );
+      return;
+    }
+
+    const outcomes = await Promise.allSettled(
+      administrators.map((administrator) =>
+        notificationService.send({
+          userId: administrator.id,
+          type: "system",
+          title: `DMCA ${notice.type} notice requires review`,
+          message: `Notice ${notice.id} concerning ${notice.contentType} ${notice.contentId} requires legal review.`,
+          link: "/admin/dmca",
+          metadata: { noticeId: notice.id, contentType: notice.contentType },
+        }),
+      ),
     );
+    const delivered = outcomes.some(
+      (outcome) =>
+        outcome.status === "fulfilled" && outcome.value.delivered,
+    );
+    if (!delivered) {
+      logger.error(
+        { noticeId: notice.id, administratorCount: administrators.length },
+        "DMCA notice persisted but no administrator notification was confirmed",
+      );
+    }
   }
 
   private async notifyOriginalClaimant(
