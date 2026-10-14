@@ -2481,37 +2481,48 @@ class MusicWorkflowAutomationService {
   // ── Scheduled workflow runners ────────────────────────────────────────────
 
   private startScheduledWorkflows(): void {
-    // Weekly digest — every Monday at 9:00 AM server time
-    const weeklyTask = cron?.schedule("0 9 * * 1", async () => {
-      try {
-        await this.runScheduledWorkflow(
-          "schedule:weekly",
-          "weekly-performance-digest",
-        );
-      } catch (err) {
-        logger.warn({ err: err }, "[MusicWorkflow] Weekly digest cron failed:");
-      }
-    });
-    this.scheduledTasks.set("weekly", weeklyTask);
+    const registered: string[] = [];
+    const weeklyTemplate = WORKFLOW_TEMPLATES.find(
+      (template) => template.id === "weekly-performance-digest",
+    );
+    if (weeklyTemplate && !weeklyTemplate.unavailableReason) {
+      const weeklyTask = cron.schedule("0 9 * * 1", async () => {
+        try {
+          await this.runScheduledWorkflow(
+            "schedule:weekly",
+            "weekly-performance-digest",
+          );
+        } catch (err) {
+          logger.warn({ err }, "[MusicWorkflow] Weekly digest cron failed:");
+        }
+      });
+      this.scheduledTasks.set("weekly", weeklyTask);
+      registered.push("weekly digest");
+    }
 
-    // Monthly royalty check — 1st of each month at 8:00 AM
-    const monthlyTask = cron?.schedule("0 8 1 * *", async () => {
-      try {
-        await this.runScheduledWorkflow(
-          "schedule:monthly",
-          "royalty-collection-reminder",
-        );
-      } catch (err) {
-        logger.warn(
-          { err: err },
-          "[MusicWorkflow] Monthly royalty cron failed:",
-        );
-      }
-    });
-    this.scheduledTasks.set("monthly", monthlyTask);
+    const monthlyTemplate = WORKFLOW_TEMPLATES.find(
+      (template) => template.id === "royalty-collection-reminder",
+    );
+    if (monthlyTemplate && !monthlyTemplate.unavailableReason) {
+      const monthlyTask = cron.schedule("0 8 1 * *", async () => {
+        try {
+          await this.runScheduledWorkflow(
+            "schedule:monthly",
+            "royalty-collection-reminder",
+          );
+        } catch (err) {
+          logger.warn(
+            { err },
+            "[MusicWorkflow] Monthly royalty reminder cron failed:",
+          );
+        }
+      });
+      this.scheduledTasks.set("monthly", monthlyTask);
+      registered.push("monthly royalty reminder");
+    }
 
     logger.info(
-      "[MusicWorkflow] Scheduled workflows started (weekly digest, monthly royalty check)",
+      `[MusicWorkflow] Scheduled workflow cron jobs initialized: ${registered.length ? registered.join(", ") : "none available"}`,
     );
   }
 
@@ -2531,6 +2542,13 @@ class MusicWorkflowAutomationService {
 
     const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
     if (!template) return;
+    if (template.unavailableReason) {
+      logger.info(
+        { templateId, reason: template.unavailableReason },
+        "[MusicWorkflow] Skipping unavailable scheduled workflow",
+      );
+      return;
+    }
 
     // Execute each user's workflow concurrently — they are fully independent
     // (different userId, different DB rows, different notification targets).
