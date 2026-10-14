@@ -671,17 +671,18 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         description: "Only alert if the uncollected amount is above this value",
       },
       deliveryMethod: {
-        label: "Report delivery",
+        label: "Reminder delivery",
         type: "select",
-        default: "email",
+        default: "push",
         options: ["email", "push", "both"],
+        description: "Only push/in-app reminders are supported; email and both are unavailable",
       },
     },
     defaultConfig: {
       checkPROBalance: false,
       generateReport: false,
       notifyThreshold: 50,
-      deliveryMethod: "email",
+      deliveryMethod: "push",
     },
     enabledByDefault: false,
   },
@@ -1356,7 +1357,7 @@ class MusicWorkflowAutomationService {
         message: `"${trackName}" mix is approved. Please create the mastering task in Projects; this workflow does not persist tasks or schedule reminders.`,
         link: "/projects",
       });
-      actions?.push("Team notified of mix completion");
+      actions?.push("Account owner notified of mix completion");
     }
 
     if (config?.createMasteringTask) {
@@ -1431,22 +1432,18 @@ class MusicWorkflowAutomationService {
     }
     const actions: string[] = [];
 
-    await notificationService.send({
+    const delivery = await notificationService.send({
       userId,
       type: "info",
       title: "Distribution Submitted",
       message: `"${releaseTitle}" has been submitted to ${Array.isArray(platforms) && platforms.length > 0 ? platforms.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
       link: "/distribution",
     });
-    actions.push("Push notification sent");
-
-    if (config.notifyTeam) {
-      actions.push("Team collaborators notified");
-    }
-
-    if (config.setFollowUpReminder) {
-      actions.push("48-hour follow-up reminder scheduled");
-    }
+    actions.push(
+      delivery.delivered
+        ? "Distribution submission notification delivered"
+        : "Distribution submission notification suppressed or not delivered",
+    );
 
     return { actions };
   }
@@ -1511,26 +1508,6 @@ class MusicWorkflowAutomationService {
     throw new WorkflowUnavailableError(
       "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest was generated.",
     );
-
-    const sections: string[] = [];
-
-    if (config?.includeStreamingData) sections?.push("streaming stats");
-    if (config?.includeRevenueData) sections?.push("revenue summary");
-    if (config?.includeAISuggestions) sections?.push("AI growth tips");
-
-    const summary = `Weekly digest covering: ${sections?.join(", ")}.`;
-
-    if (config?.deliveryMethod === "push" || config?.deliveryMethod === "both") {
-      await notificationService?.send({
-        userId,
-        type: "info",
-        title: "Your Weekly Performance Digest",
-        message: summary,
-        link: "/analytics",
-      });
-    }
-
-    return { sections, summary };
   }
 
   private async handleStreamingMilestoneCelebrate(
@@ -1586,7 +1563,7 @@ class MusicWorkflowAutomationService {
     }
     const actions: string[] = [];
 
-    // Persist the confirmed placement in the database so the user has a full record
+    // Persist the confirmed placement in the database so the user has a full record.
     try {
       await db.insert(playlistPitches).values({
         userId,
@@ -1608,6 +1585,7 @@ class MusicWorkflowAutomationService {
         { err },
         "handlePlaylistPlacementAlert: failed to save pitch record",
       );
+      throw new Error("Playlist placement was confirmed but could not be persisted");
     }
 
     if (config?.notifyPush) {
@@ -1754,25 +1732,25 @@ class MusicWorkflowAutomationService {
         "Royalty report generation and external PRO balance checks are unavailable: no verified data integration is configured. No report or balance check was performed.",
       );
     }
-    const actions: string[] = [];
-
-    if (config?.generateReport) {
-      actions?.push("Monthly royalty collection report generated");
+    if (config?.deliveryMethod !== "push") {
+      throw new WorkflowUnavailableError(
+        "Royalty reminder email delivery is unavailable in this workflow. Select push-only delivery; no email was sent.",
+      );
     }
-    if (config?.checkPROBalance) {
-      actions?.push("PRO account balance checked");
-    }
-
-    if (config?.deliveryMethod === "push" || config?.deliveryMethod === "both") {
-      await notificationService?.send({
-        userId,
-        type: "info",
-        title: "Monthly Royalty Reminder",
-        message: "Review your current royalty statements. This reminder does not generate a report or query external PRO balances.",
-        link: "/royalties",
-      });
-    }
-
+    const delivery = await notificationService.send({
+      userId,
+      type: "info",
+      title: "Monthly Royalty Reminder",
+      message: "Review your current royalty statements. This reminder does not generate a report or query external PRO balances.",
+      link: "/royalties",
+    });
+    const actions = [
+      delivery.browserSent
+        ? "Browser push reminder sent"
+        : delivery.delivered
+          ? "In-app reminder delivered; browser push was not confirmed"
+          : "Reminder suppressed or not delivered",
+    ];
     return { actions };
   }
 
@@ -1835,8 +1813,17 @@ class MusicWorkflowAutomationService {
       }
 
       if (config?.autoFillMetadata) {
-        actions?.push(
-          "ISRC, co-writers, copyright year pre-filled from track metadata",
+        const suppliedMetadata = [
+          isrc,
+          iswc,
+          upc,
+          ...(Array.isArray(coWriters) ? coWriters : []),
+          publisherName,
+        ].some((value) => value !== undefined && value !== null && value !== "");
+        actions.push(
+          suppliedMetadata
+            ? "Available track identifiers and contributor metadata copied from event data"
+            : "No track metadata was supplied; nothing was auto-filled",
         );
       }
     } catch (err) {
@@ -1844,6 +1831,7 @@ class MusicWorkflowAutomationService {
         { err },
         "handleProTrackRegistration: failed to upsert publishing rights",
       );
+      throw new Error("Publishing rights record could not be persisted");
     }
 
     if (config?.sendReminder) {
@@ -2204,39 +2192,33 @@ class MusicWorkflowAutomationService {
     const actions: string[] = [];
 
     // Build a curated list of sync licensing targets based on genre
-    const syncTargets: Array<{ name: string; email?: string; type: string }> = [
+    const syncTargets: Array<{ name: string; type: string }> = [
       {
         name: "Music Supervision Hub",
-        email: "submissions@musicsupervisionhub.com",
         type: "Film & TV",
       },
-      { name: "Musicbed", email: "licensing@musicbed.com", type: "Commercial" },
-      { name: "Artlist", email: "submissions@artlist.io", type: "Commercial" },
+      { name: "Musicbed", type: "Commercial" },
+      { name: "Artlist", type: "Commercial" },
       {
         name: "Epidemic Sound",
-        email: "licensing@epidemicsound.com",
         type: "Commercial",
       },
-      { name: "Musicvine", email: "sync@musicvine.com", type: "Film & TV" },
-      { name: "TAXI Music", email: "submissions@taxi.com", type: "Film & TV" },
+      { name: "Musicvine", type: "Film & TV" },
+      { name: "TAXI Music", type: "Film & TV" },
       {
         name: "Crucial Music",
-        email: "sync@crucialmusic.com",
         type: "Advertising",
       },
       {
         name: "Pump Audio",
-        email: "licensing@pumpaudio.com",
         type: "Broadcast",
       },
       {
         name: "Audio Network",
-        email: "licensing@audionetwork.com",
         type: "Broadcast",
       },
       {
         name: "Jingle Punks",
-        email: "sync@jinglepunks.com",
         type: "Advertising",
       },
     ].slice(0, maxPitches);
@@ -2260,7 +2242,7 @@ class MusicWorkflowAutomationService {
             price: price ? Number(price) : null,
             previewUrl: previewUrl ? String(previewUrl) : null,
             submissionTarget: target.name,
-            status: config.autoSendPitch ? "submitted" : "draft",
+            status: "draft",
           });
           count++;
         } catch (err) {
@@ -2277,49 +2259,15 @@ class MusicWorkflowAutomationService {
       `${savedCount} sync submissions saved to Sync Licensing tracker`,
     );
 
-    // Auto-send pitch emails if configured
-    if (config.autoSendPitch) {
-      let emailsSent = 0;
-      for (const target of syncTargets) {
-        if (!target.email) continue;
-        try {
-          await (emailService as any).sendEmail({
-            to: target.email,
-            subject: `Sync Licensing Submission: "${releaseTitle}" by ${artistName}`,
-            html: `
-              <p>Hi ${target.name} team,</p>
-              <p>I'd like to submit <strong>"${releaseTitle}"</strong> by <strong>${artistName}</strong> for your sync licensing consideration.</p>
-              ${genre ? `<p><strong>Genre:</strong> ${genre}</p>` : ""}
-              ${mood ? `<p><strong>Mood:</strong> ${mood}</p>` : ""}
-              ${bpm ? `<p><strong>BPM:</strong> ${bpm}</p>` : ""}
-              ${previewUrl ? `<p><strong>Preview:</strong> <a href="${previewUrl}">Listen here</a></p>` : ""}
-              <p>This track is available for ${targetGenres} placements${isExclusive ? " (exclusive licensing available)" : ""}.</p>
-              <p>Please let me know if you need the full-quality file, stems, or any additional information.</p>
-              <p>Best regards,<br>${artistName}</p>
-            `,
-          });
-          emailsSent++;
-        } catch (err) {
-          logger.warn(
-            { err, target: target.name },
-            "handleSyncLicensePitch: email failed",
-          );
-        }
-      }
-      actions?.push(
-        `${emailsSent} pitch emails sent to sync licensing companies`,
-      );
-    } else {
-      actions?.push(
-        `${savedCount} pitch drafts saved — review and send from Sync Licensing`,
-      );
-    }
+    actions.push(
+      `${savedCount} pitch drafts saved — review and send from Sync Licensing`,
+    );
 
     await notificationService?.send({
       userId,
       type: "info",
       title: "Sync Licensing Pitches Ready",
-      message: `${savedCount} sync pitches ${config?.autoSendPitch ? "sent" : "drafted"} for "${releaseTitle}" targeting ${targetGenres} placements.`,
+      message: `${savedCount} sync pitch drafts are ready for "${releaseTitle}" targeting ${targetGenres} placements. No emails were sent.`,
       link: "/sync-licensing",
     });
 
