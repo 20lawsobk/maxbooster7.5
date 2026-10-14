@@ -248,18 +248,6 @@ app.get("/.well-known/security.txt", (_req, res) => {
     );
 });
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-declare module "express-session" {
-  interface SessionData {
-    userId: string;
-  }
-}
-
 // Session middleware is configured in the async initialization block below
 // to support Redis session store for production
 
