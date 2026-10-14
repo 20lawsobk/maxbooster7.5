@@ -1138,20 +1138,48 @@ export const statusPageIncidentServices = pgTable(
 // ============================================================================
 // DMCA NOTICES
 // ============================================================================
-export const dmcaNotices = pgTable("dmca_notices", {
-  id: varchar("id")
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  contentType: text("content_type").notNull(),
-  contentId: varchar("content_id").notNull(),
-  claimantName: text("claimant_name").notNull(),
-  claimantEmail: text("claimant_email").notNull(),
-  description: text("description"),
-  status: text("status").default("pending"),
-  submittedAt: timestamp("submitted_at").defaultNow(),
-  resolvedAt: timestamp("resolved_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const dmcaNotices = pgTable(
+  "dmca_notices",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    type: text("type").notNull().default("takedown"),
+    contentType: text("content_type").notNull(),
+    contentId: varchar("content_id").notNull(),
+    contentOwnerId: varchar("content_owner_id"),
+    claimantName: text("claimant_name").notNull(),
+    claimantEmail: text("claimant_email").notNull(),
+    claimantAddress: text("claimant_address"),
+    claimantPhone: text("claimant_phone"),
+    originalWorkUrl: text("original_work_url"),
+    originalWorkDescription: text("original_work_description"),
+    infringingUrl: text("infringing_url"),
+    signature: text("signature"),
+    goodFaithStatement: boolean("good_faith_statement"),
+    accuracyStatement: boolean("accuracy_statement"),
+    perjuryStatement: boolean("perjury_statement"),
+    description: text("description"),
+    status: text("status").default("pending"),
+    relatedNoticeId: varchar("related_notice_id"),
+    counterNoticeReason: text("counter_notice_reason"),
+    counterNoticeEmailState: text("counter_notice_email_state")
+      .notNull()
+      .default("not_attempted"),
+    counterNoticeEmailMessageId: text("counter_notice_email_message_id"),
+    counterNoticeEmailAttemptedAt: timestamp("counter_notice_email_attempted_at"),
+    submittedAt: timestamp("submitted_at").defaultNow(),
+    processedAt: timestamp("processed_at"),
+    processedBy: varchar("processed_by"),
+    adminNotes: text("admin_notes"),
+    resolvedAt: timestamp("resolved_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => ({
+    contentOwnerIdIdx: index("dmca_notices_content_owner_id_idx").on(t.contentOwnerId),
+    relatedNoticeIdIdx: index("dmca_notices_related_notice_id_idx").on(t.relatedNoticeId),
+  }),
+);
 
 // ============================================================================
 // DMCA STRIKES
@@ -1167,6 +1195,11 @@ export const dmcaStrikes = pgTable(
     contentType: text("content_type").notNull(),
     contentId: varchar("content_id").notNull(),
     reason: text("reason"),
+    strikeNumber: integer("strike_number"),
+    isActive: boolean("is_active").notNull().default(true),
+    revokedAt: timestamp("revoked_at"),
+    revokedBy: varchar("revoked_by"),
+    revokeReason: text("revoke_reason"),
     expiresAt: timestamp("expires_at"),
     createdAt: timestamp("created_at").defaultNow(),
   },
@@ -1668,8 +1701,11 @@ export const legalHolds = pgTable(
     contentId: varchar("content_id").notNull(),
     reason: text("reason"),
     holdType: text("hold_type").default("dmca"),
+    dmcaNoticeId: varchar("dmca_notice_id"),
     status: text("status").default("active"),
     expiresAt: timestamp("expires_at"),
+    releasedAt: timestamp("released_at"),
+    releasedBy: varchar("released_by"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (t) => ({

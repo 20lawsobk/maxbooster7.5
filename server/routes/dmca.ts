@@ -65,7 +65,7 @@ router.post("/notice", dmcaNoticeLimiter, async (req, res) => {
       success: true,
       notice,
       message:
-        "DMCA notice submitted successfully. It will be reviewed within 24-48 hours.",
+        "DMCA notice submitted and recorded. Keep the notice ID for follow-up; review timing is not guaranteed.",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error submitting DMCA notice:");
@@ -92,7 +92,7 @@ router.post("/counter", requireAuth, async (req, res) => {
       success: true,
       notice: counterNotice,
       message:
-        "Counter-notification submitted. The original claimant has 10-14 business days to respond.",
+        "Counter-notification submitted and the notice email was accepted by the email provider. Any restoration requires legal review; no automatic restoration is scheduled.",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error submitting counter-notice:");

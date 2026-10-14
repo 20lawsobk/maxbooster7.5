@@ -695,16 +695,27 @@ router.post(
         process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
+      let emailSent = false;
       try {
-        await (emailService as any)?.sendEmail({
+        emailSent = await emailService.send({
           to: user.email,
           subject: "Verify your Max Booster email",
           html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
+          text: `Verify your Max Booster email by visiting: ${verificationUrl}. This link expires in 24 hours.`,
         });
       } catch (emailError) {
         logger.warn(
-          "Email service unavailable — verification email not sent (token not logged).",
+          { err: emailError },
+          "Email service failed — verification email not sent (token not logged).",
         );
+      }
+
+      if (!emailSent) {
+        return res.status(503).json({
+          success: false,
+          error: "verification_email_unavailable",
+          message: "We could not send the verification email. Please try again later.",
+        });
       }
 
       res.json({ success: true, message: "Verification email sent" });

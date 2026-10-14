@@ -33,3 +33,9 @@ host.
 **How to apply:** Confirm the exact push transport before retrying. If it is
 unavailable, report the authentication or host-trust block rather than
 rewriting the branch through file APIs.
+
+Never print raw remote URLs when inspecting Git metadata; old remotes can embed
+credentials as URL userinfo (including token-only userinfo, not just user:password).
+**Why:** A historical remote contained a credential even though origin was clean.
+**How to apply:** Parse and remove all URL userinfo before emitting remote metadata;
+report the need for revocation without repeating the credential.

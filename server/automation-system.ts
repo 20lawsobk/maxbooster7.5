@@ -140,7 +140,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Register built-in actions
   private registerBuiltInActions(): void {
-    // Email actions — routed through notificationService?.sendEmail
+    // Email actions use notificationService.send() and require its emailSent result
     this.registerAction("send-email", {
       name: "Send Email",
       description: "Send email notification",
@@ -153,7 +153,7 @@ export class AutomationSystem extends EventEmitter {
           const notif = await loadNotificationService();
           if (!notif) throw new Error("notificationService unavailable");
           // notificationService is user-centric; resolve user when only an
-          // address is supplied so we can hit its public sendEmail flow.
+          // address is supplied so notificationService.send() can resolve the user's email preferences.
           let userId =
             typeof params?.userId === "string" ? params.userId : undefined;
           if (!userId && params?.to) {
