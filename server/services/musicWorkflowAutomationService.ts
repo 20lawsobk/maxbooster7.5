@@ -958,8 +958,9 @@ class MusicWorkflowAutomationService {
       { enabled: boolean; config: Record<string, any> }
     > = {};
     for (const row of rows) {
+      const template = WORKFLOW_TEMPLATES.find((candidate) => candidate.id === row.templateId);
       map[row.templateId] = {
-        enabled: row.enabled,
+        enabled: row.enabled && !template?.unavailableReason,
         config: (row?.config as Record<string, any>) ?? {},
       };
     }
@@ -2384,7 +2385,14 @@ class MusicWorkflowAutomationService {
       .from(musicWorkflowAutomations)
       .where(eq(musicWorkflowAutomations.userId, userId));
 
-    const enabledCount = userAutomations?.filter((a) => a?.enabled).length;
+    const enabledTemplateIds = new Set(
+      WORKFLOW_TEMPLATES
+        .filter((template) => !template.unavailableReason)
+        .map((template) => template.id),
+    );
+    const enabledCount = userAutomations.filter(
+      (automation) => automation.enabled && enabledTemplateIds.has(automation.templateId),
+    ).length;
     const [executionStats] = await db
       .select({
         totalRuns: sql<number>`count(*)`,
