@@ -18,6 +18,20 @@ describe("pre-launch gate helpers", () => {
     });
   });
 
+  it("never selects a Neon secret over the disposable CI database", () => {
+    expect(
+      selectDatabaseTarget({
+        CI: "true",
+        NODE_ENV: "test",
+        NEON_DATABASE_URL: "postgresql://prod:secret@neon.example/production",
+        DATABASE_URL: "postgresql://postgres:postgres@localhost/test",
+      }),
+    ).toEqual({
+      name: "DATABASE_URL",
+      url: "postgresql://postgres:postgres@localhost/test",
+    });
+  });
+
   it("supports DATABASE_URL as the isolated CI database fallback", () => {
     expect(
       selectDatabaseTarget({
