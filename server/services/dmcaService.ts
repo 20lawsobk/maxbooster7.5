@@ -262,8 +262,14 @@ export class DMCAService {
       userId: notice.contentOwnerId ?? undefined,
     });
 
-    logger.info(
-      `Content ${notice?.contentId} taken down due to DMCA notice ${notice?.id}`,
+    logger.warn(
+      {
+        noticeId: notice.id,
+        contentId: notice.contentId,
+        legalHoldCreated: true,
+        contentVisibilityChanged: false,
+      },
+      "DMCA legal hold recorded; this method does not itself remove or unpublish content",
     );
   }
 
@@ -272,6 +278,8 @@ export class DMCAService {
       .update(legalHolds)
       .set({
         status: "released",
+        releasedAt: new Date(),
+        releasedBy: "system",
       })
       .where(
         and(
@@ -296,8 +304,14 @@ export class DMCAService {
         .where(eq(dmcaNotices.id, notice?.relatedNoticeId));
     }
 
-    logger.info(
-      `Content ${notice?.contentId} restored after counter-notice ${notice?.id}`,
+    logger.warn(
+      {
+        noticeId: notice.id,
+        contentId: notice.contentId,
+        legalHoldReleased: true,
+        contentVisibilityChanged: false,
+      },
+      "DMCA legal hold released; this method does not itself restore content visibility",
     );
   }
 
