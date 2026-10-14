@@ -16,7 +16,16 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cacheDir = path.join(root, ".cache");
 const tsgo = path.join(root, "node_modules", ".bin", "tsgo");
 const batchSize = 50;
+// Vercel's native CI sandbox has a hard ~2 GB process limit. These application
+// entrypoints fan out into most of the monorepo and were the reason even the first
+// batch was killed. The deployment build and ESLint cover the affected trees;
+// GitHub Actions' full `npm run check` remains mandatory before merge/release.
 const excluded = new Set([
+  "server/index.ts",
+  "server/cluster.ts",
+  "server/diffusion-gateway/index.ts",
+  "client/src/App.tsx",
+  "client/src/main.tsx",
   "client/src/components/search/GlobalSearch.tsx",
   "client/src/components/studio/StudioOneLayout.tsx",
   "client/src/components/studio/StudioOneWrapper.tsx",
@@ -124,9 +133,10 @@ async function main() {
       ...listSourceFiles("client/src"),
       ...shared,
     ]);
+    console.log("[typecheck] Vercel memory-bounded preflight: excluding only high-fan-out application entrypoints listed in the script.");
     runProject(tempDir, "server", "tsconfig.server.json", server);
     runProject(tempDir, "client", "tsconfig.client.json", client);
-    console.log("[typecheck] All bounded server and client TypeScript batches passed.");
+    console.log("[typecheck] Bounded server/client source batches passed. This does NOT replace GitHub Actions' full `npm run check`; the full check remains a release gate.");
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
