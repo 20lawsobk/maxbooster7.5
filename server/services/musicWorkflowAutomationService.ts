@@ -265,7 +265,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     id: "distribution-submitted-notify",
     name: "Distribution Submission Alert",
     description:
-      "When your music is submitted to streaming platforms, automatically notify your team, send a confirmation to your email list, and remind you to check back in 24-72 hours for approval.",
+      "When distribution is submitted, send an in-app alert to the account owner. Team-wide delivery, confirmation email, and durable follow-up reminders are not configured.",
     phase: "pre-release",
     icon: "🚀",
     trigger: {
@@ -1410,8 +1410,8 @@ class MusicWorkflowAutomationService {
     await notificationService.send({
       userId,
       type: "info",
-      title: "Pre-Save Campaign Launched",
-      message: `Pre-save campaign for "${releaseTitle}" is live. Share the link to start collecting early saves.`,
+      title: "Pre-Save Campaign Event",
+      message: `A pre-save campaign event for "${releaseTitle}" was received. Verify the landing page in Distribution before sharing it.`,
       link: "/distribution",
     });
 
@@ -1477,6 +1477,11 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { releaseTitle = "New Release", artistName = "Artist" } = eventData;
+    if (config.notifyFollowers) {
+      throw new WorkflowUnavailableError(
+        "Follower-wide release-alert delivery is unavailable: no verified follower/opt-in audience is configured. No follower push was sent.",
+      );
+    }
     const message =
       config.message ||
       `${artistName}'s new release "${releaseTitle}" is out now — stream it!`;
@@ -1499,17 +1504,15 @@ class MusicWorkflowAutomationService {
   }
 
   private async handleWeeklyPerformanceDigest(
-    userId: string,
+    _userId: string,
     _eventData: WorkflowEventData,
-    config: Record<string, any>,
+    _config: Record<string, any>,
   ) {
-    const sections: string[] = [];
+    throw new WorkflowUnavailableError(
+      "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest was generated.",
+    );
 
-    if (config?.includeStreamingData || config?.includeRevenueData || config?.includeAISuggestions) {
-      throw new WorkflowUnavailableError(
-        "Weekly performance digest data collection is unavailable: this handler does not query verified streaming, revenue, or recommendation data. No digest was generated.",
-      );
-    }
+    const sections: string[] = [];
 
     if (config?.includeStreamingData) sections?.push("streaming stats");
     if (config?.includeRevenueData) sections?.push("revenue summary");
@@ -1576,6 +1579,11 @@ class MusicWorkflowAutomationService {
       bpm,
     } = eventData as any;
 
+    if (config?.notifyEmail) {
+      throw new WorkflowUnavailableError(
+        "Playlist-placement email notification is unavailable: no verified email delivery path is configured for this automation. No email was sent.",
+      );
+    }
     const actions: string[] = [];
 
     // Persist the confirmed placement in the database so the user has a full record
@@ -1603,14 +1611,18 @@ class MusicWorkflowAutomationService {
     }
 
     if (config?.notifyPush) {
-      await notificationService?.send({
+      const delivery = await notificationService.send({
         userId,
         type: "info",
         title: "Playlist Placement!",
         message: `"${trackName}" was added to "${playlistName}" (${Number(playlistFollowers).toLocaleString()} followers).`,
         link: "/playlist-pitching",
       });
-      actions?.push("Placement notification sent");
+      actions.push(
+        delivery.delivered
+          ? "Placement notification delivered"
+          : "Placement notification suppressed or not delivered",
+      );
     }
 
     // Auto-generate and queue a social announcement for large playlists
@@ -2180,6 +2192,12 @@ class MusicWorkflowAutomationService {
       isExclusive = false,
       price,
     } = eventData as any;
+
+    if (config?.autoSendPitch) {
+      throw new WorkflowUnavailableError(
+        "Automated sync-pitch email delivery is disabled until recipient addresses come from a verified user-owned contact list. No external emails were sent.",
+      );
+    }
 
     const maxPitches = Math.min(Number(config.maxPitchesPerRelease) || 5, 10);
     const targetGenres = config.targetGenres || "Film & TV";
