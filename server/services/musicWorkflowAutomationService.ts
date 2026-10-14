@@ -1610,23 +1610,37 @@ class MusicWorkflowAutomationService {
     }
     const actions: string[] = [];
 
-    // Persist the confirmed placement in the database so the user has a full record.
+    // Persist the confirmed placement idempotently so duplicate events do not create duplicate records.
+    const placementDescription = `Confirmed placement on "${playlistName}"`;
     try {
-      await db.insert(playlistPitches).values({
-        userId,
-        trackTitle: String(trackName),
-        artistName: "",
-        genre: genre ? String(genre) : null,
-        mood: mood ? String(mood) : null,
-        bpm: bpm ? Number(bpm) : null,
-        description: `Confirmed placement on "${playlistName}"`,
-        targetPlaylistUrl: targetPlaylistUrl ? String(targetPlaylistUrl) : null,
-        curatorName: curatorName ? String(curatorName) : null,
-        curatorEmail: curatorEmail ? String(curatorEmail) : null,
-        status: "placed",
-        submittedAt: new Date(),
-      });
-      actions?.push("Placement record saved to Playlist Pitches");
+      const [existingPlacement] = await db
+        .select()
+        .from(playlistPitches)
+        .where(and(
+          eq(playlistPitches.userId, userId),
+          eq(playlistPitches.trackTitle, String(trackName)),
+          eq(playlistPitches.description, placementDescription),
+        ))
+        .limit(1);
+      if (existingPlacement) {
+        actions.push("Placement record already exists; duplicate event was deduplicated");
+      } else {
+        await db.insert(playlistPitches).values({
+          userId,
+          trackTitle: String(trackName),
+          artistName: "",
+          genre: genre ? String(genre) : null,
+          mood: mood ? String(mood) : null,
+          bpm: bpm ? Number(bpm) : null,
+          description: placementDescription,
+          targetPlaylistUrl: targetPlaylistUrl ? String(targetPlaylistUrl) : null,
+          curatorName: curatorName ? String(curatorName) : null,
+          curatorEmail: curatorEmail ? String(curatorEmail) : null,
+          status: "placed",
+          submittedAt: new Date(),
+        });
+        actions.push("Placement record saved to Playlist Pitches");
+      }
     } catch (err) {
       logger.warn(
         { err },
@@ -1828,6 +1842,13 @@ class MusicWorkflowAutomationService {
 
     const actions: string[] = [];
     const pro = config?.pro || "ASCAP";
+    const registrationUrls: Record<string, string> = {
+      ASCAP: "https://www.ascap.com/music-creators",
+      BMI: "https://www.bmi.com/join",
+      SESAC: "https://www.sesac.com/",
+      SOCAN: "https://www.socan.com/",
+      PRS: "https://www.prsformusic.com/",
+    };
 
     // Upsert a publishing rights record so the user has a pre-filled registration
     try {
@@ -1854,7 +1875,7 @@ class MusicWorkflowAutomationService {
           proName: pro,
           copyrightYear: new Date().getFullYear(),
           status: "pending",
-          notes: `Auto-created by workflow. Register this track at ${pro === "ASCAP" ? "ascap.com" : pro === "BMI" ? "bmi.com" : "sesac.com"}.`,
+          notes: `Auto-created by workflow. Register this track at ${registrationUrls[pro] || "your selected PRO's official website"}.`,
         });
         actions?.push(
           `Publishing rights record created for "${trackName}" (${pro})`,
@@ -1893,13 +1914,6 @@ class MusicWorkflowAutomationService {
     }
 
     if (config?.sendReminder) {
-      const registrationUrls: Record<string, string> = {
-        ASCAP: "https://www.ascap.com/music-creators",
-        BMI: "https://www.bmi.com/join",
-        SESAC: "https://www.sesac.com/",
-        SOCAN: "https://www.socan.com/",
-        PRS: "https://www.prsformusic.com/",
-      };
       const registrationUrl = registrationUrls[pro];
       const delivery = await notificationService.send({
         userId,
@@ -2387,7 +2401,7 @@ class MusicWorkflowAutomationService {
     const successCount = Number(executionStats?.successCount ?? 0);
     const failedCount = Number(executionStats?.failedCount ?? 0);
     const successRate =
-      totalRuns > 0 ? Math.round((successCount / (totalRuns || 1)) * 100) : 100;
+      totalRuns > 0 ? Math.round((successCount / totalRuns) * 100) : 0;
     const lastRunAt = executionStats?.lastRunAt
       ? new Date(executionStats.lastRunAt).toISOString()
       : null;
@@ -2407,18 +2421,42 @@ class MusicWorkflowAutomationService {
       0,
     );
 
-    const nextScheduledRuns = [
-      {
-        name: "Weekly Performance Digest",
+    const nextScheduledRuns: Array<{
+      name: string;
+      schedule: string;
+      nextRun: string;
+    }> = [];
+    const enabledIds = new Set(
+      userAutomations.filter((automation) => automation.enabled).map((automation) => automation.templateId),
+    );
+    const weeklyTemplate = WORKFLOW_TEMPLATES.find((template) => template.id === "weekly-performance-digest");
+    if (enabledIds.has("weekly-performance-digest") && weeklyTemplate && !weeklyTemplate.unavailableReason) {
+      nextScheduledRuns.push({
+        name: weeklyTemplate.name,
         schedule: "Every Monday at 9:00 AM",
         nextRun: nextMonday.toISOString(),
-      },
-      {
-        name: "Monthly Royalty Collection Check",
+      });
+    }
+    const royaltyTemplate = WORKFLOW_TEMPLATES.find((template) => template.id === "royalty-collection-reminder");
+    const royaltyAutomation = userAutomations.find((automation) => automation.templateId === "royalty-collection-reminder" && automation.enabled);
+    const royaltyConfig = {
+      ...(royaltyTemplate?.defaultConfig ?? {}),
+      ...((royaltyAutomation?.config as Record<string, any> | undefined) ?? {}),
+    };
+    if (
+      enabledIds.has("royalty-collection-reminder") &&
+      royaltyTemplate &&
+      !royaltyTemplate.unavailableReason &&
+      royaltyConfig.deliveryMethod === "push" &&
+      !royaltyConfig.generateReport &&
+      !royaltyConfig.checkPROBalance
+    ) {
+      nextScheduledRuns.push({
+        name: "Monthly Royalty Reminder",
         schedule: "1st of each month at 8:00 AM",
         nextRun: firstOfNext.toISOString(),
-      },
-    ];
+      });
+    }
 
     return {
       totalTemplates: WORKFLOW_TEMPLATES.length,
