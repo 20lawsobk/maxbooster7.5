@@ -925,24 +925,12 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
     const userId = (req.user as AuthenticatedUser).id;
     const { trackId, artist, title } = generateCodeSchema?.parse(req.body) ?? {};
 
-    let isrcCode: string;
-    let assignedTo: string = `${artist} - ${title}`;
-    let isOfficiallyRegistered = true;
-
-    try {
-      // LabelGrid throws when not configured — falls through to internal generator below
-      const result = await labelGridService?.generateISRC(artist, title);
-      isrcCode = result?.code;
-      assignedTo = result?.assignedTo || assignedTo;
-    } catch (lgError) {
-      logger.warn(
-        { err: lgError },
-        "LabelGrid ISRC generation unavailable, using internal generator:",
-      );
-      const fallback = await musicCodesService?.generateISRC(userId);
-      isrcCode = fallback?.code;
-      isOfficiallyRegistered = false;
-    }
+    const assignedTo = `${artist} - ${title}`;
+    const fallback = await musicCodesService.generateISRC(userId);
+    const isrcCode = fallback.code;
+    // Internal codes are provisional only. They are never written to the
+    // authoritative ISRC registry or a distribution track.
+    const isOfficiallyRegistered = false;
 
     if (trackId && !trackId.startsWith("temp_")) {
       const [track] = await db
@@ -955,17 +943,19 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Track not found" });
       }
-      await db.insert(isrcRegistry).values({
-        isrc: isrcCode,
-        trackId,
-        releaseId: track.releaseId,
-        artistId: userId,
-        title,
-      });
-      await db
-        .update(distroTracks)
-        .set({ isrc: isrcCode })
-        .where(eq(distroTracks.id, trackId));
+      if (isOfficiallyRegistered) {
+        await db.insert(isrcRegistry).values({
+          isrc: isrcCode,
+          trackId,
+          releaseId: track.releaseId,
+          artistId: userId,
+          title,
+        });
+        await db
+          .update(distroTracks)
+          .set({ isrc: isrcCode })
+          .where(eq(distroTracks.id, trackId));
+      }
     }
 
     res.json({
@@ -999,36 +989,25 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
     });
     const { releaseId, title } = upcSchema?.parse(req.body) ?? {};
 
-    let upcCode: string;
-    let assignedTo: string = title;
-    let isOfficiallyRegistered = true;
-
-    try {
-      // LabelGrid throws when not configured — falls through to internal generator below
-      const result = await labelGridService?.generateUPC(title);
-      upcCode = result?.code;
-      assignedTo = result?.assignedTo || assignedTo;
-    } catch (lgError) {
-      logger.warn(
-        { err: lgError },
-        "LabelGrid UPC generation unavailable, using internal generator:",
-      );
-      const fallback = await musicCodesService?.generateUPC(userId);
-      upcCode = fallback?.code;
-      isOfficiallyRegistered = false;
-    }
+    const assignedTo = title;
+    const fallback = await musicCodesService.generateUPC(userId);
+    const upcCode = fallback.code;
+    // Internal codes are provisional only and are not persisted as official UPCs.
+    const isOfficiallyRegistered = false;
 
     if (releaseId && !releaseId.startsWith("temp_")) {
       const release = await storage.getDistroRelease(releaseId);
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
-      await db.insert(upcRegistry).values({
-        upc: upcCode,
-        releaseId,
-        artistId: userId,
-        title,
-      });
+      if (isOfficiallyRegistered) {
+        await db.insert(upcRegistry).values({
+          upc: upcCode,
+          releaseId,
+          artistId: userId,
+          title,
+        });
+      }
     }
 
     res.json({
@@ -7164,25 +7143,12 @@ router.post(
         return res.status(400).json({ error: "artist and title are required" });
       }
 
-      let isrcCode: string;
-      let assignedTo: string = `${artist} - ${title}`;
-      let isOfficiallyRegistered = true;
+      const assignedTo = `${artist} - ${title}`;
+      const fallback = await musicCodesService.generateISRC(userId);
+      const isrcCode = fallback.code;
+      const isOfficiallyRegistered = false;
 
-      try {
-        const result = await labelGridService?.generateISRC(artist, title);
-        isrcCode = result?.code;
-        assignedTo = result?.assignedTo || assignedTo;
-      } catch (lgError) {
-        logger.warn(
-          { err: lgError },
-          "LabelGrid ISRC generation unavailable, using internal generator:",
-        );
-        const fallback = await musicCodesService?.generateISRC(userId);
-        isrcCode = fallback?.code;
-        isOfficiallyRegistered = false;
-      }
-
-      if (trackId && trackId !== `temp_${Date.now()}`) {
+      if (isOfficiallyRegistered && trackId && trackId !== `temp_${Date.now()}`) {
         try {
           await codeGenerationService?.generateISRC(
             userId,
@@ -7226,25 +7192,12 @@ router.post(
         return res.status(400).json({ error: "title is required" });
       }
 
-      let upcCode: string;
-      let assignedTo: string = title;
-      let isOfficiallyRegistered = true;
+      const assignedTo = title;
+      const fallback = await musicCodesService.generateUPC(userId);
+      const upcCode = fallback.code;
+      const isOfficiallyRegistered = false;
 
-      try {
-        const result = await labelGridService?.generateUPC(title);
-        upcCode = result?.code;
-        assignedTo = result?.assignedTo || assignedTo;
-      } catch (lgError) {
-        logger.warn(
-          { err: lgError },
-          "LabelGrid UPC generation unavailable, using internal generator:",
-        );
-        const fallback = await musicCodesService?.generateUPC(userId);
-        upcCode = fallback?.code;
-        isOfficiallyRegistered = false;
-      }
-
-      if (releaseId && releaseId !== `temp_${Date.now()}`) {
+      if (isOfficiallyRegistered && releaseId && releaseId !== `temp_${Date.now()}`) {
         try {
           await codeGenerationService?.generateUPC(userId, releaseId, title);
         } catch (storeErr) {
@@ -7873,17 +7826,9 @@ router.post(
             title: release!.title || `Track ${i + 1}`,
             artist: release!.artist || "",
           };
-          try {
-            const result = await labelGridService?.generateISRC(
-              trackInfo?.artist,
-              trackInfo?.title,
-            );
-            codes?.push(result?.code);
-          } catch {
-            const fallback = await musicCodesService?.generateISRC(userId);
-            codes?.push(fallback?.code);
-            isOfficiallyRegistered = false;
-          }
+          const fallback = await musicCodesService.generateISRC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
         }
         const code = codes[0];
         logger.info(
@@ -7908,14 +7853,9 @@ router.post(
         for (let i = 0; i < safeCount; i++) {
           const title =
             release?.title || tracks?.[0]?.title || `Release ${i + 1}`;
-          try {
-            const result = await labelGridService?.generateUPC(title);
-            codes?.push(result?.code);
-          } catch {
-            const fallback = await musicCodesService?.generateUPC(userId);
-            codes?.push(fallback?.code);
-            isOfficiallyRegistered = false;
-          }
+          const fallback = await musicCodesService.generateUPC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
         }
         const code = codes[0];
         logger.info(
@@ -7959,18 +7899,15 @@ router.post(
           .status(400)
           .json({ error: "amount must be a positive number" });
 
-      // Route through LabelGrid — will throw if distributor account not configured
-      const result = await labelGridService?.requestPayout(amount, method);
-      logger.info(
-        `[Distribution] Royalty payout requested by ${userId}: $${amount} via ${method} → id=${result?.id}`,
+      logger.warn(
+        { userId, amount, method },
+        "Royalty payout requested, but no verified Too Lost payout operation is configured",
       );
-      res.json({
-        success: true,
-        payoutId: result.id,
-        amount: result.amount,
-        method,
-        status: result.status,
-        requestedAt: result.requestedAt,
+      return res.status(501).json({
+        success: false,
+        error: "royalty_payout_unavailable",
+        message:
+          "No payout request was sent. Too Lost payout initiation is not supported by the current integration; use a separately verified payout flow.",
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error?.message : String(error);
