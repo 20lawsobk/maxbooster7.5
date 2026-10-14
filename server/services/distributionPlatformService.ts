@@ -1,6 +1,5 @@
 import { storage } from "../storage";
 import { logger } from "../logger.js";
-import { createGracefulRedisClient } from "../lib/gracefulRedis.js";
 
 interface SubmissionResult {
   dispatchId: string;
@@ -8,72 +7,23 @@ interface SubmissionResult {
   message: string;
 }
 
-const redis = createGracefulRedisClient("distributionPlatformService");
-const RATE_LIMIT_WINDOW_SECONDS = 60;
-const RATE_LIMIT_MAX = 10;
-
 /**
- * Check if a user has exceeded the distribution submission rate limit.
- * Uses Redis-backed counting so the limit holds across multiple server instances.
- * Gracefully allows the request if Redis is unavailable.
- */
-async function checkRateLimit(userId: string): Promise<boolean> {
-  const key = `rate_limit:distribution:${userId}`;
-  const count = await redis?.incr(key);
-  if (count === 0) {
-    return true;
-  }
-  if (count === 1) {
-    await redis?.expire(key, RATE_LIMIT_WINDOW_SECONDS);
-  }
-  return count <= RATE_LIMIT_MAX;
-}
-
-/**
- * Queue a release for distribution to a specific provider.
- * Records a dispatch entry in the database and returns immediately;
- * actual delivery is handled asynchronously.
+ * Fail closed until a durable provider worker exists. The previous implementation
+ * wrote a "queued" dispatch and used setTimeout to mark it "processing" without
+ * ever contacting a distributor, which falsely implied delivery had begun.
  */
 export async function submitToProvider(
   releaseId: string,
   providerSlug: string,
   userId: string,
 ): Promise<SubmissionResult> {
-  if (!(await checkRateLimit(userId))) {
-    throw new Error("Rate limit exceeded. Please try again later.");
-  }
-
-  const provider = await (storage as any)?.getDistroProviderBySlug(providerSlug);
-  if (!provider) {
-    throw new Error(`Provider ${providerSlug} not found`);
-  }
-
-  const dispatch = await storage.createDistroDispatch({
-    releaseId,
-    providerId: provider.id,
-    status: "queued",
-    logs: `Queued for ${provider?.name} submission at ${new Date().toISOString()}`,
-  });
-
-  setTimeout(() => {
-    storage
-      .updateDistroDispatch((dispatch as any)?.id, {
-        status: "processing",
-        logs: `${(dispatch as any)?.logs}\nProcessing started at ${new Date().toISOString()}`,
-      })
-      .catch((err) => {
-        logger.warn(
-          { err: err },
-          `Failed to update dispatch ${(dispatch as any)?.id} status:`,
-        );
-      });
-  }, 1000);
-
-  return {
-    dispatchId: (dispatch as any).id,
-    status: "queued",
-    message: `Successfully queued for ${provider?.name} distribution`,
-  };
+  logger.warn(
+    { releaseId, providerSlug, userId },
+    "Generic distribution dispatch unavailable: no durable provider worker is configured; no dispatch was created and no provider request was sent",
+  );
+  throw new Error(
+    "Distribution dispatch unavailable. No dispatch was created and no provider request was sent; use the verified Too Lost submission route.",
+  );
 }
 
 /**
