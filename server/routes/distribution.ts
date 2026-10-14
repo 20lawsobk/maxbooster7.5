@@ -1017,7 +1017,7 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       ...(isOfficiallyRegistered
         ? {}
         : {
-            note: "This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.",
+            note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
           }),
     });
   } catch (error: unknown) {
@@ -7213,7 +7213,7 @@ router.post(
         ...(isOfficiallyRegistered
           ? {}
           : {
-              note: "This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.",
+              note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
             }),
       });
     } catch (error: unknown) {
