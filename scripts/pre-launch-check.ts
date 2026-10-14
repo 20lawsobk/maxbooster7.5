@@ -28,8 +28,15 @@ export function selectDatabaseTarget(
   env: NodeJS.ProcessEnv = process.env,
 ): DatabaseTarget | null {
   const neonUrl = env.NEON_DATABASE_URL?.trim();
-  if (neonUrl) return { name: "NEON_DATABASE_URL", url: neonUrl };
   const fallbackUrl = env.DATABASE_URL?.trim();
+  const isolatedCiRun = env.CI === "true" || env.NODE_ENV === "test";
+
+  // CI must never accidentally prefer a repository secret pointing at the
+  // production Neon database over the local disposable Postgres service.
+  if (isolatedCiRun && fallbackUrl) {
+    return { name: "DATABASE_URL", url: fallbackUrl };
+  }
+  if (neonUrl) return { name: "NEON_DATABASE_URL", url: neonUrl };
   if (fallbackUrl) return { name: "DATABASE_URL", url: fallbackUrl };
   return null;
 }
@@ -212,12 +219,18 @@ async function main(): Promise<void> {
   }
 
   console.log("\n── Application readiness endpoint ───────────────────────────────────");
-  const baseUrl = (
+  const configuredBaseUrl = (
     process.env.TEST_BASE_URL ||
     process.env.APP_URL ||
     process.env.BASE_URL ||
     ""
-  ).trim().replace(/\/+$/, "");
+  ).trim();
+  const baseUrl = configuredBaseUrl
+    ? (/^https?:\/\//i.test(configuredBaseUrl)
+        ? configuredBaseUrl
+        : `${/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(configuredBaseUrl) ? "http" : "https"}://${configuredBaseUrl}`
+      ).replace(/\/+$/, "")
+    : "";
   if (!baseUrl) {
     if (process.env.REQUIRE_HEALTH_CHECK === "true") {
       check(
@@ -250,7 +263,7 @@ async function main(): Promise<void> {
     } catch (err) {
       const detail =
         err instanceof Error ? err.message : String(err);
-      if (isLocalCheck) {
+      if (isLocalCheck || process.env.REQUIRE_HEALTH_CHECK === "true") {
         check(`GET ${baseUrl}/ready`, false, `unreachable: ${detail}`);
       } else {
         console.log(
