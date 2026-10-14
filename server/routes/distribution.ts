@@ -7807,16 +7807,9 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
-      const {
-        type,
-        count = 1,
-        tracks,
-        release,
-      } = req.body as {
+      const { type, count = 1 } = req.body as {
         type: "isrc" | "upc";
         count: number;
-        tracks?: { title: string; artist: string }[];
-        release?: { title: string; artist: string; type: string };
       };
 
       if (!type || !["isrc", "upc"].includes(type))
@@ -7827,10 +7820,6 @@ router.post(
         const codes: string[] = [];
         let isOfficiallyRegistered = true;
         for (let i = 0; i < safeCount; i++) {
-          const trackInfo = tracks?.[i] || {
-            title: release!.title || `Track ${i + 1}`,
-            artist: release!.artist || "",
-          };
           const fallback = await musicCodesService.generateISRC(userId);
           codes.push(fallback.code);
           isOfficiallyRegistered = false;
@@ -7856,8 +7845,6 @@ router.post(
         const codes: string[] = [];
         let isOfficiallyRegistered = true;
         for (let i = 0; i < safeCount; i++) {
-          const title =
-            release?.title || tracks?.[0]?.title || `Release ${i + 1}`;
           const fallback = await musicCodesService.generateUPC(userId);
           codes.push(fallback.code);
           isOfficiallyRegistered = false;
