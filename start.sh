@@ -90,6 +90,30 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
+# A normal source build does not produce the optional prepared-release
+# executive. Fall back to the same verified startup sequence using tracked
+# source helpers; do not fail solely because a prepared release was not used.
+if [ ! -f "$_SCRIPT_DIR/dist/deployment/executive.mjs" ]; then
+  echo "[start.sh] deployment executive absent; using source-compatible startup"
+  source "$_SCRIPT_DIR/scripts/port-contract.sh"
+
+  _STUB_PID=""
+  if [ -f "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" ]; then
+    PORT="${PORT:-5000}" "$_NODE_BIN" "$_SCRIPT_DIR/scripts/boot-stub-server.mjs" &
+    _STUB_PID=$!
+    sleep 0.2
+    if ! kill -0 "$_STUB_PID" 2>/dev/null; then
+      echo "[start.sh] FATAL: boot-stub failed to start" >&2
+      wait "$_STUB_PID" || true
+      exit 1
+    fi
+    echo "[start.sh] source boot-stub started (pid $_STUB_PID) on port ${PORT:-5000}"
+  fi
+
+  export DEPLOY_NODE_BIN="$_NODE_BIN" DEPLOY_BOOT_STUB_PID="$_STUB_PID"
+  exec "$_SCRIPT_DIR/start.sh" --executive-application
+fi
+
 # ── 1a. Validate and export the runtime port contract ─────────────────────────
 # This must happen before the liveness stub or any sidecar starts. A duplicate
 # assignment is a configuration failure, never something to "work around" by
@@ -136,15 +160,33 @@ _NODE_BIN="${DEPLOY_NODE_BIN:?Startup executive must supply the Node executable}
 _STUB_PID="${DEPLOY_BOOT_STUB_PID:-}"
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ── 2. PDIM restore (Extract & Boot) ─────────────────────────────────────────
-# Extracts node_modules.pdim (and friends) on first startup. No-op on
-# subsequent restarts (directories already present, sentinel files found).
-# Reads compression formats from manifests, including zstd.
-# Independent restores are resource-scheduled while the boot stub provides
-# liveness. Application launch waits for their verified completion; the stub
-# does not represent application readiness.
-# The executive has validated and restored all prerequisites before admitting
-# this application task. Do not launch detached, unobserved restore work here.
+# Restore the dependency capsule before loading tsx or any application module.
+# This is a no-op for ordinary builds where node_modules is already present.
+if [ -f "$_SCRIPT_DIR/dist/pdim-restore.mjs" ]; then
+  "$_NODE_BIN" "$_SCRIPT_DIR/dist/pdim-restore.mjs" critical
+fi
+
+# Prefer precompiled deployment controls from a prepared release; otherwise use
+# the checked-in source helpers. This keeps npm run build/start usable without
+# requiring a separate, undocumented artifact-generation step.
+if [ -f "$_SCRIPT_DIR/dist/deployment/port-contract.sh" ]; then
+  source "$_SCRIPT_DIR/dist/deployment/port-contract.sh"
+else
+  source "$_SCRIPT_DIR/scripts/port-contract.sh"
+fi
+
+if [ -f "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs" ]; then
+  "$_NODE_BIN" "$_SCRIPT_DIR/dist/deployment/check-port-contract.mjs"
+else
+  "$_NODE_BIN" --import tsx "$_SCRIPT_DIR/scripts/check-port-contract.ts"
+fi
+
+# Begin restoring optional subsystem capsules without blocking application boot.
+if [ -f "$_SCRIPT_DIR/dist/pdim-restore.mjs" ]; then
+  "$_NODE_BIN" "$_SCRIPT_DIR/dist/pdim-restore.mjs" background &
+  _RESTORE_PID=$!
+  echo "[start.sh] optional capsule restoration started (pid $_RESTORE_PID)"
+fi
 
 # ── 3. Activate Python virtual environment ────────────────────────────────────
 # Check ./python_runtime/ first (build artifact created by build.sh, not in
