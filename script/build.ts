@@ -9,6 +9,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  const isDeployBuild =
+    process.env.PUBLISH_SHELL_PACKS_CAPSULES !== "1" &&
+    (process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID);
+
   // Ordinary web builds must not mutate or download dependencies for the
   // independent MaxCore/PDIM workspaces. Their frozen installs are needed for
   // packed Replit deployments, or when an operator explicitly requests them.
@@ -49,10 +53,6 @@ async function main() {
   // command. (REPLIT_DEPLOYMENT_ID is only set at RUNTIME, not in the build
   // container — gating on it silently skipped packing; proven by the
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
-  const isDeployBuild =
-    process.env.PUBLISH_SHELL_PACKS_CAPSULES !== "1" &&
-    (process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID);
-
   // ─── Portable Python runtime (video/audio analysis + AI sidecar deps) ─────
   // Ported from the old build.sh (2026-08-14). The run container is a
   // Debian-based VM; Nix-store Python paths from the build container don't
