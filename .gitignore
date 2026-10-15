@@ -4,6 +4,7 @@ dist/.db-indexes-ok
 dist/index.cjs
 dist/index.cjs.map
 dist/index.mjs
+dist/build-complete.json
 dist/cluster.cjs
 dist/cluster.cjs.map
 dist/cluster.mjs

@@ -69,3 +69,13 @@ requires `/api/ready` to pass and otherwise exits unsuccessfully.
   of full ecosystem readiness or successful publication.
 - No shared/production database schema or provider state was modified. The
   PostgreSQL schema push was restricted to the disposable Unix-socket fixture.
+
+## Remaining nested-runtime mismatch
+
+Inspection confirms that `maxcoreLocalSupervisor` still launches the embedded
+API server through `tsx src/index.ts` with `NODE_ENV=development`. Its separate
+production build exists, but production mode also enables its dashboard/SPA
+handler. This handoff has not been changed here: moving it to compiled,
+backend-only production execution needs a matching subsystem build and
+regression coverage. The main app's successful compiled startup does not
+establish that this nested production contract is complete.
