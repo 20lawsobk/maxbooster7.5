@@ -111,7 +111,7 @@ if [ ! -f "$_SCRIPT_DIR/dist/deployment/executive.mjs" ]; then
   fi
 
   export DEPLOY_NODE_BIN="$_NODE_BIN" DEPLOY_BOOT_STUB_PID="$_STUB_PID"
-  exec "$_SCRIPT_DIR/start.sh" --executive-application
+  exec bash "$_SCRIPT_DIR/start.sh" --executive-application
 fi
 
 # ── 1a. Validate and export the runtime port contract ─────────────────────────
