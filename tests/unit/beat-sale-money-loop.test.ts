@@ -11,13 +11,14 @@
  * Run all:        npx vitest run tests/unit/beat-sale-money-loop.test.ts
  * Run one section: npx vitest run --reporter=verbose -t "Royalty split ledger"
  *
- * Requires NEON_DATABASE_URL to be set. All seed data is cleaned up in afterAll
+ * Run with vitest.beat-loop.config.ts and BEAT_LOOP_TEST_DATABASE_URL pointing
+ * to a disposable database. All seed data is cleaned up in afterAll
  * regardless of outcome.
  */
 import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { eq, and, sql } from "drizzle-orm";
 
-// ── Lazy DB import (skips gracefully when DB unavailable) ───────────────────
+// Database imports occur only after the explicit isolated-target guard.
 let db: Awaited<ReturnType<typeof import("../../server/db").default>> | null = null;
 let listings:           typeof import("@shared/schema").listings           | null = null;
 let royaltySplits:      typeof import("@shared/schema").royaltySplits      | null = null;
@@ -30,9 +31,6 @@ let posts:              typeof import("@shared/schema").posts              | nul
 let distributeSplitsImpl: ((orderId: string) => Promise<{ success: boolean }>) | null = null;
 let processPaymentImpl: ((orderId: string, paymentIntentId: string) => Promise<unknown>) | null = null;
 
-const SKIP_REASON = !process.env.NEON_DATABASE_URL
-  ? "NEON_DATABASE_URL not set — skipping DB tests"
-  : null;
 
 // ── Shared seed IDs ─────────────────────────────────────────────────────────
 const run = Date.now();
@@ -54,7 +52,16 @@ const paymentIntentIds = {
 
 // ── Setup / teardown ────────────────────────────────────────────────────────
 beforeAll(async () => {
-  if (SKIP_REASON) return;
+  const target = process.env.BEAT_LOOP_TEST_DATABASE_URL;
+  if (!target || target === process.env.NEON_DATABASE_URL || target === process.env.DATABASE_URL) {
+    throw new Error("BEAT_LOOP_TEST_DATABASE_URL must explicitly identify a disposable database distinct from the app database.");
+  }
+  const parsed = new URL(target);
+  if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+    throw new Error("BEAT_LOOP_TEST_DATABASE_URL must be a PostgreSQL URL.");
+  }
+  process.env.NEON_DATABASE_URL = target;
+  process.env.DATABASE_URL = target;
   try {
     const dbMod = await import("../../server/db");
     db = (dbMod as { default?: typeof db; db?: typeof db }).default
@@ -81,6 +88,9 @@ beforeAll(async () => {
 
     if (!db || !listings || !royaltySplits || !royaltyTransactions || !orders) {
       throw new Error("Failed to import DB or schema modules");
+    }
+    if (!distributeSplitsImpl || !processPaymentImpl || !posts || !notifications || !revenueEvents) {
+      throw new Error("Required beat-sale service or schema contract is missing");
     }
 
     // ── Users: seller + buyer must exist — notificationService.send() looks
@@ -174,7 +184,7 @@ beforeAll(async () => {
     }
   } catch (err) {
     console.error("[beat-sale-money-loop] beforeAll failed:", err);
-    db = null;
+    throw err;
   }
 });
 
@@ -212,7 +222,7 @@ afterAll(async () => {
     }
     await db.delete(listings!).where(eq(listings!.id, seedIds.listingId));
   } catch (err) {
-    console.warn("[beat-sale-money-loop] afterAll cleanup failed:", err);
+    throw err;
   }
 });
 
@@ -221,10 +231,6 @@ afterAll(async () => {
 //    npx vitest run -t "Royalty split ledger"
 // ═══════════════════════════════════════════════════════════════════════════
 describe("A. Royalty split ledger", () => {
-  it("skips gracefully when DB is unavailable", () => {
-    if (!SKIP_REASON) return;
-    expect(SKIP_REASON).toBeTruthy();
-  });
 
   it("writes a royalty_transactions row with the correct amount", async () => {
     if (!db || !distributeSplitsImpl) return;
@@ -290,10 +296,6 @@ describe("A. Royalty split ledger", () => {
 //    npx vitest run -t "Revenue events"
 // ═══════════════════════════════════════════════════════════════════════════
 describe("B. Revenue events", () => {
-  it("skips gracefully when DB is unavailable", () => {
-    if (!SKIP_REASON) return;
-    expect(SKIP_REASON).toBeTruthy();
-  });
 
   it("records a revenue_events row with source='marketplace'", async () => {
     if (!db || !revenueEvents) return;
@@ -359,10 +361,6 @@ describe("B. Revenue events", () => {
 // _deliverSaleNotifications(), which can be exercised without a Stripe key.
 // ═══════════════════════════════════════════════════════════════════════════
 describe("C. Sale notifications — confirmed payment idempotency", () => {
-  it("skips gracefully when DB is unavailable", () => {
-    if (!SKIP_REASON) return;
-    expect(SKIP_REASON).toBeTruthy();
-  });
 
   it("processPayment on completed order delivers beat_sold + beat_purchased notifications", async () => {
     if (!db || !processPaymentImpl || !notifications) return;
@@ -511,10 +509,6 @@ describe("C. Sale notifications — confirmed payment idempotency", () => {
 //    npx vitest run -t "Content-dispatch"
 // ═══════════════════════════════════════════════════════════════════════════
 describe("D. Content-dispatch — beat-loop posts", () => {
-  it("skips gracefully when DB is unavailable", () => {
-    if (!SKIP_REASON) return;
-    expect(SKIP_REASON).toBeTruthy();
-  });
 
   it("beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt", async () => {
     if (!db || !posts) return;

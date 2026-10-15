@@ -381,12 +381,24 @@ async function spawnChild(): Promise<void> {
   const hyperGpuSizing = computeHyperGpuSizing(nodeSizing.pythonThreads);
   const resourceEnv = maxcoreResourceEnv(nodeSizing, process.env.NODE_OPTIONS);
 
-  child = spawn(TSX_BIN, ["src/index.ts"], {
+  const production = process.env.NODE_ENV === "production";
+  const productionEntry = path.join(API_SERVER_DIR, "dist", "index.mjs");
+  if (production && !fs.existsSync(productionEntry)) {
+    throw new Error("MaxCore production bundle is missing; run npm run build before starting");
+  }
+  child = spawn(production ? process.execPath : TSX_BIN, [production ? productionEntry : "src/index.ts"], {
     cwd: API_SERVER_DIR,
     env: {
       ...process.env,
       ...resourceEnv,
-      NODE_ENV: "development",
+      NODE_ENV: production ? "production" : "development",
+      MAXBOOSTER_EMBEDDED: "1",
+      // The child runs in artifacts/api-server; its cwd is not the directory
+      // containing the parent application's packaged interpreter.
+      ...(production ? {
+        MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON ||
+          path.resolve(process.cwd(), "python_runtime", "bin", "python3"),
+      } : {}),
       PORT: String(port),
       // MODEL_API_PORT set ⇒ this instance is the Python owner (see the
       // imported python-server.ts PYTHON_SPAWN_DISABLED logic).
@@ -524,6 +536,21 @@ export async function startMaxcoreLocal(): Promise<void> {
   if (shuttingDown || child || startInFlight) return;
   startInFlight = true;
   try {
+    // Production consumes the build artifact, not the development tsx install.
+    // Never attempt network installation while the deployed app is starting.
+    if (process.env.NODE_ENV === "production") {
+      const entry = path.join(API_SERVER_DIR, "dist", "index.mjs");
+      if (!fs.existsSync(entry)) {
+        startupError = "MaxCore production bundle is missing; run npm run build before starting";
+        logger.error(`[MaxCoreLocal] ${startupError}`);
+        return;
+      }
+      workspaceWaitStartedAt = 0;
+      provisionAttempts = 0;
+      startupError = null;
+      await spawnChild();
+      return;
+    }
     if (fs.existsSync(TSX_BIN)) {
       workspaceWaitStartedAt = 0;
       provisionAttempts = 0;

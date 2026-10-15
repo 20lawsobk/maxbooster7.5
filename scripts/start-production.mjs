@@ -5,7 +5,8 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const required = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs",
-  "dist/compute-sizing.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html"];
+  "dist/compute-sizing.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
+  "external/maxcore/artifacts/api-server/dist/index.mjs"];
 const digest = file => createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 function sourceInputs(root) {
   const files = ["package.json", "package-lock.json", "vite.config.ts", "start.sh"];
@@ -19,6 +20,10 @@ function sourceInputs(root) {
     }
   }
   for (const dir of ["server", "client", "shared", "script", "scripts"]) walk(dir);
+  for (const dir of ["external/maxcore/artifacts/api-server/src", "external/maxcore/lib"]) walk(dir);
+  if (fs.existsSync(path.join(root, "external/maxcore/artifacts/api-server/build.ts"))) {
+    files.push("external/maxcore/artifacts/api-server/build.ts");
+  }
   for (const file of ["tsconfig.json", "tsconfig.server.json", "tsconfig.client.json",
     ...["external/maxcore", "external/pdim"].flatMap(dir =>
       ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"].map(name => `${dir}/${name}`))]) {

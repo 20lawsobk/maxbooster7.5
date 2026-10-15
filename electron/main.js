@@ -10,7 +10,7 @@ const {
 } = require("electron");
 const path = require("node:path");
 const { fork } = require("node:child_process");
-const http = require("node:http");
+const { pingReadiness, externalHttpUrl } = require("./runtime-policy.cjs");
 const fs = require("node:fs");
 
 const isDev = !app.isPackaged;
@@ -85,17 +85,7 @@ function startServer() {
 }
 
 function pingServer() {
-  return new Promise((resolve) => {
-    const req = http.get(`${SERVER_URL}/`, { timeout: 1500 }, (res) => {
-      res.resume();
-      resolve(res.statusCode !== undefined && res.statusCode < 500);
-    });
-    req.on("error", () => resolve(false));
-    req.on("timeout", () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
+  return pingReadiness(SERVER_URL);
 }
 
 async function waitForServer() {
@@ -143,11 +133,15 @@ async function createWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) {
-      shell.openExternal(url).catch(() => {});
-      return { action: "deny" };
+    const external = externalHttpUrl(url);
+    if (external) {
+      shell.openExternal(external).catch((error) => {
+        console.error("[electron] Could not open external link:", error.message);
+      });
     }
-    return { action: "allow" };
+    // Never grant renderer-controlled javascript:, file:, data: or custom
+    // protocol URLs a new Electron window.
+    return { action: "deny" };
   });
 
   mainWindow.once("ready-to-show", () => mainWindow?.show());

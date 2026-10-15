@@ -118,7 +118,7 @@ app.get("/uploads/*path", async (req: Request, res: Response) => {
 // ─── Serve the built React dashboard in production ───────────────────────────
 // In CJS output import.meta.url is empty, so fall back to process.cwd() which
 // is the monorepo root when Node is launched from there.
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production" && process.env.MAXBOOSTER_EMBEDDED !== "1") {
   const dashboardDist = (() => {
     const metaUrl = import.meta?.url;
     if (metaUrl) {

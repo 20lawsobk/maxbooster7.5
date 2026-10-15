@@ -17,6 +17,11 @@ async function main() {
     stdio: "inherit",
     shell: "/bin/bash",
   });
+  console.log("==> Building embedded MaxCore production API (no desktop/dashboard packaging)...");
+  execSync(`${JSON.stringify(process.execPath)} --import tsx build.ts`, {
+    cwd: path.join(root, "external/maxcore/artifacts/api-server"),
+    stdio: "inherit",
+  });
   console.log("==> Building frontend with Vite...");
   execSync("node node_modules/vite/bin/vite.js build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");

@@ -18,6 +18,8 @@ export default defineConfig({
       "tests/paid-user-e2e.test.ts",
       // Legacy Jest-based test files not converted to Vitest
       "tests/unit/example.test.ts",
+      // Database-writing suite: run explicitly with vitest.beat-loop.config.ts.
+      "tests/unit/beat-sale-money-loop.test.ts",
       "server/simulations/__tests__/verifyKPIs.test.ts",
     ],
     environment: "node",

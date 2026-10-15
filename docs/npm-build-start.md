@@ -57,7 +57,7 @@ requires `/api/ready` to pass and otherwise exits unsuccessfully.
 
 - Final `npm run build`: exit 0; Vite finished in 63 seconds and all five
   server entrypoints compiled. No publishing packer or desktop build ran.
-- Contract tests listed above: 19 passed, zero failed.
+- Contract tests listed above: 20 passed, zero failed.
 - Focused ESLint for the build, launcher and contract test: exit 0.
 - Node launcher syntax and shell synchronization syntax: passed.
 - Actual `npm run start` in a disposable copy, with a fresh PostgreSQL schema,
@@ -70,12 +70,24 @@ requires `/api/ready` to pass and otherwise exits unsuccessfully.
 - No shared/production database schema or provider state was modified. The
   PostgreSQL schema push was restricted to the disposable Unix-socket fixture.
 
-## Remaining nested-runtime mismatch
+## Embedded MaxCore production handoff
 
-Inspection confirms that `maxcoreLocalSupervisor` still launches the embedded
-API server through `tsx src/index.ts` with `NODE_ENV=development`. Its separate
-production build exists, but production mode also enables its dashboard/SPA
-handler. This handoff has not been changed here: moving it to compiled,
-backend-only production execution needs a matching subsystem build and
-regression coverage. The main app's successful compiled startup does not
-establish that this nested production contract is complete.
+The ordinary build now also compiles the MaxCore API through its existing local
+build script. The supervisor uses that compiled entry with production environment
+in production, and retains its TypeScript entry in development. The explicit
+embedded flag prevents enabling the separate dashboard/SPA handler.
+
+The MaxCore bundle is required by the build completion contract. Its API/library
+source files are included in stale-source detection. No desktop or separate
+dashboard packaging is invoked. A missing compiled entry fails explicitly.
+
+Production skips the development dependency bootstrap completely. It passes
+the parent application's absolute packaged Python path to the nested server,
+while honoring an explicitly configured `MAXBOOSTER_PYTHON`. Missing runtime
+resources remain errors; startup does not download an interpreter or silently
+substitute a different one.
+
+After this change, the actual npm build passed and the full native server
+typecheck passed. Repeating isolated npm startup still returned homepage 200,
+health 200 and readiness 503 (`health check failed`). This is not a successful
+full readiness test and does not establish live MaxCore/model availability.
