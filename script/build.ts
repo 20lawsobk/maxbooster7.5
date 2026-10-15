@@ -9,20 +9,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
+  fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });
+  const { writeBuildContract, readBuildInputs } = await import("../scripts/start-production.mjs");
+  const inputs = readBuildInputs(root);
   execSync("bash script/sync-subsystem-dependencies.sh", {
     cwd: root,
     stdio: "inherit",
     shell: "/bin/bash",
   });
   console.log("==> Building frontend with Vite...");
-  execSync("npx vite build", { cwd: root, stdio: "inherit" });
+  execSync("node node_modules/vite/bin/vite.js build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
 
   console.log("==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...");
   await buildServerBundles(root);
+  writeBuildContract(root, inputs);
   console.log("   ✅ All runtime entry bundles built from current source");
 
   console.log("\n✅ Build complete.");
+  // Packing/removal and runtime provisioning belong to the explicit publishing
+  // pipeline. A normal npm build must never download or delete runtime trees.
+  if (process.env.DEPLOY_PACK !== "1") return;
 
   // ─── Extract & Boot capsules (Pocket Dimension) ────────────────────────────
   // RESTORED 2026-08-14. The old build.sh pipeline packed node_modules (and

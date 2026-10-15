@@ -287,7 +287,7 @@ var init_lua_pool = __esm({
           pw.pending.clear();
           pw.active = 0;
         });
-        worker.on("exit", (code) => {
+        worker.on("exit", () => {
           const idx = this.workers.indexOf(pw);
           if (idx !== -1) {
             this.workers.splice(idx, 1);
@@ -8654,7 +8654,7 @@ function writeSnapshotOffThread(file, entries) {
       });
     });
     worker.once("error", (error) => {
-      failure = error;
+      failure = error instanceof Error ? error : new Error(String(error));
     });
     worker.once("exit", (code) => {
       if (code === 0 && completed && !failure) resolve();

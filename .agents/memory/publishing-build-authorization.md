@@ -80,5 +80,13 @@ behavior, historical archive, and no-destructive-build-in-checkout rule remain.
 Preserve removal of successfully packed directories from the shipped image
 and restoration of required runtimes at startup; the user explicitly reiterated
 that this image-size reduction is part of the original design.
+
+Keep ordinary npm compile/start verification separate from publishing's
+destructive packing/restoration lifecycle. Reuse the existing production
+application handoff rather than omitting its sidecars.
+**Why:** The ordinary compiler did not produce the publishing executive, while
+its dependency synchronization unnecessarily fetched tools on every build.
+**How to apply:** Validate unpacked installations locally; reserve pack/remove/
+restore operations for the explicitly configured publishing path.
 Do not reintroduce a mandatory prepared-release prerequisite. Do not confuse
 historical publish markers or runtime import checks with proven live health.

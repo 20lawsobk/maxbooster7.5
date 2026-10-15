@@ -221,11 +221,11 @@ test("capsule restoration reuses only the matching generation and rejects corrup
 });
 
 
-test("build bootstraps the pinned pnpm CLI instead of relying on a global install", () => {
+test("build verifies dependencies without fetching package managers; explicit synchronization is offline", () => {
   const script = fs.readFileSync("script/sync-subsystem-dependencies.sh", "utf8");
   assert.match(script, /PNPM_VERSION=.*10[.]26[.]1/);
-  assert.match(script, /npm exec --yes --package=/);
-  assert.match(script, /-- pnpm/);
-  assert.match(script, /CI=true run_pnpm install --frozen-lockfile/);
-  assert.doesNotMatch(script, /command -v pnpm/);
+  assert.doesNotMatch(script, /npm exec|npx /);
+  assert.match(script, /SUBSYSTEM_INSTALL/);
+  assert.match(script, /command -v pnpm/);
+  assert.match(script, /CI=true run_pnpm install --offline --frozen-lockfile --ignore-scripts/);
 });

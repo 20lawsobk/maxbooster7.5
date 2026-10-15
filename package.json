@@ -25,7 +25,7 @@
     "change-compare": "npx tsx scripts/change-compare/cli.ts",
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
     "deploy": "npx tsx scripts/deploy.ts",
-    "start": "bash start.sh",
+    "start": "node scripts/start-production.mjs",
     "demo:security": "npx tsx scripts/security-self-healing-demo.ts",
     "postinstall": "SKIP_POSTINSTALL=1 node scripts/postinstall.mjs",
     "check": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
