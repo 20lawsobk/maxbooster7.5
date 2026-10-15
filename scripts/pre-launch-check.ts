@@ -109,13 +109,6 @@ function runTypecheck(timeoutMs = 600_000): CheckResult {
   );
 }
 
-function redactConnectionString(value: string): string {
-  return value.replace(
-    /(postgres(?:ql)?:\/\/)[^\s/@]+:[^\s/@]+@/gi,
-    "$1[redacted]@",
-  );
-}
-
 async function main(): Promise<void> {
   const results: CheckResult[] = [];
   let failed = 0;
@@ -196,34 +189,19 @@ async function main(): Promise<void> {
 
   console.log("\n── Database connectivity ────────────────────────────────────────────");
   if (database) {
-    let pool: import("pg").Pool | undefined;
     try {
-      const { Pool } = await import("pg");
-      pool = new Pool({
-        connectionString: database.url,
-        max: 1,
-        connectionTimeoutMillis: 10_000,
-        idleTimeoutMillis: 5_000,
-      });
-      const client = await pool.connect();
-      try {
-        const { rows } = await client.query("SELECT 1 AS ok");
-        check(
-          "PostgreSQL connection",
-          rows[0]?.ok === 1,
-          `${database.name} connected`,
-        );
-      } finally {
-        client.release();
-      }
-    } catch (err: unknown) {
+      const { checkNeonSchema } = await import("./check-neon-schema.mjs");
+      const report = await checkNeonSchema(database.url);
+      check("PostgreSQL connection", true, `${database.name} connected; read-only transaction verified`);
       check(
-        "PostgreSQL connection",
-        false,
-        redactConnectionString(String(err)).slice(0, 240),
+        "Application schema contract",
+        report.drift.length === 0,
+        `${report.checkedTables} tables checked; ${report.drift.length} table contracts differ. ` +
+          report.drift.map((entry: { table: string }) => entry.table).join(", "),
       );
-    } finally {
-      await pool?.end().catch(() => undefined);
+    } catch {
+      check("Application database/schema", false,
+        "Read-only schema verification failed. Run node --import tsx scripts/check-neon-schema.mjs for redacted diagnostics.");
     }
   } else {
     check("PostgreSQL connection", false, "no application database URL configured");

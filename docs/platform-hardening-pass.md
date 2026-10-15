@@ -115,3 +115,22 @@ tested with a scrubbed child-process environment by
 `node --test tests/beat-loop-test-safety.test.mjs`. This guard test does not prove
 the financial integration assertions; those still need a provisioned disposable
 schema and controlled provider fixtures.
+
+## Configured Neon verification
+
+The actual configured `NEON_DATABASE_URL` was queried inside a read-only
+transaction; no separate managed Replit database was substituted. Comparing
+304 Drizzle table contracts with Neon found no missing tables, but missing
+columns in four tables: `dmca_notices`, `dmca_strikes`, `legal_holds`, and
+`social_inbox_messages`.
+
+The existing migrations `0006_dmca_workflow_contract.sql` and
+`0026_social_inbox_provider_delivery.sql` address those columns. They have
+not been applied to the shared database. This requires explicit migration
+authorization and post-migration verification, not a fake schema fallback.
+
+`node --import tsx scripts/check-neon-schema.mjs` is now a reproducible,
+read-only, nonzero-on-drift gate. Prelaunch uses the same check against its
+selected database instead of declaring database readiness after `SELECT 1`.
+The check currently verifies table/column existence, not types, constraints,
+indexes, migration provenance, or financial data correctness.
