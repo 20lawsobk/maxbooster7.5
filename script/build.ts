@@ -9,11 +9,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
 async function main() {
-  execSync("bash script/sync-subsystem-dependencies.sh", {
-    cwd: root,
-    stdio: "inherit",
-    shell: "/bin/bash",
-  });
+  const isDeployBuild =
+    process.env.PUBLISH_SHELL_PACKS_CAPSULES !== "1" &&
+    (process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID);
+
+  // Ordinary web builds must not mutate or download dependencies for the
+  // independent MaxCore/PDIM workspaces. Their frozen installs are needed for
+  // packed Replit deployments, or when an operator explicitly requests them.
+  if (isDeployBuild || process.env.SYNC_SUBSYSTEM_DEPENDENCIES === "1") {
+    console.log("==> Synchronizing locked MaxCore/PDIM dependencies...");
+    execSync("bash script/sync-subsystem-dependencies.sh", {
+      cwd: root,
+      stdio: "inherit",
+      shell: "/bin/bash",
+    });
+  } else {
+    console.log(
+      "==> Skipping independent subsystem installs (set SYNC_SUBSYSTEM_DEPENDENCIES=1 to opt in)",
+    );
+  }
+
   console.log("==> Building frontend with Vite...");
   execSync("npx vite build", { cwd: root, stdio: "inherit" });
   console.log("   ✅ Vite build complete → dist/public/");
@@ -38,10 +53,6 @@ async function main() {
   // command. (REPLIT_DEPLOYMENT_ID is only set at RUNTIME, not in the build
   // container — gating on it silently skipped packing; proven by the
   // 2026-08-14 04:08 build log which had no "Packing" lines.)
-  const isDeployBuild =
-    process.env.PUBLISH_SHELL_PACKS_CAPSULES !== "1" &&
-    (process.env.DEPLOY_PACK === "1" || !!process.env.REPLIT_DEPLOYMENT_ID);
-
   // ─── Portable Python runtime (video/audio analysis + AI sidecar deps) ─────
   // Ported from the old build.sh (2026-08-14). The run container is a
   // Debian-based VM; Nix-store Python paths from the build container don't
@@ -61,7 +72,7 @@ async function main() {
         console.log(`\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`);
         fs.mkdirSync(pyDir, { recursive: true });
         execSync(
-          `curl -sL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
+          `set -o pipefail; curl -fSL --retry 2 --connect-timeout 15 --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
           { cwd: root, stdio: "inherit", shell: "/bin/bash" },
         );
       }
@@ -88,12 +99,16 @@ async function main() {
 
   if (isDeployBuild) {
     const capsuleTargets: Array<{ dir: string; capsule: string }> = [
-      { dir: "python_runtime", capsule: "python_runtime.pdim" },
+      // Python features are explicitly optional in production. If the
+      // portable runtime could not be prepared, do not turn that documented
+      // degradation into a later missing-directory capsule failure.
+      ...(fs.existsSync(path.join(root, "python_runtime"))
+        ? [{ dir: "python_runtime", capsule: "python_runtime.pdim" }]
+        : []),
       { dir: "node_modules", capsule: "node_modules.pdim" },
       { dir: "external/maxcore", capsule: "external_maxcore.pdim" },
-      // 2026-08-14: user directive — the ENTIRE project must ship in the
-      // deployment (external/pdim included), so it is packed as a capsule
-      // rather than deleted from the image.
+      // Ship the full PDIM subsystem as a capsule, without expanding it into
+      // the deployment image.
       { dir: "external/pdim", capsule: "external_pdim.pdim" },
     ];
     // Same packer as the historical shell path; one bounded job at a time.

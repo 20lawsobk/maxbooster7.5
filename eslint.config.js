@@ -216,6 +216,15 @@ export default [
     },
   },
   {
+    // k6 injects `__ENV` into JavaScript load-test modules at runtime.
+    files: ["tests/load/**/*.js"],
+    languageOptions: {
+      globals: {
+        __ENV: "readonly",
+      },
+    },
+  },
+  {
     files: [
       "**/*.test.ts",
       "**/*.test.tsx",

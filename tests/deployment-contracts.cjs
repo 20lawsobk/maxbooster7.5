@@ -219,3 +219,13 @@ test("capsule restoration reuses only the matching generation and rejects corrup
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+
+test("build bootstraps the pinned pnpm CLI instead of relying on a global install", () => {
+  const script = fs.readFileSync("script/sync-subsystem-dependencies.sh", "utf8");
+  assert.match(script, /PNPM_VERSION=.*10[.]26[.]1/);
+  assert.match(script, /npm exec --yes --package=/);
+  assert.match(script, /-- pnpm/);
+  assert.match(script, /CI=true run_pnpm install --frozen-lockfile/);
+  assert.doesNotMatch(script, /command -v pnpm/);
+});

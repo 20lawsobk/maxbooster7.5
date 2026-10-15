@@ -561,86 +561,31 @@ class ReleaseScheduler {
             break;
           }
           case "platform_publish": {
-            // Wired to the real distribution flow: distributionService
-            // .submitToProvider() calls LabelGrid when configured (the same
-            // path the manual "Submit to DSP" flow uses). If LabelGrid isn't
-            // configured for this environment, submitToProvider itself
-            // throws rather than faking a dispatch — that failure is
-            // reported honestly below via the same "unsupported" state
-            // instead of a false "completed".
+            // Scheduled publishing is not wired to the verified Too Lost
+            // submission repository. Do not call the legacy LabelGrid adapter
+            // or mark a scheduled action complete without a real provider receipt.
             const metadata =
               (action?.metadata as Record<string, unknown>) || {};
             const platform = String(metadata.platform || "").trim();
             const release = await db.query.releases.findFirst({
               where: eq(releases.id, action.releaseId),
             });
+            const error = !platform || !release
+              ? "Missing platform or release for scheduled publish"
+              : "Scheduled platform publishing is unavailable until this scheduler is wired to the Too Lost-backed submission flow. No provider request was sent.";
 
-            if (!platform || !release) {
-              logger.warn(
-                `Platform publish for release ${action?.releaseId} is missing a platform/release — marking unsupported`,
-              );
-              await db
-                .update(releaseScheduledActions)
-                .set({
-                  status: "unsupported",
-                  executedAt: new Date(),
-                  metadata: {
-                    ...metadata,
-                    error: "Missing platform or release for scheduled publish",
-                  },
-                })
-                .where(eq(releaseScheduledActions.id, action?.id));
-              unsupported++;
-              continue;
-            }
-
-            try {
-              const { distributionService } = await import(
-                "./distributionService.js"
-              );
-              const result = await distributionService.submitToProvider(
-                action.releaseId,
-                platform,
-                release.userId,
-              );
-              if (!result?.success) {
-                throw new Error(
-                  result?.reason || `Submission to ${platform} did not succeed`,
-                );
-              }
-              await db
-                .update(releaseScheduledActions)
-                .set({
-                  metadata: {
-                    ...metadata,
-                    dispatchId: result.dispatchId,
-                    estimatedLiveDate: result.estimatedLiveDate,
-                  },
-                })
-                .where(eq(releaseScheduledActions.id, action?.id));
-            } catch (distError: unknown) {
-              logger.warn(
-                { err: distError },
-                `Platform publish to ${platform} for release ${action?.releaseId} failed — marking unsupported`,
-              );
-              await db
-                .update(releaseScheduledActions)
-                .set({
-                  status: "unsupported",
-                  executedAt: new Date(),
-                  metadata: {
-                    ...metadata,
-                    error:
-                      (distError as Error)?.message ||
-                      "Platform distribution failed",
-                  },
-                })
-                .where(eq(releaseScheduledActions.id, action?.id));
-              unsupported++;
-              continue;
-            }
-            break;
+            await db
+              .update(releaseScheduledActions)
+              .set({
+                status: "unsupported",
+                executedAt: new Date(),
+                metadata: { ...metadata, error },
+              })
+              .where(eq(releaseScheduledActions.id, action?.id));
+            unsupported++;
+            continue;
           }
+
           default:
             // Nothing was actually done for an action type we don't
             // recognize — falling through to "completed" below would be a

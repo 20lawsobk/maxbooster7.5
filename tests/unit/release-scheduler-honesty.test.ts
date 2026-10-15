@@ -7,10 +7,9 @@
  *   workflow service's publish() call reports success:false — previously
  *   the scheduler awaited publish() and unconditionally marked the action
  *   completed regardless of what it returned.
- * - A "platform_publish" action has no real distribution call wired up yet
- *   (see distributionService.submitToProvider, which is a separate,
- *   manually-triggered flow). It must be marked "unsupported" instead of
- *   "completed" after only a log line.
+ * - A "platform_publish" action must remain "unsupported" until the scheduler
+ *   is wired to the verified Too Lost submission flow. It must never call the
+ *   retired LabelGrid adapter or mark a release completed without provider evidence.
  * - An unrecognized action type must be marked "failed", not "completed".
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -152,7 +151,7 @@ describe("releaseScheduler.processScheduledActions honesty", () => {
     );
   });
 
-  it("marks a platform_publish action completed only after provider submission succeeds", async () => {
+  it("marks platform_publish unsupported without calling the retired provider adapter", async () => {
     limitMock.mockResolvedValueOnce([
       makeAction({
         id: "action-2",
@@ -166,56 +165,20 @@ describe("releaseScheduler.processScheduledActions honesty", () => {
     });
     submitToProviderMock.mockResolvedValueOnce({
       success: true,
-      dispatchId: "dispatch-1",
+      dispatchId: "must-not-be-used",
       estimatedLiveDate: "2026-10-01",
     });
 
     const result = await releaseScheduler.processScheduledActions();
 
-    expect(result).toEqual({ processed: 1, errors: 0, unsupported: 0 });
-    expect(releaseWorkflowService.publish).not.toHaveBeenCalled();
-    expect(submitToProviderMock).toHaveBeenCalledWith(
-      "release-1",
-      "spotify",
-      "artist-1",
-    );
-    expect(chain.set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: expect.objectContaining({
-          dispatchId: "dispatch-1",
-          estimatedLiveDate: "2026-10-01",
-        }),
-      }),
-    );
-    expect(chain.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "completed" }),
-    );
-  });
-
-  it("marks platform_publish unsupported when provider submission fails", async () => {
-    limitMock.mockResolvedValueOnce([
-      makeAction({
-        id: "action-provider-fail",
-        actionType: "platform_publish",
-        metadata: { platform: "spotify" },
-      }),
-    ]);
-    findReleaseMock.mockResolvedValueOnce({
-      id: "release-1",
-      userId: "artist-1",
-    });
-    submitToProviderMock.mockResolvedValueOnce({
-      success: false,
-      reason: "provider unavailable",
-    });
-
-    const result = await releaseScheduler.processScheduledActions();
-
     expect(result).toEqual({ processed: 0, errors: 0, unsupported: 1 });
+    expect(submitToProviderMock).not.toHaveBeenCalled();
     expect(chain.set).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "unsupported",
-        metadata: expect.objectContaining({ error: "provider unavailable" }),
+        metadata: expect.objectContaining({
+          error: expect.stringContaining("Too Lost-backed submission flow"),
+        }),
       }),
     );
     expect(chain.set).not.toHaveBeenCalledWith(

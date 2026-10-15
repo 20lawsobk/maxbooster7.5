@@ -9,6 +9,24 @@
  * TS2339 on those properties.
  */
 import "express-session";
+import "http";
+
+// Express's raw-body parser stores the exact unparsed bytes on IncomingMessage.
+// Declare it in a shared .d.ts file so route-level typechecks need not import
+// the server bootstrap (server/index.ts) to see the field.
+declare module "http" {
+  interface IncomingMessage {
+    rawBody: unknown;
+  }
+}
+
+// Keep session-specific fields in a declaration file included by both server
+// and bounded TypeScript checks, instead of hiding them inside server/index.ts.
+declare module "express-session" {
+  interface SessionData {
+    userId: string;
+  }
+}
 // Pulls in multer's global Express.Multer.File / req.file / req.files
 // augmentation for graphs that use uploads without importing multer directly.
 import "multer";

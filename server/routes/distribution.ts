@@ -925,24 +925,12 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
     const userId = (req.user as AuthenticatedUser).id;
     const { trackId, artist, title } = generateCodeSchema?.parse(req.body) ?? {};
 
-    let isrcCode: string;
-    let assignedTo: string = `${artist} - ${title}`;
-    let isOfficiallyRegistered = true;
-
-    try {
-      // LabelGrid throws when not configured — falls through to internal generator below
-      const result = await labelGridService?.generateISRC(artist, title);
-      isrcCode = result?.code;
-      assignedTo = result?.assignedTo || assignedTo;
-    } catch (lgError) {
-      logger.warn(
-        { err: lgError },
-        "LabelGrid ISRC generation unavailable, using internal generator:",
-      );
-      const fallback = await musicCodesService?.generateISRC(userId);
-      isrcCode = fallback?.code;
-      isOfficiallyRegistered = false;
-    }
+    const assignedTo = `${artist} - ${title}`;
+    const fallback = await musicCodesService.generateISRC(userId);
+    const isrcCode = fallback.code;
+    // Internal codes are provisional only. They are never written to the
+    // authoritative ISRC registry or a distribution track.
+    const isOfficiallyRegistered = false;
 
     if (trackId && !trackId.startsWith("temp_")) {
       const [track] = await db
@@ -955,17 +943,19 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Track not found" });
       }
-      await db.insert(isrcRegistry).values({
-        isrc: isrcCode,
-        trackId,
-        releaseId: track.releaseId,
-        artistId: userId,
-        title,
-      });
-      await db
-        .update(distroTracks)
-        .set({ isrc: isrcCode })
-        .where(eq(distroTracks.id, trackId));
+      if (isOfficiallyRegistered) {
+        await db.insert(isrcRegistry).values({
+          isrc: isrcCode,
+          trackId,
+          releaseId: track.releaseId,
+          artistId: userId,
+          title,
+        });
+        await db
+          .update(distroTracks)
+          .set({ isrc: isrcCode })
+          .where(eq(distroTracks.id, trackId));
+      }
     }
 
     res.json({
@@ -975,7 +965,7 @@ router.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
       ...(isOfficiallyRegistered
         ? {}
         : {
-            note: "This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.",
+            note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
           }),
     });
   } catch (error: unknown) {
@@ -999,36 +989,25 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
     });
     const { releaseId, title } = upcSchema?.parse(req.body) ?? {};
 
-    let upcCode: string;
-    let assignedTo: string = title;
-    let isOfficiallyRegistered = true;
-
-    try {
-      // LabelGrid throws when not configured — falls through to internal generator below
-      const result = await labelGridService?.generateUPC(title);
-      upcCode = result?.code;
-      assignedTo = result?.assignedTo || assignedTo;
-    } catch (lgError) {
-      logger.warn(
-        { err: lgError },
-        "LabelGrid UPC generation unavailable, using internal generator:",
-      );
-      const fallback = await musicCodesService?.generateUPC(userId);
-      upcCode = fallback?.code;
-      isOfficiallyRegistered = false;
-    }
+    const assignedTo = title;
+    const fallback = await musicCodesService.generateUPC(userId);
+    const upcCode = fallback.code;
+    // Internal codes are provisional only and are not persisted as official UPCs.
+    const isOfficiallyRegistered = false;
 
     if (releaseId && !releaseId.startsWith("temp_")) {
       const release = await storage.getDistroRelease(releaseId);
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
-      await db.insert(upcRegistry).values({
-        upc: upcCode,
-        releaseId,
-        artistId: userId,
-        title,
-      });
+      if (isOfficiallyRegistered) {
+        await db.insert(upcRegistry).values({
+          upc: upcCode,
+          releaseId,
+          artistId: userId,
+          title,
+        });
+      }
     }
 
     res.json({
@@ -1038,7 +1017,7 @@ router.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       ...(isOfficiallyRegistered
         ? {}
         : {
-            note: "This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.",
+            note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
           }),
     });
   } catch (error: unknown) {
@@ -1136,21 +1115,39 @@ router.get("/platforms", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/distribution/platforms/verify - Verify local DSP catalog status
+// POST /api/distribution/platforms/verify - Verify the connected Too Lost catalog.
 router.post(
   "/platforms/verify",
   requireAuth,
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const result = await labelGridService.verifyDSPCatalog();
+      const userId = (req.user as AuthenticatedUser).id;
+      const catalogConnection = await getCatalogToolostConnection(userId);
+      if (!catalogConnection?.connection) {
+        return res.status(409).json({
+          error: "Too Lost distributor connection required",
+          requiresConnection: true,
+        });
+      }
+
+      const response = await toolostService
+        .forUser(catalogConnection.connection.connectedByUserId)
+        .getAvailableDSPs();
+      const active = response.dsps.filter((dsp) => dsp.isActive).length;
       res.json({
         success: true,
-        ...result,
-        message: `DSP catalog verified: ${result.total} platforms (${result.active} active)`,
+        total: response.dsps.length,
+        active,
+        source: "toolost_api",
+        syncedAt: response.syncedAt,
+        message: `Too Lost catalog verified: ${response.dsps.length} platforms (${active} active)`,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error verifying platforms:");
-      res.status(500).json({ error: "Failed to verify platforms" });
+      logger.warn({ err: error }, "Error verifying Too Lost platforms:");
+      res.status(502).json({
+        error: "Too Lost platform catalog unavailable",
+        details: error instanceof Error ? error.message : "Provider request failed",
+      });
     }
   },
 );
@@ -7106,18 +7103,25 @@ router.post(
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const { type, data } = req.body;
+      const { type } = req.body ?? {};
+      if (typeof type !== "string" || !type.trim()) {
+        return res.status(400).json({ error: "outcome type is required" });
+      }
 
       const release = await storage.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
       }
 
-      logger.info({ type, data }, `Retrying outcome ${type} for release ${id}`);
-
-      res.json({
-        success: true,
-        message: `Retry initiated for ${type}`,
+      logger.warn(
+        { releaseId: id, outcomeType: type },
+        "Distribution outcome retry requested, but no durable retry worker is configured",
+      );
+      return res.status(501).json({
+        success: false,
+        error: "distribution_retry_unavailable",
+        message:
+          "No retry job was created and no provider request was sent. Retry execution is unavailable until a durable worker is configured.",
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error retrying outcome:");
@@ -7139,34 +7143,24 @@ router.post(
         return res.status(400).json({ error: "artist and title are required" });
       }
 
-      let isrcCode: string;
-      let assignedTo: string = `${artist} - ${title}`;
-      let isOfficiallyRegistered = true;
+      const assignedTo = `${artist} - ${title}`;
+      const fallback = await musicCodesService.generateISRC(userId);
+      const isrcCode = fallback.code;
+      const isOfficiallyRegistered = false;
 
-      try {
-        const result = await labelGridService?.generateISRC(artist, title);
-        isrcCode = result?.code;
-        assignedTo = result?.assignedTo || assignedTo;
-      } catch (lgError) {
-        logger.warn(
-          { err: lgError },
-          "LabelGrid ISRC generation unavailable, using internal generator:",
-        );
-        const fallback = await musicCodesService?.generateISRC(userId);
-        isrcCode = fallback?.code;
-        isOfficiallyRegistered = false;
-      }
-
-      if (trackId && trackId !== `temp_${Date.now()}`) {
-        try {
-          await codeGenerationService?.generateISRC(
-            userId,
-            trackId,
-            artist,
-            title,
-          );
-        } catch (storeErr) {
-          logger.warn({ err: storeErr }, "Failed to store ISRC in database:");
+      if (trackId && !trackId.startsWith("temp_")) {
+        const [track] = await db
+          .select()
+          .from(distroTracks)
+          .where(eq(distroTracks.id, trackId))
+          .limit(1);
+        if (!track) return res.status(404).json({ error: "Track not found" });
+        const release = await storage.getDistroRelease(track.releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Track not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateISRC(userId, trackId, artist, title);
         }
       }
 
@@ -7178,7 +7172,7 @@ router.post(
         ...(isOfficiallyRegistered
           ? {}
           : {
-              note: "This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.",
+              note: "This is a provisional local placeholder, not an assigned or registered ISRC. It is not stored or sent to a distributor. Obtain an ISRC from a registered agency or your distributor before release submission.",
             }),
       });
     } catch (error: unknown) {
@@ -7201,29 +7195,18 @@ router.post(
         return res.status(400).json({ error: "title is required" });
       }
 
-      let upcCode: string;
-      let assignedTo: string = title;
-      let isOfficiallyRegistered = true;
+      const assignedTo = title;
+      const fallback = await musicCodesService.generateUPC(userId);
+      const upcCode = fallback.code;
+      const isOfficiallyRegistered = false;
 
-      try {
-        const result = await labelGridService?.generateUPC(title);
-        upcCode = result?.code;
-        assignedTo = result?.assignedTo || assignedTo;
-      } catch (lgError) {
-        logger.warn(
-          { err: lgError },
-          "LabelGrid UPC generation unavailable, using internal generator:",
-        );
-        const fallback = await musicCodesService?.generateUPC(userId);
-        upcCode = fallback?.code;
-        isOfficiallyRegistered = false;
-      }
-
-      if (releaseId && releaseId !== `temp_${Date.now()}`) {
-        try {
-          await codeGenerationService?.generateUPC(userId, releaseId, title);
-        } catch (storeErr) {
-          logger.warn({ err: storeErr }, "Failed to store UPC in database:");
+      if (releaseId && !releaseId.startsWith("temp_")) {
+        const release = await storage.getDistroRelease(releaseId);
+        if (!release || release.artistId !== userId) {
+          return res.status(404).json({ error: "Release not found" });
+        }
+        if (isOfficiallyRegistered) {
+          await codeGenerationService.generateUPC(userId, releaseId, title);
         }
       }
 
@@ -7235,7 +7218,7 @@ router.post(
         ...(isOfficiallyRegistered
           ? {}
           : {
-              note: "This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.",
+              note: "This is a provisional local placeholder, not an assigned or registered UPC. It is not stored or sent to a distributor. Obtain a valid barcode from an authorized source before release submission.",
             }),
       });
     } catch (error: unknown) {
@@ -7824,16 +7807,9 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
-      const {
-        type,
-        count = 1,
-        tracks,
-        release,
-      } = req.body as {
+      const { type, count = 1 } = req.body as {
         type: "isrc" | "upc";
         count: number;
-        tracks?: { title: string; artist: string }[];
-        release?: { title: string; artist: string; type: string };
       };
 
       if (!type || !["isrc", "upc"].includes(type))
@@ -7844,21 +7820,9 @@ router.post(
         const codes: string[] = [];
         let isOfficiallyRegistered = true;
         for (let i = 0; i < safeCount; i++) {
-          const trackInfo = tracks?.[i] || {
-            title: release!.title || `Track ${i + 1}`,
-            artist: release!.artist || "",
-          };
-          try {
-            const result = await labelGridService?.generateISRC(
-              trackInfo?.artist,
-              trackInfo?.title,
-            );
-            codes?.push(result?.code);
-          } catch {
-            const fallback = await musicCodesService?.generateISRC(userId);
-            codes?.push(fallback?.code);
-            isOfficiallyRegistered = false;
-          }
+          const fallback = await musicCodesService.generateISRC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
         }
         const code = codes[0];
         logger.info(
@@ -7874,23 +7838,16 @@ router.post(
           ...(isOfficiallyRegistered
             ? {}
             : {
-                note: "These ISRCs were generated internally and are not yet registered with a national ISRC agency. Connect a distributor account to obtain officially registered codes.",
+                note: "These are provisional local placeholders, not assigned or registered ISRCs. They are not stored or sent to a distributor. Obtain codes from a registered agency or your distributor before release submission.",
               }),
         });
       } else {
         const codes: string[] = [];
         let isOfficiallyRegistered = true;
         for (let i = 0; i < safeCount; i++) {
-          const title =
-            release?.title || tracks?.[0]?.title || `Release ${i + 1}`;
-          try {
-            const result = await labelGridService?.generateUPC(title);
-            codes?.push(result?.code);
-          } catch {
-            const fallback = await musicCodesService?.generateUPC(userId);
-            codes?.push(fallback?.code);
-            isOfficiallyRegistered = false;
-          }
+          const fallback = await musicCodesService.generateUPC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
         }
         const code = codes[0];
         logger.info(
@@ -7906,7 +7863,7 @@ router.post(
           ...(isOfficiallyRegistered
             ? {}
             : {
-                note: "These UPCs were generated internally and do not use a GS1-registered company prefix. Connect a distributor account to obtain officially registered barcodes.",
+                note: "These are provisional local placeholders, not GS1-assigned UPCs. They are not stored or sent to a distributor. Obtain valid barcodes from an authorized source before release submission.",
               }),
         });
       }
@@ -7934,18 +7891,15 @@ router.post(
           .status(400)
           .json({ error: "amount must be a positive number" });
 
-      // Route through LabelGrid — will throw if distributor account not configured
-      const result = await labelGridService?.requestPayout(amount, method);
-      logger.info(
-        `[Distribution] Royalty payout requested by ${userId}: $${amount} via ${method} → id=${result?.id}`,
+      logger.warn(
+        { userId, amount, method },
+        "Royalty payout requested, but no verified Too Lost payout operation is configured",
       );
-      res.json({
-        success: true,
-        payoutId: result.id,
-        amount: result.amount,
-        method,
-        status: result.status,
-        requestedAt: result.requestedAt,
+      return res.status(501).json({
+        success: false,
+        error: "royalty_payout_unavailable",
+        message:
+          "No payout request was sent. Too Lost payout initiation is not supported by the current integration; use a separately verified payout flow.",
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error?.message : String(error);

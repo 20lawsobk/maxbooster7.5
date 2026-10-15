@@ -11,6 +11,16 @@ import { logger } from "../logger.js";
 import crypto from "crypto";
 import { emailService } from "./emailService.js";
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}
+
 export type ServiceStatus =
   | "operational"
   | "degraded_performance"
@@ -415,6 +425,14 @@ export class StatusPageService {
       .where(eq(statusPageSubscribers.email, request?.email));
 
     if (existing?.length > 0) {
+      const existingSubscriber = existing[0];
+      if (!existingSubscriber.isVerified && !request?.userId) {
+        const resent = await this.sendVerificationEmail(existingSubscriber);
+        if (!resent) {
+          throw new Error("Verification email could not be sent. Please retry with the same email address.");
+        }
+        return existingSubscriber;
+      }
       throw new Error("Email already subscribed");
     }
 
@@ -436,7 +454,10 @@ export class StatusPageService {
       .returning();
 
     if (!request?.userId) {
-      await this.sendVerificationEmail(subscriber);
+      const sent = await this.sendVerificationEmail(subscriber);
+      if (!sent) {
+        throw new Error("Subscription was saved, but the verification email could not be sent. Retry with the same email address to resend it.");
+      }
     }
 
     logger.info(
@@ -600,20 +621,27 @@ export class StatusPageService {
 
     for (const subscriber of relevantSubscribers) {
       try {
-        await (emailService as any)?.sendEmail({
+        const appUrl = process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.ai";
+        const baseUrl = /^https?:\/\//i.test(appUrl) ? appUrl : `https://${appUrl}`;
+        const unsubscribeUrl = `${baseUrl.replace(/\/+$/, "")}/status/unsubscribe?token=${encodeURIComponent(String((subscriber as any).unsubscribeToken))}`;
+        const sent = await emailService.send({
           to: subscriber.email,
           subject,
           html: `
-            <h2>${incident?.title}</h2>
-            <p><strong>Status:</strong> ${statusLabel}</p>
-            <p><strong>Impact:</strong> ${(incident as any)?.impact}</p>
-            <p>${(incident as any)?.message}</p>
+            <h2>${escapeHtml(incident?.title)}</h2>
+            <p><strong>Status:</strong> ${escapeHtml(statusLabel)}</p>
+            <p><strong>Impact:</strong> ${escapeHtml((incident as any)?.impact)}</p>
+            <p>${escapeHtml((incident as any)?.message)}</p>
             <hr>
             <p><small>
-              <a href="/status/unsubscribe?token=${(subscriber as any).unsubscribeToken}">Unsubscribe</a> from status updates
+              <a href="${unsubscribeUrl}">Unsubscribe</a> from status updates
             </small></p>
           `,
+          text: `${String(incident?.title ?? "")}\nStatus: ${String(statusLabel)}\nImpact: ${String((incident as any)?.impact ?? "")}\n${String((incident as any)?.message ?? "")}\nUnsubscribe: ${unsubscribeUrl}`,
         });
+        if (!sent) {
+          logger.warn({ subscriberId: subscriber.id }, "Status incident email was not sent");
+        }
       } catch (error) {
         logger.warn(
           { err: error },
@@ -629,22 +657,34 @@ export class StatusPageService {
 
   private async sendVerificationEmail(
     subscriber: StatusPageSubscriber,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
-      await (emailService as any)?.sendEmail({
+      const appUrl = process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.ai";
+      const baseUrl = /^https?:\/\//i.test(appUrl) ? appUrl : `https://${appUrl}`;
+      const verificationUrl = `${baseUrl.replace(/\/+$/, "")}/status/verify?token=${encodeURIComponent(String((subscriber as any).verificationToken))}`;
+      const sent = await emailService.send({
         to: subscriber.email,
         subject: "Verify your status page subscription",
         html: `
           <h2>Confirm your subscription</h2>
           <p>Please click the link below to verify your email and start receiving status updates:</p>
-          <p><a href="/status/verify?token=${(subscriber as any).verificationToken}">Verify Email</a></p>
+          <p><a href="${verificationUrl}">Verify Email</a></p>
         `,
+        text: `Confirm your status page subscription by visiting: ${verificationUrl}`,
       });
+      if (!sent) {
+        logger.warn(
+          { subscriberId: subscriber.id },
+          "Status page verification email was not sent",
+        );
+      }
+      return sent;
     } catch (error) {
       logger.warn(
         { err: error },
         `Failed to send verification email to ${subscriber?.email}:`,
       );
+      return false;
     }
   }
 

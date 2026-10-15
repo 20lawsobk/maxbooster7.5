@@ -67,7 +67,7 @@ jobs:
           SKIP_BOOSTERSTATE: "1"
 
       - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
+        run: npm audit --audit-level=moderate
 
       - name: Run security audit script
         run: npm run security:audit
@@ -75,7 +75,6 @@ jobs:
           DATABASE_URL: postgresql://maxbooster:testpassword@localhost:5432/maxbooster_test
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
-        continue-on-error: true
 
       - name: Upload security report
         uses: actions/upload-artifact@v4
@@ -130,11 +129,23 @@ jobs:
 
       - name: Start server in background
         run: |
-          node --max-old-space-size=512 dist/index.mjs &
-          echo "SERVER_PID=$!" >> $GITHUB_ENV
-          sleep 8
-          curl -f http://localhost:5000/api/health || (echo "❌ Server failed to start"; kill $SERVER_PID; exit 1)
-          echo "✅ Server started"
+          set -euo pipefail
+          node --max-old-space-size=1024 dist/index.mjs &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> "$GITHUB_ENV"
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://localhost:5000/api/health >/dev/null 2>&1; then
+              echo "✅ Server liveness endpoint responded after ${attempt}s"
+              exit 0
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo "❌ Server process exited before becoming healthy"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "❌ Server did not start within 60 seconds"
+          exit 1
         env:
           DATABASE_URL: postgresql://maxbooster:testpassword@localhost:5432/maxbooster_test
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
@@ -149,7 +160,6 @@ jobs:
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
           TARGET_URL: http://localhost:5000
-        continue-on-error: true
 
       - name: Shutdown server
         if: always()
@@ -213,7 +223,6 @@ jobs:
           DATABASE_URL: postgresql://maxbooster:testpassword@localhost:5432/maxbooster_test
           SESSION_SECRET: test-secret-do-not-use-in-production-minimum-32-chars
           NODE_ENV: test
-        continue-on-error: true
 
   test-summary:
     name: Test Summary
@@ -236,3 +245,53 @@ jobs:
           echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Load Tests | ${{ needs.load-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Pre-launch Check | ${{ needs.prelaunch-check.result }} |" >> $GITHUB_STEP_SUMMARY
+
+          security_status="${{ needs.security-tests.result }}"
+          load_status="${{ needs.load-tests.result }}"
+          prelaunch_status="${{ needs.prelaunch-check.result }}"
+          expected_suite="${{ github.event.inputs.test_suite }}"
+
+          # A skipped job is acceptable only when the chosen suite intentionally
+          # excludes it. This prevents a misconfigured job condition from making
+          # the overall workflow green.
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            expected_suite="scheduled"
+            expected="security=${security_status},load=${load_status},prelaunch=${prelaunch_status}"
+            if [[ "$security_status" != "success" || "$prelaunch_status" != "success" || "$load_status" != "skipped" ]]; then
+              echo "❌ Unexpected scheduled-suite results: $expected" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          else
+            case "$expected_suite" in
+              all)
+                if [[ "$security_status" != "success" || "$load_status" != "success" || "$prelaunch_status" != "success" ]]; then
+                  echo "❌ The all suite requires all jobs to pass; got security=$security_status, load=$load_status, prelaunch=$prelaunch_status" >> "$GITHUB_STEP_SUMMARY"
+                  exit 1
+                fi
+                ;;
+              security)
+                if [[ "$security_status" != "success" || "$load_status" != "skipped" || "$prelaunch_status" != "skipped" ]]; then
+                  echo "❌ Unexpected security-suite results: security=$security_status, load=$load_status, prelaunch=$prelaunch_status" >> "$GITHUB_STEP_SUMMARY"
+                  exit 1
+                fi
+                ;;
+              load)
+                if [[ "$load_status" != "success" || "$security_status" != "skipped" || "$prelaunch_status" != "skipped" ]]; then
+                  echo "❌ Unexpected load-suite results: security=$security_status, load=$load_status, prelaunch=$prelaunch_status" >> "$GITHUB_STEP_SUMMARY"
+                  exit 1
+                fi
+                ;;
+              prelaunch)
+                if [[ "$prelaunch_status" != "success" || "$security_status" != "skipped" || "$load_status" != "skipped" ]]; then
+                  echo "❌ Unexpected prelaunch-suite results: security=$security_status, load=$load_status, prelaunch=$prelaunch_status" >> "$GITHUB_STEP_SUMMARY"
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "❌ Unknown test suite: $expected_suite" >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+                ;;
+            esac
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ All required checks for the selected suite passed." >> "$GITHUB_STEP_SUMMARY"

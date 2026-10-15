@@ -6,6 +6,16 @@ import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
 import { reviewRevision, reviewSnapshot, assertReviewRevision } from "./kycReviewRevision.js";
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}
+
 export type KYCType = "individual" | "business";
 export type KYCStatus =
   | "not_started"
@@ -1262,16 +1272,18 @@ export class KYCService {
       const level = getLevel(verification);
 
       if (user?.email) {
-        await (emailService as any)?.sendEmail({
+        const sent = await emailService.send({
           to: user.email,
           subject: "Identity Verification Complete",
           html: `
             <h2>Verification Approved</h2>
-            <p>Dear ${user?.firstName || "User"},</p>
-            <p>Your ${verification?.verificationType} verification has been approved at the ${level} level.</p>
+            <p>Dear ${escapeHtml(user?.firstName || "User")},</p>
+            <p>Your ${escapeHtml(verification?.verificationType)} verification has been approved at the ${escapeHtml(level)} level.</p>
             <p>You can now receive payouts up to the limits for your verification tier.</p>
           `,
+          text: `Dear ${user?.firstName || "User"}, your ${verification?.verificationType} verification has been approved at the ${level} level.`,
         });
+        if (!sent) logger.warn({ userId: verification.userId }, "KYC approval email was not sent");
       }
     } catch (error) {
       logger.warn({ err: error }, "Error notifying verification complete:");
@@ -1291,17 +1303,19 @@ export class KYCService {
       const metadata = getMetadata(verification);
 
       if (user?.email) {
-        await (emailService as any)?.sendEmail({
+        const sent = await emailService.send({
           to: user.email,
           subject: "Identity Verification Update Required",
           html: `
             <h2>Verification Requires Attention</h2>
-            <p>Dear ${user?.firstName || "User"},</p>
+            <p>Dear ${escapeHtml(user?.firstName || "User")},</p>
             <p>Your verification was not approved for the following reason:</p>
-            <p><em>${metadata?.rejectionReason || "Please contact support for details"}</em></p>
+            <p><em>${escapeHtml(metadata?.rejectionReason || "Please contact support for details")}</em></p>
             <p>Please log in to your account to submit corrected information.</p>
           `,
+          text: `Dear ${user?.firstName || "User"}, your verification was not approved. Reason: ${metadata?.rejectionReason || "Please contact support for details"}.`,
         });
+        if (!sent) logger.warn({ userId: verification.userId }, "KYC rejection email was not sent");
       }
     } catch (error) {
       logger.warn({ err: error }, "Error notifying verification rejected:");

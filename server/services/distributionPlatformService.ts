@@ -1,6 +1,4 @@
-import { storage } from "../storage";
 import { logger } from "../logger.js";
-import { createGracefulRedisClient } from "../lib/gracefulRedis.js";
 
 interface SubmissionResult {
   dispatchId: string;
@@ -8,78 +6,26 @@ interface SubmissionResult {
   message: string;
 }
 
-const redis = createGracefulRedisClient("distributionPlatformService");
-const RATE_LIMIT_WINDOW_SECONDS = 60;
-const RATE_LIMIT_MAX = 10;
-
 /**
- * Check if a user has exceeded the distribution submission rate limit.
- * Uses Redis-backed counting so the limit holds across multiple server instances.
- * Gracefully allows the request if Redis is unavailable.
- */
-async function checkRateLimit(userId: string): Promise<boolean> {
-  const key = `rate_limit:distribution:${userId}`;
-  const count = await redis?.incr(key);
-  if (count === 0) {
-    return true;
-  }
-  if (count === 1) {
-    await redis?.expire(key, RATE_LIMIT_WINDOW_SECONDS);
-  }
-  return count <= RATE_LIMIT_MAX;
-}
-
-/**
- * Queue a release for distribution to a specific provider.
- * Records a dispatch entry in the database and returns immediately;
- * actual delivery is handled asynchronously.
+ * Fail closed until a durable provider worker exists. The previous implementation
+ * wrote a "queued" dispatch and used setTimeout to mark it "processing" without
+ * ever contacting a distributor, which falsely implied delivery had begun.
  */
 export async function submitToProvider(
   releaseId: string,
   providerSlug: string,
   userId: string,
 ): Promise<SubmissionResult> {
-  if (!(await checkRateLimit(userId))) {
-    throw new Error("Rate limit exceeded. Please try again later.");
-  }
-
-  const provider = await (storage as any)?.getDistroProviderBySlug(providerSlug);
-  if (!provider) {
-    throw new Error(`Provider ${providerSlug} not found`);
-  }
-
-  const dispatch = await storage.createDistroDispatch({
-    releaseId,
-    providerId: provider.id,
-    status: "queued",
-    logs: `Queued for ${provider?.name} submission at ${new Date().toISOString()}`,
-  });
-
-  setTimeout(() => {
-    storage
-      .updateDistroDispatch((dispatch as any)?.id, {
-        status: "processing",
-        logs: `${(dispatch as any)?.logs}\nProcessing started at ${new Date().toISOString()}`,
-      })
-      .catch((err) => {
-        logger.warn(
-          { err: err },
-          `Failed to update dispatch ${(dispatch as any)?.id} status:`,
-        );
-      });
-  }, 1000);
-
-  return {
-    dispatchId: (dispatch as any).id,
-    status: "queued",
-    message: `Successfully queued for ${provider?.name} distribution`,
-  };
+  logger.warn(
+    { releaseId, providerSlug, userId },
+    "Generic distribution dispatch unavailable: no durable provider worker is configured; no dispatch was created and no provider request was sent",
+  );
+  throw new Error(
+    "Distribution dispatch unavailable. No dispatch was created and no provider request was sent; use the verified Too Lost submission route.",
+  );
 }
 
-/**
- * Submit a release to Spotify for Music distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function spotifySubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },
@@ -91,10 +37,7 @@ export async function spotifySubmit(
   return submitToProvider(releaseId, "spotify", userId);
 }
 
-/**
- * Submit a release to Apple Music for distribution.
- * Validates that the MusicKit team ID, key ID, and private key are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function appleMusicSubmit(
   releaseId: string,
   credentials: { teamId?: string; keyId?: string; privateKey?: string },
@@ -106,10 +49,7 @@ export async function appleMusicSubmit(
   return submitToProvider(releaseId, "apple-music", userId);
 }
 
-/**
- * Submit a release to YouTube Music for distribution.
- * Validates that the YouTube channel ID and OAuth access token are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function youtubeSubmit(
   releaseId: string,
   credentials: { channelId?: string; accessToken?: string },
@@ -121,10 +61,7 @@ export async function youtubeSubmit(
   return submitToProvider(releaseId, "youtube-music", userId);
 }
 
-/**
- * Submit a release to Amazon Music for distribution.
- * Validates that the AWS access key and secret key are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function amazonMusicSubmit(
   releaseId: string,
   credentials: { accessKeyId?: string; secretAccessKey?: string },
@@ -136,10 +73,7 @@ export async function amazonMusicSubmit(
   return submitToProvider(releaseId, "amazon-music", userId);
 }
 
-/**
- * Submit a release to Deezer for distribution.
- * Validates that the Deezer app ID and secret key are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function deezerSubmit(
   releaseId: string,
   credentials: { appId?: string; secretKey?: string },
@@ -151,10 +85,7 @@ export async function deezerSubmit(
   return submitToProvider(releaseId, "deezer", userId);
 }
 
-/**
- * Submit a release to TIDAL for distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function tidalSubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },
@@ -166,10 +97,7 @@ export async function tidalSubmit(
   return submitToProvider(releaseId, "tidal", userId);
 }
 
-/**
- * Submit a release to Pandora for distribution.
- * Validates that the Pandora partner ID and API key are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function pandoraSubmit(
   releaseId: string,
   credentials: { partnerId?: string; apiKey?: string },
@@ -181,10 +109,7 @@ export async function pandoraSubmit(
   return submitToProvider(releaseId, "pandora", userId);
 }
 
-/**
- * Submit a release to iHeartRadio for distribution.
- * Validates that the iHeartRadio API key and partner ID are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function iheartradioSubmit(
   releaseId: string,
   credentials: { apiKey?: string; partnerId?: string },
@@ -196,10 +121,7 @@ export async function iheartradioSubmit(
   return submitToProvider(releaseId, "iheartradio", userId);
 }
 
-/**
- * Submit a release to SoundCloud for distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function soundcloudSubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },
@@ -211,10 +133,7 @@ export async function soundcloudSubmit(
   return submitToProvider(releaseId, "soundcloud", userId);
 }
 
-/**
- * Submit a release to TikTok Music for distribution.
- * Validates that the TikTok client key and secret are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function tiktokSubmit(
   releaseId: string,
   credentials: { clientKey?: string; clientSecret?: string },
@@ -226,10 +145,7 @@ export async function tiktokSubmit(
   return submitToProvider(releaseId, "tiktok", userId);
 }
 
-/**
- * Submit a release to Instagram for distribution.
- * Validates that the Meta app ID and secret are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function instagramSubmit(
   releaseId: string,
   credentials: { appId?: string; appSecret?: string },
@@ -241,10 +157,7 @@ export async function instagramSubmit(
   return submitToProvider(releaseId, "instagram", userId);
 }
 
-/**
- * Submit a release to Facebook for distribution.
- * Validates that the Meta app ID and secret are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function facebookSubmit(
   releaseId: string,
   credentials: { appId?: string; appSecret?: string },
@@ -256,10 +169,7 @@ export async function facebookSubmit(
   return submitToProvider(releaseId, "facebook", userId);
 }
 
-/**
- * Submit a release to Tencent Music (QQ Music / Kugou / Kuwo) for distribution.
- * Validates that the Tencent app ID and key are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function tencentMusicSubmit(
   releaseId: string,
   credentials: { appId?: string; appKey?: string },
@@ -271,10 +181,7 @@ export async function tencentMusicSubmit(
   return submitToProvider(releaseId, "tencent-music", userId);
 }
 
-/**
- * Submit a release to NetEase Cloud Music for distribution.
- * Validates that the NetEase app ID and secret are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function neteaseSubmit(
   releaseId: string,
   credentials: { appId?: string; appSecret?: string },
@@ -286,10 +193,7 @@ export async function neteaseSubmit(
   return submitToProvider(releaseId, "netease-cloud-music", userId);
 }
 
-/**
- * Submit a release to JioSaavn for distribution.
- * Validates that the JioSaavn API key and partner ID are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function jiosaavnSubmit(
   releaseId: string,
   credentials: { apiKey?: string; partnerId?: string },
@@ -301,10 +205,7 @@ export async function jiosaavnSubmit(
   return submitToProvider(releaseId, "jiosaavn", userId);
 }
 
-/**
- * Submit a release to Gaana for distribution.
- * Validates that the Gaana API key is present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function gaanaSubmit(
   releaseId: string,
   credentials: { apiKey?: string },
@@ -316,10 +217,7 @@ export async function gaanaSubmit(
   return submitToProvider(releaseId, "gaana", userId);
 }
 
-/**
- * Submit a release to Anghami for distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function anghamiSubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },
@@ -331,10 +229,7 @@ export async function anghamiSubmit(
   return submitToProvider(releaseId, "anghami", userId);
 }
 
-/**
- * Submit a release to Boomplay for distribution.
- * Validates that the Boomplay API key and partner ID are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function boomplaySubmit(
   releaseId: string,
   credentials: { apiKey?: string; partnerId?: string },
@@ -346,10 +241,7 @@ export async function boomplaySubmit(
   return submitToProvider(releaseId, "boomplay", userId);
 }
 
-/**
- * Submit a release to Yandex Music for distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function yandexMusicSubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },
@@ -361,10 +253,7 @@ export async function yandexMusicSubmit(
   return submitToProvider(releaseId, "yandex-music", userId);
 }
 
-/**
- * Submit a release to Melon for distribution.
- * Validates that the Melon API key and CP code are present.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function melonSubmit(
   releaseId: string,
   credentials: { apiKey?: string; cpCode?: string },
@@ -376,10 +265,7 @@ export async function melonSubmit(
   return submitToProvider(releaseId, "melon", userId);
 }
 
-/**
- * Submit a release to KKBOX for distribution.
- * Validates that OAuth client credentials are present before queuing.
- */
+/** Legacy compatibility wrapper; submission is disabled until a durable provider worker is configured. */
 export async function kkboxSubmit(
   releaseId: string,
   credentials: { clientId?: string; clientSecret?: string },

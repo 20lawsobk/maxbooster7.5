@@ -6,7 +6,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { socialQueueService } from "./socialQueueService";
 import { advertisingDispatchService } from "./advertisingDispatchService";
 import { approvalService } from "./approvalService";
-import { distributionService } from "./distributionService";
 import { viralScoringService } from "./viralScoring";
 import { timingOptimizerService as timingOptimizer } from "./timingOptimizer";
 import { contentVariantGeneratorService as contentVariantGenerator } from "./contentVariantGenerator";
@@ -481,80 +480,20 @@ export class AutonomousService extends EventEmitter {
 
   async autoDistributeRelease(
     userId: string,
-    releaseData: Partial<Release>,
+    _releaseData: Partial<Release>,
   ): Promise<AutoDistributionResult> {
-    try {
-      if (!this.config.distribution) {
-        return { success: false };
-      }
-
-      logger.info(`[AUTO-DISTRIBUTE] Processing release for ${userId}`);
-
-      const release = await distributionService?.createRelease({
-        ...releaseData,
-        userId,
-        status: "processing",
-      } as Record<string, unknown>);
-
-      const providers = [
-        "spotify",
-        "apple_music",
-        "amazon_music",
-        "youtube_music",
-        "tidal",
-        "deezer",
-      ];
-      const dispatchResults = [];
-
-      for (const provider of providers) {
-        try {
-          const result = await distributionService?.submitToProvider(
-            release?.id,
-            provider,
-            userId,
-          );
-          dispatchResults?.push({ provider, ...result });
-        } catch (err) {
-          logger.warn({ err: err }, `Failed to dispatch to ${provider}:`);
-        }
-      }
-
-      const successfulDispatches = dispatchResults?.filter((r) => r?.success);
-
-      const estimatedReach = successfulDispatches?.length * 50000;
-      const royaltyProjection = estimatedReach * 0.004;
-
-      // Honest success gate: a release with zero confirmed provider dispatches
-      // was NOT distributed, regardless of how many providers we attempted —
-      // reporting success:true here previously happened unconditionally, even
-      // when every single provider threw or declined.
-      if (successfulDispatches.length === 0) {
-        logger.warn(
-          `[AUTO-DISTRIBUTE] Release ${release.id} created but 0/${providers.length} providers accepted dispatch — reporting failure, not success`,
-        );
-        return {
-          success: false,
-          releaseId: release.id,
-          dispatchedTo: [],
-          estimatedReach: 0,
-          royaltyProjection: 0,
-        };
-      }
-
-      this.metrics.releasesDistributed++;
-      this.metrics.lastUpdated = new Date();
-
-      return {
-        success: true,
-        releaseId: release.id,
-        dispatchedTo: successfulDispatches.map((r) => r?.provider),
-        estimatedReach,
-        royaltyProjection,
-      };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, "Error in auto distribution:");
+    if (!this.config.distribution) {
       return { success: false };
     }
+
+    // Automatic distribution still points at the retired LabelGrid adapter.
+    // Fail before creating a release or dispatch record; callers must use the
+    // Too Lost-backed, idempotent submission route instead.
+    logger.warn(
+      { userId },
+      "Automatic distribution unavailable: no Too Lost worker is wired to this service; no release or dispatch was created",
+    );
+    return { success: false };
   }
 
   async autoProcessImage(
