@@ -106,7 +106,7 @@ export default function Pricing() {
     {
       question: "What is your refund policy?",
       answer:
-        "A full refund is available within 7 days of your initial purchase. After 7 days, you can cancel to prevent future charges. To request a refund, contact support@maxbooster.com with your account email and purchase date.",
+        "A full refund is available within 90 days of your initial purchase. After 90 days, you can cancel to prevent future charges. To request a refund, contact support@maxbooster.com with your account email and purchase date.",
     },
     {
       question: "What happens to my projects if I cancel?",
@@ -199,10 +199,10 @@ export default function Pricing() {
               <Shield className="h-12 w-12 text-green-600 dark:text-green-400 flex-shrink-0" />
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  7-Day Refund Window
+                  90-Day Money-Back Guarantee
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  A full refund is available within 7 days of your initial
+                  A full refund is available within 90 days of your initial
                   purchase. After that, you can cancel anytime to prevent future
                   charges.
                 </p>
@@ -228,7 +228,7 @@ export default function Pricing() {
           <div className="flex items-center justify-center space-x-4 flex-wrap gap-2">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 font-medium">
               <Shield className="h-4 w-4 mr-2 text-green-500" />
-              7-Day Refund Window
+              90-Day Money-Back Guarantee
             </div>
             <span className="text-gray-400 dark:text-gray-500">•</span>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
@@ -265,7 +265,7 @@ export default function Pricing() {
                 <div className="flex justify-center mb-4">
                   <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700 px-3 py-1">
                     <Shield className="h-4 w-4 mr-2" />
-                    7-Day Refund Window
+                    90-Day Money-Back Guarantee
                   </Badge>
                 </div>
 
@@ -333,8 +333,8 @@ export default function Pricing() {
 
                 <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
                   {plan.period === "once"
-                    ? "One-time payment, lifetime access • 7-day refund window"
-                    : "7-day refund window • Cancel anytime"}
+                    ? "One-time payment, lifetime access • 90-day money-back guarantee"
+                    : "90-day money-back guarantee • Cancel anytime"}
                 </p>
               </CardContent>
             </Card>
