@@ -8,6 +8,15 @@ const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 const REGISTRATION_USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 const REGISTRATION_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGISTRATION_SESSION_RE = /^cs_[a-zA-Z0-9_]+$/;
+const ONBOARDING_LEVELS = new Set(["beginner", "intermediate", "advanced"]);
+const ONBOARDING_PERSONAS = new Set(["artist", "producer", "label", "manager"]);
+const ONBOARDING_ARRAY_LIMITS: Record<string, { items: number; length: number }> = {
+  goals: { items: 20, length: 64 },
+  connectedPlatforms: { items: 30, length: 100 },
+  connectedAccounts: { items: 30, length: 100 },
+  completedSteps: { items: 100, length: 128 },
+};
+const ONBOARDING_DATA_MAX_BYTES = 16 * 1024;
 
 export type RegistrationCheckoutBoundaryResult =
   | {
@@ -35,6 +44,10 @@ export type RegistrationCompletionBoundaryResult =
         marketingConsent: boolean;
       };
     }
+  | { ok: false; message: string };
+
+export type OnboardingUpdateBoundaryResult =
+  | { ok: true; value: Record<string, unknown> }
   | { ok: false; message: string };
 
 function parseCalendarDate(value: string): Date | null {
@@ -86,7 +99,9 @@ export function normalizeRegistrationCheckoutBody(
   }
 
   const userEmail =
-    typeof input.userEmail === "string" ? input.userEmail.trim().toLowerCase() : "";
+    typeof input.userEmail === "string"
+      ? input.userEmail.trim().toLowerCase()
+      : "";
   if (
     !userEmail ||
     userEmail.length > 254 ||
@@ -139,13 +154,15 @@ export function normalizeRegistrationCheckoutBody(
   if (input.tosAccepted !== true) {
     return {
       ok: false,
-      message: "You must accept the Terms of Service before continuing to payment",
+      message:
+        "You must accept the Terms of Service before continuing to payment",
     };
   }
   if (input.privacyAccepted !== true) {
     return {
       ok: false,
-      message: "You must accept the Privacy Policy before continuing to payment",
+      message:
+        "You must accept the Privacy Policy before continuing to payment",
     };
   }
 
@@ -165,7 +182,9 @@ export function normalizeRegistrationCheckoutBody(
 
 export function normalizeRegistrationVerificationBody(
   body: unknown,
-): { ok: true; value: { sessionId: string } } | { ok: false; message: string } {
+):
+  | { ok: true; value: { sessionId: string } }
+  | { ok: false; message: string } {
   const sessionId = normalizedCheckoutSessionId(body);
   if (!sessionId) {
     return { ok: false, message: "Invalid checkout session" };
@@ -184,7 +203,10 @@ export function normalizeRegistrationCompletionBody(
   const input = body as Record<string, unknown>;
   const password = typeof input.password === "string" ? input.password : "";
   if (password.length < 8) {
-    return { ok: false, message: "Password must be at least 8 characters long" };
+    return {
+      ok: false,
+      message: "Password must be at least 8 characters long",
+    };
   }
   if (password.length > 72) {
     return { ok: false, message: "Password must be 72 characters or fewer" };
@@ -212,6 +234,161 @@ export function normalizeRegistrationCompletionBody(
       marketingConsent: input.marketingConsent === true,
     },
   };
+}
+
+function normalizeBoundedStringArray(
+  value: unknown,
+  field: string,
+): { ok: true; value: string[] } | { ok: false; message: string } {
+  const limits = ONBOARDING_ARRAY_LIMITS[field];
+  if (!Array.isArray(value) || value.length > limits.items) {
+    return { ok: false, message: `Invalid onboarding field: ${field}` };
+  }
+
+  const normalized: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") {
+      return { ok: false, message: `Invalid onboarding field: ${field}` };
+    }
+    const trimmed = item.trim();
+    if (!trimmed || trimmed.length > limits.length) {
+      return { ok: false, message: `Invalid onboarding field: ${field}` };
+    }
+    normalized.push(trimmed);
+  }
+
+  return { ok: true, value: normalized };
+}
+
+export function normalizeOnboardingUpdateBody(
+  body: unknown,
+): OnboardingUpdateBoundaryResult {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Invalid onboarding update" };
+  }
+
+  const input = body as Record<string, unknown>;
+  const allowedTopLevel = new Set([
+    "step",
+    "completed",
+    "hasCompletedOnboarding",
+    "onboardingData",
+  ]);
+  if (Object.keys(input).some((key) => !allowedTopLevel.has(key))) {
+    return { ok: false, message: "Unsupported onboarding update field" };
+  }
+
+  const output: Record<string, unknown> = {};
+
+  if (input.step !== undefined) {
+    if (
+      typeof input.step !== "number" ||
+      !Number.isInteger(input.step) ||
+      input.step < 0 ||
+      input.step > 100
+    ) {
+      return { ok: false, message: "Invalid onboarding step" };
+    }
+    output.step = input.step;
+  }
+
+  for (const field of ["completed", "hasCompletedOnboarding"] as const) {
+    if (input[field] !== undefined) {
+      if (typeof input[field] !== "boolean") {
+        return { ok: false, message: `Invalid onboarding field: ${field}` };
+      }
+      output[field] = input[field];
+    }
+  }
+
+  if (
+    typeof input.completed === "boolean" &&
+    typeof input.hasCompletedOnboarding === "boolean" &&
+    input.completed !== input.hasCompletedOnboarding
+  ) {
+    return { ok: false, message: "Conflicting onboarding completion values" };
+  }
+
+  if (input.onboardingData !== undefined) {
+    if (
+      !input.onboardingData ||
+      typeof input.onboardingData !== "object" ||
+      Array.isArray(input.onboardingData)
+    ) {
+      return { ok: false, message: "Invalid onboarding data" };
+    }
+
+    let serialized = "";
+    try {
+      serialized = JSON.stringify(input.onboardingData);
+    } catch {
+      return { ok: false, message: "Invalid onboarding data" };
+    }
+    if (Buffer.byteLength(serialized, "utf8") > ONBOARDING_DATA_MAX_BYTES) {
+      return { ok: false, message: "Onboarding data is too large" };
+    }
+
+    const data = {
+      ...(input.onboardingData as Record<string, unknown>),
+    };
+
+    for (const field of ["persona", "accountType"] as const) {
+      if (
+        data[field] !== undefined &&
+        data[field] !== null &&
+        (typeof data[field] !== "string" ||
+          !ONBOARDING_PERSONAS.has(data[field] as string))
+      ) {
+        return { ok: false, message: `Invalid onboarding field: ${field}` };
+      }
+    }
+
+    for (const field of ["experienceLevel", "userLevel"] as const) {
+      if (
+        data[field] !== undefined &&
+        data[field] !== null &&
+        (typeof data[field] !== "string" ||
+          !ONBOARDING_LEVELS.has(data[field] as string))
+      ) {
+        return { ok: false, message: `Invalid onboarding field: ${field}` };
+      }
+    }
+
+    if (
+      data.preferSimplifiedView !== undefined &&
+      typeof data.preferSimplifiedView !== "boolean"
+    ) {
+      return {
+        ok: false,
+        message: "Invalid onboarding field: preferSimplifiedView",
+      };
+    }
+
+    for (const field of Object.keys(ONBOARDING_ARRAY_LIMITS)) {
+      if (data[field] === undefined) continue;
+      const normalized = normalizeBoundedStringArray(data[field], field);
+      if (!normalized.ok) return normalized;
+      data[field] = normalized.value;
+    }
+
+    if (data.skippedAt !== undefined) {
+      if (
+        typeof data.skippedAt !== "string" ||
+        data.skippedAt.length > 100 ||
+        !Number.isFinite(Date.parse(data.skippedAt))
+      ) {
+        return { ok: false, message: "Invalid onboarding field: skippedAt" };
+      }
+    }
+
+    output.onboardingData = data;
+  }
+
+  if (Object.keys(output).length === 0) {
+    return { ok: false, message: "Onboarding update is empty" };
+  }
+
+  return { ok: true, value: output };
 }
 
 function installRegistrationConsentFinalizer(
@@ -376,7 +553,10 @@ export const originValidation: RequestHandler = (
 ) => {
   const normalizedPath = req.path.replace(/\/$/, "");
 
-  if (req.method === "POST" && normalizedPath === "/api/create-checkout-session") {
+  if (
+    req.method === "POST" &&
+    normalizedPath === "/api/create-checkout-session"
+  ) {
     const boundary = normalizeRegistrationCheckoutBody(req.body);
     if (!boundary.ok) {
       return res.status(400).json({ error: boundary.message });
@@ -384,7 +564,10 @@ export const originValidation: RequestHandler = (
     req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
   }
 
-  if (req.method === "POST" && normalizedPath === "/api/verify-checkout-session") {
+  if (
+    req.method === "POST" &&
+    normalizedPath === "/api/verify-checkout-session"
+  ) {
     const boundary = normalizeRegistrationVerificationBody(req.body);
     if (!boundary.ok) {
       return res.status(400).json({ error: boundary.message });
@@ -392,13 +575,27 @@ export const originValidation: RequestHandler = (
     req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
   }
 
-  if (req.method === "POST" && normalizedPath === "/api/register-after-payment") {
+  if (
+    req.method === "POST" &&
+    normalizedPath === "/api/register-after-payment"
+  ) {
     const boundary = normalizeRegistrationCompletionBody(req.body);
     if (!boundary.ok) {
       return res.status(400).json({ error: boundary.message });
     }
     req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
     installRegistrationConsentFinalizer(req, res, boundary);
+  }
+
+  if (
+    req.method === "POST" &&
+    normalizedPath === "/api/auth/update-onboarding"
+  ) {
+    const boundary = normalizeOnboardingUpdateBody(req.body);
+    if (!boundary.ok) {
+      return res.status(400).json({ error: boundary.message });
+    }
+    req.body = boundary.value;
   }
 
   if (SAFE_METHODS.has(req.method)) return next();
