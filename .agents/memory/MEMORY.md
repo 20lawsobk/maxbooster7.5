@@ -121,9 +121,6 @@
 - [Workflow duplicate process trees](workflow-esbuild-duplicate-processes.md) — repeated restarts can orphan app/MaxCore trees, exhaust threads, and kill Vite's esbuild worker; clean-stop before restarting
 - [Artist discovery provider boundary](artist-discovery-provider-boundary.md) — artist IDs come from direct DSP searches; Too Lost handles authenticated distribution, not artist-roster discovery
 - [Artist sync scope](artist-sync-scope.md) — auto-reconciliation must use the selected artist profile's identities, not the user's shared platform-link map; namesake fallbacks fail closed
-- [Nested deployment audits](nested-workspace-deployment-audits.md) — publishing scans bundled subsystem dependencies too; root-only dependency fixes can miss the blocker.
-- [Simulation copy exclusions](production-simulation-copy-exclusions.md) — anchor workspace-only tar exclusions; broad names can remove dependency internals and create false build failures.
-- [Production simulation storage limits](production-simulation-resource-sizing.md) — `df` can overstate usable scratch space under hidden quotas; size conservatively and verify path-specific limits.
 - [Endpoint audit contract boundary](endpoint-audit-contract-boundary.md) — route matches prove topology, not payload/response compatibility or component behavior.
 - [Git auth vs local reference health](git-auth-vs-local-reference-health.md) — successful GitHub auth can coexist with broken tracking refs; classify fetch failures before requesting OAuth reconnection.
 - [Semgrep coverage and timeouts](semgrep-coverage-and-timeouts.md) — valid JSX/type syntax can partially parse; measure slow rules and include new untracked helpers in verification.
@@ -147,8 +144,6 @@
 - [Publishing script choice](publishing-build-authorization.md) — user chose the unmodified historical scripts as active; retain newer versions and never run destructive builds in the checkout.
 - [Settlement authorization provenance](settlement-authorization-provenance.md) — pending creators are not payout beneficiaries; ambiguous legacy allocations need reconciliation.
 - [Session revocation lineage](session-revocation-lineage.md) — fence in-flight saves and refresh successors; unbound legacy bearer credentials require account-wide revocation.
-- [Deployment concurrency boundaries](deployment-concurrency-boundaries.md) — size against container quotas; drain active destructive jobs before failure returns to recovery.
-- [Deployment toolchain preservation](deployment-toolchain-preservation.md) — preserve compatible child-process tools before cache cleanup; Nix copy permissions and pnpm project checks matter.
 - [Snapshot string ceiling](pdim-snapshot-string-limit.md) — verify both read and write beyond V8's single-string limit; preserve checkpoint consistency.
 - [Local DNS enabled](local-dns-enabled.md) — keep the local authoritative service enabled; verify UDP and TCP separately from public delegation.
 - [MaxCore lifecycle IPC](maxcore-cluster-lifecycle-state.md) — process-local restart flags cannot gate clustered HTTP workers; verify primary-to-worker readiness propagation.
@@ -157,3 +152,4 @@
 - [Unified automation scope](unified-automation-scope.md) — social, advertising, beat revenue, and music workflows must share orchestration and data-integrity boundaries.
 - [Installer registry rewrite](installer-registry-rewrite.md) — package updates can reinsert internal tarball URLs; verify upstream integrity before restoring portable lock URLs.
 - [Storefront canonical origin](storefront-canonical-origin.md) — generated storefront links use maxbooster.replit.app; preserve DNS aliases without claiming unverified public availability.
+- [Shutdown exit ownership](shutdown-owner-exit.md) — imported worker drains must return to the app owner; early process exits bypass otherwise-correct subsystem cleanup.

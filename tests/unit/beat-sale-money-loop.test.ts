@@ -190,7 +190,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!db) return;
-  try {
     // Clean up in FK-safe order
     if (notifications) {
       await db.delete(notifications).where(
@@ -221,9 +220,6 @@ afterAll(async () => {
       );
     }
     await db.delete(listings!).where(eq(listings!.id, seedIds.listingId));
-  } catch (err) {
-    throw err;
-  }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

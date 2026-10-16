@@ -7,8 +7,10 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+from production_fixture_support import native_binary
 
 source = Path(__file__).resolve().parents[1]
+binary = native_binary(source)
 root = Path(tempfile.mkdtemp(prefix="npm-start-isolated-"))
 pg = Path(tempfile.mkdtemp(prefix="npm-start-pg-"))
 manifest = json.loads((source / "dist/build-complete.json").read_text())
@@ -36,9 +38,7 @@ try:
             destination = root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.symlink_to(source / name, target_is_directory=True)
-    binary = Path("boosterstate/target/release/boosterstate")
-    if (source / binary).is_file():
-        copy_file(binary)
+    copy_file(binary)
     (pg / "socket").mkdir()
     (pg / "drizzle.json").write_text(json.dumps({
         "dialect": "postgresql", "schema": str(root / "shared/schema.ts"),

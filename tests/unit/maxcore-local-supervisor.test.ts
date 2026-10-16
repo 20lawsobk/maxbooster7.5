@@ -258,8 +258,17 @@ describe("MaxCore local supervisor", () => {
         }),
       );
 
-      stopMaxcoreLocal();
-      expect(proc.kill).toHaveBeenCalledWith("SIGTERM");
+      vi.useFakeTimers();
+      const groupKill = vi.spyOn(process, "kill").mockReturnValue(true);
+      try {
+        stopMaxcoreLocal();
+        expect(groupKill).toHaveBeenCalledWith(-424242, "SIGTERM");
+        expect(proc.kill).not.toHaveBeenCalled();
+      } finally {
+        vi.clearAllTimers();
+        vi.useRealTimers();
+        groupKill.mockRestore();
+      }
     });
   });
 });

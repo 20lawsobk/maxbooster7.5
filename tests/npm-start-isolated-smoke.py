@@ -16,6 +16,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from production_fixture_support import wait_ports_released
 
 root, pg = map(lambda value: Path(value).resolve(), sys.argv[1:3])
 if not str(root).startswith("/tmp/npm-start-isolated-") or not str(pg).startswith("/tmp/npm-start-pg-"):
@@ -33,6 +34,8 @@ env = {
     "READINESS_ISOLATED_PG": "1", "READINESS_EGRESS_GUARD": "1",
 }
 responses = {}
+runtime_ports = [5012, 5556, 8008, 8090, 9877, 9878, 9879, 9880]
+wait_ports_released(runtime_ports, timeout=0)
 Path("/tmp/npm-start-readiness.json").unlink(missing_ok=True)
 with open("/tmp/npm-start-isolated-db.log", "w") as log:
     process = subprocess.Popen(["npm", "run", "start"], cwd=root, env=env,
@@ -76,6 +79,8 @@ with open("/tmp/npm-start-isolated-db.log", "w") as log:
             except subprocess.TimeoutExpired:
                 os.killpg(process.pid, signal.SIGKILL)
                 process.wait()
+                raise RuntimeError("Production shutdown exceeded 8s and required SIGKILL")
+        wait_ports_released(runtime_ports)
 if responses.get("/", {}).get("status") != 200:
     raise SystemExit("Built application did not serve its homepage")
 if responses.get("/api/ready", {}).get("ready") is not True:

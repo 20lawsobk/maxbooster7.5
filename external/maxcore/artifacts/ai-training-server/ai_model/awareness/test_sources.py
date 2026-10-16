@@ -1,9 +1,25 @@
 import unittest
 from unittest.mock import patch
-from ai_model.awareness.sources import APP_RSS, configured_sources, rss
+from ai_model.awareness.sources import APP_RSS, configured_sources, rss, youtube
 
 
 class SourceCoverageTests(unittest.TestCase):
+    def test_youtube_feed_uses_safe_parser_and_real_view_count(self):
+        xml = b"""<feed xmlns="http://www.w3.org/2005/Atom"
+        xmlns:media="http://search.yahoo.com/mrss/"><entry>
+        <title>Fixture video</title><link href="https://www.youtube.com/watch?v=fixture"/>
+        <media:statistics views="42"/></entry></feed>"""
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+            rows = youtube("https://www.youtube.com/feeds/videos.xml")
+        self.assertEqual(rows[0]["value"], 42)
+        self.assertEqual(rows[0]["metric"], "youtube_feed_views")
+
+    def test_youtube_feed_rejects_entity_declarations(self):
+        xml = b'<!DOCTYPE feed [<!ENTITY x SYSTEM "file:///etc/passwd">]><feed>&x;</feed>'
+        with patch("ai_model.awareness.sources.legacy._fetch", return_value=xml):
+            with self.assertRaises(ValueError):
+                youtube("https://www.youtube.com/feeds/videos.xml")
+
     def test_all_ten_original_feeds_are_retained_without_keys(self):
         with patch.dict("os.environ", {}, clear=True):
             configured = configured_sources()

@@ -717,9 +717,20 @@ export function stopMaxcoreLocal(): void {
   }
   if (child) {
     logger.info("[MaxCoreLocal] Stopping MaxCore api-server…");
-    child.kill("SIGTERM");
-    // Escalate if it ignores SIGTERM (the imported primary self-exits in 3s).
+    // Signal the owned detached group immediately. The app can exit before an
+    // unref'ed escalation timer or child exit callback runs; signalling only
+    // the Node parent strands Python's model/health listeners.
     const pid = child.pid;
+    if (pid) {
+      try {
+        process.kill(-pid, "SIGTERM");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+          logger.error({ err: error }, "[MaxCoreLocal] Failed to signal owned process group");
+        }
+      }
+    }
+    // Escalate if it ignores SIGTERM (the imported primary self-exits in 3s).
     const killTimer = setTimeout(() => {
       try {
         if (pid) process.kill(-pid, "SIGKILL");

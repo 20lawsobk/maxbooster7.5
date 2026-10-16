@@ -14,3 +14,8 @@ description: Index of capsule packaging, image sizing, restore and boot constrai
 - [Nix closure sizing](replit-nix-feeds-deploy-closure.md)
 - [Capsule exclusions](production-capsule-exclusions.md)
 - [Retain build control files](capsule-build-control-files.md)
+- [Nested dependency audit coverage](nested-workspace-deployment-audits.md)
+- [Simulation copy exclusions](production-simulation-copy-exclusions.md)
+- [Simulation storage limits](production-simulation-resource-sizing.md)
+- [Build concurrency and failure draining](deployment-concurrency-boundaries.md)
+- [Toolchain preservation during cleanup](deployment-toolchain-preservation.md)

@@ -14,6 +14,10 @@ export default [
     ignores: [
       "node_modules/**",
       ".pythonlibs/**",
+      // Installed Python distributions contain third-party JS/terminfo,
+      // not application sources. Keep first-party subsystem sources in scope.
+      "python_runtime/**",
+      "venv/**",
       "dist/**",
       "build/**",
       "coverage/**",

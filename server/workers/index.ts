@@ -219,15 +219,24 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info(
       "✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)",
     );
-    process.exit(0);
   } catch (error) {
     logger.warn({ err: error }, "❌ Error during shutdown:");
-    process.exit(1);
+    throw error;
   }
 }
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+// Imported workers must never exit the HTTP process ahead of its persistence
+// flush and owned-subsystem cleanup. Only the standalone entry owns signals.
+if (process.argv[1]?.includes("workers/index")) {
+  for (const signal of ["SIGTERM", "SIGINT"]) {
+    process.on(signal, () => {
+      gracefulShutdown(signal).then(
+        () => process.exit(0),
+        () => process.exit(1),
+      );
+    });
+  }
+}
 
 process.on("uncaughtException", (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)

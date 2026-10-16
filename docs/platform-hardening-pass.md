@@ -36,6 +36,62 @@ no live remote-parity claim is made.
 
 ## Corrections made
 
+### Blocker remediation and acceptance, 2026-10-16
+
+This is partial implementation, not a five-blocker completion or launch approval.
+
+- Complete native fixture selection now mirrors start.sh: executable
+  bin/boosterstate first, then the development release path. Missing native
+  binaries fail fixture preparation instead of silently disappearing.
+- The isolated smoke checks IPv4/IPv6 listener release and rejects forced
+  shutdown. A separate runner repeats the startup/shutdown cycle in the same
+  network namespace.
+- Actual production tests exposed model listeners stranded on 9878/9879.
+  The embedded BullMQ module called process.exit while the application was
+  still draining. Embedded shutdown now returns/throws to its application
+  owner; standalone workers retain signal/exit handling. MaxCore also signals
+  its owned detached process group immediately.
+- The latest two production cycles each served HTML and health with HTTP 200,
+  shut down without leaked checked ports, and permitted the second start.
+  Both still exited 1 for readiness 503: no-egress awareness ingestion remains
+  unavailable. This is not a production-ready result.
+- Fixed the YouTube awareness adapter's undefined ET reference by using the
+  existing bounded, DTD/entity-rejecting XML parser.
+- Added a credential-free, fixed-source public read probe. All four real
+  domains passed: Apple 50 rows, Mastodon 20, Marketing Dive 10, Guardian 26.
+  The initial sanitized probe failed certificate verification; explicitly
+  using the host CA bundle fixed it without disabling TLS verification.
+  This separate read probe does not bypass or replace application readiness.
+- Full npm lint completed with 37 errors: 36 were installed Python-distribution
+  JS/terminfo files, one was a redundant test catch/rethrow. Excluded only those
+  third-party runtime trees and removed the redundant wrapper. Full lint then
+  passed; the subsequent worker edits also passed targeted lint.
+
+Observed commands:
+
+| Command/check | Outcome |
+| --- | --- |
+| python3 -B -m unittest discover -s tests -p test_production_fixture_support.py -v | 3 passed |
+| Portable Python unittest ai_model.awareness.test_sources | 12 passed |
+| Vitest snapshot writer/JSON and Redis/capsule journals | 4 files, 22 passed |
+| Vitest MaxCore supervisor/cluster ownership/distribution contract | 3 files, 17 passed |
+| Vitest worker shutdown ownership/MaxCore supervisor, after final fix | 2 files, 11 passed |
+| npm run test:runtime-contracts | 37 passed; before final worker ownership edit |
+| npm run build, after final worker ownership edit | exit 0 |
+| Resource-bounded tsgo server typecheck, after final edit | exit 0 |
+| npm run lint | exit 0 before final worker edit; targeted lint passed afterward |
+| production-restart-smoke.py under unshare -Urn | both cycles exit 1 on readiness; port-release checks passed |
+| Credential-free awareness-public-read-smoke.py | exit 0; all four domains populated |
+| verify-runtime-artifacts.mjs dependencies | 60-second shell timeout; no pass established |
+| Retained snapshot SHA-256 inventory | interrupted without a complete report; no recovery/cleanup claim |
+
+No retained PDIM files were removed. Fixture journal tests do not establish
+recovery of the real retained account dataset. The actual historical shell
+pack/restore rehearsal, production-only dependency closure, active legacy
+provider retirement, full security triage and critical cross-platform journeys
+remain open. No publishing, migrations, live messaging, payments or releases
+were performed.
+
 ### Continued build-contract verification, 2026-10-16
 
 - Fixed a late-failure acceptance hole: the build failure handler now removes

@@ -206,7 +206,7 @@ def trends_lines(rows, platform=""):
 
 
 def youtube(url):
-    root = ET.fromstring(legacy._fetch(url))
+    root = parse_feed_xml(legacy._fetch(url))
     atom = "{http://www.w3.org/2005/Atom}"
     media = "{http://search.yahoo.com/mrss/}"
     rows = []

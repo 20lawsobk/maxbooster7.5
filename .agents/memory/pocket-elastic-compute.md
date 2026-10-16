@@ -8,3 +8,9 @@ The platform's elastic compute model uses the pocket dimension for lifecycle sta
 **Why:** The imported architecture was designed to scale logical node and GPU lifecycles through compressed pocket state; finite node caps contradicted that design.
 
 **How to apply:** Preserve health, utilization, cooldown, and drain safeguards, but do not reintroduce fixed `maxNodes` ceilings or confuse logical pocket capacity with active host execution capacity.
+
+The custom Digital GPU is a supported GPU implementation within a CPU-based environment. Do not reject it merely because physical GPU hardware is absent.
+
+**Why:** The user explicitly confirmed this intended design; host CPU execution is not evidence of an unsupported backend.
+
+**How to apply:** Validate real supported inference and readiness behavior rather than imposing a hardware-GPU requirement.
