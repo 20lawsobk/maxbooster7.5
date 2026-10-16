@@ -32,3 +32,14 @@ environments. Replit's `npx` shell wrapper uses `set -u` and requires
 `XDG_CONFIG_HOME`; an otherwise valid historical build failed before Vite when
 the harness omitted it. This is a harness prerequisite, not an application
 compiler failure.
+
+Do not classify failed public-feed ingestion inside a deliberately no-egress
+fixture as a confirmed production connectivity defect. Awareness verification
+must distinguish the isolated harness from the running preview.
+
+**Why:** The user corrected an assessment that promoted a test-environment
+restriction to a production blocker despite successful running-preview checks.
+
+**How to apply:** Honor requests to keep the preview running during awareness
+tests; record its actual readiness separately from isolated tests. Do not infer
+that preview state causes workspace internet access from correlation alone.

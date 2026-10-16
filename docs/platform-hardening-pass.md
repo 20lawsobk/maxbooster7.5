@@ -40,6 +40,15 @@ no live remote-parity claim is made.
 
 This is partial implementation, not a five-blocker completion or launch approval.
 
+**Connectivity classification correction:** The intentionally no-egress fixture's
+feed failures are test-environment limitations, not a confirmed production
+networking defect. Subsequent awareness-only testing kept the preview running:
+43 Python tests and 10 application-facade tests passed; the preview returned
+HTTP 200 with awareness ready. Three public feeds passed and Apple Charts
+timed out in that run. The refresh/storage warning remains an investigation
+item, not a proven production launch blocker. These observations do not
+establish that starting the preview itself enables workspace internet access.
+
 - Complete native fixture selection now mirrors start.sh: executable
   bin/boosterstate first, then the development release path. Missing native
   binaries fail fixture preparation instead of silently disappearing.
