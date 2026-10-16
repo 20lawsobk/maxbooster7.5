@@ -1,15 +1,17 @@
 import { db } from "../db";
-import { users } from "../../shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 const CURRENT_TOS_VERSION = "1.0.0";
 const CURRENT_PRIVACY_VERSION = "1.0.0";
 
+type ConsentType = "tos" | "privacy" | "marketing" | "cookies";
+type ConsentAction = "accepted" | "rejected" | "withdrawn";
+
 interface LogConsentInput {
   userId: string;
-  consentType: "tos" | "privacy" | "marketing" | "cookies";
-  action: "accepted" | "rejected" | "withdrawn";
+  consentType: ConsentType;
+  action: ConsentAction;
   version?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -23,30 +25,47 @@ interface RegisterConsentInput {
   marketingConsent?: boolean;
 }
 
+function dateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export class ConsentService {
+  private async insertConsentLog(
+    executor: { execute: (query: unknown) => Promise<unknown> },
+    input: LogConsentInput,
+  ): Promise<void> {
+    await executor.execute(sql`
+      INSERT INTO consent_logs (
+        user_id,
+        consent_type,
+        action,
+        version,
+        ip_address,
+        user_agent,
+        metadata,
+        created_at
+      )
+      VALUES (
+        ${input.userId},
+        ${input.consentType},
+        ${input.action},
+        ${input.version ?? null},
+        ${input.ipAddress ?? null},
+        ${input.userAgent ?? null},
+        ${input.metadata ? JSON.stringify(input.metadata) : null}::jsonb,
+        NOW()
+      )
+    ` as never);
+  }
+
   async logConsent(input: LogConsentInput): Promise<void> {
     try {
-      // consent_logs table may not be in the shared schema yet; use raw insert to avoid
-      // TS2305 from a missing schema export while preserving the runtime contract.
-      await (db as any).execute(sql`
-        INSERT INTO consent_logs (user_id, consent_type, action, version, ip_address, user_agent, metadata, created_at)
-        VALUES (
-          ${input.userId},
-          ${input.consentType},
-          ${input.action},
-          ${input.version ?? null},
-          ${input.ipAddress ?? null},
-          ${input.userAgent ?? null},
-          ${input.metadata ? JSON.stringify(input.metadata) : null},
-          NOW()
-        )
-      `);
-
+      await this.insertConsentLog(db as never, input);
       logger.info(
-        `Consent logged: ${input?.userId} - ${input?.consentType} - ${input?.action}`,
+        `Consent logged: ${input.userId} - ${input.consentType} - ${input.action}`,
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error logging consent:");
+      logger.warn({ err: error }, "Error logging consent");
       throw new Error("Failed to log consent");
     }
   }
@@ -57,87 +76,113 @@ export class ConsentService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const now = new Date();
-
-    // Validate age (COPPA compliance - must be 13+)
-    const age = this.calculateAge(input?.birthdate);
-    if (age < 13) {
-      throw new Error(
-        "Users must be at least 13 years old to register (COPPA compliance)",
-      );
+    const birthdate = new Date(input.birthdate);
+    if (Number.isNaN(birthdate.getTime())) {
+      throw new Error("A valid birthdate is required");
     }
 
-    // Require TOS and Privacy acceptance
-    if (!input?.tosAccepted) {
+    const age = this.calculateAge(birthdate);
+    if (age < 13) {
+      throw new Error("Users must be at least 13 years old to register");
+    }
+    if (!input.tosAccepted) {
       throw new Error("You must accept the Terms of Service to continue");
     }
-    if (!input?.privacyAccepted) {
+    if (!input.privacyAccepted) {
       throw new Error("You must accept the Privacy Policy to continue");
     }
 
-    // Update user record with consent timestamps.
-    // These columns (ageVerified, tosAcceptedAt, etc.) exist at runtime but are not
-    // yet reflected in the shared schema type — use scoped casts to avoid TS2339.
-    const usersAny = users as any;
-    await db
-      .update(users)
-      .set({
-        [usersAny.ageVerified?.name ?? "age_verified"]: true,
-        [usersAny.tosAcceptedAt?.name ?? "tos_accepted_at"]: now,
-        [usersAny.tosVersion?.name ?? "tos_version"]: CURRENT_TOS_VERSION,
-        [usersAny.privacyAcceptedAt?.name ?? "privacy_accepted_at"]: now,
-        [usersAny.privacyVersion?.name ?? "privacy_version"]: CURRENT_PRIVACY_VERSION,
-        [usersAny.marketingConsent?.name ?? "marketing_consent"]: input.marketingConsent || false,
-        [usersAny.marketingConsentAt?.name ?? "marketing_consent_at"]: input.marketingConsent ? now : null,
-      } as any)
-      .where(eq(users.id, userId));
+    const now = new Date();
+    const marketingConsent = input.marketingConsent === true;
+    const birthdateValue = dateOnly(birthdate);
 
-    // Log TOS consent
-    await this.logConsent({
-      userId,
-      consentType: "tos",
-      action: "accepted",
-      version: CURRENT_TOS_VERSION,
-      ipAddress,
-      userAgent,
-    });
+    try {
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`
+          INSERT INTO registration_consents (
+            user_id,
+            birthdate,
+            age_verified,
+            tos_accepted_at,
+            tos_version,
+            privacy_accepted_at,
+            privacy_version,
+            marketing_consent,
+            marketing_consent_at,
+            created_at,
+            updated_at
+          )
+          VALUES (
+            ${userId},
+            ${birthdateValue}::date,
+            true,
+            ${now},
+            ${CURRENT_TOS_VERSION},
+            ${now},
+            ${CURRENT_PRIVACY_VERSION},
+            ${marketingConsent},
+            ${marketingConsent ? now : null},
+            ${now},
+            ${now}
+          )
+          ON CONFLICT (user_id) DO UPDATE SET
+            birthdate = EXCLUDED.birthdate,
+            age_verified = true,
+            tos_accepted_at = EXCLUDED.tos_accepted_at,
+            tos_version = EXCLUDED.tos_version,
+            privacy_accepted_at = EXCLUDED.privacy_accepted_at,
+            privacy_version = EXCLUDED.privacy_version,
+            marketing_consent = EXCLUDED.marketing_consent,
+            marketing_consent_at = EXCLUDED.marketing_consent_at,
+            updated_at = EXCLUDED.updated_at
+        `);
 
-    // Log Privacy consent
-    await this.logConsent({
-      userId,
-      consentType: "privacy",
-      action: "accepted",
-      version: CURRENT_PRIVACY_VERSION,
-      ipAddress,
-      userAgent,
-    });
-
-    // Log marketing consent if provided
-    if (input?.marketingConsent !== undefined) {
-      await this.logConsent({
-        userId,
-        consentType: "marketing",
-        action: input.marketingConsent ? "accepted" : "rejected",
-        ipAddress,
-        userAgent,
+        await this.insertConsentLog(tx as never, {
+          userId,
+          consentType: "tos",
+          action: "accepted",
+          version: CURRENT_TOS_VERSION,
+          ipAddress,
+          userAgent,
+          metadata: { source: "registration" },
+        });
+        await this.insertConsentLog(tx as never, {
+          userId,
+          consentType: "privacy",
+          action: "accepted",
+          version: CURRENT_PRIVACY_VERSION,
+          ipAddress,
+          userAgent,
+          metadata: { source: "registration" },
+        });
+        await this.insertConsentLog(tx as never, {
+          userId,
+          consentType: "marketing",
+          action: marketingConsent ? "accepted" : "rejected",
+          ipAddress,
+          userAgent,
+          metadata: { source: "registration" },
+        });
       });
-    }
 
-    logger.info(
-      `Registration consents recorded for user ${userId}, age: ${age}`,
-    );
+      logger.info(
+        `Registration consents recorded for user ${userId}, age: ${age}`,
+      );
+    } catch (error: unknown) {
+      logger.warn({ err: error, userId }, "Failed to record registration consents");
+      throw new Error("Failed to record registration consents");
+    }
   }
 
-  calculateAge(birthdate: Date): number {
-    const today = new Date();
+  calculateAge(birthdate: Date, now: Date = new Date()): number {
     const birth = new Date(birthdate);
-    let age = today?.getFullYear() - birth?.getFullYear();
-    const monthDiff = today?.getMonth() - birth?.getMonth();
+    let age = now.getFullYear() - birth.getFullYear();
+    const monthDiff = now.getMonth() - birth.getMonth();
     if (
       monthDiff < 0 ||
-      (monthDiff === 0 && today?.getDate() < birth?.getDate())
+      (monthDiff === 0 && now.getDate() < birth.getDate())
     ) {
-      age--;
+      age -= 1;
     }
     return age;
   }
@@ -148,48 +193,54 @@ export class ConsentService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    // Log withdrawal
-    await this.logConsent({
-      userId,
-      consentType,
-      action: "withdrawn",
-      ipAddress,
-      userAgent,
-    });
+    try {
+      await db.transaction(async (tx) => {
+        if (consentType === "marketing") {
+          await tx.execute(sql`
+            UPDATE registration_consents
+            SET
+              marketing_consent = false,
+              marketing_consent_at = NOW(),
+              updated_at = NOW()
+            WHERE user_id = ${userId}
+          `);
+        }
 
-    // Update user record
-    if (consentType === "marketing") {
-      const usersAny = users as any;
-      await db
-        .update(users)
-        .set({
-          [usersAny.marketingConsent?.name ?? "marketing_consent"]: false,
-          [usersAny.marketingConsentAt?.name ?? "marketing_consent_at"]: new Date(),
-        } as any)
-        .where(eq(users.id, userId));
+        await this.insertConsentLog(tx as never, {
+          userId,
+          consentType,
+          action: "withdrawn",
+          ipAddress,
+          userAgent,
+        });
+      });
+      logger.info(`Consent withdrawn: ${userId} - ${consentType}`);
+    } catch (error: unknown) {
+      logger.warn({ err: error, userId, consentType }, "Failed to withdraw consent");
+      throw new Error("Failed to withdraw consent");
     }
-
-    logger.info(`Consent withdrawn: ${userId} - ${consentType}`);
   }
 
   async getUserConsents(userId: string) {
-    // These columns may not yet be in the shared schema type; use raw SQL to avoid TS2339.
-    const result = await (db as any).execute(sql`
+    const result = await db.execute(sql`
       SELECT
+        user_id,
+        birthdate,
+        age_verified,
         tos_accepted_at,
         tos_version,
         privacy_accepted_at,
         privacy_version,
         marketing_consent,
         marketing_consent_at,
-        age_verified,
-        birthdate
-      FROM users
-      WHERE id = ${userId}
+        created_at,
+        updated_at
+      FROM registration_consents
+      WHERE user_id = ${userId}
       LIMIT 1
     `);
-    const rows = result?.rows ?? result ?? [];
-    return (rows as any[])[0] || null;
+    const rows = (result as unknown as { rows?: unknown[] }).rows ?? [];
+    return rows[0] ?? null;
   }
 
   getCurrentPolicyVersions() {
