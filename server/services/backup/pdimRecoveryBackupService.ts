@@ -8,7 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import {
-  openConsistentLocalPdimSnapshot,
+  openConsistentPdimSnapshot,
   type LocalPdimSnapshotDescriptor,
 } from "../../lib/localPdimServer.js";
 import {
@@ -163,7 +163,7 @@ async function copyPinnedSnapshot(
 function implementationIdentity(): { revision: string; currentHash: string } {
   const currentHash = createHash("sha256")
     .update("retained-pdim-operator-v1\0")
-    .update(openConsistentLocalPdimSnapshot.toString())
+    .update(openConsistentPdimSnapshot.toString())
     .update("\0")
     .update(runActualClassVerifier.toString())
     .digest("hex");
@@ -183,7 +183,7 @@ async function execute(job: PublicPdimRecoveryJob): Promise<void> {
     const sourceRoot = join(scratch, "source-verification");
     const restoreRoot = join(scratch, "retained-restore");
     stage = "authoritative-source-attestation-and-capture";
-    const descriptor = openConsistentLocalPdimSnapshot();
+    const descriptor = await openConsistentPdimSnapshot();
     const snapshot = await copyPinnedSnapshot(descriptor, snapshotPath);
 
     stage = "captured-source-actual-class-verification";

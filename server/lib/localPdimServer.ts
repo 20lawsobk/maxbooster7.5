@@ -18,6 +18,7 @@
 import http from "http";
 import fs from "fs";
 import path from "path";
+import { tmpdir } from "node:os";
 import { logger } from "../logger.js";
 import { runtimePorts } from "../config/ports.js";
 import cluster from "node:cluster";
@@ -28,6 +29,12 @@ import { LocalPdimCapsuleJournal } from "./localPdimCapsuleJournal.js";
 import { LocalPdimAofJournal } from "./localPdimAofJournal.js";
 import { readSnapshotJson, snapshotJsonChunks } from "./pdimSnapshotJson.js";
 import { writeSnapshotOffThread } from "./pdimSnapshotWriter.js";
+import { configuredPdimBucketObjects } from "./pdimBucketObjects.js";
+import { PdimBucketPersistence } from "./pdimBucketPersistence.js";
+import { PdimBucketCommandBatcher } from "./pdimBucketCommandBatcher.js";
+import { PdimBucketJournal } from "./pdimBucketJournal.js";
+import { isBucketTransaction } from "./pdimBucketRecovery.js";
+import { writeBucketSnapshot, verifyBucketSnapshot } from "./pdimBucketSnapshot.js";
 
 const LOCAL_PORT = runtimePorts.localPdim;
 const PERSIST_FILE = path.resolve(
@@ -72,9 +79,13 @@ type StoreEntry =
 
 const store = new Map<string, StoreEntry>();
 const canonicalStore = new RedisStore("local", "Max Booster shared local owner");
+let bucketPersistence: PdimBucketPersistence | undefined;
+let bucketBatcher: PdimBucketCommandBatcher | undefined;
 let snapshotAofBaseline = 0;
 const capsuleStore = new LocalPdimCapsules(canonicalStore,
-  (changes, publish) => capsuleJournal.commit(changes, publish));
+  (changes, publish) => bucketPersistence
+    ? bucketPersistence.commitCapsule(changes, publish)
+    : capsuleJournal.commit(changes, publish));
 
 // ── TTL helpers ───────────────────────────────────────────────────────────────
 
@@ -94,6 +105,13 @@ let asyncSnapshotSequence = 0;
 let snapshotTail: Promise<unknown> = Promise.resolve();
 
 function saveStoreAsync(): Promise<boolean> {
+  if (bucketPersistence) {
+    return bucketPersistence.checkpoint().then(() => true, (error: unknown) => {
+      logger.error({ errorType: error instanceof Error ? error.name : "unknown" },
+        "[LocalPDIM] Bucket checkpoint failed; committed journal remains authoritative");
+      return false;
+    });
+  }
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
     const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
@@ -220,7 +238,7 @@ function normalizePersistedStreamFields(fields: unknown): string[] {
   return flattened;
 }
 
-function validatePersistedEntry(key: string, value: unknown): StoreEntry {
+export function validatePersistedEntry(key: string, value: unknown): StoreEntry {
   const invalid = (detail: string): never => {
     throw new Error(
       `invalid persistence entry for key ${JSON.stringify(key)}: ${detail}`,
@@ -436,6 +454,9 @@ export function assertLocalPdimSnapshotAuthority(input: {
  * The caller owns and must close the returned read-only descriptor.
  */
 export function openConsistentLocalPdimSnapshot(): LocalPdimSnapshotDescriptor {
+  if (bucketPersistence) {
+    throw new Error("PDIM is bucket-backed; use its committed bucket checkpoint, not a local-file backup");
+  }
   const configuredExecUrl =
     process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
   assertLocalPdimSnapshotAuthority({
@@ -475,6 +496,39 @@ export function openConsistentLocalPdimSnapshot(): LocalPdimSnapshotDescriptor {
   } catch (error) {
     fs.closeSync(fd);
     throw error;
+  }
+}
+
+/** Recovery-export scratch only. Bucket data remains authoritative; the pinned
+ * temporary file is unlinked before the caller receives its descriptor. */
+export async function openConsistentPdimSnapshot(): Promise<LocalPdimSnapshotDescriptor> {
+  if (!bucketPersistence) return openConsistentLocalPdimSnapshot();
+  bucketPersistence.assertHealthy();
+  if (cluster.isWorker || !_server?.listening ||
+      (process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL) !== getLocalPdimUrl()) {
+    throw new Error("Only the authoritative PDIM owner may export a bucket checkpoint");
+  }
+  const capture = await bucketPersistence.captureSnapshot();
+  const entries: Record<string, unknown> = Object.fromEntries(capture.entries);
+  entries[CAPSULE_WATERMARK] = { type: "string", value: String(capture.capsuleSequence) };
+  entries[REDIS_AOF_WATERMARK] = { type: "string", value: String(capture.redisSequence) };
+  const scratch = await fs.promises.mkdtemp(path.join(tmpdir(), "pdim-bucket-export-"));
+  const file = path.join(scratch, "snapshot.json");
+  let fd: number | undefined;
+  try {
+    await writeSnapshotOffThread(file, entries);
+    fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    const stat = fs.fstatSync(fd);
+    await fs.promises.rm(scratch, { recursive: true });
+    const result: LocalPdimSnapshotDescriptor = {
+      fd, bytes: stat.size, device: stat.dev, inode: stat.ino,
+      sourcePath: file, recoveryPoint: "synchronous-event-loop-linearized",
+    };
+    fd = undefined; // ownership transfers to the caller
+    return result;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+    await fs.promises.rm(scratch, { recursive: true, force: true });
   }
 }
 
@@ -580,12 +634,13 @@ export function startLocalPdimServer(): Promise<void> {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
   }
   if (_starting) return _starting;
-  _starting = new Promise<void>((resolve, reject) => {
+  _starting = prepareBucketOwner().then(() => new Promise<void>((resolve, reject) => {
     if (_server) {
       resolve();
       return;
     }
 
+    if (!bucketPersistence) {
     loadStore();
     const watermark = store.get(CAPSULE_WATERMARK);
     const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
@@ -631,8 +686,14 @@ export function startLocalPdimServer(): Promise<void> {
         `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`,
       );
     }
+    }
 
     _server = http.createServer((req, res) => {
+      if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
+        return;
+      }
       // Loopback-only listener; never mounted on Express/public routes, and
       // never accepts forwarded identity headers as authentication.
       const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
@@ -674,6 +735,7 @@ export function startLocalPdimServer(): Promise<void> {
       });
       req.on("end", async () => {
         try {
+          bucketPersistence?.assertHealthy();
           const {
             cmd,
             args = [],
@@ -704,9 +766,12 @@ export function startLocalPdimServer(): Promise<void> {
             openLocalPubSubStream(res, requestController, channels, uniquePatterns);
             return;
           }
-          const result = cmd.toUpperCase().startsWith("CAPSULE.")
-            ? await capsuleStore.exec(cmd, args.map(String))
-            : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+          const result = bucketBatcher
+            ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal)
+            : cmd.toUpperCase().startsWith("CAPSULE.")
+              ? await capsuleStore.exec(cmd, args.map(String))
+              : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+          bucketPersistence?.assertHealthy();
           if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
@@ -717,7 +782,7 @@ export function startLocalPdimServer(): Promise<void> {
             return;
           }
           const status =
-            (err as { code?: unknown })?.code === "PDIM_DURABILITY_FAILURE"
+            ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String((err as { code?: unknown })?.code))
               ? 503
               : 400;
           res.writeHead(status, { "Content-Type": "application/json" });
@@ -732,7 +797,7 @@ export function startLocalPdimServer(): Promise<void> {
 
     _server.listen(LOCAL_PORT, "127.0.0.1", () => {
       logger.info(
-        `[LocalPDIM] ✅ Local PDIM exec server started on port ${LOCAL_PORT} (canonical RedisStore + fsynced AOF + snapshots)`,
+        `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`,
       );
 
       // Periodic persistence (unref so it doesn't block exit)
@@ -741,7 +806,7 @@ export function startLocalPdimServer(): Promise<void> {
         if (periodicSavePending) return;
         periodicSavePending = true;
         void saveStoreAsync().finally(() => { periodicSavePending = false; });
-      }, PERSIST_INTERVAL_MS);
+      }, bucketPersistence ? 300_000 : PERSIST_INTERVAL_MS);
       _persistTimer.unref();
 
       // Save on clean shutdown. Mark the process unsuccessful if the final
@@ -752,9 +817,11 @@ export function startLocalPdimServer(): Promise<void> {
           process.exitCode = 1;
         }
       };
-      _saveOnShutdown = saveOnShutdown;
-      process.on("SIGTERM", saveOnShutdown);
-      process.on("SIGINT", saveOnShutdown);
+      if (!bucketPersistence) {
+        _saveOnShutdown = saveOnShutdown;
+        process.on("SIGTERM", saveOnShutdown);
+        process.on("SIGINT", saveOnShutdown);
+      }
       // Preserve the failure even if another shutdown coordinator subsequently
       // calls process.exit(0).
       process.on("exit", () => {
@@ -768,6 +835,16 @@ export function startLocalPdimServer(): Promise<void> {
       _server = null;
       reject(err); // An occupied port is not proof of a shared, trusted owner.
     });
+  })).catch(async (error: unknown) => {
+    if (bucketPersistence) {
+      const failedOwner = bucketPersistence;
+      bucketPersistence = undefined;
+      bucketBatcher = undefined;
+      canonicalStore.closeEmbedded();
+      try { await failedOwner.abortStartup(); }
+      catch { logger.error("[LocalPDIM] Failed-start bucket lease release was not confirmed; lease will expire"); }
+    }
+    throw error;
   }).finally(() => { _starting = null; });
   return _starting;
 }
@@ -783,9 +860,53 @@ export async function stopLocalPdimServer(): Promise<void> {
     process.off("SIGINT", _saveOnShutdown);
     _saveOnShutdown = null;
   }
+  await bucketBatcher?.close();
   canonicalStore.closeEmbedded();
   await new Promise<void>((resolve, reject) => {
     server.close((err) => (err ? reject(err) : resolve()));
   });
   await snapshotTail;
+  await bucketPersistence?.close();
+  bucketPersistence = undefined;
+  bucketBatcher = undefined;
+}
+
+async function prepareBucketOwner(): Promise<void> {
+  if (_server) return;
+  const mode = process.env.PDIM_PERSISTENCE ?? "disk";
+  if (mode === "disk") return;
+  if (mode !== "app-storage") throw new Error("Invalid PDIM_PERSISTENCE configuration");
+  const namespace = process.env.PDIM_BUCKET_NAMESPACE;
+  if (!namespace) throw new Error("PDIM_BUCKET_NAMESPACE is required for bucket persistence");
+  const objects = await configuredPdimBucketObjects();
+  const persistence = new PdimBucketPersistence(
+    objects, namespace, canonicalStore, store as unknown as Map<string, RedisEntry>,
+    (key, value) => validatePersistedEntry(key, value) as RedisEntry,
+  );
+  await persistence.open();
+  bucketPersistence = persistence;
+  bucketBatcher = new PdimBucketCommandBatcher((command, args, signal) =>
+    command.startsWith("CAPSULE.")
+      ? capsuleStore.exec(command, args)
+      : canonicalStore.exec(command, args, signal));
+}
+
+/** Explicit offline migration: no second whole-store JSON copy and no local
+ * staging output. Inbound HTTP is disabled by PDIM_OFFLINE_MIGRATION. */
+export async function importOfflinePdimToBucket(namespace: string) {
+  if (process.env.PDIM_OFFLINE_MIGRATION !== "1" || bucketPersistence || !_server?.listening) {
+    throw new Error("Migration requires an offline local-only owner");
+  }
+  const objects = await configuredPdimBucketObjects();
+  const journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
+  return canonicalStore.captureEmbeddedCheckpoint(async redisSequence => {
+    const capsuleSequence = capsuleJournal.publishedSeq;
+    logger.info({ phase: "upload-current-state", entries: store.size }, "[LocalPDIM] Bucket import");
+    const snapshot = await writeBucketSnapshot(journal, store, redisSequence, capsuleSequence);
+    logger.info({ phase: "verify-current-state", entries: store.size }, "[LocalPDIM] Bucket import");
+    await verifyBucketSnapshot(journal, snapshot, store, redisSequence, capsuleSequence);
+    await journal.initialize(snapshot);
+    return { imported: true, verifiedEntries: store.size, snapshot,
+      redisSequence, capsuleSequence, localSourcesRemoved: false, backendActivated: false };
+  });
 }

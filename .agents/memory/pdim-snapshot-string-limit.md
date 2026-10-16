@@ -21,3 +21,11 @@ capture pause to milliseconds while preserving all entries.
 **How to apply:** Measure capture latency separately from background write
 duration and verify mutation isolation, failed writes, and large restoration.
 Eval workers should not inherit application TS loaders or CLI input-type flags.
+
+Do not retain an array of every serialized entry before writing. A per-entry
+serializer still duplicates the whole snapshot if its return value is an eager
+array. Use lazy iteration and chunk-at-a-time readback during bucket migration,
+not source + parsed snapshot + restored snapshot Maps simultaneously.
+
+**Why:** Importing the live multi-gigabyte snapshot exhausted a 4 GB Node heap;
+small snapshot fixtures did not reveal the eager serialization allocation.

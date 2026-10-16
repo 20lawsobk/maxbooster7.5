@@ -13,10 +13,22 @@ function read(text: string, bytes = 3) {
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
 describe("bounded snapshot JSON", () => {
+  it("serializes lazily instead of retaining another entire snapshot in strings", () => {
+    let serialized = 0;
+    const value = { toJSON() { serialized++; return "payload"; } };
+    const chunks = snapshotJsonChunks({ first: value, second: value });
+    expect(serialized).toBe(0);
+    expect(chunks.next().value).toBe("{");
+    expect(serialized).toBe(0);
+    chunks.next();
+    expect(serialized).toBe(1);
+    chunks.next();
+    expect(serialized).toBe(2);
+  });
   it("retains unicode, escapes, nested values, and boundary characters", () => {
     const obj = { special: { text: 'é雪😀 " \\\\ },{[]', data: [null, true, { v: 12 }] }, watermark: 321 };
     for (const size of [1, 2, 3, 7, 16, 1024]) {
-      expect(read(snapshotJsonChunks(obj).join(""), size)).toEqual(obj);
+      expect(read([...snapshotJsonChunks(obj)].join(""), size)).toEqual(obj);
     }
     expect(read("{}")).toEqual({});
     expect(read(" \n{ \"x\":1 } \n")).toEqual({ x: 1 });

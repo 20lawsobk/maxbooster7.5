@@ -2,15 +2,14 @@ import fs from "node:fs";
 import { StringDecoder } from "node:string_decoder";
 
 /** Keep the existing JSON object format without constructing a whole-file string. */
-export function snapshotJsonChunks(entries: Record<string, unknown>): string[] {
-  const chunks = ["{"];
+export function* snapshotJsonChunks(entries: Record<string, unknown>): Generator<string> {
+  yield "{";
   let first = true;
   for (const [key, value] of Object.entries(entries)) {
-    chunks.push(`${first ? "" : ","}${JSON.stringify(key)}:${JSON.stringify(value)}`);
+    yield `${first ? "" : ","}${JSON.stringify(key)}:${JSON.stringify(value)}`;
     first = false;
   }
-  chunks.push("}");
-  return chunks;
+  yield "}";
 }
 
 /** Frame top-level members; JSON.parse still validates each complete member. */
