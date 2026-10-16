@@ -1,15 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { enforceAssurance, markVerifiedJwtFactor } from "./middleware/authAssurance.js";
 import { hasPaidFeatureAccess } from "./middleware/auth.js";
+import { normalizeProjectDetailsUpdate } from "./lib/projectPageContracts.js";
 import { jwtAuthService } from "./services/jwtAuthService";
 import { storage } from "./storage";
 import { logger } from "./logger.js";
 import { getRedisClient } from "./lib/redisConnectionFactory.js";
 
-// Brute-force guard for JWT verification — counts ONLY failed attempts so
-// legitimate high-traffic clients with valid tokens are never throttled.
-// 30 failures per 15min per (IP + token-prefix) is plenty to stop guessing
-// while leaving normal usage untouched.
 const JWT_RL_WINDOW_MS = 15 * 60 * 1000;
 const JWT_RL_MAX_FAILURES = 30;
 
@@ -20,6 +17,7 @@ const PAID_API_PATHS = new Set([
   "/api/ai/optimize-content",
 ]);
 const PAID_API_PREFIXES = ["/api/studio", "/api/songwriting"];
+const DIRECT_PROJECT_UPDATE_RE = /^\/api\/studio\/projects\/[^/]+$/;
 
 function isPaidApiPath(path: string): boolean {
   return (
@@ -88,8 +86,6 @@ export const verifyJWT = async (
   }
 
   const token = authHeader?.substring(7);
-
-  // Block brute-force only — gate by accumulated failures, not total traffic.
   const ip = (req.ip || req.socket?.remoteAddress || "unknown").toString();
   const tokenPrefix = token?.slice(0, 16);
   const rlKey = `${ip}:${tokenPrefix}`;
@@ -176,10 +172,6 @@ export const requireAdmin = async (
 
 export const requireAuth = requireAuthDual;
 
-// Account-mode API guard. This middleware is mounted at `/api` after attachUser,
-// so it is the earliest reliable place to enforce session-backed paid feature
-// access before handlers that still use legacy inline `req.user` checks.
-// It also preserves the existing read-only demo-account policy.
 export const blockDemoWrite = async (
   req: Request,
   res: Response,
@@ -198,6 +190,14 @@ export const blockDemoWrite = async (
       code: "PAID_SUBSCRIPTION_REQUIRED",
       upgradeUrl: "/pricing",
     });
+  }
+
+  if (req.method === "PATCH" && DIRECT_PROJECT_UPDATE_RE.test(fullPath)) {
+    const normalized = normalizeProjectDetailsUpdate(req.body);
+    if (!normalized.ok) {
+      return res.status(400).json({ error: normalized.message });
+    }
+    req.body = normalized.value;
   }
 
   if (
