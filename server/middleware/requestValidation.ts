@@ -7,6 +7,139 @@ import { isProductionEnv } from "../lib/envHelpers.js";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
+const REGISTRATION_USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
+const REGISTRATION_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type RegistrationCheckoutBoundaryResult =
+  | {
+      ok: true;
+      value: {
+        tier: "monthly" | "yearly" | "lifetime";
+        userEmail: string;
+        username: string;
+        birthdate: string;
+        artistName: string;
+        tosAccepted: true;
+        privacyAccepted: true;
+      };
+    }
+  | { ok: false; message: string };
+
+function parseCalendarDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+/**
+ * Canonical public boundary for the unauthenticated Stripe registration checkout.
+ * The downstream route still performs its own duplicate/Stripe/price checks; this
+ * layer guarantees that every request entering that route has the same normalized
+ * shape as the browser flow and has accepted the legal terms before payment.
+ */
+export function normalizeRegistrationCheckoutBody(
+  body: unknown,
+  now: Date = new Date(),
+): RegistrationCheckoutBoundaryResult {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Invalid checkout request" };
+  }
+
+  const input = body as Record<string, unknown>;
+  const tier = typeof input.tier === "string" ? input.tier.trim() : "";
+  if (!(["monthly", "yearly", "lifetime"] as const).includes(tier as any)) {
+    return { ok: false, message: "Invalid subscription tier" };
+  }
+
+  const userEmail =
+    typeof input.userEmail === "string" ? input.userEmail.trim().toLowerCase() : "";
+  if (
+    !userEmail ||
+    userEmail.length > 254 ||
+    !REGISTRATION_EMAIL_RE.test(userEmail)
+  ) {
+    return { ok: false, message: "Invalid email format" };
+  }
+
+  const username =
+    typeof input.username === "string" ? input.username.trim() : "";
+  if (!REGISTRATION_USERNAME_RE.test(username)) {
+    return {
+      ok: false,
+      message:
+        "Username must be 3-30 characters and contain only letters, numbers, or underscores",
+    };
+  }
+
+  const artistName =
+    typeof input.artistName === "string" ? input.artistName.trim() : "";
+  if (artistName.length > 100) {
+    return {
+      ok: false,
+      message: "Artist / producer name must be 100 characters or fewer",
+    };
+  }
+
+  const birthdate =
+    typeof input.birthdate === "string" ? input.birthdate.trim() : "";
+  const parsedBirthdate = parseCalendarDate(birthdate);
+  if (!parsedBirthdate) {
+    return { ok: false, message: "Invalid birthdate format" };
+  }
+
+  const todayUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  if (parsedBirthdate > todayUtc) {
+    return { ok: false, message: "Birthdate cannot be in the future" };
+  }
+  const minimumBirthdate = new Date(todayUtc);
+  minimumBirthdate.setUTCFullYear(minimumBirthdate.getUTCFullYear() - 13);
+  if (parsedBirthdate > minimumBirthdate) {
+    return {
+      ok: false,
+      message: "You must be at least 13 years old to create an account",
+    };
+  }
+
+  if (input.tosAccepted !== true) {
+    return {
+      ok: false,
+      message: "You must accept the Terms of Service before continuing to payment",
+    };
+  }
+  if (input.privacyAccepted !== true) {
+    return {
+      ok: false,
+      message: "You must accept the Privacy Policy before continuing to payment",
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      tier: tier as "monthly" | "yearly" | "lifetime",
+      userEmail,
+      username,
+      birthdate,
+      artistName,
+      tosAccepted: true,
+      privacyAccepted: true,
+    },
+  };
+}
 
 /**
  * Returns true if `value` is a well-formed UUID v4.
@@ -125,6 +258,17 @@ export const originValidation: RequestHandler = (
   res: Response,
   next: NextFunction,
 ) => {
+  if (
+    req.method === "POST" &&
+    req.path.replace(/\/$/, "") === "/api/create-checkout-session"
+  ) {
+    const boundary = normalizeRegistrationCheckoutBody(req.body);
+    if (!boundary.ok) {
+      return res.status(400).json({ error: boundary.message });
+    }
+    req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
+  }
+
   if (SAFE_METHODS?.has(req.method)) return next();
 
   const isExempt = EXEMPT_PATH_PREFIXES?.some((prefix) =>
