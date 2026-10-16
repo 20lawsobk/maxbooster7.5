@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getDistributionToolostService,
+  getOwnedToolostService,
   getToolostRedirectUri,
 } from "../services/toolostRuntimeConfig";
 import { getToolostApiEnvironment } from "../services/toolostEnvironment.js";
@@ -5577,8 +5578,14 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = (req.user as AuthenticatedUser).id;
-      const toolost = await getDistributionToolostService(userId);
-      const summary = await toolost.getRoyaltySummary();
+      const ownedToolost = await getOwnedToolostService(userId);
+      if (!ownedToolost) {
+        return res.status(409).json({
+          code: "OWNED_DISTRIBUTOR_ACCOUNT_REQUIRED",
+          error: "Account-wide earnings require your own connected Too Lost account. Shared distributor totals are not your personal earnings.",
+        });
+      }
+      const summary = await ownedToolost.getRoyaltySummary();
       return res.json({
         totalEarnings: summary.lifetime,
         currency: summary.currency,

@@ -1535,7 +1535,7 @@ export default function Distribution() {
   const [, setGeneratedUPC] = useState<string>("");
 
   // Data Queries
-  const { data: releases = [], isLoading: releasesLoading } = useQuery<
+  const { data: releases = [], isLoading: releasesLoading, isError: releasesError, refetch: retryReleases } = useQuery<
     Release[]
   >({
     queryKey: ["/api/distribution/releases"],
@@ -2576,6 +2576,14 @@ export default function Distribution() {
                     </Card>
                   ))}
                 </div>
+              ) : releasesError ? (
+                <Card role="alert">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold">Unable to load your releases</h3>
+                    <p className="my-3">Your catalog could not be retrieved. This does not mean your releases are missing.</p>
+                    <Button onClick={() => void retryReleases()}>Retry</Button>
+                  </CardContent>
+                </Card>
               ) : releases.length === 0 ? (
                 <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
                   <CardContent className="p-12 text-center">
@@ -2587,7 +2595,7 @@ export default function Distribution() {
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
                       Start your music distribution journey by uploading your
-                      first release to 150+ platforms worldwide.
+                      first release and selecting supported delivery platforms.
                     </p>
                     <Button
                       onClick={() => setIsUploadOpen(true)}
@@ -4065,8 +4073,8 @@ export default function Distribution() {
                 <CardHeader>
                   <CardTitle>Distribution Platforms</CardTitle>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Your music will be distributed to 150+ platforms
-                    automatically
+                    Select supported platforms for your release. Delivery
+                    depends on provider acceptance and each platform's requirements.
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -5263,7 +5271,7 @@ export default function Distribution() {
                     {uploadReleaseMutation.isPending
                       ? "Uploading..."
                       : currentStep === 5
-                        ? "Submit Release"
+                        ? "Save Draft"
                         : "Next"}
                   </Button>
                 </div>

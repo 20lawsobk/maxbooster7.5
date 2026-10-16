@@ -30,6 +30,17 @@ export async function getDistributionToolostService(userId: string) {
   return toolostService.forUser(connection.connectedByUserId);
 }
 
+/** Account-wide financial totals must never use the shared delivery account. */
+export async function getOwnedToolostService(userId: string) {
+  const [{ storage }, { toolostService }] = await Promise.all([
+    import("../storage.js"),
+    import("./toolost-service.js"),
+  ]);
+  const connection = await storage.getToolostConnection(userId, getToolostApiEnvironment());
+  if (!connection || connection.connectedByUserId !== userId) return null;
+  return toolostService.forUser(userId);
+}
+
 export function getToolostRedirectUri(
   env: ToolostRuntimeEnvironment = process.env,
 ): string {
