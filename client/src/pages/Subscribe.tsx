@@ -16,6 +16,12 @@ import { Logo } from "@/components/ui/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  getSubscriptionAuthAction,
+  normalizeSubscriptionSetupError,
+  parseSubscriptionSetupPayload,
+  readSubscriptionSetupPayload,
+} from "@/lib/subscriptionCheckout";
+import {
   Check,
   ArrowLeft,
   Shield,
@@ -366,12 +372,13 @@ const StripeUnavailableFallback = () => (
 
 export default function Subscribe() {
   const { tier } = useParams();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [setupError, setSetupError] = useState<BillingError | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const checkoutIntentRef = useRef<{ planId: string; key: string } | null>(null);
+  const setupAttemptRef = useRef(0);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -380,7 +387,9 @@ export default function Subscribe() {
   const createSubscription = useCallback(async () => {
     if (!plan) return;
 
+    const attempt = ++setupAttemptRef.current;
     setIsLoading(true);
+    setClientSecret("");
     setSetupError(null);
 
     try {
@@ -397,77 +406,77 @@ export default function Subscribe() {
           "Idempotency-Key": checkoutIntentRef.current.key,
         },
       });
-      const data = await response.json();
+      const rawData = await readSubscriptionSetupPayload(response);
+      if (attempt !== setupAttemptRef.current) return;
 
-      if (data.code === "STRIPE_NOT_CONFIGURED") {
-        setSetupError({
-          message: "Payment service is temporarily unavailable.",
-          code: "STRIPE_NOT_CONFIGURED",
-          retryable: false,
-        });
+      const parsed = parseSubscriptionSetupPayload(rawData);
+      if (!parsed.ok) {
+        setSetupError(parsed.error);
         return;
       }
 
-      setClientSecret(data.clientSecret);
+      setClientSecret(parsed.clientSecret);
     } catch (error) {
-      const errorData = error.body || error;
+      if (attempt !== setupAttemptRef.current) return;
+      const errorData = normalizeSubscriptionSetupError(error);
+      setSetupError(errorData);
 
-      if (errorData.code === "STRIPE_NOT_CONFIGURED") {
-        setSetupError({
-          message:
-            "Payment service is temporarily unavailable. Please try again later.",
-          code: "STRIPE_NOT_CONFIGURED",
-          retryable: false,
-        });
-      } else {
-        setSetupError({
-          message:
-            errorData.message || "Failed to setup payment. Please try again.",
-          code: errorData.code || "SETUP_FAILED",
-          retryable: errorData.retryable ?? true,
-        });
-
-        toast({
-          title: "Setup Failed",
-          description:
-            errorData.message || "Failed to setup payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Setup Failed",
+        description: errorData.message,
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      if (attempt === setupAttemptRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [plan, toast]);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
+    const authAction = getSubscriptionAuthAction({
+      authLoading,
+      userId: user?.id,
+      tier,
+    });
+
+    if (authAction.kind === "wait") return;
+
+    if (authAction.kind === "redirect") {
+      setupAttemptRef.current += 1;
+      navigate(authAction.href);
       return;
     }
 
     if (!plan) {
+      setupAttemptRef.current += 1;
       navigate("/pricing");
       return;
     }
 
-    createSubscription();
-  }, [user, plan, navigate, createSubscription]);
+    if (!stripePromise) return;
+
+    void createSubscription();
+    return () => {
+      setupAttemptRef.current += 1;
+    };
+  }, [authLoading, user?.id, tier, plan, navigate, createSubscription]);
 
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
     createSubscription();
   }, [createSubscription]);
 
-  if (!stripePromise) {
-    return <StripeUnavailableFallback />;
-  }
-
-  if (!user) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (!stripePromise) {
+    return <StripeUnavailableFallback />;
   }
 
   if (!plan) {
@@ -509,7 +518,10 @@ export default function Subscribe() {
   }
 
   if (setupError) {
-    if (setupError.code === "STRIPE_NOT_CONFIGURED") {
+    if (
+      setupError.code === "STRIPE_NOT_CONFIGURED" ||
+      setupError.code === "SERVICE_UNAVAILABLE"
+    ) {
       return <StripeUnavailableFallback />;
     }
 
