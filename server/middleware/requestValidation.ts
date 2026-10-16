@@ -1,9 +1,6 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
-import { finalizePaidRegistrationConsent } from "../services/registrationConsentFinalizer.js";
-
-// ── Param validation helpers ──────────────────────────────────────────────────
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,12 +71,6 @@ function normalizedCheckoutSessionId(body: unknown): string | null {
   return sessionId;
 }
 
-/**
- * Canonical public boundary for the unauthenticated Stripe registration checkout.
- * The downstream route still performs its own duplicate/Stripe/price checks; this
- * layer guarantees that every request entering that route has the same normalized
- * shape as the browser flow and has accepted the legal terms before payment.
- */
 export function normalizeRegistrationCheckoutBody(
   body: unknown,
   now: Date = new Date(),
@@ -247,13 +238,16 @@ function installRegistrationConsentFinalizer(
     }
 
     handled = true;
-    void finalizePaidRegistrationConsent({
-      sessionId: completion.value.sessionId,
-      userId,
-      marketingConsent: completion.value.marketingConsent,
-      ipAddress: req.ip,
-      userAgent: req.get("user-agent") ?? undefined,
-    })
+    void import("../services/registrationConsentFinalizer.js")
+      .then(({ finalizePaidRegistrationConsent }) =>
+        finalizePaidRegistrationConsent({
+          sessionId: completion.value.sessionId,
+          userId,
+          marketingConsent: completion.value.marketingConsent,
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent") ?? undefined,
+        }),
+      )
       .then(() => {
         if (res.headersSent) return;
         const enriched =
@@ -286,12 +280,10 @@ function installRegistrationConsentFinalizer(
   }) as Response["json"];
 }
 
-/** Returns true if `value` is a well-formed UUID. */
 export function isValidUUID(value: unknown): value is string {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
-/** Returns true for bounded alphanumeric/dash/underscore IDs. */
 export function isSafeId(value: unknown): value is string {
   return typeof value === "string" && SAFE_ID_RE.test(value);
 }
