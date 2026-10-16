@@ -1,7 +1,8 @@
-// @ts-nocheck
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import type { User } from "@shared/schema";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
@@ -17,9 +18,18 @@ import ContextualFeatureHint from "@/components/onboarding/ContextualFeatureHint
 import { AICareerCoach } from "@/components/dashboard/AICareerCoach";
 import { LoopHealthScore } from "@/components/dashboard/LoopHealthScore";
 import {
+  formatDashboardTimestamp,
+  hasDashboardPaidAccess,
   metricValueOrUnavailable,
   normalizeDashboardAIInsights,
+  normalizeDashboardCountdowns,
+  normalizeDashboardOptimization,
+  normalizeDashboardSocialPosts,
+  readDashboardJson,
   type DashboardAIInsights,
+  type DashboardCountdownItem,
+  type DashboardOptimizedDraft,
+  type DashboardSocialPost,
 } from "@/components/dashboard/dashboardDataContracts";
 import { StreakCounter } from "@/components/achievements/StreakCounter";
 import { AchievementNotification } from "@/components/achievements/AchievementNotification";
@@ -29,14 +39,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SkeletonCard, SkeletonChart, SkeletonList } from "@/components/ui/skeleton-loader";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonList,
+} from "@/components/ui/skeleton-loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
-import { DollarSign, Music, TrendingUp, Upload, Sparkles, Activity, Zap, Brain, Rocket, Crown, Globe, Calendar, ArrowUp, ArrowDown, Plus, AlertTriangle, CheckCircle, Info, Lightbulb, Lock } from "lucide-react";
-import { useLocation } from "wouter";
-import type { User } from "@shared/schema";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Brain,
+  Calendar,
+  CheckCircle,
+  Crown,
+  DollarSign,
+  Globe,
+  Info,
+  Lightbulb,
+  Lock,
+  Music,
+  Plus,
+  Rocket,
+  Sparkles,
+  TrendingUp,
+  Upload,
+  Zap,
+  Activity,
+} from "lucide-react";
 
 type DashboardUserPersona =
   | "artist"
@@ -44,26 +77,6 @@ type DashboardUserPersona =
   | "label"
   | "manager"
   | null;
-
-interface CountdownProgress {
-  completed: number;
-  total: number;
-  percentage: number;
-}
-
-interface CountdownItem {
-  id: string | number;
-  title?: string;
-  releaseDate: string;
-  artworkUrl?: string | null;
-  status?: string;
-  progress?: CountdownProgress;
-  presaveCount?: number;
-}
-
-interface CountdownsResponse {
-  countdowns: CountdownItem[];
-}
 
 interface OnboardingStatusResponse {
   hasCompletedOnboarding: boolean;
@@ -113,7 +126,7 @@ interface DashboardProject {
   id: string | number;
   title?: string;
   genre?: string;
-  streams?: number;
+  streams?: number | null;
   status?: string;
 }
 
@@ -134,40 +147,16 @@ function getStoredUserLevel(
   return level === "intermediate" || level === "advanced" ? level : "beginner";
 }
 
-export default function Dashboard() {
-  const { user, isLoading: authLoading } = useRequireSubscription();
-
-  // Show loading skeleton during auth check to prevent flickering
-  if (authLoading) {
-    return (
-      <AppLayout>
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <SkeletonCard key={i} className="h-32" />
-            ))}
-          </div>
-          <SkeletonChart />
-          <SkeletonList />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Redirect is handled by useRequireSubscription - wait for user
-  if (!user) {
-    return null;
-  }
-
-  return <DashboardContent user={user} />;
-}
-
 function UpcomingReleasesSection() {
-  const { data, isLoading } = useQuery<CountdownsResponse>({
+  const { data: countdowns = [], isLoading, isError, refetch } = useQuery<
+    DashboardCountdownItem[]
+  >({
     queryKey: ["/api/countdowns"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/countdowns");
+      return normalizeDashboardCountdowns(await readDashboardJson(response));
+    },
   });
-
-  const countdowns = data?.countdowns ?? [];
 
   return (
     <Card>
@@ -183,6 +172,15 @@ function UpcomingReleasesSection() {
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
           </div>
+        ) : isError ? (
+          <div className="space-y-3 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Upcoming releases could not be loaded.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </div>
         ) : countdowns.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Music className="w-10 h-10 mx-auto mb-2 opacity-50" />
@@ -190,24 +188,18 @@ function UpcomingReleasesSection() {
           </div>
         ) : (
           <div className="space-y-3">
-            {countdowns.map((countdown: CountdownItem) => {
+            {countdowns.map((countdown) => {
               const releaseDate = new Date(countdown.releaseDate);
-              const now = new Date();
-              const diff = releaseDate.getTime() - now.getTime();
+              const diff = releaseDate.getTime() - Date.now();
               const isReleased = diff <= 0;
-              const days = Math.max(
-                0,
-                Math.floor(diff / (1000 * 60 * 60 * 24)),
+              const positiveDiff = Math.max(0, diff);
+              const days = Math.floor(positiveDiff / (1000 * 60 * 60 * 24));
+              const hours = Math.floor(
+                (positiveDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
               );
-              const hours = Math.max(
-                0,
-                Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+              const minutes = Math.floor(
+                (positiveDiff % (1000 * 60 * 60)) / (1000 * 60),
               );
-              const minutes = Math.max(
-                0,
-                Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-              );
-
               const progress = countdown.progress ?? {
                 completed: 0,
                 total: 1,
@@ -236,12 +228,33 @@ function UpcomingReleasesSection() {
   );
 }
 
-// Separate component to ensure hooks are only called when user is authenticated
+export default function Dashboard() {
+  const { user, isLoading: authLoading } = useRequireSubscription();
+
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, index) => (
+              <SkeletonCard key={index} className="h-32" />
+            ))}
+          </div>
+          <SkeletonChart />
+          <SkeletonList />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!user) return null;
+  return <DashboardContent user={user} />;
+}
+
 function DashboardContent({ user }: { user: User }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { invalidateOnProjectChange, invalidateDashboard } =
-    useAnalyticsInvalidation();
+  const { invalidateDashboard } = useAnalyticsInvalidation();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [showContentOptimizer, setShowContentOptimizer] = useState(false);
@@ -249,7 +262,8 @@ function DashboardContent({ user }: { user: User }) {
   const [optimizerPlatform, setOptimizerPlatform] = useState("instagram");
   const [optimizerPostId, setOptimizerPostId] = useState("");
   const [optimizerOriginalContent, setOptimizerOriginalContent] = useState("");
-  const [optimizedDraft, setOptimizedDraft] = useState<any>(null);
+  const [optimizedDraft, setOptimizedDraft] =
+    useState<DashboardOptimizedDraft | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userLevel, setUserLevel] = useState<
     "beginner" | "intermediate" | "advanced"
@@ -263,23 +277,16 @@ function DashboardContent({ user }: { user: User }) {
   const [showFeatureDiscovery, setShowFeatureDiscovery] = useState(false);
   const [showFeatureSpotlight, setShowFeatureSpotlight] = useState(false);
 
-  // Check if user has paid subscription
-  const hasPaidSubscription = Boolean(
-    user.subscriptionTier &&
-      user.subscriptionTier !== "" &&
-      user.subscriptionTier !== "trial",
-  );
+  const hasPaidSubscription = hasDashboardPaidAccess(user);
 
-  // Check onboarding status
   const { data: onboardingStatus } = useQuery<OnboardingStatusResponse>({
     queryKey: ["/api/auth/onboarding-status"],
-    staleTime: 15 * 60 * 1000, // 15 minutes - less frequent changes
-    retry: 1, // Limit retries
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
     retryDelay: 1000,
   });
 
   useEffect(() => {
-    // Show onboarding for new users who haven't completed it
     if (
       onboardingStatus &&
       !onboardingStatus.hasCompletedOnboarding &&
@@ -289,7 +296,6 @@ function DashboardContent({ user }: { user: User }) {
     }
   }, [onboardingStatus]);
 
-  // Fetch comprehensive dashboard data - now only called when user is authenticated
   const {
     data: dashboardData,
     isLoading: dashboardLoading,
@@ -297,21 +303,16 @@ function DashboardContent({ user }: { user: User }) {
     refetch: refetchDashboard,
   } = useQuery<ComprehensiveDashboardData>({
     queryKey: ["/api/dashboard/comprehensive"],
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+    refetchInterval: 30_000,
+    staleTime: 30_000,
   });
 
-  const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsResponse>({
-    queryKey: ["/api/projects"],
-    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-  });
-
-  const projects = projectsData?.data || [];
-
-  useQuery({
-    queryKey: ["/api/analytics/dashboard"],
-    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-  });
+  const { data: projectsData, isLoading: projectsLoading } =
+    useQuery<ProjectsResponse>({
+      queryKey: ["/api/projects"],
+      staleTime: 5 * 60 * 1000,
+    });
+  const projects = projectsData?.data ?? [];
 
   const {
     data: aiInsights,
@@ -319,29 +320,30 @@ function DashboardContent({ user }: { user: User }) {
     error: aiInsightsError,
   } = useQuery<DashboardAIInsights>({
     queryKey: ["/api/ai/insights"],
-    enabled: hasPaidSubscription, // Only fetch if user has paid subscription
-    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+    enabled: hasPaidSubscription,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/ai/insights");
-      return normalizeDashboardAIInsights(await response.json());
+      return normalizeDashboardAIInsights(await readDashboardJson(response));
     },
   });
 
-  const { data: socialPosts = [] } = useQuery<any[]>({
+  const { data: socialPosts = [] } = useQuery<DashboardSocialPost[]>({
     queryKey: ["/api/social/posts"],
     enabled: showContentOptimizer && hasPaidSubscription,
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/social/posts");
-      const result = await response.json();
-      return Array.isArray(result) ? result : [];
+      return normalizeDashboardSocialPosts(await readDashboardJson(response));
     },
   });
+
   const optimizableDrafts = socialPosts.filter(
     (post) =>
-      post?.status === "draft" &&
-      post?.approvalStatus === "draft" &&
-      typeof post?.content === "string" &&
-      post.content.trim(),
+      post.status === "draft" &&
+      post.approvalStatus === "draft" &&
+      typeof post.content === "string" &&
+      post.content.trim().length > 0,
   );
 
   const optimizeContentMutation = useMutation({
@@ -356,31 +358,20 @@ function DashboardContent({ user }: { user: User }) {
         "/api/ai/optimize-content",
         input,
       );
-      return response.json();
+      return normalizeDashboardOptimization(await readDashboardJson(response));
     },
-    onSuccess: (data: any) => {
-      if (!data?.success || !data?.draft?.id || !data?.draft?.content) {
-        toast({
-          title: "Optimization Was Not Saved",
-          description:
-            "The response did not include a persisted optimized draft.",
-          variant: "destructive",
-        });
-        return;
+    onSuccess: ({ draft, updatedExisting }) => {
+      setOptimizedDraft({ ...draft, updatedExisting });
+      if (updatedExisting) {
+        setOptimizerContent(draft.content);
+        setOptimizerOriginalContent(draft.content);
       }
-      setOptimizedDraft(data.draft);
-      if (data.updatedExisting) {
-        setOptimizerContent(data.draft.content);
-        setOptimizerOriginalContent(data.draft.content);
-      }
-      void queryClient.invalidateQueries({
-        queryKey: ["/api/social/posts"],
-      });
+      void queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       toast({
-        title: data.updatedExisting
+        title: updatedExisting
           ? "Existing Draft Updated"
           : "Optimized Draft Saved",
-        description: data.updatedExisting
+        description: updatedExisting
           ? "The selected unpublished draft now contains the MaxCore rewrite."
           : "Review the new draft in Social Media before scheduling or publishing.",
       });
@@ -396,8 +387,7 @@ function DashboardContent({ user }: { user: User }) {
   });
 
   const stats = dashboardData?.stats;
-  const hasAnalyticsReport =
-    (dashboardData?.topPlatforms?.length ?? 0) > 0;
+  const hasAnalyticsReport = (dashboardData?.topPlatforms?.length ?? 0) > 0;
   const revenueAvailable =
     dashboardData?.dataAvailability?.revenue ?? hasAnalyticsReport;
   const socialReachAvailable =
@@ -432,11 +422,12 @@ function DashboardContent({ user }: { user: User }) {
       title: "Total Revenue",
       value:
         typeof revenueValue === "number"
-          ? `$${revenueValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          ? `$${revenueValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`
           : revenueValue,
-      change: revenueAvailable
-        ? (stats?.monthlyGrowth?.revenue ?? null)
-        : null,
+      change: revenueAvailable ? (stats?.monthlyGrowth?.revenue ?? null) : null,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50 dark:bg-green-950/20",
@@ -457,7 +448,6 @@ function DashboardContent({ user }: { user: User }) {
     },
   ];
 
-  // Quick actions - simple array literal to ensure state updates propagate correctly
   const quickActions = [
     {
       title: "Create New Project",
@@ -474,18 +464,18 @@ function DashboardContent({ user }: { user: User }) {
         ? "Generate a MaxCore rewrite and save it as an unpublished draft"
         : "Upgrade to access AI features",
       icon: Brain,
-        action: () => {
+      action: () => {
         if (!hasPaidSubscription) {
           toast({
             title: "Subscription Required",
             description:
-              "AI features require an active paid subscription. Please upgrade your plan.",
+              "AI features require an active or trialing paid subscription.",
             variant: "destructive",
           });
           return;
         }
-          setShowContentOptimizer(true);
-          setOptimizedDraft(null);
+        setShowContentOptimizer(true);
+        setOptimizedDraft(null);
       },
       color: hasPaidSubscription
         ? "bg-purple-600 hover:bg-purple-700"
@@ -513,7 +503,6 @@ function DashboardContent({ user }: { user: User }) {
     },
   ];
 
-  // Onboarding handlers
   const handleOnboardingComplete = (selection?: {
     experienceLevel?: "beginner" | "intermediate" | "advanced" | null;
     preferSimplifiedView?: boolean;
@@ -524,46 +513,31 @@ function DashboardContent({ user }: { user: User }) {
     setShowSimplified(
       selection?.preferSimplifiedView ?? selectedLevel === "beginner",
     );
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: ["/api/auth/onboarding-status"],
     });
-    queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   };
 
-  const handleOnboardingSkip = () => {
-    setShowOnboarding(false);
-    setShowSimplified(false);
-  };
-
-  const handleUpgradeToFullMode = () => {
-    setShowSimplified(false);
-    setUserLevel("intermediate");
-  };
-
-  const handleExploreFeature = (featureId: string) => {
-    setShowFeatureSpotlight(false);
-    setShowFeatureDiscovery(false);
-    toast({
-      title: "Feature Selected",
-      description: `Find ${featureId} in the navigation to get started.`,
-    });
-  };
-
-  // Show onboarding flow
   if (showOnboarding) {
     return (
       <OnboardingWizard
         onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
+        onSkip={() => {
+          setShowOnboarding(false);
+          setShowSimplified(false);
+        }}
       />
     );
   }
 
-  // Show simplified dashboard for beginners
   if (showSimplified) {
     return (
       <SimplifiedDashboard
-        onUpgrade={handleUpgradeToFullMode}
+        onUpgrade={() => {
+          setShowSimplified(false);
+          setUserLevel("intermediate");
+        }}
         userLevel={userLevel}
       />
     );
@@ -571,44 +545,33 @@ function DashboardContent({ user }: { user: User }) {
 
   return (
     <AppLayout title="Dashboard">
-      {/* Achievement Notification System */}
       <AchievementNotification />
-
       <div
         className="max-w-7xl mx-auto space-y-6"
         role="main"
         aria-label="Dashboard content"
       >
-        {/* Header */}
-        <header className="flex justify-between items-center" role="banner">
+        <header className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
               🎵 Welcome to Max Booster!
             </h1>
-            <p
-              className="text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              Hi {user?.username}! Start building your music career with our
-              powerful AI-powered platform
+            <p className="text-muted-foreground" role="status" aria-live="polite">
+              Hi {user.username}! Build and grow your music career from one dashboard.
             </p>
           </div>
           <nav
-            className="flex items-center space-x-3"
-            role="navigation"
+            className="flex flex-wrap items-center gap-3"
             aria-label="Dashboard actions"
           >
-            {/* Streak Counter in Header */}
-            <StreakCounter compact={true} />
+            <StreakCounter compact />
             <Button
               data-testid="button-discover-features"
               variant="outline"
               onClick={() => setShowFeatureDiscovery(true)}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 hover:from-blue-600 hover:to-purple-700"
               aria-label="Discover platform features"
             >
-              <Sparkles className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Sparkles className="w-4 h-4 mr-2" />
               Discover Features
             </Button>
             <Button
@@ -616,9 +579,8 @@ function DashboardContent({ user }: { user: User }) {
               variant="ghost"
               onClick={() => setShowFeatureSpotlight(true)}
               size="sm"
-              aria-label="View all features"
             >
-              <Zap className="w-4 h-4 mr-1" aria-hidden="true" />
+              <Zap className="w-4 h-4 mr-1" />
               All Features
             </Button>
             <Badge
@@ -628,121 +590,90 @@ function DashboardContent({ user }: { user: User }) {
                   ? "bg-green-100 text-green-800 border-green-300"
                   : "bg-gray-100 text-gray-700 border-gray-300"
               }
-              role="status"
-              aria-label={
-                hasPaidSubscription
-                  ? "AI features enabled"
-                  : "AI features available with a paid subscription"
-              }
             >
               {hasPaidSubscription ? (
-                <CheckCircle className="w-3 h-3 mr-1" aria-hidden="true" />
+                <CheckCircle className="w-3 h-3 mr-1" />
               ) : (
-                <Lock className="w-3 h-3 mr-1" aria-hidden="true" />
+                <Lock className="w-3 h-3 mr-1" />
               )}
               {hasPaidSubscription ? "AI Enhanced" : "AI with subscription"}
             </Badge>
           </nav>
         </header>
 
-        {/* User Overview Panel */}
         <UserOverviewPanel user={user} />
-
-        {/* Progressive Feature Discovery - Shows one feature at a time */}
         <PowerFeatureSpotlight
           userPersona={
             user.onboardingData &&
             typeof user.onboardingData === "object" &&
             "persona" in user.onboardingData
-              ? (user.onboardingData as { persona?: DashboardUserPersona })
-                  .persona || null
+              ? ((user.onboardingData as { persona?: DashboardUserPersona }).persona ??
+                null)
               : null
           }
           compact={false}
         />
-
-        {/* Value Calculator - Show subscription savings */}
         {hasPaidSubscription && <ValueCalculator />}
-
-        {/* Smart Next Action Widget */}
         <SmartNextActionWidget />
 
-        {/* Stats Grid */}
         {dashboardError && (
           <Card className="border-destructive">
             <CardContent className="flex items-center justify-between gap-4 p-4">
-              <p className="text-sm">Dashboard data could not be loaded. Please try again.</p>
-              <Button variant="outline" onClick={() => refetchDashboard()}>
+              <p className="text-sm">
+                Dashboard data could not be loaded. Please try again.
+              </p>
+              <Button variant="outline" onClick={() => void refetchDashboard()}>
                 Retry
               </Button>
             </CardContent>
           </Card>
         )}
+
         <section
           className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
-          role="region"
           aria-label="Performance statistics"
         >
           {statsCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card
-                key={index}
-                data-testid={
-                  (stat as Record<string, unknown>).testId ||
-                  `card-stat-${stat.title.toLowerCase().replace(/\s+/g, "-")}`
-                }
-                className={`${stat.bgColor} ${stat.borderColor} border-2 hover:shadow-lg transition-all duration-300`}
-                role="article"
-                aria-label={`${stat.title} statistic`}
+                key={stat.title}
+                data-testid={stat.testId}
+                className={`${stat.bgColor} ${stat.borderColor} border-2`}
               >
                 <CardContent className="p-3 sm:p-4 lg:p-6">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p
-                        className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate"
-                        id={`stat-label-${index}`}
-                      >
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 truncate">
                         {stat.title}
                       </p>
-                      <p
-                        className={`text-lg sm:text-xl lg:text-2xl font-bold ${stat.color}`}
-                        aria-labelledby={`stat-label-${index}`}
-                        aria-describedby={`stat-change-${index}`}
-                      >
+                      <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${stat.color}`}>
                         {stat.value}
                       </p>
                       {stat.change === null ? (
-                        <p
-                          className="text-[10px] sm:text-xs mt-1 text-muted-foreground"
-                          id={`stat-change-${index}`}
-                        >
+                        <p className="text-[10px] sm:text-xs mt-1 text-muted-foreground">
                           Change unavailable
                         </p>
                       ) : (
                         <p
-                          className={`text-[10px] sm:text-xs flex items-center mt-1 ${stat.change >= 0 ? "text-green-600" : "text-red-600"}`}
-                          id={`stat-change-${index}`}
+                          className={`text-[10px] sm:text-xs flex items-center mt-1 ${
+                            stat.change > 0
+                              ? "text-green-600"
+                              : stat.change < 0
+                                ? "text-red-600"
+                                : "text-muted-foreground"
+                          }`}
                         >
                           {stat.change > 0 ? (
-                            <ArrowUp className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Increase" />
+                            <ArrowUp className="w-3 h-3 mr-1" />
                           ) : stat.change < 0 ? (
-                            <ArrowDown className="w-3 h-3 mr-1 flex-shrink-0" aria-label="Decrease" />
+                            <ArrowDown className="w-3 h-3 mr-1" />
                           ) : null}
-                          <span className="truncate">
-                            {stat.change}% from last month
-                          </span>
+                          {stat.change}% from last month
                         </p>
                       )}
                     </div>
-                    <div
-                      className={`p-2 sm:p-3 rounded-full ${stat.bgColor} ${stat.borderColor} border-2 flex-shrink-0`}
-                      aria-hidden="true"
-                    >
-                      <Icon
-                        className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${stat.color}`}
-                      />
-                    </div>
+                    <Icon className={`w-6 h-6 ${stat.color}`} aria-hidden="true" />
                   </div>
                 </CardContent>
               </Card>
@@ -750,24 +681,20 @@ function DashboardContent({ user }: { user: User }) {
           })}
         </section>
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Zap className="w-5 h-5 mr-2 text-yellow-600" />
               Quick Actions
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              AI-powered tools to accelerate your music career
-            </p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action, index) => {
+              {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <Button
-                    key={index}
+                    key={action.title}
                     data-testid={`button-${action.title.toLowerCase().replace(/\s+/g, "-")}`}
                     onClick={action.action}
                     disabled={action.loading || action.disabled}
@@ -778,12 +705,10 @@ function DashboardContent({ user }: { user: User }) {
                     ) : (
                       <Icon className="w-6 h-6" />
                     )}
-                    <div className="text-center">
-                      <div className="font-semibold">{action.title}</div>
-                      <div className="text-xs opacity-90">
-                        {action.description}
-                      </div>
-                    </div>
+                    <span className="font-semibold">{action.title}</span>
+                    <span className="text-xs opacity-90 text-center">
+                      {action.description}
+                    </span>
                   </Button>
                 );
               })}
@@ -796,17 +721,12 @@ function DashboardContent({ user }: { user: User }) {
             <CardHeader>
               <CardTitle>Optimize a social post</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Choose one of your unreviewed drafts to update it in place, or
-                paste text to create a new draft. Nothing is scheduled or
-                published.
+                Update an unreviewed draft in place or create a new unpublished draft.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label
-                  htmlFor="dashboard-optimizer-existing-draft"
-                  className="text-sm font-medium"
-                >
+                <label htmlFor="dashboard-optimizer-existing-draft" className="text-sm font-medium">
                   Existing draft (optional)
                 </label>
                 <select
@@ -818,19 +738,13 @@ function DashboardContent({ user }: { user: User }) {
                       (post) => String(post.id) === postId,
                     );
                     setOptimizerPostId(selected ? String(selected.id) : "");
-                    setOptimizerOriginalContent(
+                    const selectedContent =
                       selected && typeof selected.content === "string"
                         ? selected.content
-                        : "",
-                    );
-                    setOptimizerContent(
-                      selected && typeof selected.content === "string"
-                        ? selected.content
-                        : "",
-                    );
-                    if (selected?.platform) {
-                      setOptimizerPlatform(selected.platform);
-                    }
+                        : "";
+                    setOptimizerOriginalContent(selectedContent);
+                    setOptimizerContent(selectedContent);
+                    if (selected?.platform) setOptimizerPlatform(selected.platform);
                     setOptimizedDraft(null);
                   }}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -838,22 +752,13 @@ function DashboardContent({ user }: { user: User }) {
                   <option value="">Create a new optimized draft</option>
                   {optimizableDrafts.map((post) => (
                     <option key={post.id} value={String(post.id)}>
-                      {post.platform} — {post.content.slice(0, 90)}
+                      {post.platform ?? "Social"} — {post.content?.slice(0, 90)}
                     </option>
                   ))}
                 </select>
-                {optimizableDrafts.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No unreviewed drafts are available; enter text below to
-                    create a new draft.
-                  </p>
-                )}
               </div>
               <div className="space-y-2">
-                <label
-                  htmlFor="dashboard-optimizer-content"
-                  className="text-sm font-medium"
-                >
+                <label htmlFor="dashboard-optimizer-content" className="text-sm font-medium">
                   Content to optimize
                 </label>
                 <textarea
@@ -864,25 +769,13 @@ function DashboardContent({ user }: { user: User }) {
                   rows={5}
                   readOnly={Boolean(optimizerPostId)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  placeholder={
-                    optimizerPostId
-                      ? "Selected draft content"
-                      : "Paste the post you want MaxCore to improve..."
-                  }
-                  aria-describedby="dashboard-optimizer-count"
                 />
-                <p
-                  id="dashboard-optimizer-count"
-                  className="text-xs text-muted-foreground"
-                >
+                <p className="text-xs text-muted-foreground">
                   {optimizerContent.length}/5000
                 </p>
               </div>
               <div className="space-y-2">
-                <label
-                  htmlFor="dashboard-optimizer-platform"
-                  className="text-sm font-medium"
-                >
+                <label htmlFor="dashboard-optimizer-platform" className="text-sm font-medium">
                   Platform
                 </label>
                 <select
@@ -906,7 +799,7 @@ function DashboardContent({ user }: { user: User }) {
                 <Button
                   onClick={() =>
                     optimizeContentMutation.mutate({
-                      content: optimizerContent,
+                      content: optimizerContent.trim(),
                       platform: optimizerPlatform,
                       ...(optimizerPostId
                         ? {
@@ -916,19 +809,14 @@ function DashboardContent({ user }: { user: User }) {
                         : {}),
                     })
                   }
-                  disabled={
-                    !optimizerContent.trim() || optimizeContentMutation.isPending
-                  }
+                  disabled={!optimizerContent.trim() || optimizeContentMutation.isPending}
                   data-testid="button-optimize-content"
                 >
                   {optimizeContentMutation.isPending
                     ? "Generating…"
                     : "Generate optimized draft"}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowContentOptimizer(false)}
-                >
+                <Button variant="outline" onClick={() => setShowContentOptimizer(false)}>
                   Close
                 </Button>
               </div>
@@ -948,10 +836,7 @@ function DashboardContent({ user }: { user: User }) {
                   <p className="whitespace-pre-wrap text-sm">
                     {optimizedDraft.content}
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setLocation("/social-media")}
-                  >
+                  <Button variant="outline" onClick={() => setLocation("/social-media")}>
                     Open Social Media drafts
                   </Button>
                 </section>
@@ -960,197 +845,63 @@ function DashboardContent({ user }: { user: User }) {
           </Card>
         )}
 
-        {/* Main Content Tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-6"
-        >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-            <TabsTrigger data-testid="tab-overview" value="overview">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger data-testid="tab-growth" value="growth">
-              Growth
-            </TabsTrigger>
-            <TabsTrigger data-testid="tab-analytics" value="analytics">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger data-testid="tab-ai-insights" value="ai-insights">
-              AI Insights
-            </TabsTrigger>
-            <TabsTrigger data-testid="tab-projects" value="projects">
-              Projects
-            </TabsTrigger>
-            <TabsTrigger data-testid="tab-activity" value="activity">
-              Activity
-            </TabsTrigger>
+            <TabsTrigger data-testid="tab-overview" value="overview">Overview</TabsTrigger>
+            <TabsTrigger data-testid="tab-growth" value="growth">Growth</TabsTrigger>
+            <TabsTrigger data-testid="tab-analytics" value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger data-testid="tab-ai-insights" value="ai-insights">AI Insights</TabsTrigger>
+            <TabsTrigger data-testid="tab-projects" value="projects">Projects</TabsTrigger>
+            <TabsTrigger data-testid="tab-activity" value="activity">Activity</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Platforms */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Globe className="w-5 h-5 mr-2 text-blue-600" />
-                    Top Performing Platforms
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {dashboardLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3, 4].map((i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
-                    </div>
-                  ) : (dashboardData?.topPlatforms?.length ?? 0) > 0 ? (
-                    <div className="space-y-4">
-                      {dashboardData.topPlatforms.map((platform, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-bold text-blue-600">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-semibold">
-                                {platform.name}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {platform.streams.toLocaleString()} streams
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-green-600">
-                              ${platform.revenue.toLocaleString()}
-                            </div>
-                            <div
-                              className={`text-sm flex items-center ${
-                                platform.growth > 0
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {platform.growth > 0 ? (
-                                <ArrowUp className="w-3 h-3 mr-1" />
-                              ) : (
-                                <ArrowDown className="w-3 h-3 mr-1" />
-                              )}
-                              {Math.abs(platform.growth)}%
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      No platform analytics have been reported yet.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Recent Projects */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Music className="w-5 h-5 mr-2 text-purple-600" />
-                    Recent Projects
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {projectsLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  ) : projects.length > 0 ? (
-                    <div className="space-y-3">
-                      {projects.slice(0, 5).map((project: DashboardProject) => (
-                        <div
-                          key={project.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                              <Music className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                              <div className="font-semibold">
-                                {project.title}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {project.genre} •{" "}
-                                {project.streams == null
-                                  ? "Streams not reported"
-                                  : `${project.streams.toLocaleString()} streams`}
-                              </div>
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              project.status === "published"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {project.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Music className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        No projects yet
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        Create your first project to get started
-                      </p>
-                      <Button onClick={() => setLocation("/projects")}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Project
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <TopPlatformsCard
+                platforms={dashboardData?.topPlatforms ?? []}
+                loading={dashboardLoading}
+              />
+              <ProjectsCard
+                projects={projects}
+                loading={projectsLoading}
+                onOpenProjects={() => setLocation("/projects")}
+              />
             </div>
-
-            {/* First Week Success Path for new users */}
             <FirstWeekSuccessPath />
           </TabsContent>
 
-          {/* Growth Tab - Retention Features */}
           <TabsContent value="growth" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* AI Career Coach */}
               <div className="lg:col-span-2">
                 <AICareerCoach />
               </div>
-
-              {/* Streak Counter */}
               <div className="space-y-4">
-                <StreakCounter showAll={true} />
+                <StreakCounter showAll />
                 <SuggestedCollaborators />
               </div>
             </div>
-
-            {/* Beat Money Loop Health Score (admin-only — hides for non-admin) */}
             <ErrorBoundary>
               <LoopHealthScore />
             </ErrorBoundary>
-
-            {/* Upcoming Releases */}
             <UpcomingReleasesSection />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Analytics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Review the measured dashboard summary here, or open the full Analytics workspace for deeper reporting.
+                </p>
+                <TopPlatformsCard
+                  platforms={dashboardData?.topPlatforms ?? []}
+                  loading={dashboardLoading}
+                />
+                <Button onClick={() => setLocation("/analytics")}>Open Full Analytics</Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="ai-insights" className="space-y-6">
@@ -1162,8 +913,7 @@ function DashboardContent({ user }: { user: User }) {
                     AI Features Require Subscription
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    Upgrade to a paid plan to access AI-powered insights and
-                    recommendations.
+                    Upgrade to a paid plan to access AI-powered insights.
                   </p>
                   <Button onClick={() => setLocation("/pricing")}>
                     <Crown className="w-4 h-4 mr-2" />
@@ -1172,77 +922,54 @@ function DashboardContent({ user }: { user: User }) {
                 </CardContent>
               </Card>
             ) : aiInsightsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))}
-              </div>
+              <Skeleton className="h-40 w-full" />
             ) : aiInsightsError ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    AI Insights Unavailable
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-2">AI Insights Unavailable</h3>
                   <p className="text-muted-foreground">
-                    The insight service has not supplied a supported result.
-                    No performance scores or forecast values are being shown.
+                    The current MaxCore analytics contract does not provide supported insight data. No invented scores or forecasts are shown.
                   </p>
                 </CardContent>
               </Card>
-            ) : aiInsights ? (
+            ) : aiInsights && aiInsights.insights.length > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
                     AI Insights
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Insights returned by the analytics insight service
-                  </p>
                 </CardHeader>
-                <CardContent>
-                  {aiInsights.insights.length > 0 ? (
-                    <div className="space-y-4">
-                      {aiInsights.insights.map((insight, index) => (
-                        <div
-                          key={`${insight.metric ?? insight.type}-${index}`}
-                          className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h4 className="font-semibold">{insight.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {insight.description}
-                              </p>
-                            </div>
-                            <Badge variant="outline">
-                              {insight.impact ?? insight.type}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                <CardContent className="space-y-4">
+                  {aiInsights.insights.map((insight, index) => (
+                    <div
+                      key={`${insight.metric ?? insight.type}-${index}`}
+                      className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20"
+                    >
+                      <h4 className="font-semibold">{insight.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {insight.description}
+                      </p>
                     </div>
-                  ) : (
-                    <p className="py-6 text-center text-muted-foreground">
-                      No insights are available from the current data.
-                    </p>
-                  )}
+                  ))}
                 </CardContent>
               </Card>
             ) : (
               <Card>
-                <CardContent className="p-12 text-center">
-                  <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    AI Insights Unavailable
-                  </h3>
-                  <p className="text-muted-foreground">
-                    No supported insight data is available yet.
-                  </p>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  No supported insight data is available yet.
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="projects" className="space-y-6">
+            <ProjectsCard
+              projects={projects}
+              loading={projectsLoading}
+              onOpenProjects={() => setLocation("/projects")}
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-6">
@@ -1255,49 +982,28 @@ function DashboardContent({ user }: { user: User }) {
               </CardHeader>
               <CardContent>
                 {dashboardLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
-                  </div>
+                  <Skeleton className="h-32 w-full" />
                 ) : (dashboardData?.recentActivity?.length ?? 0) > 0 ? (
                   <div className="space-y-4">
-                    {dashboardData.recentActivity.map((activity) => (
+                    {dashboardData?.recentActivity?.map((activity) => (
                       <div
-                        key={
-                          activity.id ??
-                          `${activity.type ?? activity.title}-${activity.timestamp}`
-                        }
+                        key={activity.id ?? `${activity.type ?? activity.title}-${String(activity.timestamp)}`}
                         className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
                       >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            activity.status === "success"
-                              ? "bg-green-100 dark:bg-green-900"
-                              : activity.status === "warning"
-                                ? "bg-yellow-100 dark:bg-yellow-900"
-                                : activity.status === "error"
-                                  ? "bg-red-100 dark:bg-red-900"
-                                  : "bg-blue-100 dark:bg-blue-900"
-                          }`}
-                        >
-                          {activity.status === "success" ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : activity.status === "warning" ? (
-                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                          ) : activity.status === "error" ? (
-                            <AlertTriangle className="w-4 h-4 text-red-600" />
-                          ) : (
-                            <Info className="w-4 h-4 text-blue-600" />
-                          )}
-                        </div>
+                        {activity.status === "success" ? (
+                          <CheckCircle className="w-5 h-5 text-green-600 mt-1" />
+                        ) : activity.status === "warning" || activity.status === "error" ? (
+                          <AlertTriangle className="w-5 h-5 text-yellow-600 mt-1" />
+                        ) : (
+                          <Info className="w-5 h-5 text-blue-600 mt-1" />
+                        )}
                         <div className="flex-1">
                           <div className="font-semibold">{activity.title}</div>
                           <div className="text-sm text-muted-foreground">
                             {activity.description}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {new Date(activity.timestamp).toLocaleString()}
+                            {formatDashboardTimestamp(activity.timestamp)}
                           </div>
                         </div>
                       </div>
@@ -1313,24 +1019,148 @@ function DashboardContent({ user }: { user: User }) {
           </TabsContent>
         </Tabs>
 
-        {/* Feature Discovery Modals */}
         {showFeatureDiscovery && (
           <FeatureDiscovery
             onClose={() => setShowFeatureDiscovery(false)}
             userLevel={userLevel}
           />
         )}
-
         {showFeatureSpotlight && (
           <FeatureSpotlight
             onClose={() => setShowFeatureSpotlight(false)}
-            onExploreFeature={handleExploreFeature}
+            onExploreFeature={(featureId) => {
+              setShowFeatureSpotlight(false);
+              setShowFeatureDiscovery(false);
+              toast({
+                title: "Feature Selected",
+                description: `Find ${featureId} in the navigation to get started.`,
+              });
+            }}
           />
         )}
-
-        {/* Contextual Feature Hints - appears after completing tasks */}
         <ContextualFeatureHint />
       </div>
     </AppLayout>
+  );
+}
+
+function TopPlatformsCard({
+  platforms,
+  loading,
+}: {
+  platforms: DashboardTopPlatform[];
+  loading: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Globe className="w-5 h-5 mr-2 text-blue-600" />
+          Top Performing Platforms
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : platforms.length > 0 ? (
+          <div className="space-y-4">
+            {platforms.map((platform, index) => (
+              <div
+                key={`${platform.name}-${index}`}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
+              >
+                <div>
+                  <div className="font-semibold">{platform.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {platform.streams.toLocaleString()} streams
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-green-600">
+                    ${platform.revenue.toLocaleString()}
+                  </div>
+                  <div
+                    className={`text-sm ${
+                      platform.growth > 0
+                        ? "text-green-600"
+                        : platform.growth < 0
+                          ? "text-red-600"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {platform.growth > 0 ? "+" : ""}
+                    {platform.growth}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No platform analytics have been reported yet.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProjectsCard({
+  projects,
+  loading,
+  onOpenProjects,
+}: {
+  projects: DashboardProject[];
+  loading: boolean;
+  onOpenProjects: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Music className="w-5 h-5 mr-2 text-purple-600" />
+          Recent Projects
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : projects.length > 0 ? (
+          <div className="space-y-3">
+            {projects.slice(0, 8).map((project) => (
+              <div
+                key={project.id}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
+              >
+                <div>
+                  <div className="font-semibold">
+                    {project.title || "Untitled Project"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {project.genre || "Genre not set"} •{" "}
+                    {project.streams == null
+                      ? "Streams not reported"
+                      : `${project.streams.toLocaleString()} streams`}
+                  </div>
+                </div>
+                {project.status && <Badge variant="secondary">{project.status}</Badge>}
+              </div>
+            ))}
+            <Button variant="outline" className="w-full" onClick={onOpenProjects}>
+              Open all projects
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Music className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+            <Button onClick={onOpenProjects}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
