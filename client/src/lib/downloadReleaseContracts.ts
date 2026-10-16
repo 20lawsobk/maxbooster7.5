@@ -29,12 +29,7 @@ export interface ReleaseData {
   message?: string;
 }
 
-const GITHUB_HOSTS = new Set([
-  "github.com",
-  "objects.githubusercontent.com",
-  "release-assets.githubusercontent.com",
-]);
-
+const GITHUB_REPOSITORY_PATH = "/20lawsobk/maxbooster7.5/";
 const PLATFORMS = new Set(["Windows", "macOS", "Linux", "Android", "iOS"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -51,8 +46,14 @@ export function normalizeGithubReleaseUrl(value: unknown): string {
   } catch {
     throw new Error("The release metadata contained an invalid URL.");
   }
-  if (parsed.protocol !== "https:" || !GITHUB_HOSTS.has(parsed.hostname)) {
-    throw new Error("The release metadata pointed outside approved GitHub hosts.");
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname !== "github.com" ||
+    !parsed.pathname.toLowerCase().startsWith(GITHUB_REPOSITORY_PATH)
+  ) {
+    throw new Error(
+      "The release metadata pointed outside the official Max Booster repository.",
+    );
   }
   return parsed.toString();
 }
@@ -61,6 +62,14 @@ function optionalReleaseUrl(value: unknown): string | undefined {
   return value === undefined || value === null
     ? undefined
     : normalizeGithubReleaseUrl(value);
+}
+
+function optionalTimestamp(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) {
+    throw new Error("The release metadata contained an invalid timestamp.");
+  }
+  return value;
 }
 
 function normalizeExtra(value: unknown): DownloadExtra {
@@ -106,13 +115,13 @@ function normalizeAsset(value: unknown): DownloadAsset {
     downloadUrl: normalizeGithubReleaseUrl(value.downloadUrl),
     fileName: value.fileName.trim().slice(0, 255),
     fileSize: value.fileSize.trim().slice(0, 100),
-    ...(typeof value.buildDate === "string"
+    ...(typeof value.buildDate === "string" && value.buildDate.trim()
       ? { buildDate: value.buildDate.trim().slice(0, 100) }
       : {}),
     ...(value.fallbackUrl !== undefined
       ? { fallbackUrl: normalizeGithubReleaseUrl(value.fallbackUrl) }
       : {}),
-    ...(typeof value.fallbackName === "string"
+    ...(typeof value.fallbackName === "string" && value.fallbackName.trim()
       ? { fallbackName: value.fallbackName.trim().slice(0, 255) }
       : {}),
     ...(Array.isArray(extras) ? { extras: extras.map(normalizeExtra) } : {}),
@@ -132,33 +141,29 @@ export function normalizeReleaseData(payload: unknown): ReleaseData {
     return value.map(normalizeAsset);
   };
 
+  const releasesPageUrl = optionalReleaseUrl(payload.releasesPageUrl);
+  const allReleasesUrl = optionalReleaseUrl(payload.allReleasesUrl);
+  const fallbackUrl = optionalReleaseUrl(payload.fallbackUrl);
+  const publishedAt = optionalTimestamp(payload.publishedAt);
+  const fetchedAt = optionalTimestamp(payload.fetchedAt);
+  const desktop = normalizeList(payload.desktop);
+  const mobile = normalizeList(payload.mobile);
+
   return {
     available: payload.available,
-    ...(typeof payload.version === "string"
+    ...(typeof payload.version === "string" && payload.version.trim()
       ? { version: payload.version.trim().slice(0, 100) }
       : {}),
-    ...(typeof payload.publishedAt === "string"
-      ? { publishedAt: payload.publishedAt }
-      : {}),
-    ...(typeof payload.fetchedAt === "string" ? { fetchedAt: payload.fetchedAt } : {}),
-    ...(optionalReleaseUrl(payload.releasesPageUrl)
-      ? { releasesPageUrl: optionalReleaseUrl(payload.releasesPageUrl) }
-      : {}),
-    ...(optionalReleaseUrl(payload.allReleasesUrl)
-      ? { allReleasesUrl: optionalReleaseUrl(payload.allReleasesUrl) }
-      : {}),
-    ...(optionalReleaseUrl(payload.fallbackUrl)
-      ? { fallbackUrl: optionalReleaseUrl(payload.fallbackUrl) }
-      : {}),
+    ...(publishedAt ? { publishedAt } : {}),
+    ...(fetchedAt ? { fetchedAt } : {}),
+    ...(releasesPageUrl ? { releasesPageUrl } : {}),
+    ...(allReleasesUrl ? { allReleasesUrl } : {}),
+    ...(fallbackUrl ? { fallbackUrl } : {}),
     ...(typeof payload.message === "string"
       ? { message: payload.message.trim().slice(0, 500) }
       : {}),
-    ...(normalizeList(payload.desktop) !== undefined
-      ? { desktop: normalizeList(payload.desktop) }
-      : {}),
-    ...(normalizeList(payload.mobile) !== undefined
-      ? { mobile: normalizeList(payload.mobile) }
-      : {}),
+    ...(desktop !== undefined ? { desktop } : {}),
+    ...(mobile !== undefined ? { mobile } : {}),
   };
 }
 
@@ -172,7 +177,10 @@ export async function readReleaseJson(
       response.json(),
       new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () => reject(new Error("The download service response took too long to read.")),
+          () =>
+            reject(
+              new Error("The download service response took too long to read."),
+            ),
           timeoutMs,
         );
       }),
