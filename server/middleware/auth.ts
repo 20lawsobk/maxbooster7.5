@@ -4,8 +4,48 @@ import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 import { enforceAssurance, markVerifiedJwtFactor } from "./authAssurance.js";
 
+const PAID_FEATURE_PATHS = new Set([
+  "/api/ai/insights",
+  "/api/ai/optimize-content",
+]);
+
+type PaidFeatureUser = {
+  role?: string | null;
+  email?: string | null;
+  subscriptionStatus?: string | null;
+  subscriptionTier?: string | null;
+  isDemo?: boolean | null;
+};
+
+export function hasPaidFeatureAccess(user: PaidFeatureUser): boolean {
+  if (
+    user.role === "admin" ||
+    user.isDemo === true ||
+    user.email === "demo@maxbooster.ai"
+  ) {
+    return true;
+  }
+
+  return (
+    (user.subscriptionStatus === "active" ||
+      user.subscriptionStatus === "trialing") &&
+    Boolean(user.subscriptionTier && user.subscriptionTier !== "free")
+  );
+}
+
+export function isPaidFeatureRequest(req: Pick<Request, "originalUrl" | "url">): boolean {
+  const rawPath = req.originalUrl || req.url || "";
+  const path = rawPath.split("?", 1)[0].replace(/\/+$/, "") || "/";
+  return PAID_FEATURE_PATHS.has(path);
+}
+
 async function resolveJwtUser(req: Request): Promise<void> {
-  if (req.isAuthenticated && req.isAuthenticated() && !req.headers.authorization) return;
+  if (
+    req.isAuthenticated &&
+    req.isAuthenticated() &&
+    !req.headers.authorization
+  )
+    return;
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) return;
@@ -77,14 +117,27 @@ export const requireAuth = async (
     }
   }
 
+  if (
+    isPaidFeatureRequest(req) &&
+    !hasPaidFeatureAccess(user as PaidFeatureUser)
+  ) {
+    res.status(403).json({
+      error: "Paid subscription required",
+      code: "PAID_SUBSCRIPTION_REQUIRED",
+      upgradeUrl: "/pricing",
+    });
+    return;
+  }
+
   next();
 };
 
 /**
  * Auth-only guard — verifies the user is logged in.
  * Does NOT apply trial-expiry or subscription-expiry gates.
- * Use on content generation endpoints that are already behind
- * the frontend's protected-route subscription check.
+ * Use only on endpoints that are intentionally available to any authenticated
+ * account. Paid feature endpoints must use `requireAuth` so their server-side
+ * entitlement policy cannot be bypassed by calling the API directly.
  */
 export const requireAuthOnly = async (
   req: Request,
@@ -120,10 +173,14 @@ export const requireAdmin = (
  * Enforces two-factor authentication on privileged routes.
  * If the user has 2FA enabled but has not verified it this session,
  * the request is rejected with 403 so they must complete the 2FA flow.
- * Gates that don't require 2FA (e?.g. the 2FA setup/verify routes themselves)
+ * Gates that don't require 2FA (e.g. the 2FA setup/verify routes themselves)
  * should NOT use this middleware.
  */
-export const require2FA = (req: Request, res: Response, next: NextFunction) => {
+export const require2FA = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const user = req.user;
   if (!user) {
     return res.status(401).json({ error: "Authentication required" });
@@ -139,7 +196,8 @@ export const requireVerified2FA = (
   next: NextFunction,
 ) => {
   const user = req.user;
-  if (!user) return res.status(401).json({ error: "Authentication required" });
+  if (!user)
+    return res.status(401).json({ error: "Authentication required" });
   if (!user.twoFactorEnabled) {
     return res.status(403).json({
       error: "Two-factor authentication must be enabled for this operation",
