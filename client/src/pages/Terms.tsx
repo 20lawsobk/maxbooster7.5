@@ -184,7 +184,7 @@ export default function Terms() {
                   cancelled
                 </li>
                 <li>
-                  Refunds available within 7 days of purchase (see Section 7)
+                  Refunds available within 90 days of purchase (see Section 7)
                 </li>
                 <li>
                   Price changes with 30 days notice for existing subscribers
@@ -206,11 +206,11 @@ export default function Terms() {
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>
-                  <strong>7-Day Window:</strong> Full refund available within 7
+                  <strong>90-Day Window:</strong> Full refund available within 90
                   days of initial purchase
                 </li>
                 <li>
-                  <strong>After 7 Days:</strong> No refunds, but you may cancel
+                  <strong>After 90 Days:</strong> No refunds, but you may cancel
                   to prevent future charges
                 </li>
                 <li>
@@ -223,7 +223,7 @@ export default function Terms() {
                 </li>
               </ul>
               <p className="mt-4">
-                To request a refund within the 7-day window, email
+                To request a refund within the 90-day window, email
                 support@maxbooster.com with your account email and purchase
                 date.
               </p>
