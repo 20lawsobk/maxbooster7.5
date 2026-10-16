@@ -117,6 +117,9 @@ async function main() {
 }
 
 main().catch((err) => {
+  // Later provisioning/packing can fail after compilation created the marker.
+  // Never allow startup to accept artifacts from a failed build invocation.
+  fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });
   console.error("Build failed:", err);
   process.exit(1);
 });

@@ -21,7 +21,7 @@ no live remote-parity claim is made.
 ## Build/start chain
 
 1. `npm run build` → local `tsx` build script → installed subsystem dependency
-   verification → embedded MaxCore API build → Vite client → five root Node
+   verification → embedded MaxCore API build → Vite client → six root Node
    bundles → source/artifact hash contract.
 2. `npm run start` → Node production launcher → contract and port validation →
    port contract → existing `start.sh --executive-application` → existing
@@ -35,6 +35,31 @@ no live remote-parity claim is made.
    successful from a passing npm web build.
 
 ## Corrections made
+
+### Continued build-contract verification, 2026-10-16
+
+- Fixed a late-failure acceptance hole: the build failure handler now removes
+  the completion marker even when provisioning or packing fails after compilation.
+  Added an executable regression using the actual handler with a disposable marker.
+- Strengthened the isolated startup smoke test to require an `ok` readiness
+  payload and `unifiedAwareness.ready === true`, not HTTP 200 alone.
+- `npm run test:runtime-contracts`: 37 passed, no failures/skips.
+- `npm run build`: passed.
+- `eslint script/build.ts --quiet`: passed.
+- Python AST parse of the modified smoke test: passed; this is not a rerun of
+  its live startup journey.
+- Seven targeted Vitest files (DMCA rules/schema, distribution provider contract,
+  upload authorization, Stripe/instant-payout webhook honesty, prelaunch):
+  87 tests passed.
+- Client and server `tsgo --noEmit` checks passed with GOMAXPROCS=2 and
+  GOMEMLIMIT=2GiB.
+- `timeout 60s npm run lint`: timed out (124), not passed.
+- Earlier complete-runtime isolated production rehearsal loaded 71/71 model
+  tensors and the Digital GPU backend, serving HTML and health with HTTP 200.
+  Readiness remained 503 because mandatory awareness feed ingestion could not
+  reach public sources from the isolated network. Do not suppress that gate.
+- No production migrations, deployment, or live business operations were
+  initiated. Full-platform acceptance and production readiness remain open.
 
 - Removed dependency auto-fixing and source formatting from `npm run verify`.
   `npm run audit` is now read-only; explicit developer fix commands remain.

@@ -48,6 +48,14 @@ with open("/tmp/npm-start-isolated-db.log", "w") as log:
                     # Registry probes (3s) precede awareness (5s).
                     with urllib.request.urlopen("http://127.0.0.1:5012" + route, timeout=10) as response:
                         responses[route] = {"status": response.status, "type": response.headers.get("Content-Type")}
+                        if route == "/api/ready":
+                            body = response.read()
+                            Path("/tmp/npm-start-readiness.json").write_bytes(body)
+                            payload = json.loads(body)
+                            responses[route]["ready"] = (
+                                payload.get("status") == "ok"
+                                and payload.get("unifiedAwareness", {}).get("ready") is True
+                            )
                 except urllib.error.HTTPError as error:
                     responses[route] = {"status": error.code, "type": error.headers.get("Content-Type")}
                     if route == "/api/ready":
@@ -57,7 +65,7 @@ with open("/tmp/npm-start-isolated-db.log", "w") as log:
                     responses[route] = {"error": type(error).__name__}
                     if route == "/api/ready":
                         Path("/tmp/npm-start-readiness.json").unlink(missing_ok=True)
-            if responses.get("/", {}).get("status") == 200 and responses.get("/api/ready", {}).get("status") == 200:
+            if responses.get("/", {}).get("status") == 200 and responses.get("/api/ready", {}).get("ready") is True:
                 break
         print(json.dumps({"responses": responses, "exit": process.poll()}))
     finally:
@@ -70,5 +78,5 @@ with open("/tmp/npm-start-isolated-db.log", "w") as log:
                 process.wait()
 if responses.get("/", {}).get("status") != 200:
     raise SystemExit("Built application did not serve its homepage")
-if responses.get("/api/ready", {}).get("status") != 200:
+if responses.get("/api/ready", {}).get("ready") is not True:
     raise SystemExit("Application readiness was not established")

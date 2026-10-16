@@ -7,6 +7,29 @@ import vm from "node:vm";
 import { transformSync } from "esbuild";
 import { validateBuild, writeBuildContract } from "../scripts/start-production.mjs";
 
+test("a late build failure invalidates its completion marker", () => {
+  const source = fs.readFileSync("script/build.ts", "utf8");
+  const start = source.indexOf("main().catch((err) => {");
+  assert.ok(start >= 0);
+  const handler = source.slice(start + "main().catch((err) => {".length, source.lastIndexOf("});"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "failed-build-"));
+  const failure = new Error("fixture packing failure");
+  const exits = [];
+  const logged = [];
+  try {
+    fs.mkdirSync(path.join(root, "dist"));
+    fs.writeFileSync(path.join(root, "dist/build-complete.json"), "{}");
+    vm.runInNewContext(handler, { fs, path, root, err: failure,
+      console: { error: (...args) => logged.push(args) },
+      process: { exit: code => exits.push(code) } });
+    assert.equal(fs.existsSync(path.join(root, "dist/build-complete.json")), false);
+    assert.deepEqual(exits, [1]);
+    assert.equal(logged[0][1], failure);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("Python provisioning fails closed without deleting the existing runtime", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
   assert.match(source, /set -o pipefail; curl -fSL --retry 2 --connect-timeout 15/);
