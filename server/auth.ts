@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { enforceAssurance, markVerifiedJwtFactor } from "./middleware/authAssurance.js";
+import { hasPaidFeatureAccess } from "./middleware/auth.js";
 import { jwtAuthService } from "./services/jwtAuthService";
 import { storage } from "./storage";
 import { logger } from "./logger.js";
@@ -12,6 +13,12 @@ import { getRedisClient } from "./lib/redisConnectionFactory.js";
 const JWT_RL_WINDOW_MS = 15 * 60 * 1000;
 const JWT_RL_MAX_FAILURES = 30;
 
+const PAID_API_PATHS = new Set([
+  "/api/dashboard/comprehensive",
+  "/api/ai/insights",
+  "/api/ai/optimize-content",
+]);
+
 const localRl = new Map<string, { count: number; resetAt: number }>();
 const localRlPrune = () => {
   const now = Date?.now();
@@ -23,7 +30,7 @@ async function isJwtBlocked(key: string): Promise<boolean> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const raw = await (client as any).get(redisKey) as string | null;
+      const raw = (await (client as any).get(redisKey)) as string | null;
       const count = raw ? parseInt(raw, 10) : 0;
       return count >= JWT_RL_MAX_FAILURES;
     }
@@ -40,7 +47,7 @@ async function recordJwtFailure(key: string): Promise<void> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const count = await (client as any).incr(redisKey) as number;
+      const count = (await (client as any).incr(redisKey)) as number;
       if (count === 1)
         await (client as any).pexpire(redisKey, JWT_RL_WINDOW_MS);
       return;
@@ -76,11 +83,9 @@ export const verifyJWT = async (
   const tokenPrefix = token?.slice(0, 16);
   const rlKey = `${ip}:${tokenPrefix}`;
   if (await isJwtBlocked(rlKey)) {
-    return res
-      .status(429)
-      .json({
-        message: "Too many failed JWT verification attempts. Try again later.",
-      });
+    return res.status(429).json({
+      message: "Too many failed JWT verification attempts. Try again later.",
+    });
   }
 
   try {
@@ -114,7 +119,12 @@ export const requireAuthDual = async (
   next: NextFunction,
 ) => {
   // First check for passport?.js session authentication (req.isAuthenticated checks req.user)
-  if (req.isAuthenticated && req.isAuthenticated() && req.user && !req.headers.authorization) {
+  if (
+    req.isAuthenticated &&
+    req.isAuthenticated() &&
+    req.user &&
+    !req.headers.authorization
+  ) {
     if (enforceAssurance(req, res)) return next();
     return;
   }
@@ -159,21 +169,39 @@ export const requireAdmin = async (
 // Alias for backwards compatibility
 export const requireAuth = requireAuthDual;
 
-// Block write operations for demo users (read-only mode)
-// NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
-// Use req.originalUrl for full-path matching or paths without the /api prefix.
+// Account-mode API guard. This middleware is mounted at `/api` after attachUser,
+// so it is the earliest reliable place to enforce session-backed paid feature
+// access before handlers that still use legacy inline `req.user` checks.
+// It also preserves the existing read-only demo-account policy.
 export const blockDemoWrite = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if ((req.user as { email?: string } | undefined)?.email !== "demo@maxbooster.ai") {
+  const fullPath =
+    req.originalUrl.split("?")[0].replace(/\/+$/, "") || "/";
+
+  if (
+    req.user &&
+    PAID_API_PATHS.has(fullPath) &&
+    !hasPaidFeatureAccess(req.user)
+  ) {
+    return res.status(403).json({
+      error: "Paid subscription required",
+      code: "PAID_SUBSCRIPTION_REQUIRED",
+      upgradeUrl: "/pricing",
+    });
+  }
+
+  if (
+    (req.user as { email?: string } | undefined)?.email !==
+    "demo@maxbooster.ai"
+  ) {
     return next();
   }
 
   const writeMethods = ["POST", "PUT", "PATCH", "DELETE"];
   if (writeMethods?.includes(req.method)) {
-    const fullPath = req.originalUrl.split("?")[0];
     const allowedDemoPaths = [
       "/api/auth/logout",
       "/api/auth/demo",
