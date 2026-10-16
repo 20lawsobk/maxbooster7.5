@@ -155,6 +155,8 @@ export default function RegisterPayment() {
           username: normalized.username,
           artistName: normalized.artistName,
           birthdate: normalized.birthdate,
+          tosAccepted,
+          privacyAccepted,
         },
       );
       const payload = await readRegistrationCheckoutPayload(response);
@@ -447,7 +449,10 @@ export default function RegisterPayment() {
 
                 <div className="text-center text-xs text-gray-500 dark:text-gray-400 space-y-2">
                   <p>Secure payment powered by Stripe</p>
-                  <p>Your payment details are entered only on Stripe's hosted checkout.</p>
+                  <p>
+                    Your payment details are entered only on Stripe's hosted
+                    checkout.
+                  </p>
                 </div>
               </CardContent>
             </Card>
