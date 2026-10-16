@@ -153,3 +153,4 @@
 - [Installer registry rewrite](installer-registry-rewrite.md) — package updates can reinsert internal tarball URLs; verify upstream integrity before restoring portable lock URLs.
 - [Storefront canonical origin](storefront-canonical-origin.md) — generated storefront links use maxbooster.replit.app; preserve DNS aliases without claiming unverified public availability.
 - [Shutdown exit ownership](shutdown-owner-exit.md) — imported worker drains must return to the app owner; early process exits bypass otherwise-correct subsystem cleanup.
+- [Page-scoped readiness reviews](page-scoped-readiness.md) — review each page with its backend; track child panels and shared-service gaps explicitly.
