@@ -10,12 +10,15 @@ describe("refund policy consistency", () => {
     const terms = read("client/src/pages/Terms.tsx");
     const help = read("client/src/pages/Help.tsx");
     const registrationCheckout = read("client/src/pages/RegisterPayment.tsx");
+    const supportAI = read("server/services/supportAIService.ts");
 
     expect(pricing).toMatch(/90-Day Money-Back Guarantee/i);
     expect(terms).toMatch(/90-Day Window/i);
     expect(terms).toMatch(/within the 90-day window/i);
     expect(help).toMatch(/90-day money-back guarantee/i);
     expect(registrationCheckout).toMatch(/90-Day Money-Back Guarantee/i);
+    expect(supportAI).toMatch(/90-Day Money-Back Guarantee/i);
+    expect(supportAI).toMatch(/Full refund within 90 days of purchase/i);
   });
 
   it("does not reintroduce the retired 7-day subscription refund copy", () => {
@@ -24,6 +27,7 @@ describe("refund policy consistency", () => {
       read("client/src/pages/Terms.tsx"),
       read("client/src/pages/Help.tsx"),
       read("client/src/pages/RegisterPayment.tsx"),
+      read("server/services/supportAIService.ts"),
     ].join("\n");
 
     expect(customerPolicyFiles).not.toMatch(/7-Day Refund Window/i);
