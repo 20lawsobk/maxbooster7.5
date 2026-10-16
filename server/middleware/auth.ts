@@ -8,6 +8,7 @@ const PAID_FEATURE_PATHS = new Set([
   "/api/ai/insights",
   "/api/ai/optimize-content",
 ]);
+const PAID_FEATURE_PREFIXES = ["/api/studio", "/api/songwriting"];
 
 type PaidFeatureUser = {
   role?: string | null;
@@ -33,10 +34,17 @@ export function hasPaidFeatureAccess(user: PaidFeatureUser): boolean {
   );
 }
 
-export function isPaidFeatureRequest(req: Pick<Request, "originalUrl" | "url">): boolean {
+export function isPaidFeatureRequest(
+  req: Pick<Request, "originalUrl" | "url">,
+): boolean {
   const rawPath = req.originalUrl || req.url || "";
   const path = rawPath.split("?", 1)[0].replace(/\/+$/, "") || "/";
-  return PAID_FEATURE_PATHS.has(path);
+  return (
+    PAID_FEATURE_PATHS.has(path) ||
+    PAID_FEATURE_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+  );
 }
 
 async function resolveJwtUser(req: Request): Promise<void> {
