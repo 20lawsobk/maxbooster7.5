@@ -16,6 +16,7 @@ function captureEntry(entry: RedisEntry): RedisEntry {
   };
   return copy(entry) as RedisEntry;
 }
+class CheckpointCancelledForShutdown extends Error {}
 
 /** Bucket durability coordinator. The application owner still supplies the
  * canonical RedisStore, validation, HTTP admission and graceful-drain boundary.
@@ -28,12 +29,14 @@ export class PdimBucketPersistence {
   private renewPending?: Promise<void>;
   private checkpointPending?: Promise<void>;
   private failed?: Error;
+  private closing = false;
 
   constructor(
     objects: PdimObjectStore, namespace: string,
     private readonly engine: RedisStore,
     private readonly entries: Map<string, RedisEntry>,
     private readonly validate: (key: string, value: unknown) => RedisEntry,
+    private readonly onStage: (stage: string) => void = () => {},
   ) {
     this.journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
   }
@@ -53,7 +56,9 @@ export class PdimBucketPersistence {
   }
 
   async open(): Promise<void> {
+    this.onStage("acquiring-lease");
     await this.journal.acquire();
+    this.onStage("lease-acquired");
     this.heartbeat = setInterval(() => {
       if (this.renewPending || this.failed) return;
       this.renewPending = this.journal.renew().catch(cause => {
@@ -65,6 +70,7 @@ export class PdimBucketPersistence {
     try {
       const recovered = await this.journal.recover();
       const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate);
+      this.onStage("snapshot-verified");
       const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
       this.assertHealthy();
       // Complete validation before publishing any recovered state to the owner.
@@ -110,8 +116,15 @@ export class PdimBucketPersistence {
     const captured = await this.captureSnapshot();
     // Remote uploads happen outside both mutation gates; only immutable captured
     // containers are serialized, so requests can continue during a large upload.
-    const snapshot = await writeBucketSnapshot(this.journal, captured.entries,
+    const snapshot = await writeBucketSnapshot({
+      readImmutable: id => this.journal.readImmutable(id),
+      putImmutable: bytes => {
+        if (this.closing) throw new CheckpointCancelledForShutdown();
+        return this.journal.putImmutable(bytes);
+      },
+    }, captured.entries,
       captured.redisSequence, captured.capsuleSequence);
+    if (this.closing) throw new CheckpointCancelledForShutdown();
     await this.journal.checkpoint(snapshot, captured.position);
     this.engine.compactEmbeddedAof(captured.redisSequence);
   }
@@ -128,8 +141,15 @@ export class PdimBucketPersistence {
 
   /** The application must stop admitting commands and drain HTTP first. */
   async close(): Promise<void> {
+    this.closing = true;
     try {
-      await this.checkpoint();
+      // Every acknowledged mutation is already durable. Shutdown must not start
+      // another multi-gigabyte snapshot and exceed the process drain deadline.
+      if (this.checkpointPending) {
+        try { await this.checkpointPending; }
+        catch (error) { if (!(error instanceof CheckpointCancelledForShutdown)) throw error; }
+      }
+      await this.journal.capture(() => undefined);
       if (this.heartbeat) clearInterval(this.heartbeat);
       if (this.renewPending) await this.renewPending;
       this.assertHealthy();

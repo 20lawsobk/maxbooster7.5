@@ -66,8 +66,13 @@ export async function readBucketSnapshot<E>(
     throw new Error("Invalid bucket PDIM snapshot manifest");
   }
   const entries = new Map<string, E>();
-  for (const id of manifest.chunks) {
-    const rows: unknown = JSON.parse((await objects.readImmutable(id)).toString());
+  // Bound concurrent downloads; do not serialize hundreds of network round trips
+  // or retain buffers for the entire snapshot during startup.
+  for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
+    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4)
+      .map(id => objects.readImmutable(id)));
+    for (const buffer of buffers) {
+    const rows: unknown = JSON.parse(buffer.toString());
     if (!Array.isArray(rows)) throw new Error("Invalid bucket PDIM snapshot chunk");
     for (const row of rows) {
       if (!Array.isArray(row) || row.length !== 2 ||
@@ -75,6 +80,7 @@ export async function readBucketSnapshot<E>(
         throw new Error("Invalid or duplicate bucket PDIM snapshot entry");
       }
       entries.set(row[0], validate(row[0], row[1]));
+    }
     }
   }
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");

@@ -154,22 +154,23 @@ describe("retained PDIM operator recovery boundary", () => {
 
   it("makes the standalone worker a required production artifact", () => {
     const buildSource = readFileSync("script/build.ts", "utf8");
+    const bundles = readFileSync("script/lib/serverBundles.ts", "utf8");
+    const runtimeContract = readFileSync("scripts/start-production.mjs", "utf8");
+    const capsuleVerification = readFileSync("script/lib/preparedCapsules.ts", "utf8");
     const legacyBuildSource = readFileSync("build.sh", "utf8");
     const dockerignore = readFileSync(".dockerignore", "utf8");
     const serviceSource = readFileSync(
       "server/services/backup/pdimRecoveryBackupService.ts",
       "utf8",
     );
-    expect(buildSource).toContain(
-      'outfile: path.resolve(root, "dist/retained-pdim-recovery-worker.mjs")',
-    );
-    expect(buildSource).toContain(
-      'const requiredPdimWorker = "dist/retained-pdim-recovery-worker.mjs"',
-    );
-    expect(legacyBuildSource).toContain("export DEPLOY_PACK=1");
-    expect(legacyBuildSource).toContain("exec npm run build");
-    expect(buildSource).toContain('if (!remainingMembers.includes(requiredPdimWorker))');
-    expect(buildSource).toContain("Required runtime artifact is absent from the app capsule payload:");
+    expect(buildSource).toContain("await buildServerBundles(root)");
+    expect(bundles).toContain('"retained-pdim-recovery-worker": "scripts/retained-pdim-recovery-worker.ts"');
+    expect(bundles).toContain('outExtension: { ".js": ".mjs" }');
+    expect(runtimeContract).toContain('"dist/retained-pdim-recovery-worker.mjs"');
+    expect(runtimeContract).toContain('for (const file of required) if (!contract.files?.[file]) throw new Error');
+    expect(capsuleVerification).toContain('"dist/retained-pdim-recovery-worker.mjs"');
+    expect(capsuleVerification).toContain('if (!result.ready) throw new Error');
+    expect(legacyBuildSource).toContain("PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build");
     expect(JSON.parse(readFileSync("package.json", "utf8")).scripts.build).toContain("script/build.ts");
     expect(dockerignore).toContain("!scripts/retained-pdim-recovery-worker.ts");
     expect(dockerignore).toContain("!scripts/recovery-private-store.mjs");

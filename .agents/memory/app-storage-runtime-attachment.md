@@ -43,3 +43,18 @@ that extra allocation.
 **How to apply:** Keep root runtime data separate from unencrypted source capsules,
 without excluding nested source datasets by accident. A release bootstrap snapshot
 is not continuous backup of later production writes; never describe it as such.
+
+## Live owner recovery and shutdown
+
+Use separate mutable namespaces for independently running preview/production
+owners, with generation-fenced leases. Preserve the actual prior owner lease;
+never clear it merely because a local listener is absent.
+
+**Why:** Short workflow restart deadlines interrupted large bucket recovery and
+subsequent starts encountered the still-valid lease. Longer startup allowance
+and bounded parallel reads recovered successfully without bypassing fencing.
+
+**How to apply:** Distinguish startup timeout from active-owner conflict. Bound
+recovery concurrency and any lease-expiry wait. Once every acknowledged mutation
+has a durable bucket journal commit, shutdown should drain that journal, not
+start a full multi-gigabyte snapshot that exceeds process termination deadlines.

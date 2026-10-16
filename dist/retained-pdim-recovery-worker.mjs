@@ -2440,9 +2440,9 @@ var init_store = __esm({
       getOrCreateHash(key) {
         const entry = this.data.get(key);
         if (!entry) {
-          const hash = {};
-          this.data.set(key, { type: "hash", value: hash });
-          return hash;
+          const hash2 = {};
+          this.data.set(key, { type: "hash", value: hash2 });
+          return hash2;
         }
         if (entry.type !== "hash")
           throw new Error(
@@ -2455,11 +2455,11 @@ var init_store = __esm({
         if (!key || pairs.length === 0 || pairs.length % 2 !== 0)
           throw new Error("ERR wrong number of arguments for 'hset'");
         if (this.isExpired(key)) this.data.delete(key);
-        const hash = this.getOrCreateHash(key);
+        const hash2 = this.getOrCreateHash(key);
         let added = 0;
         for (let i = 0; i < pairs.length; i += 2) {
-          if (!(pairs[i] in hash)) added++;
-          hash[pairs[i]] = pairs[i + 1];
+          if (!(pairs[i] in hash2)) added++;
+          hash2[pairs[i]] = pairs[i + 1];
         }
         this.dirty = true;
         return added;
@@ -2577,11 +2577,11 @@ var init_store = __esm({
         if (!key || field === void 0 || by === void 0)
           throw new Error("ERR wrong number of arguments for 'hincrby'");
         if (this.isExpired(key)) this.data.delete(key);
-        const hash = this.getOrCreateHash(key);
-        const n = Number(hash[field] ?? 0);
+        const hash2 = this.getOrCreateHash(key);
+        const n = Number(hash2[field] ?? 0);
         if (Number.isNaN(n)) throw new Error("ERR hash value is not an integer");
         const next = n + Number(by);
-        hash[field] = String(next);
+        hash2[field] = String(next);
         this.dirty = true;
         return next;
       }
@@ -2590,11 +2590,11 @@ var init_store = __esm({
         if (!key || field === void 0 || by === void 0)
           throw new Error("ERR wrong number of arguments for 'hincrbyfloat'");
         if (this.isExpired(key)) this.data.delete(key);
-        const hash = this.getOrCreateHash(key);
-        const n = parseFloat(hash[field] ?? "0");
+        const hash2 = this.getOrCreateHash(key);
+        const n = parseFloat(hash2[field] ?? "0");
         if (Number.isNaN(n)) throw new Error("ERR hash value is not a float");
         const next = n + parseFloat(by);
-        hash[field] = String(next);
+        hash2[field] = String(next);
         this.dirty = true;
         return String(next);
       }
@@ -2603,9 +2603,9 @@ var init_store = __esm({
         if (!key || field === void 0 || value === void 0)
           throw new Error("ERR wrong number of arguments for 'hsetnx'");
         if (this.isExpired(key)) this.data.delete(key);
-        const hash = this.getOrCreateHash(key);
-        if (field in hash) return 0;
-        hash[field] = value;
+        const hash2 = this.getOrCreateHash(key);
+        if (field in hash2) return 0;
+        hash2[field] = value;
         this.dirty = true;
         return 1;
       }
@@ -7684,19 +7684,19 @@ var init_pocket_dimension = __esm({
         return entry;
       }
       async processChunk(data, depth) {
-        const hash = this.hashContent(data);
-        if (this.enableDeduplication && this.chunks.has(hash)) {
-          const existing = this.chunks.get(hash);
+        const hash2 = this.hashContent(data);
+        if (this.enableDeduplication && this.chunks.has(hash2)) {
+          const existing = this.chunks.get(hash2);
           existing.accessCount++;
           existing.lastAccessed = /* @__PURE__ */ new Date();
           return existing;
         }
         const compressed = await this.compress(data);
         const finalData = this.encryptionKey ? this.encrypt(compressed) : compressed;
-        this.chunkData.set(hash, finalData);
-        await this.persistChunk(hash, finalData);
+        this.chunkData.set(hash2, finalData);
+        await this.persistChunk(hash2, finalData);
         const chunk = {
-          id: hash,
+          id: hash2,
           size: data.length,
           compressedSize: finalData.length,
           compressionRatio: data.length / finalData?.length,
@@ -7706,7 +7706,7 @@ var init_pocket_dimension = __esm({
           encrypted: !!this.encryptionKey,
           depth
         };
-        this.chunks.set(hash, chunk);
+        this.chunks.set(hash2, chunk);
         return chunk;
       }
       async persistChunk(id, data) {
@@ -8139,14 +8139,14 @@ var init_localPdimCapsules = __esm({
           return restored.toString("utf8");
         }
         const bytes = Buffer.from(args[1], "utf8");
-        const hash = digest(bytes);
-        await pocket2.write(hash, bytes, { depth: 2 });
+        const hash2 = digest(bytes);
+        await pocket2.write(hash2, bytes, { depth: 2 });
         await root.close();
         const reference = {
           format: "pdim-recursive-state-v1",
           namespace,
-          entry: hash,
-          sha256: hash,
+          entry: hash2,
+          sha256: hash2,
           bytes: bytes.length
         };
         changes[refKey] = JSON.stringify(reference);
@@ -8214,7 +8214,7 @@ var init_localPdimCapsuleJournal = __esm({
         const size = fs3.statSync(this.file).size;
         let end = 0;
         let previous = 0;
-        let sequence = baseline;
+        let sequence2 = baseline;
         for (const item of completeLines(this.file)) {
           end = item.end;
           if (!item.line) continue;
@@ -8222,8 +8222,8 @@ var init_localPdimCapsuleJournal = __esm({
           if (record.seq <= previous) throw new Error("Capsule journal sequence regression");
           previous = record.seq;
           if (record.seq <= baseline) continue;
-          if (record.seq !== sequence + 1) throw new Error("Capsule journal sequence gap");
-          sequence = record.seq;
+          if (record.seq !== sequence2 + 1) throw new Error("Capsule journal sequence gap");
+          sequence2 = record.seq;
         }
         for (const { line } of completeLines(this.file)) {
           if (!line) continue;
@@ -8515,15 +8515,14 @@ var init_localPdimAofJournal = __esm({
 // server/lib/pdimSnapshotJson.ts
 import fs5 from "node:fs";
 import { StringDecoder } from "node:string_decoder";
-function snapshotJsonChunks(entries) {
-  const chunks = ["{"];
+function* snapshotJsonChunks(entries) {
+  yield "{";
   let first = true;
   for (const [key, value] of Object.entries(entries)) {
-    chunks.push(`${first ? "" : ","}${JSON.stringify(key)}:${JSON.stringify(value)}`);
+    yield `${first ? "" : ","}${JSON.stringify(key)}:${JSON.stringify(value)}`;
     first = false;
   }
-  chunks.push("}");
-  return chunks;
+  yield "}";
 }
 function readSnapshotJson(file, chunkBytes = 1024 * 1024) {
   const result = /* @__PURE__ */ Object.create(null);
@@ -8704,24 +8703,754 @@ try {
   }
 });
 
+// scripts/recovery-private-store.mjs
+import { Storage, CRC32C } from "@google-cloud/storage";
+async function createRecoveryStorage({
+  bucketId,
+  fetchImpl = globalThis.fetch,
+  StorageClass = Storage
+} = {}) {
+  let selected = bucketId;
+  if (!selected) {
+    if (typeof fetchImpl !== "function") throw new Error("Sidecar default-bucket lookup is unavailable");
+    const response = await fetchImpl(DEFAULT_BUCKET_URL);
+    if (!response.ok) throw new Error(`Sidecar default-bucket lookup failed (${response.status})`);
+    const body = await response.json();
+    selected = body?.bucketId;
+  }
+  selected = assertSafeBucketId(selected);
+  const client = new StorageClass({ credentials: REPLIT_ADC, projectId: "" });
+  return { bucket: client.bucket(selected), bucketId: selected };
+}
+var SIDECAR, DEFAULT_BUCKET_URL, REPLIT_ADC, assertSafeBucketId, MANAGED_STORAGE_CONTRACT;
+var init_recovery_private_store = __esm({
+  "scripts/recovery-private-store.mjs"() {
+    "use strict";
+    SIDECAR = "http://127.0.0.1:1106";
+    DEFAULT_BUCKET_URL = `${SIDECAR}/object-storage/default-bucket`;
+    REPLIT_ADC = Object.freeze({
+      audience: "replit",
+      subject_token_type: "access_token",
+      token_url: `${SIDECAR}/token`,
+      type: "external_account",
+      credential_source: {
+        url: `${SIDECAR}/credential`,
+        format: { type: "json", subject_token_field_name: "access_token" }
+      },
+      universe_domain: "googleapis.com"
+    });
+    assertSafeBucketId = (value) => {
+      if (typeof value !== "string" || !/^[a-z0-9][a-z0-9._-]{1,221}[a-z0-9]$/.test(value)) {
+        throw new Error("Recovery bucket selection was missing or invalid");
+      }
+      return value;
+    };
+    MANAGED_STORAGE_CONTRACT = Object.freeze({
+      privacy: "private Replit App Storage; authenticated access required",
+      retention: "retained-until-explicit-delete",
+      fixedDurationLocked: false
+    });
+  }
+});
+
+// server/lib/pdimBucketObjects.ts
+async function configuredPdimBucketObjects() {
+  const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID || process.env.REPLIT_BUCKET_ID;
+  if (!bucketId) throw new Error("PDIM App Storage bucket is not configured");
+  const { bucket } = await createRecoveryStorage({ bucketId });
+  return new PdimBucketObjects(bucket);
+}
+var PdimBucketObjects;
+var init_pdimBucketObjects = __esm({
+  "server/lib/pdimBucketObjects.ts"() {
+    "use strict";
+    init_recovery_private_store();
+    PdimBucketObjects = class {
+      constructor(bucket) {
+        this.bucket = bucket;
+      }
+      async read(key) {
+        const file = this.bucket.file(key);
+        let generation;
+        try {
+          const [metadata] = await file.getMetadata();
+          if (typeof metadata.generation !== "string") throw new Error("Missing object generation");
+          generation = metadata.generation;
+        } catch (error) {
+          if (error.code === 404) return null;
+          throw error;
+        }
+        const [bytes] = await this.bucket.file(key, { generation }).download({ validation: "crc32c" });
+        return { bytes, generation };
+      }
+      async write(key, bytes, generation) {
+        const file = this.bucket.file(key);
+        await file.save(bytes, {
+          resumable: false,
+          validation: "crc32c",
+          preconditionOpts: { ifGenerationMatch: generation }
+        });
+        const published = file.metadata.generation;
+        if (typeof published !== "string") throw new Error("Upload returned no generation receipt");
+        return published;
+      }
+    };
+  }
+});
+
+// server/lib/pdimBucketJournal.ts
+import { createHash as createHash7, randomUUID as randomUUID4 } from "node:crypto";
+var digest2, hash, sequence, PdimBucketUnavailable, PdimBucketLeaseBusy, PdimBucketJournal;
+var init_pdimBucketJournal = __esm({
+  "server/lib/pdimBucketJournal.ts"() {
+    "use strict";
+    digest2 = (bytes) => createHash7("sha256").update(bytes).digest("hex");
+    hash = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+    sequence = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
+    PdimBucketUnavailable = class extends Error {
+      constructor() {
+        super(...arguments);
+        this.code = "PDIM_DURABILITY_FAILURE";
+      }
+    };
+    PdimBucketLeaseBusy = class extends PdimBucketUnavailable {
+      constructor(retryAfterMs) {
+        super("Another process owns this bucket PDIM namespace");
+        this.retryAfterMs = retryAfterMs;
+      }
+    };
+    PdimBucketJournal = class {
+      constructor(objects, prefix, validateValue, clock = Date.now, leaseMs = 6e4) {
+        this.objects = objects;
+        this.prefix = prefix;
+        this.validateValue = validateValue;
+        this.clock = clock;
+        this.leaseMs = leaseMs;
+        this.owner = randomUUID4();
+        this.tail = Promise.resolve();
+        if (!/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(prefix)) {
+          throw new Error("Invalid PDIM bucket namespace");
+        }
+        if (!Number.isSafeInteger(leaseMs) || leaseMs < 1e3) throw new Error("Invalid lease duration");
+      }
+      serial(operation) {
+        const result = this.tail.then(operation);
+        this.tail = result.then(() => void 0, () => void 0);
+        return result;
+      }
+      decodeHead(bytes) {
+        const value = JSON.parse(bytes.toString());
+        if (value.version !== 1 || typeof value.commit !== "string" || !/^[a-f0-9-]{36}$/.test(value.commit) || !hash(value.snapshot) || !sequence(value.sequence) || !sequence(value.baseSequence) || value.baseSequence > value.sequence || !(value.tip === null || hash(value.tip)) || !(value.baseTip === null || hash(value.baseTip)) || value.sequence === 0 !== (value.tip === null) || value.baseSequence === 0 !== (value.baseTip === null) || !(value.owner === null || typeof value.owner === "string" && /^[a-f0-9-]{36}$/.test(value.owner)) || !Number.isSafeInteger(value.leaseUntil) || value.leaseUntil < 0) {
+          throw new PdimBucketUnavailable("Invalid bucket PDIM commit pointer");
+        }
+        return value;
+      }
+      assertOwned() {
+        if (this.failure) throw this.failure;
+        if (!this.head || this.head.owner !== this.owner || this.head.leaseUntil <= this.clock()) {
+          throw new PdimBucketUnavailable("Bucket PDIM ownership unavailable or expired");
+        }
+      }
+      async putImmutable(bytes) {
+        const id = digest2(bytes);
+        const key = `${this.prefix}/objects/${id}`;
+        try {
+          await this.objects.write(key, bytes, 0);
+        } catch (cause) {
+          const existing = await this.objects.read(key);
+          if (!existing || digest2(existing.bytes) !== id) {
+            throw new PdimBucketUnavailable("Bucket PDIM object publication failed", { cause });
+          }
+        }
+        return id;
+      }
+      async readImmutable(id) {
+        if (!hash(id)) throw new PdimBucketUnavailable("Invalid bucket object reference");
+        const object = await this.objects.read(`${this.prefix}/objects/${id}`);
+        if (!object || digest2(object.bytes) !== id) {
+          throw new PdimBucketUnavailable("Bucket PDIM object missing or corrupt");
+        }
+        return object.bytes;
+      }
+      async publish(next, expected) {
+        const committed = { ...next, commit: randomUUID4() };
+        const bytes = Buffer.from(JSON.stringify(committed));
+        try {
+          this.generation = await this.objects.write(`${this.prefix}/HEAD`, bytes, expected);
+        } catch (cause) {
+          const actual = await this.objects.read(`${this.prefix}/HEAD`);
+          if (!actual || !actual.bytes.equals(bytes)) {
+            throw new PdimBucketUnavailable("Bucket PDIM commit rejected or unconfirmed", { cause });
+          }
+          this.generation = actual.generation;
+        }
+        this.head = committed;
+      }
+      /** Explicit migration/new-store operation; never called implicitly on a miss. */
+      initialize(snapshot) {
+        return this.serial(async () => {
+          await this.readImmutable(snapshot);
+          await this.publish({
+            version: 1,
+            snapshot,
+            baseSequence: 0,
+            baseTip: null,
+            sequence: 0,
+            tip: null,
+            owner: null,
+            leaseUntil: 0
+          }, 0);
+        });
+      }
+      acquire() {
+        return this.serial(async () => {
+          if (this.head?.owner === this.owner) throw new Error("Bucket PDIM already acquired");
+          const actual = await this.objects.read(`${this.prefix}/HEAD`);
+          if (!actual) throw new PdimBucketUnavailable("Bucket PDIM migration is required; refusing an empty store");
+          const head = this.decodeHead(actual.bytes);
+          if (head.owner && head.leaseUntil > this.clock()) {
+            throw new PdimBucketLeaseBusy(head.leaseUntil - this.clock());
+          }
+          await this.publish(
+            { ...head, owner: this.owner, leaseUntil: this.clock() + this.leaseMs },
+            actual.generation
+          );
+        });
+      }
+      renew() {
+        return this.serial(async () => {
+          this.assertOwned();
+          try {
+            await this.publish({ ...this.head, leaseUntil: this.clock() + this.leaseMs }, this.generation);
+          } catch (cause) {
+            this.failure = new PdimBucketUnavailable("Bucket PDIM lease renewal failed", { cause });
+            throw this.failure;
+          }
+        });
+      }
+      checkpointPosition() {
+        this.assertOwned();
+        return Object.freeze({ sequence: this.head.sequence, tip: this.head.tip });
+      }
+      /** Execute a synchronous capture only after earlier commits AND their local
+       * publication callbacks. The caller must separately fence Redis mutations. */
+      capture(callback) {
+        return this.serial(async () => {
+          this.assertOwned();
+          return callback(this.checkpointPosition());
+        });
+      }
+      append(value, publish) {
+        return this.serial(async () => {
+          this.assertOwned();
+          if (!this.validateValue(value)) throw new Error("Invalid bucket PDIM transaction");
+          try {
+            const current = this.head;
+            const frame = {
+              version: 1,
+              sequence: current.sequence + 1,
+              previous: current.tip,
+              value
+            };
+            const tip = await this.putImmutable(Buffer.from(JSON.stringify(frame)));
+            this.assertOwned();
+            await this.publish({
+              ...current,
+              tip,
+              sequence: frame.sequence,
+              leaseUntil: this.clock() + this.leaseMs
+            }, this.generation);
+            publish?.();
+            return frame.sequence;
+          } catch (cause) {
+            this.failure = new PdimBucketUnavailable("Bucket PDIM write failed; recovery required", { cause });
+            throw this.failure;
+          }
+        });
+      }
+      async recover() {
+        this.assertOwned();
+        const head = { ...this.head };
+        const snapshot = await this.readImmutable(head.snapshot);
+        const transactions = [];
+        let tip = head.tip;
+        let expected = head.sequence;
+        while (expected > head.baseSequence) {
+          if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
+          const frame = JSON.parse((await this.readImmutable(tip)).toString());
+          if (frame.version !== 1 || frame.sequence !== expected || !(frame.previous === null || hash(frame.previous)) || !this.validateValue(frame.value)) {
+            throw new PdimBucketUnavailable("Bucket PDIM journal discontinuity or invalid transaction");
+          }
+          transactions.push(frame.value);
+          tip = frame.previous;
+          expected--;
+        }
+        if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
+        this.assertOwned();
+        return { snapshot, transactions: transactions.reverse() };
+      }
+      checkpoint(snapshot, position) {
+        return this.serial(async () => {
+          this.assertOwned();
+          const head = this.head;
+          if (!sequence(position.sequence) || position.sequence < head.baseSequence || position.sequence > head.sequence || !(position.tip === null || hash(position.tip))) {
+            throw new Error("Invalid bucket PDIM checkpoint position");
+          }
+          let tip = head.tip;
+          for (let index = head.sequence; index > position.sequence; index--) {
+            const frame = JSON.parse((await this.readImmutable(tip)).toString());
+            if (frame.sequence !== index) throw new Error("Invalid checkpoint ancestry");
+            tip = frame.previous;
+          }
+          if (tip !== position.tip) throw new Error("Checkpoint is not a committed ancestor");
+          await this.readImmutable(snapshot);
+          this.assertOwned();
+          await this.publish({
+            ...head,
+            snapshot,
+            baseSequence: position.sequence,
+            baseTip: position.tip
+          }, this.generation);
+        });
+      }
+      release() {
+        return this.serial(async () => {
+          this.assertOwned();
+          await this.publish({ ...this.head, owner: null, leaseUntil: 0 }, this.generation);
+        });
+      }
+    };
+  }
+});
+
+// server/lib/pdimBucketRecovery.ts
+function isBucketTransaction(value) {
+  if (!value || typeof value !== "object") return false;
+  const transaction = value;
+  if (transaction.kind === "redis") {
+    return Array.isArray(transaction.records) && transaction.records.length > 0 && transaction.records.every((record) => !!record && Number.isSafeInteger(record.s) && record.s > 0 && typeof record.c === "string" && Array.isArray(record.a) && record.a.every((arg) => typeof arg === "string"));
+  }
+  if (transaction.kind === "capsule") {
+    return Number.isSafeInteger(transaction.sequence) && transaction.sequence > 0 && !!transaction.changes && typeof transaction.changes === "object" && !Array.isArray(transaction.changes) && Object.values(transaction.changes).every((item) => item === null || typeof item === "string");
+  }
+  return false;
+}
+function orderedBucketRecovery(transactions, redisBaseline, capsuleBaseline) {
+  if (![redisBaseline, capsuleBaseline].every((n) => Number.isSafeInteger(n) && n >= 0)) {
+    throw new Error("Invalid bucket recovery baseline");
+  }
+  let redisSequence = redisBaseline;
+  let capsuleSequence = capsuleBaseline;
+  let replaySequence = redisBaseline;
+  const records = [];
+  const next = () => {
+    if (!Number.isSafeInteger(replaySequence + 1)) throw new Error("Recovery sequence overflow");
+    return ++replaySequence;
+  };
+  for (const transaction of transactions) {
+    if (!isBucketTransaction(transaction)) throw new Error("Invalid bucket transaction");
+    if (transaction.kind === "redis") {
+      for (const record of transaction.records) {
+        if (record.s !== redisSequence + 1) throw new Error("Bucket Redis sequence discontinuity");
+        redisSequence = record.s;
+        records.push({ ...record, s: next() });
+      }
+    } else {
+      if (transaction.sequence !== capsuleSequence + 1) throw new Error("Bucket capsule sequence discontinuity");
+      capsuleSequence = transaction.sequence;
+      for (const [key, value] of Object.entries(transaction.changes)) {
+        records.push({
+          s: next(),
+          c: "__RESTORE_KEY",
+          a: [key, JSON.stringify(value === null ? null : { type: "string", value })]
+        });
+      }
+    }
+  }
+  return { records, redisSequence, capsuleSequence };
+}
+var init_pdimBucketRecovery = __esm({
+  "server/lib/pdimBucketRecovery.ts"() {
+    "use strict";
+  }
+});
+
+// server/lib/pdimBucketSnapshot.ts
+import { createHash as createHash8 } from "node:crypto";
+async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSequence, chunkBytes = 4 * 1024 * 1024) {
+  if (!validSequence(redisSequence) || !validSequence(capsuleSequence) || !Number.isSafeInteger(chunkBytes) || chunkBytes < 1) throw new Error("Invalid snapshot limits");
+  const chunks = [];
+  let lines = [];
+  let bytes = 2;
+  let count = 0;
+  const seen = /* @__PURE__ */ new Set();
+  const flush = async () => {
+    if (!lines.length) return;
+    chunks.push(await objects.putImmutable(Buffer.from(`[${lines.join(",")}]`)));
+    lines = [];
+    bytes = 2;
+  };
+  for (const [key, value] of entries) {
+    if (typeof key !== "string" || seen.has(key) || value === void 0) {
+      throw new Error("Invalid or duplicate snapshot entry");
+    }
+    seen.add(key);
+    const line = JSON.stringify([key, value]);
+    const length = Buffer.byteLength(line);
+    if (bytes + length + 1 > chunkBytes) await flush();
+    lines.push(line);
+    bytes += length + 1;
+    count++;
+  }
+  await flush();
+  const manifest = {
+    format: "pdim-bucket-snapshot-v1",
+    redisSequence,
+    capsuleSequence,
+    count,
+    chunks
+  };
+  return objects.putImmutable(Buffer.from(JSON.stringify(manifest)));
+}
+async function readBucketSnapshot(objects, manifestBytes, validate) {
+  const manifest = JSON.parse(manifestBytes.toString());
+  if (manifest.format !== "pdim-bucket-snapshot-v1" || !validSequence(manifest.redisSequence) || !validSequence(manifest.capsuleSequence) || !validSequence(manifest.count) || !Array.isArray(manifest.chunks) || manifest.chunks.some((id) => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id))) {
+    throw new Error("Invalid bucket PDIM snapshot manifest");
+  }
+  const entries = /* @__PURE__ */ new Map();
+  for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
+    const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4).map((id) => objects.readImmutable(id)));
+    for (const buffer of buffers) {
+      const rows = JSON.parse(buffer.toString());
+      if (!Array.isArray(rows)) throw new Error("Invalid bucket PDIM snapshot chunk");
+      for (const row of rows) {
+        if (!Array.isArray(row) || row.length !== 2 || typeof row[0] !== "string" || entries.has(row[0])) {
+          throw new Error("Invalid or duplicate bucket PDIM snapshot entry");
+        }
+        entries.set(row[0], validate(row[0], row[1]));
+      }
+    }
+  }
+  if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");
+  return { entries, redisSequence: manifest.redisSequence, capsuleSequence: manifest.capsuleSequence };
+}
+async function verifyBucketSnapshot(objects, id, expected, redisSequence, capsuleSequence) {
+  const manifest = JSON.parse((await objects.readImmutable(id)).toString());
+  if (manifest.format !== "pdim-bucket-snapshot-v1" || manifest.count !== expected.size || manifest.redisSequence !== redisSequence || manifest.capsuleSequence !== capsuleSequence || !Array.isArray(manifest.chunks)) throw new Error("Imported snapshot contract mismatch");
+  const seen = /* @__PURE__ */ new Set();
+  const digest4 = (value) => createHash8("sha256").update(JSON.stringify(value)).digest("hex");
+  for (const chunk of manifest.chunks) {
+    const rows = JSON.parse((await objects.readImmutable(chunk)).toString());
+    if (!Array.isArray(rows)) throw new Error("Invalid imported snapshot chunk");
+    for (const row of rows) {
+      if (!Array.isArray(row) || row.length !== 2 || typeof row[0] !== "string" || seen.has(row[0]) || !expected.has(row[0]) || digest4(row[1]) !== digest4(expected.get(row[0]))) {
+        throw new Error("Imported snapshot entry mismatch");
+      }
+      seen.add(row[0]);
+    }
+  }
+  if (seen.size !== expected.size) throw new Error("Imported snapshot missing entries");
+}
+var validSequence;
+var init_pdimBucketSnapshot = __esm({
+  "server/lib/pdimBucketSnapshot.ts"() {
+    "use strict";
+    validSequence = (n) => Number.isSafeInteger(n) && Number(n) >= 0;
+  }
+});
+
+// server/lib/pdimBucketPersistence.ts
+function captureEntry(entry) {
+  const copy = (value) => {
+    if (Array.isArray(value)) return value.map(copy);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, copy(item)]));
+    }
+    return value;
+  };
+  return copy(entry);
+}
+var CheckpointCancelledForShutdown, PdimBucketPersistence;
+var init_pdimBucketPersistence = __esm({
+  "server/lib/pdimBucketPersistence.ts"() {
+    "use strict";
+    init_pdimBucketJournal();
+    init_pdimBucketRecovery();
+    init_pdimBucketSnapshot();
+    CheckpointCancelledForShutdown = class extends Error {
+    };
+    PdimBucketPersistence = class {
+      constructor(objects, namespace, engine, entries, validate, onStage = () => {
+      }) {
+        this.engine = engine;
+        this.entries = entries;
+        this.validate = validate;
+        this.onStage = onStage;
+        this.capsuleSequence = 0;
+        this.closing = false;
+        this.journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
+      }
+      assertHealthy() {
+        if (this.failed) throw this.failed;
+        this.journal.assertOwned();
+      }
+      /** Offline migration only: input must be a quiesced, recovered source. */
+      async initialize(entries, redisSequence, capsuleSequence) {
+        const snapshot = await writeBucketSnapshot(this.journal, entries, redisSequence, capsuleSequence);
+        await this.journal.initialize(snapshot);
+      }
+      async open() {
+        this.onStage("acquiring-lease");
+        await this.journal.acquire();
+        this.onStage("lease-acquired");
+        this.heartbeat = setInterval(() => {
+          if (this.renewPending || this.failed) return;
+          this.renewPending = this.journal.renew().catch((cause) => {
+            this.failed = Object.assign(
+              new Error("Bucket PDIM lease unavailable", { cause }),
+              { code: "PDIM_DURABILITY_FAILURE" }
+            );
+          }).finally(() => {
+            this.renewPending = void 0;
+          });
+        }, 1e4);
+        this.heartbeat.unref();
+        try {
+          const recovered = await this.journal.recover();
+          const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate);
+          this.onStage("snapshot-verified");
+          const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
+          this.assertHealthy();
+          this.entries.clear();
+          for (const [key, entry] of snapshot.entries) this.entries.set(key, entry);
+          this.engine.attachEmbeddedSnapshot(this.entries, {
+            baselineSequence: snapshot.redisSequence,
+            recoveryRecords: ordered.records
+          });
+          this.engine.attachEmbeddedSnapshot(this.entries, {
+            baselineSequence: ordered.redisSequence,
+            appendAof: (records) => this.appendRedis(records)
+          });
+          this.capsuleSequence = ordered.capsuleSequence;
+        } catch (error) {
+          if (this.heartbeat) clearInterval(this.heartbeat);
+          this.engine.closeEmbedded();
+          throw error;
+        }
+      }
+      async appendRedis(records) {
+        this.assertHealthy();
+        await this.journal.append({ kind: "redis", records: [...records] });
+      }
+      async commitCapsule(changes, publish) {
+        this.assertHealthy();
+        const sequence2 = this.capsuleSequence + 1;
+        await this.journal.append({ kind: "capsule", sequence: sequence2, changes }, () => {
+          publish();
+          this.capsuleSequence = sequence2;
+        });
+      }
+      checkpoint() {
+        if (this.checkpointPending) return this.checkpointPending;
+        this.checkpointPending = this.saveCheckpoint().finally(() => {
+          this.checkpointPending = void 0;
+        });
+        return this.checkpointPending;
+      }
+      async saveCheckpoint() {
+        const captured = await this.captureSnapshot();
+        const snapshot = await writeBucketSnapshot(
+          {
+            readImmutable: (id) => this.journal.readImmutable(id),
+            putImmutable: (bytes) => {
+              if (this.closing) throw new CheckpointCancelledForShutdown();
+              return this.journal.putImmutable(bytes);
+            }
+          },
+          captured.entries,
+          captured.redisSequence,
+          captured.capsuleSequence
+        );
+        if (this.closing) throw new CheckpointCancelledForShutdown();
+        await this.journal.checkpoint(snapshot, captured.position);
+        this.engine.compactEmbeddedAof(captured.redisSequence);
+      }
+      async captureSnapshot() {
+        this.assertHealthy();
+        return this.engine.captureEmbeddedCheckpoint(
+          (redisSequence) => this.journal.capture((position) => ({
+            position,
+            redisSequence,
+            capsuleSequence: this.capsuleSequence,
+            entries: [...this.entries].map(([key, entry]) => [key, captureEntry(entry)])
+          }))
+        );
+      }
+      /** The application must stop admitting commands and drain HTTP first. */
+      async close() {
+        this.closing = true;
+        try {
+          if (this.checkpointPending) {
+            try {
+              await this.checkpointPending;
+            } catch (error) {
+              if (!(error instanceof CheckpointCancelledForShutdown)) throw error;
+            }
+          }
+          await this.journal.capture(() => void 0);
+          if (this.heartbeat) clearInterval(this.heartbeat);
+          if (this.renewPending) await this.renewPending;
+          this.assertHealthy();
+          await this.journal.release();
+        } finally {
+          if (this.heartbeat) clearInterval(this.heartbeat);
+        }
+      }
+      /** Startup failed before serving traffic; don't leave a heartbeat renewing an
+       * owner that never bound its port. No checkpoint is necessary in this case. */
+      async abortStartup() {
+        if (this.heartbeat) clearInterval(this.heartbeat);
+        if (this.renewPending) await this.renewPending;
+        this.assertHealthy();
+        await this.journal.release();
+      }
+    };
+  }
+});
+
+// server/lib/pdimBucketCommandBatcher.ts
+var blocking, standalone, PdimBucketCommandBatcher;
+var init_pdimBucketCommandBatcher = __esm({
+  "server/lib/pdimBucketCommandBatcher.ts"() {
+    "use strict";
+    blocking = /* @__PURE__ */ new Set(["BLPOP", "BRPOP", "BZPOPMIN", "BZPOPMAX"]);
+    standalone = /* @__PURE__ */ new Set([
+      "PUBLISH",
+      "SUBSCRIBE",
+      "UNSUBSCRIBE",
+      "PSUBSCRIBE",
+      "PUNSUBSCRIBE",
+      "__PDIM_MULTI_EXEC"
+    ]);
+    PdimBucketCommandBatcher = class {
+      constructor(execute) {
+        this.execute = execute;
+        this.queue = [];
+        this.queuedBytes = 0;
+        this.running = false;
+        this.closed = false;
+        this.drainWaiters = [];
+      }
+      exec(command, args, signal) {
+        if (this.closed) return Promise.reject(new Error("PDIM command batcher is closed"));
+        if (signal?.aborted) return Promise.reject(signal.reason ?? new Error("Request aborted"));
+        const upper = command.toUpperCase();
+        if (blocking.has(upper)) return this.execute(upper, args, signal);
+        const bytes = Buffer.byteLength(upper) + args.reduce((sum, arg) => sum + Buffer.byteLength(arg), 0);
+        if (this.queue.length >= 4096 || this.queuedBytes + bytes > 64 * 1024 * 1024) {
+          return Promise.reject(Object.assign(new Error("PDIM durable write queue is full"), { code: "PDIM_BACKPRESSURE" }));
+        }
+        const promise = new Promise((resolve, reject) => {
+          this.queue.push({ command: upper, args, bytes, signal, resolve, reject });
+          this.queuedBytes += bytes;
+        });
+        if (!this.running) {
+          this.running = true;
+          setTimeout(() => {
+            void this.drain();
+          }, 5);
+        }
+        return promise;
+      }
+      individual(request) {
+        return standalone.has(request.command) || request.command.startsWith("CAPSULE.");
+      }
+      async drain() {
+        try {
+          while (this.queue.length) {
+            const requests = [];
+            let bytes = 0;
+            while (this.queue.length && requests.length < 128) {
+              const next = this.queue[0];
+              if (requests.length && (this.individual(next) || bytes + next.bytes > 4 * 1024 * 1024)) break;
+              this.queue.shift();
+              this.queuedBytes -= next.bytes;
+              if (next.signal?.aborted) {
+                next.reject(next.signal.reason ?? new Error("Request aborted"));
+                continue;
+              }
+              requests.push(next);
+              bytes += next.bytes;
+              if (this.individual(next)) break;
+            }
+            if (!requests.length) continue;
+            try {
+              if (this.individual(requests[0])) {
+                const row = requests[0];
+                row.resolve(await this.execute(row.command, row.args, row.signal));
+              } else {
+                const result = await this.execute("__PDIM_MULTI_EXEC", [
+                  JSON.stringify(requests.map((row) => [row.command, ...row.args]))
+                ]);
+                if (!Array.isArray(result) || result.length !== requests.length || result.some((row) => !Array.isArray(row) || row.length !== 2)) {
+                  throw new Error("Invalid canonical PDIM transaction response");
+                }
+                for (let index = 0; index < requests.length; index++) {
+                  const [error, value] = result[index];
+                  if (error) requests[index].reject(new Error(
+                    typeof error === "object" && typeof error.message === "string" ? error.message : "PDIM command failed"
+                  ));
+                  else requests[index].resolve(value);
+                }
+              }
+            } catch (error) {
+              for (const row of requests) row.reject(error);
+            }
+          }
+        } finally {
+          this.running = false;
+          for (const resolve of this.drainWaiters.splice(0)) resolve();
+        }
+      }
+      async close() {
+        this.closed = true;
+        if (this.running) await new Promise((resolve) => this.drainWaiters.push(resolve));
+      }
+    };
+  }
+});
+
 // server/lib/localPdimServer.ts
 var localPdimServer_exports = {};
 __export(localPdimServer_exports, {
   assertLocalPdimSnapshotAuthority: () => assertLocalPdimSnapshotAuthority,
   getLocalPdimUrl: () => getLocalPdimUrl,
+  importOfflinePdimToBucket: () => importOfflinePdimToBucket,
   isLocalPdimServerOwnedByThisProcess: () => isLocalPdimServerOwnedByThisProcess,
   openConsistentLocalPdimSnapshot: () => openConsistentLocalPdimSnapshot,
+  openConsistentPdimSnapshot: () => openConsistentPdimSnapshot,
   startLocalPdimServer: () => startLocalPdimServer,
-  stopLocalPdimServer: () => stopLocalPdimServer
+  stopLocalPdimServer: () => stopLocalPdimServer,
+  validatePersistedEntry: () => validatePersistedEntry
 });
 import http from "http";
 import fs6 from "fs";
 import path7 from "path";
+import { tmpdir } from "node:os";
 import cluster from "node:cluster";
 function expired(e) {
   return e.expiresAt !== void 0 && Date.now() > e.expiresAt;
 }
 function saveStoreAsync() {
+  if (bucketPersistence) {
+    return bucketPersistence.checkpoint().then(() => true, (error) => {
+      logger.error(
+        { errorType: error instanceof Error ? error.name : "unknown" },
+        "[LocalPDIM] Bucket checkpoint failed; committed journal remains authoritative"
+      );
+      return false;
+    });
+  }
   const operation = snapshotTail.then(async () => {
     const publication = snapshotPublication;
     const temporaryFile = `${PERSIST_FILE}.async-${process.pid}-${++asyncSnapshotSequence}`;
@@ -8964,6 +9693,9 @@ function assertLocalPdimSnapshotAuthority(input) {
   }
 }
 function openConsistentLocalPdimSnapshot() {
+  if (bucketPersistence) {
+    throw new Error("PDIM is bucket-backed; use its committed bucket checkpoint, not a local-file backup");
+  }
   const configuredExecUrl = process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
   assertLocalPdimSnapshotAuthority({
     configuredExecUrl,
@@ -8996,6 +9728,39 @@ function openConsistentLocalPdimSnapshot() {
   } catch (error) {
     fs6.closeSync(fd);
     throw error;
+  }
+}
+async function openConsistentPdimSnapshot() {
+  if (!bucketPersistence) return openConsistentLocalPdimSnapshot();
+  bucketPersistence.assertHealthy();
+  if (cluster.isWorker || !_server?.listening || (process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL) !== getLocalPdimUrl()) {
+    throw new Error("Only the authoritative PDIM owner may export a bucket checkpoint");
+  }
+  const capture2 = await bucketPersistence.captureSnapshot();
+  const entries = Object.fromEntries(capture2.entries);
+  entries[CAPSULE_WATERMARK] = { type: "string", value: String(capture2.capsuleSequence) };
+  entries[REDIS_AOF_WATERMARK] = { type: "string", value: String(capture2.redisSequence) };
+  const scratch = await fs6.promises.mkdtemp(path7.join(tmpdir(), "pdim-bucket-export-"));
+  const file = path7.join(scratch, "snapshot.json");
+  let fd;
+  try {
+    await writeSnapshotOffThread(file, entries);
+    fd = fs6.openSync(file, fs6.constants.O_RDONLY | fs6.constants.O_NOFOLLOW);
+    const stat = fs6.fstatSync(fd);
+    await fs6.promises.rm(scratch, { recursive: true });
+    const result = {
+      fd,
+      bytes: stat.size,
+      device: stat.dev,
+      inode: stat.ino,
+      sourcePath: file,
+      recoveryPoint: "synchronous-event-loop-linearized"
+    };
+    fd = void 0;
+    return result;
+  } finally {
+    if (fd !== void 0) fs6.closeSync(fd);
+    await fs6.promises.rm(scratch, { recursive: true, force: true });
   }
 }
 function openLocalPubSubStream(res, requestController, channels, patterns) {
@@ -9088,55 +9853,62 @@ function startLocalPdimServer() {
     return Promise.reject(new Error("Only the cluster primary may own local PDIM"));
   }
   if (_starting) return _starting;
-  _starting = new Promise((resolve, reject) => {
+  _starting = prepareBucketOwner().then(() => new Promise((resolve, reject) => {
     if (_server) {
       resolve();
       return;
     }
-    loadStore();
-    const watermark = store.get(CAPSULE_WATERMARK);
-    const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
-    if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
-      throw new Error("Invalid capsule journal snapshot watermark");
-    }
-    store.delete(CAPSULE_WATERMARK);
-    capsuleJournal.recover(capsuleBaseline, (changes) => {
-      for (const [key, value] of Object.entries(changes)) {
-        if (value === null) store.delete(key);
-        else store.set(key, { type: "string", value });
+    if (!bucketPersistence) {
+      loadStore();
+      const watermark = store.get(CAPSULE_WATERMARK);
+      const capsuleBaseline = watermark?.type === "string" ? Number(watermark.value) : 0;
+      if (!Number.isSafeInteger(capsuleBaseline) || capsuleBaseline < 0) {
+        throw new Error("Invalid capsule journal snapshot watermark");
       }
-    });
-    for (const entry of store.values()) {
-      if (entry.type === "stream") {
-        const stream = entry;
-        stream.value = stream.value.map((message) => ({
-          id: message.id,
-          fields: normalizePersistedStreamFields(message.fields)
-        }));
-        stream.groups ??= {};
+      store.delete(CAPSULE_WATERMARK);
+      capsuleJournal.recover(capsuleBaseline, (changes) => {
+        for (const [key, value] of Object.entries(changes)) {
+          if (value === null) store.delete(key);
+          else store.set(key, { type: "string", value });
+        }
+      });
+      for (const entry of store.values()) {
+        if (entry.type === "stream") {
+          const stream = entry;
+          stream.value = stream.value.map((message) => ({
+            id: message.id,
+            fields: normalizePersistedStreamFields(message.fields)
+          }));
+          stream.groups ??= {};
+        }
       }
-    }
-    const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
-    canonicalStore.attachEmbeddedSnapshot(
-      store,
-      {
-        baselineSequence: snapshotAofBaseline,
-        recoveryRecords: redisAofRecords,
-        appendAof: (records) => redisAofJournal.append(records)
-      }
-    );
-    canonicalStore.on("durability-error", (error) => {
-      logger.error(
-        { err: error },
-        "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+      const redisAofRecords = redisAofJournal.recover(snapshotAofBaseline);
+      canonicalStore.attachEmbeddedSnapshot(
+        store,
+        {
+          baselineSequence: snapshotAofBaseline,
+          recoveryRecords: redisAofRecords,
+          appendAof: (records) => redisAofJournal.append(records)
+        }
       );
-    });
-    if (redisAofRecords.length > 0) {
-      logger.info(
-        `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
-      );
+      canonicalStore.on("durability-error", (error) => {
+        logger.error(
+          { err: error },
+          "[LocalPDIM] Durable Redis journal failed; the owner is unavailable"
+        );
+      });
+      if (redisAofRecords.length > 0) {
+        logger.info(
+          `[LocalPDIM] Replayed ${redisAofRecords.length} durable Redis mutation(s)`
+        );
+      }
     }
     _server = http.createServer((req, res) => {
+      if (process.env.PDIM_OFFLINE_MIGRATION === "1") {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "PDIM is offline for verified migration" }));
+        return;
+      }
       const token = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
       if (token && req.headers.authorization !== `Bearer ${token}`) {
         res.writeHead(401, { "Content-Type": "application/json" });
@@ -9174,6 +9946,7 @@ function startLocalPdimServer() {
       });
       req.on("end", async () => {
         try {
+          bucketPersistence?.assertHealthy();
           const {
             cmd,
             args = [],
@@ -9195,7 +9968,8 @@ function startLocalPdimServer() {
             openLocalPubSubStream(res, requestController, channels, uniquePatterns);
             return;
           }
-          const result = cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+          const result = bucketBatcher ? await bucketBatcher.exec(cmd, args.map(String), requestController.signal) : cmd.toUpperCase().startsWith("CAPSULE.") ? await capsuleStore.exec(cmd, args.map(String)) : await canonicalStore.exec(cmd, args.map(String), requestController.signal);
+          bucketPersistence?.assertHealthy();
           if (requestController.signal.aborted || res.destroyed || res.writableEnded) return;
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(result));
@@ -9205,7 +9979,7 @@ function startLocalPdimServer() {
             res.destroy(err instanceof Error ? err : void 0);
             return;
           }
-          const status = err?.code === "PDIM_DURABILITY_FAILURE" ? 503 : 400;
+          const status = ["PDIM_DURABILITY_FAILURE", "PDIM_BACKPRESSURE"].includes(String(err?.code)) ? 503 : 400;
           res.writeHead(status, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
@@ -9217,7 +9991,7 @@ function startLocalPdimServer() {
     });
     _server.listen(LOCAL_PORT, "127.0.0.1", () => {
       logger.info(
-        `[LocalPDIM] \u2705 Local PDIM exec server started on port ${LOCAL_PORT} (canonical RedisStore + fsynced AOF + snapshots)`
+        `[LocalPDIM] Local PDIM exec server started on port ${LOCAL_PORT} (${bucketPersistence ? "App Storage journal and snapshots" : "local fsynced AOF and snapshots"})`
       );
       let periodicSavePending = false;
       _persistTimer = setInterval(() => {
@@ -9226,7 +10000,7 @@ function startLocalPdimServer() {
         void saveStoreAsync().finally(() => {
           periodicSavePending = false;
         });
-      }, PERSIST_INTERVAL_MS);
+      }, bucketPersistence ? 3e5 : PERSIST_INTERVAL_MS);
       _persistTimer.unref();
       const saveOnShutdown = () => {
         if (!saveStore()) {
@@ -9234,9 +10008,11 @@ function startLocalPdimServer() {
           process.exitCode = 1;
         }
       };
-      _saveOnShutdown = saveOnShutdown;
-      process.on("SIGTERM", saveOnShutdown);
-      process.on("SIGINT", saveOnShutdown);
+      if (!bucketPersistence) {
+        _saveOnShutdown = saveOnShutdown;
+        process.on("SIGTERM", saveOnShutdown);
+        process.on("SIGINT", saveOnShutdown);
+      }
       process.on("exit", () => {
         if (_finalSaveFailed) process.exitCode = 1;
       });
@@ -9246,6 +10022,19 @@ function startLocalPdimServer() {
       _server = null;
       reject(err);
     });
+  })).catch(async (error) => {
+    if (bucketPersistence) {
+      const failedOwner = bucketPersistence;
+      bucketPersistence = void 0;
+      bucketBatcher = void 0;
+      canonicalStore.closeEmbedded();
+      try {
+        await failedOwner.abortStartup();
+      } catch {
+        logger.error("[LocalPDIM] Failed-start bucket lease release was not confirmed; lease will expire");
+      }
+    }
+    throw error;
   }).finally(() => {
     _starting = null;
   });
@@ -9262,13 +10051,73 @@ async function stopLocalPdimServer() {
     process.off("SIGINT", _saveOnShutdown);
     _saveOnShutdown = null;
   }
-  canonicalStore.closeEmbedded();
-  await new Promise((resolve, reject) => {
+  const closed = new Promise((resolve, reject) => {
     server.close((err) => err ? reject(err) : resolve());
   });
+  try {
+    await bucketBatcher?.close();
+  } finally {
+    canonicalStore.closeEmbedded();
+    server.closeAllConnections();
+    await closed;
+  }
   await snapshotTail;
+  await bucketPersistence?.close();
+  bucketPersistence = void 0;
+  bucketBatcher = void 0;
 }
-var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, store, canonicalStore, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
+async function prepareBucketOwner() {
+  if (_server) return;
+  const mode = process.env.PDIM_PERSISTENCE ?? "disk";
+  if (mode === "disk") return;
+  if (mode !== "app-storage") throw new Error("Invalid PDIM_PERSISTENCE configuration");
+  const namespace = process.env.PDIM_BUCKET_NAMESPACE;
+  if (!namespace) throw new Error("PDIM_BUCKET_NAMESPACE is required for bucket persistence");
+  const objects = await configuredPdimBucketObjects();
+  const persistence = new PdimBucketPersistence(
+    objects,
+    namespace,
+    canonicalStore,
+    store,
+    (key, value) => validatePersistedEntry(key, value),
+    (stage) => logger.info({ stage, pid: process.pid }, "[LocalPDIM] Bucket startup")
+  );
+  try {
+    await persistence.open();
+  } catch (error) {
+    if (!(error instanceof PdimBucketLeaseBusy) || error.retryAfterMs < 0 || error.retryAfterMs > 6e4) throw error;
+    logger.info({ waitMs: error.retryAfterMs }, "[LocalPDIM] Waiting once for prior owner lease expiry");
+    await new Promise((resolve) => setTimeout(resolve, error.retryAfterMs + 25));
+    await persistence.open();
+  }
+  bucketPersistence = persistence;
+  bucketBatcher = new PdimBucketCommandBatcher((command, args, signal) => command.startsWith("CAPSULE.") ? capsuleStore.exec(command, args) : canonicalStore.exec(command, args, signal));
+}
+async function importOfflinePdimToBucket(namespace) {
+  if (process.env.PDIM_OFFLINE_MIGRATION !== "1" || bucketPersistence || !_server?.listening) {
+    throw new Error("Migration requires an offline local-only owner");
+  }
+  const objects = await configuredPdimBucketObjects();
+  const journal = new PdimBucketJournal(objects, namespace, isBucketTransaction);
+  return canonicalStore.captureEmbeddedCheckpoint(async (redisSequence) => {
+    const capsuleSequence = capsuleJournal.publishedSeq;
+    logger.info({ phase: "upload-current-state", entries: store.size }, "[LocalPDIM] Bucket import");
+    const snapshot = await writeBucketSnapshot(journal, store, redisSequence, capsuleSequence);
+    logger.info({ phase: "verify-current-state", entries: store.size }, "[LocalPDIM] Bucket import");
+    await verifyBucketSnapshot(journal, snapshot, store, redisSequence, capsuleSequence);
+    await journal.initialize(snapshot);
+    return {
+      imported: true,
+      verifiedEntries: store.size,
+      snapshot,
+      redisSequence,
+      capsuleSequence,
+      localSourcesRemoved: false,
+      backendActivated: false
+    };
+  });
+}
+var LOCAL_PORT, PERSIST_FILE, PERSIST_INTERVAL_MS, CAPSULE_WATERMARK, REDIS_AOF_WATERMARK, capsuleJournal, redisAofJournal, store, canonicalStore, bucketPersistence, bucketBatcher, snapshotAofBaseline, capsuleStore, snapshotPublication, asyncSnapshotSequence, snapshotTail, _server, _finalSaveFailed, _persistTimer, _saveOnShutdown, _starting;
 var init_localPdimServer = __esm({
   "server/lib/localPdimServer.ts"() {
     "use strict";
@@ -9280,6 +10129,12 @@ var init_localPdimServer = __esm({
     init_localPdimAofJournal();
     init_pdimSnapshotJson();
     init_pdimSnapshotWriter();
+    init_pdimBucketObjects();
+    init_pdimBucketPersistence();
+    init_pdimBucketCommandBatcher();
+    init_pdimBucketJournal();
+    init_pdimBucketRecovery();
+    init_pdimBucketSnapshot();
     LOCAL_PORT = runtimePorts.localPdim;
     PERSIST_FILE = path7.resolve(
       process.env.LOCAL_PDIM_STORE_FILE ?? "./data/local-pdim-store.json"
@@ -9294,7 +10149,7 @@ var init_localPdimServer = __esm({
     snapshotAofBaseline = 0;
     capsuleStore = new LocalPdimCapsules(
       canonicalStore,
-      (changes, publish) => capsuleJournal.commit(changes, publish)
+      (changes, publish) => bucketPersistence ? bucketPersistence.commitCapsule(changes, publish) : capsuleJournal.commit(changes, publish)
     );
     snapshotPublication = 0;
     asyncSnapshotSequence = 0;
@@ -9313,7 +10168,7 @@ __export(hybridStorageService_exports, {
   HybridStorageService: () => HybridStorageService,
   hybridStorageService: () => hybridStorageService
 });
-import { createHash as createHash7 } from "crypto";
+import { createHash as createHash9 } from "crypto";
 var COLD_TIER_THRESHOLD_DAYS, COLD_TIER_THRESHOLD_MS, HOT_ACCESS_COUNT_THRESHOLD, _SIZE_THRESHOLD_FOR_COLD, HybridStorageService, hybridStorageService;
 var init_hybridStorageService = __esm({
   "server/services/hybridStorageService.ts"() {
@@ -9415,18 +10270,18 @@ var init_hybridStorageService = __esm({
             });
           }
           const nextHashes = /* @__PURE__ */ new Map();
-          for (const [hash, keys] of Object.entries(index.contentHashes)) {
+          for (const [hash2, keys] of Object.entries(index.contentHashes)) {
             if (!Array.isArray(keys) || !keys.every((key) => typeof key === "string" && nextFiles.has(key))) {
-              throw new Error(`invalid hybrid content-hash entry ${JSON.stringify(hash)}`);
+              throw new Error(`invalid hybrid content-hash entry ${JSON.stringify(hash2)}`);
             }
-            nextHashes.set(hash, keys);
+            nextHashes.set(hash2, keys);
           }
           const nextPublic = /* @__PURE__ */ new Map();
-          for (const [hash, key] of Object.entries(index.publicHashes)) {
+          for (const [hash2, key] of Object.entries(index.publicHashes)) {
             if (typeof key !== "string" || !nextFiles.has(key)) {
-              throw new Error(`invalid hybrid public-hash entry ${JSON.stringify(hash)}`);
+              throw new Error(`invalid hybrid public-hash entry ${JSON.stringify(hash2)}`);
             }
-            nextPublic.set(hash, key);
+            nextPublic.set(hash2, key);
           }
           this.fileIndex = nextFiles;
           this.contentHashIndex = nextHashes;
@@ -9479,7 +10334,7 @@ var init_hybridStorageService = __esm({
         }
       }
       computeContentHash(data) {
-        return createHash7("sha256").update(data).digest("hex");
+        return createHash9("sha256").update(data).digest("hex");
       }
       determineTier(entry) {
         const now = Date?.now();
@@ -10076,9 +10931,9 @@ var init_hybridStorageService = __esm({
       }
       generateFileKey(userId, fileName, folder) {
         const timestamp = Date?.now();
-        const hash = createHash7("sha256").update(`${userId}:${fileName}:${timestamp}`).digest("hex").substring(0, 8);
+        const hash2 = createHash9("sha256").update(`${userId}:${fileName}:${timestamp}`).digest("hex").substring(0, 8);
         const sanitizedName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
-        const base = folder ? `${userId}/${folder}/${hash}-${sanitizedName}` : `${userId}/${hash}-${sanitizedName}`;
+        const base = folder ? `${userId}/${folder}/${hash2}-${sanitizedName}` : `${userId}/${hash2}-${sanitizedName}`;
         return base;
       }
     };
@@ -10088,11 +10943,11 @@ var init_hybridStorageService = __esm({
 
 // scripts/retained-pdim-recovery-worker.ts
 import assert from "node:assert/strict";
-import { createHash as createHash8 } from "node:crypto";
-var digest2 = (parts) => {
-  const hash = createHash8("sha256");
-  for (const part of parts) hash.update(part).update("\0");
-  return hash.digest("hex");
+import { createHash as createHash10 } from "node:crypto";
+var digest3 = (parts) => {
+  const hash2 = createHash10("sha256");
+  for (const part of parts) hash2.update(part).update("\0");
+  return hash2.digest("hex");
 };
 var { startLocalPdimServer: startLocalPdimServer2, stopLocalPdimServer: stopLocalPdimServer2 } = await Promise.resolve().then(() => (init_localPdimServer(), localPdimServer_exports));
 try {
@@ -10114,7 +10969,7 @@ try {
     const owner = String(file.userId);
     assert(key.length > 0 && owner.length > 0);
     const bytes = await hybridStorageService2.read(owner, key);
-    const contentSha256 = createHash8("sha256").update(bytes).digest("hex");
+    const contentSha256 = createHash10("sha256").update(bytes).digest("hex");
     assert.equal(contentSha256, file.contentHash);
     assert.equal(bytes.length, file.sizeBytes);
     const metadata = hybridStorageService2.getMetadata(key);
@@ -10140,8 +10995,8 @@ try {
     physicalFileCount: physicalFiles.length,
     pocketEntryCount: pocketEntries.length,
     chunkCount: stats.chunkCount,
-    fileContentEvidenceSha256: digest2(fileEvidence),
-    ownershipCountsSha256: digest2(ownershipEvidence),
+    fileContentEvidenceSha256: digest3(fileEvidence),
+    ownershipCountsSha256: digest3(ownershipEvidence),
     everyFileReadByActualClasses: true
   };
   await pocketManager2.closeAll();

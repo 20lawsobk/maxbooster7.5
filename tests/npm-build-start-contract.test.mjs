@@ -7,6 +7,13 @@ import vm from "node:vm";
 import { transformSync } from "esbuild";
 import { validateBuild, writeBuildContract } from "../scripts/start-production.mjs";
 
+test("production build aliases do not invoke missing fixers or prune the workspace", () => {
+  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  assert.equal(scripts["build:full"], "npm run security:audit && npm run build");
+  assert.equal(scripts["build:prod"], "npm run build");
+  assert.equal(scripts["security-fix"], undefined);
+});
+
 test("a late build failure invalidates its completion marker", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
   const start = source.indexOf("main().catch((err) => {");

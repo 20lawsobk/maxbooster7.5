@@ -1,4 +1,63 @@
-# PDIM bucket migration — partial implementation, not activated
+# PDIM bucket migration — preview cutover verified; broader acceptance open
+
+## Current evidence — 2026-10-16
+
+- Archived and generation-pinned/checksum-verified **26** retained staging
+  snapshots (**17,610,628,936 bytes**), then removed only the matched local
+  staging copies with user approval. Original active snapshot/journals remain.
+- Imported **63,927 entries**, Redis sequence **47414**, capsule sequence
+  **41859**, into the existing private bucket. Full entry-by-entry readback
+  matched before publishing the initial HEAD. The first importer exhausted a
+  4 GB heap; lazy serialization and chunk-at-a-time verification fixed that
+  demonstrated allocation problem. The second importer exited **0**.
+- Development configuration explicitly selects App Storage and a separate
+  preview namespace. No production namespace or deployment was changed.
+- Preview startup recovered the bucket data. Observed **450 committed
+  transactions**, checkpoint **279**, and unchanged original local snapshot/AOF
+  files. After the scanner-associated process loss, startup recovered again and
+  `/api/ready` returned **200**, status **ok**, awareness **ready**.
+- Short workflow-start deadlines caused retries while the previous startup
+  lease was still valid. A longer startup allowance succeeded. Chunk reads are
+  bounded-parallel. Startup now waits once for an expiring lease; a renewed
+  lease still prevents takeover. Ownership fencing is never bypassed.
+- Recovery exports use a consistent captured view and unlinked temporary
+  scratch, not a stale local snapshot. Shutdown no longer initiates another
+  whole-store checkpoint; acknowledged journal commits are already durable.
+- Actual isolated bucket HTTP smoke: write, export, shutdown, restart, read:
+  **passed**, no local durable files used. Only its random fixture objects were
+  removed. This is separate from the full preview readiness evidence.
+- Latest focused migration/operator run: **27 tests passed**. Subsequent
+  shutdown/lease-focused tests: **11 passed**. Build/start contract tests:
+  **7 passed**. Deployment/runtime artifact gate tests: **18 passed**.
+- Current server and client typechecks both exited **0** after the shutdown,
+  lease and selective-icon changes. Targeted server/storage lint exited **0**.
+  The actual production build passed with a 2 GB Node heap; both earlier
+  attempts at a 1 GB heap failed in Vite. The build contract validator exited
+  **0**. See `production-readiness-session-2026-10-16.md` for commands.
+- Full security batch: dependency scan **0 critical, 0 high, 72 moderate**;
+  static scan **incomplete**; privacy scanner **timed out**. An additional
+  cgroup OOM kill and preview termination occurred during the batch. Do not
+  repeat heavyweight parallel scans alongside the live model runtime.
+- The server typecheck coincided with another kernel OOM kill, despite the
+  soft Go memory limit. Preview was restarted after that check and again
+  returned HTTP **200**, status **ok**, awareness **ready**. This is recovery
+  evidence, not a claim that concurrent validation is safe.
+
+## Remaining acceptance
+
+- Verify the newest shutdown changes on the full app, not only isolated HTTP.
+- Finish production-only dependency closure,
+  disposable publishing/restore/start rehearsal and production readiness.
+- Production storage cutover requires its own authoritative state and namespace;
+  do not silently point a second live owner at the preview namespace.
+- Broader platform blockers remain, including active LabelGrid references,
+  checkpoint unknown-token generation failures, incomplete security coverage
+  and unverified cross-system business flows. No whole-platform certification
+  follows from the preview's health response.
+
+The following sections preserve **earlier implementation evidence**, not the
+current activation status. The current evidence above supersedes their pending
+work and operational-state statements.
 
 ## Verified work
 

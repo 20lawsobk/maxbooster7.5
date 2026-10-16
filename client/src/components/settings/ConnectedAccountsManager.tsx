@@ -48,18 +48,16 @@ import {
   Headphones,
   MessageCircle,
 } from "lucide-react";
-import {
-  SiSpotify,
-  SiApplemusic,
-  SiSoundcloud,
-  SiYoutube,
-  SiInstagram,
-  SiTiktok,
-  SiFacebook,
-  SiX,
-  SiGoogle,
-  SiThreads,
-} from "@icons-pack/react-simple-icons";
+import SiSpotify from "@icons-pack/react-simple-icons/icons/SiSpotify.mjs";
+import SiApplemusic from "@icons-pack/react-simple-icons/icons/SiApplemusic.mjs";
+import SiSoundcloud from "@icons-pack/react-simple-icons/icons/SiSoundcloud.mjs";
+import SiYoutube from "@icons-pack/react-simple-icons/icons/SiYoutube.mjs";
+import SiInstagram from "@icons-pack/react-simple-icons/icons/SiInstagram.mjs";
+import SiTiktok from "@icons-pack/react-simple-icons/icons/SiTiktok.mjs";
+import SiFacebook from "@icons-pack/react-simple-icons/icons/SiFacebook.mjs";
+import SiX from "@icons-pack/react-simple-icons/icons/SiX.mjs";
+import SiGoogle from "@icons-pack/react-simple-icons/icons/SiGoogle.mjs";
+import SiThreads from "@icons-pack/react-simple-icons/icons/SiThreads.mjs";
 
 interface ConnectedAccount {
   id: string;

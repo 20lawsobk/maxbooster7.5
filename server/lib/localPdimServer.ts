@@ -32,7 +32,7 @@ import { writeSnapshotOffThread } from "./pdimSnapshotWriter.js";
 import { configuredPdimBucketObjects } from "./pdimBucketObjects.js";
 import { PdimBucketPersistence } from "./pdimBucketPersistence.js";
 import { PdimBucketCommandBatcher } from "./pdimBucketCommandBatcher.js";
-import { PdimBucketJournal } from "./pdimBucketJournal.js";
+import { PdimBucketJournal, PdimBucketLeaseBusy } from "./pdimBucketJournal.js";
 import { isBucketTransaction } from "./pdimBucketRecovery.js";
 import { writeBucketSnapshot, verifyBucketSnapshot } from "./pdimBucketSnapshot.js";
 
@@ -860,11 +860,17 @@ export async function stopLocalPdimServer(): Promise<void> {
     process.off("SIGINT", _saveOnShutdown);
     _saveOnShutdown = null;
   }
-  await bucketBatcher?.close();
-  canonicalStore.closeEmbedded();
-  await new Promise<void>((resolve, reject) => {
+  // Stop admitting new connections before waiting for the durable command queue.
+  const closed = new Promise<void>((resolve, reject) => {
     server.close((err) => (err ? reject(err) : resolve()));
   });
+  try {
+    await bucketBatcher?.close();
+  } finally {
+    canonicalStore.closeEmbedded();
+    server.closeAllConnections(); // abort outstanding blocking reads
+    await closed;
+  }
   await snapshotTail;
   await bucketPersistence?.close();
   bucketPersistence = undefined;
@@ -882,8 +888,19 @@ async function prepareBucketOwner(): Promise<void> {
   const persistence = new PdimBucketPersistence(
     objects, namespace, canonicalStore, store as unknown as Map<string, RedisEntry>,
     (key, value) => validatePersistedEntry(key, value) as RedisEntry,
+    stage => logger.info({ stage, pid: process.pid }, "[LocalPDIM] Bucket startup"),
   );
-  await persistence.open();
+  try {
+    await persistence.open();
+  } catch (error) {
+    if (!(error instanceof PdimBucketLeaseBusy) ||
+        error.retryAfterMs < 0 || error.retryAfterMs > 60_000) throw error;
+    logger.info({ waitMs: error.retryAfterMs }, "[LocalPDIM] Waiting once for prior owner lease expiry");
+    await new Promise(resolve => setTimeout(resolve, error.retryAfterMs + 25));
+    // This still uses generation CAS. A live owner renewing its lease prevents
+    // takeover; this is not a force-unlock or a retry loop.
+    await persistence.open();
+  }
   bucketPersistence = persistence;
   bucketBatcher = new PdimBucketCommandBatcher((command, args, signal) =>
     command.startsWith("CAPSULE.")

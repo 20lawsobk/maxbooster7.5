@@ -30,6 +30,11 @@ const sequence = (value: unknown): value is number =>
 export class PdimBucketUnavailable extends Error {
   readonly code = "PDIM_DURABILITY_FAILURE";
 }
+export class PdimBucketLeaseBusy extends PdimBucketUnavailable {
+  constructor(readonly retryAfterMs: number) {
+    super("Another process owns this bucket PDIM namespace");
+  }
+}
 
 /** Generation-fenced, single-owner redo log. Objects are immutable; only the
  * small HEAD pointer changes. Unreferenced uploads are NOT committed writes.
@@ -147,7 +152,7 @@ export class PdimBucketJournal<T> {
       if (!actual) throw new PdimBucketUnavailable("Bucket PDIM migration is required; refusing an empty store");
       const head = this.decodeHead(actual.bytes);
       if (head.owner && head.leaseUntil > this.clock()) {
-        throw new PdimBucketUnavailable("Another process owns this bucket PDIM namespace");
+        throw new PdimBucketLeaseBusy(head.leaseUntil - this.clock());
       }
       await this.publish({ ...head, owner: this.owner, leaseUntil: this.clock() + this.leaseMs },
         actual.generation);

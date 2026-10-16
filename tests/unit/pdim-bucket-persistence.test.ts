@@ -34,7 +34,10 @@ describe("bucket PDIM owner lifecycle", () => {
       await engine.exec("INCR", ["counter"]);
       await owner.commitCapsule({ content: "actual capsule fixture" },
         () => engine.publishEmbeddedStrings({ content: "actual capsule fixture" }));
+      await owner.checkpoint();
+      const immutableObjects = [...data.keys()].filter(key => key.includes("/objects/")).length;
       await owner.close();
+      expect([...data.keys()].filter(key => key.includes("/objects/")).length).toBe(immutableObjects);
       engine.closeEmbedded();
       await restored.open();
       expect(await restoredEngine.exec("GET", ["counter"])).toBe("11");
