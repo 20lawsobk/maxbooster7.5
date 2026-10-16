@@ -99,6 +99,7 @@ export default function SimplifiedDashboard() {
       <SimplifiedDashboardComponent
         onUpgrade={() => upgradeToFullModeMutation.mutate()}
         userLevel={userLevel}
+        upgrading={upgradeToFullModeMutation.isPending}
       />
     </AppLayout>
   );
