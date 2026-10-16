@@ -19,6 +19,13 @@ disowned the inner process. From that point on:
   it can end up silently killed when the shell session backing the outer
   task is torn down, `nohup`'s SIGHUP protection notwithstanding.
 
+This includes service launchers that daemonize for you, such as `pg_ctl start`.
+For disposable PostgreSQL tests, run foreground `postgres` as the tracked
+background task instead.
+**Why:** A successfully initialized test database became unreachable when its
+launcher shell ended; it was a process-lifetime failure, not an application
+database-connection defect.
+
 ## How to apply
 
 Never nest backgrounding. Pass the real long-running command directly as

@@ -73,7 +73,7 @@ async function main() {
         console.log(`\n==> Downloading portable Python ${PYVER} (x86_64-linux-gnu)...`);
         fs.mkdirSync(pyDir, { recursive: true });
         execSync(
-          `curl -sL --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
+          `set -o pipefail; curl -fSL --retry 2 --connect-timeout 15 --max-time 180 ${JSON.stringify(PYURL)} | tar xz --strip-components=1 -C ${JSON.stringify(pyDir)} python/`,
           { cwd: root, stdio: "inherit", shell: "/bin/bash" },
         );
       }
@@ -89,12 +89,9 @@ async function main() {
       );
       console.log("   ✅ Portable Python runtime ready → python_runtime/");
     } catch (e) {
-      // Non-fatal: production degrades to "Python features disabled" exactly
-      // as before this step existed. Never fail the publish over it.
-      console.warn(
-        `   WARNING: portable Python runtime build failed (${(e as Error).message}) — video/audio analysis will be disabled in production`,
-      );
-      fs.rmSync(pyDir, { recursive: true, force: true });
+      // Local MaxCore/Digital GPU is required. Do not silently package a
+      // degraded release, or delete an existing runtime after a failed install.
+      throw new Error("Required portable Python runtime provisioning failed; existing runtime preserved", { cause: e });
     }
   }
 

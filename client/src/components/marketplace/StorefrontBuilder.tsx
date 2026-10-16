@@ -147,20 +147,11 @@ function stripDomainInput(raw: string): string {
 }
 
 /**
- * Returns the canonical public URL for a storefront using the same priority
- * order as the server's getStorefrontUrl():
- *   1. Active custom domain  (e.g. artist.com)
- *   2. Server-computed publicUrl (covers managed subdomains)
- *   3. Slug path fallback
+ * Shared links use the platform's canonical slug route.
+ * Custom domains remain inbound aliases, not alternate generated links.
  */
 function getCanonicalUrl(storefront: Storefront): string {
-  if (storefront.isCustomDomainActive && storefront.customDomain) {
-    return `https://${storefront.customDomain}`;
-  }
-  if (storefront.publicUrl) {
-    return storefront.publicUrl;
-  }
-  return `${STOREFRONT_BASE}/storefront/${storefront.slug}`;
+  return `${STOREFRONT_BASE}/storefront/${encodeURIComponent(storefront.slug)}`;
 }
 
 export default function StorefrontBuilder() {
@@ -2544,6 +2535,7 @@ export default function StorefrontBuilder() {
                     <TabsContent value="dns" className="space-y-4 mt-4">
                       <StorefrontDnsZoneManager
                         storefrontId={selectedStorefront!.id}
+                        storefrontSlug={selectedStorefront!.slug}
                         onCustomizeStorefront={() => setActiveTab("overview")}
                       />
                     </TabsContent>

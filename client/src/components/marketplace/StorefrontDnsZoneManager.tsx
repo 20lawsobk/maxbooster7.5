@@ -447,7 +447,7 @@ function DnsZoneEditor({
     storefrontName: string;
     storefrontSlug: string;
     status: string;
-  } | null = linkData.linked ?? null;
+  } | null = linkData?.linked ?? null;
 
   const linkQKey = ["/api/dns-manager/zones", zone.id, "storefront-link"];
 
@@ -480,7 +480,7 @@ function DnsZoneEditor({
       qc.invalidateQueries({ queryKey: ["/api/storefront/my"] });
       toast({
         title: "Storefront URL set!",
-        description: `${zone.domain} is now your storefront URL.`,
+        description: `${zone.domain} is linked as a domain alias. Shared storefront links keep the canonical platform URL.`,
       });
     },
     onError: async (err: Error) => {
@@ -514,7 +514,7 @@ function DnsZoneEditor({
       qc.invalidateQueries({ queryKey: ["/api/storefront/my"] });
       toast({
         title: "Storefront URL removed",
-        description: `${zone.domain} is no longer your storefront URL.`,
+        description: `${zone.domain} is no longer linked as a domain alias.`,
       });
     },
     onError: async (err: Error) => {
@@ -1131,12 +1131,12 @@ function DnsZoneEditor({
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <a
-                        href={`https://${zone.domain}`}
+                        href={`https://maxbooster.replit.app/storefront/${encodeURIComponent(currentLink.storefrontSlug)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 hover:underline font-mono"
                       >
-                        https://{zone.domain}{" "}
+                        Open canonical storefront{" "}
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
@@ -1632,11 +1632,13 @@ function DnsZoneEditor({
 
 interface Props {
   storefrontId?: string;
+  storefrontSlug?: string;
   onCustomizeStorefront?: () => void;
 }
 
 export function StorefrontDnsZoneManager({
   storefrontId,
+  storefrontSlug,
   onCustomizeStorefront,
 }: Props) {
   const { toast } = useToast();
@@ -1726,7 +1728,7 @@ export function StorefrontDnsZoneManager({
       }).then((r) => r.json()),
     onMutate: (domain) => setClaimingDomain(domain),
     onSettled: () => setClaimingDomain(null),
-    onSuccess: (data, domain) => {
+    onSuccess: (_data, domain) => {
       // Invalidate every query that displays domain / zone / usage / storefront data
       qc.invalidateQueries({ queryKey: ["/api/domain-registrar/my-domains"] });
       qc.invalidateQueries({ queryKey: ["/api/dns-manager/zones"] });
@@ -1753,9 +1755,8 @@ export function StorefrontDnsZoneManager({
         title: `${isPlatformSubdomain && label ? `${label}.${PLATFORM_DOMAIN}` : domain} claimed!`,
         description:
           isPlatformSubdomain && label
-            ? `Your store is live at https://${label}.${PLATFORM_DOMAIN} — no DNS setup required.`
-            : (data.message ??
-              "Your domain is active. DNS zone created — manage records in the DNS Records tab."),
+            ? "Domain claim recorded. Your storefront continues to use its canonical platform link; claiming a domain does not verify public DNS or TLS."
+            : "Domain claim recorded. Verify public DNS and TLS before using the domain.",
       });
     },
     onError: async (err: Error) => {
@@ -2003,7 +2004,7 @@ export function StorefrontDnsZoneManager({
                 <div>
                   <p className="text-xs font-semibold">Platform subdomain</p>
                   <p className="text-[11px] text-muted-foreground">
-                    yourname.{PLATFORM_DOMAIN} — live in seconds, zero DNS setup
+                    yourname.{PLATFORM_DOMAIN} — public DNS and TLS must be verified before use
                   </p>
                 </div>
               </div>
@@ -2235,15 +2236,11 @@ export function StorefrontDnsZoneManager({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {d.domain.endsWith(`.${PLATFORM_DOMAIN}`) &&
+                      {storefrontSlug && d.domain.endsWith(`.${PLATFORM_DOMAIN}`) &&
                         (() => {
-                          const label = d.domain.replace(
-                            `.${PLATFORM_DOMAIN}`,
-                            "",
-                          );
                           return (
                             <a
-                              href={`https://${label}.${PLATFORM_DOMAIN}`}
+                              href={`https://maxbooster.replit.app/storefront/${encodeURIComponent(storefrontSlug)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-2.5 py-1 rounded border border-primary/30 hover:bg-primary/5 transition-colors"

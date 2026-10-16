@@ -75,7 +75,9 @@ function spawnChild(): void {
   // The app already exposes zone data in exactly the shape dns-node expects
   // at GET /api/dns/zone/:domain (server/routes/dns.ts) — point the child's
   // sync loop at our own loopback port so it hot-loads real zone records.
-  child = spawn(TSX_BIN, ["src/index.ts"], {
+  const production = process.env.NODE_ENV === "production";
+  child = spawn(production ? process.execPath : TSX_BIN,
+    [production ? path.resolve(DNS_NODE_DIR, "../dist/dns-node.mjs") : "src/index.ts"], {
     cwd: DNS_NODE_DIR,
     env: {
       ...process.env,
@@ -190,8 +192,18 @@ export function stopDnsNodeLocal(): void {
   }
   if (child) {
     logger.info("[DnsNodeLocal] Stopping dns-node child…");
-    child.kill("SIGTERM");
     const pid = child.pid;
+    // The detached launcher and its descendants share this process group.
+    // Signal all of them before the parent can exit and abandon the kill timer.
+    if (pid) {
+      try {
+        process.kill(-pid, "SIGTERM");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+          logger.warn({ err: error }, "[DnsNodeLocal] Failed to signal owned process group");
+        }
+      }
+    }
     const killTimer = setTimeout(() => {
       try {
         if (pid) process.kill(-pid, "SIGKILL");

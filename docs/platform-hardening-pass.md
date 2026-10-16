@@ -125,12 +125,169 @@ columns in four tables: `dmca_notices`, `dmca_strikes`, `legal_holds`, and
 `social_inbox_messages`.
 
 The existing migrations `0006_dmca_workflow_contract.sql` and
-`0026_social_inbox_provider_delivery.sql` address those columns. They have
-not been applied to the shared database. This requires explicit migration
-authorization and post-migration verification, not a fake schema fallback.
+`0026_social_inbox_provider_delivery.sql` address those columns. They were
+initially withheld pending authorization; their authorized application and
+post-commit verification are recorded below.
 
 `node --import tsx scripts/check-neon-schema.mjs` is now a reproducible,
 read-only, nonzero-on-drift gate. Prelaunch uses the same check against its
 selected database instead of declaring database readiness after `SELECT 1`.
 The check currently verifies table/column existence, not types, constraints,
 indexes, migration provenance, or financial data correctness.
+
+## Production runtime and storefront continuation — 2026-10-16
+
+Implemented in the existing workspace:
+
+- `script/lib/serverBundles.ts` now builds the DNS server as `dist/dns-node.mjs`.
+  `server/services/dnsNodeLocalSupervisor.ts` runs that artifact with Node in
+  production; development retains TSX. Both publishing and npm builds use the
+  shared bundler.
+- `scripts/start-production.mjs` requires and hashes the DNS artifact, tracks its
+  sources/configuration, and tracks `client/index.html`. Missing DNS output or a
+  changed HTML entry invalidates startup.
+- `StorefrontBuilder.tsx`, `StorefrontDnsZoneManager.tsx`, and
+  `storefrontService.ts` generate canonical storefront links on
+  `https://maxbooster.replit.app`. Custom-domain records/routing remain intact.
+  Domain claims no longer claim that public DNS/TLS has been verified.
+- `tests/npm-start-isolated-smoke.py` discards stale observations on errors,
+  clears stale readiness output, and permits the registry's 3-second probe plus
+  awareness's 5-second probe before declaring a request timeout.
+- Runtime-contract CI now includes the canonical-link and Neon-schema tests.
+
+Observed verification:
+
+| Command/check | Result |
+| --- | --- |
+| `npm run build` | Passed; runtime bundles and completion contract written |
+| `npm run test:runtime-contracts` | 34 passed, zero failed/skipped |
+| `GOMAXPROCS=2 GOMEMLIMIT=2GiB node_modules/.bin/tsgo --noEmit -p tsconfig.server.json` | Passed |
+| Same native checker with `tsconfig.client.json` | Passed |
+| ESLint on changed production/client/build files, `--quiet` | Passed |
+| `unshare -Urn python3 tests/dns-production-smoke.py "$(readlink /proc/self/ns/net)"` | Passed: compiled Node service, HTTP health, UDP DNS answer, TCP response |
+| Isolated `npm run start`, through `tests/npm-start-isolated-smoke.py` | Started and served `/` and `/api/health` with 200; `/api/ready` returned 503; smoke test correctly exited 1 |
+| `git diff --check` | Passed |
+
+The startup rehearsal used a disposable PostgreSQL database/schema, sanitized
+environment, copied source/artifacts, and a private network namespace. No shared
+Neon migration, provider call, publication, or payout was authorized or performed
+by the rehearsal. Python/model resources were absent from the fixture: MaxCore
+reported Python unavailable and the awareness request timed out. This is **not**
+a passing full-stack readiness test. Its first attempt also encountered a
+fixture PostgreSQL process-lifetime error, corrected by using a tracked
+background process. An unbounded typecheck attempt lost its container; the
+resource-bounded commands above subsequently passed.
+
+Operational blockers found while restoring preview:
+
+- Read-only Neon inspection found 30 missing columns across four tables (above).
+  This specific blocker was resolved by the authorized migrations below.
+- PDIM logged filesystem write error -122. There are 25 snapshot staging files
+  totaling 17,420,751,086 bytes. These are **retained**, not declared redundant or
+  deleted: their recovery value must be established before cleanup.
+- An orphaned DNS process group (parent PID 1, verified workspace DNS cwd) owned
+  port 5353. That group was stopped; this is operational remediation, not proof
+  that every abrupt-shutdown orphan scenario has been eliminated.
+
+The DNS-management panel also guards its initially undefined link query result
+and uses the canonical platform link for already-linked domain records. The final
+post-edit checks again passed: 34 runtime contracts, client native typecheck,
+targeted ESLint, and `npm run build` (Vite phase 67 seconds).
+
+Full-suite, security, external-provider, desktop-package, authenticated
+cross-system workflow, and sustained-load acceptance remain incomplete. Do not
+infer platform-wide production readiness from this focused pass.
+
+## Authorized shared Neon migrations — 2026-10-16 05:18 UTC
+
+The user explicitly approved applying the two additive migrations. They were
+applied directly to the configured `NEON_DATABASE_URL`, not the separate managed
+Replit database. No other migrations were applied.
+
+| Migration | SHA-256 of executed SQL |
+| --- | --- |
+| `migrations/0006_dmca_workflow_contract.sql` | `106dd3b294992f426949d65e5844e76d5357c27f16a34b00fe27eaef55342b8a` |
+| `migrations/0026_social_inbox_provider_delivery.sql` | `24ff33afd7f979fecb1e941b8bf6474802572612bec1a539539eb5b5c9f22e0d` |
+
+Execution used one transaction, an advisory migration lock, locks on the four
+affected tables, a 3-second lock timeout, and a 15-second statement timeout.
+Before commit, row counts and digests over **all original columns** matched
+before/after for all four tables. The new fields receive their migration-defined
+defaults; the comparison deliberately checks preservation of existing fields.
+Both new indexes were valid. Replaying both migrations in the same transaction
+also preserved the original data, confirming their idempotency. Commit completed
+at `2026-10-16T05:18:04.470Z`.
+
+Post-commit verification:
+
+- `node --import tsx scripts/check-neon-schema.mjs`: exit 0, 304 table contracts
+  checked in a read-only transaction, `drift: []`.
+- `node --test tests/neon-schema-contract.test.mjs`: 5 passed.
+- `env -i PATH="$PATH" HOME=/tmp NODE_ENV=test DATABASE_URL=postgresql://test:test@127.0.0.1:1/test NEON_DATABASE_URL=postgresql://test:test@127.0.0.1:1/test node_modules/.bin/vitest run tests/unit/pre-launch-check.test.ts tests/unit/dmca-schema-contract.test.ts tests/unit/dmca-rules.test.ts --maxWorkers=1`:
+  23 passed across three files. These tests did not use the shared database.
+
+Existing fields were preserved; no DELETE or UPDATE statements were executed.
+No emails, payouts, releases, or publication were triggered by this operation. This resolves the observed
+table/column drift only; it does not certify end-to-end legal workflows, provider
+delivery, every schema constraint, or overall production readiness.
+
+## Focused build/restart continuation — 2026-10-16
+
+Preserved the existing dirty workspace rather than resetting it to GitHub.
+The local history inspected started at `4a3659b93`, with `5af4ca5e3` and
+`d76d19e40` immediately preceding it.
+
+### Changes
+
+- `server/services/dnsNodeLocalSupervisor.ts`: send SIGTERM immediately to
+  the owned detached process group, not only its launcher. Retain the bounded
+  SIGKILL escalation and report unexpected signaling errors.
+- `script/build.ts`: adopted the fail-fast curl/pipefail download correction
+  from PR #84. Required Python provisioning now throws on failure and preserves
+  the existing runtime directory instead of deleting it and continuing degraded.
+- `tests/npm-build-start-contract.test.mjs`: added executable tests for process
+  group shutdown, repeat-stop safety, and the provisioning failure handler.
+  The failure-handler test does not run pip or download Python.
+
+### PR comparison
+
+Read PR #84 through the configured GitHub connection: still open, head
+`364ef8e6b857e23bd4b8159f49b7659fe214e8af`, 40 changed files. Examined its
+build/start, dependency synchronization, prelaunch, and test-runner patches.
+The fail-closed test-runner and prelaunch helpers are already present locally.
+Retained the newer source/artifact hash checks and compiled subsystem entries.
+Did not import its default-to-development launcher, network-bootstrapped pnpm
+installs, optional-Python packaging, or detached background restoration:
+those conflict with this workspace's stricter runtime contract.
+This was a focused comparison, not validation of all 40 changed files or
+a re-run of GitHub checks. No merge or GitHub modification was performed.
+
+### New execution evidence
+
+- `npm run build`: passed after the final edits.
+- `npm run test:runtime-contracts`: 36 passed, zero failed/skipped.
+- `GOMAXPROCS=2 GOMEMLIMIT=2GiB node_modules/.bin/tsgo --noEmit -p tsconfig.server.json`:
+  passed after the supervisor change.
+- `node_modules/.bin/eslint script/build.ts server/services/dnsNodeLocalSupervisor.ts --quiet`:
+  passed after final edits.
+- Managed `Start application` (`npm run dev`) was stopped before the first build
+  and restarted once afterward. The actual homepage rendered in the preview.
+- Preview `/api/ready`: 200 before restart; 503 during Python warm-up; then 200
+  with `maxcore: ok` and `unifiedAwareness.ready: true`. Runtime logs showed the
+  Digital GPU backend and 71/71 model tensors loaded.
+- The inspected restart log contained zero `EADDRINUSE` occurrences. Socket
+  inspection found one owner each for app/PDIM, MaxCore, Python, and DNS listeners.
+  This proves the observed restart, not every abrupt-kill scenario.
+- Final production artifact contract validation passed.
+
+### Remaining acceptance boundary
+
+No new full `npm run start` rehearsal was performed in this continuation.
+The earlier isolated run served production HTML and liveness but failed
+readiness without the fixture's Python/model resources. Workspace development
+readiness is now proven, but must not be substituted for production-mode
+acceptance. Next: provision a complete isolated runtime fixture (including the
+supported Digital GPU model and PDIM dependencies), then run the actual npm start
+command through warm-up and shutdown without live provider or account effects.
+No deployment, migrations, paid actions, or external messages were initiated
+as part of this focused continuation.

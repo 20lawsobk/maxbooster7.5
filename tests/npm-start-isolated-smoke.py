@@ -33,24 +33,30 @@ env = {
     "READINESS_ISOLATED_PG": "1", "READINESS_EGRESS_GUARD": "1",
 }
 responses = {}
+Path("/tmp/npm-start-readiness.json").unlink(missing_ok=True)
 with open("/tmp/npm-start-isolated-db.log", "w") as log:
     process = subprocess.Popen(["npm", "run", "start"], cwd=root, env=env,
                                stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     try:
-        for _ in range(100):
+        deadline = time.monotonic() + 100
+        while time.monotonic() < deadline:
             time.sleep(1)
             if process.poll() is not None:
                 break
             for route in ["/", "/api/ready", "/api/health"]:
                 try:
-                    with urllib.request.urlopen("http://127.0.0.1:5012" + route, timeout=.3) as response:
+                    # Registry probes (3s) precede awareness (5s).
+                    with urllib.request.urlopen("http://127.0.0.1:5012" + route, timeout=10) as response:
                         responses[route] = {"status": response.status, "type": response.headers.get("Content-Type")}
                 except urllib.error.HTTPError as error:
                     responses[route] = {"status": error.code, "type": error.headers.get("Content-Type")}
                     if route == "/api/ready":
                         Path("/tmp/npm-start-readiness.json").write_bytes(error.read())
-                except OSError:
-                    pass
+                except OSError as error:
+                    # Never retain an earlier 200/503 as the latest observation.
+                    responses[route] = {"error": type(error).__name__}
+                    if route == "/api/ready":
+                        Path("/tmp/npm-start-readiness.json").unlink(missing_ok=True)
             if responses.get("/", {}).get("status") == 200 and responses.get("/api/ready", {}).get("status") == 200:
                 break
         print(json.dumps({"responses": responses, "exit": process.poll()}))

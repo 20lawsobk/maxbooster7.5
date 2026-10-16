@@ -1567,13 +1567,8 @@ export class StorefrontService {
   /**
    * Get the public URL for a storefront.
    *
-   * Normal priority: custom domain (when active) → managed subdomain → slug path.
-   *
-   * Temporary override: when STOREFRONT_URL_FORMAT=slug the slug-path URL is always
-   * returned regardless of custom domain / subdomain state.  This is used while the
-   * platform wildcard SSL cert is being provisioned so that autopilot-generated
-   * social posts and ads always link to a URL that is guaranteed to resolve over
-   * HTTPS.  Remove / unset the env var once the wildcard cert is live.
+   * Generated links always use the canonical platform slug route.
+   * Existing custom-domain routing is preserved as an inbound alias.
    */
   getStorefrontUrl(storefront: {
     subdomain?: string | null;
@@ -1582,18 +1577,7 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const slugUrl = getStorefrontPathUrl(storefront.slug);
-
-    // A user-owned custom host remains canonical.  The managed subdomain
-    // fields are historical platform routing records; they must not turn a
-    // normal storefront link into an unreachable artist.max-booster.com URL.
-    if (storefront?.customDomain && storefront?.isCustomDomainActive) {
-      return `https://${storefront.customDomain}`;
-    }
-
-    // Slug is the safe default and the only format with a guaranteed route.
-    // An old "subdomain" setting must not resurrect an unusable legacy link.
-    return slugUrl;
+    return getStorefrontPathUrl(storefront.slug);
   }
 }
 

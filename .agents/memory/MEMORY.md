@@ -156,3 +156,4 @@
 - [Advisory test reachability](advisory-test-reachability.md) — validate benign equivalents first; a skipped operation can falsely appear to block an exploit.
 - [Unified automation scope](unified-automation-scope.md) — social, advertising, beat revenue, and music workflows must share orchestration and data-integrity boundaries.
 - [Installer registry rewrite](installer-registry-rewrite.md) — package updates can reinsert internal tarball URLs; verify upstream integrity before restoring portable lock URLs.
+- [Storefront canonical origin](storefront-canonical-origin.md) — generated storefront links use maxbooster.replit.app; preserve DNS aliases without claiming unverified public availability.
