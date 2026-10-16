@@ -15,9 +15,20 @@ const JWT_RL_MAX_FAILURES = 30;
 
 const PAID_API_PATHS = new Set([
   "/api/dashboard/comprehensive",
+  "/api/projects",
   "/api/ai/insights",
   "/api/ai/optimize-content",
 ]);
+const PAID_API_PREFIXES = ["/api/studio", "/api/songwriting"];
+
+function isPaidApiPath(path: string): boolean {
+  return (
+    PAID_API_PATHS.has(path) ||
+    PAID_API_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+  );
+}
 
 const localRl = new Map<string, { count: number; resetAt: number }>();
 const localRlPrune = () => {
@@ -118,7 +129,6 @@ export const requireAuthDual = async (
   res: Response,
   next: NextFunction,
 ) => {
-  // First check for passport?.js session authentication (req.isAuthenticated checks req.user)
   if (
     req.isAuthenticated &&
     req.isAuthenticated() &&
@@ -129,7 +139,6 @@ export const requireAuthDual = async (
     return;
   }
 
-  // Fallback: check for custom session userId
   if (req.session?.userId && !req.headers.authorization) {
     try {
       const user = await storage.getUser(req.session.userId);
@@ -144,7 +153,6 @@ export const requireAuthDual = async (
     }
   }
 
-  // Final fallback: try JWT authentication
   return verifyJWT(req, res, next);
 };
 
@@ -166,7 +174,6 @@ export const requireAdmin = async (
   if (enforceAssurance(req, res)) next();
 };
 
-// Alias for backwards compatibility
 export const requireAuth = requireAuthDual;
 
 // Account-mode API guard. This middleware is mounted at `/api` after attachUser,
@@ -183,7 +190,7 @@ export const blockDemoWrite = async (
 
   if (
     req.user &&
-    PAID_API_PATHS.has(fullPath) &&
+    isPaidApiPath(fullPath) &&
     !hasPaidFeatureAccess(req.user)
   ) {
     return res.status(403).json({
