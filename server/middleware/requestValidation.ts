@@ -1,6 +1,7 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
+import { finalizePaidRegistrationConsent } from "../services/registrationConsentFinalizer.js";
 
 // ── Param validation helpers ──────────────────────────────────────────────────
 
@@ -9,6 +10,7 @@ const UUID_RE =
 const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 const REGISTRATION_USERNAME_RE = /^[a-zA-Z0-9_]{3,30}$/;
 const REGISTRATION_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REGISTRATION_SESSION_RE = /^cs_[a-zA-Z0-9_]+$/;
 
 export type RegistrationCheckoutBoundaryResult =
   | {
@@ -21,6 +23,19 @@ export type RegistrationCheckoutBoundaryResult =
         artistName: string;
         tosAccepted: true;
         privacyAccepted: true;
+      };
+    }
+  | { ok: false; message: string };
+
+export type RegistrationCompletionBoundaryResult =
+  | {
+      ok: true;
+      value: {
+        sessionId: string;
+        password: string;
+        tosAccepted: true;
+        privacyAccepted: true;
+        marketingConsent: boolean;
       };
     }
   | { ok: false; message: string };
@@ -41,6 +56,22 @@ function parseCalendarDate(value: string): Date | null {
     return null;
   }
   return parsed;
+}
+
+function normalizedCheckoutSessionId(body: unknown): string | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const sessionId =
+    typeof (body as Record<string, unknown>).sessionId === "string"
+      ? ((body as Record<string, unknown>).sessionId as string).trim()
+      : "";
+  if (
+    !sessionId ||
+    sessionId.length > 255 ||
+    !REGISTRATION_SESSION_RE.test(sessionId)
+  ) {
+    return null;
+  }
+  return sessionId;
 }
 
 /**
@@ -141,28 +172,130 @@ export function normalizeRegistrationCheckoutBody(
   };
 }
 
-/**
- * Returns true if `value` is a well-formed UUID v4.
- * Use for params that must be database row IDs.
- */
+export function normalizeRegistrationVerificationBody(
+  body: unknown,
+): { ok: true; value: { sessionId: string } } | { ok: false; message: string } {
+  const sessionId = normalizedCheckoutSessionId(body);
+  if (!sessionId) {
+    return { ok: false, message: "Invalid checkout session" };
+  }
+  return { ok: true, value: { sessionId } };
+}
+
+export function normalizeRegistrationCompletionBody(
+  body: unknown,
+): RegistrationCompletionBoundaryResult {
+  const sessionId = normalizedCheckoutSessionId(body);
+  if (!sessionId || !body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Invalid checkout session" };
+  }
+
+  const input = body as Record<string, unknown>;
+  const password = typeof input.password === "string" ? input.password : "";
+  if (password.length < 8) {
+    return { ok: false, message: "Password must be at least 8 characters long" };
+  }
+  if (password.length > 72) {
+    return { ok: false, message: "Password must be 72 characters or fewer" };
+  }
+  if (input.tosAccepted !== true) {
+    return { ok: false, message: "Terms of Service acceptance is required" };
+  }
+  if (input.privacyAccepted !== true) {
+    return { ok: false, message: "Privacy Policy acceptance is required" };
+  }
+  if (
+    input.marketingConsent !== undefined &&
+    typeof input.marketingConsent !== "boolean"
+  ) {
+    return { ok: false, message: "Invalid marketing consent value" };
+  }
+
+  return {
+    ok: true,
+    value: {
+      sessionId,
+      password,
+      tosAccepted: true,
+      privacyAccepted: true,
+      marketingConsent: input.marketingConsent === true,
+    },
+  };
+}
+
+function installRegistrationConsentFinalizer(
+  req: Request,
+  res: Response,
+  completion: RegistrationCompletionBoundaryResult & { ok: true },
+): void {
+  const originalJson = res.json.bind(res);
+  let handled = false;
+
+  res.json = ((payload: unknown) => {
+    if (handled) return originalJson(payload);
+
+    const userId =
+      payload && typeof payload === "object"
+        ? (payload as { user?: { id?: unknown } }).user?.id
+        : undefined;
+    if (
+      res.statusCode >= 400 ||
+      typeof userId !== "string" ||
+      userId.length === 0
+    ) {
+      return originalJson(payload);
+    }
+
+    handled = true;
+    void finalizePaidRegistrationConsent({
+      sessionId: completion.value.sessionId,
+      userId,
+      marketingConsent: completion.value.marketingConsent,
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") ?? undefined,
+    })
+      .then(() => {
+        if (res.headersSent) return;
+        const enriched =
+          payload && typeof payload === "object" && !Array.isArray(payload)
+            ? { ...(payload as Record<string, unknown>), consentRecorded: true }
+            : payload;
+        originalJson(enriched);
+      })
+      .catch((error: unknown) => {
+        logger.error(
+          {
+            err: error,
+            userId,
+            checkoutSessionId: completion.value.sessionId,
+          },
+          "Paid registration account created but consent evidence finalization failed",
+        );
+        if (res.headersSent) return;
+        res.status(500);
+        originalJson({
+          error: "Account created but registration finalization failed",
+          message:
+            "Your paid account was created, but we could not finish the registration record. Please sign in and contact support if prompted.",
+          code: "ACCOUNT_CREATED_CONSENT_PENDING",
+          accountCreated: true,
+        });
+      });
+
+    return res;
+  }) as Response["json"];
+}
+
+/** Returns true if `value` is a well-formed UUID. */
 export function isValidUUID(value: unknown): value is string {
-  return typeof value === "string" && UUID_RE?.test(value);
+  return typeof value === "string" && UUID_RE.test(value);
 }
 
-/**
- * Returns true if `value` is a safe alphanumeric/dash/underscore ID.
- * Use for params that may be slugs, numeric IDs, or short codes.
- */
+/** Returns true for bounded alphanumeric/dash/underscore IDs. */
 export function isSafeId(value: unknown): value is string {
-  return typeof value === "string" && SAFE_ID_RE?.test(value);
+  return typeof value === "string" && SAFE_ID_RE.test(value);
 }
 
-/**
- * Express middleware factory: validates that the named route param is a valid UUID.
- * Returns 400 immediately if validation fails.
- *
- * Usage: router.get('/:id', requireUUIDParam('id'), handler)
- */
 export function requireUUIDParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const val = req.params[paramName];
@@ -176,12 +309,6 @@ export function requireUUIDParam(paramName: string): RequestHandler {
   };
 }
 
-/**
- * Express middleware factory: validates that the named route param is a safe ID
- * (alphanumeric, dash, underscore, max 128 chars). Returns 400 if invalid.
- *
- * Usage: router.get('/:slug', requireSafeParam('slug'), handler)
- */
 export function requireSafeParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const val = req.params[paramName];
@@ -213,8 +340,6 @@ const EXEMPT_PATH_PREFIXES = [
   "/health",
   "/ready",
   "/status",
-  // Internal server-to-server routes — protected by BOOSTERSTATE_SECRET bearer
-  // token at the proxy layer; no browser Origin header is present on these calls.
   "/api/ai-service/",
   "/api/training/internal/",
 ];
@@ -231,20 +356,19 @@ function getAllowedOrigins(req: Request): string[] {
   const replSlug = process.env.REPL_SLUG;
   const replOwner = process.env.REPL_OWNER;
   if (replSlug && replOwner) {
-    origins?.push(`https://${replSlug}.${replOwner}.repl.co`);
-    origins?.push(`https://${replSlug}--${replOwner}.repl.co`);
-    origins?.push(`https://${replSlug}.replit.app`);
+    origins.push(`https://${replSlug}.${replOwner}.repl.co`);
+    origins.push(`https://${replSlug}--${replOwner}.repl.co`);
+    origins.push(`https://${replSlug}.replit.app`);
   }
 
   const appUrl = process.env.APP_URL || process.env.REPLIT_APP_URL;
   if (appUrl) {
     try {
-      origins?.push(new URL(appUrl).origin);
+      origins.push(new URL(appUrl).origin);
     } catch {}
   }
 
-  // Always allow the platform's own custom domain and artist storefront subdomains.
-  origins?.push(
+  origins.push(
     "https://maxbooster.replit.app",
     "https://max-booster.com",
     "https://www.max-booster.com",
@@ -258,10 +382,9 @@ export const originValidation: RequestHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  if (
-    req.method === "POST" &&
-    req.path.replace(/\/$/, "") === "/api/create-checkout-session"
-  ) {
+  const normalizedPath = req.path.replace(/\/$/, "");
+
+  if (req.method === "POST" && normalizedPath === "/api/create-checkout-session") {
     const boundary = normalizeRegistrationCheckoutBody(req.body);
     if (!boundary.ok) {
       return res.status(400).json({ error: boundary.message });
@@ -269,9 +392,26 @@ export const originValidation: RequestHandler = (
     req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
   }
 
-  if (SAFE_METHODS?.has(req.method)) return next();
+  if (req.method === "POST" && normalizedPath === "/api/verify-checkout-session") {
+    const boundary = normalizeRegistrationVerificationBody(req.body);
+    if (!boundary.ok) {
+      return res.status(400).json({ error: boundary.message });
+    }
+    req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
+  }
 
-  const isExempt = EXEMPT_PATH_PREFIXES?.some((prefix) =>
+  if (req.method === "POST" && normalizedPath === "/api/register-after-payment") {
+    const boundary = normalizeRegistrationCompletionBody(req.body);
+    if (!boundary.ok) {
+      return res.status(400).json({ error: boundary.message });
+    }
+    req.body = { ...(req.body as Record<string, unknown>), ...boundary.value };
+    installRegistrationConsentFinalizer(req, res, boundary);
+  }
+
+  if (SAFE_METHODS.has(req.method)) return next();
+
+  const isExempt = EXEMPT_PATH_PREFIXES.some((prefix) =>
     req.path.startsWith(prefix),
   );
   if (isExempt) return next();
@@ -281,10 +421,10 @@ export const originValidation: RequestHandler = (
 
   if (!origin && !referer) {
     if (!isProductionEnv()) return next();
-    logger.warn({
-      ip: req.ip,
-      userAgent: req.get("user-agent"),
-    }, `Mutation without Origin: ${req.method} ${req.path}`);
+    logger.warn(
+      { ip: req.ip, userAgent: req.get("user-agent") },
+      `Mutation without Origin: ${req.method} ${req.path}`,
+    );
     return next();
   }
 
@@ -302,12 +442,11 @@ export const originValidation: RequestHandler = (
   if (!requestOrigin) return next();
 
   const allowed = getAllowedOrigins(req);
-  if (!allowed?.includes(requestOrigin)) {
-    logger.warn({
-      requestOrigin,
-      allowed,
-      ip: req.ip,
-    }, `Origin blocked: ${req.method} ${req.path}`);
+  if (!allowed.includes(requestOrigin)) {
+    logger.warn(
+      { requestOrigin, allowed, ip: req.ip },
+      `Origin blocked: ${req.method} ${req.path}`,
+    );
     return res.status(403).json({
       error: "Origin not allowed",
       message: "Request blocked: unexpected origin.",
