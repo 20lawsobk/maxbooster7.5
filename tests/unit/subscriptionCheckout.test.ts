@@ -52,14 +52,11 @@ describe("subscription checkout lifecycle", () => {
   });
 
   it.each([
-    null,
-    undefined,
-    [],
     {},
     { clientSecret: null },
     { clientSecret: 123 },
     { clientSecret: "   " },
-  ])("rejects malformed subscription setup payloads", (payload) => {
+  ])("rejects checkout objects without a usable client secret", (payload) => {
     expect(parseSubscriptionSetupPayload(payload)).toEqual({
       ok: false,
       error: {
@@ -71,17 +68,20 @@ describe("subscription checkout lifecycle", () => {
     });
   });
 
-  it("maps non-object malformed payloads to a retryable checkout error", () => {
-    expect(parseSubscriptionSetupPayload("not-json-object")).toEqual({
-      ok: false,
-      error: {
-        message:
-          "The payment service returned an invalid response. Please try again.",
-        code: "INVALID_CHECKOUT_RESPONSE",
-        retryable: true,
-      },
-    });
-  });
+  it.each([null, undefined, [], "not-json-object"])(
+    "maps non-object malformed payloads to a retryable checkout error",
+    (payload) => {
+      expect(parseSubscriptionSetupPayload(payload)).toEqual({
+        ok: false,
+        error: {
+          message:
+            "The payment service returned an invalid response. Please try again.",
+          code: "INVALID_CHECKOUT_RESPONSE",
+          retryable: true,
+        },
+      });
+    },
+  );
 
   it("recognizes Stripe configuration failures", () => {
     expect(
