@@ -28,7 +28,7 @@ export interface Project {
 
 export interface SongwritingSession {
   id: string;
-  userId?: string;
+  userId?: string | null;
   title: string;
   genre?: string | null;
   mood?: string | null;
@@ -120,8 +120,9 @@ function normalizeProject(value: unknown): Project | null {
     title: value.title,
     createdAt: value.createdAt,
   };
+  const writable = project as unknown as Record<string, unknown>;
 
-  const stringFields = [
+  for (const field of [
     "description",
     "genre",
     "key",
@@ -132,13 +133,12 @@ function normalizeProject(value: unknown): Project | null {
     "updatedAt",
     "audioUrl",
     "timeSignature",
-  ] as const;
-  for (const field of stringFields) {
+  ] as const) {
     const normalized = asNullableString(value[field]);
-    if (normalized !== undefined) project[field] = normalized;
+    if (normalized !== undefined) writable[field] = normalized;
   }
 
-  const numberFields = [
+  for (const field of [
     "bpm",
     "sampleRate",
     "bitDepth",
@@ -146,13 +146,15 @@ function normalizeProject(value: unknown): Project | null {
     "fileSize",
     "streams",
     "progress",
-  ] as const;
-  for (const field of numberFields) {
+  ] as const) {
     const normalized = asNullableFiniteNumber(value[field]);
-    if (normalized !== undefined) project[field] = normalized;
+    if (normalized !== undefined) writable[field] = normalized;
   }
 
-  if (typeof value.isStudioProject === "boolean" || value.isStudioProject === null) {
+  if (
+    typeof value.isStudioProject === "boolean" ||
+    value.isStudioProject === null
+  ) {
     project.isStudioProject = value.isStudioProject;
   }
   if (typeof value.favorite === "boolean" || value.favorite === null) {
@@ -163,7 +165,8 @@ function normalizeProject(value: unknown): Project | null {
   }
   if (
     value.tags === null ||
-    (Array.isArray(value.tags) && value.tags.every((tag) => typeof tag === "string"))
+    (Array.isArray(value.tags) &&
+      value.tags.every((tag) => typeof tag === "string"))
   ) {
     project.tags = value.tags as string[] | null;
   }
@@ -213,6 +216,7 @@ function normalizeSongwritingSession(value: unknown): SongwritingSession | null 
     id: value.id,
     title: value.title,
   };
+  const writable = session as unknown as Record<string, unknown>;
   for (const field of [
     "userId",
     "genre",
@@ -225,7 +229,7 @@ function normalizeSongwritingSession(value: unknown): SongwritingSession | null 
     "updatedAt",
   ] as const) {
     const normalized = asNullableString(value[field]);
-    if (normalized !== undefined) session[field] = normalized;
+    if (normalized !== undefined) writable[field] = normalized;
   }
   const bpm = asNullableFiniteNumber(value.bpm);
   if (bpm !== undefined) session.bpm = bpm;
@@ -235,7 +239,9 @@ function normalizeSongwritingSession(value: unknown): SongwritingSession | null 
   return session;
 }
 
-export function normalizeSongwritingSessions(payload: unknown): SongwritingSession[] {
+export function normalizeSongwritingSessions(
+  payload: unknown,
+): SongwritingSession[] {
   if (!Array.isArray(payload)) {
     throw new Error("The songwriting response did not match its API contract.");
   }
@@ -246,7 +252,9 @@ export function normalizeSongwritingSessions(payload: unknown): SongwritingSessi
   return sessions as SongwritingSession[];
 }
 
-export function normalizeSongwritingSessionResponse(payload: unknown): SongwritingSession {
+export function normalizeSongwritingSessionResponse(
+  payload: unknown,
+): SongwritingSession {
   const session = normalizeSongwritingSession(payload);
   if (!session) {
     throw new Error("The songwriting session response was invalid.");
@@ -254,13 +262,18 @@ export function normalizeSongwritingSessionResponse(payload: unknown): Songwriti
   return session;
 }
 
-export function normalizeSongwritingAssist(payload: unknown): SongwritingAssistResponse {
+export function normalizeSongwritingAssist(
+  payload: unknown,
+): SongwritingAssistResponse {
   if (!isRecord(payload)) {
     throw new Error("The songwriting assistant response was invalid.");
   }
   const list = (field: string): string[] => {
     const value = payload[field];
-    if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
+    if (
+      !Array.isArray(value) ||
+      !value.every((item) => typeof item === "string")
+    ) {
       throw new Error(`The songwriting assistant returned invalid ${field}.`);
     }
     return value.map((item) => item.trim()).filter(Boolean);
@@ -313,7 +326,9 @@ export function normalizeSongwritingDraftInput(
 
 export function resolveProjectAudioSource(raw: string): string {
   const value = raw.trim();
-  if (!value) throw new Error("This project does not have a valid audio source.");
+  if (!value) {
+    throw new Error("This project does not have a valid audio source.");
+  }
 
   if (value.startsWith("/api/")) return value;
   if (value.startsWith("//")) {
@@ -342,7 +357,9 @@ export function resolveProjectAudioSource(raw: string): string {
 export function formatProjectDate(value: unknown): string {
   if (typeof value !== "string") return "Date unavailable";
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toLocaleDateString() : "Date unavailable";
+  return Number.isFinite(date.getTime())
+    ? date.toLocaleDateString()
+    : "Date unavailable";
 }
 
 export function formatProjectFileSize(bytes: unknown): string {
