@@ -20,6 +20,18 @@ Do not demand GCS IAM/PAP/retention-policy reads or screenshots from the user.
 
 ## Large filesystem recovery
 
+The user expects persistent storage disk usage to have been replaced by the
+configured Replit App Storage bucket. Backup/restore integration alone does not
+satisfy that expectation for live PDIM persistence.
+
+**Why:** The user reiterated this requirement after a local quota failure
+prevented awareness ingestion.
+
+**How to apply:** Treat bucket-backed live persistence as unfinished until
+acknowledged writes and recovery are verified against the bucket. Preserve
+existing records and PDIM interfaces; never describe space reclamation or a
+restart as completing that migration.
+
 Stream backups directly to private storage and compare the generation-pinned
 download against quiesced originals. Do not stage both a compressed archive and
 an extracted verification copy on local disk.
