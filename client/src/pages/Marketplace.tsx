@@ -203,6 +203,15 @@ interface Purchase {
 
 type CartItem = MarketplaceCartItem;
 
+async function loadMarketplaceData(path: string, array = true) {
+  const response = await apiRequest("GET", path);
+  const data = await response.json();
+  if (array && !Array.isArray(data)) {
+    throw new Error("Marketplace returned an invalid list. Please retry.");
+  }
+  return data;
+}
+
 interface MerchStats {
   totalRevenue: number;
   totalOrders: number;
@@ -458,6 +467,7 @@ function ProducerFollowButton({
   followMutation: ProducerFollowMutation;
   unfollowMutation: ProducerFollowMutation;
 }) {
+  const { user } = useAuth();
   const {
     data: followStatus,
     isLoading,
@@ -465,7 +475,8 @@ function ProducerFollowButton({
     isFetching,
     refetch,
   } = useQuery<FollowStatusResponse>({
-    queryKey: ["/api/marketplace/producers", producerId, "follow-status"],
+    queryKey: ["/api/marketplace/producers", producerId, "follow-status", user?.id],
+    enabled: !!user,
     queryFn: async () => {
       const response = await fetch(
         `/api/marketplace/producers/${producerId}/follow-status`,
@@ -523,6 +534,11 @@ function ProducerFollowButton({
 }
 
 export default function Marketplace() {
+  const { user } = useAuth();
+  return <MarketplaceContent key={user?.id || "guest"} />;
+}
+
+function MarketplaceContent() {
   const { user, isLoading: authLoading } = useAuth();
   // Cap how long we wait for the auth state to resolve. If the session check
   // takes > 4 s (slow network, PDIM cold start) we stop blocking and render
@@ -877,21 +893,24 @@ export default function Marketplace() {
   });
 
   // Merch Store queries and mutations
-  const { data: merchItems, isLoading: merchLoading } = useQuery<MerchItem[]>({
-    queryKey: ["/api/merch"],
-    enabled: activeTab === "merch",
+  const { data: merchItems, isLoading: merchLoading, ...merchQuery } = useQuery<MerchItem[]>({
+    queryKey: ["/api/merch", user?.id],
+    queryFn: () => loadMarketplaceData("/api/merch"),
+    enabled: !!user && activeTab === "merch",
   });
 
-  const { data: merchOrders, isLoading: ordersLoading } = useQuery<
+  const { data: merchOrders, isLoading: ordersLoading, ...ordersQuery } = useQuery<
     MerchOrder[]
   >({
-    queryKey: ["/api/merch/orders"],
-    enabled: activeTab === "merch",
+    queryKey: ["/api/merch/orders", user?.id],
+    queryFn: () => loadMarketplaceData("/api/merch/orders"),
+    enabled: !!user && activeTab === "merch",
   });
 
-  const { data: merchStats } = useQuery<MerchStats>({
-    queryKey: ["/api/merch/stats"],
-    enabled: activeTab === "merch",
+  const { data: merchStats, ...merchStatsQuery } = useQuery<MerchStats>({
+    queryKey: ["/api/merch/stats", user?.id],
+    queryFn: () => loadMarketplaceData("/api/merch/stats", false),
+    enabled: !!user && activeTab === "merch",
   });
 
   const addItemMutation = useMutation({
@@ -1068,7 +1087,7 @@ export default function Marketplace() {
   );
   const deepLinkedBeatId = isDeepLinkedBeat ? deepLinkParams?.beatId : undefined;
 
-  const { data: deepLinkedBeat } = useQuery<Beat | null>({
+  const { data: deepLinkedBeat, ...deepLinkQuery } = useQuery<Beat | null>({
     queryKey: ["/api/marketplace/beats", "detail", deepLinkedBeatId],
     queryFn: async () => {
       const res = await fetch(`/api/marketplace/beats/${deepLinkedBeatId}`, {
@@ -1082,7 +1101,7 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: browsedBeats = [], isLoading: beatsLoading } = useQuery<
+  const { data: browsedBeats = [], isLoading: beatsLoading, ...beatsQuery } = useQuery<
     Beat[]
   >({
     queryKey: [
@@ -1106,7 +1125,9 @@ export default function Marketplace() {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
 
-      return await res.json();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Marketplace returned an invalid beat list.");
+      return data;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -1195,70 +1216,83 @@ export default function Marketplace() {
     return () => { cancelled = true; };
   }, [currentUserId]);
 
-  const { data: producersData } =
+  const { data: producersData, ...producersQuery } =
     useQuery<ProducersResponse>({
       queryKey: ["/api/marketplace/producers"],
+      queryFn: async () => {
+        const data = await loadMarketplaceData("/api/marketplace/producers", false);
+        if (!Array.isArray(data?.producers)) throw new Error("Marketplace returned an invalid producer list.");
+        return data;
+      },
       staleTime: 5 * 60 * 1000,
     });
 
   const producers = producersData?.producers || [];
 
-  const { data: purchases = [], isLoading: purchasesLoading } = useQuery<
+  const { data: purchases = [], isLoading: purchasesLoading, ...purchasesQuery } = useQuery<
     Purchase[]
   >({
-    queryKey: ["/api/marketplace/purchases"],
+    queryKey: ["/api/marketplace/purchases", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/purchases"),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: salesAnalytics } =
+  const { data: salesAnalytics, ...salesQuery } =
     useQuery<SalesAnalytics>({
-      queryKey: ["/api/marketplace/sales-analytics"],
+      queryKey: ["/api/marketplace/sales-analytics", user?.id],
+      queryFn: () => loadMarketplaceData("/api/marketplace/sales-analytics", false),
       enabled: !!user,
       staleTime: 5 * 60 * 1000,
     });
 
-  const { data: myBeats = [], isLoading: myBeatsLoading } = useQuery<Beat[]>({
-    queryKey: ["/api/marketplace/my-beats"],
+  const { data: myBeats = [], isLoading: myBeatsLoading, ...myBeatsQuery } = useQuery<Beat[]>({
+    queryKey: ["/api/marketplace/my-beats", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/my-beats"),
     enabled: !!user && activeTab === "my-beats",
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: escrowTransactions = [] } = useQuery<EscrowTransaction[]>({
-    queryKey: ["/api/marketplace/escrow"],
+  const { data: escrowTransactions = [], ...escrowQuery } = useQuery<EscrowTransaction[]>({
+    queryKey: ["/api/marketplace/escrow", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/escrow"),
     enabled: !!user && activeTab === "escrow",
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: affiliates = [] } = useQuery<AffiliateData[]>({
-    queryKey: ["/api/marketplace/affiliates"],
+  const { data: affiliates = [], ...affiliatesQuery } = useQuery<AffiliateData[]>({
+    queryKey: ["/api/marketplace/affiliates", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/affiliates"),
     enabled: !!user && activeTab === "affiliates",
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: aiRecommendations = [] } = useQuery<AIRecommendation[]>({
-    queryKey: ["/api/marketplace/ai-recommendations"],
+    queryKey: ["/api/marketplace/ai-recommendations", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/ai-recommendations"),
     enabled: !!user,
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: licenseTemplatesData = [] } = useQuery<LicenseTemplate[]>({
-    queryKey: ["/api/marketplace/license-templates"],
+  const { data: licenseTemplatesData = [], ...licensesQuery } = useQuery<LicenseTemplate[]>({
+    queryKey: ["/api/marketplace/license-templates", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/license-templates"),
     enabled: !!user && activeTab === "licenses",
     staleTime: 5 * 60 * 1000,
   });
 
-  const activeLicenseTemplates =
-    licenseTemplatesData.length > 0 ? licenseTemplatesData : LICENSE_TYPES;
+  const activeLicenseTemplates = licenseTemplatesData;
 
-  const { data: contractTemplates = [] } = useQuery<ContractTemplate[]>({
-    queryKey: ["/api/marketplace/contracts"],
+  const { data: contractTemplates = [], ...contractsQuery } = useQuery<ContractTemplate[]>({
+    queryKey: ["/api/marketplace/contracts", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/contracts"),
     enabled: !!user && activeTab === "contracts",
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: collaborations = [] } = useQuery<CollaborationOffer[]>({
-    queryKey: ["/api/marketplace/collaborations"],
+  const { data: collaborations = [], ...collaborationsQuery } = useQuery<CollaborationOffer[]>({
+    queryKey: ["/api/marketplace/collaborations", user?.id],
+    queryFn: () => loadMarketplaceData("/api/marketplace/collaborations"),
     enabled: !!user && activeTab === "collaborations",
     staleTime: 5 * 60 * 1000,
   });
@@ -2370,7 +2404,7 @@ export default function Marketplace() {
 
   const handleAddToCart = (beat: Beat, licenseType: string) => {
     if (!user) {
-      setLocation(
+      navigate(
         `/login?redirect=${encodeURIComponent(`/marketplace/beat/${beat.id}`)}`,
       );
       return;
@@ -2440,7 +2474,7 @@ export default function Marketplace() {
     // this beat instead of letting the purchase call fail with an opaque
     // "Purchase Failed" toast.
     if (!user) {
-      setLocation(
+      navigate(
         `/login?redirect=${encodeURIComponent(`/marketplace/beat/${beat.id}`)}`,
       );
       return;
@@ -2449,7 +2483,7 @@ export default function Marketplace() {
   };
 
   const handleShare = (beat: Beat) => {
-    const beatUrl = `${window.location.origin}/marketplace/beat/${beat.id}`;
+    const beatUrl = `https://maxbooster.replit.app/marketplace/beat/${encodeURIComponent(beat.id)}`;
     if (navigator.share) {
       navigator
         .share({
@@ -2688,6 +2722,23 @@ export default function Marketplace() {
     }
   };
 
+  const activeQueries = {
+    browse: [beatsQuery, ...(deepLinkedBeatId ? [deepLinkQuery] : [])],
+    producers: [producersQuery],
+    "my-beats": [myBeatsQuery],
+    purchases: [purchasesQuery],
+    sales: [salesQuery],
+    escrow: [escrowQuery],
+    affiliates: [affiliatesQuery],
+    licenses: [licensesQuery],
+    contracts: [contractsQuery],
+    collaborations: [collaborationsQuery],
+    merch: [merchQuery, ordersQuery, merchStatsQuery],
+  }[activeTab] || [];
+  const activeQueryError = activeQueries.find((query) => query.isError);
+  const activeQueryPending = activeQueries.some((query) => query.isPending);
+  const privateTabWithoutUser = !user && !["browse", "producers"].includes(activeTab);
+
   if (isMarketplaceLoading) {
     return (
       <AppLayout>
@@ -2726,7 +2777,7 @@ export default function Marketplace() {
                 Max Booster Marketplace
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-                Buy &amp; Sell Beats with Escrow Protection &amp; AI Discovery
+                Buy &amp; Sell Beats with AI Discovery
               </p>
               <div className="flex items-center flex-wrap gap-2 mt-4">
                 <Badge
@@ -2734,7 +2785,7 @@ export default function Marketplace() {
                   className="border-blue-200 text-blue-700 bg-blue-50"
                 >
                   <Shield className="w-3 h-3 mr-1" />
-                  Escrow Protected
+                  Standard Checkout
                 </Badge>
                 <Badge
                   variant="outline"
@@ -3159,6 +3210,19 @@ export default function Marketplace() {
             )}
           </TabsList>
 
+          {activeTab === "browse" && deepLinkedBeatId && deepLinkQuery.isSuccess && !deepLinkedBeat && (
+            <p role="alert" className="p-4">This beat is unavailable or no longer listed. You can browse other beats below.</p>
+          )}
+          {privateTabWithoutUser ? (
+            <p role="status" className="p-6">Please log in to view this marketplace section.</p>
+          ) : activeQueryError ? (
+            <div role="alert" className="p-6 space-y-3">
+              <p>Unable to load this marketplace section. {activeQueryError.error?.message}</p>
+              <Button onClick={() => activeQueries.forEach((query) => void query.refetch())}>Retry</Button>
+            </div>
+          ) : activeQueryPending ? (
+            <p role="status" className="p-6">Loading marketplace section…</p>
+          ) : <>
           <TabsContent value="browse" className="space-y-6">
             {(searchQuery ||
               selectedGenre !== "all" ||
@@ -4231,7 +4295,7 @@ export default function Marketplace() {
               />
               <StatCard
                 title="Avg. Sale Price"
-                value={salesAnalytics?.avgSalePrice || 0}
+                value={salesAnalytics?.averageOrderValue ?? 0}
                 change={0}
                 trend="neutral"
                 prefix="$"
@@ -4240,7 +4304,7 @@ export default function Marketplace() {
               />
               <StatCard
                 title="Conversion Rate"
-                value={salesAnalytics?.conversionRate || 0}
+                value={salesAnalytics?.conversionRate ?? "Unavailable"}
                 change={0}
                 trend="neutral"
                 suffix="%"
@@ -4268,7 +4332,7 @@ export default function Marketplace() {
                 <div className="h-48 flex items-center justify-center text-slate-500">
                   <div className="text-center">
                     <BarChart3 className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                    <p className="text-sm">No sales data yet</p>
+                    <p className="text-sm">Revenue trend data is unavailable.</p>
                   </div>
                 </div>
               )}
@@ -4319,7 +4383,7 @@ export default function Marketplace() {
                       )
                     ) : (
                       <p className="text-center text-gray-500 py-4">
-                        No sales data yet
+                        Top-selling beat data is unavailable.
                       </p>
                     )}
                   </div>
@@ -4343,8 +4407,8 @@ export default function Marketplace() {
                             <span className="font-semibold">
                               {salesAnalytics?.licenseDistribution?.[
                                 license
-                              ]?.toFixed(0) || 0}
-                              %
+                              ]?.toFixed(0) ?? "Unavailable"}
+                              {salesAnalytics?.licenseDistribution ? "%" : ""}
                             </span>
                           </div>
                           <Progress
@@ -4377,8 +4441,8 @@ export default function Marketplace() {
                       Escrow Protection
                     </h3>
                     <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                      All transactions are protected with escrow. Funds are held
-                      securely until both parties confirm the transaction.
+                      Escrow checkout and releases are not currently supported.
+                      The records below are provided for reference, not confirmation of protected funds.
                     </p>
                   </div>
                 </div>
@@ -4486,7 +4550,8 @@ export default function Marketplace() {
                               onClick={() =>
                                 releaseEscrowMutation.mutate(transaction.id)
                               }
-                              disabled={releaseEscrowMutation.isPending}
+                              disabled
+                              title="Escrow releases are not currently supported"
                             >
                               Release Funds
                             </Button>
@@ -5351,6 +5416,7 @@ export default function Marketplace() {
               </TabsContent>
             </Tabs>
           </TabsContent>
+          </>}
         </Tabs>
       </div>
 

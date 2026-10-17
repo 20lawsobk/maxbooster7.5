@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Logo } from "@/components/ui/Logo";
 import {
   Mail,
@@ -15,11 +16,35 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+async function requestPasswordReset(email: string): Promise<void> {
+  const response = await fetch("/api/auth/forgot-password", {
+    method: "POST",
+    signal: AbortSignal.timeout(30_000),
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  const data: unknown = await response.json().catch(() => null);
+  if (response.status === 429) {
+    throw new Error("Too many password reset requests. Please wait a few minutes before trying again.");
+  }
+  const body = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  if (!response.ok || body.success !== true) {
+    throw new Error(
+      typeof body.message === "string" && body.message
+        ? body.message
+        : `Unable to confirm the reset request (${response.status}). Please try again.`,
+    );
+  }
+}
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [requestError, setRequestError] = useState("");
+  const requestInFlight = useRef(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const resendIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
@@ -36,7 +61,7 @@ export default function ForgotPassword() {
 
   const validateEmail = (value: string): string | undefined => {
     if (!value.trim()) return "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()))
       return "Please enter a valid email address";
     return undefined;
   };
@@ -75,6 +100,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestInFlight.current) return;
 
     const error = validateEmail(email);
     if (error) {
@@ -82,40 +108,22 @@ export default function ForgotPassword() {
       return;
     }
 
+    requestInFlight.current = true;
+    setRequestError("");
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      await requestPasswordReset(email);
 
-      const data = await response.json().catch(() => null);
-
-      if (response.status === 429) {
-        toast({
-          title: "Too Many Requests",
-          description:
-            "You have made too many password reset requests. Please wait a few minutes before trying again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.message || "Failed to send reset link");
-      }
-
+      setEmail(email.trim());
       setSubmitted(true);
       startResendCooldown();
       toast({
-        title: "Reset Link Sent",
-        description: "Check your email for password reset instructions.",
+        title: "Reset Request Received",
+        description: "If an account exists for that email, check its inbox for reset instructions.",
       });
     } catch (error: unknown) {
+      setRequestError(error instanceof Error ? error.message : "Unable to send the reset link. Please try again.");
       toast({
         title: "Unable to Send Reset Link",
         description:
@@ -125,42 +133,27 @@ export default function ForgotPassword() {
         variant: "destructive",
       });
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (resendCooldown > 0) return;
+    if (requestInFlight.current || resendCooldown > 0) return;
+    requestInFlight.current = true;
+    setRequestError("");
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (response.status === 429) {
-        toast({
-          title: "Too Many Requests",
-          description: "Please wait before requesting another reset link.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.message || "Could not resend the reset link.");
-      }
+      await requestPasswordReset(email);
 
       startResendCooldown();
       toast({
-        title: "Email Resent",
-        description: "A new password reset link has been sent to your email.",
+        title: "Reset Request Received",
+        description: "If an account exists for that email, check its inbox for a new reset link.",
       });
     } catch (error: unknown) {
+      setRequestError(error instanceof Error ? error.message : "Could not resend the reset link. Please try again.");
       toast({
         title: "Resend Failed",
         description:
@@ -170,6 +163,7 @@ export default function ForgotPassword() {
         variant: "destructive",
       });
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   };
@@ -198,12 +192,17 @@ export default function ForgotPassword() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               {!submitted
                 ? "Enter your email and we'll send you a reset link"
-                : "We've sent password reset instructions to your email"}
+                : "If an account exists for that email, you'll receive reset instructions."}
             </p>
           </CardHeader>
           <CardContent>
+            {requestError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{requestError}</AlertDescription>
+              </Alert>
+            )}
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
                 <div className="space-y-1">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -242,6 +241,7 @@ export default function ForgotPassword() {
                 <div className="text-center">
                   <Link href="/login">
                     <Button
+                      type="button"
                       variant="link"
                       className="text-sm"
                       data-testid="link-back-to-login"
@@ -257,7 +257,7 @@ export default function ForgotPassword() {
                 <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    We've sent a password reset link to:
+                    If an account exists, reset instructions will be sent to:
                   </p>
                   <p className="font-medium text-gray-900 dark:text-white mb-6">
                     {email}
@@ -293,7 +293,7 @@ export default function ForgotPassword() {
                     disabled={loading || resendCooldown > 0}
                     data-testid="button-resend-email"
                   >
-                    {resendCooldown > 0 ? (
+                    {loading ? "Sending..." : resendCooldown > 0 ? (
                       <>
                         <Clock className="h-4 w-4 mr-2" />
                         Resend in {resendCooldown}s
@@ -309,10 +309,12 @@ export default function ForgotPassword() {
                     variant="ghost"
                     size="sm"
                     className="w-full text-muted-foreground"
+                    disabled={loading}
                     onClick={() => {
                       setSubmitted(false);
                       setEmail("");
                       setEmailError("");
+                      setRequestError("");
                     }}
                     data-testid="button-try-different-email"
                   >

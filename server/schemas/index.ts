@@ -1,5 +1,11 @@
 // @ts-nocheck
 import { z } from "zod";
+import { getAccountEligibilityError } from "../../shared/agePolicy.js";
+
+const eligibleBirthdateSchema = z.string().superRefine((value, ctx) => {
+  const message = getAccountEligibilityError(value);
+  if (message) ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+});
 
 // ============================================================================
 // Common Schemas
@@ -43,6 +49,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
+    birthdate: eligibleBirthdateSchema,
     email: z.string().email("Invalid email address"),
     username: z
       .string()
@@ -96,24 +103,7 @@ export const createCheckoutSessionSchema = z.object({
     .string()
     .min(3, "Username must be at least 3 characters")
     .max(50, "Username cannot exceed 50 characters"),
-  birthdate: z.string().refine(
-    (date) => {
-      const birthDate = new Date(date);
-      const today = new Date();
-      const age = today?.getFullYear() - birthDate?.getFullYear();
-      const monthDiff = today?.getMonth() - birthDate?.getMonth();
-      const actualAge =
-        monthDiff < 0 ||
-        (monthDiff === 0 && today?.getDate() < birthDate?.getDate())
-          ? age - 1
-          : age;
-      return actualAge >= 13;
-    },
-    {
-      message:
-        "You must be at least 13 years old to create an account (COPPA compliance)",
-    },
-  ),
+  birthdate: eligibleBirthdateSchema,
 });
 
 export const registerAfterPaymentSchema = z.object({

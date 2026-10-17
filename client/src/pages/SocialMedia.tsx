@@ -103,6 +103,7 @@ interface SocialPost {
   content: string;
   platforms: string[];
   scheduledTime: string;
+  scheduledAt?: string;
   status: "draft" | "scheduled" | "published" | "failed";
   media: {
     type: "image" | "video" | "audio";
@@ -514,9 +515,9 @@ export default function SocialMedia() {
   const [hashtagStrategy, setHashtagStrategy] = useState("balanced");
   const [captionLength, setCaptionLength] = useState("optimal");
   const [ctaStrength, setCtaStrength] = useState("medium");
-  const [, setEditingPost] = useState<string | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
+  const [uploadedMediaUrl, setUploadedMediaUrl] = useState<string | null>(null);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
     null,
   );
@@ -582,7 +583,7 @@ export default function SocialMedia() {
             category: "oauth",
             title: "Connection Failed",
             message: errorMessage
-              ? `${platformName} connection failed: ${decodeURIComponent(errorMessage)}`
+              ? `${platformName} connection failed: ${errorMessage}`
               : `Failed to connect to ${platformName}. Please try again.`,
             platformId: callbackPlatformId,
             retryable: true,
@@ -1027,6 +1028,16 @@ export default function SocialMedia() {
       setPostContent("");
       setScheduledTime("");
       setSelectedPlatforms([]);
+      setUploadedMedia(null);
+      setUploadedMediaUrl(null);
+      setMediaPreviewUrl((previous) => {
+        if (previous?.startsWith("blob:")) URL.revokeObjectURL(previous);
+        return null;
+      });
+      setGeneratedVideoUrl(null);
+      setGeneratedVideoPosterUrl(undefined);
+      setGeneratedImageUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       invalidateOnSocialChange();
       trackFirstPostScheduled();
@@ -1284,17 +1295,23 @@ export default function SocialMedia() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      return uploadWithProgress("/api/storage/upload", formData, {
+      const result = await uploadWithProgress("/api/storage/upload", formData, {
         timeout: 300000, // 5 minutes
-      });
+      }) as { success?: boolean; file?: { url?: string } };
+      if (result.success === false || !result.file?.url) {
+        throw new Error("The upload did not return a saved media URL. Please try again.");
+      }
+      return result.file.url;
     },
-    onSuccess: () => {
+    onSuccess: (url: string) => {
+      setUploadedMediaUrl(url);
       toast({
         title: "Media Uploaded!",
         description: "Your media has been uploaded successfully.",
       });
     },
     onError: (error: Error) => {
+      setUploadedMediaUrl(null);
       toast({
         title: "Upload Failed",
         description:
@@ -1343,8 +1360,6 @@ export default function SocialMedia() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       invalidateOnSocialChange();
-      setScheduleDialogOpen(false);
-      setEditingCalendarPost(null);
     },
     onError: (error: Error) => {
       toast({
@@ -1386,18 +1401,19 @@ export default function SocialMedia() {
       );
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
-        title: "Post Updated!",
-        description: "Your scheduled post has been updated.",
+        title: result?.queued ? "Post Queued" : "Draft Updated",
+        description: result?.queued
+          ? "Your post is queued. Delivery is not confirmed until the platform responds."
+          : "Your draft was updated. Nothing has been published.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/social/calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/social/calendar/stats"],
       });
       invalidateOnSocialChange();
-      setScheduleDialogOpen(false);
-      setEditingCalendarPost(null);
     },
     onError: (error: Error) => {
       toast({
@@ -1658,6 +1674,15 @@ export default function SocialMedia() {
   };
 
   const handleSchedulePostFromTab = () => {
+    if (schedulePostMutation.isPending) return;
+    if (uploadMediaMutation.isPending || (uploadedMedia && !uploadedMediaUrl)) {
+      toast({
+        title: "Media Not Ready",
+        description: "Wait for the upload to finish, retry it, or remove the media before scheduling.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!postContent.trim()) {
       toast({
         title: "Content Required",
@@ -1674,10 +1699,46 @@ export default function SocialMedia() {
       });
       return;
     }
+    const mediaUrl =
+      regularContentFormat === "video" ? generatedVideoUrl
+        : regularContentFormat === "image" ? generatedImageUrl
+          : uploadedMediaUrl;
+    let deliveryMediaUrl: string | undefined;
+    if (mediaUrl) {
+      try {
+        const parsedMediaUrl = new URL(mediaUrl, window.location.origin);
+        if (!["http:", "https:"].includes(parsedMediaUrl.protocol)) {
+          throw new Error("Media must be saved before scheduling.");
+        }
+        deliveryMediaUrl = parsedMediaUrl.href;
+      } catch {
+        toast({
+          title: "Media Not Ready",
+          description: "The media URL is invalid or is only a local preview. Save or regenerate the media before scheduling.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    const scheduledDate = scheduledTime ? new Date(scheduledTime) : new Date();
+    if (Number.isNaN(scheduledDate.getTime())) {
+      toast({
+        title: "Invalid Schedule",
+        description: "Choose a valid date and time.",
+        variant: "destructive",
+      });
+      return;
+    }
     schedulePostMutation.mutate({
       content: postContent,
       platforms: selectedPlatforms,
-      scheduledAt: scheduledTime || new Date().toISOString(),
+      scheduledAt: scheduledDate.toISOString(),
+      mediaUrls: deliveryMediaUrl ? [deliveryMediaUrl] : [],
+      mediaType: deliveryMediaUrl
+        ? regularContentFormat === "video" ? "video"
+          : regularContentFormat === "image" ? "image"
+            : uploadedMedia?.type.startsWith("video/") ? "video" : "image"
+        : undefined,
     });
   };
 
@@ -1806,11 +1867,17 @@ export default function SocialMedia() {
   const handleEditPost = (postId: string) => {
     const post = posts.find((p: SocialPost) => p.id === postId);
     if (post) {
-      setPostContent(post.content);
-      setSelectedPlatforms(post.platforms);
-      setScheduledTime(post.scheduledTime);
-      setActiveTab("create");
-      setEditingPost(postId);
+      if (post.status !== "draft") {
+        toast({
+          title: "Queued Posts Cannot Be Edited",
+          description: "Delete the queued post before creating a replacement. Opening it in the composer would create a duplicate.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setEditingCalendarPost(post);
+      setScheduleDialogOpen(true);
+      setActiveTab("calendar");
     }
   };
 
@@ -1825,8 +1892,8 @@ export default function SocialMedia() {
 
   const handleAIAction = (action: string) => {
     toast({
-      title: "Action Started",
-      description: `${action} initiated`,
+      title: "Manual Review Required",
+      description: `Recommendation: ${action}. No automated action has been performed.`,
     });
   };
 
@@ -1871,15 +1938,20 @@ export default function SocialMedia() {
   };
 
   // Calendar handlers
-  const handleSchedulePost = (data: SchedulePostData) => {
+  const handleSchedulePost = async (data: SchedulePostData) => {
     if (editingCalendarPost) {
-      updateCalendarPostMutation.mutate({
+      await updateCalendarPostMutation.mutateAsync({
         postId: editingCalendarPost.id,
         data,
       });
     } else {
-      createCalendarPostMutation.mutate(data);
+      await createCalendarPostMutation.mutateAsync(data);
     }
+  };
+
+  const handleScheduleDialogOpenChange = (open: boolean) => {
+    setScheduleDialogOpen(open);
+    if (!open) setEditingCalendarPost(null);
   };
 
   const handleDateClick = (date: Date, datePosts: CalendarPost[]) => {
@@ -2375,7 +2447,7 @@ export default function SocialMedia() {
                         {generatedVideoUrl && (
                           <Button
                             onClick={handleSchedulePostFromTab}
-                            disabled={selectedPlatforms.length === 0}
+                            disabled={selectedPlatforms.length === 0 || schedulePostMutation.isPending}
                             className="w-full"
                             data-testid="button-schedule-video-post"
                           >
@@ -2415,7 +2487,7 @@ export default function SocialMedia() {
                         {generatedImageUrl && (
                           <Button
                             onClick={handleSchedulePostFromTab}
-                            disabled={selectedPlatforms.length === 0}
+                            disabled={selectedPlatforms.length === 0 || schedulePostMutation.isPending}
                             className="w-full"
                             data-testid="button-schedule-image-post"
                           >
@@ -2448,6 +2520,8 @@ export default function SocialMedia() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 setUploadedMedia(file);
+                                setUploadedMediaUrl(null);
+                                if (mediaPreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(mediaPreviewUrl);
                                 const previewUrl = URL.createObjectURL(file);
                                 setMediaPreviewUrl(previewUrl);
                                 uploadMediaMutation.mutate(file);
@@ -2473,8 +2547,11 @@ export default function SocialMedia() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+                                disabled={uploadMediaMutation.isPending}
                                 onClick={() => {
                                   setUploadedMedia(null);
+                                  setUploadedMediaUrl(null);
+                                  if (mediaPreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(mediaPreviewUrl);
                                   setMediaPreviewUrl(null);
                                   if (fileInputRef.current) {
                                     fileInputRef.current.value = "";
@@ -2538,6 +2615,8 @@ export default function SocialMedia() {
                           <Button
                             onClick={handleSchedulePostFromTab}
                             disabled={
+                              schedulePostMutation.isPending ||
+                              uploadMediaMutation.isPending ||
                               !postContent.trim() ||
                               selectedPlatforms.length === 0
                             }
@@ -3551,7 +3630,7 @@ export default function SocialMedia() {
               {/* Schedule Post Dialog */}
               <SchedulePostDialog
                 open={scheduleDialogOpen}
-                onOpenChange={setScheduleDialogOpen}
+                onOpenChange={handleScheduleDialogOpenChange}
                 onSchedule={handleSchedulePost}
                 initialData={
                   editingCalendarPost
@@ -3562,8 +3641,12 @@ export default function SocialMedia() {
                             editingCalendarPost.scheduledAt ||
                             new Date(),
                         ),
-                        platforms: editingCalendarPost.platforms || [],
-                        postType: editingCalendarPost.postType || "post",
+                        platforms: (editingCalendarPost.platforms?.length
+                          ? editingCalendarPost.platforms
+                          : editingCalendarPost.platform ? [editingCalendarPost.platform] : [])
+                            .map((platform) => platform === "x" ? "twitter" : platform === "google_business" ? "googlebusiness" : platform),
+                        postType: editingCalendarPost.postType ||
+                          (editingCalendarPost.contentType === "video" ? "video" : "post"),
                         content: getCalendarPostText(editingCalendarPost.content),
                         mediaUrls: editingCalendarPost.mediaUrls || [],
                         hashtags: editingCalendarPost.hashtags || [],
@@ -3858,9 +3941,9 @@ export default function SocialMedia() {
                                   </div>
                                   <div className="flex items-center text-sm text-gray-600">
                                     <Clock className="w-4 h-4 mr-1" />
-                                    {post.scheduledTime
+                                    {post.scheduledAt || post.scheduledTime
                                       ? new Date(
-                                          post.scheduledTime,
+                                          post.scheduledAt || post.scheduledTime,
                                         ).toLocaleString()
                                       : "Time not set"}
                                     <Badge className="ml-3 bg-blue-100 text-blue-800">
@@ -5001,7 +5084,7 @@ function PressKitTabContent() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
-  const { data: pressKit, isLoading } = useQuery<PressKitData | null>({
+  const { data: pressKit, isLoading, isError } = useQuery<PressKitData | null>({
     queryKey: ["/api/press-kit"],
   });
 
@@ -5047,7 +5130,7 @@ function PressKitTabContent() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit.isPublic ?? false,
+      isPublic: pressKit?.isPublic ?? false,
     });
   };
 
@@ -5066,6 +5149,7 @@ function PressKitTabContent() {
         formData,
       )) as { file: { url: string } };
       const photoUrl = res.file.url;
+      if (!photoUrl) throw new Error("The upload did not return a saved photo URL.");
 
       const currentPhotos = (pressKit?.photos as PressKitPhoto[]) || [];
       updatePressKitMutation.mutate({
@@ -5084,19 +5168,27 @@ function PressKitTabContent() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as PressKitPhoto[])];
+    const currentPhotos = [...(pressKit?.photos ?? [])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
 
-  const copyPublicLink = () => {
+  const copyPublicLink = async () => {
     if (pressKit?.slug) {
       const url = `${window.location.origin}/epk/${pressKit.slug}`;
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Link Copied",
-        description: "Public EPK link copied to clipboard",
-      });
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link Copied",
+          description: "Public EPK link copied to clipboard",
+        });
+      } catch {
+        toast({
+          title: "Copy Failed",
+          description: "The browser could not copy the public EPK link.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -5106,6 +5198,10 @@ function PressKitTabContent() {
         <RefreshCw className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <p role="alert" className="text-destructive">The press kit could not be loaded. Please retry before editing.</p>;
   }
 
   return (
@@ -5410,6 +5506,7 @@ function RadioPitchingContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/radio-pitches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/radio-pitches/stats"] });
       setIsNewOpen(false);
       setNewPitch({
         trackTitle: "",
@@ -5426,6 +5523,11 @@ function RadioPitchingContent() {
         description: "Your outreach has been logged.",
       });
     },
+    onError: (error: Error) => toast({
+      title: "Pitch Not Saved",
+      description: error.message || "Could not log outreach. Your form has been kept.",
+      variant: "destructive",
+    }),
   });
 
   const updateStatusMutation = useMutation({
@@ -5437,8 +5539,15 @@ function RadioPitchingContent() {
     },
     onMutate: ({ id }) => setUpdatingId(id),
     onSettled: () => setUpdatingId(null),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["/api/radio-pitches"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/radio-pitches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/radio-pitches/stats"] });
+    },
+    onError: (error: Error) => toast({
+      title: "Pitch Status Not Saved",
+      description: error.message || "Could not update the pitch status.",
+      variant: "destructive",
+    }),
   });
 
   const filteredPitches =
@@ -5805,6 +5914,7 @@ function FanCampaignsContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns/stats"] });
       setIsNewOpen(false);
       setNewCampaign({
         name: "",
@@ -5817,6 +5927,11 @@ function FanCampaignsContent() {
         description: "Draft saved. Ready to send.",
       });
     },
+    onError: (error: Error) => toast({
+      title: "Campaign Not Saved",
+      description: error.message || "Could not save the campaign. Your form has been kept.",
+      variant: "destructive",
+    }),
   });
 
   const sendMutation = useMutation({
@@ -5828,6 +5943,7 @@ function FanCampaignsContent() {
     onSettled: () => setSendingId(null),
     onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns/stats"] });
       toast({
         title: "Campaign processed",
         description: `${data.acceptedCount ?? 0} accepted by email provider; ${data.pendingCount ?? 0} pending; ${data.unknownCount ?? 0} need reconciliation. Acceptance is not delivery.`,
@@ -5847,8 +5963,15 @@ function FanCampaignsContent() {
     },
     onMutate: (id) => setDeletingId(id),
     onSettled: () => setDeletingId(null),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/fan-campaigns/stats"] });
+    },
+    onError: (error: Error) => toast({
+      title: "Campaign Not Deleted",
+      description: error.message || "Could not delete the campaign.",
+      variant: "destructive",
+    }),
   });
 
   const TEMPLATES = [

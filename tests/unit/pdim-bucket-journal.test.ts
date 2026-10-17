@@ -32,6 +32,19 @@ async function fixture() {
 }
 
 describe("bucket PDIM durability", () => {
+  it("revalidates an unchanged expired lease without allowing takeover over a successor", async () => {
+    const { journal, make, advance } = await fixture();
+    advance();
+    await journal.renew();
+    await expect(make().acquire()).rejects.toThrow("Another process");
+    advance();
+    const successor = make();
+    await successor.acquire();
+    await expect(journal.renew()).rejects.toThrow("renewal failed");
+    await expect(journal.append({ n: 3 })).rejects.toThrow();
+    await successor.append({ n: 4 });
+    expect((await successor.recover()).transactions).toEqual([{ n: 4 }]);
+  });
   it("refuses missing bucket state instead of creating an empty database", async () => {
     await expect(new PdimBucketJournal(new Objects(), "test", valid).acquire()).rejects.toThrow("migration");
   });

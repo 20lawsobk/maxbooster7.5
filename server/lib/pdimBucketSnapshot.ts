@@ -57,6 +57,7 @@ export async function readBucketSnapshot<E>(
   objects: Objects,
   manifestBytes: Buffer,
   validate: (key: string, entry: unknown) => E,
+  onProgress?: (completed: number, total: number) => void,
 ): Promise<{ entries: Map<string, E>; redisSequence: number; capsuleSequence: number }> {
   const manifest = JSON.parse(manifestBytes.toString()) as Snapshot;
   if (manifest.format !== "pdim-bucket-snapshot-v1" ||
@@ -66,6 +67,7 @@ export async function readBucketSnapshot<E>(
     throw new Error("Invalid bucket PDIM snapshot manifest");
   }
   const entries = new Map<string, E>();
+  onProgress?.(0, manifest.chunks.length);
   // Bound concurrent downloads; do not serialize hundreds of network round trips
   // or retain buffers for the entire snapshot during startup.
   for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
@@ -81,6 +83,10 @@ export async function readBucketSnapshot<E>(
       }
       entries.set(row[0], validate(row[0], row[1]));
     }
+    }
+    const completed = Math.min(offset + 4, manifest.chunks.length);
+    if (completed % 32 === 0 || completed === manifest.chunks.length) {
+      onProgress?.(completed, manifest.chunks.length);
     }
   }
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");

@@ -1254,7 +1254,7 @@ export class MarketplaceService {
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching user listings:");
-      return [];
+      throw new Error("Failed to fetch user listings");
     }
   }
 
@@ -1317,7 +1317,7 @@ export class MarketplaceService {
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching producer listings:");
-      return [];
+      throw new Error("Failed to fetch producer listings");
     }
   }
 
@@ -1436,7 +1436,7 @@ export class MarketplaceService {
       return orders || [];
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching user purchases:");
-      return [];
+      throw new Error("Failed to fetch user purchases");
     }
   }
 
@@ -1457,12 +1457,7 @@ export class MarketplaceService {
       };
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching sales analytics:");
-      return {
-        totalRevenue: 0,
-        totalSales: 0,
-        averageOrderValue: 0,
-        recentSales: [],
-      };
+      throw new Error("Failed to fetch sales analytics");
     }
   }
 

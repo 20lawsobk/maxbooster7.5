@@ -38,7 +38,7 @@ interface Project {
   bpm?: number;
   favorite?: boolean;
   lastOpenedAt?: string;
-  updatedAt?: string;
+  updatedAt?: string | null;
   createdAt?: string;
   coverImageUrl?: string;
   tags?: string[];
@@ -211,10 +211,13 @@ export function StudioStartHub({
   });
 
   const deleteProjectMutation = useMutation({
-    mutationFn: async (projectId: string) => {
+    mutationFn: async (project: Project) => {
+      if (project.updatedAt === undefined) throw new Error("Refresh projects to load this project's version before deleting.");
+      const expectedUpdatedAt = project.updatedAt === null ? null : new Date(project.updatedAt).toISOString();
       const response = await apiRequest(
         "DELETE",
-        `/api/studio/projects/${projectId}`,
+        `/api/studio/projects/${project.id}`,
+        { expectedUpdatedAt },
       );
       return response.json();
     },
@@ -227,10 +230,12 @@ export function StudioStartHub({
         queryKey: ["/api/studio/start-hub/summary"],
       });
     },
-    onError: () => {
+    onError: (error: Error & { status?: number }) => {
       toast({
         title: "Error",
-        description: "Failed to delete project",
+        description: error.status === 409
+          ? "This project changed before deletion. Refresh and review it before trying again."
+          : error.message || "Failed to delete project",
         variant: "destructive",
       });
     },
@@ -625,7 +630,7 @@ export function StudioStartHub({
                         favorite: !project.favorite,
                       })
                     }
-                    onDelete={() => deleteProjectMutation.mutate(project.id)}
+                    onDelete={() => deleteProjectMutation.mutate(project)}
                   />
                 ))}
               </div>
@@ -642,7 +647,7 @@ export function StudioStartHub({
                         favorite: !project.favorite,
                       })
                     }
-                    onDelete={() => deleteProjectMutation.mutate(project.id)}
+                    onDelete={() => deleteProjectMutation.mutate(project)}
                   />
                 ))}
               </div>

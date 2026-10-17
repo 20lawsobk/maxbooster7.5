@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState } from "react";
-import { useParams, Link, useLocation } from "wouter";
+import { useRef, useState } from "react";
+import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest } from "@/lib/queryClient";
+import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError } from "@shared/agePolicy";
 
 const plans = {
   monthly: {
@@ -41,9 +42,8 @@ const plans = {
   yearly: {
     id: "yearly",
     name: "Yearly Plan",
-    price: 39,
-    originalPrice: 49,
-    period: "month",
+    price: 468,
+    period: "year",
     billedAnnually: true,
     description: "Best value for serious artists",
     popular: true,
@@ -93,7 +93,7 @@ const plans = {
 
 export default function RegisterPayment() {
   const { tier } = useParams<{ tier: string }>();
-  const [, _navigate] = useLocation();
+  const submitting = useRef(false);
   const [formData, setFormData] = useState({
     username: "",
     artistName: "",
@@ -101,9 +101,11 @@ export default function RegisterPayment() {
     birthdate: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState("");
   const { toast } = useToast();
 
-  const plan = plans[tier as keyof typeof plans];
+  const plan = Object.prototype.hasOwnProperty.call(plans, tier)
+    ? plans[tier as keyof typeof plans] : undefined;
 
   if (!plan) {
     return (
@@ -129,7 +131,10 @@ export default function RegisterPayment() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setIsLoading(true);
+    setFormError("");
 
     try {
       // Validate form data
@@ -141,27 +146,15 @@ export default function RegisterPayment() {
         throw new Error("Please fill in all fields");
       }
 
-      if (!formData.email.includes("@")) {
+      if (!/^[a-zA-Z0-9_]{3,30}$/.test(formData.username.trim())) {
+        throw new Error("Username must be 3–30 letters, numbers, or underscores");
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
         throw new Error("Please enter a valid email address");
       }
 
-      // Validate age (13+) for COPPA compliance
-      const birthDate = new Date(formData.birthdate);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-      ) {
-        age--;
-      }
-
-      if (age < 13) {
-        throw new Error(
-          "You must be at least 13 years old to create an account (COPPA compliance)",
-        );
-      }
+      const eligibilityError = getAccountEligibilityError(formData.birthdate);
+      if (eligibilityError) throw new Error(eligibilityError);
 
       // Create Stripe checkout session
       const response = await apiRequest(
@@ -169,16 +162,21 @@ export default function RegisterPayment() {
         "/api/create-checkout-session",
         {
           tier: plan.id,
-          userEmail: formData.email,
-          username: formData.username,
-          artistName: formData.artistName,
+          userEmail: formData.email.trim(),
+          username: formData.username.trim(),
+          artistName: formData.artistName.trim().slice(0, 100),
           birthdate: formData.birthdate,
         },
       );
 
       const data = await response.json();
 
-      if (data.url) {
+      if (typeof data.url === "string") {
+        const checkoutUrl = new URL(data.url);
+        if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com" ||
+            checkoutUrl.username || checkoutUrl.password) {
+          throw new Error("Invalid secure checkout URL. Please contact support.");
+        }
         // Redirect to Stripe hosted checkout
         window.location.href = data.url;
       } else {
@@ -194,6 +192,8 @@ export default function RegisterPayment() {
         description: errorMessage,
         variant: "destructive",
       });
+      setFormError(errorMessage);
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -262,19 +262,9 @@ export default function RegisterPayment() {
                       /{plan.period}
                     </span>
                   </div>
-                  {plan.originalPrice && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      <span className="line-through">
-                        ${plan.originalPrice}/month
-                      </span>
-                      <span className="text-green-600 dark:text-green-400 ml-2 font-medium">
-                        Save ${(plan.originalPrice - plan.price) * 12}/year
-                      </span>
-                    </div>
-                  )}
                   {plan.billedAnnually && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Billed annually (${plan.price * 12})
+                      Billed $468 annually ($39/month equivalent). Save $120/year.
                     </p>
                   )}
                 </div>
@@ -327,7 +317,8 @@ export default function RegisterPayment() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
+                  {formError && <p role="alert" className="text-sm text-red-600">{formError}</p>}
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -338,6 +329,9 @@ export default function RegisterPayment() {
                       value={formData.username}
                       onChange={handleInputChange}
                       required
+                      minLength={3}
+                      maxLength={30}
+                      pattern="[a-zA-Z0-9_]{3,30}"
                       autoComplete="username"
                       data-testid="input-username"
                     />
@@ -353,6 +347,7 @@ export default function RegisterPayment() {
                       value={formData.artistName}
                       onChange={handleInputChange}
                       autoComplete="nickname"
+                      maxLength={100}
                       data-testid="input-artist-name"
                     />
                   </div>
@@ -387,7 +382,7 @@ export default function RegisterPayment() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500">
-                      You must be at least 13 years old (COPPA compliance)
+                      {ACCOUNT_AGE_REQUIREMENT}
                     </p>
                   </div>
 
@@ -415,8 +410,7 @@ export default function RegisterPayment() {
                 <div className="text-center text-xs text-gray-500 space-y-2">
                   <p>Secure payment powered by Stripe</p>
                   <p>
-                    By continuing, you agree to our Terms of Service and Privacy
-                    Policy
+                    By continuing, you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
                   </p>
                 </div>
               </CardContent>

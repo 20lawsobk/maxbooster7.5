@@ -1834,6 +1834,11 @@ router.post(
           { err: persistErr },
           "[Billing] Failed to persist refund request to audit log",
         );
+        return res.status(500).json({
+          success: false,
+          code: "REFUND_REQUEST_FAILED",
+          message: "Your refund request could not be saved. Please try again.",
+        });
       }
 
       logger.info(

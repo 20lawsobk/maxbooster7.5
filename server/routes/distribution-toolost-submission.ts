@@ -189,7 +189,7 @@ export function buildToolostPayload(
     releaseDate: release.releaseDate
       ? new Date(release.releaseDate as string | Date).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
-    upc: (release as { upc?: string }).upc,
+    upc: typeof metadata.upc === "string" ? metadata.upc.trim() : undefined,
     artwork: String(
       release.artworkUrl || metadata.artworkUrl || metadata.artwork || "",
     ),
@@ -209,6 +209,7 @@ export function buildToolostPayload(
     artworkAiUsage: validArtworkAiUsage,
     tracks: tracks.map((track, index) => {
       const value = track as Record<string, unknown>;
+      const trackMetadata = (value.metadata || {}) as Record<string, unknown>;
       return {
         title: String(value.title || ""),
         artist: String(
@@ -222,8 +223,8 @@ export function buildToolostPayload(
         audioFile: String(value.audioUrl || value.fileUrl || ""),
         duration: Number(value.duration) || 0,
         trackNumber: Number(value.trackNumber) || index + 1,
-        explicit: Boolean(value.explicit),
-        lyrics: value.lyrics ? String(value.lyrics) : undefined,
+        explicit: Boolean(trackMetadata.explicit ?? value.explicit),
+        lyrics: typeof trackMetadata.lyrics === "string" ? trackMetadata.lyrics : typeof value.lyrics === "string" ? value.lyrics : undefined,
         audioAiUsage,
         compositionAiUsage,
       } satisfies ToolostTrack;

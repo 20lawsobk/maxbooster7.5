@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRedirectIfAuthenticated } from "@/hooks/useRequireAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/Logo";
-import { getCsrfTokenFromCookie, setAuthToken } from "@/lib/queryClient";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Eye,
   EyeOff,
@@ -67,9 +66,35 @@ const OAUTH_ERROR_MESSAGES: Record<
     description:
       "Please verify your email address before logging in. Check your inbox for a verification link.",
   },
+  unverified_identity: {
+    title: "Google Identity Not Verified",
+    description: "Google did not provide a verified identity. Please try another account or sign in with email and password.",
+  },
+  identity_mismatch: {
+    title: "Google Account Mismatch",
+    description: "This Google identity does not match the linked account. Please use the Google account originally connected.",
+  },
+  account_unavailable: {
+    title: "Account Unavailable",
+    description: "The account could not be loaded. Please try again or contact support.",
+  },
+  authenticator_recovery_required: {
+    title: "Authenticator Recovery Required",
+    description: "Your authenticator needs recovery. Please contact support before trying to sign in again.",
+  },
 };
 
 type AuthResponse = Record<string, unknown>;
+
+function getSafeLoginRedirect(value: string | null): string {
+  // Reject network-path URLs and browser-normalized backslashes/control chars.
+  return value &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !/[\\\u0000-\u0020\u007f]/.test(value)
+    ? value
+    : "/dashboard";
+}
 
 async function getRequiredCsrfToken(): Promise<string> {
   const existingToken = getCsrfTokenFromCookie();
@@ -79,10 +104,12 @@ async function getRequiredCsrfToken(): Promise<string> {
 
   const response = await fetch("/api/csrf-token", {
     credentials: "include",
+    signal: AbortSignal.timeout(30_000),
   });
-  const body = (await response.json()) as { csrfToken?: unknown };
+  const body: unknown = await response.json().catch(() => null);
 
-  if (!response.ok || typeof body.csrfToken !== "string" || !body.csrfToken) {
+  if (!response.ok || !body || typeof body !== "object" ||
+      !("csrfToken" in body) || typeof body.csrfToken !== "string" || !body.csrfToken) {
     throw new Error(
       "Unable to establish the security token required to sign in. Please refresh the page and try again.",
     );
@@ -99,11 +126,11 @@ async function readAuthResponse(response: Response): Promise<AuthResponse> {
 
   try {
     const parsed: unknown = JSON.parse(body);
-    return parsed && typeof parsed === "object"
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? (parsed as AuthResponse)
-      : { message: body };
+      : {};
   } catch {
-    return { message: body };
+    return {};
   }
 }
 
@@ -114,8 +141,7 @@ function getResponseMessage(data: AuthResponse, fallback: string): string {
 }
 
 export default function Login() {
-  const {  isLoading: authLoading } =
-    useRedirectIfAuthenticated();
+  const { user: authenticatedUser, isLoading: authLoading, authenticate } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -128,38 +154,41 @@ export default function Login() {
     password?: string;
   }>({});
   const [isDemoLoading, setIsDemoLoading] = useState(false);
-  const [_accountLockedUntil, _setAccountLockedUntil] = useState<Date | null>(
-    null,
-  );
-  const queryClient = useQueryClient();
+  const requestInFlight = useRef(false);
   const [_location, navigate] = useLocation();
   const { toast } = useToast();
 
   const redirectAfterLogin = (() => {
     const urlParams = new URLSearchParams(window.location.search);
     const r = urlParams.get("redirect");
-    return r && r.startsWith("/") ? r : "/dashboard";
+    return getSafeLoginRedirect(r);
   })();
+
+  useEffect(() => {
+    if (!authLoading && authenticatedUser) navigate(redirectAfterLogin);
+  }, [authenticatedUser, authLoading, navigate, redirectAfterLogin]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
-    if (error && OAUTH_ERROR_MESSAGES[error]) {
-      const { title, description } = OAUTH_ERROR_MESSAGES[error];
+    if (error) {
+      const { title, description } = OAUTH_ERROR_MESSAGES[error] || OAUTH_ERROR_MESSAGES.oauth_error;
       toast({
         title,
         description,
         variant: "destructive",
       });
-      window.history.replaceState({}, "", "/login");
+      urlParams.delete("error");
+      window.history.replaceState({}, "", `${window.location.pathname}${urlParams.size ? `?${urlParams}` : ""}${window.location.hash}`);
     }
   }, [toast]);
 
   // Show loading spinner while checking authentication
-  if (authLoading) {
+  if (authLoading || authenticatedUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <span className="sr-only" role="status">Checking authentication...</span>
       </div>
     );
   }
@@ -196,9 +225,8 @@ export default function Login() {
 
     if (lowerMessage.includes("locked") || lowerMessage.includes("suspended")) {
       return {
-        title: "Account Locked",
-        description:
-          "Your account has been temporarily locked due to too many failed login attempts. Please wait 15 minutes or contact support.",
+        title: "Account Access Unavailable",
+        description: message,
         icon: <Shield className="h-4 w-4" />,
       };
     }
@@ -216,13 +244,13 @@ export default function Login() {
     }
 
     if (
-      lowerMessage.includes("invalid 2fa") ||
+      lowerMessage.includes("2fa code") ||
       lowerMessage.includes("invalid verification")
     ) {
       return {
         title: "Invalid Code",
         description:
-          "The authenticator code you entered is incorrect. Please check your authenticator app and try again.",
+          "The authenticator code is invalid or already used. Wait for a fresh 6-digit code and try again.",
         icon: <Shield className="h-4 w-4" />,
       };
     }
@@ -232,6 +260,13 @@ export default function Login() {
         title: "Session Error",
         description:
           "There was a problem with your session. Please refresh the page and try again.",
+      };
+    }
+
+    if (lowerMessage.includes("security token") || lowerMessage.includes("csrf")) {
+      return {
+        title: "Security Token Error",
+        description: message,
       };
     }
 
@@ -254,34 +289,43 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestInFlight.current) return;
     setFieldErrors({});
     setTwoFactorError("");
 
     if (!validateForm()) {
       return;
     }
+    if (requiresTwoFactor && !/^\d{6}$/.test(twoFactorCode)) {
+      setTwoFactorError("Enter a 6-digit authenticator code.");
+      return;
+    }
 
+    requestInFlight.current = true;
     setIsLoading(true);
 
     try {
-      const csrfToken = await getRequiredCsrfToken();
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrfToken,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          username,
-          password,
-          twoFactorCode: requiresTwoFactor ? twoFactorCode : undefined,
-        }),
+      const { response, data } = await authenticate(async () => {
+        const csrfToken = await getRequiredCsrfToken();
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          signal: AbortSignal.timeout(30_000),
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            username: username.trim(),
+            password,
+            twoFactorCode: requiresTwoFactor ? twoFactorCode : undefined,
+          }),
+        });
+        const data = await readAuthResponse(response);
+        return { response, data };
       });
 
-      const data = await readAuthResponse(response);
-
-      if (data.requiresTwoFactor === true) {
+      if (response.ok && data.requiresTwoFactor === true) {
         setRequiresTwoFactor(true);
         setTwoFactorCode("");
         toast({
@@ -321,7 +365,7 @@ export default function Login() {
         return;
       }
 
-      if (typeof data.id !== "string") {
+      if (typeof data.id !== "string" || !data.id) {
         toast({
           title: "Login Failed",
           description:
@@ -335,11 +379,6 @@ export default function Login() {
         title: "Welcome back!",
         description: "You've successfully signed in.",
       });
-      if (typeof data.sessionToken === "string") {
-        setAuthToken(data.sessionToken);
-      }
-      const { sessionToken: _sessionToken, ...user } = data;
-      queryClient.setQueryData(["/api/auth/me"], user);
       navigate(redirectAfterLogin);
     } catch (error: unknown) {
       toast({
@@ -351,6 +390,7 @@ export default function Login() {
         variant: "destructive",
       });
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
@@ -363,23 +403,29 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
+    if (requestInFlight.current) return;
     window.location.href = "/api/auth/google";
   };
 
   const handleDemoLogin = async () => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     setIsDemoLoading(true);
     try {
-      const csrfToken = await getRequiredCsrfToken();
-      const response = await fetch("/api/auth/demo", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrfToken,
-        },
-        credentials: "include",
+      const { response, data } = await authenticate(async () => {
+        const csrfToken = await getRequiredCsrfToken();
+        const response = await fetch("/api/auth/demo", {
+          method: "POST",
+          signal: AbortSignal.timeout(30_000),
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
+          credentials: "include",
+        });
+        const data = await readAuthResponse(response);
+        return { response, data };
       });
-
-      const data = await readAuthResponse(response);
 
       if (!response.ok) {
         toast({
@@ -393,7 +439,7 @@ export default function Login() {
         return;
       }
 
-      if (typeof data.id !== "string" || data.isDemo !== true) {
+      if (typeof data.id !== "string" || !data.id || data.isDemo !== true) {
         toast({
           title: "Demo Login Failed",
           description:
@@ -403,8 +449,6 @@ export default function Login() {
         return;
       }
 
-      const { sessionToken: _sessionToken, ...user } = data;
-      queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Welcome to Demo Mode!",
         description: "Explore all Max Booster features with sample data.",
@@ -420,6 +464,7 @@ export default function Login() {
         variant: "destructive",
       });
     } finally {
+      requestInFlight.current = false;
       setIsDemoLoading(false);
     }
   };
@@ -439,7 +484,7 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
             <div className="space-y-2">
               <Label htmlFor="username">Username or Email</Label>
               <Input
@@ -457,7 +502,7 @@ export default function Login() {
                     }));
                 }}
                 required
-                disabled={requiresTwoFactor}
+                disabled={requiresTwoFactor || isLoading || isDemoLoading}
                 autoComplete="username"
                 className={fieldErrors.username ? "border-destructive" : ""}
                 aria-invalid={!!fieldErrors.username}
@@ -493,7 +538,7 @@ export default function Login() {
                       }));
                   }}
                   required
-                  disabled={requiresTwoFactor}
+                  disabled={requiresTwoFactor || isLoading || isDemoLoading}
                   autoComplete="current-password"
                   className={
                     fieldErrors.password ? "border-destructive pr-10" : "pr-10"
@@ -510,7 +555,8 @@ export default function Login() {
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   data-testid="button-toggle-password"
-                  disabled={requiresTwoFactor}
+                  disabled={requiresTwoFactor || isLoading || isDemoLoading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -545,7 +591,9 @@ export default function Login() {
                     data-testid="input-2fa-code"
                     type="text"
                     inputMode="numeric"
-                    pattern="[0-9]*"
+                    pattern="[0-9]{6}"
+                    autoComplete="one-time-code"
+                    disabled={isLoading || isDemoLoading}
                     placeholder="Enter 6-digit code"
                     value={twoFactorCode}
                     onChange={(e) => {
@@ -576,6 +624,7 @@ export default function Login() {
                   variant="link"
                   size="sm"
                   onClick={handleResetTwoFactor}
+                  disabled={isLoading || isDemoLoading}
                   className="p-0 h-auto text-muted-foreground"
                   data-testid="button-reset-2fa"
                 >
@@ -587,7 +636,7 @@ export default function Login() {
               type="submit"
               className="w-full"
               disabled={
-                isLoading || (requiresTwoFactor && twoFactorCode.length !== 6)
+                isLoading || isDemoLoading || (requiresTwoFactor && twoFactorCode.length !== 6)
               }
               data-testid="button-login-submit"
             >
@@ -618,6 +667,7 @@ export default function Login() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleLogin}
+            disabled={isLoading || isDemoLoading}
             data-testid="button-google-login"
           >
             <GoogleIcon className="mr-2 h-4 w-4" />
@@ -629,7 +679,7 @@ export default function Login() {
             variant="ghost"
             className="w-full border border-dashed border-gray-300 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             onClick={handleDemoLogin}
-            disabled={isDemoLoading}
+            disabled={isLoading || isDemoLoading}
             data-testid="button-demo-login"
           >
             {isDemoLoading ? (

@@ -2430,7 +2430,7 @@ export class DatabaseStorage implements IStorage {
       `);
 
       const rows = (result as { rows?: unknown[] }).rows ?? result;
-      if (!Array.isArray(rows)) return [];
+      if (!Array.isArray(rows)) throw new Error("Invalid producer query result");
 
       return rows?.map((row: unknown) => {
         const u = row as Record<string, unknown>;
@@ -2460,7 +2460,7 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       logger.warn({ err: error }, "Error getting producers:");
-      return [];
+      throw error;
     }
   }
 
@@ -2718,23 +2718,26 @@ export class DatabaseStorage implements IStorage {
     return (row?.value as unknown[]) || [];
   }
 
-  private async _saveDispatches(
+  private async _mutateDispatches<T>(
     releaseId: string,
-    dispatches: unknown[],
-  ): Promise<void> {
+    mutate: (dispatches: any[]) => T,
+  ): Promise<T> {
     const key = this._dispatchSettingKey(releaseId);
-    const [existing] = await db
-      .select({ id: systemSettings.id })
-      .from(systemSettings)
-      .where(eq(systemSettings.key, key))
-      .limit(1);
-    if (existing) {
-      await db
+    return db.transaction(async (tx) => {
+    // Also serialize the first insert, when there is no row to lock yet.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+    const [stored] = await tx.select().from(systemSettings)
+      .where(eq(systemSettings.key, key)).limit(1);
+    const dispatches = stored?.value ?? [];
+    if (!Array.isArray(dispatches)) throw new Error("Invalid persisted distribution dispatch list");
+    const result = mutate(dispatches);
+    if (stored) {
+      await tx
         .update(systemSettings)
         .set({ value: dispatches, updatedAt: new Date() })
         .where(eq(systemSettings.key, key));
     } else {
-      await db
+      await tx
         .insert(systemSettings)
         .values({
           key,
@@ -2742,6 +2745,8 @@ export class DatabaseStorage implements IStorage {
           description: `Distribution dispatches for release ${releaseId}`,
         });
     }
+    return result;
+    });
   }
 
   async createDistroDispatch(data: Record<string, unknown>): Promise<unknown> {
@@ -2751,10 +2756,10 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const releaseDispatches = await this._loadDispatches((data?.releaseId as string));
-    releaseDispatches?.push(dispatch);
-    await this._saveDispatches((data?.releaseId as string), releaseDispatches);
-    return dispatch;
+    return this._mutateDispatches(data.releaseId as string, dispatches => {
+      dispatches.push(dispatch);
+      return dispatch;
+    });
   }
 
   async getDistroDispatchStatuses(releaseId: string): Promise<any[]> {
@@ -2765,7 +2770,7 @@ export class DatabaseStorage implements IStorage {
     releaseId: string,
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown> | null> {
-    const dispatches = await this._loadDispatches(releaseId);
+    return this._mutateDispatches(releaseId, dispatches => {
     if (data?.platform || data?.providerId) {
       const requestedPlatform = String(data.platform || data.providerId).replace(
         /_/g,
@@ -2773,19 +2778,17 @@ export class DatabaseStorage implements IStorage {
       );
       const dispatch = dispatches?.find(
         (d: Record<string, unknown>) =>
-          d?.platform === data?.platform ||
-          d?.providerId === data?.providerId ||
-          d?.providerId === data?.platform ||
-          String(d?.platform || d?.providerId || "").replace(/_/g, "-") ===
-            requestedPlatform,
+          [d.platform, d.providerId].some(value =>
+            typeof value === "string" &&
+            value.replace(/_/g, "-") === requestedPlatform),
       );
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
-        await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
     }
     return null;
+    });
   }
 
   async updateDistroDispatch(
@@ -2795,18 +2798,23 @@ export class DatabaseStorage implements IStorage {
     const rows = await db
       .select()
       .from(systemSettings)
-      .where(sql`${systemSettings.key} like ${"distro_dispatch:%"}`)
-      .limit(200);
+      .where(and(
+        sql`${systemSettings.key} like ${"distro_dispatch:%"}`,
+        sql`${systemSettings.value} @> ${JSON.stringify([{ id: dispatchId }])}::jsonb`,
+      ));
     for (const row of rows) {
       const dispatches = (row?.value as Record<string, unknown>[]) || [];
       const dispatch = dispatches?.find(
         (d: Record<string, unknown>) => d?.id === dispatchId,
       );
       if (dispatch) {
-        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
         const releaseId = row?.key.replace("distro_dispatch:", "");
-        await this._saveDispatches(releaseId, dispatches);
-        return dispatch;
+        return this._mutateDispatches(releaseId, current => {
+          const target = current.find(item => item.id === dispatchId);
+          if (!target) return null;
+          Object.assign(target, data, { updatedAt: new Date().toISOString() });
+          return target;
+        });
       }
     }
     return null;
@@ -3290,7 +3298,7 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching beat listings:");
-      return [];
+      throw error;
     }
   }
 
@@ -3703,7 +3711,7 @@ export class DatabaseStorage implements IStorage {
       return results;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching user orders:");
-      return [];
+      throw error;
     }
   }
 
@@ -3718,7 +3726,7 @@ export class DatabaseStorage implements IStorage {
       return results;
     } catch (error) {
       logger.warn({ err: error }, "Error fetching seller orders:");
-      return [];
+      throw error;
     }
   }
 

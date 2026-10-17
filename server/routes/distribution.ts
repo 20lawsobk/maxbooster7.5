@@ -43,8 +43,10 @@ import {
 } from "./distribution-toolost-submission";
 import {
   createReleaseDraftSchema,
+  editReleaseDraftSchema,
   createReleaseSchema,
-  updateReleaseSchema,
+  createTrackSchema,
+  editTrackSchema,
 } from "./distribution-release-schemas";
 import { musicCodesService } from "../services/musicCodes";
 import {
@@ -478,14 +480,6 @@ function decodeImportedStatementLabel(label: string | null | undefined) {
   }
 }
 
-const createTrackSchema = z.object({
-  title: z.string().min(1),
-  trackNumber: z.number().int().min(1),
-  explicit: z.boolean().default(false),
-  lyrics: z.string().optional(),
-  lyricsLanguage: z.string().optional(),
-});
-
 const generateCodeSchema = z.object({
   trackId: z.string().optional(),
   releaseId: z.string().optional(),
@@ -550,6 +544,7 @@ router.post("/releases", requireAuth, async (req: Request, res: Response) => {
         territories: data.territories,
         selectedPlatforms: data.selectedPlatforms,
         artworkAiUsage: data.artworkAiUsage,
+        upc: data.upc,
         audioAiUsage: data.audioAiUsage,
         compositionAiUsage: data.compositionAiUsage,
         composerName: data.composerName,
@@ -600,7 +595,8 @@ router.get(
         })
         .from(royaltySplits)
         .where(eq(royaltySplits.releaseId, id));
-      res.json({ ...release, royaltySplits: savedSplits });
+      const tracks = await storage.getDistroTracks(id);
+      res.json({ ...release, tracks, royaltySplits: savedSplits });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching release:");
       res.status(500).json({ error: "Failed to fetch release" });
@@ -616,7 +612,7 @@ router.patch(
     try {
       const userId = (req.user as AuthenticatedUser).id;
       const { id } = req.params as Record<string, string>;
-      const updates = updateReleaseSchema?.parse(req.body);
+      const updates = editReleaseDraftSchema.parse(req.body);
 
       const release = await storage.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
@@ -684,6 +680,10 @@ router.post(
       const release = await storage.getDistroRelease(id);
       if (!release || release.artistId !== userId) {
         return res.status(404).json({ error: "Release not found" });
+      }
+
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release artwork can be edited" });
       }
 
       const key = await storageService.uploadFile(
@@ -804,6 +804,10 @@ router.post(
         return res.status(404).json({ error: "Release not found" });
       }
 
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release tracks can be edited" });
+      }
+
       // SECURITY FIX: Wrap JSON.parse in try-catch to prevent unhandled exceptions on invalid JSON
       let parsedMetadata: unknown;
       try {
@@ -814,6 +818,15 @@ router.post(
           .json({ error: "Invalid JSON in metadata field" });
       }
       const data = createTrackSchema?.parse(parsedMetadata);
+
+      // Recover an acknowledged or response-lost upload within this owned draft.
+      // This is not a replacement for the provider's submission checkpoint.
+      if (data.clientUploadId) {
+        const existing = (await storage.getDistroTracks(releaseId)).find(track =>
+          (track.metadata as Record<string, unknown>)?.clientUploadId === data.clientUploadId,
+        );
+        if (existing) return res.json(existing);
+      }
 
       // Upload audio buffer to Pocket Dimension (memoryStorage — no filename property)
       const audioKey = await storageService?.uploadFile(
@@ -828,11 +841,13 @@ router.post(
         releaseId,
         title: data.title,
         trackNumber: data.trackNumber,
+        isrc: data.isrc || null,
         audioUrl,
         metadata: {
           explicit: data.explicit,
           lyrics: data.lyrics,
           lyricsLanguage: data.lyricsLanguage,
+          clientUploadId: data.clientUploadId,
         },
       });
 
@@ -863,11 +878,25 @@ router.patch(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      const updates = createTrackSchema?.partial().parse(req.body);
+      const updates = editTrackSchema.parse(req.body);
+      if (!["draft", "rejected"].includes(String((release.metadata as Record<string, unknown>)?.status || release.status || "draft"))) {
+        return res.status(409).json({ error: "Only draft or rejected release tracks can be edited" });
+      }
+      const existing = (await storage.getDistroTracks(releaseId)).find(track => track.id === trackId);
+      if (!existing) return res.status(404).json({ error: "Track not found in this release" });
+      const { explicit, lyrics, lyricsLanguage, clientUploadId: _clientUploadId, ...columns } = updates;
       const track = await storage.updateDistroTrack(
         trackId,
         releaseId,
-        updates,
+        {
+          ...columns,
+          metadata: {
+            ...(existing.metadata as Record<string, unknown> || {}),
+            ...(explicit !== undefined ? { explicit } : {}),
+            ...(lyrics !== undefined ? { lyrics } : {}),
+            ...(lyricsLanguage !== undefined ? { lyricsLanguage } : {}),
+          },
+        },
       );
       if (!track) {
         return res
@@ -2182,17 +2211,16 @@ router.post(
       }
 
       // HARDENING: Validate UPC before submission
-      const releaseUpc = (release as { upc?: string }).upc;
+      const releaseUpc = typeof metadata.upc === "string" ? metadata.upc.trim() : "";
       if (!releaseUpc) {
         return res.status(400).json({
           error: "Missing UPC",
           message:
-            "A valid UPC code is required before submission. Generate one in the release metadata.",
+            "Save your existing distributor-assigned UPC/EAN in the release metadata. Locally generated provisional codes are not official identifiers.",
         });
       }
       // Basic UPC format validation (12-13 digits)
-      const upcClean = releaseUpc.replace(/\D/g, "");
-      if (upcClean.length !== 12 && upcClean.length !== 13) {
+      if (!/^\d{12,13}$/.test(releaseUpc)) {
         return res.status(400).json({
           error: "Invalid UPC format",
           message: "UPC must be 12 or 13 digits.",

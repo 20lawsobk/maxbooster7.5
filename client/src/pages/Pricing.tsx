@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/Logo";
 import { Check, ArrowLeft, Sparkles, Shield, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -43,9 +44,8 @@ export default function Pricing() {
     {
       id: "yearly",
       name: "Yearly",
-      price: 39,
-      originalPrice: 49,
-      period: "month",
+      price: 468,
+      period: "year",
       billedAnnually: true,
       description: "Save $120/year with annual billing",
       popular: true,
@@ -101,17 +101,17 @@ export default function Pricing() {
     {
       question: "Can I change my plan later?",
       answer:
-        "Yes. You can change your subscription plan from Settings → Billing. Upgrades take effect immediately, while downgrades take effect at the end of the current billing cycle.",
+        "Visit Settings → Billing to review subscription management options. Contact support@maxbooster.ai if you need help changing plans.",
     },
     {
       question: "What is your refund policy?",
       answer:
-        "A full refund is available within 7 days of your initial purchase. After 7 days, you can cancel to prevent future charges. To request a refund, contact support@maxbooster.com with your account email and purchase date.",
+        "All plans include a 90-day money-back guarantee. A full refund is available within 90 days of your initial purchase. To request a refund, contact support@maxbooster.ai with your account email and purchase date.",
     },
     {
       question: "What happens to my projects if I cancel?",
       answer:
-        "Your projects and data remain accessible for 30 days after cancellation. You can download all your content during this period.",
+        "If you cancel a recurring plan at the end of its billing period, your access continues until that period ends. Download content you want to keep before your access ends. Contact support@maxbooster.ai for help with your projects.",
     },
     {
       question: "Are there any hidden fees or feature top-ups?",
@@ -123,67 +123,67 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
+      <nav aria-label="Main navigation" className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/">
-              <Button variant="ghost" className="flex items-center space-x-2">
-                <ArrowLeft className="h-4 w-4" />
+            <Button asChild variant="ghost" className="flex items-center space-x-2">
+              <Link href="/" aria-label="Max Booster home">
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
                 <Logo size="sm" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/features">
-                <Button variant="ghost">Features</Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/pricing">
-                <Button>Get Started</Button>
-              </Link>
+              <Button asChild variant="ghost">
+                <Link href="/features">Features</Link>
+              </Button>
+              <Button asChild variant="ghost">
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button asChild>
+                <a href="#plans">Get Started</a>
+              </Button>
             </div>
 
             {/* Mobile Hamburger Menu */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" size="icon" aria-label="Open navigation menu">
+                  <Menu aria-hidden="true" className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Browse Max Booster or choose a pricing plan.
+                  </SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4 mt-8">
-                  <Link href="/features">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Features
-                    </Button>
-                  </Link>
-                  <Link href="/login">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/pricing">
-                    <Button
-                      className="w-full"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Link href="/features">Features</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="w-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <a href="#plans">Get Started</a>
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
@@ -191,20 +191,20 @@ export default function Pricing() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         {/* Refund Policy Banner */}
         <div className="mb-12 mx-auto max-w-4xl">
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-center space-x-4">
               <Shield className="h-12 w-12 text-green-600 dark:text-green-400 flex-shrink-0" />
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  7-Day Refund Window
-                </h2>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  90-Day Money-Back Guarantee
+                </p>
                 <p className="text-gray-600 dark:text-gray-300">
-                  A full refund is available within 7 days of your initial
-                  purchase. After that, you can cancel anytime to prevent future
-                  charges.
+                  A full refund is available within 90 days of your initial
+                  purchase. You can cancel recurring plans anytime to prevent
+                  future charges.
                 </p>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function Pricing() {
           <div className="flex items-center justify-center space-x-4 flex-wrap gap-2">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 font-medium">
               <Shield className="h-4 w-4 mr-2 text-green-500" />
-              7-Day Refund Window
+              90-Day Money-Back Guarantee
             </div>
             <span className="text-gray-400 dark:text-gray-500">•</span>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
@@ -244,7 +244,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+        <div id="plans" className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 scroll-mt-24">
           {plans.map((plan) => (
             <Card
               key={plan.id}
@@ -265,13 +265,13 @@ export default function Pricing() {
                 <div className="flex justify-center mb-4">
                   <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700 px-3 py-1">
                     <Shield className="h-4 w-4 mr-2" />
-                    7-Day Refund Window
+                    90-Day Money-Back Guarantee
                   </Badge>
                 </div>
 
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {plan.name}
-                </CardTitle>
+                </h2>
                 <div className="mb-4">
                   <div className="flex items-baseline justify-center">
                     <span className="text-5xl font-bold text-gray-900 dark:text-white">
@@ -281,19 +281,9 @@ export default function Pricing() {
                       /{plan.period}
                     </span>
                   </div>
-                  {plan.originalPrice && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      <span className="line-through">
-                        ${plan.originalPrice}/month
-                      </span>
-                      <span className="text-green-600 dark:text-green-400 ml-2 font-medium">
-                        Save ${(plan.originalPrice - plan.price) * 12}/year
-                      </span>
-                    </div>
-                  )}
                   {plan.billedAnnually && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Billed annually (${plan.price * 12})
+                      Billed annually • Equivalent to $39/month
                     </p>
                   )}
                 </div>
@@ -314,27 +304,29 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                <Link href={`/register/payment/${plan.id}`}>
-                  <Button
-                    className={`w-full py-3 ${
-                      plan.popular
-                        ? "bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
-                        : ""
-                    }`}
-                    variant={plan.popular ? "default" : "outline"}
-                    size="lg"
-                    data-testid={`button-select-${plan.id}`}
-                  >
+                <Button
+                  asChild
+                  aria-label={`Choose ${plan.name} plan`}
+                  className={`w-full py-3 ${
+                    plan.popular
+                      ? "bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                      : ""
+                  }`}
+                  variant={plan.popular ? "default" : "outline"}
+                  size="lg"
+                  data-testid={`button-select-${plan.id}`}
+                >
+                  <Link href={`/register/payment/${plan.id}`}>
                     {plan.period === "once"
                       ? "Get Lifetime Access"
                       : "Get Started Now"}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
 
                 <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-3">
                   {plan.period === "once"
-                    ? "One-time payment, lifetime access • 7-day refund window"
-                    : "7-day refund window • Cancel anytime"}
+                    ? "One-time payment, lifetime access • 90-day money-back guarantee"
+                    : "90-day money-back guarantee • Cancel anytime"}
                 </p>
               </CardContent>
             </Card>
@@ -350,19 +342,20 @@ export default function Pricing() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden dark:border dark:border-gray-700">
             <div className="overflow-x-auto">
               <table className="w-full">
+                <caption className="sr-only">Features included in each Max Booster plan</caption>
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="text-left p-6 font-semibold text-gray-900 dark:text-white">
+                    <th scope="col" className="text-left p-6 font-semibold text-gray-900 dark:text-white">
                       Features
                     </th>
-                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">
+                    <th scope="col" className="text-center p-6 font-semibold text-gray-900 dark:text-white">
                       Monthly
                     </th>
-                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white bg-primary/5">
+                    <th scope="col" className="text-center p-6 font-semibold text-gray-900 dark:text-white bg-primary/5">
                       Yearly
                       <Badge className="ml-2 bg-primary text-xs">Popular</Badge>
                     </th>
-                    <th className="text-center p-6 font-semibold text-gray-900 dark:text-white">
+                    <th scope="col" className="text-center p-6 font-semibold text-gray-900 dark:text-white">
                       Lifetime
                     </th>
                   </tr>
@@ -455,13 +448,13 @@ export default function Pricing() {
                     },
                   ].map((row, index) => (
                     <tr key={index}>
-                      <td className="p-6 font-medium text-gray-900 dark:text-white">
+                      <th scope="row" className="p-6 text-left font-medium text-gray-900 dark:text-white">
                         {row.feature}
-                      </td>
+                      </th>
                       <td className="p-6 text-center">
                         {typeof row.monthly === "boolean" ? (
                           row.monthly ? (
-                            <Check className="h-5 w-5 text-green-500 mx-auto" />
+                            <><Check aria-hidden="true" className="h-5 w-5 text-green-500 mx-auto" /><span className="sr-only">Included</span></>
                           ) : (
                             "—"
                           )
@@ -472,7 +465,7 @@ export default function Pricing() {
                       <td className="p-6 text-center bg-primary/5">
                         {typeof row.yearly === "boolean" ? (
                           row.yearly ? (
-                            <Check className="h-5 w-5 text-green-500 mx-auto" />
+                            <><Check aria-hidden="true" className="h-5 w-5 text-green-500 mx-auto" /><span className="sr-only">Included</span></>
                           ) : (
                             "—"
                           )
@@ -483,7 +476,7 @@ export default function Pricing() {
                       <td className="p-6 text-center">
                         {typeof row.lifetime === "boolean" ? (
                           row.lifetime ? (
-                            <Check className="h-5 w-5 text-green-500 mx-auto" />
+                            <><Check aria-hidden="true" className="h-5 w-5 text-green-500 mx-auto" /><span className="sr-only">Included</span></>
                           ) : (
                             "—"
                           )
@@ -536,19 +529,18 @@ export default function Pricing() {
             their careers.
           </p>
           <div className="flex justify-center">
-            <Link href="/register/payment/yearly">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="px-8 py-4"
-                data-testid="button-get-started-cta"
-              >
-                Get Started Now
-              </Button>
-            </Link>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="px-8 py-4"
+              data-testid="button-get-started-cta"
+            >
+              <Link href="/register/payment/yearly">Get Started Now</Link>
+            </Button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

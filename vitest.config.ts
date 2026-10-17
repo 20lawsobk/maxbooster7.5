@@ -35,12 +35,8 @@ export default defineConfig({
     // starved simulation gets one clean shot instead of failing the run.
     maxWorkers: 2,
     retry: 1,
-    // @ts-ignore — poolOptions is valid in vitest 4.x but missing from older type stubs
-    poolOptions: {
-      forks: {
-        execArgv: ["--max-old-space-size=4096"],
-      },
-    },
+    // Vitest 4 exposes fork execution arguments directly on the test config.
+    execArgv: ["--max-old-space-size=4096"],
     reporters: ["verbose"],
     coverage: {
       provider: "v8",

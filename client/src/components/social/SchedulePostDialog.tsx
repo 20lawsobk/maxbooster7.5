@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,7 @@ import {
 interface SchedulePostDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSchedule: (data: SchedulePostData) => void;
+  onSchedule: (data: SchedulePostData) => Promise<unknown>;
   initialData?: Partial<SchedulePostData>;
 }
 
@@ -109,19 +109,24 @@ export function SchedulePostDialog({
     createScheduleFormData(initialData),
   );
   const initialDataKey = JSON.stringify(initialData ?? null);
+  const savingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [mentionInput, setMentionInput] = useState("");
 
   useEffect(() => {
-    if (open) {
+    if (open && !savingRef.current) {
       setFormData(
         createScheduleFormData(
           JSON.parse(initialDataKey) ?? undefined,
         ),
       );
+      setSubmitError(null);
+      setHashtagInput("");
+      setMentionInput("");
     }
   }, [open, initialDataKey]);
-
-  const [hashtagInput, setHashtagInput] = useState("");
-  const [mentionInput, setMentionInput] = useState("");
 
   const handlePlatformToggle = (platformId: string) => {
     setFormData((prev) => ({
@@ -172,25 +177,58 @@ export function SchedulePostDialog({
     }));
   };
 
-  const handleSubmit = (status: "draft" | "scheduled") => {
+  const handleSubmit = async (status: "draft" | "scheduled") => {
+    // State alone does not guard a second click before React rerenders.
+    if (savingRef.current) return;
     if (!formData.content.trim() || formData.platforms.length === 0) return;
     if (status === "scheduled" && (!formData.title.trim() || !formData.scheduledFor)) return;
-    onSchedule({ ...formData, status });
-    onOpenChange(false);
-    setFormData(createScheduleFormData());
+    savingRef.current = true;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const persistence = onSchedule({ ...formData, status });
+      if (!persistence || typeof persistence.then !== "function") {
+        throw new Error("The save handler did not return a persistence promise. Your input has been kept.");
+      }
+      await persistence;
+      setFormData(createScheduleFormData());
+      setHashtagInput("");
+      setMentionInput("");
+      onOpenChange(false);
+    } catch (error) {
+      setSubmitError(error instanceof Error && error.message
+        ? error.message
+        : "The post could not be saved. Your input has been kept. Please try again.");
+    } finally {
+      savingRef.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!savingRef.current) onOpenChange(nextOpen);
   };
 
   const characterCount = formData.content.length;
   const characterLimit = 280;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        aria-busy={isSubmitting}
+        onInteractOutside={(event) => {
+          if (savingRef.current) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (savingRef.current) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Schedule Post</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <fieldset disabled={isSubmitting} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="title">Post Title</Label>
             <Input
@@ -256,6 +294,7 @@ export function SchedulePostDialog({
                     className="flex items-center space-x-2"
                   >
                     <Checkbox
+                      disabled={isSubmitting}
                       id={platform.id}
                       checked={formData.platforms.includes(platform.id)}
                       onCheckedChange={() => handlePlatformToggle(platform.id)}
@@ -276,6 +315,7 @@ export function SchedulePostDialog({
           <div className="space-y-2">
             <Label htmlFor="postType">Post Type</Label>
             <Select
+              disabled={isSubmitting}
               value={formData.postType}
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, postType: value }))
@@ -347,7 +387,7 @@ export function SchedulePostDialog({
                     key={index}
                     variant="secondary"
                     className="cursor-pointer"
-                    onClick={() => removeHashtag(tag)}
+                    onClick={() => !savingRef.current && removeHashtag(tag)}
                   >
                     {tag} ×
                   </Badge>
@@ -382,7 +422,7 @@ export function SchedulePostDialog({
                     key={index}
                     variant="secondary"
                     className="cursor-pointer"
-                    onClick={() => removeMention(mention)}
+                    onClick={() => !savingRef.current && removeMention(mention)}
                   >
                     {mention} ×
                   </Badge>
@@ -405,26 +445,30 @@ export function SchedulePostDialog({
               }
             />
           </div>
-        </div>
+        </fieldset>
+
+        {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
+        {isSubmitting && <p role="status" className="text-sm text-muted-foreground">Saving your post. Please wait…</p>}
 
         <DialogFooter className="gap-2">
           <Button
             variant="outline"
             onClick={() => handleSubmit("draft")}
-            disabled={!formData.content.trim() || formData.platforms.length === 0}
+            disabled={isSubmitting || !formData.content.trim() || formData.platforms.length === 0}
           >
-            Save Draft
+            {isSubmitting ? "Saving…" : "Save Draft"}
           </Button>
           <Button
             onClick={() => handleSubmit("scheduled")}
             disabled={
+              isSubmitting ||
               !formData.title ||
               !formData.scheduledFor ||
               !formData.content.trim() ||
               formData.platforms.length === 0
             }
           >
-            Schedule Post
+            {isSubmitting ? "Saving…" : "Schedule Post"}
           </Button>
         </DialogFooter>
       </DialogContent>

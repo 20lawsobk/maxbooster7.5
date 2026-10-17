@@ -1497,6 +1497,7 @@ export default function Distribution() {
   const [showEditRelease, setShowEditRelease] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
+  const [wizardReleaseId, setWizardReleaseId] = useState<string | undefined>();
   const [editReleaseForm, setEditReleaseForm] = useState({
     title: "",
     artistName: "",
@@ -2370,7 +2371,10 @@ export default function Distribution() {
           {/* Main Tabs */}
           <Tabs
             value={activeTab}
-            onValueChange={setActiveTab}
+            onValueChange={(tab) => {
+              if (tab === "new-release") setWizardReleaseId(undefined);
+              setActiveTab(tab);
+            }}
             className="space-y-6"
           >
             <div className="overflow-x-auto">
@@ -2742,6 +2746,14 @@ export default function Distribution() {
 
                           {/* Actions */}
                           <div className="flex space-x-2">
+                            {["draft", "rejected"].includes(String((release.metadata as ReleaseMetadata)?.status || release.status)) && (
+                              <Button size="sm" onClick={() => {
+                                setWizardReleaseId(release.id);
+                                setActiveTab("new-release");
+                              }}>
+                                Review &amp; complete
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -2874,6 +2886,8 @@ export default function Distribution() {
 
             <TabsContent value="new-release" className="space-y-6">
               <ReleaseWizard
+                key={wizardReleaseId || "new"}
+                releaseId={wizardReleaseId}
                 onComplete={() => {
                   toast({
                     title: "Success!",
@@ -2881,12 +2895,16 @@ export default function Distribution() {
                       "Your release has been submitted for distribution.",
                   });
                   setActiveTab("releases");
+                  setWizardReleaseId(undefined);
                   queryClient.invalidateQueries({
                     queryKey: ["/api/distribution/releases"],
                   });
                   invalidateOnDistributionChange();
                 }}
-                onCancel={() => setActiveTab("releases")}
+                onCancel={() => {
+                  setWizardReleaseId(undefined);
+                  setActiveTab("releases");
+                }}
               />
             </TabsContent>
 
@@ -5424,6 +5442,11 @@ export default function Distribution() {
                   onClick={() => {
                     setShowReleaseDetails(false);
                     if (selectedRelease) {
+                      if (["draft", "rejected"].includes(String((selectedRelease.metadata as ReleaseMetadata)?.status || selectedRelease.status))) {
+                        setWizardReleaseId(selectedRelease.id);
+                        setActiveTab("new-release");
+                        return;
+                      }
                       setEditReleaseForm({
                         title: selectedRelease.title,
                         artistName:

@@ -89,8 +89,15 @@ export function ProjectSettingsDialog({
     sampleRate: project.sampleRate || 48000,
     bitDepth: project.bitDepth || 24,
   });
+  const [snapshot, setSnapshot] = useState<{
+    projectId: string | null;
+    expectedUpdatedAt: string | null | undefined;
+    loading: boolean;
+    error: string;
+  }>({ projectId: null, expectedUpdatedAt: undefined, loading: false, error: "" });
 
   useEffect(() => {
+    let cancelled = false;
     if (open) {
       setForm({
         name: project.name || "Untitled Project",
@@ -100,13 +107,55 @@ export function ProjectSettingsDialog({
         sampleRate: project.sampleRate || 48000,
         bitDepth: project.bitDepth || 24,
       });
+      setSnapshot({ projectId, expectedUpdatedAt: undefined, loading: !!projectId, error: "" });
+      if (projectId) {
+        // The DAW currently passes only reduced local metadata, without a
+        // server version. Load the canonical edit-start snapshot ONCE on open.
+        // Never refresh/rebase it on submit, rerenders, or after a conflict.
+        void (async () => {
+          try {
+            const response = await fetch(`/api/studio/projects/${projectId}`, { credentials: "include" });
+            if (!response.ok) throw new Error(`Unable to load project settings (${response.status})`);
+            const loaded = await response.json();
+            if (loaded.id !== projectId || loaded.updatedAt === undefined ||
+                (loaded.updatedAt !== null && !Number.isFinite(new Date(loaded.updatedAt).getTime()))) {
+              throw new Error("The server did not provide this project's version.");
+            }
+            if (cancelled) return;
+            setForm({
+              name: loaded.title || "Untitled Project",
+              description: loaded.description || "",
+              tempo: loaded.bpm ?? 120,
+              timeSignature: loaded.timeSignature || "4/4",
+              sampleRate: loaded.sampleRate ?? 48000,
+              bitDepth: loaded.bitDepth ?? 24,
+            });
+            setSnapshot({
+              projectId,
+              expectedUpdatedAt: loaded.updatedAt === null ? null : new Date(loaded.updatedAt).toISOString(),
+              loading: false, error: "",
+            });
+          } catch (error) {
+            if (!cancelled) setSnapshot({
+              projectId, expectedUpdatedAt: undefined, loading: false,
+              error: error instanceof Error ? error.message : "Unable to load project settings.",
+            });
+          }
+        })();
+      }
     }
-  }, [open, project]);
+    return () => { cancelled = true; };
+    // Parent metadata is an inline object and changes on every DAW render.
+    // An open edit must retain its original form and version across those renders.
+  }, [open, projectId]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!projectId) {
         throw new Error("Cannot save project settings without a project");
+      }
+      if (snapshot.projectId !== projectId || snapshot.expectedUpdatedAt === undefined || snapshot.loading) {
+        throw new Error("Project settings have not loaded. Close and reopen the dialog to try again.");
       }
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}`, {
@@ -117,6 +166,7 @@ export function ProjectSettingsDialog({
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
         body: JSON.stringify({
+          expectedUpdatedAt: snapshot.expectedUpdatedAt,
           title: form.name,
           description: form.description,
           tempo: form.tempo,
@@ -126,6 +176,9 @@ export function ProjectSettingsDialog({
         }),
       });
       if (!response.ok) {
+        if (response.status === 409) {
+          throw new Error("This project changed on the server. Your settings remain in this form. Review the current project before starting a new edit.");
+        }
         throw new Error(`Failed to save project settings (${response.status})`);
       }
       return true;
@@ -148,10 +201,10 @@ export function ProjectSettingsDialog({
       });
       onOpenChange(false);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Save Failed",
-        description: "Unable to save project settings.",
+        description: error.message || "Unable to save project settings.",
         variant: "destructive",
       });
     },
@@ -183,7 +236,7 @@ export function ProjectSettingsDialog({
   const isSubmitting = saveMutation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!isSubmitting) onOpenChange(nextOpen); }}>
       <DialogContent className="max-w-lg bg-[#1e1e22] border-[#333] text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
@@ -196,6 +249,9 @@ export function ProjectSettingsDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          {snapshot.loading && <p role="status">Loading the project's saved settings and version…</p>}
+          {snapshot.error && <p role="alert">{snapshot.error} Close and reopen to retry.</p>}
+          <fieldset disabled={isSubmitting || (!!projectId && (snapshot.projectId !== projectId || snapshot.expectedUpdatedAt === undefined))} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-300">
               Project Name
@@ -325,6 +381,7 @@ export function ProjectSettingsDialog({
             </div>
           </div>
 
+          </fieldset>
           <DialogFooter className="pt-4">
             <Button
               type="button"
@@ -337,7 +394,7 @@ export function ProjectSettingsDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !form.name.trim()}
+              disabled={isSubmitting || !form.name.trim() || (!!projectId && (snapshot.projectId !== projectId || snapshot.expectedUpdatedAt === undefined))}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isSubmitting ? (

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,20 @@ const getPasswordStrength = (password: string): PasswordStrength => {
   return { score, label: "Very Strong", color: "bg-green-600", requirements };
 };
 
+async function readResetResponse(response: Response): Promise<Record<string, unknown>> {
+  const data: unknown = await response.json().catch(() => null);
+  return data && typeof data === "object" && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
+}
+
+function validateResetPassword(value: string): string | undefined {
+  if (!value) return "Password is required";
+  if (value.length < 8) return "Password must be at least 8 characters";
+  if (value.length > 72) return "Password must be 72 characters or fewer";
+  return undefined;
+}
+
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,30 +73,22 @@ export default function ResetPassword() {
     password?: string;
     confirmPassword?: string;
   }>({});
-  const [tokenError, setTokenError] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
   const { toast } = useToast();
 
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
 
-  useEffect(() => {
-    if (!token) {
-      setTokenError(
-        "No reset token provided. Please request a new password reset link.",
-      );
-    }
-  }, [token]);
+  const tokenError = !token
+    ? "No reset token provided. Please request a new password reset link."
+    : null;
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(password),
     [password],
   );
 
-  const validatePassword = (value: string): string | undefined => {
-    if (!value) return "Password is required";
-    if (value.length < 8) return "Password must be at least 8 characters";
-    return undefined;
-  };
+  const validatePassword = validateResetPassword;
 
   const validateConfirmPassword = (value: string): string | undefined => {
     if (!value) return "Please confirm your password";
@@ -92,7 +98,12 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestInFlight.current) return;
     setError("");
+    if (!token) {
+      setError("No reset token provided. Please request a new password reset link.");
+      return;
+    }
 
     const passwordError = validatePassword(password);
     const confirmError = validateConfirmPassword(confirmPassword);
@@ -105,32 +116,34 @@ export default function ResetPassword() {
       return;
     }
 
+    requestInFlight.current = true;
+    setFieldErrors({});
     setLoading(true);
 
     try {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
+        signal: AbortSignal.timeout(30_000),
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password, confirmPassword }),
+        credentials: "include",
+        body: JSON.stringify({ token, password }),
       });
 
-      const contentType = response.headers.get("content-type") || "";
-      const data: unknown = contentType.includes("application/json")
-        ? await response.json().catch(() => null)
-        : null;
+      const data = await readResetResponse(response);
       const message =
-        data &&
-        typeof data === "object" &&
-        "message" in data &&
         typeof data.message === "string"
           ? data.message
           : "";
 
       if (!response.ok) {
-        if (message.toLowerCase().includes("already used")) {
+        if (response.status === 429) {
+          setError("Too many password reset attempts. Please wait a few minutes before trying again.");
+        } else if (message.toLowerCase().includes("already used")) {
           setError(
             "This password reset link has already been used. Please request a new one.",
           );
+        } else if (message.toLowerCase().includes("invalid or expired")) {
+          setError("This password reset link is invalid or expired. Please request a new one.");
         } else if (message.toLowerCase().includes("expired")) {
           setError(
             "This password reset link has expired. Please request a new one.",
@@ -148,6 +161,13 @@ export default function ResetPassword() {
         return;
       }
 
+      if (data.success !== true) {
+        setError("The server did not confirm the password reset. Please try signing in or request a new reset link.");
+        return;
+      }
+
+      setPassword("");
+      setConfirmPassword("");
       setSuccess(true);
       toast({
         title: "Password Reset Successfully",
@@ -158,6 +178,7 @@ export default function ResetPassword() {
         "Unable to connect to the server. Please check your internet connection and try again.",
       );
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   };
@@ -279,7 +300,12 @@ export default function ResetPassword() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Link href="/forgot-password" className="block mb-4 text-sm text-primary hover:underline">
+                Request a new reset link
+              </Link>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
               <div className="space-y-1">
                 <Label htmlFor="password">New Password</Label>
                 <div className="relative">
@@ -318,6 +344,8 @@ export default function ResetPassword() {
                     disabled={loading}
                     autoComplete="new-password"
                     className={`pr-10 ${fieldErrors.password ? "border-destructive" : ""}`}
+                    aria-invalid={!!fieldErrors.password}
+                    aria-describedby={fieldErrors.password ? "password-error" : undefined}
                     data-testid="input-new-password"
                   />
                   <Button
@@ -326,6 +354,7 @@ export default function ResetPassword() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                     aria-label={
                       showPassword ? "Hide new password" : "Show new password"
                     }
@@ -378,7 +407,7 @@ export default function ResetPassword() {
                   </div>
                 )}
                 {fieldErrors.password && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
+                  <p id="password-error" className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {fieldErrors.password}
                   </p>
@@ -416,6 +445,8 @@ export default function ResetPassword() {
                     disabled={loading}
                     autoComplete="new-password"
                     className={`pr-10 ${fieldErrors.confirmPassword ? "border-destructive" : ""}`}
+                    aria-invalid={!!fieldErrors.confirmPassword}
+                    aria-describedby={fieldErrors.confirmPassword ? "confirm-password-error" : undefined}
                     data-testid="input-confirm-password"
                   />
                   <Button
@@ -424,6 +455,7 @@ export default function ResetPassword() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={loading}
                     aria-label={
                       showConfirmPassword
                         ? "Hide confirmed password"
@@ -444,7 +476,7 @@ export default function ResetPassword() {
                   </p>
                 )}
                 {fieldErrors.confirmPassword && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
+                  <p id="confirm-password-error" className="text-sm text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {fieldErrors.confirmPassword}
                   </p>
@@ -467,6 +499,7 @@ export default function ResetPassword() {
               <div className="text-center">
                 <Link href="/login">
                   <Button
+                    type="button"
                     variant="link"
                     className="text-sm"
                     data-testid="link-back-to-login"

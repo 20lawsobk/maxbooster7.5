@@ -1,8 +1,15 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import ts from "typescript";
 import { createReleaseDraftSchema } from "../../server/routes/distribution-release-schemas.js";
 
 describe("distribution wizard draft persistence", () => {
+  it("preserves a supplied UPC in draft metadata without accepting malformed identifiers", () => {
+    expect(createReleaseDraftSchema.parse({ title: "Draft", upc: "012345678905" }).upc)
+      .toBe("012345678905");
+    expect(() => createReleaseDraftSchema.parse({ title: "Draft", upc: "not-an-identifier" })).toThrow();
+    expect(createReleaseDraftSchema.parse({ title: "Draft" }).upc).toBeUndefined();
+  });
   it("accepts a minimal draft with validated royalty splits", () => {
     const parsed = createReleaseDraftSchema.parse({
       title: "  Work in progress  ",
@@ -43,20 +50,36 @@ describe("distribution wizard draft persistence", () => {
     ).toThrow(/must total 100%/);
   });
 
-  it("sends draft data as JSON and includes royalty splits for save and submit", () => {
-    const wizardSource = readFileSync(
-      "client/src/components/distribution/ReleaseWizard.tsx",
-      "utf8",
+  it("retains the acknowledged release when media fails so retry PATCHes instead of duplicating it", async () => {
+    // Execute the real helper, without mounting React or contacting services.
+    const source = ts.createSourceFile("wizard.tsx", readFileSync(
+      "client/src/components/distribution/ReleaseWizard.tsx", "utf8",
+    ), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    let initializer: ts.Expression | undefined;
+    function visit(node: ts.Node) {
+      if (ts.isVariableDeclaration(node) && node.name.getText(source) === "persistDraft") {
+        initializer = node.initializer;
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(source);
+    expect(initializer).toBeDefined();
+    const code = ts.transpileModule(`return (${initializer!.getText(source)});`, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
+    }).outputText;
+    const payload = { title: "Draft", royaltySplits: [{ name: "Artist", percentage: 100 }] };
+    const apiRequest = vi.fn().mockResolvedValue({ json: async () => ({ id: "owned-release" }) });
+    const persistMedia = vi.fn().mockRejectedValueOnce(new Error("Upload failed")).mockResolvedValue(undefined);
+    const ref = { current: undefined as string | undefined };
+    const save = new Function("apiRequest", "releasePayload", "releaseIdRef", "setDraftReleaseId", "persistMedia", code)(
+      apiRequest, () => payload, ref, vi.fn(), persistMedia,
     );
-    const saveDraftSection = wizardSource.slice(
-      wizardSource.indexOf("const saveDraftMutation"),
-      wizardSource.indexOf("// Submit for distribution mutation"),
-    );
-
-    expect(saveDraftSection).toContain("royaltySplits");
-    expect(saveDraftSection).toContain("apiRequest");
-    expect(saveDraftSection).not.toContain("new FormData()");
-    expect(wizardSource).toContain("draftReleaseId ? \"PATCH\" : \"POST\"");
-    expect(wizardSource).toContain("royaltySplits,");
+    await expect(save()).rejects.toThrow("Upload failed");
+    expect(ref.current).toBe("owned-release");
+    await expect(save()).resolves.toEqual({ id: "owned-release" });
+    expect(apiRequest.mock.calls).toEqual([
+      ["POST", "/api/distribution/releases", payload],
+      ["PATCH", "/api/distribution/releases/owned-release", payload],
+    ]);
   });
 });

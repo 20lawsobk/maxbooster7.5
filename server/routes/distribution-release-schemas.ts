@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createReleaseSchema = z.object({
   title: z.string().min(1),
+  upc: z.string().trim().regex(/^(?:\d{12,13})?$/, "Enter an existing 12- or 13-digit UPC/EAN, or leave blank for a draft.").optional(),
   artistName: z.string().min(1),
   releaseType: z.enum(["single", "EP", "album"]),
   primaryGenre: z.string().min(1),
@@ -67,7 +68,33 @@ export const createReleaseSchema = z.object({
     .optional(),
 });
 
-export const updateReleaseSchema = createReleaseSchema.partial();
+// PATCH must never manufacture defaults for fields the caller did not edit.
+const optionalReleaseFlags = {
+  isExplicit: z.boolean().optional(),
+  territoryMode: z.enum(["worldwide", "include", "exclude"]).optional(),
+};
+export const updateReleaseSchema = createReleaseSchema.partial().extend(optionalReleaseFlags);
 export const createReleaseDraftSchema = createReleaseSchema.partial().extend({
   title: z.string().trim().min(1).max(200),
+  artistName: z.string().optional(),
+  primaryGenre: z.string().optional(),
+  language: z.string().optional(),
+  copyrightOwner: z.string().optional(),
+});
+
+// Incomplete metadata is valid while editing; the submit route validates completeness.
+export const editReleaseDraftSchema = createReleaseDraftSchema.partial().extend(optionalReleaseFlags);
+
+export const createTrackSchema = z.object({
+  title: z.string().min(1),
+  trackNumber: z.number().int().min(1),
+  isrc: z.string().trim().toUpperCase().regex(/^(?:[A-Z]{2}[A-Z0-9]{3}\d{7})?$/, "Enter an assigned ISRC without spaces or hyphens.").optional(),
+  explicit: z.boolean().default(false),
+  lyrics: z.string().optional(),
+  lyricsLanguage: z.string().optional(),
+  clientUploadId: z.string().min(1).max(128).optional(),
+});
+
+export const editTrackSchema = createTrackSchema.partial().extend({
+  explicit: z.boolean().optional(),
 });

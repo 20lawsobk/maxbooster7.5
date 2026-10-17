@@ -154,3 +154,4 @@
 - [Storefront canonical origin](storefront-canonical-origin.md) — generated storefront links use maxbooster.replit.app; preserve DNS aliases without claiming unverified public availability.
 - [Shutdown exit ownership](shutdown-owner-exit.md) — imported worker drains must return to the app owner; early process exits bypass otherwise-correct subsystem cleanup.
 - [Page-scoped readiness reviews](page-scoped-readiness.md) — review each page with its backend; track child panels and shared-service gaps explicitly.
+- [Minimum account age](minimum-account-age.md) — user selected 16 as the consistent registration and policy minimum; preserve existing accounts.

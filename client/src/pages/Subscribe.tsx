@@ -110,7 +110,6 @@ const plans = {
     name: "Monthly Plan",
     price: 49,
     period: "month",
-    priceId: "price_monthly_49", // This would be set from Stripe dashboard
     description: "Perfect for getting started",
     features: [
       "All AI Tools & Studio Access",
@@ -125,10 +124,8 @@ const plans = {
   yearly: {
     id: "yearly",
     name: "Yearly Plan",
-    price: 39,
-    originalPrice: 49,
-    period: "month",
-    priceId: "price_yearly_468", // This would be set from Stripe dashboard (39*12)
+    price: 468,
+    period: "year",
     description: "Best value for serious artists",
     features: [
       "Everything in Monthly",
@@ -148,7 +145,6 @@ const plans = {
     name: "Lifetime Plan",
     price: 699,
     period: "once",
-    priceId: "price_lifetime_699", // This would be set from Stripe dashboard
     description: "Complete access forever",
     features: [
       "Everything in Yearly",
@@ -167,10 +163,8 @@ const plans = {
 
 const SubscribeForm = ({
   plan,
-  onRetry,
 }: {
   plan: Record<string, unknown>;
-  onRetry?: () => void;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -182,12 +176,16 @@ const SubscribeForm = ({
     canRetry: boolean;
   } | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const processing = useRef(false);
+  const [elementReady, setElementReady] = useState(false);
+  const [elementFailed, setElementFailed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (processing.current) return;
     setPaymentError(null);
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !elementReady || elementFailed) {
       setPaymentError({
         message: "Payment system is not ready. Please wait a moment.",
         canRetry: true,
@@ -196,12 +194,13 @@ const SubscribeForm = ({
     }
 
     setIsProcessing(true);
+    processing.current = true;
 
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/dashboard?payment=success`,
+          return_url: `${window.location.origin}/dashboard?payment=return`,
         },
         redirect: "if_required",
       });
@@ -219,7 +218,7 @@ const SubscribeForm = ({
       } else if (paymentIntent?.status === "succeeded") {
         toast({
           title: "Payment Successful!",
-          description: `Welcome to Max Booster ${plan.name}!`,
+          description: "Stripe confirmed payment. Account access updates after server confirmation.",
         });
         navigate("/dashboard?payment=success");
       } else if (paymentIntent?.status === "processing") {
@@ -230,10 +229,13 @@ const SubscribeForm = ({
         });
         navigate("/dashboard?payment=processing");
       } else if (paymentIntent?.status === "requires_action") {
+        setPaymentError({ message: "Additional verification is required. Complete verification before retrying.", canRetry: true });
         toast({
           title: "Additional Verification Required",
           description: "Please complete the verification in the popup window.",
         });
+      } else {
+        setPaymentError({ message: "Payment was not confirmed. Check your payment details or contact support before starting another purchase.", canRetry: true });
       }
     } catch (err) {
       const errorInfo = getPaymentErrorMessage(err);
@@ -244,19 +246,19 @@ const SubscribeForm = ({
         variant: "destructive",
       });
     } finally {
+      processing.current = false;
       setIsProcessing(false);
     }
   };
 
   const handleRetry = () => {
     setPaymentError(null);
-    if (onRetry) {
-      onRetry();
-    }
+    // Retry confirmation against these same Elements/intent; never create
+    // another subscription just because a card was declined.
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" aria-busy={isProcessing}>
       {paymentError && (
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4" />
@@ -269,6 +271,7 @@ const SubscribeForm = ({
                 variant="outline"
                 size="sm"
                 onClick={handleRetry}
+                disabled={isProcessing}
                 className="mt-2"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
@@ -291,6 +294,11 @@ const SubscribeForm = ({
 
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <PaymentElement
+          onReady={() => setElementReady(true)}
+          onLoadError={() => {
+            setElementFailed(true);
+            setPaymentError({ message: "The secure payment form could not load. Please try again later or contact support.", canRetry: false });
+          }}
           options={{
             layout: "tabs",
             paymentMethodOrder: ["card", "apple_pay", "google_pay"],
@@ -306,7 +314,7 @@ const SubscribeForm = ({
       <Button
         type="submit"
         className="w-full py-3 text-lg gradient-bg"
-        disabled={!stripe || isProcessing}
+        disabled={!stripe || !elements || !elementReady || elementFailed || isProcessing}
         data-testid="button-submit-payment"
       >
         {isProcessing ? (
@@ -325,7 +333,7 @@ const SubscribeForm = ({
       </Button>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        By subscribing, you agree to our Terms of Service and Privacy Policy.
+        By subscribing, you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
         {plan.period !== "once" && " You can cancel anytime."}
       </p>
     </form>
@@ -341,8 +349,7 @@ const StripeUnavailableFallback = () => (
           Payment Service Unavailable
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Our payment processing service is temporarily unavailable. This is
-          usually resolved within a few minutes.
+          The secure payment service is unavailable. Please try again later or contact support. No payment has been confirmed by this page.
         </p>
         <div className="space-y-3">
           <Button onClick={() => window.location.reload()} className="w-full">
@@ -357,7 +364,7 @@ const StripeUnavailableFallback = () => (
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-500 mt-6">
           If this issue persists, please contact support at
-          support@maxbooster.com
+          <a href="/help" className="underline">our help center</a>.
         </p>
       </CardContent>
     </Card>
@@ -366,38 +373,51 @@ const StripeUnavailableFallback = () => (
 
 export default function Subscribe() {
   const { tier } = useParams();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [setupError, setSetupError] = useState<BillingError | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const checkoutIntentRef = useRef<{ planId: string; key: string } | null>(null);
+  const checkoutIntents = useRef(new Map<string, { key: string; request?: Promise<any> }>());
+  const activeCheckout = useRef<string | null>(null);
+  const [setupScope, setSetupScope] = useState("");
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
-  const plan = plans[tier as keyof typeof plans];
+  const plan = Object.prototype.hasOwnProperty.call(plans, tier)
+    ? plans[tier as keyof typeof plans] : undefined;
+  const scope = user?.id && plan ? `${user.id}:${plan.id}` : "";
 
   const createSubscription = useCallback(async () => {
-    if (!plan) return;
+    if (!plan || !user?.id || !stripePromise || activeCheckout.current !== scope) return;
 
+    setSetupScope(scope);
     setIsLoading(true);
     setSetupError(null);
+    setClientSecret("");
 
     try {
-      if (checkoutIntentRef.current?.planId !== plan.id) {
-        checkoutIntentRef.current = {
-          planId: plan.id,
-          key: crypto.randomUUID(),
-        };
+      let intent = checkoutIntents.current.get(scope);
+      if (!intent) {
+        intent = { key: crypto.randomUUID() };
+        checkoutIntents.current.set(scope, intent);
       }
-      const response = await apiRequest("POST", "/api/create-subscription", {
-        planName: plan.id,
-      }, {
-        headers: {
-          "Idempotency-Key": checkoutIntentRef.current.key,
-        },
-      });
-      const data = await response.json();
+      if (!intent.request) {
+        intent.request = (async () => {
+          const response = await apiRequest("POST", "/api/create-subscription", {
+            planName: plan.id,
+          }, { headers: { "Idempotency-Key": intent.key } });
+          const data = await response.json();
+          if (typeof data.clientSecret !== "string" || !data.clientSecret.trim()) {
+            throw new Error("The server did not return a valid payment session. Please contact support before starting another purchase.");
+          }
+          return data;
+        })();
+        // Keep the same key on failure; a lost response must not cause a new charge.
+        intent.request.catch(() => { intent.request = undefined; });
+      }
+      const data = await intent.request;
+      if (activeCheckout.current !== scope) return;
 
       if (data.code === "STRIPE_NOT_CONFIGURED") {
         setSetupError({
@@ -410,7 +430,8 @@ export default function Subscribe() {
 
       setClientSecret(data.clientSecret);
     } catch (error) {
-      const errorData = error.body || error;
+      if (activeCheckout.current !== scope) return;
+      const errorData = error instanceof Error ? error : { message: "Failed to set up payment. Please try again." };
 
       if (errorData.code === "STRIPE_NOT_CONFIGURED") {
         setSetupError({
@@ -435,13 +456,14 @@ export default function Subscribe() {
         });
       }
     } finally {
-      setIsLoading(false);
+      if (activeCheckout.current === scope) setIsLoading(false);
     }
-  }, [plan, toast]);
+  }, [plan, user?.id, scope, toast]);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
+    if (authLoading) return;
+    if (!user?.id) {
+      navigate(`/login?redirect=${encodeURIComponent(`/subscribe/${tier}`)}`);
       return;
     }
 
@@ -450,8 +472,10 @@ export default function Subscribe() {
       return;
     }
 
-    createSubscription();
-  }, [user, plan, navigate, createSubscription]);
+    activeCheckout.current = scope;
+    if (stripePromise) void createSubscription();
+    return () => { activeCheckout.current = null; };
+  }, [user?.id, authLoading, plan, scope, tier, navigate, createSubscription]);
 
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
@@ -490,7 +514,7 @@ export default function Subscribe() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || setupScope !== scope) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
         <Card className="max-w-md mx-4">
@@ -631,7 +655,7 @@ export default function Subscribe() {
                 </div>
                 {plan.id === "yearly" && (
                   <p className="text-green-600 font-medium">
-                    Save ${(49 - 39) * 12}/year with annual billing
+                    $39/month equivalent, billed $468 annually. Save $120/year.
                   </p>
                 )}
                 <p className="text-gray-600">{plan.description}</p>
@@ -658,7 +682,7 @@ export default function Subscribe() {
                     </h4>
                     <p className="text-sm text-blue-700">
                       {plan.id === "yearly"
-                        ? `You'll be charged $${plan.price * 12} today, then $${plan.price * 12} every year.`
+                        ? `You'll be charged $${plan.price} today, then $${plan.price} every year.`
                         : `You'll be charged $${plan.price} today, then $${plan.price} every month.`}
                     </p>
                     <p className="text-xs text-blue-600 mt-2">
@@ -667,6 +691,10 @@ export default function Subscribe() {
                     </p>
                   </div>
                 )}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg text-blue-900">
+                  <Shield className="inline h-4 w-4 mr-2" />
+                  90-Day Money-Back Guarantee
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -681,8 +709,8 @@ export default function Subscribe() {
                 </p>
               </CardHeader>
               <CardContent>
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <SubscribeForm plan={plan} onRetry={handleRetry} />
+                <Elements key={`${scope}:${clientSecret}`} stripe={stripePromise} options={{ clientSecret }}>
+                  <SubscribeForm plan={plan} />
                 </Elements>
               </CardContent>
             </Card>

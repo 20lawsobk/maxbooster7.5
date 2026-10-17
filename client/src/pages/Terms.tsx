@@ -6,19 +6,19 @@ import { Link } from "wouter";
 export default function Terms() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container max-w-4xl mx-auto px-4 py-8">
-        <Link href="/">
-          <Button variant="ghost" className="mb-6" data-testid="button-back">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+      <main className="container max-w-4xl mx-auto px-4 py-8">
+        <Button asChild variant="ghost" className="mb-6" data-testid="button-back">
+          <Link href="/">
+            <ArrowLeft aria-hidden="true" className="w-4 h-4 mr-2" />
             Back
-          </Button>
-        </Link>
+          </Link>
+        </Button>
 
         <Card className="dark:bg-gray-900 dark:border-gray-700">
           <CardContent className="p-8 prose dark:prose-invert max-w-none">
             <h1 className="text-4xl font-bold mb-6">Terms and Conditions</h1>
             <p className="text-gray-600 dark:text-gray-300 mb-8">
-              Last updated: {new Date().toLocaleDateString()}
+              Please review these terms before using the Service.
             </p>
 
             <section className="mb-8">
@@ -60,6 +60,10 @@ export default function Terms() {
                 When you create an account with Max Booster, you must provide
                 accurate, complete, and current information. Failure to do so
                 constitutes a breach of the Terms.
+              </p>
+              <p className="mb-4">
+                You must be at least 16 years old to create a new account,
+                including through Google signup or a paid registration.
               </p>
               <p className="mb-4">You are responsible for:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -184,7 +188,7 @@ export default function Terms() {
                   cancelled
                 </li>
                 <li>
-                  Refunds available within 7 days of purchase (see Section 7)
+                  90-day money-back guarantee (see Section 7)
                 </li>
                 <li>
                   Price changes with 30 days notice for existing subscribers
@@ -206,11 +210,11 @@ export default function Terms() {
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>
-                  <strong>7-Day Window:</strong> Full refund available within 7
+                  <strong>90-Day Money-Back Guarantee:</strong> Full refund available within 90
                   days of initial purchase
                 </li>
                 <li>
-                  <strong>After 7 Days:</strong> No refunds, but you may cancel
+                  <strong>After 90 Days:</strong> You may still cancel
                   to prevent future charges
                 </li>
                 <li>
@@ -223,8 +227,9 @@ export default function Terms() {
                 </li>
               </ul>
               <p className="mt-4">
-                To request a refund within the 7-day window, email
-                support@maxbooster.com with your account email and purchase
+                To request a refund within the 90-day window, email{" "}
+                <a href="mailto:support@maxbooster.ai">support@maxbooster.ai</a>{" "}
+                with your account email and purchase
                 date.
               </p>
             </section>
@@ -351,7 +356,7 @@ export default function Terms() {
               </h3>
               <p className="mb-4">
                 Before filing any formal claim or legal action, you agree to
-                contact us at legal@maxbooster.com to attempt to resolve the
+                contact us at <a href="mailto:legal@maxbooster.ai">legal@maxbooster.ai</a> to attempt to resolve the
                 dispute informally. We will attempt to resolve the dispute
                 within 30 days of receiving your notice.
               </p>
@@ -449,7 +454,7 @@ export default function Terms() {
                 15. Entire Agreement
               </h2>
               <p>
-                These Terms, together with our Privacy Policy and DMCA Policy,
+                These Terms, together with our <Link href="/privacy">Privacy Policy</Link> and <Link href="/dmca">DMCA Policy</Link>,
                 constitute the entire agreement between you and Max Booster
                 regarding the use of the Service and supersede all prior
                 agreements and understandings.
@@ -465,16 +470,16 @@ export default function Terms() {
               </p>
               <ul className="list-none space-y-2">
                 <li>
-                  <strong>General Inquiries:</strong> support@maxbooster.com
+                  <strong>General Inquiries:</strong> <a href="mailto:support@maxbooster.ai">support@maxbooster.ai</a>
                 </li>
                 <li>
-                  <strong>Legal Matters:</strong> legal@maxbooster.com
+                  <strong>Legal Matters:</strong> <a href="mailto:legal@maxbooster.ai">legal@maxbooster.ai</a>
                 </li>
                 <li>
-                  <strong>DMCA Notices:</strong> dmca@maxbooster.com
+                  <strong>DMCA Notices:</strong> <a href="mailto:dmca@maxbooster.com">dmca@maxbooster.com</a>
                 </li>
                 <li>
-                  <strong>Privacy Concerns:</strong> privacy@maxbooster.com
+                  <strong>Privacy Concerns:</strong> <a href="mailto:privacy@maxbooster.ai">privacy@maxbooster.ai</a>
                 </li>
               </ul>
             </section>
@@ -487,12 +492,12 @@ export default function Terms() {
                 We're committed to transparency. If anything in these Terms is
                 unclear or you have questions about how they apply to your
                 specific situation, please don't hesitate to reach out to our
-                team at legal@maxbooster.com.
+                team at <a href="mailto:legal@maxbooster.ai">legal@maxbooster.ai</a>.
               </p>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

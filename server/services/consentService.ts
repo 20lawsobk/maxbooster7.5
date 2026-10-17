@@ -2,6 +2,7 @@ import { db } from "../db";
 import { users } from "../../shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
+import { calculateAgeUtc, getAccountEligibilityError } from "../../shared/agePolicy.js";
 
 const CURRENT_TOS_VERSION = "1.0.0";
 const CURRENT_PRIVACY_VERSION = "1.0.0";
@@ -17,7 +18,7 @@ interface LogConsentInput {
 }
 
 interface RegisterConsentInput {
-  birthdate: Date;
+  birthdate: Date | string;
   tosAccepted: boolean;
   privacyAccepted: boolean;
   marketingConsent?: boolean;
@@ -59,13 +60,13 @@ export class ConsentService {
   ): Promise<void> {
     const now = new Date();
 
-    // Validate age (COPPA compliance - must be 13+)
+    // New-registration eligibility only; never backfill/restrict existing accounts.
+    const dateOnly = input?.birthdate instanceof Date && !Number.isNaN(input.birthdate.getTime())
+      ? input.birthdate.toISOString().slice(0, 10)
+      : input?.birthdate;
+    const eligibilityError = getAccountEligibilityError(dateOnly);
+    if (eligibilityError) throw new Error(eligibilityError);
     const age = this.calculateAge(input?.birthdate);
-    if (age < 13) {
-      throw new Error(
-        "Users must be at least 13 years old to register (COPPA compliance)",
-      );
-    }
 
     // Require TOS and Privacy acceptance
     if (!input?.tosAccepted) {
@@ -128,17 +129,11 @@ export class ConsentService {
     );
   }
 
-  calculateAge(birthdate: Date): number {
-    const today = new Date();
-    const birth = new Date(birthdate);
-    let age = today?.getFullYear() - birth?.getFullYear();
-    const monthDiff = today?.getMonth() - birth?.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today?.getDate() < birth?.getDate())
-    ) {
-      age--;
-    }
+  calculateAge(birthdate: Date | string): number {
+    const dateOnly = birthdate instanceof Date && !Number.isNaN(birthdate.getTime())
+      ? birthdate.toISOString().slice(0, 10) : birthdate;
+    const age = calculateAgeUtc(dateOnly);
+    if (age === null) throw new Error("A valid date of birth is required");
     return age;
   }
 

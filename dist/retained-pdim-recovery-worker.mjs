@@ -8919,8 +8919,17 @@ var init_pdimBucketJournal = __esm({
       }
       renew() {
         return this.serial(async () => {
-          this.assertOwned();
           try {
+            if (this.failure) throw this.failure;
+            if (!this.head || this.head.owner !== this.owner) {
+              throw new PdimBucketUnavailable("Bucket PDIM is not owned by this process");
+            }
+            if (this.head.leaseUntil <= this.clock()) {
+              const actual = await this.objects.read(`${this.prefix}/HEAD`);
+              if (!actual || actual.generation !== this.generation || this.decodeHead(actual.bytes).owner !== this.owner) {
+                throw new PdimBucketUnavailable("Bucket PDIM owner changed during lease expiry");
+              }
+            }
             await this.publish({ ...this.head, leaseUntil: this.clock() + this.leaseMs }, this.generation);
           } catch (cause) {
             this.failure = new PdimBucketUnavailable("Bucket PDIM lease renewal failed", { cause });
@@ -8968,13 +8977,14 @@ var init_pdimBucketJournal = __esm({
           }
         });
       }
-      async recover() {
+      async recover(onProgress) {
         this.assertOwned();
         const head = { ...this.head };
         const snapshot = await this.readImmutable(head.snapshot);
         const transactions = [];
         let tip = head.tip;
         let expected = head.sequence;
+        onProgress?.(0, head.sequence - head.baseSequence);
         while (expected > head.baseSequence) {
           if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
           const frame = JSON.parse((await this.readImmutable(tip)).toString());
@@ -8984,6 +8994,9 @@ var init_pdimBucketJournal = __esm({
           transactions.push(frame.value);
           tip = frame.previous;
           expected--;
+          if ((head.sequence - expected) % 32 === 0 || expected === head.baseSequence) {
+            onProgress?.(head.sequence - expected, head.sequence - head.baseSequence);
+          }
         }
         if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
         this.assertOwned();
@@ -9112,12 +9125,13 @@ async function writeBucketSnapshot(objects, entries, redisSequence, capsuleSeque
   };
   return objects.putImmutable(Buffer.from(JSON.stringify(manifest)));
 }
-async function readBucketSnapshot(objects, manifestBytes, validate) {
+async function readBucketSnapshot(objects, manifestBytes, validate, onProgress) {
   const manifest = JSON.parse(manifestBytes.toString());
   if (manifest.format !== "pdim-bucket-snapshot-v1" || !validSequence(manifest.redisSequence) || !validSequence(manifest.capsuleSequence) || !validSequence(manifest.count) || !Array.isArray(manifest.chunks) || manifest.chunks.some((id) => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id))) {
     throw new Error("Invalid bucket PDIM snapshot manifest");
   }
   const entries = /* @__PURE__ */ new Map();
+  onProgress?.(0, manifest.chunks.length);
   for (let offset = 0; offset < manifest.chunks.length; offset += 4) {
     const buffers = await Promise.all(manifest.chunks.slice(offset, offset + 4).map((id) => objects.readImmutable(id)));
     for (const buffer of buffers) {
@@ -9129,6 +9143,10 @@ async function readBucketSnapshot(objects, manifestBytes, validate) {
         }
         entries.set(row[0], validate(row[0], row[1]));
       }
+    }
+    const completed = Math.min(offset + 4, manifest.chunks.length);
+    if (completed % 32 === 0 || completed === manifest.chunks.length) {
+      onProgress?.(completed, manifest.chunks.length);
     }
   }
   if (entries.size !== manifest.count) throw new Error("Bucket PDIM snapshot count mismatch");
@@ -9216,9 +9234,15 @@ var init_pdimBucketPersistence = __esm({
         }, 1e4);
         this.heartbeat.unref();
         try {
-          const recovered = await this.journal.recover();
-          const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate);
+          const recovered = await this.journal.recover((completed, total) => this.onStage(`journal:${completed}/${total}`));
+          const snapshot = await readBucketSnapshot(
+            this.journal,
+            recovered.snapshot,
+            this.validate,
+            (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`)
+          );
           this.onStage("snapshot-verified");
+          await this.journal.renew();
           const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
           this.assertHealthy();
           this.entries.clear();

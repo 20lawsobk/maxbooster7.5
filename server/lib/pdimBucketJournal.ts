@@ -161,8 +161,20 @@ export class PdimBucketJournal<T> {
 
   renew(): Promise<void> {
     return this.serial(async () => {
-      this.assertOwned();
       try {
+        if (this.failure) throw this.failure;
+        if (!this.head || this.head.owner !== this.owner) {
+          throw new PdimBucketUnavailable("Bucket PDIM is not owned by this process");
+        }
+        if (this.head.leaseUntil <= this.clock()) {
+          // A long recovery/GC pause may delay heartbeat execution. Revalidate
+          // the unchanged generation; never renew over a successor's lease.
+          const actual = await this.objects.read(`${this.prefix}/HEAD`);
+          if (!actual || actual.generation !== this.generation ||
+              this.decodeHead(actual.bytes).owner !== this.owner) {
+            throw new PdimBucketUnavailable("Bucket PDIM owner changed during lease expiry");
+          }
+        }
         await this.publish({ ...this.head!, leaseUntil: this.clock() + this.leaseMs }, this.generation!);
       } catch (cause) {
         this.failure = new PdimBucketUnavailable("Bucket PDIM lease renewal failed", { cause });
@@ -208,13 +220,14 @@ export class PdimBucketJournal<T> {
     });
   }
 
-  async recover(): Promise<{ snapshot: Buffer; transactions: T[] }> {
+  async recover(onProgress?: (completed: number, total: number) => void): Promise<{ snapshot: Buffer; transactions: T[] }> {
     this.assertOwned();
     const head = { ...this.head! };
     const snapshot = await this.readImmutable(head.snapshot);
     const transactions: T[] = [];
     let tip = head.tip;
     let expected = head.sequence;
+    onProgress?.(0, head.sequence - head.baseSequence);
     while (expected > head.baseSequence) {
       if (!tip) throw new PdimBucketUnavailable("Bucket PDIM journal truncated");
       const frame = JSON.parse((await this.readImmutable(tip)).toString()) as Frame<T>;
@@ -225,6 +238,9 @@ export class PdimBucketJournal<T> {
       transactions.push(frame.value);
       tip = frame.previous;
       expected--;
+      if ((head.sequence - expected) % 32 === 0 || expected === head.baseSequence) {
+        onProgress?.(head.sequence - expected, head.sequence - head.baseSequence);
+      }
     }
     if (tip !== head.baseTip) throw new PdimBucketUnavailable("Bucket PDIM checkpoint ancestry mismatch");
     this.assertOwned();

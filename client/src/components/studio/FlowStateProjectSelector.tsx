@@ -102,15 +102,23 @@ export function FlowStateProjectSelector({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (projectId: string) => {
-      await apiRequest("DELETE", `/api/studio/projects/${projectId}`);
+    mutationFn: async (project: Project) => {
+      if (project.updatedAt === undefined) throw new Error("Refresh projects to load this project's version before deleting.");
+      const expectedUpdatedAt = project.updatedAt === null ? null : new Date(project.updatedAt).toISOString();
+      await apiRequest("DELETE", `/api/studio/projects/${project.id}`, { expectedUpdatedAt });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
       toast({ title: "Project deleted" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete project", variant: "destructive" });
+    onError: (error: Error & { status?: number }) => {
+      toast({
+        title: "Failed to delete project",
+        description: error.status === 409
+          ? "This project changed before deletion. Refresh and review it before trying again."
+          : error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -405,7 +413,7 @@ export function FlowStateProjectSelector({
                               title: "Delete Project",
                               description: `Are you sure you want to delete "${project.title}"? This cannot be undone.`,
                               onConfirm: () =>
-                                deleteMutation.mutate(project.id),
+                                deleteMutation.mutate(project),
                             });
                           }}
                         >

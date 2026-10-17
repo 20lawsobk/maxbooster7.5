@@ -216,7 +216,7 @@ export class SupportAIService {
       "legal compliance",
       {
         answer:
-          "Max Booster is fully compliant with all major regulations:\n\n**COPPA Compliance:**\n- Age 13+ verification\n- UTC-normalized birthdate validation\n- Parental consent for users under 13\n\n**GDPR Compliance:**\n- Cookie consent banner (Article 7)\n- Right to access your data (Article 15)\n- Right to erasure with 30-day grace period (Article 17)\n- Right to data portability (Article 20)\n\n**DMCA Safe Harbor:**\n- Designated agent registered at copyright.gov\n- Agent ID: DMCA-1065850\n- Protects you from copyright infringement liability\n\n**Business Entity:**\n- LLC formation complete\n- Full legal protection\n\nYou can launch and accept paid users with complete legal protection.",
+          "Max Booster is fully compliant with all major regulations:\n\n**New Account Eligibility:**\n- You must be at least 16 years old to create an account\n- Strict calendar-date validation with UTC birthday boundaries\n- Applies to email, Google signup and paid registration; parental permission does not bypass the minimum age\n\n**GDPR Compliance:**\n- Cookie consent banner (Article 7)\n- Right to access your data (Article 15)\n- Right to erasure with 30-day grace period (Article 17)\n- Right to data portability (Article 20)\n\n**DMCA Safe Harbor:**\n- Designated agent registered at copyright.gov\n- Agent ID: DMCA-1065850\n- Protects you from copyright infringement liability\n\n**Business Entity:**\n- LLC formation complete\n- Full legal protection\n\nYou can launch and accept paid users with complete legal protection.",
         category: "legal",
       },
     ],

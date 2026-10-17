@@ -14,8 +14,8 @@ const release = {
   releaseDate: "2026-01-01",
   artworkUrl: "https://art.example/cover.jpg",
   genre: "Pop",
-  upc: "123456789012",
   metadata: {
+    upc: "012345678905",
     releaseType: "Single",
     language: "English",
     composerName: "Composer",
@@ -42,6 +42,10 @@ const tracks = [
 ];
 
 describe("shared Too Lost route submission", () => {
+  it("reads the UPC from persisted release metadata rather than a nonexistent row column", async () => {
+    const { buildToolostPayload } = await import("../../server/routes/distribution-toolost-submission.js");
+    expect(buildToolostPayload(release, tracks, ["Spotify"]).upc).toBe("012345678905");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     submitDistributionOnce.mockImplementation(

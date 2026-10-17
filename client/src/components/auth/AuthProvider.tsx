@@ -9,8 +9,10 @@ import { clearPrivateQueryCache } from "@/lib/idbPersister";
 import { toast } from "@/hooks/use-toast";
 import { acquireAccountLease, changeAccount, registerAccountCleanup } from "@/lib/offline/accountCoordinator";
 import { resetStudioOfflineState } from "@/lib/offline/studioOfflineLifecycle";
+import { completeAuthentication, type AuthenticationExchange } from "@/lib/authenticationBoundary";
 
 interface AuthContextType {
+  authenticate: <T extends AuthenticationExchange>(request: () => Promise<T>) => Promise<T>;
   user: User | null;
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (data: {
@@ -34,6 +36,7 @@ async function silentAuthCheck(): Promise<User | null> {
     const response = await fetch(`/api/auth/me?account-check=${crypto.randomUUID()}`, {
       credentials: "include",
       cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
     });
     if (response.status === 401) {
       return null;
@@ -124,18 +127,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const authenticate = <T extends AuthenticationExchange,>(request: () => Promise<T>) =>
+    completeAuthentication(request, {
+      changeAccount,
+      setToken: setAuthToken,
+      verify: silentAuthCheck,
+      commit: loginUser => {
+        queryClient.setQueryData(["/api/auth/me"], loginUser);
+        authTransition.current = false;
+        setAccountLocked(false);
+      },
+    });
+
   const login = async (credentials: { username: string; password: string }) => {
-    await changeAccount(async () => {
+    const result = await authenticate(async () => {
       const response = await apiRequest("POST", "/api/auth/login", credentials);
       const data = await response.json();
-      if (data.sessionToken) setAuthToken(data.sessionToken);
+      return { response, data };
     });
-    // Reverify after acquiring the shared lease; another exclusive transition
-    // may have won the lock between our response and lease acquisition.
-    const loginUser = await silentAuthCheck();
-    authTransition.current = false;
-    setAccountLocked(false);
-    queryClient.setQueryData(["/api/auth/me"], loginUser);
+    if (result.data.requiresTwoFactor === true) {
+      throw new Error("Two-factor authentication is required. Continue on the sign-in page.");
+    }
   };
 
   const register = async (data: {
@@ -144,15 +156,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string;
     confirmPassword: string;
   }) => {
-    await changeAccount(async () => {
+    await authenticate(async () => {
       const response = await apiRequest("POST", "/api/auth/register", data);
       const result = await response.json();
-      if (result.sessionToken) setAuthToken(result.sessionToken);
+      return { response, data: result };
     });
-    const result = await silentAuthCheck();
-    authTransition.current = false;
-    setAccountLocked(false);
-    queryClient.setQueryData(["/api/auth/me"], result);
   };
 
   const logout = async () => {
@@ -174,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       user,
+      authenticate,
       login,
       register,
       logout,

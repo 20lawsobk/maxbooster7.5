@@ -82,6 +82,7 @@ interface ProjectsApiResponse {
 
 interface ApiError {
   message?: string;
+  status?: number;
 }
 
 export default function Projects() {
@@ -99,6 +100,7 @@ export default function Projects() {
   );
 
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const editRequestRef = useRef(0);
   const [draftMessage, setDraftMessage] = useState("");
   const [reviewConflicts, setReviewConflicts] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -123,10 +125,12 @@ export default function Projects() {
       const identity = offlineIdentity();
       const project = projects.find(project => project.id === projectId);
       if (!project) throw new Error("Refresh your projects before deleting this item.");
+      if (project.updatedAt === undefined) throw new Error("The project's version is unavailable. Refresh before deleting.");
+      const expectedUpdatedAt = project.updatedAt === null ? null : new Date(project.updatedAt).toISOString();
       let action;
       try {
         action = await offlineQueue.enqueue("project.delete", {
-          projectId, expectedUpdatedAt: project.updatedAt ? new Date(project.updatedAt).toISOString() : null,
+          projectId, expectedUpdatedAt,
         }, { conflictStrategy: "manual" });
       } catch (error) {
         assertOfflineIdentity(identity);
@@ -142,6 +146,7 @@ export default function Projects() {
       const response = await apiRequest(
         "DELETE",
         `/api/studio/projects/${projectId}`,
+        { expectedUpdatedAt },
       );
       await response.json();
       return { queued: false };
@@ -163,7 +168,7 @@ export default function Projects() {
       toast({
         title: "Delete Failed",
         description:
-          apiError.message || "Failed to delete project. Please try again.",
+          apiError.status === 409 ? "This project changed before deletion. Refresh and review it before trying again." : apiError.message || "Failed to delete project. Please try again.",
         variant: "destructive",
       });
     },
@@ -209,9 +214,13 @@ export default function Projects() {
       data: Record<string, unknown>;
     }) => {
       const identity = offlineIdentity();
+      if (editingProject?.id !== id || editingProject.updatedAt === undefined) {
+        throw new Error("This draft has no saved project version. Keep a copy of your changes and review current server data before starting a new edit.");
+      }
+      const expectedUpdatedAt = editingProject.updatedAt === null ? null : new Date(editingProject.updatedAt).toISOString();
       let draftVersion: number | undefined;
       try {
-        draftVersion = (await draftStorage.saveDraft(`project-edit:${id}`, data)).version;
+        draftVersion = (await draftStorage.saveDraft(`project-edit:${id}`, { ...data, expectedUpdatedAt })).version;
       } catch {
         setDraftMessage("Local storage unavailable. This update requires a successful server response.");
       }
@@ -219,7 +228,7 @@ export default function Projects() {
       if (draftVersion !== undefined) {
         const action = await offlineQueue.enqueue("project.update", {
           projectId: id, changes: data, isStudio: false,
-          expectedUpdatedAt: editingProject?.updatedAt ? new Date(editingProject.updatedAt).toISOString() : null,
+          expectedUpdatedAt,
         }, { conflictStrategy: "manual", metadata: { formId: `project-edit:${id}`, draftVersion } });
         assertOfflineIdentity(identity);
         const result = navigator.onLine ? await syncManager.forceSyncAction(action.id) : null;
@@ -231,7 +240,7 @@ export default function Projects() {
       const response = await apiRequest(
         "PATCH",
         `/api/studio/projects/${id}`,
-        data,
+        { ...data, expectedUpdatedAt },
       );
       await response.json();
       return { queued: false };
@@ -248,18 +257,15 @@ export default function Projects() {
         description: result.queued ? "Pending server confirmation. Review its status below; keep the draft until it is applied." : "Your project has been updated successfully.",
       });
       setIsEditOpen(false);
-      if (editingProject && !result.queued) {
-        void draftStorage.deleteDraft(`project-edit:${editingProject.id}`).catch(() => {
-          toast({ title: "Project saved", description: "The old local draft could not be removed. Review it before restoring.", variant: "destructive" });
-        });
-      }
+      // The action-updated listener removes only the acknowledged draft version.
+      // Do not delete a newer draft saved while the request was in flight.
       setEditingProject(null);
     },
     onError: (error: Error) => {
       const apiError = error as ApiError;
       toast({
         title: "Update Failed",
-        description: apiError.message || "Failed to update project.",
+        description: apiError.status === 409 ? "This project changed on the server. Your form is still here; review current server data before trying again." : apiError.message || "Failed to update project.",
         variant: "destructive",
       });
     },
@@ -279,6 +285,7 @@ export default function Projects() {
 
   useEffect(() => {
     return () => {
+      ++editRequestRef.current;
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
@@ -296,11 +303,8 @@ export default function Projects() {
       return;
     }
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
     if (project.audioUrl) {
+      if (audioRef.current) audioRef.current.pause();
       let audioSrc = project.audioUrl;
       if (!audioSrc.startsWith("http") && !audioSrc.startsWith("/api/")) {
         audioSrc = `/api/marketplace/audio/${audioSrc.replace(/^\//, "")}`;
@@ -353,28 +357,16 @@ export default function Projects() {
         });
       };
 
-      if (audioRef.current && audioRef.current.src.endsWith(audioSrc)) {
-        setAudioLoading(null);
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {
-          if (audioProjectRef.current === project.id) {
-            setCurrentlyPlaying(null);
-            setAudioLoading(null);
-            audioProjectRef.current = null;
-            toast({
-              title: "Playback Error",
-              description: "Playback could not be started.",
-              variant: "destructive",
-            });
-          }
-        });
+      const audio = audioRef.current || new Audio();
+      audio.preload = "auto";
+      if (audio.src === new URL(audioSrc, window.location.href).href) {
+        audio.currentTime = 0;
       } else {
-        const audio = audioRef.current || new Audio();
-        audio.preload = "auto";
         audio.src = audioSrc;
-        audioRef.current = audio;
-        startPlayback(audio);
       }
+      audioRef.current = audio;
+      // Rebind events even when two projects share the same audio URL.
+      startPlayback(audio);
     } else {
       toast({
         title: "No Audio File",
@@ -385,6 +377,7 @@ export default function Projects() {
   };
 
   const handleEdit = async (project: Project) => {
+    const requestId = ++editRequestRef.current;
     const identity = offlineIdentity();
     setEditingProject(project);
     setDraftMessage("");
@@ -395,13 +388,20 @@ export default function Projects() {
     });
     setIsEditOpen(true);
     try {
-      const saved = await draftStorage.getDraft<typeof editForm>(`project-edit:${project.id}`);
+      const saved = await draftStorage.getDraft<typeof editForm & { expectedUpdatedAt?: string | null }>(`project-edit:${project.id}`);
       assertOfflineIdentity(identity);
+      if (requestId !== editRequestRef.current) return;
       if (saved) {
         setEditForm(saved.data);
-        setDraftMessage("Recovered a draft saved on this device. Review it before updating.");
+        // Recover the original base version with the draft, never silently
+        // rebase stale local fields onto the currently listed server version.
+        setEditingProject({ ...project, updatedAt: saved.data.expectedUpdatedAt });
+        setDraftMessage(saved.data.expectedUpdatedAt === undefined
+          ? "Recovered an older draft without a server version. Keep a copy of your changes and review current project data before starting a new edit."
+          : "Recovered a draft saved on this device. Its original server version will be checked before updating.");
       }
     } catch (error) {
+      if (requestId !== editRequestRef.current) return;
       setDraftMessage("Local drafts are unavailable. Keep this form open until your update succeeds.");
     }
   };
@@ -430,7 +430,7 @@ export default function Projects() {
     editMutation.mutate({
       id: editingProject.id,
       data: {
-        title: editForm.title,
+        title: editForm.title.trim(),
         description: editForm.description,
         genre: editForm.genre,
       },
@@ -501,6 +501,8 @@ export default function Projects() {
     );
   }
 
+  if (!user) return null;
+
   return (
     <AppLayout>
       <div className="p-6" role="main" aria-label="Projects management">
@@ -538,7 +540,11 @@ export default function Projects() {
           </div>
 
           {/* Edit Project Dialog */}
-          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <Dialog open={isEditOpen} onOpenChange={(open) => {
+            if (editMutation.isPending) return;
+            if (!open) ++editRequestRef.current;
+            setIsEditOpen(open);
+          }}>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Edit Project</DialogTitle>
@@ -557,6 +563,7 @@ export default function Projects() {
                       }))
                     }
                     placeholder="Enter project title"
+                    maxLength={255}
                     required
                   />
                 </div>
@@ -609,7 +616,11 @@ export default function Projects() {
                   <Button type="button" variant="outline" onClick={async () => {
                     if (!editingProject) return;
                     try {
-                      await draftStorage.saveDraft(`project-edit:${editingProject.id}`, editForm);
+                      await draftStorage.saveDraft(`project-edit:${editingProject.id}`, {
+                        ...editForm,
+                        expectedUpdatedAt: editingProject.updatedAt === undefined ? undefined
+                          : editingProject.updatedAt === null ? null : new Date(editingProject.updatedAt).toISOString(),
+                      });
                       setDraftMessage("Saved on this device, not yet sent to the server. Reopen this project to recover it.");
                     } catch {
                       setDraftMessage("Draft could not be saved. Keep this form open and retry.");
@@ -618,7 +629,11 @@ export default function Projects() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsEditOpen(false)}
+                    disabled={editMutation.isPending}
+                    onClick={() => {
+                      ++editRequestRef.current;
+                      setIsEditOpen(false);
+                    }}
                   >
                     Cancel
                   </Button>
@@ -818,6 +833,7 @@ export default function Projects() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-red-600"
+                              disabled={deleteMutation.isPending}
                               onClick={() => deleteMutation.mutate(project.id)}
                               data-testid={`button-delete-${project.id}`}
                             >

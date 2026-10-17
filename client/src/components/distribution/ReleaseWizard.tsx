@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -79,6 +79,7 @@ const metadataSchema = z.object({
   audioAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
   compositionAiUsage: z.enum(["none", "ai-assisted"]).or(z.literal("")),
   composerName: z.string(),
+  upc: z.string().regex(/^(?:\d{12,13})?$/, "UPC/EAN must contain 12 or 13 digits"),
   acceptTerms: z.boolean(),
   confirmRights: z.boolean(),
   confirmYoutubeRights: z.boolean(),
@@ -126,6 +127,7 @@ export function ReleaseWizard({
     audioAiUsage: "" as "" | "none" | "ai-assisted",
     compositionAiUsage: "" as "" | "none" | "ai-assisted",
     composerName: "",
+    upc: "",
     acceptTerms: false,
     confirmRights: false,
     confirmYoutubeRights: false,
@@ -133,6 +135,7 @@ export function ReleaseWizard({
 
   const [audioFiles, setAudioFiles] = useState<any[]>([]);
   const [artwork, setArtwork] = useState<File | null>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string | null>(null);
   const [lyrics, setLyrics] = useState<Record<string, string>>({});
   const [selectedTerritories, setSelectedTerritories] = useState<string[]>([]);
   const [territoryMode, setTerritoryMode] = useState<
@@ -146,27 +149,128 @@ export function ReleaseWizard({
   );
   const [createPreSave, setCreatePreSave] = useState(true);
   const [preSaveSlug, setPreSaveSlug] = useState("");
+  const [existingTracks, setExistingTracks] = useState<any[]>([]);
+  const [existingArtwork, setExistingArtwork] = useState("");
+  const [loadingRelease, setLoadingRelease] = useState(Boolean(releaseId));
+  const [loadError, setLoadError] = useState("");
+  const uploadedTracks = useRef(new Map<string, any>());
+  const uploadedArtwork = useRef<File | null>(null);
+  const releaseIdRef = useRef(releaseId);
+
+  useEffect(() => {
+    if (!releaseId) return;
+    let cancelled = false;
+    setLoadingRelease(true);
+    apiRequest("GET", `/api/distribution/releases/${encodeURIComponent(releaseId)}`)
+      .then(response => response.json())
+      .then(release => {
+        if (cancelled) return;
+        const saved = release.metadata || {};
+        if (!["draft", "rejected"].includes(String(saved.status || release.status || "draft"))) {
+          throw new Error("This release is already submitted. Use its delivery status to reconcile it; do not resubmit.");
+        }
+        setMetadataData(current => ({
+          ...current,
+          ...Object.fromEntries(Object.keys(current).filter(key => saved[key] !== undefined).map(key => [key, saved[key]])),
+          title: release.title,
+        }));
+        setDraftReleaseId(release.id);
+        releaseIdRef.current = release.id;
+        setExistingTracks((release.tracks || []).sort((a, b) => a.trackNumber - b.trackNumber).map(track => ({
+          ...track,
+          explicit: track.metadata?.explicit ?? track.explicit ?? false,
+          lyrics: track.metadata?.lyrics ?? track.lyrics ?? "",
+        })));
+        setExistingArtwork(release.artworkUrl || "");
+        setArtworkPreview(release.artworkUrl || null);
+        setSelectedPlatforms(saved.selectedPlatforms || []);
+        setSelectedTerritories(saved.territories || []);
+        setTerritoryMode(saved.territoryMode || "worldwide");
+        setReleaseDate(release.releaseDate ? new Date(release.releaseDate) : null);
+        setRoyaltySplits((release.royaltySplits || []).map(split => ({
+          ...split, percentage: Number(split.percentage),
+        })));
+        setLoadError("");
+      })
+      .catch(error => { if (!cancelled) setLoadError(error.message || "Failed to load release"); })
+      .finally(() => { if (!cancelled) setLoadingRelease(false); });
+    return () => { cancelled = true; };
+  }, [releaseId]);
+
+  const releasePayload = () => ({
+    ...Object.fromEntries(Object.entries(metadataData).filter(([key, value]) =>
+      !["artworkAiUsage", "audioAiUsage", "compositionAiUsage"].includes(key) || value !== "",
+    )),
+    releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
+    territoryMode,
+    territories: selectedTerritories,
+    selectedPlatforms,
+    royaltySplits,
+  });
+
+  // Checkpoint each acknowledged upload before continuing: retries PATCH it, never re-POST it.
+  const persistMedia = async (id: string) => {
+    for (const track of existingTracks) {
+      await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(track.id)}`, {
+        title: track.title,
+        trackNumber: track.trackNumber,
+        isrc: track.isrc || "",
+        explicit: track.explicit,
+        lyrics: track.lyrics || "",
+        lyricsLanguage: track.lyricsLanguage || track.metadata?.lyricsLanguage,
+      });
+    }
+    for (const [index, audioFile] of audioFiles.entries()) {
+      const metadata = {
+        title: audioFile.name || audioFile.file.name.replace(/\.[^/.]+$/, ""),
+        trackNumber: Math.max(0, ...existingTracks.map(track => track.trackNumber)) + index + 1,
+        isrc: audioFile.isrc || "",
+        explicit: audioFile.explicit ?? metadataData.isExplicit,
+        lyrics: lyrics[audioFile.id] || "",
+        lyricsLanguage: audioFile.lyricsLanguage,
+      };
+      const saved = uploadedTracks.current.get(audioFile.id);
+      if (saved) {
+        await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(saved.id)}`, metadata);
+        continue;
+      }
+      const trackFormData = new FormData();
+      trackFormData.append("audio", audioFile.file);
+      trackFormData.append("metadata", JSON.stringify({ ...metadata, clientUploadId: audioFile.id }));
+      const response = await apiRequest("POST", `/api/distribution/releases/${encodeURIComponent(id)}/tracks`, trackFormData);
+      const uploaded = await response.json();
+      uploadedTracks.current.set(audioFile.id, uploaded);
+      // Also applies current edits when POST recovered a response-lost upload by clientUploadId.
+      await apiRequest("PATCH", `/api/distribution/releases/${encodeURIComponent(id)}/tracks/${encodeURIComponent(uploaded.id)}`, metadata);
+    }
+    if (artwork && uploadedArtwork.current !== artwork) {
+      const artworkFormData = new FormData();
+      artworkFormData.append("artwork", artwork);
+      const response = await apiRequest("POST", `/api/distribution/releases/${encodeURIComponent(id)}/artwork`, artworkFormData);
+      const saved = await response.json();
+      uploadedArtwork.current = artwork;
+      setExistingArtwork(saved.artworkUrl);
+    }
+  };
+
+  const persistDraft = async () => {
+    const id = releaseIdRef.current;
+    const response = await apiRequest(
+      id ? "PATCH" : "POST",
+      id ? `/api/distribution/releases/${encodeURIComponent(id)}` : "/api/distribution/releases",
+      releasePayload(),
+    );
+    const release = await response.json();
+    if (!release.id) throw new Error("Release save returned no identifier");
+    releaseIdRef.current = release.id;
+    setDraftReleaseId(release.id);
+    await persistMedia(release.id);
+    return release;
+  };
 
   // Save as draft mutation
   const saveDraftMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        ...metadataData,
-        releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
-        territoryMode,
-        territories: selectedTerritories,
-        selectedPlatforms,
-        royaltySplits,
-      };
-      const response = await apiRequest(
-        draftReleaseId ? "PATCH" : "POST",
-        draftReleaseId
-          ? `/api/distribution/releases/${encodeURIComponent(draftReleaseId)}`
-          : "/api/distribution/releases",
-        payload,
-      );
-      return response.json() as Promise<{ id: string }>;
-    },
+    mutationFn: persistDraft,
     onSuccess: (release) => {
       if (release.id) setDraftReleaseId(release.id);
       toast({
@@ -189,7 +293,7 @@ export function ReleaseWizard({
   // Submit for distribution mutation
   const submitMutation = useMutation({
     mutationFn: async () => {
-      if (audioFiles.length === 0) {
+      if (audioFiles.length + existingTracks.length === 0) {
         throw new Error("Please upload at least one track");
       }
       if (
@@ -203,74 +307,13 @@ export function ReleaseWizard({
         );
       }
 
-      // Step 1: Create the release with JSON metadata (no files)
-      const releasePayload = {
-        ...metadataData,
-        releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
-        territoryMode,
-        territories: selectedTerritories,
-        selectedPlatforms,
-        lyrics,
-        royaltySplits,
-      };
-
-      const response = await apiRequest(
-        draftReleaseId ? "PATCH" : "POST",
-        draftReleaseId
-          ? `/api/distribution/releases/${encodeURIComponent(draftReleaseId)}`
-          : "/api/distribution/releases",
-        releasePayload,
-      );
-      const releaseData = await response.json();
-      if (releaseData.id) setDraftReleaseId(releaseData.id);
-
-      // Step 2: Upload each track individually to the tracks endpoint
-      if (releaseData.id && audioFiles.length > 0) {
-        await Promise.all(
-          audioFiles.map(async (audioFile) => {
-            const trackFormData = new FormData();
-            trackFormData.append("audio", audioFile.file);
-            trackFormData.append(
-              "metadata",
-              JSON.stringify({
-                title: audioFile.name || audioFile.file.name,
-                isExplicit: metadataData.isExplicit,
-                lyrics: lyrics,
-              }),
-            );
-            await apiRequest(
-              "POST",
-              `/api/distribution/releases/${releaseData.id}/tracks`,
-              trackFormData,
-            );
-          }),
-        );
-      }
-
-      // Step 3: Upload artwork if provided
-      if (releaseData.id && artwork) {
-        const artworkFormData = new FormData();
-        artworkFormData.append("artwork", artwork);
-        await apiRequest(
-          "POST",
-          `/api/distribution/releases/${releaseData.id}/artwork`,
-          artworkFormData,
-        ).catch((artworkErr: unknown) => {
-          logger.warn("Artwork upload failed (non-fatal):", artworkErr);
-          toast({
-            title: "Artwork upload failed",
-            description:
-              "Your release was saved but the artwork could not be uploaded. You can re-upload it from the release editor.",
-            variant: "destructive",
-          });
-        });
-      }
+      const releaseData = await persistDraft();
 
       // Step 4: Submit through the server's distribution endpoint.
       // Keep provider naming out of this client message because provider
       // dispatch is owned by the server endpoint, not this component.
       // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
-      // ISRCs are auto-generated during track upload; UPC during release create.
+      // Official UPC/ISRC values must be supplied by the rights holder, never fabricated here.
       let submissionStatus: "submitted" | "saved-as-draft" = "saved-as-draft";
       let submissionError: string | undefined;
       if (releaseData.id) {
@@ -302,7 +345,7 @@ export function ReleaseWizard({
         submissionError;
 
       // Create HyperFollow campaign if enabled
-      if (createPreSave && releaseData.id) {
+      if (submissionStatus === "submitted" && createPreSave && releaseData.id) {
         const slug =
           preSaveSlug ||
           metadataData.title
@@ -348,8 +391,10 @@ export function ReleaseWizard({
             "/api/distribution/hyperfollow",
             hyperFollowData,
           );
+          releaseData.preSaveCreated = true;
         } catch (error: unknown) {
           logger.error("Failed to create HyperFollow campaign:", error);
+          toast({ title: "Pre-save campaign not created", description: "Your distribution submission was saved, but campaign creation failed. Retry from HyperFollow.", variant: "destructive" });
         }
       }
 
@@ -363,13 +408,13 @@ export function ReleaseWizard({
       if (status === "submitted") {
         toast({
           title: "Release submitted!",
-          description: createPreSave
-            ? "Your release is queued for distribution and the pre-save campaign is live."
+          description: releaseData.preSaveCreated
+            ? "Your release is queued for distribution and the pre-save campaign was created."
             : "Your release is queued for distribution to the selected platforms.",
         });
       } else {
         toast({
-          title: "Release saved as draft",
+          title: "Release saved; submission not confirmed",
           description: submissionError
             ? `Saved, but distribution submission failed: ${submissionError}. Open the release to resolve and resubmit.`
             : "Saved successfully. Open the release to submit for distribution.",
@@ -382,7 +427,7 @@ export function ReleaseWizard({
       queryClient.invalidateQueries({
         queryKey: ["/api/distribution/hyperfollow"],
       });
-      onComplete?.();
+      if (status === "submitted") onComplete?.();
     },
     onError: (error: Error) => {
       toast({
@@ -418,7 +463,7 @@ export function ReleaseWizard({
         return true;
       }
       case 2: {
-        const result = tracksSchema.safeParse({ audioFiles, artwork });
+        const result = tracksSchema.safeParse({ audioFiles: [...existingTracks, ...audioFiles], artwork });
         if (!result.success) {
           const firstMessage =
             result.error.issues[0]?.message ||
@@ -455,6 +500,15 @@ export function ReleaseWizard({
         }
         return true;
       case 6: {
+        if (!/^\d{12,13}$/.test(metadataData.upc) ||
+          [...existingTracks, ...audioFiles].some(track => !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(track.isrc || ""))) {
+          toast({ title: "Assigned identifiers required", description: "Enter your real UPC/EAN and each track's assigned ISRC. Drafts can be saved without them.", variant: "destructive" });
+          return false;
+        }
+        if (!artwork && !existingArtwork) {
+          toast({ title: "Artwork required", description: "Upload cover artwork before submitting.", variant: "destructive" });
+          return false;
+        }
         const missing = [
           metadataData.artworkAiUsage,
           metadataData.audioAiUsage,
@@ -524,10 +578,9 @@ export function ReleaseWizard({
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCompletedSteps([...completedSteps, currentStep]);
-      setCurrentStep(currentStep + 1);
-    }
+    // Incomplete drafts can be reviewed in any step. Completeness is required only on submit.
+    setCompletedSteps([...completedSteps, currentStep]);
+    setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
@@ -541,12 +594,25 @@ export function ReleaseWizard({
   };
 
   const handleSubmit = () => {
-    if (validateStep(6)) {
+    if ([1, 2, 4, 5, 6].every(validateStep)) {
       submitMutation.mutate();
     }
   };
 
   const progress = (currentStep / (STEPS.length || 1)) * 100;
+  const lyricsTracks = [
+    ...existingTracks,
+    ...audioFiles.map((track, index) => ({
+      ...track,
+      title: track.name || track.file.name.replace(/\.[^/.]+$/, ""),
+      trackNumber: Math.max(0, ...existingTracks.map(track => track.trackNumber)) + index + 1,
+      lyrics: lyrics[track.id] || "",
+      explicit: track.explicit ?? metadataData.isExplicit,
+    })),
+  ];
+
+  if (loadingRelease) return <p role="status">Loading saved release…</p>;
+  if (loadError) return <div role="alert"><p>Cannot edit release: {loadError}</p><Button onClick={onCancel}>Back to releases</Button></div>;
 
   return (
     <div className="space-y-6">
@@ -554,7 +620,7 @@ export function ReleaseWizard({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Create New Release</h2>
+            <h2 className="text-2xl font-bold">{draftReleaseId ? "Complete Release Draft" : "Create New Release"}</h2>
             <p className="text-muted-foreground">
               Step {currentStep} of {STEPS.length}:{" "}
               {STEPS[currentStep - 1].title}
@@ -563,7 +629,7 @@ export function ReleaseWizard({
           <Button
             variant="outline"
             onClick={handleSaveDraft}
-            disabled={saveDraftMutation.isPending}
+            disabled={saveDraftMutation.isPending || submitMutation.isPending}
           >
             <Save className="h-4 w-4 mr-2" />
             Save Draft
@@ -613,6 +679,7 @@ export function ReleaseWizard({
       {/* Step Content */}
       <Card>
         <CardContent className="p-6">
+          <fieldset disabled={saveDraftMutation.isPending || submitMutation.isPending} className="min-w-0">
           {currentStep === 1 && (
             <MetadataForm
               data={metadataData}
@@ -626,20 +693,61 @@ export function ReleaseWizard({
 
           {currentStep === 2 && (
             <div className="space-y-6">
-              <TrackUploader files={audioFiles} onChange={setAudioFiles} />
-              <ArtworkUploader artwork={artwork} onChange={setArtwork} />
+              {existingArtwork && <p className="text-sm">Saved artwork is retained unless you upload a replacement.</p>}
+              {existingTracks.map((track, index) => (
+                <div key={track.id} className="space-y-2 rounded border p-3">
+                  <Label htmlFor={`saved-title-${track.id}`}>Saved track {track.trackNumber}: title</Label>
+                  <Input id={`saved-title-${track.id}`} value={track.title} onChange={event => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, title: event.target.value } : item))} />
+                  <p className="text-sm text-muted-foreground">Existing audio is retained.</p>
+                  <Label htmlFor={`saved-isrc-${track.id}`}>Assigned ISRC</Label>
+                  <Input id={`saved-isrc-${track.id}`} value={track.isrc || ""} maxLength={12} onChange={event => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, isrc: event.target.value.toUpperCase() } : item))} />
+                  <Label htmlFor={`saved-explicit-${track.id}`}>Explicit lyrics</Label>
+                  <Switch id={`saved-explicit-${track.id}`} checked={track.explicit} onCheckedChange={explicit => setExistingTracks(tracks => tracks.map((item, i) => i === index ? { ...item, explicit } : item))} />
+                </div>
+              ))}
+              <TrackUploader files={audioFiles} onChange={(files) => {
+                const removedSaved = audioFiles.some(file => uploadedTracks.current.has(file.id) && !files.some(next => next.id === file.id));
+                if (removedSaved) {
+                  toast({ title: "Track already saved", description: "Reload this draft before changing saved audio. Saved tracks are retained to prevent accidental media loss.", variant: "destructive" });
+                  return;
+                }
+                setAudioFiles(files);
+              }} />
+              {audioFiles.map((track, index) => (
+                <div key={track.id} className="space-y-2">
+                  <Label htmlFor={`isrc-${track.id}`}>Assigned ISRC — {track.file.name}</Label>
+                  <Input id={`isrc-${track.id}`} value={track.isrc || ""} maxLength={12} onChange={event => setAudioFiles(files => files.map((item, i) => i === index ? { ...item, isrc: event.target.value.toUpperCase() } : item))} />
+                  <Label htmlFor={`explicit-${track.id}`}>Explicit lyrics</Label>
+                  <Switch id={`explicit-${track.id}`} checked={track.explicit ?? metadataData.isExplicit} onCheckedChange={explicit => setAudioFiles(files => files.map((item, i) => i === index ? { ...item, explicit } : item))} />
+                </div>
+              ))}
+              <ArtworkUploader artwork={artwork} previewUrl={artworkPreview} onChange={(file, preview) => {
+                setArtwork(file);
+                setArtworkPreview(preview || existingArtwork || null);
+              }} />
             </div>
           )}
 
           {currentStep === 3 && (
             <LyricsEditor
-              tracks={audioFiles.map((f, i) => ({
-                id: f.id,
-                title: f.file.name.replace(/\.[^/.]+$/, ""),
-                trackNumber: i + 1,
+              tracks={lyricsTracks}
+              lyricsData={lyricsTracks.map(track => ({
+                trackNumber: track.trackNumber,
+                trackTitle: track.title,
+                lyrics: track.lyrics || "",
+                language: track.lyricsLanguage || metadataData.language,
+                hasExplicitContent: track.explicit,
               }))}
-              lyrics={lyrics}
-              onChange={setLyrics}
+              onChange={next => {
+                const byId = new Map(next.map(entry => [lyricsTracks.find(track => track.trackNumber === entry.trackNumber)?.id, entry]));
+                setLyrics(current => ({ ...current, ...Object.fromEntries([...byId].filter(([id]) => id).map(([id, entry]) => [id, entry.lyrics])) }));
+                const update = track => {
+                  const entry = byId.get(track.id);
+                  return entry ? { ...track, lyrics: entry.lyrics, lyricsLanguage: entry.language, explicit: entry.hasExplicitContent } : track;
+                };
+                setExistingTracks(tracks => tracks.map(update));
+                setAudioFiles(tracks => tracks.map(update));
+              }}
             />
           )}
 
@@ -649,7 +757,7 @@ export function ReleaseWizard({
                 mode={territoryMode}
                 selectedTerritories={selectedTerritories}
                 onModeChange={setTerritoryMode}
-                onTerritoriesChange={setSelectedTerritories}
+                onChange={setSelectedTerritories}
               />
               <DSPSelector
                 selectedPlatforms={selectedPlatforms}
@@ -661,7 +769,7 @@ export function ReleaseWizard({
           {currentStep === 5 && (
             <div className="space-y-6">
               <ReleaseDateScheduler
-                releaseDate={releaseDate}
+                selectedDate={releaseDate}
                 onChange={setReleaseDate}
               />
 
@@ -757,7 +865,7 @@ export function ReleaseWizard({
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-2">Tracks</h4>
                   <p className="text-sm">
-                    {audioFiles.length} track(s) uploaded
+                    {existingTracks.length + audioFiles.length} track(s) saved or selected
                   </p>
                 </div>
 
@@ -782,7 +890,15 @@ export function ReleaseWizard({
 
                 <div className="space-y-4 rounded-lg border p-4">
                   <div>
-                    <h4 className="font-medium">Required Too Lost AI declarations</h4>
+                    <Label htmlFor="release-upc">Existing distributor-assigned UPC/EAN</Label>
+                    <Input id="release-upc" inputMode="numeric" maxLength={13}
+                      value={metadataData.upc}
+                      onChange={event => setMetadataData({ ...metadataData, upc: event.target.value })} />
+                    <p className="text-sm text-muted-foreground">
+                      Enter your assigned identifier, not a locally generated provisional code.
+                      You may leave this blank while saving a draft.
+                    </p>
+                    <h4 className="font-medium mt-4">Required Too Lost AI declarations</h4>
                     <p className="text-sm text-muted-foreground">
                       Select the truthful answer for this release. These declarations
                       are sent to Too Lost and are never inferred.
@@ -910,6 +1026,7 @@ export function ReleaseWizard({
               </div>
             </div>
           )}
+          </fieldset>
         </CardContent>
       </Card>
 
@@ -918,19 +1035,19 @@ export function ReleaseWizard({
         <Button
           variant="outline"
           onClick={currentStep === 1 ? onCancel : handleBack}
-          disabled={submitMutation.isPending}
+          disabled={submitMutation.isPending || saveDraftMutation.isPending}
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
           {currentStep === 1 ? "Cancel" : "Back"}
         </Button>
 
         {currentStep < 6 ? (
-          <Button onClick={handleNext}>
+          <Button onClick={handleNext} disabled={submitMutation.isPending || saveDraftMutation.isPending}>
             Next
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit} disabled={submitMutation.isPending}>
+          <Button onClick={handleSubmit} disabled={submitMutation.isPending || saveDraftMutation.isPending}>
             <Send className="h-4 w-4 mr-2" />
             {submitMutation.isPending
               ? "Submitting..."

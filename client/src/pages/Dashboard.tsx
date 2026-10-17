@@ -62,7 +62,8 @@ interface CountdownItem {
 }
 
 interface CountdownsResponse {
-  countdowns: CountdownItem[];
+  success: boolean;
+  data: CountdownItem[];
 }
 
 interface OnboardingStatusResponse {
@@ -159,15 +160,15 @@ export default function Dashboard() {
     return null;
   }
 
-  return <DashboardContent user={user} />;
+  return <DashboardContent key={user.id} user={user} />;
 }
 
 function UpcomingReleasesSection() {
-  const { data, isLoading } = useQuery<CountdownsResponse>({
+  const { data, isLoading, error, refetch } = useQuery<CountdownsResponse>({
     queryKey: ["/api/countdowns"],
   });
 
-  const countdowns = data?.countdowns ?? [];
+  const countdowns = data?.data ?? [];
 
   return (
     <Card>
@@ -182,6 +183,11 @@ function UpcomingReleasesSection() {
           <div className="space-y-3">
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
+          </div>
+        ) : error ? (
+          <div role="alert" className="space-y-2">
+            <p className="text-sm">Upcoming releases could not be loaded.</p>
+            <Button variant="outline" onClick={() => refetch()}>Retry</Button>
           </div>
         ) : countdowns.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
@@ -267,6 +273,7 @@ function DashboardContent({ user }: { user: User }) {
   const hasPaidSubscription = Boolean(
     user.subscriptionTier &&
       user.subscriptionTier !== "" &&
+      user.subscriptionTier !== "free" &&
       user.subscriptionTier !== "trial",
   );
 
@@ -282,8 +289,7 @@ function DashboardContent({ user }: { user: User }) {
     // Show onboarding for new users who haven't completed it
     if (
       onboardingStatus &&
-      !onboardingStatus.hasCompletedOnboarding &&
-      !localStorage.getItem("onboardingSkipped")
+      !onboardingStatus.hasCompletedOnboarding
     ) {
       setShowOnboarding(true);
     }
@@ -301,7 +307,7 @@ function DashboardContent({ user }: { user: User }) {
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsResponse>({
+  const { data: projectsData, isLoading: projectsLoading, error: projectsError, refetch: refetchProjects } = useQuery<ProjectsResponse>({
     queryKey: ["/api/projects"],
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
@@ -533,11 +539,43 @@ function DashboardContent({ user }: { user: User }) {
   const handleOnboardingSkip = () => {
     setShowOnboarding(false);
     setShowSimplified(false);
+    void queryClient.invalidateQueries({ queryKey: ["/api/auth/onboarding-status"] });
+    void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   };
 
+  const fullDashboardMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/auth/update-onboarding", {
+        hasCompletedOnboarding: true,
+        onboardingData: {
+          experienceLevel: "intermediate",
+          userLevel: "intermediate",
+          preferSimplifiedView: false,
+        },
+      });
+      const result = await response.json();
+      if (result?.success !== true) {
+        throw new Error("Your dashboard preference was not saved.");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      setShowSimplified(false);
+      setUserLevel("intermediate");
+      void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/auth/onboarding-status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Dashboard Preference Not Saved",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpgradeToFullMode = () => {
-    setShowSimplified(false);
-    setUserLevel("intermediate");
+    if (!fullDashboardMutation.isPending) fullDashboardMutation.mutate();
   };
 
   const handleExploreFeature = (featureId: string) => {
@@ -1070,6 +1108,11 @@ function DashboardContent({ user }: { user: User }) {
                       {[1, 2, 3].map((i) => (
                         <Skeleton key={i} className="h-12 w-full" />
                       ))}
+                    </div>
+                  ) : projectsError ? (
+                    <div role="alert" className="space-y-2">
+                      <p className="text-sm">Your projects could not be loaded.</p>
+                      <Button variant="outline" onClick={() => refetchProjects()}>Retry</Button>
                     </div>
                   ) : projects.length > 0 ? (
                     <div className="space-y-3">

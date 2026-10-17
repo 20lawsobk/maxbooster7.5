@@ -50,6 +50,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
+import { normalizeSocialPlatformStatuses } from "@/lib/socialPlatformStatus";
 import { AutonomousDashboard } from "@/components/autonomous/autonomous-dashboard";
 import { ContentAnalyzer } from "@/components/content/ContentAnalyzer";
 import {
@@ -235,7 +236,7 @@ function PromoteContentCard() {
   const [contentId, setContentId] = useState<string>("");
   const [createdCampaign, setCreatedCampaign] = useState<any>(null);
 
-  const { data: itemsData, isLoading: itemsLoading } = useQuery<{
+  const { data: itemsData, isLoading: itemsLoading, isError: itemsError } = useQuery<{
     items: PromotableItem[];
   }>({
     queryKey: [`/api/social/promotable-content?type=${contentType}`],
@@ -306,7 +307,9 @@ function PromoteContentCard() {
   // own record when no contentId is supplied.
   const requiresItemPick = !["storefront", "epk"].includes(contentType);
   const canGenerate =
+    !itemsLoading && !itemsError &&
     (!requiresItemPick || !!contentId) &&
+    (!requiresItemPick || !!selectedItem?.promotable) &&
     (!selectedItem || selectedItem.promotable);
 
   return (
@@ -323,6 +326,11 @@ function PromoteContentCard() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {itemsError && (
+          <p role="alert" className="text-sm text-destructive">
+            Promotable content could not be loaded. Retry before generating a campaign.
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>What do you want to promote?</Label>
@@ -554,6 +562,13 @@ export default function Advertisement() {
   const forecasts = Array.isArray(forecastsData)
     ? forecastsData
     : forecastsData?.forecasts || [];
+  const measuredLookalikeSimilarities = lookalikeAudiences
+    .map((audience) => audience.similarityScore)
+    .filter((score) => typeof score === "number" && Number.isFinite(score));
+  const estimatedLookalikeReach = lookalikeAudiences.reduce(
+    (sum, audience) => sum + (audience.estimatedSize > 0 ? audience.estimatedSize : 0),
+    0,
+  );
   const _competitorInsights = Array.isArray(
     competitorInsightsData,
   )
@@ -628,7 +643,7 @@ export default function Advertisement() {
   const [lookalikeSourceType, setLookalikeSourceType] = useState("top-engaged");
   const [lookalikeExpansionLevel, setLookalikeExpansionLevel] = useState(2);
 
-  const { data: campaigns = [] } = useQuery<
+  const { data: campaigns = [], isError: campaignsError } = useQuery<
     AdCampaign[]
   >({
     queryKey: ["/api/advertising/campaigns"],
@@ -642,19 +657,26 @@ export default function Advertisement() {
     },
   );
 
-  const { data: socialConnections } =
+  const { data: socialConnectionsFromApi } =
     useQuery<SocialConnections>({
       queryKey: ["/api/social/platform-status"],
       enabled: !!user,
     });
+  const socialConnections = normalizeSocialPlatformStatuses(
+    Array.isArray(socialConnectionsFromApi) ? socialConnectionsFromApi : [],
+  );
 
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("image", file);
-      return uploadWithProgress("/api/advertising/upload-image", formData, {
+      const result = await uploadWithProgress("/api/advertising/upload-image", formData, {
         timeout: 300000, // 5 minutes
-      }) as Promise<{ url?: string; fileUrl?: string }>;
+      }) as { success?: boolean; url?: string; fileUrl?: string };
+      if (result.success === false || !(result.url || result.fileUrl)) {
+        throw new Error("The upload did not return a saved image URL. Please try again.");
+      }
+      return result;
     },
     onSuccess: (data) => {
       // Replace the temporary blob URL with the permanent server URL and free memory
@@ -699,16 +721,15 @@ export default function Advertisement() {
         {
           name: `${data.sourceAudienceType} Lookalike (${data.expansionLevel}%)`,
           sourceAudience: data.sourceAudienceType,
-          estimatedSize: data.expansionLevel * 100_000,
-          status: "building",
+          status: "draft",
         },
       );
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Lookalike Audience Created",
-        description: "Your new lookalike audience is being built.",
+        title: "Audience Profile Saved",
+        description: "Saved as a draft only. No audience has been built or targeted.",
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/advertising/lookalike-audiences"],
@@ -742,7 +763,7 @@ export default function Advertisement() {
       toast({
         title:
           vars.status === "active" ? "Audience Activated" : "Audience Paused",
-        description: `Lookalike audience has been ${vars.status === "active" ? "activated" : "paused"}.`,
+        description: `Audience profile status saved as ${vars.status}. This does not build or target a provider audience.`,
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/advertising/lookalike-audiences"],
@@ -1128,11 +1149,11 @@ export default function Advertisement() {
       });
       return;
     }
-    if (uploadImageMutation.isPending) {
+    if (uploadImageMutation.isPending || (uploadedImage && (!imagePreviewUrl || imagePreviewUrl.startsWith("blob:")))) {
       toast({
-        title: "Image Still Uploading",
+        title: "Image Not Ready",
         description:
-          "Wait for the campaign image upload to finish before creating the campaign.",
+          "Wait for the campaign image upload to finish, retry it, or remove the image before creating the campaign.",
         variant: "destructive",
       });
       return;
@@ -1215,6 +1236,14 @@ export default function Advertisement() {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto space-y-6">
+          {campaignsError && (
+            <div role="alert" className="rounded-lg border border-destructive p-4 text-sm">
+              Campaigns could not be loaded. The totals below are unavailable, not confirmed zero.
+              <Button variant="outline" size="sm" className="ml-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/advertising/campaigns"] })}>
+                Retry
+              </Button>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
@@ -1232,18 +1261,17 @@ export default function Advertisement() {
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
                   <Rocket className="w-4 h-4 mr-2" />
-                  Activate AI Campaign
+                  Create Campaign Draft
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center">
                     <Brain className="w-5 h-5 mr-2 text-blue-600" />
-                    Activate AI Campaign
+                    Create Campaign Draft
                   </DialogTitle>
                   <DialogDescription>
-                    MaxCore AI will generate optimized content and publish it
-                    through your connected social profiles
+                    Save a campaign draft for review. Publishing requires a separate activation.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6">
@@ -2334,9 +2362,8 @@ export default function Advertisement() {
                     Audience Lookalike Expansion Controls
                   </CardTitle>
                   <CardDescription>
-                    Build audience profiles based on your best-performing
-                    followers — AI targets similar users organically across your
-                    connected profiles
+                    Save audience profiles for planning. These records do not build
+                    or target audiences on connected providers.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -2358,13 +2385,9 @@ export default function Advertisement() {
                         Total Reach
                       </p>
                       <p className="text-2xl font-bold text-green-600">
-                        {(
-                          lookalikeAudiences.reduce(
-                            (acc, a) => acc + a.estimatedSize,
-                            0,
-                          ) / 1000000
-                        ).toFixed(1)}
-                        M
+                        {estimatedLookalikeReach > 0
+                          ? `${(estimatedLookalikeReach / 1000000).toFixed(1)}M`
+                          : "Not available"}
                       </p>
                     </div>
                     <div className="p-4 rounded-lg bg-white/50 dark:bg-gray-900/50 text-center">
@@ -2372,15 +2395,9 @@ export default function Advertisement() {
                         Avg. Similarity
                       </p>
                       <p className="text-2xl font-bold text-purple-600">
-                        {lookalikeAudiences.length > 0
-                          ? (
-                              lookalikeAudiences.reduce(
-                                (acc, a) => acc + a.similarityScore,
-                                0,
-                              ) / (lookalikeAudiences.length || 1)
-                            ).toFixed(0)
-                          : 0}
-                        %
+                        {measuredLookalikeSimilarities.length > 0
+                          ? `${(measuredLookalikeSimilarities.reduce((sum, score) => sum + score, 0) / measuredLookalikeSimilarities.length).toFixed(0)}%`
+                          : "Not available"}
                       </p>
                     </div>
                   </div>
@@ -2438,7 +2455,7 @@ export default function Advertisement() {
                               disabled={updateAudienceStatusMutation.isPending}
                             >
                               <Unlock className="w-3 h-3 mr-1" />
-                              Activate
+                              Mark Active
                             </Button>
                           )}
                         </div>
@@ -2450,7 +2467,7 @@ export default function Advertisement() {
                             Similarity
                           </p>
                           <p className="font-bold text-blue-600">
-                            {audience.similarityScore}%
+                            {typeof audience.similarityScore === "number" ? `${audience.similarityScore}%` : "Not available"}
                           </p>
                         </div>
                         <div className="text-center p-2 rounded bg-green-50 dark:bg-green-950/20">
@@ -2458,7 +2475,7 @@ export default function Advertisement() {
                             Est. Size
                           </p>
                           <p className="font-bold text-green-600">
-                            {(audience.estimatedSize / 1000).toFixed(0)}K
+                            {audience.estimatedSize > 0 ? `${(audience.estimatedSize / 1000).toFixed(0)}K` : "Not available"}
                           </p>
                         </div>
                       </div>
@@ -2470,7 +2487,7 @@ export default function Advertisement() {
                               Expansion Level
                             </span>
                             <span className="font-medium">
-                              {audience.expansionLevel}/5
+                              {audience.expansionLevel ? `${audience.expansionLevel}/5` : "Not available"}
                             </span>
                           </div>
                           <div className="flex gap-1">
@@ -2495,8 +2512,9 @@ export default function Advertisement() {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Similar to {audience.similarityScore}% of your{" "}
-                            {audience.sourceAudience}
+                            {typeof audience.similarityScore === "number"
+                              ? `Similarity score: ${audience.similarityScore}% for ${audience.sourceAudience}.`
+                              : "No measured similarity data is available for this profile."}
                           </p>
                         </div>
                       </div>
@@ -2715,9 +2733,11 @@ export default function Advertisement() {
                           Connect your social media accounts to build your
                           personal ad network
                         </p>
-                        <Button className="mt-4" variant="outline">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Connect Profile
+                        <Button asChild className="mt-4" variant="outline">
+                          <a href="/social-media">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Connect Profile
+                          </a>
                         </Button>
                       </div>
                     )}
@@ -3071,7 +3091,7 @@ function PressKitTabContent() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
-  const { data: pressKit, isLoading } = useQuery<PressKitData>({
+  const { data: pressKit, isLoading, isError } = useQuery<PressKitData | null>({
     queryKey: ["/api/press-kit"],
   });
 
@@ -3117,7 +3137,7 @@ function PressKitTabContent() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit.isPublic ?? false,
+      isPublic: pressKit?.isPublic ?? false,
     });
   };
 
@@ -3136,6 +3156,7 @@ function PressKitTabContent() {
         formData,
       )) as StorageUploadResponse;
       const photoUrl = res.file.url;
+      if (!photoUrl) throw new Error("The upload did not return a saved photo URL.");
 
       const currentPhotos = pressKit?.photos || [];
       updatePressKitMutation.mutate({
@@ -3159,14 +3180,22 @@ function PressKitTabContent() {
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
 
-  const copyPublicLink = () => {
+  const copyPublicLink = async () => {
     if (pressKit?.slug) {
       const url = `${window.location.origin}/epk/${pressKit.slug}`;
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Link Copied",
-        description: "Public EPK link copied to clipboard",
-      });
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link Copied",
+          description: "Public EPK link copied to clipboard",
+        });
+      } catch {
+        toast({
+          title: "Copy Failed",
+          description: "The browser could not copy the public EPK link.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -3176,6 +3205,10 @@ function PressKitTabContent() {
         <RefreshCw className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <p role="alert" className="text-destructive">The press kit could not be loaded. Please retry before editing.</p>;
   }
 
   return (

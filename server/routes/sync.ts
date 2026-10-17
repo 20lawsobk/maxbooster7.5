@@ -2,9 +2,10 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { logger } from "../logger.js";
-import { projects, studioProjects, studioTracks, users, projectRoyaltySplits } from "@shared/schema";
+import { projects, studioProjects, studioTracks, users } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { clientSyncReceipts, type SyncTransaction, type OperationResult } from "../repositories/clientSyncReceipts.js";
+import { deleteLockedOwnedProject } from "../services/projectOwnedDeletionCleanup.js";
 
 const router = Router();
 
@@ -231,9 +232,7 @@ const ACTION_HANDLERS: Record<
     if ((current.updatedAt?.toISOString() ?? null) !== data.expectedUpdatedAt) {
       return { success: false, conflict: true, error: "Project changed before deletion. Review the current project.", data: current };
     }
-    await db.delete(studioTracks).where(eq(studioTracks.projectId, data.projectId));
-    await db.delete(projectRoyaltySplits).where(eq(projectRoyaltySplits.projectId, data.projectId));
-    await db.delete(projects).where(and(eq(projects.id, data.projectId), eq(projects.userId, userId)));
+    await deleteLockedOwnedProject(db, data.projectId, userId);
     return { success: true, data: { projectId: data.projectId, deleted: true } };
   },
 

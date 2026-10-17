@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,10 +9,14 @@ import SimplifiedDashboardComponent from "@/components/onboarding/SimplifiedDash
 import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function SimplifiedDashboard() {
-  const { user, isLoading } = useRequireAuth();
+  const { user, isLoading } = useRequireSubscription();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const onboardingData =
+    user?.onboardingData && typeof user.onboardingData === "object"
+      ? user.onboardingData
+      : {};
 
   const { data: onboardingStatus } = useQuery({
     queryKey: ["/api/auth/onboarding-status"],
@@ -24,20 +28,28 @@ export default function SimplifiedDashboard() {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
+          experienceLevel: "intermediate",
           userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });
-      return response.json();
+      const result = await response.json();
+      if (result?.success !== true) {
+        throw new Error("Your dashboard preference was not saved.");
+      }
+      return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/auth/onboarding-status"],
-      });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["/api/auth/onboarding-status"],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
+      ]);
       setLocation("/dashboard");
       toast({
-        title: "Upgraded Successfully",
-        description: "You now have access to all advanced features!",
+        title: "Full Dashboard Enabled",
+        description: "Your dashboard preference has been saved. Your subscription is unchanged.",
       });
     },
     onError: () => {
@@ -50,17 +62,17 @@ export default function SimplifiedDashboard() {
   });
 
   const handleUpgrade = () => {
-    upgradeToFullModeMutation.mutate();
+    if (!upgradeToFullModeMutation.isPending) upgradeToFullModeMutation.mutate();
   };
 
   useEffect(() => {
     if (
       onboardingStatus?.hasCompletedOnboarding &&
-      onboardingStatus?.onboardingData?.preferSimplifiedView === false
+      onboardingData.preferSimplifiedView === false
     ) {
       setLocation("/dashboard");
     }
-  }, [onboardingStatus, setLocation]);
+  }, [onboardingStatus, onboardingData.preferSimplifiedView, setLocation]);
 
   if (isLoading || !user) {
     return (
@@ -70,7 +82,11 @@ export default function SimplifiedDashboard() {
     );
   }
 
-  const userLevel = onboardingStatus?.onboardingData?.userLevel || "beginner";
+  const storedLevel = onboardingData.experienceLevel ?? onboardingData.userLevel;
+  const userLevel =
+    storedLevel === "intermediate" || storedLevel === "advanced"
+      ? storedLevel
+      : "beginner";
 
   return (
     <AppLayout>

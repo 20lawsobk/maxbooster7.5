@@ -17,7 +17,6 @@ import {
   stemExports,
   pluginPresets,
   studioSamples,
-  projectRoyaltySplits,
 } from "@shared/schema";
 import { notificationService } from "../services/notificationService.js";
 import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
@@ -38,6 +37,7 @@ import { resolveAudioUrlToLocalFile } from "../services/audioSourceResolver.js";
 import { authorizeAudioSource } from "../services/audioSourceAuthorization.js";
 import { promises as fsPromises } from "fs";
 import { analyzeAudio } from "../services/mediaAnalyzerService.js";
+import { deleteLockedOwnedProject } from "../services/projectOwnedDeletionCleanup.js";
 
 const router = Router();
 const execFileAsync = promisify(execFile);
@@ -117,7 +117,13 @@ const updateClipSchema = z.object({
   locked: z.boolean().optional(),
 });
 
-const updateProjectSchema = z.object({
+// Explicit null is a version for legacy rows with a null updatedAt. Omission
+// must never silently opt an old client out of concurrency protection.
+const projectMutationVersionSchema = z.object({
+  expectedUpdatedAt: z.string().datetime().nullable(),
+});
+
+const updateProjectSchema = projectMutationVersionSchema.extend({
   title: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
   genre: z.string().optional(),
@@ -309,25 +315,31 @@ router.delete(
       const { projectId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      const hasAccess = await verifyProjectOwnership(projectId, userId);
-      if (!hasAccess) {
-        return res.status(403).json({ error: "Access denied" });
+      if (req.body?.expectedUpdatedAt === undefined) {
+        return res.status(428).json({ error: "expectedUpdatedAt is required. Refresh the project before deleting." });
       }
+      const { expectedUpdatedAt } = projectMutationVersionSchema.parse(req.body);
 
-      await db
-        .delete(studioTracks)
-        .where(eq(studioTracks.projectId, projectId));
-      // No DB-level cascade exists for project royalty splits (see
-      // shared/schema.ts), so they must be deleted explicitly or they
-      // become permanently orphaned rows once the project is gone.
-      await db
-        .delete(projectRoyaltySplits)
-        .where(eq(projectRoyaltySplits.projectId, projectId));
-      await db.delete(projects).where(eq(projects.id, projectId));
+      const result = await db.transaction(async (tx) => {
+        // These routes mutate projects, not studioProjects. Ownership of the
+        // latter must not authorize cleanup of a colliding projects ID.
+        const [current] = await tx.select().from(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .for("update");
+        if (!current) return { status: 404, body: { error: "Project not found" } };
+        if ((current.updatedAt?.toISOString() ?? null) !== expectedUpdatedAt) {
+          return { status: 409, body: { conflict: true, error: "Project changed before deletion. Review the current project.", data: current } };
+        }
 
-      res.json({ success: true, message: "Project deleted" });
+        await deleteLockedOwnedProject(tx, projectId, userId);
+        return { status: 200, body: { success: true, message: "Project deleted" } };
+      });
+      res.status(result.status).json(result.body);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error deleting project:");
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.issues });
+      }
       res.status(500).json({ error: "Failed to delete project" });
     }
   },
@@ -1105,23 +1117,33 @@ router.patch(
       const { projectId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+      if (req.body?.expectedUpdatedAt === undefined) {
+        return res.status(428).json({ error: "expectedUpdatedAt is required. Refresh the project before updating." });
       }
+      const { expectedUpdatedAt, tempo, version: _legacyVersion, ...data } = updateProjectSchema.parse(req.body);
 
-      const data = updateProjectSchema?.parse(req.body);
-
-      const [updated] = await db
-        .update(projects)
-        .set({
-          ...data,
-          bpm: data.tempo,
-          updatedAt: new Date(),
-        })
-        .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
-        .returning();
-
-      res.json(updated);
+      const result = await db.transaction(async (tx) => {
+        const [current] = await tx.select().from(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .for("update");
+        if (!current) return { status: 404, body: { error: "Project not found" } };
+        if ((current.updatedAt?.toISOString() ?? null) !== expectedUpdatedAt) {
+          return { status: 409, body: { conflict: true, error: "Project changed on the server", data: current } };
+        }
+        const [updated] = await tx.update(projects)
+          .set({
+            ...data,
+            bpm: data.bpm ?? tempo,
+            // Match sync.ts: every successful write advances the serialized
+            // millisecond version, even for two writes in the same clock tick.
+            updatedAt: drizzleSql`GREATEST(clock_timestamp()::timestamp, COALESCE(${projects.updatedAt}, '-infinity'::timestamp) + interval '1 millisecond')`,
+          })
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .returning();
+        if (!updated) throw new Error("Locked project was not updated");
+        return { status: 200, body: updated };
+      });
+      res.status(result.status).json(result.body);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error updating project:");
       if (error instanceof z.ZodError) {

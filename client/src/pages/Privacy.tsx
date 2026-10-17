@@ -6,13 +6,13 @@ import { Link } from "wouter";
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container max-w-4xl mx-auto px-4 py-8">
-        <Link href="/">
-          <Button variant="ghost" className="mb-6" data-testid="button-back">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+      <main className="container max-w-4xl mx-auto px-4 py-8">
+        <Button asChild variant="ghost" className="mb-6" data-testid="button-back">
+          <Link href="/">
+            <ArrowLeft aria-hidden="true" className="w-4 h-4 mr-2" />
             Back
-          </Button>
-        </Link>
+          </Link>
+        </Button>
 
         <Card className="dark:bg-gray-900 dark:border-gray-700">
           <CardContent className="p-8 prose dark:prose-invert max-w-none">
@@ -21,16 +21,16 @@ export default function Privacy() {
               <h1 className="text-4xl font-bold mb-0">Privacy Policy</h1>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-8">
-              Last updated: November 11, 2025
+              Last updated: <time dateTime="2025-11-11">November 11, 2025</time>
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="flex items-start space-x-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
                 <Lock className="w-5 h-5 text-green-600 dark:text-green-400 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">
+                  <p className="font-semibold text-sm mb-1">
                     Protected in Transit
-                  </h3>
+                  </p>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
                     Safeguards are used to protect your data in transit
                   </p>
@@ -39,7 +39,7 @@ export default function Privacy() {
               <div className="flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                 <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Transparent</h3>
+                  <p className="font-semibold text-sm mb-1">Transparent</p>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
                     Full transparency about what's collected and why
                   </p>
@@ -48,7 +48,7 @@ export default function Privacy() {
               <div className="flex items-start space-x-3 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
                 <UserX className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">No Selling</h3>
+                  <p className="font-semibold text-sm mb-1">No Selling</p>
                   <p className="text-xs text-gray-600 dark:text-gray-300">
                     Your personal data is never sold
                   </p>
@@ -187,7 +187,7 @@ export default function Privacy() {
                 <li>Security updates and monitoring</li>
               </ul>
               <p className="mt-4">
-                While I strive to protect your information, no method of
+                While we strive to protect your information, no method of
                 transmission over the internet is 100% secure. Absolute security
                 cannot be guaranteed.
               </p>
@@ -358,7 +358,7 @@ export default function Privacy() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

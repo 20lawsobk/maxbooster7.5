@@ -154,15 +154,50 @@ function getCanonicalUrl(storefront: Storefront): string {
   return `${STOREFRONT_BASE}/storefront/${encodeURIComponent(storefront.slug)}`;
 }
 
+async function loadStorefrontList(path: string) {
+  const response = await apiRequest("GET", path);
+  const data = await response.json();
+  if (!Array.isArray(data)) throw new Error("Storefront returned an invalid list. Please retry.");
+  return data;
+}
+
 export default function StorefrontBuilder() {
+  const { user } = useAuth();
+  return <StorefrontEditor key={user?.id || "guest"} />;
+}
+
+function StorefrontEditor() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { trackBeatStoreSetup } = useOnboardingProgress();
 
+  const copyText = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: "Copied!", description: "The text is in your clipboard." });
+    } catch {
+      toast({ title: "Copy failed", description: "Clipboard access is unavailable. Select and copy the text manually.", variant: "destructive" });
+    }
+  };
+
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedStorefront, setSelectedStorefront] =
     useState<Storefront | null>(null);
+  const selectedStorefrontIdRef = useRef<string | null>(null);
+  selectedStorefrontIdRef.current = selectedStorefront?.id ?? null;
+  // Remount all editor drafts on identity changes; never retain another owner's selection.
+  const ownerId = user?.id;
+  useEffect(() => {
+    setSelectedStorefront(null);
+    setShowCreateDialog(false);
+    setShowTierDialog(false);
+    setShowDeleteDialog(false);
+    setStorefrontToDelete(null);
+    setClaimedPlatformDomain(null);
+    setAddedDnsZone(null);
+    setShowCampaignResult(null);
+  }, [ownerId]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [_showTemplateDialog, _setShowTemplateDialog] = useState(false);
   const [showTierDialog, setShowTierDialog] = useState(false);
@@ -270,6 +305,11 @@ export default function StorefrontBuilder() {
     assetType: "logo" | "banner" | "avatar",
   ) => {
     if (!file) return;
+    const uploadStorefrontId = selectedStorefront?.id;
+    if (!uploadStorefrontId || uploadingAsset) {
+      toast({ title: "Upload unavailable", description: "Select a storefront and wait for the current upload to finish.", variant: "destructive" });
+      return;
+    }
 
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
@@ -319,8 +359,11 @@ export default function StorefrontBuilder() {
         },
       )) as Record<string, unknown>;
 
-      if (result.error) {
-        throw new Error(result.error);
+      if (result.error || typeof result.url !== "string" || !result.url) {
+        throw new Error(String(result.error || "Upload did not return an image URL."));
+      }
+      if (selectedStorefrontIdRef.current !== uploadStorefrontId) {
+        throw new Error("The storefront selection changed during upload. The image was not applied; select the intended storefront and upload again.");
       }
 
       revokeLocalPreview(preview);
@@ -328,14 +371,14 @@ export default function StorefrontBuilder() {
       else if (assetType === "banner") setBannerPreviewUrl(null);
       else setAvatarPreviewUrl(null);
 
-      setCustomization({
-        ...customization,
+      setCustomization((current) => ({
+        ...current,
         [assetType]: result.url,
-      });
+      }));
 
       toast({
         title: "Upload Successful",
-        description: `Your ${assetType} has been uploaded`,
+        description: `Your ${assetType} has been uploaded. Save changes to apply it to your storefront.`,
       });
     } catch (error) {
       revokeLocalPreview(preview);
@@ -369,10 +412,11 @@ export default function StorefrontBuilder() {
     </div>
   );
 
-  const { data: storefronts = [], isLoading: storefrontsLoading } = useQuery<
+  const { data: storefronts = [], isLoading: storefrontsLoading, isError: storefrontsError, error: storefrontError, refetch: refetchStorefronts } = useQuery<
     Storefront[]
   >({
-    queryKey: ["/api/storefront/my"],
+    queryKey: ["/api/storefront/my", ownerId],
+    queryFn: () => loadStorefrontList("/api/storefront/my"),
     enabled: !!user,
   });
 
@@ -380,7 +424,7 @@ export default function StorefrontBuilder() {
   // Uses functional setState so we never need selectedStorefront in the dep array.
   useEffect(() => {
     if (!storefrontsLoading && storefronts.length > 0) {
-      setSelectedStorefront((prev) => prev ?? storefronts[0]);
+      setSelectedStorefront((prev) => storefronts.find((store) => store.id === prev?.id) ?? storefronts[0]);
     }
   }, [storefronts, storefrontsLoading]);
 
@@ -388,26 +432,39 @@ export default function StorefrontBuilder() {
   // customDomain, and isCustomDomainActive reflect the latest activation state
   // whenever the storefront list is refetched (e.g. after domain verification).
   useEffect(() => {
-    if (storefronts.length === 0) return;
+    if (storefronts.length === 0) {
+      setSelectedStorefront(null);
+      return;
+    }
     setSelectedStorefront((prev) => {
       if (!prev) return prev;
       const fresh = storefronts.find((s) => s.id === prev.id);
-      return fresh ?? prev;
+      return fresh ?? null;
     });
   }, [storefronts]);
 
-  const { data: templates = [], isLoading: templatesLoading } = useQuery<
+  useEffect(() => {
+    if (!selectedStorefront) return;
+    setCustomization(selectedStorefront.customization || {});
+    setSubdomainAvailable(null);
+    setFreeDomainAvailable(null);
+    setFreeDomainError(null);
+    setAddedDnsZone(null);
+  }, [selectedStorefront?.id]);
+
+  const { data: templates = [], isLoading: templatesLoading, isError: templatesError, refetch: refetchTemplates } = useQuery<
     StorefrontTemplate[]
   >({
     queryKey: ["/api/storefront/templates"],
+    queryFn: () => loadStorefrontList("/api/storefront/templates"),
     enabled: !!user,
   });
 
-  const { data: tiers = [] } = useQuery<
+  const { data: tiers = [], isPending: tiersLoading, isError: tiersError, refetch: refetchTiers } = useQuery<
     MembershipTier[]
   >({
-    queryKey: ["storefront-membership-tiers", selectedStorefront?.id],
-    enabled: !!selectedStorefront,
+    queryKey: ["storefront-membership-tiers", selectedStorefront?.id, ownerId],
+    enabled: !!ownerId && selectedStorefront?.userId === ownerId,
     queryFn: async () => {
       const res = await fetch(
         `/api/storefront/${selectedStorefront!.id}/membership-tiers`,
@@ -416,7 +473,9 @@ export default function StorefrontBuilder() {
         },
       );
       if (!res.ok) throw new Error("Failed to fetch tiers");
-      return res.json();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Storefront returned an invalid membership list.");
+      return data;
     },
   });
 
@@ -431,8 +490,8 @@ export default function StorefrontBuilder() {
       createdAt: string;
     }>;
   }>({
-    queryKey: ["storefront-domains-for-storefront", selectedStorefront?.id],
-    enabled: !!selectedStorefront,
+    queryKey: ["storefront-domains-for-storefront", selectedStorefront?.id, ownerId],
+    enabled: !!ownerId && selectedStorefront?.userId === ownerId,
     queryFn: async () => {
       const res = await fetch(
         `/api/storefront-domains/storefront/${selectedStorefront!.id}`,
@@ -453,11 +512,12 @@ export default function StorefrontBuilder() {
     onSuccess: (data) => {
       toast({
         title: "Storefront Created!",
-        description: `Your storefront "${data.name}" is live at ${STOREFRONT_BASE}/storefront/${data.slug}`,
+        description: `Your storefront "${data.name}" has been created. Publish it when you are ready to share it.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
       setShowCreateDialog(false);
       setSelectedStorefront(data);
+      setCustomization(data.customization || {});
       setSubdomainForm({ subdomain: "", isSubdomainActive: false });
       setSubdomainAvailable(null);
       setCreateForm({ name: "", slug: "", templateId: "" });
@@ -616,19 +676,23 @@ export default function StorefrontBuilder() {
   > | null>(null);
 
   const promoteCampaignMutation = useMutation({
-    mutationFn: async (storefrontId: string) => {
+    mutationFn: async (slug: string) => {
       const response = await apiRequest(
         "POST",
         "/api/social/veo-campaign/promote-storefront",
-        { storefrontId },
+        { slug },
       );
-      return response.json();
+      const data = await response.json();
+      if (data?.success !== true || !Array.isArray(data?.campaign?.assets)) {
+        throw new Error("The campaign response was incomplete. No generated campaign could be confirmed.");
+      }
+      return data;
     },
     onSuccess: (data) => {
       setShowCampaignResult(data);
       toast({
         title: "Campaign Generated!",
-        description: `Video campaign created with ${data.campaign.videos.length || 0} platform videos.`,
+        description: `Campaign returned ${data.campaign.assets.length} platform assets. Review their generation status before use.`,
       });
     },
     onError: (error: Error) => {
@@ -659,7 +723,7 @@ export default function StorefrontBuilder() {
       if (data.ok) {
         toast({
           title: "Subdomain Reserved",
-          description: `Your store is now at ${data.publicUrl || `${STOREFRONT_BASE}/storefront/${selectedStorefront?.slug || ""}`}`,
+          description: "Subdomain reserved. DNS and HTTPS availability must be verified before sharing the alias.",
         });
         queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
         queryClient.invalidateQueries({
@@ -696,7 +760,8 @@ export default function StorefrontBuilder() {
       verificationToken: string;
     }>;
   }>({
-    queryKey: ["/api/dns-manager/zones"],
+    queryKey: ["/api/dns-manager/zones", ownerId],
+    enabled: !!ownerId,
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/zones").then((r) => r.json()),
   });
@@ -740,7 +805,7 @@ export default function StorefrontBuilder() {
     domain: string | null;
     status: string | null;
   }>({
-    queryKey: ["storefront-platform-domain", selectedStorefront?.id],
+    queryKey: ["storefront-platform-domain", selectedStorefront?.id, ownerId],
     queryFn: () =>
       selectedStorefront
         ? apiRequest(
@@ -748,7 +813,7 @@ export default function StorefrontBuilder() {
             `/api/storefront-domains/platform/${selectedStorefront!.id}`,
           ).then((r) => r.json())
         : Promise.resolve({ ok: true, domain: null, status: null }),
-    enabled: !!selectedStorefront,
+    enabled: !!ownerId && selectedStorefront?.userId === ownerId,
   });
 
   // Sync claimed domain into state when query resolves
@@ -765,8 +830,8 @@ export default function StorefrontBuilder() {
       if (data.ok) {
         setClaimedPlatformDomain(data.domain);
         toast({
-          title: "Your Domain is Live!",
-          description: `${data.domain} is now active and pointing to your store.`,
+          title: "Domain Claimed",
+          description: `${data.domain} was claimed. Registrar ownership, DNS and HTTPS still need to be verified.`,
         });
         queryClient.invalidateQueries({
           queryKey: [
@@ -861,7 +926,7 @@ export default function StorefrontBuilder() {
       const data = await response.json();
       setCreateForm((prev) => ({ ...prev, slug: data.slug }));
     } catch {
-      // Silently ignore — slug field keeps whatever value the user typed
+      toast({ title: "URL suggestion unavailable", description: "Enter a storefront URL manually or try again.", variant: "destructive" });
     }
   };
 
@@ -911,6 +976,10 @@ export default function StorefrontBuilder() {
 
   const handleSaveCustomization = () => {
     if (!selectedStorefront) return;
+    if (uploadingAsset) {
+      toast({ title: "Upload in progress", description: "Wait for the image upload to finish before saving.", variant: "destructive" });
+      return;
+    }
 
     updateStorefrontMutation.mutate({
       customization,
@@ -945,7 +1014,14 @@ export default function StorefrontBuilder() {
         </Button>
       </div>
 
-      {storefronts.length === 0 ? (
+      {storefrontsLoading ? (
+        <p role="status">Loading storefronts…</p>
+      ) : storefrontsError ? (
+        <div role="alert" className="space-y-3">
+          <p>Unable to load storefronts. {storefrontError?.message}</p>
+          <Button onClick={() => void refetchStorefronts()}>Retry</Button>
+        </div>
+      ) : storefronts.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Store className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -1209,7 +1285,7 @@ export default function StorefrontBuilder() {
             ))}
           </div>
 
-          {selectedStorefront && (
+          {selectedStorefront?.userId === ownerId && selectedStorefront && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -1225,7 +1301,7 @@ export default function StorefrontBuilder() {
                       <Button
                         size="sm"
                         onClick={() =>
-                          promoteCampaignMutation.mutate(selectedStorefront.id)
+                          promoteCampaignMutation.mutate(selectedStorefront.slug)
                         }
                         disabled={
                           promoteCampaignMutation.isPending ||
@@ -1320,14 +1396,7 @@ export default function StorefrontBuilder() {
                                       className="h-6 w-6 flex-shrink-0"
                                       title="Copy store link"
                                       onClick={() => {
-                                        navigator.clipboard.writeText(
-                                          primaryUrl,
-                                        );
-                                        toast({
-                                          title: "Link copied!",
-                                          description:
-                                            "Your store link is in the clipboard.",
-                                        });
+                                        void copyText(primaryUrl);
                                       }}
                                     >
                                       <Copy className="w-3 h-3" />
@@ -1383,13 +1452,7 @@ export default function StorefrontBuilder() {
                                 className="text-muted-foreground hover:text-foreground"
                                 title="Copy domain"
                                 onClick={() => {
-                                  navigator.clipboard.writeText(
-                                    claimedPlatformDomain,
-                                  );
-                                  toast({
-                                    title: "Copied!",
-                                    description: `${claimedPlatformDomain} is in your clipboard.`,
-                                  });
+                                  void copyText(claimedPlatformDomain);
                                 }}
                               >
                                 <Copy className="w-4 h-4" />
@@ -1425,11 +1488,7 @@ export default function StorefrontBuilder() {
                                     className="text-muted-foreground hover:text-foreground flex-shrink-0"
                                     title={`Copy ${ns}`}
                                     onClick={() => {
-                                      navigator.clipboard.writeText(ns);
-                                      toast({
-                                        title: "Copied!",
-                                        description: `${ns} is in your clipboard.`,
-                                      });
+                                      void copyText(ns);
                                     }}
                                   >
                                     <Copy className="w-3 h-3" />
@@ -2453,7 +2512,11 @@ export default function StorefrontBuilder() {
                         </Button>
                       </div>
 
-                      {tiers.length === 0 ? (
+                      {tiersError ? (
+                        <div role="alert">Unable to load membership tiers. <Button onClick={() => void refetchTiers()}>Retry</Button></div>
+                      ) : tiersLoading ? (
+                        <p role="status">Loading membership tiers…</p>
+                      ) : tiers.length === 0 ? (
                         <Card>
                           <CardContent className="py-8 text-center">
                             <Crown className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
@@ -2848,7 +2911,9 @@ export default function StorefrontBuilder() {
                 )}
               </div>
 
-              {templatesLoading ? (
+              {templatesError ? (
+                <div role="alert">Unable to load templates. <Button onClick={() => void refetchTemplates()}>Retry</Button></div>
+              ) : templatesLoading ? (
                 <div className="grid grid-cols-2 gap-3">
                   {[...Array(6)].map((_, i) => (
                     <div
@@ -3096,21 +3161,21 @@ export default function StorefrontBuilder() {
                 <div className="bg-muted rounded-lg p-3">
                   <span className="text-muted-foreground">Videos</span>
                   <p className="font-bold text-lg">
-                    {showCampaignResult.campaign.videos?.length || 0}
+                    {showCampaignResult.campaign.assets.length}
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-3">
                   <span className="text-muted-foreground">Platforms</span>
                   <p className="font-bold text-lg">
-                    {showCampaignResult.campaign.platforms?.length || 0}
+                    {new Set(showCampaignResult.campaign.assets.map((asset) => asset.platform)).size}
                   </p>
                 </div>
               </div>
-              {showCampaignResult.campaign.platforms && (
+              {showCampaignResult.campaign.assets.length > 0 && (
                 <div>
                   <Label className="text-sm mb-2 block">Target Platforms</Label>
                   <div className="flex flex-wrap gap-1">
-                    {showCampaignResult.campaign.platforms.map((p: string) => (
+                    {[...new Set(showCampaignResult.campaign.assets.map((asset) => asset.platform))].map((p: string) => (
                       <Badge key={p} variant="secondary" className="text-xs">
                         {p}
                       </Badge>

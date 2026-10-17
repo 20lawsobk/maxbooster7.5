@@ -4,12 +4,15 @@ import crypto from "crypto";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db, pool } from "./db.js";
+import { onboardingUpdateSchema } from "./lib/onboardingUpdate.js";
 import { createOwnedRoyaltySplit, updateOwnedRoyaltySplit, RoyaltySplitError } from "./services/royaltySplitOwnership.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements, projects, projectRoyaltySplits, posts } from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
+import { requireCsrfToken } from "./middleware/csrf.js";
+import { getAccountEligibilityError, MINIMUM_ACCOUNT_AGE } from "../shared/agePolicy.js";
 import { sessionAuthority } from "./services/sessionAuthority.js";
 import accountErasureRouter from "./routes/accountErasure.js";
 import { mfaLifecycle } from "./services/mfaLifecycle.js";
@@ -309,8 +312,11 @@ export async function registerRoutes(
     registerRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { email, password, username, firstName, lastName, artistName } =
+        const { email, password, username, firstName, lastName, artistName, birthdate } =
           req.body;
+
+        const eligibilityError = getAccountEligibilityError(birthdate);
+        if (eligibilityError) return res.status(400).json({ message: eligibilityError });
 
         if (!email || !password) {
           return res
@@ -720,8 +726,11 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { step, completed, hasCompletedOnboarding, onboardingData } =
-          req.body;
+        const parsed = onboardingUpdateSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res.status(400).json({ message: "Invalid onboarding update", errors: parsed.error.issues });
+        }
+        const { step, completed, hasCompletedOnboarding, onboardingData } = parsed.data;
 
         // Support both legacy format (step/completed) and new format (hasCompletedOnboarding/onboardingData)
         const updateData: Record<string, any> = {};
@@ -738,10 +747,15 @@ export async function registerRoutes(
 
         // Store onboarding preferences if provided
         if (onboardingData) {
-          updateData.onboardingData = onboardingData;
+          updateData.onboardingData = sql`COALESCE(${users.onboardingData}, '{}'::jsonb) || ${JSON.stringify(onboardingData)}::jsonb`;
         }
 
-        await storage.updateUser(req.user.id, updateData);
+        if (Object.keys(updateData).length === 0) {
+          return res.status(400).json({ message: "No onboarding changes supplied" });
+        }
+        const [updated] = await db.update(users).set(updateData)
+          .where(eq(users.id, req.user.id)).returning({ id: users.id });
+        if (!updated) return res.status(404).json({ message: "Account not found" });
         return res.json({ success: true });
       } catch (error) {
         logger.warn({ err: error }, "Update onboarding error");
@@ -2194,8 +2208,32 @@ export async function registerRoutes(
     }
   });
 
-  // Auth: Google OAuth - Start login flow
-  app.get("/api/auth/google", (req: Request, res: Response) => {
+  // Validate DOB once; retain only a server-owned, short-lived eligibility receipt.
+  // Neither DOB nor an eligibility assertion supplied via URL reaches Google.
+  app.post("/api/auth/google/signup", registerRateLimiter, requireCsrfToken, async (req: Request, res: Response) => {
+    const signupSession = req.session as typeof req.session & {
+      googleSignupEligibility?: unknown;
+      googleOAuthEligibility?: unknown;
+    };
+    // A rejected replacement attempt must not leave an earlier receipt usable.
+    delete signupSession.googleSignupEligibility;
+    delete signupSession.googleOAuthEligibility;
+    const eligibilityError = getAccountEligibilityError(req.body?.birthdate);
+    if (eligibilityError) return res.status(400).json({ message: eligibilityError });
+    try {
+      Object.assign(req.session, {
+        googleSignupEligibility: { minimumAge: MINIMUM_ACCOUNT_AGE, expiresAt: Date.now() + 10 * 60_000 },
+      });
+      await sessionSave(req);
+      return res.json({ success: true });
+    } catch (error) {
+      logger.warn({ err: error }, "Google signup eligibility session failed");
+      return res.status(503).json({ message: "Unable to save signup eligibility. Please try again." });
+    }
+  });
+
+  // Login remains available without a DOB; only new Google accounts need eligibility.
+  app.get("/api/auth/google", async (req: Request, res: Response) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -2205,13 +2243,25 @@ export async function registerRoutes(
 
     const state = crypto.randomBytes(32).toString("hex");
 
-    // Store state in session
+    // Bind an optional signup receipt to this one OAuth transaction.
     if (req.session) {
-      (
-        req.session as import("express-session").Session & {
-          googleOAuthState?: string;
-        }
-      ).googleOAuthState = state;
+      const session = req.session as typeof req.session & {
+        googleOAuthState?: string;
+        googleSignupEligibility?: { minimumAge: number; expiresAt: number };
+        googleOAuthEligibility?: { minimumAge: number; expiresAt: number; state: string };
+      };
+      session.googleOAuthState = state;
+      delete session.googleOAuthEligibility;
+      if (session.googleSignupEligibility) {
+        session.googleOAuthEligibility = { ...session.googleSignupEligibility, state };
+        delete session.googleSignupEligibility;
+      }
+      try {
+        await sessionSave(req);
+      } catch (error) {
+        logger.warn({ err: error }, "Google OAuth state session failed");
+        return res.redirect("/login?error=login_failed");
+      }
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
@@ -2236,8 +2286,14 @@ export async function registerRoutes(
   // Auth: Google OAuth callback
   app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     const { code, state, error } = req.query;
+    const oauthSession = req.session as typeof req.session & {
+      googleOAuthState?: string;
+      googleOAuthEligibility?: { minimumAge: number; expiresAt: number; state: string };
+    };
 
     if (error) {
+      delete oauthSession.googleOAuthState;
+      delete oauthSession.googleOAuthEligibility;
       return res.redirect(`/login?error=google_denied`);
     }
 
@@ -2253,6 +2309,8 @@ export async function registerRoutes(
     if (typeof code !== "string" || !code.trim()) {
       return res.redirect("/login?error=token_exchange_failed");
     }
+    const signupEligibility = oauthSession.googleOAuthEligibility;
+    delete oauthSession.googleOAuthEligibility;
     delete (
       req.session as import("express-session").Session & {
         googleOAuthState?: string;
@@ -2322,6 +2380,12 @@ export async function registerRoutes(
 
       if (!user) {
         // Create new user from Google account
+        // Existing Google/password accounts deliberately do not pass this gate.
+        if (!signupEligibility || signupEligibility.state !== state ||
+            !Number.isFinite(signupEligibility.expiresAt) || signupEligibility.expiresAt <= Date.now() ||
+            signupEligibility.minimumAge !== MINIMUM_ACCOUNT_AGE) {
+          return res.redirect("/register?error=eligibility_required");
+        }
         await assertRegistrationEnabled();
         user = await storage.createUser({
           email: googleUser.email,
@@ -8064,23 +8128,8 @@ export async function registerRoutes(
           return res.status(400).json({ error: "Invalid email format" });
         }
 
-        if (
-          typeof birthdate !== "string" ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)
-        ) {
-          return res.status(400).json({ error: "A valid birthdate is required" });
-        }
-        const parsedBirthdate = new Date(`${birthdate}T00:00:00.000Z`);
-        if (Number.isNaN(parsedBirthdate.getTime())) {
-          return res.status(400).json({ error: "A valid birthdate is required" });
-        }
-        const minimumBirthdate = new Date();
-        minimumBirthdate.setFullYear(minimumBirthdate.getFullYear() - 13);
-        if (parsedBirthdate > minimumBirthdate) {
-          return res.status(400).json({
-            error: "You must be at least 13 years old to create an account",
-          });
-        }
+        const eligibilityError = getAccountEligibilityError(birthdate);
+        if (eligibilityError) return res.status(400).json({ error: eligibilityError });
 
         // Validate username (alphanumeric, 3-30 chars)
         const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
@@ -8148,7 +8197,7 @@ export async function registerRoutes(
           metadata: {
             tier,
             username,
-            birthdate: birthdate || "",
+            birthdate,
             artistName:
               typeof artistName === "string" ? artistName.trim().slice(0, 100) : "",
             firstName: req.body.firstName || "",
@@ -8308,6 +8357,15 @@ export async function registerRoutes(
           return res.status(409).json({
             error: "Account already exists. Please sign in using normal login.",
             code: "LOGIN_REQUIRED",
+          });
+        }
+
+        // Revalidate historical/tampered/missing metadata before any account writes.
+        const eligibilityError = getAccountEligibilityError(session.metadata?.birthdate);
+        if (eligibilityError) {
+          return res.status(400).json({
+            error: `${eligibilityError}. If you already paid, contact support before purchasing again.`,
+            code: "REGISTRATION_ELIGIBILITY_REQUIRED",
           });
         }
 

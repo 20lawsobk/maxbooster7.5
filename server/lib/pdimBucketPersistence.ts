@@ -68,9 +68,12 @@ export class PdimBucketPersistence {
     }, 10_000);
     this.heartbeat.unref();
     try {
-      const recovered = await this.journal.recover();
-      const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate);
+      const recovered = await this.journal.recover((completed, total) =>
+        this.onStage(`journal:${completed}/${total}`));
+      const snapshot = await readBucketSnapshot(this.journal, recovered.snapshot, this.validate,
+        (completed, total) => this.onStage(`snapshot-shards:${completed}/${total}`));
       this.onStage("snapshot-verified");
+      await this.journal.renew();
       const ordered = orderedBucketRecovery(recovered.transactions, snapshot.redisSequence, snapshot.capsuleSequence);
       this.assertHealthy();
       // Complete validation before publishing any recovered state to the owner.

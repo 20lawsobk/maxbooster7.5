@@ -1,8 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useRedirectIfAuthenticated } from "@/hooks/useRequireAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,8 +36,11 @@ import {
   Mic2,
 } from "lucide-react";
 import { GoogleIcon } from "@/components/ui/brand-icons";
+import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError } from "@shared/agePolicy";
 
 interface FieldErrors {
+  birthdate?: string;
   username?: string;
   email?: string;
   password?: string;
@@ -93,14 +94,31 @@ const OAUTH_ERROR_MESSAGES: Record<
     title: "OAuth Error",
     description: "An error occurred during Google sign-up. Please try again.",
   },
+  eligibility_required: {
+    title: "Date of Birth Required",
+    description: "To create a new Google account, enter your date of birth below and continue with Google. You must be at least 16.",
+  },
 };
+
+async function readRegistrationResponse(response: Response): Promise<Record<string, unknown>> {
+  const data: unknown = await response.json().catch(() => null);
+  return data && typeof data === "object" && !Array.isArray(data)
+    ? data as Record<string, unknown>
+    : {};
+}
+
+function getRegistrationFieldError(message: string): "email" | "username" | undefined {
+  const lower = message.toLowerCase();
+  if (lower.includes("email") && (lower.includes("already registered") || lower.includes("already exists"))) return "email";
+  if (lower.includes("username") && (lower.includes("already taken") || lower.includes("already exists"))) return "username";
+  return undefined;
+}
 
 export default function Register() {
   const [, navigate] = useLocation();
-  useAuth();
-  const queryClient = useQueryClient();
+  const { user: authenticatedUser, isLoading: authLoading, authenticate } = useAuth();
   const { toast } = useToast();
-  useRedirectIfAuthenticated();
+  const requestInFlight = useRef(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -108,8 +126,10 @@ export default function Register() {
     password: "",
     confirmPassword: "",
     artistName: "",
+    birthdate: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -118,12 +138,17 @@ export default function Register() {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
+    if (!authLoading && authenticatedUser) navigate("/dashboard");
+  }, [authenticatedUser, authLoading, navigate]);
+
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
     if (error && OAUTH_ERROR_MESSAGES[error]) {
       const { title, description } = OAUTH_ERROR_MESSAGES[error];
       toast({ title, description, variant: "destructive" });
-      window.history.replaceState({}, "", "/register");
+      urlParams.delete("error");
+      window.history.replaceState({}, "", `${window.location.pathname}${urlParams.size ? `?${urlParams}` : ""}${window.location.hash}`);
     }
   }, [toast]);
 
@@ -137,11 +162,13 @@ export default function Register() {
     value: string,
   ): string | undefined => {
     switch (field) {
+      case "birthdate":
+        return getAccountEligibilityError(value);
       case "username":
         if (!value.trim()) return "Username is required";
         if (value.length < 3) return "Username must be at least 3 characters";
         if (value.length > 30)
-          return "Username must be less than 30 characters";
+          return "Username must be 30 characters or fewer";
         if (!/^[a-zA-Z0-9_]+$/.test(value))
           return "Username can only contain letters, numbers, and underscores";
         return undefined;
@@ -190,6 +217,7 @@ export default function Register() {
 
   const validateForm = (): boolean => {
     const errors: FieldErrors = {
+      birthdate: validateField("birthdate", formData.birthdate),
       username: validateField("username", formData.username),
       email: validateField("email", formData.email),
       password: validateField("password", formData.password),
@@ -208,6 +236,7 @@ export default function Register() {
       password: true,
       confirmPassword: true,
       termsAccepted: true,
+      birthdate: true,
     });
     return !Object.values(errors).some((error) => error !== undefined);
   };
@@ -216,7 +245,7 @@ export default function Register() {
     const lowerMessage = message.toLowerCase();
     if (status === 429)
       return "Too many registration attempts. Please wait a few minutes before trying again.";
-    if (lowerMessage.includes("email") && lowerMessage.includes("exists"))
+    if (getRegistrationFieldError(message) === "email")
       return "This email is already registered. Please sign in or use a different email.";
     if (
       lowerMessage.includes("username") &&
@@ -230,37 +259,45 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestInFlight.current) return;
     setError("");
 
     if (!validateForm()) {
       return;
     }
 
+    requestInFlight.current = true;
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
+      const { response, data } = await authenticate(async () => {
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          signal: AbortSignal.timeout(30_000),
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(formData),
+        });
+        const data = await readRegistrationResponse(response);
+        return { response, data };
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const message = typeof data.message === "string" && data.message
+          ? data.message
+          : `Registration failed (${response.status}). Please try again.`;
         const enhancedMessage = getEnhancedErrorMessage(
-          data.message || "Registration failed",
+          message,
           response.status,
         );
         setError(enhancedMessage);
 
-        if (data.message?.toLowerCase().includes("email")) {
+        if (getRegistrationFieldError(message) === "email") {
           setFieldErrors((prev) => ({
             ...prev,
             email: "This email is already registered",
           }));
-        } else if (data.message?.toLowerCase().includes("username")) {
+        } else if (getRegistrationFieldError(message) === "username") {
           setFieldErrors((prev) => ({
             ...prev,
             username: "This username is already taken",
@@ -270,23 +307,69 @@ export default function Register() {
         return;
       }
 
+      if (typeof data.id !== "string" || !data.id) {
+        setError("The server returned an invalid registration response. Please try signing in before registering again.");
+        return;
+      }
+
       toast({
         title: "Account created successfully!",
         description: "Welcome to Max Booster! Let's get started.",
       });
-      queryClient.setQueryData(["/api/auth/me"], data);
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
-        "Unable to connect to the server. Please check your internet connection and try again.",
+        error instanceof Error && error.message
+          ? error.message
+          : "Unable to connect to the server. Please check your internet connection and try again.",
       );
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignup = () => {
-    window.location.href = "/api/auth/google";
+  const handleGoogleSignup = async () => {
+    if (requestInFlight.current || !termsAccepted) return;
+    const birthdateError = getAccountEligibilityError(formData.birthdate);
+    setTouched((prev) => ({ ...prev, birthdate: true }));
+    setFieldErrors((prev) => ({ ...prev, birthdate: birthdateError }));
+    if (birthdateError) return;
+    requestInFlight.current = true;
+    setIsLoading(true);
+    setIsGoogleLoading(true);
+    setError("");
+    try {
+      let csrfToken = getCsrfTokenFromCookie();
+      if (!csrfToken) {
+        const csrfResponse = await fetch("/api/csrf-token", {
+          credentials: "include", signal: AbortSignal.timeout(30_000),
+        });
+        const csrfData = await readRegistrationResponse(csrfResponse);
+        if (!csrfResponse.ok || typeof csrfData.csrfToken !== "string" || !csrfData.csrfToken) {
+          throw new Error("Unable to establish the signup security token. Please refresh and try again.");
+        }
+        csrfToken = csrfData.csrfToken;
+      }
+      const response = await fetch("/api/auth/google/signup", {
+        method: "POST",
+        credentials: "include",
+        signal: AbortSignal.timeout(30_000),
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+        body: JSON.stringify({ birthdate: formData.birthdate }),
+      });
+      const data = await readRegistrationResponse(response);
+      if (!response.ok || data.success !== true) {
+        throw new Error(typeof data.message === "string" ? data.message : "Unable to confirm signup eligibility. Please try again.");
+      }
+      window.location.href = "/api/auth/google";
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Unable to prepare Google signup. Please try again.");
+    } finally {
+      requestInFlight.current = false;
+      setIsLoading(false);
+      setIsGoogleLoading(false);
+    }
   };
 
   const benefits = [
@@ -296,6 +379,14 @@ export default function Register() {
     { icon: Users, text: "Automated social media" },
     { icon: DollarSign, text: "Revenue optimization" },
   ];
+
+  if (authLoading || authenticatedUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" role="status">
+        Checking authentication...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex">
@@ -376,7 +467,32 @@ export default function Register() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
+              <div className="space-y-1">
+                <Label htmlFor="birthdate">Date of Birth</Label>
+                <Input
+                  id="birthdate"
+                  type="date"
+                  value={formData.birthdate}
+                  onChange={(e) => handleChange("birthdate", e.target.value)}
+                  onBlur={() => handleBlur("birthdate")}
+                  max={new Date().toISOString().slice(0, 10)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="bday"
+                  data-testid="input-birthdate"
+                  aria-invalid={!!(fieldErrors.birthdate && touched.birthdate)}
+                  aria-describedby={fieldErrors.birthdate ? "birthdate-policy birthdate-error" : "birthdate-policy"}
+                />
+                <p id="birthdate-policy" className="text-xs text-muted-foreground">
+                  {ACCOUNT_AGE_REQUIREMENT}. Required for email and Google signup.
+                </p>
+                {fieldErrors.birthdate && touched.birthdate && (
+                  <p id="birthdate-error" className="text-sm text-destructive" role="alert">
+                    {fieldErrors.birthdate}
+                  </p>
+                )}
+              </div>
               <div className="space-y-1">
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -488,7 +604,10 @@ export default function Register() {
                     data-testid="input-password"
                     className={`pr-10 ${fieldErrors.password && touched.password ? "border-destructive" : ""}`}
                     aria-invalid={!!(fieldErrors.password && touched.password)}
-                    aria-describedby="password-strength password-error"
+                    aria-describedby={[
+                      formData.password ? "password-strength" : "",
+                      fieldErrors.password && touched.password ? "password-error" : "",
+                    ].filter(Boolean).join(" ") || undefined}
                   />
                   <Button
                     type="button"
@@ -496,6 +615,8 @@ export default function Register() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     data-testid="button-toggle-password"
                   >
                     {showPassword ? (
@@ -588,6 +709,8 @@ export default function Register() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                    aria-label={showConfirmPassword ? "Hide confirmed password" : "Show confirmed password"}
                     data-testid="button-toggle-confirm-password"
                   >
                     {showConfirmPassword ? (
@@ -619,6 +742,8 @@ export default function Register() {
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="terms"
+                    disabled={isLoading}
+                    aria-invalid={!!fieldErrors.termsAccepted}
                     checked={termsAccepted}
                     onCheckedChange={(checked) => {
                       setTermsAccepted(checked === true);
@@ -677,7 +802,7 @@ export default function Register() {
                 }
                 data-testid="button-create-account"
               >
-                {isLoading ? "Creating Account..." : "Create Your Account"}
+                {isLoading ? (isGoogleLoading ? "Preparing Google Signup..." : "Creating Account...") : "Create Your Account"}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </form>
@@ -689,10 +814,11 @@ export default function Register() {
               variant="outline"
               className="w-full"
               onClick={handleGoogleSignup}
+              disabled={isLoading || !termsAccepted}
               data-testid="button-google-signup"
             >
               <GoogleIcon className="mr-2 h-4 w-4" />
-              Sign up with Google
+              {isGoogleLoading ? "Preparing Google Signup..." : "Sign up with Google"}
             </Button>
           </CardContent>
 

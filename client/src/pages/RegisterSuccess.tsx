@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -28,17 +28,18 @@ export default function RegisterSuccess() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [paymentValid, setPaymentValid] = useState(false);
   const [verificationError, setVerificationError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
+  const verificationRequest = useRef<Promise<void> | null>(null);
+  const submitting = useRef(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, authenticate } = useAuth();
 
   useEffect(() => {
-    if (!sessionId) {
-      toast({
-        title: "Invalid Session",
-        description: "No payment session found. Please try again.",
-        variant: "destructive",
-      });
-      navigate("/pricing");
+    if (authLoading) return;
+    if (!sessionId || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+      setVerificationError("No valid payment session found. If you already paid, contact support before purchasing again.");
+      setIsVerifying(false);
       return;
     }
 
@@ -49,13 +50,23 @@ export default function RegisterSuccess() {
     }
 
     let cancelled = false;
+    setIsVerifying(true);
+    setPaymentValid(false);
+    setVerificationError("");
 
     // Do not show the account-creation form until the server has verified this
     // Checkout session with Stripe. The final registration endpoint repeats this
     // check to protect against a payment status change between these requests.
     const verifyPayment = async () => {
       try {
-        await apiRequest("POST", "/api/verify-checkout-session", { sessionId });
+        if (!verificationRequest.current) {
+          verificationRequest.current = (async () => {
+            const response = await apiRequest("POST", "/api/verify-checkout-session", { sessionId });
+            const data = await response.json();
+            if (data.verified !== true) throw new Error("Payment could not be verified. Please contact support before purchasing again.");
+          })();
+        }
+        await verificationRequest.current;
         if (!cancelled) {
           setPaymentValid(true);
           setIsVerifying(false);
@@ -77,19 +88,23 @@ export default function RegisterSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, user, navigate, toast]);
+  }, [sessionId, user?.id, authLoading, navigate, verificationAttempt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting.current) return;
+    if (!paymentValid || isVerifying || !sessionId || authLoading || user) return;
+    submitting.current = true;
     setIsLoading(true);
+    setFormError("");
 
     try {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
 
-      if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters long");
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
       }
 
       if (!tosAccepted) {
@@ -102,28 +117,24 @@ export default function RegisterSuccess() {
 
       // Create account after payment verification
       // Note: birthdate is retrieved from Stripe session metadata (collected before payment)
-      const response = await apiRequest("POST", "/api/register-after-payment", {
-        sessionId,
-        password,
-        tosAccepted,
-        privacyAccepted,
-        marketingConsent,
+      // This endpoint actually creates a login session. Its legacy payload nests
+      // the authenticated identity under user; adapt that identity, not a checkout
+      // receipt, for the provider's cleanup + independent /auth/me verification.
+      await authenticate(async () => {
+        const response = await apiRequest("POST", "/api/register-after-payment", {
+          sessionId, password, tosAccepted, privacyAccepted, marketingConsent,
+        });
+        const data = await response.json();
+        if (typeof data.user?.id !== "string" || !data.user.id) {
+          throw new Error("Account response could not be verified. Please sign in before trying again.");
+        }
+        return { response, data: { ...data, id: data.user.id } };
       });
-
-      const data = await response.json();
-
-      if (data.user) {
         toast({
           title: "Welcome to Max Booster!",
-          description:
-            "Your account has been created and your subscription is active.",
+          description: "Your account has been created and your sign-in verified.",
         });
-
-        // Force page reload to update authentication state
-        window.location.href = "/dashboard";
-      } else {
-        throw new Error(data.error || "Account creation failed");
-      }
+        navigate("/dashboard");
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -134,7 +145,9 @@ export default function RegisterSuccess() {
         description: errorMessage,
         variant: "destructive",
       });
+      setFormError(errorMessage);
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -165,9 +178,16 @@ export default function RegisterSuccess() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Payment Verification Failed
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p role="alert" className="text-gray-600 mb-6">
               {verificationError || "We couldn't verify your payment. Please try again."}
             </p>
+            {sessionId && /^cs_[A-Za-z0-9_]+$/.test(sessionId) && (
+              <Button className="mb-3" onClick={() => {
+                verificationRequest.current = null;
+                setVerificationAttempt(attempt => attempt + 1);
+              }}>Retry Verification</Button>
+            )}
+            <p className="text-sm mb-4">Already paid? <a className="underline" href="/help">Contact support</a> before starting another purchase. Already registered? <a className="underline" href="/login">Sign in</a>.</p>
             <Button
               onClick={() => navigate("/pricing")}
               data-testid="button-back-to-pricing"
@@ -208,7 +228,8 @@ export default function RegisterSuccess() {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
+              {formError && <p role="alert" className="text-sm text-red-600">{formError} <a href="/login" className="underline">Sign in</a> or <a href="/help" className="underline">contact support</a> if your account was already created.</p>}
               <div className="space-y-2">
                 <Label htmlFor="password">Create Password</Label>
                 <div className="relative">
@@ -220,7 +241,7 @@ export default function RegisterSuccess() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     autoComplete="new-password"
                     data-testid="input-password"
                   />
@@ -230,6 +251,8 @@ export default function RegisterSuccess() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
                     data-testid="button-toggle-password"
                   >
                     {showPassword ? (
@@ -252,7 +275,7 @@ export default function RegisterSuccess() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     autoComplete="new-password"
                     data-testid="input-confirm-password"
                   />
@@ -262,6 +285,8 @@ export default function RegisterSuccess() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    aria-pressed={showConfirmPassword}
                     data-testid="button-toggle-confirm-password"
                   >
                     {showConfirmPassword ? (
@@ -279,7 +304,7 @@ export default function RegisterSuccess() {
                     id="tosAccepted"
                     checked={tosAccepted}
                     onCheckedChange={(checked) =>
-                      setTosAccepted(checked as boolean)
+                      setTosAccepted(checked === true)
                     }
                     data-testid="checkbox-tos"
                     className="mt-1"
@@ -292,6 +317,7 @@ export default function RegisterSuccess() {
                     <a
                       href="/terms"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
                     >
                       Terms of Service
@@ -305,7 +331,7 @@ export default function RegisterSuccess() {
                     id="privacyAccepted"
                     checked={privacyAccepted}
                     onCheckedChange={(checked) =>
-                      setPrivacyAccepted(checked as boolean)
+                      setPrivacyAccepted(checked === true)
                     }
                     data-testid="checkbox-privacy"
                     className="mt-1"
@@ -318,6 +344,7 @@ export default function RegisterSuccess() {
                     <a
                       href="/privacy"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
                     >
                       Privacy Policy
@@ -331,7 +358,7 @@ export default function RegisterSuccess() {
                     id="marketingConsent"
                     checked={marketingConsent}
                     onCheckedChange={(checked) =>
-                      setMarketingConsent(checked as boolean)
+                      setMarketingConsent(checked === true)
                     }
                     data-testid="checkbox-marketing"
                     className="mt-1"
@@ -350,7 +377,7 @@ export default function RegisterSuccess() {
                 type="submit"
                 className="w-full py-3 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
                 size="lg"
-                disabled={isLoading}
+                disabled={isLoading || !tosAccepted || !privacyAccepted}
                 data-testid="button-complete-registration"
               >
                 {isLoading ? (
@@ -365,7 +392,7 @@ export default function RegisterSuccess() {
             </form>
 
             <div className="text-center text-xs text-gray-500 mt-4">
-              <p>Your subscription is already active and ready to use!</p>
+              <p>Your payment is verified. Complete registration to access your account.</p>
             </div>
           </CardContent>
         </Card>

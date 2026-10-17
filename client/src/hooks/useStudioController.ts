@@ -6,6 +6,7 @@ import type { InsertStudioTrack, InsertAudioClip } from "@shared/schema";
 import AudioEngine from "@/lib/audioEngine";
 import { useStudioStore } from "@/lib/studioStore";
 import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 
 export interface StudioTrack {
   id: string;
@@ -58,6 +59,13 @@ export function useStudioController({
   onError,
 }: StudioControllerOptions) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const tempoPersistenceRef = useRef<{
+    projectId: string | null;
+    expectedUpdatedAt: string | null | undefined;
+    inFlight: boolean;
+    blocked: boolean;
+  }>({ projectId: null, expectedUpdatedAt: undefined, inFlight: false, blocked: false });
 
   // Audio Engine instance (singleton)
   const audioEngineRef = useRef<AudioEngine | null>(null);
@@ -79,6 +87,39 @@ export function useStudioController({
     setTempo: setStoreTempo,
     setTracks: setStoreTracks,
   } = useStudioStore();
+
+  // This hook's transport store has no canonical project timestamp. Hydrate a
+  // matching tempo/version once when the selected project changes, not when a
+  // mutation fails or a newer list/cache entry happens to arrive.
+  useEffect(() => {
+    const snapshot = { projectId, expectedUpdatedAt: undefined as string | null | undefined, inFlight: false, blocked: false };
+    tempoPersistenceRef.current = snapshot;
+    let cancelled = false;
+    if (projectId) {
+      void (async () => {
+        try {
+          const response = await apiRequest("GET", `/api/studio/projects/${projectId}`);
+          const loaded = await response.json();
+          if (loaded.id !== projectId || loaded.updatedAt === undefined ||
+              (loaded.updatedAt !== null && !Number.isFinite(new Date(loaded.updatedAt).getTime()))) {
+            throw new Error("The server did not provide this project's tempo version.");
+          }
+          if (cancelled || tempoPersistenceRef.current !== snapshot) return;
+          snapshot.expectedUpdatedAt = loaded.updatedAt === null ? null : new Date(loaded.updatedAt).toISOString();
+          setStoreTempo(loaded.bpm ?? 120);
+        } catch (error) {
+          if (cancelled || tempoPersistenceRef.current !== snapshot) return;
+          snapshot.blocked = true;
+          const failure = error instanceof Error ? error : new Error("Unable to load the saved project tempo.");
+          logger.error("Failed to load project tempo:", failure);
+          if (onError) onError(failure);
+          else toast({ title: "Tempo unavailable", description: failure.message, variant: "destructive" });
+        }
+      })();
+    }
+    return () => { cancelled = true; };
+    // Callback identity changes must not rehydrate/rebase an open project.
+  }, [projectId, setStoreTempo]);
 
   // Track state
   const [tracks, setTracks] = useState<StudioTrack[]>([]);
@@ -476,20 +517,59 @@ export function useStudioController({
   }, []);
 
   const setTempo = useCallback(
-    (newTempo: number) => {
-      setStoreTempo(newTempo);
-
-      // Persist tempo changes to backend if projectId exists
-      if (projectId) {
-        apiRequest("PATCH", `/api/studio/projects/${projectId}`, {
-          tempo: newTempo,
-        }).catch((error) => {
-          logger.error("Failed to persist tempo:", error);
-          if (onError) onError(error as Error);
-        });
+    async (newTempo: number) => {
+      if (!projectId) {
+        setStoreTempo(newTempo);
+        return;
+      }
+      const snapshot = tempoPersistenceRef.current;
+      try {
+        if (snapshot.projectId !== projectId || snapshot.expectedUpdatedAt === undefined) {
+          throw new Error("Wait for this project's saved tempo and version to load before changing tempo.");
+        }
+        if (snapshot.blocked) {
+          throw new Error("Tempo persistence needs review. Your local tempo is retained; review and reopen the project before starting a new edit.");
+        }
+        if (snapshot.inFlight) {
+          throw new Error("A tempo change is still saving. Wait for confirmation before changing tempo again.");
+        }
+        snapshot.inFlight = true;
+        setStoreTempo(newTempo);
+        try {
+          const response = await apiRequest("PATCH", `/api/studio/projects/${projectId}`, {
+            tempo: newTempo, expectedUpdatedAt: snapshot.expectedUpdatedAt,
+          });
+          const updated = await response.json();
+          if (updated.id !== projectId || typeof updated.updatedAt !== "string" ||
+              !Number.isFinite(new Date(updated.updatedAt).getTime())) {
+            throw new Error("The server did not confirm the saved tempo version. Review the project before retrying.");
+          }
+          if (tempoPersistenceRef.current !== snapshot) return;
+          // Only this write's acknowledgement advances our base version.
+          snapshot.expectedUpdatedAt = new Date(updated.updatedAt).toISOString();
+          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/studio/start-hub/summary"] });
+        } catch (error) {
+          // A conflict, ambiguous network result, or malformed acknowledgement
+          // must not trigger a fresh-version retry or overwrite newer local work.
+          snapshot.blocked = true;
+          if (tempoPersistenceRef.current !== snapshot) return;
+          if ((error as { status?: number })?.status === 409) {
+            throw new Error("This project changed on the server. Your local tempo is retained but not saved. Review the project before starting a new edit.");
+          }
+          throw error;
+        } finally {
+          snapshot.inFlight = false;
+        }
+      } catch (error) {
+        const failure = error instanceof Error ? error : new Error("Tempo could not be saved.");
+        logger.error("Failed to persist tempo:", failure);
+        if (onError) onError(failure);
+        else toast({ title: "Tempo not saved", description: failure.message, variant: "destructive" });
       }
     },
-    [projectId, setStoreTempo, onError],
+    [projectId, setStoreTempo, onError, queryClient, toast],
   );
 
   const startRecording = useCallback(async () => {
