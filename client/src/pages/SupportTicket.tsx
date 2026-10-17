@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getCsrfTokenFromCookie } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type Ticket = {
   id: string; subject: string; description: string; status: string;
@@ -12,36 +14,51 @@ type Ticket = {
 
 export default function SupportTicket() {
   const { ticketId } = useParams<{ ticketId: string }>();
+  const { user, isLoading } = useRequireAuth();
+  if (isLoading) return <AppLayout><p role="status">Loading conversation…</p></AppLayout>;
+  if (!user || !ticketId) return null;
+  return <TicketConversation key={`${user.id}:${ticketId}`} ticketId={ticketId} />;
+}
+
+function TicketConversation({ticketId}: {ticketId: string}) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [error, setError] = useState("");
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
-  const load = useCallback(async () => {
-    const response = await fetch(`/api/support/my/tickets/${encodeURIComponent(ticketId || "")}`, { credentials: "include" });
+  const generation = useRef(0);
+  const sendPending = useRef(false);
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const current = generation.current;
+    const response = await apiRequest("GET", `/api/support/my/tickets/${encodeURIComponent(ticketId || "")}`, undefined, { signal, timeout: 30000 });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Unable to load ticket");
-    setTicket(data);
+    if (current === generation.current && !signal?.aborted) setTicket(data);
   }, [ticketId]);
   useEffect(() => {
+    generation.current += 1;
+    const controller = new AbortController();
     setTicket(null);
-    load().catch(error => setError(error.message));
+    setError("");
+    setReply("");
+    load(AbortSignal.any([controller.signal, AbortSignal.timeout(30000)])).catch(error => {
+      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "Unable to load ticket");
+    });
+    return () => { controller.abort(); generation.current += 1; };
   }, [load]);
   const send = async () => {
+    if (sendPending.current || !reply.trim() || !ticket || ticket.status === "closed") return;
+    sendPending.current = true;
+    const current = generation.current;
     setSending(true);
     setError("");
     try {
-      const csrf = getCsrfTokenFromCookie();
-      const response = await fetch(`/api/support/my/tickets/${encodeURIComponent(ticketId || "")}/messages`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json", ...(csrf ? { "x-csrf-token": csrf } : {}) },
-        body: JSON.stringify({ message: reply }),
-      });
-      if (!response.ok) throw new Error((await response.json()).error || "Unable to send reply");
+      await apiRequest("POST", `/api/support/my/tickets/${encodeURIComponent(ticketId || "")}/messages`, {message: reply.trim()}, {timeout: 30000});
+      if (current !== generation.current) return;
       setReply("");
       await load();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to send reply");
+      if (current === generation.current) setError(error instanceof Error ? error.message : "Unable to send reply");
     } finally {
+      sendPending.current = false;
       setSending(false);
     }
   };
@@ -58,7 +75,7 @@ export default function SupportTicket() {
         <time>{new Date(message.createdAt).toLocaleString()}</time>
       </article>)}
       {ticket.status === "closed" ? <p>This ticket is closed.</p> : <>
-        <Textarea aria-label="Your reply" value={reply} maxLength={10000} onChange={event => setReply(event.target.value)} />
+        <Textarea aria-label="Your reply" value={reply} maxLength={10000} disabled={sending} onChange={event => setReply(event.target.value)} />
         <Button onClick={send} disabled={sending || !reply.trim()}>{sending ? "Sending…" : "Send reply"}</Button>
       </>}
     </>}

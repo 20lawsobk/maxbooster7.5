@@ -5,6 +5,53 @@ Scope: all 80 route declarations in `route-inventory.md`, reviewed as individual
 frontend/backend boundaries. This file records the current pass only. Historical
 reports do not certify current code. No page is production-certified yet.
 
+## Platform code focus — owner direction
+
+The owner requested that this pass ignore workflow execution and focus on the
+actual platform. Workflow status is historical information below, not a blocker
+to continuing page inspection, corrections or local verification. No workflow
+files were changed in this follow-up.
+
+### Notifications and notification detail
+
+- Fixed an account-isolation defect in the category query: both OR branches now
+  remain inside the authenticated owner AND predicate. A regression compiles the
+  actual route expression with Drizzle's PostgreSQL dialect and verifies SQL
+  grouping and bound parameters.
+- Reject invalid, repeated/structured, negative or unbounded pagination/filter
+  inputs before a database query.
+- Detail now uses the existing owner-scoped single-record endpoint, instead of
+  searching only the first 50 list records. Its response retains category,
+  priority and action-label metadata consistently with the collection.
+- Notification actions accept only local absolute paths or explicit HTTP(S)
+  URLs without credentials or control characters. New tabs use noopener and
+  noreferrer. Removed duplicate navigation from list items.
+
+### Customer support and shared staff write boundaries
+
+- Customer conversation requests have deadlines, cancellation and generation
+  fencing; switching account/ticket remounts private state. Replies have a
+  same-tick duplicate guard and use the shared CSRF-aware request helper.
+- Ticket creation validates bounded text/types and enum values before writing.
+  Staff replies enforce the same message bounds as customer replies. Admin
+  updates reject null/empty enum values, invalid numeric ranges, invalid dates,
+  empty patches and unexpected fields before persistence.
+- Loopback HTTP fixtures exercise the real router and authentication middleware
+  against isolated database/service doubles: unauthenticated access, absent
+  owner-scoped records, malformed creation/staff writes and customer attempts
+  to call staff-only routes. These do not certify live database concurrency,
+  provider delivery or browser accessibility. The complete admin support UI
+  review remains queued.
+
+Follow-up validation: **366 passed across 26 files**, plus **2 passed** in
+an additional page-handler fixture covering late-response fencing and same-tick
+duplicate sends; all ran with retries disabled. Server/client native TypeScript
+checks, scoped runtime ESLint and a fresh production build passed. Fresh build
+output is retained outside the checkout at
+`/workspace/.onboarding/page-review-notifications-support-built-dist`; tracked
+generated assets were restored. Browser and live-provider acceptance
+remain unperformed for these pages.
+
 ## First review batch
 
 | Page | Frontend/backend finding and implemented change | Current evidence |
