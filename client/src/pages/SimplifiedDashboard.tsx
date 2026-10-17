@@ -28,8 +28,6 @@ export default function SimplifiedDashboard() {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
-          experienceLevel: "intermediate",
-          userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });

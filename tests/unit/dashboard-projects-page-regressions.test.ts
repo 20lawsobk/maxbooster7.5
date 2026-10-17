@@ -47,7 +47,7 @@ describe("dashboard and projects page regressions", () => {
   });
 
   it.each(["dashboard", "simplified"])("patches only changed full-mode preferences without resending stale onboarding metadata (%s)", async page => {
-    const preferences = { persona: "producer", experienceLevel: "beginner", goals: ["release"], preferSimplifiedView: true };
+    const preferences = { persona: "producer", experienceLevel: "advanced", userLevel: "advanced", goals: ["release"], preferSimplifiedView: true };
     const apiRequest = vi.fn(async (_method: string, _url: string, _body: { onboardingData: Record<string, unknown> }) => ({
       json: async () => ({ success: true }),
     }));
@@ -61,14 +61,14 @@ describe("dashboard and projects page regressions", () => {
     expect(apiRequest).toHaveBeenCalledWith("POST", "/api/auth/update-onboarding", {
       hasCompletedOnboarding: true,
       onboardingData: {
-        experienceLevel: "intermediate",
-        userLevel: "intermediate",
         preferSimplifiedView: false,
       },
     });
     const submittedPreferences = apiRequest.mock.calls[0][2].onboardingData;
     expect(submittedPreferences).not.toHaveProperty("persona");
     expect(submittedPreferences).not.toHaveProperty("goals");
+    expect(submittedPreferences).not.toHaveProperty("experienceLevel");
+    expect(submittedPreferences).not.toHaveProperty("userLevel");
   });
 
   it.each(["dashboard", "simplified"])("does not claim a preference was saved for an unsuccessful response (%s)", async page => {
@@ -157,7 +157,7 @@ describe("dashboard and projects page regressions", () => {
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {
     const route = readFileSync("server/routes/releaseCountdown.ts", "utf8");
     expect(route).toContain("data: countdownsWithProgress");
-    expect(sources.dashboard).toContain("normalizeDashboardCountdowns(await readDashboardJson(response))");
+    expect(sources.dashboard).toContain("select: normalizeDashboardCountdowns");
     expect(sources.dashboard).toContain("const countdowns = data ?? []");
     expect(sources.dashboard).not.toContain("data?.countdowns");
   });

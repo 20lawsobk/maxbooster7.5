@@ -238,7 +238,8 @@ export default function RegisterSuccess() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="8-72 characters"
+                    placeholder="At least 8 characters"
+                    aria-describedby="registration-password-policy"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
@@ -263,6 +264,9 @@ export default function RegisterSuccess() {
                     )}
                   </Button>
                 </div>
+                <p id="registration-password-policy" className="text-xs text-muted-foreground">
+                  Use at least 8 characters and at most 72 UTF-8 bytes. Accented characters and emoji can use multiple bytes.
+                </p>
               </div>
 
               <div className="space-y-2">

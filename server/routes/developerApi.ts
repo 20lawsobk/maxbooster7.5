@@ -7,16 +7,14 @@ const router = Router();
 
 // Schema for API key creation
 const createApiKeySchema = z.object({
-  keyName: z.string().min(1).max(255),
+  keyName: z.string().trim().min(1).max(255),
   tier: z.enum(["free", "pro", "enterprise"]).optional().default("free"),
 });
 
 // Schema for query parameters
 const usageQuerySchema = z.object({
-  days: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val) : 30)),
+  days: z.string().regex(/^\d+$/, "Days must be a whole number").optional().default("30")
+    .transform(Number).pipe(z.number().int().min(1).max(365)),
 });
 
 /**
@@ -45,6 +43,13 @@ router.post("/keys/create", async (req: Request, res: Response) => {
 
     const { keyName, tier } = validation?.data ?? {};
     const userId = req.user.id;
+
+    if (["suspended", "banned"].includes(req.user.subscriptionStatus ?? "")) {
+      return res.status(403).json({ error: "Forbidden", message: "This account cannot create API keys" });
+    }
+    if (tier !== "free" && !["active", "trialing"].includes(req.user.subscriptionStatus ?? "")) {
+      return res.status(403).json({ error: "Forbidden", message: "Premium API keys require a current active or trialing subscription" });
+    }
 
     // Check subscription tier for premium API keys
     if (

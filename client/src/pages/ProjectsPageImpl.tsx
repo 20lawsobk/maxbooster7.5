@@ -531,7 +531,9 @@ export default function ProjectsPageImpl() {
         setEditingProject({ ...project, updatedAt: saved.data.expectedUpdatedAt });
         setEditForm(saved.data);
         setDraftMessage(
-          "Recovered a draft saved on this device. Review it before updating.",
+          saved.data.expectedUpdatedAt === undefined
+            ? "This older draft has no saved project version. Copy its content, then reopen the server version before applying your changes."
+            : "Recovered a draft saved on this device. Review it before updating.",
         );
       }
     } catch {
@@ -540,6 +542,35 @@ export default function ProjectsPageImpl() {
         "Local drafts are unavailable. Keep this form open until your update succeeds.",
       );
     }
+  };
+
+  const handleSaveEditDraft = async () => {
+    if (!editingProject || editingProject.updatedAt === undefined) {
+      setDraftMessage("This draft has no saved project version. Copy its content, then reopen the server version before saving.");
+      return;
+    }
+    const identity = offlineIdentity();
+    const expectedUpdatedAt = editingProject.updatedAt === null ? null : new Date(editingProject.updatedAt).toISOString();
+    try {
+      await draftStorage.saveDraft(`project-edit:${editingProject.id}`, { ...editForm, expectedUpdatedAt });
+      assertOfflineIdentity(identity);
+      setDraftMessage("Draft saved on this device with its original project version.");
+    } catch {
+      assertOfflineIdentity(identity);
+      setDraftMessage("Draft could not be saved on this device. Keep this form open until your update succeeds.");
+    }
+  };
+
+  const handleUseServerVersion = () => {
+    const snapshot = projects.find(candidate => candidate.id === editingProject?.id);
+    if (!snapshot || snapshot.updatedAt === undefined) {
+      setDraftMessage("Refresh the project list to load the current server version first.");
+      return;
+    }
+    ++editRequestRef.current;
+    setEditingProject(snapshot);
+    setEditForm({ title: snapshot.title, description: snapshot.description ?? "", genre: snapshot.genre ?? "" });
+    setDraftMessage("Loaded the server version. The older device draft remains saved until you explicitly replace it.");
   };
 
   const requestDelete = (project: Project) => {
@@ -636,24 +667,15 @@ export default function ProjectsPageImpl() {
                 </Select>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
+                {editingProject?.updatedAt === undefined && (
+                  <Button type="button" variant="outline" onClick={handleUseServerVersion}>
+                    Use current server version
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    if (!editingProject) return;
-                    void draftStorage
-                      .saveDraft(`project-edit:${editingProject.id}`, editForm)
-                      .then(() =>
-                        setDraftMessage(
-                          "Saved on this device, not yet sent to the server.",
-                        ),
-                      )
-                      .catch(() =>
-                        setDraftMessage(
-                          "Draft could not be saved. Keep this form open and retry.",
-                        ),
-                      );
-                  }}
+                  onClick={() => void handleSaveEditDraft()}
                 >
                   Save draft on device
                 </Button>

@@ -15,7 +15,7 @@ reports do not certify current code. No page is production-certified yet.
 | ForgotPassword | Traced account-neutral UI, provider result and reset-token persistence. Existing request/resend fixtures pass. | Live email acceptance and outage-enumeration risk remain open. |
 | ResetPassword | Character-count upper bound allowed multibyte bcrypt truncation. Uses shared byte policy; existing atomic reset/session-epoch backend remains intact. | Actual handler/password fixtures pass; live reset/revocation acceptance pending. |
 | RegisterPayment | Undefined date bound crashed rendering; missing helper imports and double body parsing prevented checkout; duplicate JSX attributes. Restored bounded parser, validated hosted URL and UTC age bound. | Checkout page fixtures pass; real Stripe sandbox acceptance pending. |
-| RegisterSuccess | Missing hook/session/consent variables crashed rendering; catch displayed a success toast; unbounded response parsing and missing paid-consent persistence. Restored state, bounded verified parsing, strict acknowledgment and backend consent recording before login. Partial failure reports an existing account. | Frontend and actual offline backend route fixtures pass; provider/database acceptance pending. |
+| RegisterSuccess | Missing hook/session/consent variables crashed rendering; catch displayed a success toast; unbounded response parsing and missing paid-consent persistence. Restored state, bounded verified parsing, strict acknowledgment and backend consent recording before login. Account, subscription metadata and consent writes now commit atomically; a failed consent write leaves no account, and the same paid request can be retried safely. | Frontend and actual offline backend route fixtures pass; provider/database acceptance pending. |
 | Subscribe | Undefined rawData/setupAttemptRef broke setup; setup failures did not populate retry state. Uses bounded real parser and error normalization while retaining intent keys. | Scope/race/retry fixtures pass; provider acceptance pending. |
 | Dashboard | Countdown parser returns an array but UI expected a transport envelope; status ignored for paid access; full-mode action bypassed persistence. Corrected data boundary, shared access check, persisted mode switch and null-safe account rendering. | Focused dashboard/project fixtures pass. |
 | SimplifiedDashboard | Undefined onboardingStatus crashed the effect; unauthenticated/restricted content could mount; full-mode handler bypassed duplicate guard. Reads persisted authenticated-user preferences and gates content/action. | Focused contracts pass. |
@@ -29,8 +29,8 @@ reports do not certify current code. No page is production-certified yet.
   not a production rehearsal or live-provider test.
 - Scoped ESLint: **0 errors, 20 warnings** across edited runtime files.
 - Client semantic check: native `tsgo -p tsconfig.client.json --noEmit` passed.
-- Server semantic check found an unused legacy date helper in consentService;
-  removed it; rerun pending.
+- Server semantic check initially found an unused legacy date helper in consentService;
+  removed it; fresh server and client native semantic checks now both pass.
 - A TypeScript symbol scan across page implementation files found no additional
   unbound runtime identifiers besides the now-fixed simplified dashboard effect.
   This is a narrow diagnostic, not review completion for the other pages.
@@ -52,3 +52,78 @@ Required current-instance bindings are absent: development DATABASE_URL (or
 NEON_DATABASE_URL) and SESSION_SECRET. Do not use a production/shared database
 for destructive acceptance tests. Provider-dependent checks require configured
 sandbox credentials; they have not been run.
+
+
+## GitHub review #85 and corrected findings
+
+Review: https://github.com/20lawsobk/maxbooster7.5/pull/85
+CodeRabbit returned four major findings and one minor wording finding on
+`561f8da0`. All five were implemented and validated locally:
+
+- Keep `/api/countdowns` cached as its response envelope and normalize only the
+  Dashboard observer's `select`. A real QueryClient/QueryObserver regression
+  proves other consumers retain the envelope while Dashboard receives an array.
+- Enabling full mode changes only `preferSimplifiedView`; both dashboard paths
+  preserve advanced experience/user levels. Focused mutation tests assert that
+  no stale experience level or other preferences are resent.
+- Manual device drafts include the edit-start version; reopening and direct
+  fallback submission retain it. Older unversioned drafts get an explicit
+  action to load the server snapshot without deleting the retained device copy.
+- Paid account creation and consent/audit writes use one PostgreSQL transaction.
+  A real private PostgreSQL test forces the second audit insert to fail, verifies
+  all user/consent/log rows roll back, then retries the same paid request and
+  verifies one user, one consent row and three audit entries. Cookie/session
+  issuance occurs only after commit. Stripe remains an offline fixture here.
+- Registration completion describes the upper bound as 72 UTF-8 bytes and
+  connects the instruction to the password field accessibly.
+
+Additional page work: Desktop download contracts passed; fixed the static route
+inventory to follow default router re-exports instead of reporting the real
+`/api/downloads/latest` route as absent. Developer API now normalizes/bounds key
+names, rejects premium key creation for inactive subscriptions, bounds usage
+queries to 1–365 whole days, prevents duplicate create clicks, and requires
+positive key/revocation response contracts. Its real loopback HTTP tests use an
+isolated service and no real key or provider side effects.
+
+Fresh focused convergence after those changes: **311 passed, 20 files**, no
+retries/skips. Server and client native semantic checks passed. A fresh ordinary
+production build after the CodeRabbit correction batch passed, and scoped runtime
+ESLint completed with zero errors. Initial full unit run: **1,947 passed,
+12 failed, 3 skipped**. The PostgreSQL PATH/setup and download-audit failures were
+subsequently corrected and targeted checks passed. Remaining full-suite failures
+include legacy build/export/release assumptions, MaxCore mocked readiness,
+undocumented environment variables and stale Dashboard source assertions; the
+full suite has not been declared green.
+
+## Isolated runtime and external blockers
+
+The isolated runner now waits for the real CSRF endpoint (health and static HTML
+precede lazy route registration), supplies the required synthetic adult DOB and
+stages the required package/dependency paths in its disposable working directory.
+It creates its own PostgreSQL cluster and blocks outbound TCP/UDP/child processes.
+It never uses workspace credentials or production data.
+
+Observed current rehearsal: schema generation and PostgreSQL passed; health and
+frontend returned HTTP 200. Real registration, login, session persistence, CSRF
+rejection and logout invalidation passed. The bounded authenticated HTTP load
+recorded no request failures or threshold failures in steady and spike phases.
+Project read/write coverage was **not** exercised: the unentitled synthetic user
+received 403. Browser testing was intentionally not run in explicit HTTP mode.
+The overall rehearsal **FAILED** because `/api/ready` remained HTTP 503 with
+MaxCore deliberately unconfigured in this non-ML fixture. This is not full
+production or model readiness. Raw current-instance evidence is retained at
+`/workspace/.onboarding/page-review-isolated-result.json` (not portable Git data).
+
+GitHub Actions did not execute any steps (`runner_id: 0`). The Type Check check
+annotation explicitly states: **"The job was not started because your account is
+locked due to a billing issue."** The owner must resolve GitHub account billing
+before the external CI gates can run. No gate was bypassed. The CI unit job now
+prepares PostgreSQL fixture binaries, but that change cannot be verified on a
+GitHub runner until the account lock is resolved.
+
+CodeRabbit's completed review states its included allowance is one review per
+hour and zero remained immediately afterward. A subsequent review is not a pass
+until the service actually completes it. Remaining routed pages are still queued;
+this PR is a concrete first batch, not completion of all 80 route reviews.
+
+The paid-consent transaction uses the existing tables from `migrations/0095_registration_consents.sql`; this migration was not applied to any shared or production database. Fresh build output is retained outside the checkout at `/workspace/.onboarding/page-review-final-built-dist`; tracked generated assets were restored to avoid unrelated generated-file churn.

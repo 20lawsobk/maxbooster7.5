@@ -109,7 +109,26 @@ function backendHarness(existingAccount = false) {
     sessionAuthority: async () => ({ issue: async () => "unit-generation" }),
     bcrypt: { hash: async () => "fixture-bcrypt-hash" },
     consentService: { recordRegistrationConsents: async (...args: any[]) => { consents.push(args); } },
-    require: () => ({ assertRegistrationEnabled: async () => {} }),
+    require: () => ({ assertRegistrationEnabled: async () => {}, userPocketService: { initializeUserStorage: async () => {} } }),
+    users: {},
+    db: { transaction: async (operation: (tx: any) => Promise<any>) => {
+      const before = storedUser;
+      const count = created.length;
+      try {
+        return await operation({
+          execute: async () => {},
+          insert: () => ({ values: (user: any) => ({ returning: async () => {
+            created.push(user);
+            storedUser = { ...user, id: "created-unit", twoFactorEnabled: false };
+            return [storedUser];
+          } }) }),
+        });
+      } catch (error) {
+        storedUser = before;
+        created.splice(count);
+        throw error;
+      }
+    } },
     storage: {
       getUserByEmail: async () => storedUser,
       getUserByUsername: async () => undefined,
@@ -166,21 +185,31 @@ describe("Registration password and paid consent boundaries (offline route fixtu
     expect(result.body.consentRecorded).toBe(true);
     expect(h.consents).toEqual([["created-unit", {
       birthdate: "1990-06-15", tosAccepted: true, privacyAccepted: true, marketingConsent: true,
-    }, "127.0.0.1", "fixture-agent"]]);
+    }, "127.0.0.1", "fixture-agent", expect.objectContaining({ execute: expect.any(Function) })]]);
     expect(h.session.userId).toBe("created-unit");
   });
 
-  it("reports the persisted account and prevents sign-in if consent persistence fails", async () => {
+  it("rolls back a failed consent write and retries the paid checkout without a second account", async () => {
     const h = backendHarness();
     h.checkoutSession.metadata.birthdate = "1990-06-15";
-    h.scope.consentService.recordRegistrationConsents = async () => { throw new Error("fixture persistence failure"); };
-    const result = await h.invoke("post", "/api/register-after-payment", {
+    let attempts = 0;
+    h.scope.consentService.recordRegistrationConsents = async (...args: any[]) => {
+      if (++attempts === 1) throw new Error("fixture persistence failure");
+      h.consents.push(args);
+    };
+    const body = {
       sessionId: "cs_fixture", password: "Password1!", tosAccepted: true, privacyAccepted: true,
-    });
-    expect(result.statusCode).toBe(503);
-    expect(result.body).toMatchObject({ accountCreated: true, code: "REGISTRATION_CONSENT_FAILED" });
-    expect(h.created).toHaveLength(1);
+    };
+    const result = await h.invoke("post", "/api/register-after-payment", body);
+    expect(result.statusCode).toBe(500);
+    expect(h.created).toHaveLength(0);
     expect(h.session.userId).toBeUndefined();
+    const retried = await h.invoke("post", "/api/register-after-payment", body);
+    expect(retried.statusCode).toBe(200);
+    expect(retried.body.consentRecorded).toBe(true);
+    expect(h.created).toHaveLength(1);
+    expect(h.consents).toHaveLength(1);
+    expect(h.session.userId).toBe("created-unit");
   });
 });
 

@@ -72,6 +72,7 @@ export class ConsentService {
     input: RegisterConsentInput,
     ipAddress?: string,
     userAgent?: string,
+    executor?: Pick<typeof db, "execute">,
   ): Promise<void> {
     const now = new Date();
 
@@ -93,7 +94,7 @@ export class ConsentService {
     const birthdateValue = birthdate;
 
     try {
-      await db.transaction(async (tx) => {
+      const writeConsents = async (tx: Pick<typeof db, "execute">) => {
         await tx.execute(sql`
           INSERT INTO registration_consents (
             user_id,
@@ -159,7 +160,9 @@ export class ConsentService {
           userAgent,
           metadata: { source: "registration" },
         });
-      });
+      };
+      if (executor) await writeConsents(executor);
+      else await db.transaction(writeConsents);
 
       logger.info(
         `Registration consents recorded for user ${userId}, age: ${age}`,

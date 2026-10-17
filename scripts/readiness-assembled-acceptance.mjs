@@ -195,7 +195,7 @@ async function runHttpAuthJourney(email, username, password) {
   response = await authRequest(jar, "/api/auth/register", {
     method: "POST",
     csrf,
-    body: { email, username, password, confirmPassword: password, firstName: "Acceptance", lastName: "User" },
+    body: { email, username, password, confirmPassword: password, birthdate: "1990-06-15", firstName: "Acceptance", lastName: "User" },
   });
   const registered = jsonBody(response);
   if (response.status !== 200 || typeof registered.id !== "string" || "password" in registered) {
@@ -601,7 +601,7 @@ async function createLoadSession(email, username, password, register) {
     method: "POST",
     csrf,
     body: register
-      ? { email, username, password, confirmPassword: password, firstName: "Load", lastName: "User" }
+      ? { email, username, password, confirmPassword: password, birthdate: "1990-06-15", firstName: "Load", lastName: "User" }
       : { email, password },
   });
   const user = jsonBody(response);
@@ -793,6 +793,8 @@ try {
   mkdirSync(join(temp, "schema"));
   symlinkSync(join(root, "node_modules"), join(temp, "node_modules"), "dir");
   symlinkSync(join(root, "dist"), join(temp, "cwd", "dist"), "dir");
+  symlinkSync(join(root, "package.json"), join(temp, "cwd", "package.json"), "file");
+  symlinkSync(join(root, "node_modules"), join(temp, "cwd", "node_modules"), "dir");
   symlinkSync(join(root, "shared"), join(temp, "cwd", "shared"), "dir");
   symlinkSync(join(root, "tsconfig.json"), join(temp, "cwd", "tsconfig.json"), "file");
   symlinkSync(join(root, "tsconfig.server.json"), join(temp, "cwd", "tsconfig.server.json"), "file");
@@ -899,6 +901,12 @@ try {
     bytes: frontend.bytes,
     sha256: sha256(frontend.body),
   };
+
+  // Health and static HTML are served before lazy API route registration.
+  // Probe a real required read endpoint before beginning any account writes.
+  await waitFor("/api/csrf-token", response =>
+    response.status === 200 && typeof jsonBody(response)?.csrfToken === "string",
+  90_000);
 
   if (httpLoadOnly) {
     evidence.browser = "intentionally skipped only for explicit --http-load mode";
@@ -1013,6 +1021,8 @@ try {
   }
 } catch (error) {
   failures.push(String(error?.message ?? error).replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, "postgresql://[redacted]").slice(0, 1800));
+  const logTail = sanitizedLogTail();
+  if (logTail) observations.push(`Application diagnostic tail (redacted):\n${logTail}`);
 } finally {
   if (app && app.exitCode === null) {
     app.kill("SIGTERM");

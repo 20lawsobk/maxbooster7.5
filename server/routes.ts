@@ -8386,40 +8386,30 @@ export async function registerRoutes(
         // Create the user account
         const { assertRegistrationEnabled } = await import("./services/governancePolicyService.js");
         await assertRegistrationEnabled();
-        const user = await storage.createUser({
-          email,
-          password: hashedPassword,
-          username,
-          firstName: session.metadata!.firstName || "",
-          lastName: session.metadata!.lastName || "",
-        });
-        // Apply subscription details that are not part of the base insert schema
-        if (tier || subscriptionEndsAt) {
-          await storage.updateUser(user.id, {
-            subscriptionTier: tier ?? undefined,
-            subscriptionEndsAt: subscriptionEndsAt ?? undefined,
-          });
-        }
-        const artistName = session.metadata?.artistName?.trim();
-        if (artistName) {
-          await storage.updateUser(user.id, { artistName });
-        }
-
-        try {
-          await consentService.recordRegistrationConsents(user.id, {
+        // A failed consent write must roll back the account itself, so the
+        // same paid checkout can be retried without leaving a login-capable
+        // account that has never recorded consent.
+        const user = await db.transaction(async (tx) => {
+          const [created] = await tx.insert(users).values({
+            email, password: hashedPassword, username,
+            firstName: session.metadata!.firstName || "",
+            lastName: session.metadata!.lastName || "",
+            subscriptionTier: tier,
+            subscriptionEndsAt,
+            artistName: session.metadata?.artistName?.trim() || null,
+          }).returning();
+          if (!created) throw new Error("Paid account creation did not return a user");
+          await consentService.recordRegistrationConsents(created.id, {
             birthdate: session.metadata!.birthdate,
-            tosAccepted: true,
-            privacyAccepted: true,
+            tosAccepted: true, privacyAccepted: true,
             marketingConsent: marketingConsent === true,
-          }, req.ip, req.get("user-agent"));
-        } catch (consentError) {
-          logger.warn({ err: consentError, userId: user.id }, "[PostPayment] Consent persistence failed");
-          return res.status(503).json({
-            accountCreated: true,
-            code: "REGISTRATION_CONSENT_FAILED",
-            message: "Your account was created, but registration preferences could not be saved. Contact support before purchasing or registering again.",
-          });
-        }
+          }, req.ip, req.get("user-agent"), tx);
+          return created;
+        });
+        // Preserve normal account storage initialization, only after commit.
+        void import("./services/userPocketDimensionService.js")
+          .then(({ userPocketService }) => userPocketService.initializeUserStorage(user.id, user.email))
+          .catch(error => logger.warn({ err: error, userId: user.id }, "[PostPayment] Account storage initialization deferred"));
 
         // Log the user in (regenerate prevents session fixation)
         const {

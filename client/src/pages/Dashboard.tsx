@@ -176,12 +176,13 @@ export default function Dashboard() {
 }
 
 function UpcomingReleasesSection() {
-  const { data, isLoading, error, refetch } = useQuery<DashboardCountdownItem[]>({
+  const { data, isLoading, error, refetch } = useQuery<unknown, Error, DashboardCountdownItem[]>({
     queryKey: ["/api/countdowns"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/countdowns");
-      return normalizeDashboardCountdowns(await readDashboardJson(response));
+      return readDashboardJson(response);
     },
+    select: normalizeDashboardCountdowns,
   });
 
   const countdowns = data ?? [];
@@ -532,8 +533,6 @@ function DashboardContent({ user }: { user: User }) {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
-          experienceLevel: "intermediate",
-          userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });
@@ -545,7 +544,6 @@ function DashboardContent({ user }: { user: User }) {
     },
     onSuccess: () => {
       setShowSimplified(false);
-      setUserLevel("intermediate");
       void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/auth/onboarding-status"] });
     },
