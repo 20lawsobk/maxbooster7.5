@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Preserve build tools BEFORE cleanup can remove platform-owned wrappers/caches.
 set -Eeuo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/publishing-context.sh"
+prepare_publishing_context
 echo "[bootstrap] Preparing build toolchain before workspace cleanup"
 tools=$(mktemp -d /tmp/deployment-tools.XXXXXX)
+isolate_publishing_caches
 trap 'rc=$?; trap - EXIT; rm -rf -- "$tools"; exit "$rc"' EXIT
 trap 'rc=$?; echo "[bootstrap] FAILED at line $LINENO (exit $rc)" >&2' ERR
 trap 'echo "[bootstrap] Interrupted by TERM" >&2; exit 143' TERM
@@ -34,6 +37,9 @@ case "$node_bin" in
     chmod +x "$tools/node" ;;
 esac
 export PATH="$tools:$PATH"
+# Recovery uses only builtins and precedes package-manager/package.json probes.
+# A previous interrupted pack may have removed those dependency inputs.
+"$tools/node" script/lib/deploymentPackRecovery.mjs --recover "$PUBLISH_BUILD_ROOT"
 for manager in npm pnpm; do
   echo "[bootstrap] Resolving compatible $manager"
   if [ "$manager" = npm ]; then

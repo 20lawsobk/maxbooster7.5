@@ -13,7 +13,7 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "bash scripts/start-dev.sh",
-    "build": "node --import tsx script/build.ts",
+    "build": "node scripts/build-production.mjs",
     "release:prepare": "node --import tsx script/prepare-release.ts",
     "release:verify": "node --import tsx -e \"import('./script/publish-release.ts').then(m=>m.verifyPreparedRelease(process.cwd())).then(()=>console.log('Prepared release is current')).catch(e=>{console.error(e.message);process.exitCode=1})\"",
     "build:clean": "DEPLOY_CLEAN=1 npx tsx script/build.ts",
