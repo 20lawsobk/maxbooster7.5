@@ -127,3 +127,5 @@ until the service actually completes it. Remaining routed pages are still queued
 this PR is a concrete first batch, not completion of all 80 route reviews.
 
 The paid-consent transaction uses the existing tables from `migrations/0095_registration_consents.sql`; this migration was not applied to any shared or production database. Fresh build output is retained outside the checkout at `/workspace/.onboarding/page-review-final-built-dist`; tracked generated assets were restored to avoid unrelated generated-file churn.
+
+Final local checks: the repository's `npm run check` completed successfully (server and client TypeScript). `npm audit --omit=dev --audit-level=high` completed with zero vulnerabilities. The incremental CodeRabbit request was accepted but then rate-limited (the service reported 44 minutes until the next included review); it has not approved the fixes. GitHub Actions remains externally blocked by the confirmed billing lock.
