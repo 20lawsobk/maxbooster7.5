@@ -141,7 +141,7 @@ const faqs = [
       {
         question: "Can I cancel my subscription anytime?",
         answer:
-          "Yes! Monthly and yearly subscriptions can be canceled anytime from the Settings page. Your access continues until the end of your billing period. Lifetime subscriptions are non-refundable.",
+          "Yes! Monthly and yearly subscriptions can be canceled anytime from the Settings page. Your access continues until the end of your billing period. Lifetime access does not renew, and the initial purchase is covered by Max Booster's 90-day money-back guarantee.",
       },
       {
         question: "What payment methods do you accept?",
@@ -156,7 +156,7 @@ const faqs = [
       {
         question: "Do you offer refunds?",
         answer:
-          "Monthly and yearly subscriptions can be canceled for a prorated refund within 7 days of purchase. Lifetime subscriptions are final sale. If you experience technical issues, contact support for assistance.",
+          "Yes. Max Booster offers a 90-day money-back guarantee on the initial purchase of Monthly, Yearly, and Lifetime plans. Request the refund within 90 days of purchase; after the guarantee window, monthly and yearly subscriptions can still be canceled to prevent future renewal charges.",
       },
     ],
   },

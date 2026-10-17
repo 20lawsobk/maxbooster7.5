@@ -16,6 +16,12 @@ import { Logo } from "@/components/ui/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  getSubscriptionAuthAction,
+  normalizeSubscriptionSetupError,
+  parseSubscriptionSetupPayload,
+  readSubscriptionSetupPayload,
+} from "@/lib/subscriptionCheckout";
+import {
   Check,
   ArrowLeft,
   Shield,
@@ -393,6 +399,7 @@ export default function Subscribe() {
 
     setSetupScope(scope);
     setIsLoading(true);
+    setClientSecret("");
     setSetupError(null);
     setClientSecret("");
 
@@ -419,42 +426,22 @@ export default function Subscribe() {
       const data = await intent.request;
       if (activeCheckout.current !== scope) return;
 
-      if (data.code === "STRIPE_NOT_CONFIGURED") {
-        setSetupError({
-          message: "Payment service is temporarily unavailable.",
-          code: "STRIPE_NOT_CONFIGURED",
-          retryable: false,
-        });
+      const parsed = parseSubscriptionSetupPayload(rawData);
+      if (!parsed.ok) {
+        setSetupError(parsed.error);
         return;
       }
 
-      setClientSecret(data.clientSecret);
+      setClientSecret(parsed.clientSecret);
     } catch (error) {
       if (activeCheckout.current !== scope) return;
       const errorData = error instanceof Error ? error : { message: "Failed to set up payment. Please try again." };
 
-      if (errorData.code === "STRIPE_NOT_CONFIGURED") {
-        setSetupError({
-          message:
-            "Payment service is temporarily unavailable. Please try again later.",
-          code: "STRIPE_NOT_CONFIGURED",
-          retryable: false,
-        });
-      } else {
-        setSetupError({
-          message:
-            errorData.message || "Failed to setup payment. Please try again.",
-          code: errorData.code || "SETUP_FAILED",
-          retryable: errorData.retryable ?? true,
-        });
-
-        toast({
-          title: "Setup Failed",
-          description:
-            errorData.message || "Failed to setup payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Setup Failed",
+        description: errorData.message,
+        variant: "destructive",
+      });
     } finally {
       if (activeCheckout.current === scope) setIsLoading(false);
     }
@@ -468,6 +455,7 @@ export default function Subscribe() {
     }
 
     if (!plan) {
+      setupAttemptRef.current += 1;
       navigate("/pricing");
       return;
     }
@@ -482,16 +470,16 @@ export default function Subscribe() {
     createSubscription();
   }, [createSubscription]);
 
-  if (!stripePromise) {
-    return <StripeUnavailableFallback />;
-  }
-
-  if (!user) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (!stripePromise) {
+    return <StripeUnavailableFallback />;
   }
 
   if (!plan) {
@@ -533,7 +521,10 @@ export default function Subscribe() {
   }
 
   if (setupError) {
-    if (setupError.code === "STRIPE_NOT_CONFIGURED") {
+    if (
+      setupError.code === "STRIPE_NOT_CONFIGURED" ||
+      setupError.code === "SERVICE_UNAVAILABLE"
+    ) {
       return <StripeUnavailableFallback />;
     }
 

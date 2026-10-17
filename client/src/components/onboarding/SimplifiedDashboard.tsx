@@ -4,37 +4,62 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Music, Share2, Target, Play, Upload, Sparkles, Zap, Crown, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import { formatDashboardTimestamp } from "@/components/dashboard/dashboardDataContracts";
+import {
+  ArrowRight,
+  CheckCircle,
+  Crown,
+  Loader2,
+  Music,
+  Play,
+  Share2,
+  Sparkles,
+  Target,
+  Upload,
+  Zap,
+} from "lucide-react";
 
 interface SimplifiedDashboardProps {
   onUpgrade: () => void;
   userLevel: "beginner" | "intermediate" | "advanced" | string;
+  upgrading?: boolean;
+}
+
+interface SimplifiedDashboardData {
+  stats?: {
+    totalTracks?: number | null;
+    activeDistributions?: number | null;
+    activeSocialAccounts?: number | null;
+  };
+  recentActivity?: Array<{
+    id?: string | number;
+    type?: string;
+    title: string;
+    description: string;
+    timestamp: string | number | Date;
+  }>;
 }
 
 export default function SimplifiedDashboard({
   onUpgrade,
   userLevel,
+  upgrading = false,
 }: SimplifiedDashboardProps) {
   const [, setLocation] = useLocation();
-  const { data: dashboardData, isLoading, error, refetch } = useQuery<{
-    stats: {
-      totalTracks: number;
-      activeDistributions: number;
-      activeSocialAccounts: number;
-    };
-    recentActivity: Array<{
-      id: string;
-      title: string;
-      description: string;
-      timestamp: string;
-    }>;
-  }>({ queryKey: ["/api/dashboard/comprehensive"] });
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<SimplifiedDashboardData>({
+    queryKey: ["/api/dashboard/comprehensive"],
+  });
 
   const quickActions = [
     {
       id: "upload-music",
       title: "Upload Your Music",
-      description: "Get your music on all major platforms",
+      description: "Prepare and distribute your music",
       icon: <Upload className="w-6 h-6" />,
       color: "bg-blue-500",
       href: "/distribution",
@@ -42,7 +67,7 @@ export default function SimplifiedDashboard({
     {
       id: "create-beat",
       title: "Create a Beat",
-      description: "Use our AI-powered studio",
+      description: "Open the production studio",
       icon: <Music className="w-6 h-6" />,
       color: "bg-purple-500",
       href: "/studio",
@@ -50,7 +75,7 @@ export default function SimplifiedDashboard({
     {
       id: "share-music",
       title: "Share on Social",
-      description: "AI-optimized social media posts",
+      description: "Create and manage social drafts",
       icon: <Share2 className="w-6 h-6" />,
       color: "bg-pink-500",
       href: "/social-media",
@@ -58,7 +83,7 @@ export default function SimplifiedDashboard({
     {
       id: "boost-reach",
       title: "Boost Your Reach",
-      description: "Zero-cost AI advertising",
+      description: "Plan and manage advertising campaigns",
       icon: <Target className="w-6 h-6" />,
       color: "bg-red-500",
       href: "/advertising",
@@ -70,7 +95,7 @@ export default function SimplifiedDashboard({
     {
       id: "upload-first-track",
       title: "Upload Your First Track",
-      description: "Get your music on streaming platforms",
+      description: "Start your first music project",
       completed: (stats?.totalTracks ?? 0) > 0,
       points: 25,
       href: "/studio",
@@ -86,7 +111,7 @@ export default function SimplifiedDashboard({
     {
       id: "connect-social",
       title: "Connect Social Media",
-      description: "Link your social media accounts",
+      description: "Link a supported social account",
       completed: (stats?.activeSocialAccounts ?? 0) > 0,
       points: 15,
       href: "/settings?tab=connected-accounts",
@@ -98,6 +123,7 @@ export default function SimplifiedDashboard({
     .filter((task) => task.completed)
     .reduce((sum, task) => sum + task.points, 0);
   const progressPercentage = (earnedPoints / (totalPoints || 1)) * 100;
+  const recentActivity = dashboardData?.recentActivity ?? [];
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -116,7 +142,10 @@ export default function SimplifiedDashboard({
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <div className="max-w-7xl mx-auto flex justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin" aria-label="Loading dashboard" />
+          <Loader2
+            className="w-8 h-8 animate-spin"
+            aria-label="Loading dashboard"
+          />
         </div>
       </div>
     );
@@ -127,8 +156,16 @@ export default function SimplifiedDashboard({
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
         <Card className="max-w-lg mx-auto mt-24">
           <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">Unable to load your dashboard.</p>
-            <Button className="mt-4" variant="outline" onClick={() => refetch()}>Retry</Button>
+            <p className="text-sm text-muted-foreground">
+              Unable to load your dashboard.
+            </p>
+            <Button
+              className="mt-4"
+              variant="outline"
+              onClick={() => void refetch()}
+            >
+              Retry
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -138,8 +175,7 @@ export default function SimplifiedDashboard({
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               Welcome to Max Booster
@@ -148,16 +184,15 @@ export default function SimplifiedDashboard({
               Your simplified music career management dashboard
             </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Badge className={getLevelColor(userLevel)}>{userLevel} Mode</Badge>
-            <Button onClick={onUpgrade} variant="outline">
+            <Button onClick={onUpgrade} variant="outline" disabled={upgrading}>
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade to Full Mode
+              {upgrading ? "Enabling Full Mode…" : "Upgrade to Full Mode"}
             </Button>
           </div>
         </div>
 
-        {/* Progress Overview */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -187,7 +222,6 @@ export default function SimplifiedDashboard({
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -199,10 +233,7 @@ export default function SimplifiedDashboard({
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {quickActions.map((action) => (
-                    <Card
-                      key={action.id}
-                      className="hover:shadow-md transition-shadow cursor-pointer"
-                    >
+                    <Card key={action.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start space-x-3">
                           <div
@@ -234,13 +265,12 @@ export default function SimplifiedDashboard({
             </Card>
           </div>
 
-          {/* Getting Started Tasks */}
           <div>
             <Card>
               <CardHeader>
                 <CardTitle>Getting Started</CardTitle>
                 <p className="text-gray-600">
-                  Complete these tasks to unlock features
+                  Complete these tasks to build your setup
                 </p>
               </CardHeader>
               <CardContent>
@@ -292,32 +322,44 @@ export default function SimplifiedDashboard({
           </div>
         </div>
 
-        {/* Recent Activity */}
         <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            {dashboardData.recentActivity.length ? (
+            {recentActivity.length ? (
               <div className="space-y-3">
-                {dashboardData.recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="p-2 bg-blue-500 rounded-lg text-white"><Play className="w-4 h-4" /></div>
+                {recentActivity.map((activity, index) => (
+                  <div
+                    key={
+                      activity.id ??
+                      `${activity.type ?? activity.title}-${String(activity.timestamp)}-${index}`
+                    }
+                    className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg"
+                  >
+                    <div className="p-2 bg-blue-500 rounded-lg text-white">
+                      <Play className="w-4 h-4" />
+                    </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{activity.title}</p>
-                      <p className="text-xs text-gray-600">{activity.description}</p>
+                      <p className="text-xs text-gray-600">
+                        {activity.description}
+                      </p>
                     </div>
-                    <Badge variant="secondary">{new Date(activity.timestamp).toLocaleDateString()}</Badge>
+                    <Badge variant="secondary">
+                      {formatDashboardTimestamp(activity.timestamp)}
+                    </Badge>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-center text-sm text-muted-foreground">No activity yet. Create a project to get started.</p>
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No activity yet. Create a project to get started.
+              </p>
             )}
           </CardContent>
         </Card>
 
-        {/* Tips and Tricks */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -332,15 +374,15 @@ export default function SimplifiedDashboard({
                   🎵 Start with Distribution
                 </h4>
                 <p className="text-xs text-gray-600">
-                  Upload your music first to get it on all major platforms
+                  Upload your music and prepare a release before submitting it
+                  to distribution partners.
                 </p>
               </div>
               <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">
-                  🤖 Use AI Features
-                </h4>
+                <h4 className="font-semibold text-sm mb-2">🤖 Review AI Drafts</h4>
                 <p className="text-xs text-gray-600">
-                  Let AI optimize your social media posts and advertising
+                  Keep AI-generated social content as drafts until you have
+                  reviewed and approved it.
                 </p>
               </div>
               <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
@@ -348,7 +390,8 @@ export default function SimplifiedDashboard({
                   📈 Track Your Progress
                 </h4>
                 <p className="text-xs text-gray-600">
-                  Monitor your analytics to see what's working
+                  Use reported analytics to understand which actions are
+                  producing measurable results.
                 </p>
               </div>
             </div>

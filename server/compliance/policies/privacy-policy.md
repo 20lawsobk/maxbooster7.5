@@ -287,7 +287,7 @@ Max Booster is not directed to children under 16. We do not knowingly collect pe
 
 If you believe a child under 16 has provided us with personal data, please contact us at privacy@maxbooster.com, and we will delete such information.
 
-**Parental Consent:** Users aged 13-15 require parental consent in compliance with COPPA (US) and GDPR (EU).
+**Minimum account age:** A person must be at least 16 years old to create a new account. Parental consent does not lower this minimum; existing accounts are not automatically invalidated by this registration rule.
 
 ## 10. Cookies and Tracking Technologies
 

@@ -17,7 +17,10 @@ const useSSL =
 
 export default defineConfig({
   out: "./migrations",
-  schema: "./shared/schema.ts",
+  schema: [
+    "./shared/schema.ts",
+    "./shared/registration-consent-schema.ts",
+  ],
   dialect: "postgresql",
   dbCredentials: {
     url: dbUrl,

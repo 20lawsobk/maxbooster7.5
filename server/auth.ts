@@ -1,16 +1,32 @@
 import type { Request, Response, NextFunction } from "express";
 import { enforceAssurance, markVerifiedJwtFactor } from "./middleware/authAssurance.js";
+import { hasPaidFeatureAccess } from "./middleware/auth.js";
+import { normalizeProjectDetailsUpdate } from "./lib/projectPageContracts.js";
 import { jwtAuthService } from "./services/jwtAuthService";
 import { storage } from "./storage";
 import { logger } from "./logger.js";
 import { getRedisClient } from "./lib/redisConnectionFactory.js";
 
-// Brute-force guard for JWT verification — counts ONLY failed attempts so
-// legitimate high-traffic clients with valid tokens are never throttled.
-// 30 failures per 15min per (IP + token-prefix) is plenty to stop guessing
-// while leaving normal usage untouched.
 const JWT_RL_WINDOW_MS = 15 * 60 * 1000;
 const JWT_RL_MAX_FAILURES = 30;
+
+const PAID_API_PATHS = new Set([
+  "/api/dashboard/comprehensive",
+  "/api/projects",
+  "/api/ai/insights",
+  "/api/ai/optimize-content",
+]);
+const PAID_API_PREFIXES = ["/api/studio", "/api/songwriting"];
+const DIRECT_PROJECT_UPDATE_RE = /^\/api\/studio\/projects\/[^/]+$/;
+
+function isPaidApiPath(path: string): boolean {
+  return (
+    PAID_API_PATHS.has(path) ||
+    PAID_API_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
+  );
+}
 
 const localRl = new Map<string, { count: number; resetAt: number }>();
 const localRlPrune = () => {
@@ -23,7 +39,7 @@ async function isJwtBlocked(key: string): Promise<boolean> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const raw = await (client as any).get(redisKey) as string | null;
+      const raw = (await (client as any).get(redisKey)) as string | null;
       const count = raw ? parseInt(raw, 10) : 0;
       return count >= JWT_RL_MAX_FAILURES;
     }
@@ -40,7 +56,7 @@ async function recordJwtFailure(key: string): Promise<void> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const count = await (client as any).incr(redisKey) as number;
+      const count = (await (client as any).incr(redisKey)) as number;
       if (count === 1)
         await (client as any).pexpire(redisKey, JWT_RL_WINDOW_MS);
       return;
@@ -70,17 +86,13 @@ export const verifyJWT = async (
   }
 
   const token = authHeader?.substring(7);
-
-  // Block brute-force only — gate by accumulated failures, not total traffic.
   const ip = (req.ip || req.socket?.remoteAddress || "unknown").toString();
   const tokenPrefix = token?.slice(0, 16);
   const rlKey = `${ip}:${tokenPrefix}`;
   if (await isJwtBlocked(rlKey)) {
-    return res
-      .status(429)
-      .json({
-        message: "Too many failed JWT verification attempts. Try again later.",
-      });
+    return res.status(429).json({
+      message: "Too many failed JWT verification attempts. Try again later.",
+    });
   }
 
   try {
@@ -113,13 +125,16 @@ export const requireAuthDual = async (
   res: Response,
   next: NextFunction,
 ) => {
-  // First check for passport?.js session authentication (req.isAuthenticated checks req.user)
-  if (req.isAuthenticated && req.isAuthenticated() && req.user && !req.headers.authorization) {
+  if (
+    req.isAuthenticated &&
+    req.isAuthenticated() &&
+    req.user &&
+    !req.headers.authorization
+  ) {
     if (enforceAssurance(req, res)) return next();
     return;
   }
 
-  // Fallback: check for custom session userId
   if (req.session?.userId && !req.headers.authorization) {
     try {
       const user = await storage.getUser(req.session.userId);
@@ -134,7 +149,6 @@ export const requireAuthDual = async (
     }
   }
 
-  // Final fallback: try JWT authentication
   return verifyJWT(req, res, next);
 };
 
@@ -156,24 +170,45 @@ export const requireAdmin = async (
   if (enforceAssurance(req, res)) next();
 };
 
-// Alias for backwards compatibility
 export const requireAuth = requireAuthDual;
 
-// Block write operations for demo users (read-only mode)
-// NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
-// Use req.originalUrl for full-path matching or paths without the /api prefix.
 export const blockDemoWrite = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if ((req.user as { email?: string } | undefined)?.email !== "demo@maxbooster.ai") {
+  const fullPath =
+    req.originalUrl.split("?")[0].replace(/\/+$/, "") || "/";
+
+  if (
+    req.user &&
+    isPaidApiPath(fullPath) &&
+    !hasPaidFeatureAccess(req.user)
+  ) {
+    return res.status(403).json({
+      error: "Paid subscription required",
+      code: "PAID_SUBSCRIPTION_REQUIRED",
+      upgradeUrl: "/pricing",
+    });
+  }
+
+  if (req.method === "PATCH" && DIRECT_PROJECT_UPDATE_RE.test(fullPath)) {
+    const normalized = normalizeProjectDetailsUpdate(req.body);
+    if (!normalized.ok) {
+      return res.status(400).json({ error: normalized.message });
+    }
+    req.body = normalized.value;
+  }
+
+  if (
+    (req.user as { email?: string } | undefined)?.email !==
+    "demo@maxbooster.ai"
+  ) {
     return next();
   }
 
   const writeMethods = ["POST", "PUT", "PATCH", "DELETE"];
   if (writeMethods?.includes(req.method)) {
-    const fullPath = req.originalUrl.split("?")[0];
     const allowedDemoPaths = [
       "/api/auth/logout",
       "/api/auth/demo",

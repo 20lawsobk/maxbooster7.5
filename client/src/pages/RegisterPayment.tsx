@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
@@ -25,18 +26,19 @@ const plans = {
     period: "month",
     description: "Perfect for getting started",
     features: [
-      "Complete AI-Powered Studio Access",
-      "Unlimited Active Projects",
+      "Professional AI Music Studio (DAW)",
+      "Autonomous Social Media Autopilot (24/7)",
+      "AI-Enhanced Organic Advertisement Autopilot",
+      "Beat Marketplace & Licensing",
       "Professional Analytics Dashboard",
-      "Advanced Social Media Management",
-      "Distribution to All Major Platforms",
-      "AI Mastering & Audio Enhancement",
-      "Royalty Tracking & Analytics",
-      "Beat Marketplace Access",
-      "Custom Branding & White-label",
-      "Cloud Storage (100GB)",
-      "Priority Email & Chat Support",
-      "Early Access to New Features",
+      "Distribution to 150+ Platforms",
+      "AI Mixing & Mastering",
+      "Royalty Tracking & Splits",
+      "Email Marketing System",
+      "Unlimited Active Projects",
+      "Premium Content Library",
+      "Cloud Storage (50GB)",
+      "Email Support",
     ],
   },
   yearly: {
@@ -48,20 +50,11 @@ const plans = {
     description: "Best value for serious artists",
     popular: true,
     features: [
-      "Complete AI-Powered Studio Access",
-      "Unlimited Active Projects",
-      "Professional Analytics Dashboard",
-      "Advanced Social Media Management",
-      "Distribution to All Major Platforms",
-      "AI Mastering & Audio Enhancement",
-      "Royalty Tracking & Analytics",
-      "Beat Marketplace Access",
-      "Custom Branding & White-label",
-      "Cloud Storage (500GB)",
-      "Priority Email & Chat Support",
+      "Everything in Monthly",
+      "Priority Support (Email & Chat)",
+      "Cloud Storage (100GB)",
       "Early Access to New Features",
-      "API Access & Integrations",
-      "Premium Content Library",
+      "Advanced Analytics",
     ],
   },
   lifetime: {
@@ -71,25 +64,23 @@ const plans = {
     period: "once",
     description: "Complete access forever",
     features: [
-      "Complete AI-Powered Studio Access",
-      "Unlimited Active Projects",
-      "Professional Analytics Dashboard",
-      "Advanced Social Media Management",
-      "Distribution to All Major Platforms",
-      "AI Mastering & Audio Enhancement",
-      "Royalty Tracking & Analytics",
-      "Beat Marketplace Access",
-      "Custom Branding & White-label",
+      "Everything in Yearly",
+      "Lifetime Access - No Recurring Fees",
       "Unlimited Cloud Storage",
       "Premium Support (Phone & Video)",
-      "Early Access to New Features",
-      "API Access & Integrations",
-      "Premium Content Library",
       "Personal Account Manager",
       "Custom Enterprise Integrations",
+      "Early Access to Beta Features",
     ],
   },
-};
+} as const;
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function RegisterPayment() {
   const { tier } = useParams<{ tier: string }>();
@@ -100,6 +91,8 @@ export default function RegisterPayment() {
     email: "",
     birthdate: "",
   });
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
@@ -115,7 +108,7 @@ export default function RegisterPayment() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Plan Not Found
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               The subscription plan you selected doesn't exist.
             </p>
             <Link href="/pricing">
@@ -156,7 +149,6 @@ export default function RegisterPayment() {
       const eligibilityError = getAccountEligibilityError(formData.birthdate);
       if (eligibilityError) throw new Error(eligibilityError);
 
-      // Create Stripe checkout session
       const response = await apiRequest(
         "POST",
         "/api/create-checkout-session",
@@ -168,6 +160,8 @@ export default function RegisterPayment() {
           birthdate: formData.birthdate,
         },
       );
+      const payload = await readRegistrationCheckoutPayload(response);
+      const checkoutUrl = getStripeCheckoutUrl(payload);
 
       const data = await response.json();
 
@@ -188,7 +182,7 @@ export default function RegisterPayment() {
           ? error.message
           : "Something went wrong. Please try again.";
       toast({
-        title: "Error",
+        title: "Unable to Continue",
         description: errorMessage,
         variant: "destructive",
       });
@@ -198,16 +192,13 @@ export default function RegisterPayment() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      {/* Navigation */}
       <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -221,26 +212,23 @@ export default function RegisterPayment() {
                 <Logo size="sm" />
               </Button>
             </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/login">
-                <Button variant="ghost" data-testid="button-sign-in">
-                  Sign In
-                </Button>
-              </Link>
-            </div>
+            <Link href="/login">
+              <Button variant="ghost" data-testid="button-sign-in">
+                Sign In
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Plan Summary */}
           <div className="order-2 lg:order-1">
             <Card
-              className={`${plan.popular ? "border-primary shadow-lg" : "shadow-md"}`}
+              className={`${"popular" in plan && plan.popular ? "border-primary shadow-lg" : "shadow-md"}`}
             >
               <CardHeader className="text-center">
-                {plan.popular && (
+                {"popular" in plan && plan.popular && (
                   <div className="mb-4">
                     <span className="bg-primary text-white text-sm px-3 py-1 rounded-full">
                       Most Popular
@@ -274,10 +262,10 @@ export default function RegisterPayment() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start space-x-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start space-x-3">
                       <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mt-0.5 flex-shrink-0">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
                       </div>
                       <span className="text-gray-700 dark:text-gray-200 text-sm">
                         {feature}
@@ -295,14 +283,13 @@ export default function RegisterPayment() {
                   </div>
                   <p className="text-blue-700 dark:text-blue-400 text-sm mt-1">
                     If you're not completely satisfied, we'll refund your entire
-                    payment, no questions asked.
+                    payment within 90 days of the initial purchase.
                   </p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Registration Form */}
           <div className="order-1 lg:order-2">
             <Card>
               <CardHeader className="text-center">
@@ -328,6 +315,9 @@ export default function RegisterPayment() {
                       placeholder="Choose a username"
                       value={formData.username}
                       onChange={handleInputChange}
+                      minLength={3}
+                      maxLength={30}
+                      pattern="[A-Za-z0-9_]{3,30}"
                       required
                       minLength={3}
                       maxLength={30}
@@ -335,10 +325,15 @@ export default function RegisterPayment() {
                       autoComplete="username"
                       data-testid="input-username"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      3-30 letters, numbers, or underscores.
+                    </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="artistName">Artist / Producer Name (optional)</Label>
+                    <Label htmlFor="artistName">
+                      Artist / Producer Name (optional)
+                    </Label>
                     <Input
                       id="artistName"
                       name="artistName"
@@ -346,6 +341,7 @@ export default function RegisterPayment() {
                       placeholder="Your stage name or producer alias"
                       value={formData.artistName}
                       onChange={handleInputChange}
+                      maxLength={100}
                       autoComplete="nickname"
                       maxLength={100}
                       data-testid="input-artist-name"
@@ -361,6 +357,7 @@ export default function RegisterPayment() {
                       placeholder="Enter your email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      maxLength={254}
                       required
                       autoComplete="email"
                       data-testid="input-email"
@@ -375,7 +372,7 @@ export default function RegisterPayment() {
                       type="date"
                       value={formData.birthdate}
                       onChange={handleInputChange}
-                      max={new Date().toISOString().split("T")[0]}
+                      max={latestEligibleBirthdate}
                       required
                       autoComplete="bday"
                       data-testid="input-birthdate"
@@ -386,6 +383,59 @@ export default function RegisterPayment() {
                     </p>
                   </div>
 
+                  <div className="space-y-3 rounded-lg border p-4">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="checkout-terms"
+                        checked={tosAccepted}
+                        onCheckedChange={(checked) =>
+                          setTosAccepted(checked === true)
+                        }
+                        data-testid="checkbox-checkout-terms"
+                      />
+                      <Label
+                        htmlFor="checkout-terms"
+                        className="text-sm leading-relaxed font-normal"
+                      >
+                        I agree to the{" "}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          Terms of Service
+                        </a>
+                        .
+                      </Label>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="checkout-privacy"
+                        checked={privacyAccepted}
+                        onCheckedChange={(checked) =>
+                          setPrivacyAccepted(checked === true)
+                        }
+                        data-testid="checkbox-checkout-privacy"
+                      />
+                      <Label
+                        htmlFor="checkout-privacy"
+                        className="text-sm leading-relaxed font-normal"
+                      >
+                        I acknowledge the{" "}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          Privacy Policy
+                        </a>
+                        .
+                      </Label>
+                    </div>
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full py-3 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
@@ -394,20 +444,20 @@ export default function RegisterPayment() {
                     data-testid="button-continue-to-payment"
                   >
                     {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                        <span>Processing...</span>
-                      </div>
+                      <span className="flex items-center space-x-2">
+                        <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                        <span>Preparing Secure Payment...</span>
+                      </span>
                     ) : (
-                      <div className="flex items-center space-x-2">
+                      <span className="flex items-center space-x-2">
                         <CreditCard className="h-5 w-5" />
                         <span>Continue to Secure Payment</span>
-                      </div>
+                      </span>
                     )}
                   </Button>
                 </form>
 
-                <div className="text-center text-xs text-gray-500 space-y-2">
+                <div className="text-center text-xs text-gray-500 dark:text-gray-400 space-y-2">
                   <p>Secure payment powered by Stripe</p>
                   <p>
                     By continuing, you agree to our <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.

@@ -1,10 +1,19 @@
-// @ts-nocheck
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  buildFullModeUpgradePayload,
+  getOnboardingUserLevel,
+  parseOnboardingUpdateResponse,
+  prefersSimplifiedDashboard,
+} from "@/lib/onboardingMode";
+import {
+  hasDashboardPaidAccess,
+  readDashboardJson,
+} from "@/components/dashboard/dashboardDataContracts";
 import SimplifiedDashboardComponent from "@/components/onboarding/SimplifiedDashboard";
 import { AppLayout } from "@/components/layout/AppLayout";
 
@@ -18,10 +27,9 @@ export default function SimplifiedDashboard() {
       ? user.onboardingData
       : {};
 
-  const { data: onboardingStatus } = useQuery({
-    queryKey: ["/api/auth/onboarding-status"],
-    enabled: !!user,
-  });
+  const hasAccess = user ? hasDashboardPaidAccess(user) : false;
+  const userLevel = getOnboardingUserLevel(user?.onboardingData);
+  const preferSimplified = prefersSimplifiedDashboard(user?.onboardingData);
 
   const upgradeToFullModeMutation = useMutation({
     mutationFn: async () => {
@@ -52,10 +60,11 @@ export default function SimplifiedDashboard() {
         description: "Your dashboard preference has been saved. Your subscription is unchanged.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Upgrade Failed",
-        description: "Failed to upgrade to full mode. Please try again.",
+        description:
+          error.message || "Failed to enable full mode. Please try again.",
         variant: "destructive",
       });
     },
@@ -74,25 +83,24 @@ export default function SimplifiedDashboard() {
     }
   }, [onboardingStatus, onboardingData.preferSimplifiedView, setLocation]);
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <div
+          className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
+          aria-label="Loading dashboard"
+          role="status"
+        />
       </div>
     );
   }
 
-  const storedLevel = onboardingData.experienceLevel ?? onboardingData.userLevel;
-  const userLevel =
-    storedLevel === "intermediate" || storedLevel === "advanced"
-      ? storedLevel
-      : "beginner";
-
   return (
     <AppLayout>
       <SimplifiedDashboardComponent
-        onUpgrade={handleUpgrade}
+        onUpgrade={() => upgradeToFullModeMutation.mutate()}
         userLevel={userLevel}
+        upgrading={upgradeToFullModeMutation.isPending}
       />
     </AppLayout>
   );

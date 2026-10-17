@@ -7,20 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, ApiError } from "@/lib/queryClient";
+import {
+  parseRegistrationCompletionPayload,
+  parseVerificationPayload,
+  readRegistrationCompletionPayload,
+  validateCheckoutSessionId,
+  validateRegistrationPassword,
+} from "@/lib/registrationCompletion";
 
 export default function RegisterSuccess() {
   const [, navigate] = useLocation();
-  const [searchParams] = useState(
+  const searchParams = useMemo(
     () => new URLSearchParams(window.location.search),
+    [],
   );
-  const sessionId = searchParams.get("session_id");
+  const rawSessionId = searchParams.get("session_id");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [tosAccepted, setTosAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -54,10 +60,7 @@ export default function RegisterSuccess() {
     setPaymentValid(false);
     setVerificationError("");
 
-    // Do not show the account-creation form until the server has verified this
-    // Checkout session with Stripe. The final registration endpoint repeats this
-    // check to protect against a payment status change between these requests.
-    const verifyPayment = async () => {
+    void (async () => {
       try {
         if (!verificationRequest.current) {
           verificationRequest.current = (async () => {
@@ -72,19 +75,19 @@ export default function RegisterSuccess() {
           setIsVerifying(false);
         }
       } catch (error) {
-        if (!cancelled) {
-          setPaymentValid(false);
-          setVerificationError(
-            error instanceof Error
+        if (cancelled) return;
+        const message =
+          error instanceof ApiError
+            ? error.userMessage || error.message
+            : error instanceof Error
               ? error.message
-              : "Unable to verify your payment. Please try again.",
-          );
-          setIsVerifying(false);
-        }
+              : "Unable to verify your payment. Please try again.";
+        setPaymentValid(false);
+        setVerificationError(message);
+        setIsVerifying(false);
       }
-    };
+    })();
 
-    verifyPayment();
     return () => {
       cancelled = true;
     };
@@ -99,9 +102,8 @@ export default function RegisterSuccess() {
     setFormError("");
 
     try {
-      if (password !== confirmPassword) {
-        throw new Error("Passwords do not match");
-      }
+      const sessionId = validateCheckoutSessionId(rawSessionId);
+      validateRegistrationPassword(password, confirmPassword);
 
       if (password.length < 8) {
         throw new Error("Password must be at least 8 characters long");
@@ -141,9 +143,9 @@ export default function RegisterSuccess() {
           ? error.message
           : "Something went wrong. Please try again.";
       toast({
-        title: "Account Creation Failed",
-        description: errorMessage,
-        variant: "destructive",
+        title: "Welcome to Max Booster!",
+        description:
+          "Your paid account is complete and your registration preferences were saved.",
       });
       setFormError(errorMessage);
     } finally {
@@ -152,7 +154,7 @@ export default function RegisterSuccess() {
     }
   };
 
-  if (isVerifying) {
+  if (authLoading || isVerifying) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -161,8 +163,8 @@ export default function RegisterSuccess() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               Verifying Payment...
             </h2>
-            <p className="text-gray-600">
-              Please wait while we confirm your payment.
+            <p className="text-gray-600 dark:text-gray-300">
+              Please wait while we confirm your Stripe payment session.
             </p>
           </CardContent>
         </Card>
@@ -175,6 +177,7 @@ export default function RegisterSuccess() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Payment Verification Failed
             </h1>
@@ -202,13 +205,10 @@ export default function RegisterSuccess() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      {/* Navigation */}
       <nav className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Logo size="sm" />
-            </div>
+          <div className="flex items-center h-16">
+            <Logo size="sm" />
           </div>
         </div>
       </nav>
@@ -216,15 +216,15 @@ export default function RegisterSuccess() {
       <div className="max-w-md mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Payment Successful!
+            <CardTitle className="text-2xl font-bold">
+              Payment Verified
             </CardTitle>
-            <p className="text-gray-600 mt-2">
-              Your payment has been processed successfully. Now create your
-              password to complete your account setup.
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Create your password to finish your Max Booster account. Your
+              subscription access is finalized with this registration step.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -237,9 +237,9 @@ export default function RegisterSuccess() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a secure password"
+                    placeholder="8-72 characters"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(event) => setPassword(event.target.value)}
                     required
                     minLength={8}
                     autoComplete="new-password"
@@ -249,6 +249,7 @@ export default function RegisterSuccess() {
                     type="button"
                     variant="ghost"
                     size="sm"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
@@ -273,7 +274,7 @@ export default function RegisterSuccess() {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
                     required
                     minLength={8}
                     autoComplete="new-password"
@@ -283,6 +284,11 @@ export default function RegisterSuccess() {
                     type="button"
                     variant="ghost"
                     size="sm"
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide password confirmation"
+                        : "Show password confirmation"
+                    }
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
@@ -381,10 +387,10 @@ export default function RegisterSuccess() {
                 data-testid="button-complete-registration"
               >
                 {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  <span className="flex items-center space-x-2">
+                    <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                     <span>Creating Account...</span>
-                  </div>
+                  </span>
                 ) : (
                   "Complete Registration"
                 )}
