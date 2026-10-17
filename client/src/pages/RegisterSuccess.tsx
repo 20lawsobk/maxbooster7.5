@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest, ApiError } from "@/lib/queryClient";
 import {
@@ -25,9 +25,12 @@ export default function RegisterSuccess() {
     [],
   );
   const rawSessionId = searchParams.get("session_id");
+  const sessionId = rawSessionId?.trim() ?? "";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +46,7 @@ export default function RegisterSuccess() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!sessionId || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+    if (!sessionId || sessionId.length > 255 || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
       setVerificationError("No valid payment session found. If you already paid, contact support before purchasing again.");
       setIsVerifying(false);
       return;
@@ -65,8 +68,12 @@ export default function RegisterSuccess() {
         if (!verificationRequest.current) {
           verificationRequest.current = (async () => {
             const response = await apiRequest("POST", "/api/verify-checkout-session", { sessionId });
-            const data = await response.json();
-            if (data.verified !== true) throw new Error("Payment could not be verified. Please contact support before purchasing again.");
+            const data = await readRegistrationCompletionPayload(response);
+            try {
+              parseVerificationPayload(data);
+            } catch {
+              throw new Error("Payment could not be verified. Please contact support before purchasing again.");
+            }
           })();
         }
         await verificationRequest.current;
@@ -105,10 +112,6 @@ export default function RegisterSuccess() {
       const sessionId = validateCheckoutSessionId(rawSessionId);
       validateRegistrationPassword(password, confirmPassword);
 
-      if (password.length < 8) {
-        throw new Error("Password must be at least 8 characters long");
-      }
-
       if (!tosAccepted) {
         throw new Error("You must accept the Terms of Service to continue");
       }
@@ -126,11 +129,9 @@ export default function RegisterSuccess() {
         const response = await apiRequest("POST", "/api/register-after-payment", {
           sessionId, password, tosAccepted, privacyAccepted, marketingConsent,
         });
-        const data = await response.json();
-        if (typeof data.user?.id !== "string" || !data.user.id) {
-          throw new Error("Account response could not be verified. Please sign in before trying again.");
-        }
-        return { response, data: { ...data, id: data.user.id } };
+        const payload = await readRegistrationCompletionPayload(response);
+        const { userId } = parseRegistrationCompletionPayload(payload);
+        return { response, data: { ...(payload as Record<string, unknown>), id: userId } };
       });
         toast({
           title: "Welcome to Max Booster!",
@@ -143,9 +144,9 @@ export default function RegisterSuccess() {
           ? error.message
           : "Something went wrong. Please try again.";
       toast({
-        title: "Welcome to Max Booster!",
-        description:
-          "Your paid account is complete and your registration preferences were saved.",
+        title: "Registration needs attention",
+        description: errorMessage,
+        variant: "destructive",
       });
       setFormError(errorMessage);
     } finally {
@@ -252,7 +253,6 @@ export default function RegisterSuccess() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
                     data-testid="button-toggle-password"
                   >
@@ -291,7 +291,6 @@ export default function RegisterSuccess() {
                     }
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                     aria-pressed={showConfirmPassword}
                     data-testid="button-toggle-confirm-password"
                   >

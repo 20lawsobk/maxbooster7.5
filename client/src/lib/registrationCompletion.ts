@@ -1,3 +1,5 @@
+import { getNewPasswordError } from "@shared/passwordPolicy";
+
 export const REGISTRATION_COMPLETION_BODY_TIMEOUT_MS = 10_000;
 const CHECKOUT_SESSION_RE = /^cs_[a-zA-Z0-9_]+$/;
 
@@ -25,12 +27,8 @@ export function validateRegistrationPassword(
   if (password !== confirmPassword) {
     throw new Error("Passwords do not match");
   }
-  if (password.length < 8) {
-    throw new Error("Password must be at least 8 characters long");
-  }
-  if (password.length > 72) {
-    throw new Error("Password must be 72 characters or fewer");
-  }
+  const error = getNewPasswordError(password);
+  if (error) throw new Error(error);
 }
 
 export async function readRegistrationCompletionPayload(

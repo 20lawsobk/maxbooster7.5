@@ -26,10 +26,6 @@ interface RegisterConsentInput {
   marketingConsent?: boolean;
 }
 
-function dateOnly(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export class ConsentService {
   private async insertConsentLog(
     executor: { execute: (query: unknown) => Promise<unknown> },

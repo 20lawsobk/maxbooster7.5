@@ -16,7 +16,6 @@ import { Logo } from "@/components/ui/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  getSubscriptionAuthAction,
   normalizeSubscriptionSetupError,
   parseSubscriptionSetupPayload,
   readSubscriptionSetupPayload,
@@ -401,7 +400,6 @@ export default function Subscribe() {
     setIsLoading(true);
     setClientSecret("");
     setSetupError(null);
-    setClientSecret("");
 
     try {
       let intent = checkoutIntents.current.get(scope);
@@ -414,28 +412,21 @@ export default function Subscribe() {
           const response = await apiRequest("POST", "/api/create-subscription", {
             planName: plan.id,
           }, { headers: { "Idempotency-Key": intent.key } });
-          const data = await response.json();
-          if (typeof data.clientSecret !== "string" || !data.clientSecret.trim()) {
-            throw new Error("The server did not return a valid payment session. Please contact support before starting another purchase.");
-          }
-          return data;
+          const data = await readSubscriptionSetupPayload(response);
+          const parsed = parseSubscriptionSetupPayload(data);
+          if (!parsed.ok) throw Object.assign(new Error(parsed.error.message), parsed.error);
+          return parsed;
         })();
         // Keep the same key on failure; a lost response must not cause a new charge.
         intent.request.catch(() => { intent.request = undefined; });
       }
-      const data = await intent.request;
+      const parsed = await intent.request;
       if (activeCheckout.current !== scope) return;
-
-      const parsed = parseSubscriptionSetupPayload(rawData);
-      if (!parsed.ok) {
-        setSetupError(parsed.error);
-        return;
-      }
-
       setClientSecret(parsed.clientSecret);
     } catch (error) {
       if (activeCheckout.current !== scope) return;
-      const errorData = error instanceof Error ? error : { message: "Failed to set up payment. Please try again." };
+      const errorData = normalizeSubscriptionSetupError(error);
+      setSetupError(errorData);
 
       toast({
         title: "Setup Failed",
@@ -455,7 +446,6 @@ export default function Subscribe() {
     }
 
     if (!plan) {
-      setupAttemptRef.current += 1;
       navigate("/pricing");
       return;
     }

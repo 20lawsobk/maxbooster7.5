@@ -1,18 +1,15 @@
 import { useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  buildFullModeUpgradePayload,
   getOnboardingUserLevel,
-  parseOnboardingUpdateResponse,
   prefersSimplifiedDashboard,
 } from "@/lib/onboardingMode";
 import {
   hasDashboardPaidAccess,
-  readDashboardJson,
 } from "@/components/dashboard/dashboardDataContracts";
 import SimplifiedDashboardComponent from "@/components/onboarding/SimplifiedDashboard";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -22,11 +19,6 @@ export default function SimplifiedDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const onboardingData =
-    user?.onboardingData && typeof user.onboardingData === "object"
-      ? user.onboardingData
-      : {};
-
   const hasAccess = user ? hasDashboardPaidAccess(user) : false;
   const userLevel = getOnboardingUserLevel(user?.onboardingData);
   const preferSimplified = prefersSimplifiedDashboard(user?.onboardingData);
@@ -76,12 +68,11 @@ export default function SimplifiedDashboard() {
 
   useEffect(() => {
     if (
-      onboardingStatus?.hasCompletedOnboarding &&
-      onboardingData.preferSimplifiedView === false
+      user?.onboardingCompleted && !preferSimplified
     ) {
       setLocation("/dashboard");
     }
-  }, [onboardingStatus, onboardingData.preferSimplifiedView, setLocation]);
+  }, [user?.onboardingCompleted, preferSimplified, setLocation]);
 
   if (isLoading) {
     return (
@@ -95,10 +86,12 @@ export default function SimplifiedDashboard() {
     );
   }
 
+  if (!user || !hasAccess) return null;
+
   return (
     <AppLayout>
       <SimplifiedDashboardComponent
-        onUpgrade={() => upgradeToFullModeMutation.mutate()}
+        onUpgrade={handleUpgrade}
         userLevel={userLevel}
         upgrading={upgradeToFullModeMutation.isPending}
       />
