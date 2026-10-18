@@ -2,6 +2,22 @@
 export const MINIMUM_ACCOUNT_AGE = 16;
 export const ACCOUNT_AGE_REQUIREMENT = `You must be at least ${MINIMUM_ACCOUNT_AGE} years old to create an account`;
 
+/** Latest UTC birthdate that satisfies the shared minimum-age policy. */
+export function getLatestEligibleBirthdate(now: Date = new Date()): string {
+  if (Number.isNaN(now.getTime())) {
+    throw new RangeError("Cannot calculate the age boundary from an invalid date");
+  }
+  return new Date(
+    Date.UTC(
+      now.getUTCFullYear() - MINIMUM_ACCOUNT_AGE,
+      now.getUTCMonth(),
+      now.getUTCDate(),
+    ),
+  )
+    .toISOString()
+    .slice(0, 10);
+}
+
 /** Strict date-only calendar parsing; Date's rollover normalization is rejected. */
 export function parseBirthdate(value: unknown): Date | null {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) ||

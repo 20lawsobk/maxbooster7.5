@@ -167,6 +167,17 @@ describe("Registration checkout page", () => {
     expect(h.text()).toContain("90-Day Money-Back Guarantee");
     if (tier === "yearly") expect(h.text()).toContain("$39/month equivalent");
   });
+  it("renders the birthdate limit from the shared age policy and enforces that exact boundary", () => {
+    const h = harness("RegisterPayment");
+    const latestEligibleBirthdate = agePolicy.getLatestEligibleBirthdate();
+    expect(h.find("id", "birthdate").props.max).toBe(latestEligibleBirthdate);
+    expect(agePolicy.getAccountEligibilityError(latestEligibleBirthdate)).toBeUndefined();
+
+    const tooYoungBirthdate = new Date(`${latestEligibleBirthdate}T00:00:00.000Z`);
+    tooYoungBirthdate.setUTCDate(tooYoungBirthdate.getUTCDate() + 1);
+    expect(agePolicy.getAccountEligibilityError(tooYoungBirthdate.toISOString().slice(0, 10)))
+      .toBe(agePolicy.ACCOUNT_AGE_REQUIREMENT);
+  });
   it.each([
     { username: "x" }, { username: "bad name" }, { email: "a@b" },
     { birthdate: "not-a-date" }, { birthdate: "2000-02-31" }, { birthdate: "2999-01-01" }, { birthdate: "2020-01-01" },

@@ -3,6 +3,7 @@ import ts from "typescript";
 import * as projectContracts from "../../client/src/lib/projectsPageContracts";
 import { describe, expect, it, vi } from "vitest";
 import { resolveProjectAudioSource } from "../../client/src/lib/projectsPageContracts";
+import { parseOnboardingUpdateResponse } from "../../client/src/lib/onboardingMode";
 
 const paths = {
   dashboard: "client/src/pages/Dashboard.tsx",
@@ -73,6 +74,7 @@ describe("dashboard and projects page regressions", () => {
       user: { onboardingData: preferences },
       onboardingData: preferences,
       getStoredOnboardingData: (user: any) => user.onboardingData,
+      parseOnboardingUpdateResponse,
     }, true);
     await save();
     expect(apiRequest).toHaveBeenCalledWith("POST", "/api/auth/update-onboarding", {
@@ -94,8 +96,13 @@ describe("dashboard and projects page regressions", () => {
       user: {},
       onboardingData: {},
       getStoredOnboardingData: () => ({}),
+      parseOnboardingUpdateResponse,
     }, true);
-    await expect(save()).rejects.toThrow("preference was not saved");
+    await expect(save()).rejects.toThrow(
+      page === "dashboard"
+        ? "Your dashboard preference was not saved."
+        : "The onboarding update did not complete successfully.",
+    );
   });
 
   it("reads persisted preference data from the authenticated user, not the status-only endpoint", () => {

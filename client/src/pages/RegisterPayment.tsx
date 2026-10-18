@@ -15,7 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest } from "@/lib/queryClient";
-import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError, MINIMUM_ACCOUNT_AGE } from "@shared/agePolicy";
+import {
+  ACCOUNT_AGE_REQUIREMENT,
+  getAccountEligibilityError,
+  getLatestEligibleBirthdate,
+} from "@shared/agePolicy";
 import { getStripeCheckoutUrl, readRegistrationCheckoutPayload } from "@/lib/registrationCheckout";
 
 const plans = {
@@ -89,8 +93,7 @@ export default function RegisterPayment() {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
-  const today = new Date();
-  const latestEligibleBirthdate = `${today.getUTCFullYear() - MINIMUM_ACCOUNT_AGE}-${String(today.getUTCMonth() + 1).padStart(2, "0")}-${String(today.getUTCDate()).padStart(2, "0")}`;
+  const latestEligibleBirthdate = getLatestEligibleBirthdate();
 
   const plan = Object.prototype.hasOwnProperty.call(plans, tier)
     ? plans[tier as keyof typeof plans] : undefined;
