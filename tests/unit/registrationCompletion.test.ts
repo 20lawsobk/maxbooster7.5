@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  isValidCheckoutSessionId,
   parseRegistrationCompletionPayload,
   parseVerificationPayload,
   readRegistrationCompletionPayload,
@@ -21,6 +22,12 @@ describe("registration completion", () => {
       expect(() => validateCheckoutSessionId(sessionId)).toThrow(/Invalid payment session/i);
     },
   );
+
+  it("uses the same bounded checkout-session rule for display and submission", () => {
+    expect(isValidCheckoutSessionId(" cs_unit ")).toBe(true);
+    expect(isValidCheckoutSessionId("cs_bad-value")).toBe(false);
+    expect(isValidCheckoutSessionId(`cs_${"a".repeat(253)}`)).toBe(false);
+  });
 
   it("enforces the backend bcrypt password boundary", () => {
     expect(() => validateRegistrationPassword("1234567", "1234567")).toThrow(

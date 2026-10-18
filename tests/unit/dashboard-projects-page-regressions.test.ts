@@ -178,4 +178,10 @@ describe("dashboard and projects page regressions", () => {
     expect(sources.dashboard).toContain("const countdowns = data ?? []");
     expect(sources.dashboard).not.toContain("data?.countdowns");
   });
+
+  it("persists dashboard mode changes and uses the shared feature-selection handler", () => {
+    expect(sources.dashboard).toContain("onUpgrade={handleUpgradeToFullMode}");
+    expect(sources.dashboard).toContain("onExploreFeature={handleExploreFeature}");
+    expect(sources.dashboard).toContain("onSkip={handleOnboardingSkip}");
+  });
 });

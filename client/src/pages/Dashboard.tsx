@@ -648,7 +648,12 @@ function DashboardContent({ user }: { user: User }) {
           </nav>
         </header>
 
-        <UserOverviewPanel user={user} />
+        <UserOverviewPanel
+          user={{
+            ...user,
+            username: user.username ?? user.firstName ?? "Creator",
+          }}
+        />
         <PowerFeatureSpotlight
           userPersona={
             user.onboardingData &&

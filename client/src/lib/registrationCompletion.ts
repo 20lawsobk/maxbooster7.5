@@ -3,6 +3,15 @@ import { getNewPasswordError } from "@shared/passwordPolicy";
 export const REGISTRATION_COMPLETION_BODY_TIMEOUT_MS = 10_000;
 const CHECKOUT_SESSION_RE = /^cs_[a-zA-Z0-9_]+$/;
 
+export function isValidCheckoutSessionId(value: string | null): boolean {
+  const sessionId = value?.trim() ?? "";
+  return (
+    sessionId.length > 0 &&
+    sessionId.length <= 255 &&
+    CHECKOUT_SESSION_RE.test(sessionId)
+  );
+}
+
 export interface RegistrationCompletionError extends Error {
   code?: string;
   accountCreated?: boolean;
@@ -10,11 +19,7 @@ export interface RegistrationCompletionError extends Error {
 
 export function validateCheckoutSessionId(value: string | null): string {
   const sessionId = value?.trim() ?? "";
-  if (
-    !sessionId ||
-    sessionId.length > 255 ||
-    !CHECKOUT_SESSION_RE.test(sessionId)
-  ) {
+  if (!isValidCheckoutSessionId(sessionId)) {
     throw new Error("Invalid payment session. Please return to pricing and try again.");
   }
   return sessionId;

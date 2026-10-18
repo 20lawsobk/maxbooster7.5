@@ -1,7 +1,29 @@
 export type OnboardingUserLevel = "beginner" | "intermediate" | "advanced";
 
+export interface OnboardingStatusResponse {
+  hasCompletedOnboarding: boolean;
+  currentStep: number;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function parseOnboardingStatusResponse(
+  payload: unknown,
+): OnboardingStatusResponse {
+  if (
+    !isRecord(payload) ||
+    typeof payload.hasCompletedOnboarding !== "boolean" ||
+    !Number.isInteger(payload.currentStep) ||
+    (payload.currentStep as number) < 0
+  ) {
+    throw new Error("The onboarding status response did not match its API contract.");
+  }
+  return {
+    hasCompletedOnboarding: payload.hasCompletedOnboarding,
+    currentStep: payload.currentStep as number,
+  };
 }
 
 export function getOnboardingData(value: unknown): Record<string, unknown> {

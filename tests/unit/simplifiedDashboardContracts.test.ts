@@ -5,6 +5,7 @@ import {
   buildFullModeUpgradePayload,
   getOnboardingUserLevel,
   parseOnboardingUpdateResponse,
+  parseOnboardingStatusResponse,
   prefersSimplifiedDashboard,
 } from "../../client/src/lib/onboardingMode";
 import { normalizeOnboardingUpdateBody } from "../../server/middleware/requestValidation";
@@ -68,6 +69,18 @@ describe("simplified dashboard onboarding mode", () => {
     expect(() => parseOnboardingUpdateResponse({ success: false })).toThrow(
       /did not complete successfully/i,
     );
+  });
+
+  it("validates the authenticated onboarding-status response before redirecting", () => {
+    expect(
+      parseOnboardingStatusResponse({
+        hasCompletedOnboarding: true,
+        currentStep: 4,
+      }),
+    ).toEqual({ hasCompletedOnboarding: true, currentStep: 4 });
+    expect(() =>
+      parseOnboardingStatusResponse({ hasCompletedOnboarding: "yes", currentStep: -1 }),
+    ).toThrow(/onboarding status response/i);
   });
 });
 
@@ -137,6 +150,10 @@ describe("simplified dashboard route contract", () => {
     expect(page).toContain("handleUpgrade");
     expect(page).not.toContain("buildFullModeUpgradePayload");
     expect(page).toContain('queryKey: ["/api/auth/me"]');
+    expect(page).toContain("parseOnboardingUpdateResponse");
+    expect(page).toContain('queryKey: ["/api/auth/onboarding-status"]');
+    expect(page).toContain("enabled: Boolean(user) && !isLoading");
+    expect(page).toContain("!hasAccess");
 
     expect(serverGuard).toContain('"/api/dashboard/comprehensive"');
     expect(serverGuard).toContain('code: "PAID_SUBSCRIPTION_REQUIRED"');

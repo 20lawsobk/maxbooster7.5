@@ -5,8 +5,10 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  getOnboardingData,
   getOnboardingUserLevel,
   prefersSimplifiedDashboard,
+  parseOnboardingStatusResponse,
 } from "@/lib/onboardingMode";
 import {
   hasDashboardPaidAccess,
@@ -20,9 +22,26 @@ export default function SimplifiedDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const onboardingData = getOnboardingData(user?.onboardingData);
+
   const hasAccess = user ? hasDashboardPaidAccess(user) : false;
   const userLevel = getOnboardingUserLevel(user?.onboardingData);
-  const preferSimplified = prefersSimplifiedDashboard(user?.onboardingData);
+  const preferSimplified = prefersSimplifiedDashboard(onboardingData);
+
+  const { data: onboardingStatus } = useQuery({
+    queryKey: ["/api/auth/onboarding-status"],
+    enabled: Boolean(user) && !isLoading,
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/auth/onboarding-status");
+      return parseOnboardingStatusResponse(await readDashboardJson(response));
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoading && user && !hasAccess) {
+      setLocation("/pricing");
+    }
+  }, [isLoading, user, hasAccess, setLocation]);
 
   const { data: onboardingStatus } = useQuery<{ hasCompletedOnboarding: boolean }>({
     queryKey: ["/api/auth/onboarding-status"],
@@ -46,11 +65,7 @@ export default function SimplifiedDashboard() {
           preferSimplifiedView: false,
         },
       });
-      const result = await response.json();
-      if (result?.success !== true) {
-        throw new Error("Your dashboard preference was not saved.");
-      }
-      return result;
+      return parseOnboardingUpdateResponse(await response.json());
     },
     onSuccess: async () => {
       await Promise.all([
@@ -86,7 +101,7 @@ export default function SimplifiedDashboard() {
     ) {
       setLocation("/dashboard");
     }
-  }, [onboardingStatus, preferSimplified, setLocation]);
+  }, [onboardingStatus?.hasCompletedOnboarding, preferSimplified, setLocation]);
 
   if (isLoading) {
     return (

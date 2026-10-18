@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,20 +14,20 @@ import {
   parseRegistrationCompletionPayload,
   parseVerificationPayload,
   readRegistrationCompletionPayload,
+  isValidCheckoutSessionId,
   validateCheckoutSessionId,
   validateRegistrationPassword,
 } from "@/lib/registrationCompletion";
 
 export default function RegisterSuccess() {
   const [, navigate] = useLocation();
-  const searchParams = useMemo(
-    () => new URLSearchParams(window.location.search),
-    [],
-  );
-  const rawSessionId = searchParams.get("session_id");
+  const rawSessionId = new URLSearchParams(window.location.search).get("session_id");
   const sessionId = rawSessionId?.trim() ?? "";
+  const sessionIdIsValid = isValidCheckoutSessionId(rawSessionId);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -46,11 +46,12 @@ export default function RegisterSuccess() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!sessionId || sessionId.length > 255 || !/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+    if (!sessionIdIsValid) {
       setVerificationError("No valid payment session found. If you already paid, contact support before purchasing again.");
       setIsVerifying(false);
       return;
     }
+    const verifiedSessionId = validateCheckoutSessionId(rawSessionId);
 
     // If user is already logged in, redirect to dashboard
     if (user) {
@@ -67,7 +68,9 @@ export default function RegisterSuccess() {
       try {
         if (!verificationRequest.current) {
           verificationRequest.current = (async () => {
-            const response = await apiRequest("POST", "/api/verify-checkout-session", { sessionId });
+            const response = await apiRequest("POST", "/api/verify-checkout-session", {
+              sessionId: verifiedSessionId,
+            });
             const data = await readRegistrationCompletionPayload(response);
             try {
               parseVerificationPayload(data);
@@ -98,18 +101,18 @@ export default function RegisterSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, user?.id, authLoading, navigate, verificationAttempt]);
+  }, [rawSessionId, sessionIdIsValid, user?.id, authLoading, navigate, verificationAttempt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting.current) return;
-    if (!paymentValid || isVerifying || !sessionId || authLoading || user) return;
+    if (!paymentValid || isVerifying || !sessionIdIsValid || authLoading || user) return;
     submitting.current = true;
     setIsLoading(true);
     setFormError("");
 
     try {
-      const sessionId = validateCheckoutSessionId(rawSessionId);
+      const validatedSessionId = validateCheckoutSessionId(rawSessionId);
       validateRegistrationPassword(password, confirmPassword);
 
       if (!tosAccepted) {
@@ -127,17 +130,21 @@ export default function RegisterSuccess() {
       // receipt, for the provider's cleanup + independent /auth/me verification.
       await authenticate(async () => {
         const response = await apiRequest("POST", "/api/register-after-payment", {
-          sessionId, password, tosAccepted, privacyAccepted, marketingConsent,
+          sessionId: validatedSessionId,
+          password,
+          tosAccepted,
+          privacyAccepted,
+          marketingConsent,
         });
         const payload = await readRegistrationCompletionPayload(response);
         const { userId } = parseRegistrationCompletionPayload(payload);
         return { response, data: { ...(payload as Record<string, unknown>), id: userId } };
       });
-        toast({
-          title: "Welcome to Max Booster!",
-          description: "Your account has been created and your sign-in verified.",
-        });
-        navigate("/dashboard");
+      toast({
+        title: "Welcome to Max Booster!",
+        description: "Your account has been created and your sign-in verified.",
+      });
+      navigate("/dashboard");
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -185,7 +192,7 @@ export default function RegisterSuccess() {
             <p role="alert" className="text-gray-600 mb-6">
               {verificationError || "We couldn't verify your payment. Please try again."}
             </p>
-            {sessionId && /^cs_[A-Za-z0-9_]+$/.test(sessionId) && (
+            {sessionId && sessionIdIsValid && (
               <Button className="mb-3" onClick={() => {
                 verificationRequest.current = null;
                 setVerificationAttempt(attempt => attempt + 1);
