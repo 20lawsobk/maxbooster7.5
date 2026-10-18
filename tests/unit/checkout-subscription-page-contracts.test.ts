@@ -4,8 +4,10 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as agePolicy from "../../shared/agePolicy";
 import * as registrationCompletion from "../../client/src/lib/registrationCompletion";
+import * as registrationCheckout from "../../client/src/lib/registrationCheckout";
 import * as subscriptionCheckout from "../../client/src/lib/subscriptionCheckout";
 import * as registrationCheckout from "../../client/src/lib/registrationCheckout";
+import { ApiError } from "../../client/src/lib/queryClient";
 
 // Execute real page handlers with isolated hooks and transport. No backend,
 // browser SDK, credentials, account creation, or network is loaded.
@@ -71,6 +73,7 @@ function harness(page: string, options: { tier?: string; search?: string; user?:
       if (id === "react") return hooks;
       if (id.endsWith("/agePolicy")) return agePolicy;
       if (id.endsWith("/registrationCompletion")) return registrationCompletion;
+      if (id.endsWith("/registrationCheckout")) return registrationCheckout;
       if (id.endsWith("/subscriptionCheckout")) return subscriptionCheckout;
       if (id.endsWith("/registrationCheckout")) return registrationCheckout;
       if (id === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
@@ -86,8 +89,8 @@ function harness(page: string, options: { tier?: string; search?: string; user?:
       }) };
       if (id.endsWith("/use-toast")) return { useToast: () => ({ toast }) };
       if (id.endsWith("/queryClient")) return {
+        ApiError,
         apiRequest: async (...args: any[]) => { calls.push(args); return transport(...args); },
-        ApiError: class ApiError extends Error {},
       };
       if (id === "@stripe/stripe-js") return { loadStripe: () => Promise.resolve({}) };
       if (id === "@stripe/react-stripe-js") return {

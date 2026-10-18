@@ -16,6 +16,10 @@ import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  getStripeCheckoutUrl,
+  readRegistrationCheckoutPayload,
+} from "@/lib/registrationCheckout";
+import {
   ACCOUNT_AGE_REQUIREMENT,
   getAccountEligibilityError,
   getLatestEligibleBirthdate,
