@@ -158,9 +158,14 @@ export default function RegisterPayment() {
           birthdate: formData.birthdate,
         },
       );
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
       const payload = await readRegistrationCheckoutPayload(response);
       const checkoutUrl = getStripeCheckoutUrl(payload);
 
+      // Redirect only to the destination validated from the single response read.
       window.location.href = checkoutUrl;
     } catch (error) {
       const errorMessage =

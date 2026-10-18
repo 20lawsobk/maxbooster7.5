@@ -82,18 +82,21 @@ describe("registration checkout", () => {
     ).toBe("2010-10-16");
   });
 
-  it("accepts only HTTPS Stripe checkout URLs", () => {
+  it("accepts only the exact HTTPS Stripe checkout host without credentials", () => {
     expect(
       getStripeCheckoutUrl({ url: "https://checkout.stripe.com/c/pay/cs_test_123" }),
     ).toBe("https://checkout.stripe.com/c/pay/cs_test_123");
 
-    expect(() =>
-      getStripeCheckoutUrl({ url: "https://stripe.com.evil.invalid/phish" }),
-    ).toThrow(/unsafe checkout link/i);
-    expect(() =>
-      // eslint-disable-next-line no-script-url -- Deliberate hostile URL fixture verifies the production boundary rejects script URLs.
-      getStripeCheckoutUrl({ url: "javascript:alert(1)" }),
-    ).toThrow(/unsafe checkout link|invalid checkout link/i);
+    for (const url of [
+      "https://stripe.com.evil.invalid/phish",
+      "https://sub.checkout.stripe.com/c/pay/session",
+      "https://user@checkout.stripe.com/c/pay/session",
+      "https://user:password@checkout.stripe.com/c/pay/session",
+      "http://checkout.stripe.com/c/pay/session",
+      "javascript:alert(1)",
+    ]) {
+      expect(() => getStripeCheckoutUrl({ url }), url).toThrow(/unsafe checkout link|invalid checkout link/i);
+    }
   });
 
   it("rejects malformed checkout response shapes", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
@@ -186,23 +186,69 @@ describe("Registration checkout page", () => {
     await h.submit(); h.render();
     expect(h.calls).toEqual([]); expect(h.all().some(n => n.props?.role === "alert")).toBe(true);
   });
-  it("normalizes input and prevents duplicate checkout submissions", async () => {
+  it("reads a successful single-use response once and navigates to its validated checkout URL", async () => {
     const h = harness("RegisterPayment"); details(h);
-    const request = deferred(); h.transport(() => request.promise);
+    const response = json({ url: "https://checkout.stripe.com/c/pay/unit" });
+    const parseBody = vi.spyOn(response, "json");
+    h.transport(async () => response);
     const first = h.submit(); const second = h.submit();
     expect(h.calls).toHaveLength(1);
     expect(h.calls[0][2]).toMatchObject({ userEmail: "unit@example.test", username: "artist_1", tier: "monthly" });
-    request.resolve(json({ url: "https://checkout.stripe.com/c/pay/unit" }));
     await Promise.all([first, second]);
+    h.render();
+    expect(parseBody).toHaveBeenCalledTimes(1);
+    expect(response.bodyUsed).toBe(true);
     expect(h.location.href).toBe("https://checkout.stripe.com/c/pay/unit");
   });
-  it("does not navigate to an untrusted or missing provider URL and allows retry", async () => {
+  it.each([
+    "https://checkout.stripe.com.evil.test/pay",
+    "https://sub.checkout.stripe.com/pay",
+    "https://attacker@checkout.stripe.com/pay",
+    "https://attacker:secret@checkout.stripe.com/pay",
+    "http://checkout.stripe.com/pay",
+  ])("does not navigate to an unsafe checkout URL: %s", async url => {
     const h = harness("RegisterPayment"); details(h);
-    h.transport(async () => json({ url: "https://checkout.stripe.com.evil.test/pay" }));
+    h.transport(async () => json({ url }));
     await h.submit(); h.render();
-    expect(h.location.href).toBe(""); expect(h.text()).toContain("checkout");
+    expect(h.location.href).toBe("");
+    expect(h.text()).toContain("unsafe checkout link");
+  });
+  it("does not navigate for malformed checkout payloads or malformed JSON", async () => {
+    const h = harness("RegisterPayment"); details(h);
+    h.transport(async () => json({ url: 42 }));
+    await h.submit(); h.render();
+    expect(h.location.href).toBe("");
+    expect(h.text()).toContain("did not return a checkout link");
+
+    h.transport(async () => new Response("{", { headers: { "Content-Type": "application/json" } }));
+    await h.submit(); h.render();
+    expect(h.location.href).toBe("");
+    expect(h.all().some(node => node.props?.role === "alert")).toBe(true);
+  });
+  it("does not read or navigate a non-successful checkout response", async () => {
+    const h = harness("RegisterPayment"); details(h);
+    const response = new Response(
+      JSON.stringify({ url: "https://checkout.stripe.com/c/pay/unit" }),
+      { status: 502, headers: { "Content-Type": "application/json" } },
+    );
+    const parseBody = vi.spyOn(response, "json");
+    h.transport(async () => response);
+    await h.submit(); h.render();
+    expect(h.location.href).toBe("");
+    expect(response.ok).toBe(false);
+    expect(parseBody).not.toHaveBeenCalled();
+    expect(h.text()).toContain("Failed to create checkout session");
+  });
+  it("does not navigate when a successful response omits its checkout URL and allows retry", async () => {
+    const h = harness("RegisterPayment"); details(h);
     h.transport(async () => json({}));
-    await h.submit(); expect(h.calls).toHaveLength(2);
+    await h.submit(); h.render();
+    expect(h.location.href).toBe("");
+    expect(h.text()).toContain("did not return a checkout link");
+    h.transport(async () => json({ url: "https://checkout.stripe.com/c/pay/retry" }));
+    await h.submit();
+    expect(h.location.href).toBe("https://checkout.stripe.com/c/pay/retry");
+    expect(h.calls).toHaveLength(2);
   });
 });
 

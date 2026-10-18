@@ -93,8 +93,12 @@ export function getStripeCheckoutUrl(payload: unknown): string {
   }
 
   const hostname = parsed.hostname.toLowerCase();
-  const isStripeHost = hostname === "stripe.com" || hostname.endsWith(".stripe.com");
-  if (parsed.protocol !== "https:" || !isStripeHost) {
+  if (
+    parsed.protocol !== "https:" ||
+    hostname !== "checkout.stripe.com" ||
+    parsed.username.length > 0 ||
+    parsed.password.length > 0
+  ) {
     throw new Error("The payment service returned an unsafe checkout link. Please try again.");
   }
 
