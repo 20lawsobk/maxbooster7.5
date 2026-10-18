@@ -7,7 +7,29 @@ import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createRecoveryStorage, verifyManagedPrivateStorage } from "./recovery-private-store.mjs";
 
-export async function restoreRuntimeData(root, receipt, storage) {
+const MAX_EXTRACTOR_DIAGNOSTIC_BYTES = 8192;
+
+function sanitizeDiagnostic(value, root, stage) {
+  return String(value ?? "")
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "")
+    .replaceAll(root, "<restore-root>")
+    .replaceAll(stage, "<restore-stage>")
+    .replace(/https?:\/\/[^\s)"']+/gi, "<url>")
+    .replace(/\b(?:authorization|bearer|token|secret|credential)\b\s*[:=]?\s*[^\s,;]+/gi, "$1=<redacted>")
+    .replace(/\b(?:data|uploads)\/[^:\s]+/g, "<runtime-entry>")
+    .replace(/\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+/g, "<path>")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, 4096);
+}
+
+function errorSummary(error) {
+  if (!error) return "";
+  const code = typeof error.code === "string" ? ` (${error.code})` : "";
+  return `${error.name || "Error"}${code}: ${error.message || "stream failed"}`;
+}
+
+export async function restoreRuntimeData(root, receipt, storage, { tarPath = "tar" } = {}) {
   if (receipt.version !== 1 || !/^[a-f0-9]{64}$/.test(receipt.sha256) ||
       !/^[1-9]\d*$/.test(receipt.generation) ||
       !/^private-runtime-recovery\/[a-f0-9-]+\/runtime\.tar\.zst$/.test(receipt.name) ||
@@ -32,19 +54,43 @@ export async function restoreRuntimeData(root, receipt, storage) {
   fs.mkdirSync(stage, { mode: 0o700 });
   const hash = createHash("sha256");
   let bytes = 0;
-  const extractor = spawn("tar", ["--zstd", "-xf", "-", "--no-same-owner", "-C", stage],
-    { stdio: ["pipe", "ignore", "inherit"] });
-  const exited = new Promise((resolve, reject) => {
-    extractor.once("error", reject);
-    extractor.once("close", code => code === 0 ? resolve() : reject(new Error(`Runtime extraction failed: ${code}`)));
+  const extractor = spawn(tarPath, ["--zstd", "-xf", "-", "--no-same-owner", "-C", stage],
+    { stdio: ["pipe", "ignore", "pipe"] });
+  const stderr = [];
+  let stderrBytes = 0;
+  extractor.stderr.on("data", chunk => {
+    if (stderrBytes >= MAX_EXTRACTOR_DIAGNOSTIC_BYTES) return;
+    const limited = Buffer.from(chunk).subarray(0, MAX_EXTRACTOR_DIAGNOSTIC_BYTES - stderrBytes);
+    stderr.push(limited);
+    stderrBytes += limited.length;
+  });
+  const exited = new Promise(resolve => {
+    extractor.once("error", error => resolve({ error }));
+    extractor.once("close", (code, signal) => resolve({ code, signal }));
   });
   const meter = new Transform({ transform(chunk, encoding, done) {
     bytes += chunk.length; hash.update(chunk); done(null, chunk);
   }});
   try {
-    await Promise.all([exited, pipeline(
+    const streamed = pipeline(
       storage.bucket.file(receipt.name, { generation: receipt.generation }).createReadStream({ validation: "crc32c" }),
-      meter, extractor.stdin)]);
+      meter, extractor.stdin).then(() => ({}), error => ({ error }));
+    const [exit, stream] = await Promise.all([exited, streamed]);
+    const diagnostic = sanitizeDiagnostic(Buffer.concat(stderr).toString("utf8"), root, stage);
+    if (exit.error) {
+      throw new Error(`Runtime extractor could not start: ${sanitizeDiagnostic(errorSummary(exit.error), root, stage)}`,
+        { cause: exit.error });
+    }
+    if (exit.code !== 0) {
+      const streamDetail = stream.error && stream.error.code !== "EPIPE"
+        ? `; archive stream: ${sanitizeDiagnostic(errorSummary(stream.error), root, stage)}` : "";
+      throw new Error(`Runtime extraction failed: tar exited ${exit.code}${exit.signal ? ` (${exit.signal})` : ""}` +
+        `${diagnostic ? `: ${diagnostic}` : ""}${streamDetail}`);
+    }
+    if (stream.error) {
+      throw new Error(`Runtime backup stream failed: ${sanitizeDiagnostic(errorSummary(stream.error), root, stage)}`,
+        { cause: stream.error });
+    }
     if (bytes !== receipt.bytes || hash.digest("hex") !== receipt.sha256) throw new Error("Runtime backup checksum mismatch");
     if (fs.readdirSync(stage).sort().join(",") !== "data,uploads") throw new Error("Unexpected runtime backup roots");
     function validate(file) {
@@ -62,8 +108,7 @@ export async function restoreRuntimeData(root, receipt, storage) {
     }
     console.log("[runtime-data] Verified private backup restored; existing seeded data preserved");
   } finally {
-    extractor.kill("SIGTERM");
-    await exited.catch(() => {});
+    if (extractor.exitCode === null && extractor.signalCode === null) extractor.kill("SIGTERM");
     fs.rmSync(stage, { recursive: true, force: true });
   }
 }

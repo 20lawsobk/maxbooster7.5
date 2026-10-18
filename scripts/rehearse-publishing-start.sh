@@ -8,6 +8,14 @@ if [[ "${1:-}" == "--inner" ]]; then
   mkdir -p "$alias/tools/node_modules"
   mount --bind "$root/node_modules" "$alias/tools/node_modules"
   mount -o remount,bind,ro "$alias/tools/node_modules"
+  dev_modules_mounted=1
+  cleanup_dev_modules() {
+    if [[ "${dev_modules_mounted:-0}" == 1 ]]; then
+      umount "$alias/tools/node_modules" 2>/dev/null || true
+      dev_modules_mounted=0
+    fi
+  }
+  trap cleanup_dev_modules EXIT
   # Absolute paths in the application resolve to the disposable copy, never
   # the live checkout. All descendants also inherit the private network.
   mount --bind "$alias/app" "$root"
@@ -15,8 +23,8 @@ if [[ "${1:-}" == "--inner" ]]; then
   export HOME="$alias/home" TMPDIR="$alias/tmp"
   export XDG_CONFIG_HOME="$alias/config" XDG_CACHE_HOME="$alias/cache"
   export XDG_DATA_HOME="$alias/user-data" XDG_STATE_HOME="$alias/state"
-  export PATH="$alias/tools/node_modules/.bin:$PATH"
-  export NODE_PATH="$alias/tools/node_modules"
+  export PATH="$alias/app/.node_bin:$PATH"
+  unset NODE_PATH
   export NODE_ENV=production PORT=5000
   export DATABASE_URL='postgresql://simulation@127.0.0.1:55432/postgres?sslmode=disable'
   export NEON_DATABASE_URL="$DATABASE_URL"
@@ -31,7 +39,10 @@ if [[ "${1:-}" == "--inner" ]]; then
   trap cleanup EXIT
   pg_ctl -D "$pg" -l "$alias/postgres.log" -o "-h 127.0.0.1 -k $alias/tmp -p 55432" -w start
   cd "$root"
-  "$node" "$alias/tools/node_modules/drizzle-kit/bin.cjs" push --force > "$alias/schema.log" 2>&1
+  env PATH="$alias/tools/node_modules/.bin:$PATH" NODE_PATH="$alias/tools/node_modules" \
+    "$node" "$alias/tools/node_modules/drizzle-kit/bin.cjs" push --force > "$alias/schema.log" 2>&1
+  cleanup_dev_modules
+  rmdir "$alias/tools/node_modules" "$alias/tools"
   readlink /proc/self/ns/net > "$alias/runtime-network-namespace"
   setsid bash start.sh > "$alias/start.log" 2>&1 &
   app_pid=$!
