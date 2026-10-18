@@ -6,7 +6,7 @@ test("publishing rehearsal scopes development dependencies to schema preparation
   const script = fs.readFileSync("scripts/rehearse-publishing-start.sh", "utf8");
   const schemaPush = script.indexOf("drizzle-kit/bin.cjs");
   const unmount = script.indexOf("cleanup_dev_modules\n", schemaPush);
-  const applicationStart = script.indexOf('setsid bash "$run/start-rehearsal.sh"', unmount);
+  const applicationStart = script.indexOf("setsid bash start.sh", unmount);
   assert.ok(schemaPush > 0, "isolated schema setup must remain available");
   assert.ok(unmount > schemaPush, "checkout dependency mount must be removed after schema setup");
   assert.ok(applicationStart > unmount, "the app must start only after removing the dev dependency mount");
