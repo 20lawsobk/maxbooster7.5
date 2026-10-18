@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import * as agePolicy from "../../shared/agePolicy";
+import * as passwordPolicy from "../../shared/passwordPolicy";
 
 type Element = { type: unknown; props: Record<string, any> };
 
@@ -71,6 +72,7 @@ function pageHarness(page: string, search = "", authLoading = false, user: { id:
     require(id: string) {
       if (id === "react") return hooks;
       if (id === "@shared/agePolicy") return agePolicy;
+      if (id === "@shared/passwordPolicy") return passwordPolicy;
       if (id === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (id === "wouter") return {
         Link: "Link", useLocation: () => ["", (path: string) => navigations.push(path)],
@@ -140,6 +142,58 @@ function deferred() {
   const promise = new Promise<Response>(done => { resolve = done; });
   return { promise, resolve };
 }
+
+describe("Landing page demo authentication", () => {
+  it("uses the provider boundary and prevents duplicate demo exchanges", async () => {
+    const h = pageHarness("Landing");
+    const pending = deferred();
+    h.transport(() => pending.promise);
+    const start = h.find("data-testid", "button-watch-demo").props.onClick;
+    const first = start();
+    await start();
+    await Promise.resolve();
+    expect(h.calls).toHaveLength(1);
+    expect(h.authenticationCalls).toHaveLength(1);
+    expect(h.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    pending.resolve(json({ id: "demo-user", isDemo: true }));
+    await first;
+    expect(h.navigations).toEqual(["/dashboard"]);
+    expect(h.tokens).toEqual([]);
+  });
+
+  it("keeps an existing account instead of replacing it with a demo session", async () => {
+    const h = pageHarness("Landing", "", false, { id: "existing-user" });
+    await h.find("data-testid", "button-watch-demo").props.onClick();
+    expect(h.calls).toEqual([]);
+    expect(h.navigations).toEqual(["/dashboard"]);
+  });
+
+  it("does not navigate when authoritative session verification fails", async () => {
+    const h = pageHarness("Landing");
+    h.transport(async () => json({ id: "demo-user", isDemo: true }));
+    h.failAuthentication(new Error("The active session could not be verified"));
+    await h.find("data-testid", "button-watch-demo").props.onClick();
+    h.render();
+    expect(h.navigations).toEqual([]);
+    expect(h.toasts[0].description).toContain("could not be verified");
+    expect(h.find("data-testid", "button-watch-demo").props.disabled).toBe(false);
+  });
+
+  it("releases controls on malformed responses and waits for initial authentication", async () => {
+    const loading = pageHarness("Landing", "", true);
+    await loading.find("data-testid", "button-watch-demo").props.onClick();
+    expect(loading.calls).toEqual([]);
+    const h = pageHarness("Landing");
+    h.transport(async () => new Response("not-json"));
+    await h.find("data-testid", "button-watch-demo").props.onClick();
+    h.render();
+    expect(h.navigations).toEqual([]);
+    expect(h.find("data-testid", "button-watch-demo").props.disabled).toBe(false);
+    expect(h.toasts[0].description).toContain("invalid response");
+    expect(h.all().some(node => node.props?.href === "/api-docs")).toBe(true);
+    expect(h.all().some(node => node.props?.href === "/api")).toBe(false);
+  });
+});
 
 describe("Login page contract and request lifecycle", () => {
   it("trims the identifier, handles MFA without caching a user, preserves fresh-code guidance", async () => {

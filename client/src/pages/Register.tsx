@@ -38,6 +38,7 @@ import {
 import { GoogleIcon } from "@/components/ui/brand-icons";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError } from "@shared/agePolicy";
+import { getNewPasswordError } from "@shared/passwordPolicy";
 
 interface FieldErrors {
   birthdate?: string;
@@ -178,9 +179,7 @@ export default function Register() {
           return "Please enter a valid email address";
         return undefined;
       case "password":
-        if (!value) return "Password is required";
-        if (value.length < 8) return "Password must be at least 8 characters";
-        return undefined;
+        return getNewPasswordError(value);
       case "confirmPassword":
         if (!value) return "Please confirm your password";
         if (value !== formData.password) return "Passwords do not match";
