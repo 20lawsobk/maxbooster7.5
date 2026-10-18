@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useRef, useState } from "react";
 import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, CreditCard } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { apiRequest } from "@/lib/queryClient";
-import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError } from "@shared/agePolicy";
+import { ACCOUNT_AGE_REQUIREMENT, getAccountEligibilityError, MINIMUM_ACCOUNT_AGE } from "@shared/agePolicy";
+import { getStripeCheckoutUrl, readRegistrationCheckoutPayload } from "@/lib/registrationCheckout";
 
 const plans = {
   monthly: {
@@ -75,13 +75,6 @@ const plans = {
   },
 } as const;
 
-function toDateInputValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export default function RegisterPayment() {
   const { tier } = useParams<{ tier: string }>();
   const submitting = useRef(false);
@@ -96,6 +89,8 @@ export default function RegisterPayment() {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
+  const today = new Date();
+  const latestEligibleBirthdate = `${today.getUTCFullYear() - MINIMUM_ACCOUNT_AGE}-${String(today.getUTCMonth() + 1).padStart(2, "0")}-${String(today.getUTCDate()).padStart(2, "0")}`;
 
   const plan = Object.prototype.hasOwnProperty.call(plans, tier)
     ? plans[tier as keyof typeof plans] : undefined;
@@ -163,19 +158,7 @@ export default function RegisterPayment() {
       const payload = await readRegistrationCheckoutPayload(response);
       const checkoutUrl = getStripeCheckoutUrl(payload);
 
-      const data = await response.json();
-
-      if (typeof data.url === "string") {
-        const checkoutUrl = new URL(data.url);
-        if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com" ||
-            checkoutUrl.username || checkoutUrl.password) {
-          throw new Error("Invalid secure checkout URL. Please contact support.");
-        }
-        // Redirect to Stripe hosted checkout
-        window.location.href = data.url;
-      } else {
-        throw new Error("Failed to create checkout session");
-      }
+      window.location.href = checkoutUrl;
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -250,7 +233,7 @@ export default function RegisterPayment() {
                       /{plan.period}
                     </span>
                   </div>
-                  {plan.billedAnnually && (
+                  {plan.id === "yearly" && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Billed $468 annually ($39/month equivalent). Save $120/year.
                     </p>
@@ -315,9 +298,6 @@ export default function RegisterPayment() {
                       placeholder="Choose a username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      minLength={3}
-                      maxLength={30}
-                      pattern="[A-Za-z0-9_]{3,30}"
                       required
                       minLength={3}
                       maxLength={30}
@@ -343,7 +323,6 @@ export default function RegisterPayment() {
                       onChange={handleInputChange}
                       maxLength={100}
                       autoComplete="nickname"
-                      maxLength={100}
                       data-testid="input-artist-name"
                     />
                   </div>
