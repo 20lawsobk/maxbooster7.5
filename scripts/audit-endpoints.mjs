@@ -221,6 +221,19 @@ function buildMountPrefixMap(serverFiles) {
       }
     }
   }
+  // Route entrypoints may forward their default router to an implementation
+  // module. Preserve the actual mount rather than inventing an unmounted path
+  // for the implementation (for example downloads.ts -> downloadsImpl.ts).
+  // Map iteration visits newly added targets, while has() terminates cycles.
+  for (const [file, mount] of prefixMap) {
+    const source = readFileSync(file, "utf8");
+    const forwarded = source.match(/export\s*\{\s*default\s*\}\s*from\s*["']([^"']+)["']/);
+    if (!forwarded) continue;
+    const target = resolveSpecifier(file, forwarded[1]);
+    if (target && !prefixMap.has(target)) {
+      prefixMap.set(target, { ...mount, mountedFrom: [...mount.mountedFrom, `${relative(ROOT, file)} (default re-export)`] });
+    }
+  }
   return prefixMap;
 }
 

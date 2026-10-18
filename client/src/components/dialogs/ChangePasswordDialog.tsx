@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getNewPasswordError } from "@shared/passwordPolicy";
 import { Eye, EyeOff, CheckCircle, X, AlertCircle } from "lucide-react";
 
 interface ChangePasswordDialogProps {
@@ -81,10 +82,9 @@ export default function ChangePasswordDialog({
       errors.current = "Current password is required";
     }
 
-    if (!passwords.newPassword) {
-      errors.new = "New password is required";
-    } else if (passwords.newPassword.length < 8) {
-      errors.new = "Password must be at least 8 characters";
+    const passwordError = getNewPasswordError(passwords.newPassword);
+    if (passwordError) {
+      errors.new = passwordError;
     } else if (passwords.newPassword === passwords.currentPassword) {
       errors.new = "New password must be different from current password";
     }

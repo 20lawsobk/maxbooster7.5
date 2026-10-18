@@ -54,12 +54,7 @@ async function readResetResponse(response: Response): Promise<Record<string, unk
     : {};
 }
 
-function validateResetPassword(value: string): string | undefined {
-  if (!value) return "Password is required";
-  if (value.length < 8) return "Password must be at least 8 characters";
-  if (value.length > 72) return "Password must be 72 characters or fewer";
-  return undefined;
-}
+import { getNewPasswordError } from "@shared/passwordPolicy";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -88,7 +83,7 @@ export default function ResetPassword() {
     [password],
   );
 
-  const validatePassword = validateResetPassword;
+  const validatePassword = getNewPasswordError;
 
   const validateConfirmPassword = (value: string): string | undefined => {
     if (!value) return "Please confirm your password";
