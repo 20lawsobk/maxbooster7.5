@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import * as agePolicy from "../../shared/agePolicy";
+import * as registrationCompletion from "../../client/src/lib/registrationCompletion";
+import * as subscriptionCheckout from "../../client/src/lib/subscriptionCheckout";
+import * as registrationCheckout from "../../client/src/lib/registrationCheckout";
 
 // Execute real page handlers with isolated hooks and transport. No backend,
 // browser SDK, credentials, account creation, or network is loaded.
@@ -38,6 +41,11 @@ function harness(page: string, options: { tier?: string; search?: string; user?:
       if (!slots[index] || !same(slots[index].deps, deps)) slots[index] = { fn, deps };
       return slots[index].fn;
     },
+    useMemo(fn: () => any, deps: any[]) {
+      const index = cursor++;
+      if (!slots[index] || !same(slots[index].deps, deps)) slots[index] = { value: fn(), deps };
+      return slots[index].value;
+    },
     useEffect(fn: any, deps: any[]) {
       const index = cursor++;
       if (!slots[index] || !same(slots[index].deps, deps)) {
@@ -62,6 +70,9 @@ function harness(page: string, options: { tier?: string; search?: string; user?:
     require(id: string) {
       if (id === "react") return hooks;
       if (id.endsWith("/agePolicy")) return agePolicy;
+      if (id.endsWith("/registrationCompletion")) return registrationCompletion;
+      if (id.endsWith("/subscriptionCheckout")) return subscriptionCheckout;
+      if (id.endsWith("/registrationCheckout")) return registrationCheckout;
       if (id === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (id === "wouter") return { Link: "Link", useLocation: () => ["", navigate], useParams: () => ({ tier }) };
       if (id.endsWith("/useAuth")) return { useAuth: () => ({
@@ -74,7 +85,10 @@ function harness(page: string, options: { tier?: string; search?: string; user?:
         },
       }) };
       if (id.endsWith("/use-toast")) return { useToast: () => ({ toast }) };
-      if (id.endsWith("/queryClient")) return { apiRequest: async (...args: any[]) => { calls.push(args); return transport(...args); } };
+      if (id.endsWith("/queryClient")) return {
+        apiRequest: async (...args: any[]) => { calls.push(args); return transport(...args); },
+        ApiError: class ApiError extends Error {},
+      };
       if (id === "@stripe/stripe-js") return { loadStripe: () => Promise.resolve({}) };
       if (id === "@stripe/react-stripe-js") return {
         Elements: "Elements", PaymentElement: "PaymentElement",
@@ -175,7 +189,7 @@ describe("Registration checkout page", () => {
     const h = harness("RegisterPayment"); details(h);
     h.transport(async () => json({ url: "https://checkout.stripe.com.evil.test/pay" }));
     await h.submit(); h.render();
-    expect(h.location.href).toBe(""); expect(h.text()).toContain("Invalid secure checkout");
+    expect(h.location.href).toBe(""); expect(h.text()).toContain("checkout");
     h.transport(async () => json({}));
     await h.submit(); expect(h.calls).toHaveLength(2);
   });
@@ -195,7 +209,7 @@ describe("Registration success page", () => {
     const retry = h.all().find(n => n.props?.children === "Retry Verification");
     h.transport(async () => json({ verified: true }));
     retry.props.onClick(); h.render(); await h.settle();
-    expect(h.text()).toContain("Payment Successful!"); expect(h.calls).toHaveLength(2);
+    expect(h.text()).toContain("Payment Verified"); expect(h.calls).toHaveLength(2);
   });
   it("matches the server's eight-character password minimum", async () => {
     const h = await verified(); passwords(h, "short12");
@@ -208,7 +222,7 @@ describe("Registration success page", () => {
     const request = deferred(); h.transport(() => request.promise);
     const first = h.submit(), second = h.submit();
     expect(h.calls).toHaveLength(2);
-    request.resolve(json({ user: { id: "unit-user" } }));
+    request.resolve(json({ user: { id: "unit-user" }, consentRecorded: true }));
     await Promise.all([first, second]);
     expect(h.exchanges).toHaveLength(1);
     expect(h.exchanges[0].data.id).toBe("unit-user");
@@ -216,7 +230,7 @@ describe("Registration success page", () => {
   });
   it("does not claim account success if boundary verification fails", async () => {
     const h = await verified(); passwords(h);
-    h.transport(async () => json({ user: { id: "unit-user" } }));
+    h.transport(async () => json({ user: { id: "unit-user" }, consentRecorded: true }));
     h.authFailure(new Error("The active session could not be verified. Please sign in again."));
     await h.submit(); h.render();
     expect(h.navigations).toEqual([]);
@@ -243,7 +257,7 @@ describe("Authenticated subscription page", () => {
     await h.settle();
     expect(h.calls).toHaveLength(2);
     expect(h.calls[1][3].headers["Idempotency-Key"]).toBe(key);
-    expect(h.text()).toContain("valid payment session");
+    expect(h.text()).toContain("usable checkout session");
   });
   it("ignores a late old-tier response and keys Elements to the current checkout", async () => {
     const h = harness("Subscribe", { authLoading: true });

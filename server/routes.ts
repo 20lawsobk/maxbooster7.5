@@ -13,6 +13,8 @@ import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
 import { requireCsrfToken } from "./middleware/csrf.js";
 import { getAccountEligibilityError, MINIMUM_ACCOUNT_AGE } from "../shared/agePolicy.js";
+import { getNewPasswordError } from "../shared/passwordPolicy.js";
+import { consentService } from "./services/consentService.js";
 import { sessionAuthority } from "./services/sessionAuthority.js";
 import accountErasureRouter from "./routes/accountErasure.js";
 import { mfaLifecycle } from "./services/mfaLifecycle.js";
@@ -313,12 +315,12 @@ export async function registerRoutes(
     async (req: Request, res: Response) => {
       try {
         const { email, password, username, firstName, lastName, artistName, birthdate } =
-          req.body;
+          req.body ?? {};
 
         const eligibilityError = getAccountEligibilityError(birthdate);
         if (eligibilityError) return res.status(400).json({ message: eligibilityError });
 
-        if (!email || !password) {
+        if (typeof email !== "string" || !email || typeof password !== "string" || !password) {
           return res
             .status(400)
             .json({ message: "Email and password are required" });
@@ -334,10 +336,9 @@ export async function registerRoutes(
           return res.status(400).json({ message: "Invalid email format" });
         }
 
-        if (password.length < 8) {
-          return res
-            .status(400)
-            .json({ message: "Password must be at least 8 characters long" });
+        const passwordError = getNewPasswordError(password);
+        if (passwordError) {
+          return res.status(400).json({ message: passwordError });
         }
 
         // Check if email already exists
@@ -1308,17 +1309,16 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword, newPassword } = req.body ?? {};
 
-        if (!currentPassword) {
+        if (typeof currentPassword !== "string" || !currentPassword) {
           return res
             .status(400)
             .json({ message: "Current password is required" });
         }
-        if (!newPassword || newPassword.length < 8) {
-          return res
-            .status(400)
-            .json({ message: "New password must be at least 8 characters" });
+        const passwordError = getNewPasswordError(newPassword);
+        if (passwordError) {
+          return res.status(400).json({ message: passwordError });
         }
 
         const isValid = await bcrypt.compare(
@@ -2102,15 +2102,9 @@ export async function registerRoutes(
             .json({ message: "Token and password are required" });
         }
 
-        if (password.length < 8) {
-          return res
-            .status(400)
-            .json({ message: "Password must be at least 8 characters" });
-        }
-        if (password.length > 72) {
-          return res
-            .status(400)
-            .json({ message: "Password must be 72 characters or fewer" });
+        const passwordError = getNewPasswordError(password);
+        if (passwordError) {
+          return res.status(400).json({ message: passwordError });
         }
 
         const hashedToken = crypto
@@ -8289,13 +8283,14 @@ export async function registerRoutes(
           password,
           tosAccepted,
           privacyAccepted,
-        } = req.body;
+          marketingConsent,
+        } = req.body ?? {};
 
         if (!sessionId || !password) {
           return res.status(400).json({ error: "Missing required fields" });
         }
 
-        if (!tosAccepted || !privacyAccepted) {
+        if (tosAccepted !== true || privacyAccepted !== true) {
           return res
             .status(400)
             .json({
@@ -8303,10 +8298,9 @@ export async function registerRoutes(
             });
         }
 
-        if (password.length < 8) {
-          return res
-            .status(400)
-            .json({ error: "Password must be at least 8 characters long" });
+        const passwordError = getNewPasswordError(password);
+        if (passwordError) {
+          return res.status(400).json({ error: passwordError });
         }
 
         // Retrieve and verify the Stripe checkout session
@@ -8392,24 +8386,30 @@ export async function registerRoutes(
         // Create the user account
         const { assertRegistrationEnabled } = await import("./services/governancePolicyService.js");
         await assertRegistrationEnabled();
-        const user = await storage.createUser({
-          email,
-          password: hashedPassword,
-          username,
-          firstName: session.metadata!.firstName || "",
-          lastName: session.metadata!.lastName || "",
+        // A failed consent write must roll back the account itself, so the
+        // same paid checkout can be retried without leaving a login-capable
+        // account that has never recorded consent.
+        const user = await db.transaction(async (tx) => {
+          const [created] = await tx.insert(users).values({
+            email, password: hashedPassword, username,
+            firstName: session.metadata!.firstName || "",
+            lastName: session.metadata!.lastName || "",
+            subscriptionTier: tier,
+            subscriptionEndsAt,
+            artistName: session.metadata?.artistName?.trim() || null,
+          }).returning();
+          if (!created) throw new Error("Paid account creation did not return a user");
+          await consentService.recordRegistrationConsents(created.id, {
+            birthdate: session.metadata!.birthdate,
+            tosAccepted: true, privacyAccepted: true,
+            marketingConsent: marketingConsent === true,
+          }, req.ip, req.get("user-agent"), tx);
+          return created;
         });
-        // Apply subscription details that are not part of the base insert schema
-        if (tier || subscriptionEndsAt) {
-          await storage.updateUser(user.id, {
-            subscriptionTier: tier ?? undefined,
-            subscriptionEndsAt: subscriptionEndsAt ?? undefined,
-          });
-        }
-        const artistName = session.metadata?.artistName?.trim();
-        if (artistName) {
-          await storage.updateUser(user.id, { artistName });
-        }
+        // Preserve normal account storage initialization, only after commit.
+        void import("./services/userPocketDimensionService.js")
+          .then(({ userPocketService }) => userPocketService.initializeUserStorage(user.id, user.email))
+          .catch(error => logger.warn({ err: error, userId: user.id }, "[PostPayment] Account storage initialization deferred"));
 
         // Log the user in (regenerate prevents session fixation)
         const {
@@ -8426,6 +8426,7 @@ export async function registerRoutes(
           await sessionSave(req);
           return res.json({
             user: userWithoutPassword,
+            consentRecorded: true,
             message: "Account created successfully",
           });
         } catch (sessionErr) {
@@ -8437,6 +8438,8 @@ export async function registerRoutes(
             .status(500)
             .json({
               error: "Account created but login failed - please sign in.",
+              accountCreated: true,
+              code: "REGISTRATION_LOGIN_FAILED",
             });
         }
       } catch (error) {

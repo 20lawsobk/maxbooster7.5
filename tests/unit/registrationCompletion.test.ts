@@ -28,7 +28,7 @@ describe("registration completion", () => {
     );
     expect(() =>
       validateRegistrationPassword("a".repeat(73), "a".repeat(73)),
-    ).toThrow(/72 characters or fewer/i);
+    ).toThrow(/72 UTF-8 bytes or fewer/i);
     expect(() => validateRegistrationPassword("abcdefgh", "abcdefgi")).toThrow(
       /do not match/i,
     );
