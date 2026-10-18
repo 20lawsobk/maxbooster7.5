@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
+import { readProjectsJson, normalizeMutationSuccess, normalizeProjectResponse } from "../../client/src/lib/projectsPageContracts";
 
 const paths = {
-  projects: "client/src/pages/Projects.tsx",
+  projects: "client/src/pages/ProjectsPageImpl.tsx",
   hub: "client/src/components/studio/StudioStartHub.tsx",
   selector: "client/src/components/studio/FlowStateProjectSelector.tsx",
   settings: "client/src/components/studio/ProjectSettingsDialog.tsx",
@@ -44,11 +45,12 @@ function actual(page: Page, name: string, dependencies: Record<string, unknown>,
 
 const version = "2026-01-02T03:04:05.000Z";
 const staleVersion = "2025-01-02T03:04:05.000Z";
-const project = { id: "p1", updatedAt: version, title: "Original" };
+const project = { id: "p1", userId: "owner", createdAt: version, updatedAt: version, title: "Original" };
 const form = { name: "Unsaved", description: "Keep me", tempo: 135, timeSignature: "3/4", sampleRate: 48000, bitDepth: 24 };
 const identity = {
   offlineIdentity: () => "owner", assertOfflineIdentity: vi.fn(),
   navigator: { onLine: true }, toast: vi.fn(),
+  readProjectsJson, normalizeMutationSuccess, normalizeProjectResponse,
 };
 
 describe("direct project caller version contracts", () => {
@@ -61,14 +63,14 @@ describe("direct project caller version contracts", () => {
   });
 
   it("Projects PATCH fallback sends the edit-start version when local draft persistence fails", async () => {
-    const apiRequest = vi.fn(async () => ({ json: async () => ({ updatedAt: version }) }));
+    const apiRequest = vi.fn(async () => ({ json: async () => ({ ...project, updatedAt: version }) }));
     const save = actual("projects", "editMutation", {
       ...identity, apiRequest, editingProject: project,
       draftStorage: { saveDraft: vi.fn(async () => { throw new Error("storage offline"); }) },
       setDraftMessage: vi.fn(),
     }, "mutationFn");
-    await expect(save({ id: "p1", data: { title: "Unsaved" } })).resolves.toEqual({ queued: false });
-    expect(apiRequest).toHaveBeenCalledWith("PATCH", "/api/studio/projects/p1", { title: "Unsaved", expectedUpdatedAt: version });
+    await expect(save({ id: "p1", data: { title: "Unsaved", description: "", genre: "" } })).resolves.toEqual({ queued: false });
+    expect(apiRequest).toHaveBeenCalledWith("PATCH", "/api/studio/projects/p1", { title: "Unsaved", description: "", genre: "", expectedUpdatedAt: version });
   });
 
   it("Projects keeps the same saved base version in the local draft and offline queue", async () => {
@@ -81,10 +83,10 @@ describe("direct project caller version contracts", () => {
       draftStorage: { saveDraft }, offlineQueue: { enqueue }, syncManager: { forceSyncAction },
       setDraftMessage: vi.fn(),
     }, "mutationFn");
-    await save({ id: "p1", data: { title: "Unsaved" } });
-    expect(saveDraft).toHaveBeenCalledWith("project-edit:p1", { title: "Unsaved", expectedUpdatedAt: staleVersion });
+    await save({ id: "p1", data: { title: "Unsaved", description: "", genre: "" } });
+    expect(saveDraft).toHaveBeenCalledWith("project-edit:p1", { title: "Unsaved", description: "", genre: "", expectedUpdatedAt: staleVersion });
     expect(enqueue).toHaveBeenCalledWith("project.update", {
-      projectId: "p1", changes: { title: "Unsaved" }, isStudio: false, expectedUpdatedAt: staleVersion,
+      projectId: "p1", changes: { title: "Unsaved", description: "", genre: "" }, isStudio: false, expectedUpdatedAt: staleVersion,
     }, { conflictStrategy: "manual", metadata: { formId: "project-edit:p1", draftVersion: 7 } });
     expect(forceSyncAction).toHaveBeenCalledWith("action1");
     expect(apiRequest).not.toHaveBeenCalled();
@@ -116,6 +118,45 @@ describe("direct project caller version contracts", () => {
     await remove("p1");
     expect(enqueue).toHaveBeenCalledWith("project.delete", { projectId: "p1", expectedUpdatedAt: version }, { conflictStrategy: "manual" });
     expect(apiRequest).toHaveBeenCalledWith("DELETE", "/api/studio/projects/p1", { expectedUpdatedAt: version });
+  });
+
+  it("saves, reopens, and submits a manual draft against its original version", async () => {
+    let saved: any;
+    let reopened: any;
+    let reopenedForm: any;
+    const data = { title: "Manual draft", description: "Retain my changes", genre: "jazz" };
+    const persist = actual("projects", "handleSaveEditDraft", {
+      ...identity, editingProject: { ...project, updatedAt: staleVersion }, editForm: data,
+      setDraftMessage: vi.fn(),
+      draftStorage: { saveDraft: async (_key: string, value: any) => { saved = { data: value }; } },
+    });
+    await persist();
+    expect(saved.data.expectedUpdatedAt).toBe(staleVersion);
+    const reopen = actual("projects", "handleEdit", {
+      ...identity, editRequestRef: { current: 0 }, setDraftMessage: vi.fn(), setIsEditOpen: vi.fn(),
+      setEditingProject: (value: any) => { reopened = value; }, setEditForm: (value: any) => { reopenedForm = value; },
+      draftStorage: { getDraft: async () => saved },
+    });
+    await reopen(project);
+    expect(reopened.updatedAt).toBe(staleVersion);
+    const apiRequest = vi.fn(async () => ({ json: async () => ({ ...project, ...data }) }));
+    const submit = actual("projects", "editMutation", {
+      ...identity, editingProject: reopened, apiRequest, setDraftMessage: vi.fn(),
+      draftStorage: { saveDraft: async () => { throw new Error("fixture device unavailable"); } },
+    }, "mutationFn");
+    await expect(submit({ id: project.id, data: reopenedForm })).resolves.toEqual({ queued: false });
+    expect(apiRequest).toHaveBeenCalledWith("PATCH", "/api/studio/projects/p1", { ...data, expectedUpdatedAt: staleVersion });
+  });
+
+  it("offers an explicit server snapshot for older unversioned drafts without deleting them", () => {
+    const setEditingProject = vi.fn(), setEditForm = vi.fn();
+    const select = actual("projects", "handleUseServerVersion", {
+      projects: [project], editingProject: { ...project, updatedAt: undefined }, editRequestRef: { current: 1 },
+      setEditingProject, setEditForm, setDraftMessage: vi.fn(),
+    });
+    select();
+    expect(setEditingProject).toHaveBeenCalledWith(project);
+    expect(setEditForm).toHaveBeenCalledWith({ title: project.title, description: "", genre: "" });
   });
 
   it("a queued conflict never falls through to an unqueued project delete", async () => {
@@ -158,7 +199,7 @@ describe("direct project caller version contracts", () => {
       ...identity, apiRequest, editingProject: project, setDraftMessage: vi.fn(),
       draftStorage: { saveDraft: async () => { throw new Error("unavailable"); } },
     }, "mutationFn");
-    await expect(save({ id: "p1", data: { title: "Unsaved" } })).rejects.toBe(error);
+    await expect(save({ id: "p1", data: { title: "Unsaved", description: "", genre: "" } })).rejects.toBe(error);
     const toast = vi.fn();
     actual("projects", "editMutation", { toast }, "onError")(error);
     expect(toast).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringContaining("Your form is still here") }));
