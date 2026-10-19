@@ -65,6 +65,48 @@ describe("model release manifest", () => {
     expect(fs.readFileSync(modelPath, "utf8")).toBe("validated model bytes");
   });
 
+  it("uses an existing checksum-verified checkpoint without fetching an LFS source", () => {
+    const { root, modelPath } = fixture();
+    validateModelRelease(root);
+    const source = path.join(
+      root,
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+    );
+    fs.rmSync(source);
+    expect(validateModelRelease(root, { readOnly: true }).sha256).toBe(
+      createHash("sha256").update("validated model bytes").digest("hex"),
+    );
+  });
+
+  it("accepts an unmaterialized LFS pointer only when model.pt is valid", () => {
+    const { root, modelPath } = fixture();
+    const source = path.join(
+      root,
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+    );
+    const valid = fs.readFileSync(source);
+    const pointer = Buffer.from(
+      `version https://git-lfs.github.com/spec/v1\n` +
+        `oid sha256:${createHash("sha256").update(valid).digest("hex")}\n` +
+        `size ${valid.length}\n`,
+    );
+    fs.writeFileSync(source, pointer);
+    expect(() => validateModelRelease(root)).toThrow(/model checkpoint not available/);
+    fs.writeFileSync(modelPath, valid);
+    expect(validateModelRelease(root, { readOnly: true }).bytes).toBe(valid.length);
+    fs.appendFileSync(modelPath, "tampered");
+    expect(() => validateModelRelease(root, { readOnly: true })).toThrow(/size mismatch/);
+  });
+
+  it("fails closed if neither source nor active model is available", () => {
+    const { root } = fixture();
+    fs.rmSync(path.join(
+      root,
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+    ));
+    expect(() => validateModelRelease(root)).toThrow(/checkpoint not available/);
+  });
+
   it("fails closed when checkpoint bytes differ", () => {
     const { root } = fixture();
     validateModelRelease(root);
