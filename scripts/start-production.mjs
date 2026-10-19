@@ -66,7 +66,18 @@ export function validateBuild(root) {
   try {
     const contract = JSON.parse(fs.readFileSync(path.join(root, "dist/build-complete.json"), "utf8"));
     if (contract.version !== 1) throw new Error("Unsupported build contract");
-    if (JSON.stringify(Object.keys(contract.inputs ?? {}).sort()) !== JSON.stringify(sourceInputs(root))) throw new Error("Source file list changed since build");
+    const previousInputs = Object.keys(contract.inputs ?? {}).sort();
+    const currentInputs = sourceInputs(root);
+    if (JSON.stringify(previousInputs) !== JSON.stringify(currentInputs)) {
+      // Report a bounded file-name diff without hashing files or displaying file contents.
+      // This distinguishes an ordinary stale build from a missing build artifact.
+      const previous = new Set(previousInputs);
+      const current = new Set(currentInputs);
+      const added = currentInputs.filter((file) => !previous.has(file));
+      const removed = previousInputs.filter((file) => !current.has(file));
+      const sample = (items) => items.slice(0, 5).join(", ") || "none";
+      throw new Error(`Source file list changed since build (added: ${sample(added)}; removed: ${sample(removed)})`);
+    }
     const expectedPublicFiles = Object.keys(contract.files ?? {}).filter(file => file.startsWith("dist/public/")).sort();
     if (JSON.stringify(publicBuildFiles(root)) !== JSON.stringify(expectedPublicFiles)) {
       throw new Error("Public build asset list changed since build");
