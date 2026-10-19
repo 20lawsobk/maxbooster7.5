@@ -107,6 +107,20 @@ describe("model release manifest", () => {
     expect(() => validateModelRelease(root)).toThrow(/checkpoint not available/);
   });
 
+  it("rejects corrupted materialized source even when the active checkpoint is valid", () => {
+    const { root } = fixture();
+    validateModelRelease(root);
+    const source = path.join(
+      root,
+      "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt",
+    );
+    // Same byte count: only an actual digest comparison catches the mutation.
+    const bytes = fs.readFileSync(source);
+    bytes[0] ^= 1;
+    fs.writeFileSync(source, bytes);
+    expect(() => validateModelRelease(root)).toThrow(/source SHA-256 mismatch/);
+  });
+
   it("fails closed when checkpoint bytes differ", () => {
     const { root } = fixture();
     validateModelRelease(root);
