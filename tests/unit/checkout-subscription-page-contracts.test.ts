@@ -265,11 +265,31 @@ describe("Registration success page", () => {
     const h = harness("RegisterSuccess", { search: "?session_id=cs_unit", authLoading: true });
     h.transport(async () => json({})); h.identity(null); await h.settle();
     expect(h.text()).not.toContain("Payment Successful!");
-    expect(h.text()).toContain("Payment could not be verified");
+    expect(h.text()).toContain("invalid verification response");
     const retry = h.all().find(n => n.props?.children === "Retry Verification");
     h.transport(async () => json({ verified: true }));
     retry.props.onClick(); h.render(); await h.settle();
     expect(h.text()).toContain("Payment Verified"); expect(h.calls).toHaveLength(2);
+  });
+  it("shows the safe API error message when checkout verification fails", async () => {
+    const h = harness("RegisterSuccess", { search: "?session_id=cs_unit", authLoading: true });
+    h.transport(async () => {
+      throw new ApiError({
+        code: "SERVER_ERROR",
+        message: "provider-internal-detail",
+        userMessage: "Payment could not be verified. Please try again.",
+        status: 502,
+        retryable: true,
+        suggestions: [],
+      });
+    });
+    h.identity(null);
+    await h.settle();
+
+    expect(h.text()).toContain("Payment could not be verified. Please try again.");
+    expect(h.text()).not.toContain("provider-internal-detail");
+    expect(h.text()).not.toContain("Payment Successful!");
+    expect(h.calls).toHaveLength(1);
   });
   it("matches the server's eight-character password minimum", async () => {
     const h = await verified(); passwords(h, "short12");

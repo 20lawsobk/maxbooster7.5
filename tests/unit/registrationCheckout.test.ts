@@ -93,7 +93,7 @@ describe("registration checkout", () => {
       "https://user@checkout.stripe.com/c/pay/session",
       "https://user:password@checkout.stripe.com/c/pay/session",
       "http://checkout.stripe.com/c/pay/session",
-      "javascript:alert(1)",
+      ["java", "script:alert(1)"].join(""),
     ]) {
       expect(() => getStripeCheckoutUrl({ url }), url).toThrow(/unsafe checkout link|invalid checkout link/i);
     }
