@@ -163,3 +163,53 @@ export function buildGaugeReport(
     categories,
   };
 }
+
+/**
+ * Strict, opt-in CI release gate. A weighted GO score is a diagnostic summary,
+ * not sufficient proof that every core check ran and passed. In particular,
+ * --only/--skip must never turn a partial run into release authorization.
+ *
+ * This gate covers the check catalog; it does not replace live deployment,
+ * integration, billing, model, recovery or human sign-off requirements.
+ */
+export const CORE_RELEASE_CHECK_IDS = [
+  "secrets-scan",
+  "dependency-audit",
+  "typecheck",
+  "unit-tests",
+  "lint",
+  "production-build",
+  "env-config",
+  "health-endpoint",
+  "port-contract",
+  "node-version",
+  "migrations",
+  "ci-config",
+] as const;
+
+export function assessReleaseGate(
+  report: GaugeReport,
+  resolved: ResolvedCheck[],
+  filtered = false,
+): { ok: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  if (filtered) reasons.push("filtered runs (--only/--skip) cannot certify a release");
+
+  const enabled = resolved.filter((item) => item.enabled);
+  const enabledIds = new Set(enabled.map((item) => item.check.id));
+  for (const id of CORE_RELEASE_CHECK_IDS) {
+    if (!enabledIds.has(id)) reasons.push(`critical check not enabled: ${id}`);
+  }
+
+  const observed = new Map(report.checks.map((check) => [check.id, check]));
+  for (const item of enabled) {
+    const status = observed.get(item.check.id)?.status;
+    if (status !== "pass") {
+      reasons.push(`check ${item.check.id} is ${status ?? "missing"}, not pass`);
+    }
+  }
+
+  if (report.verdict !== "GO") reasons.push(`gauge verdict is ${report.verdict}, not GO`);
+  if (report.score !== 100) reasons.push(`gauge score is ${report.score ?? "unavailable"}, not 100`);
+  return { ok: reasons.length === 0, reasons };
+}
