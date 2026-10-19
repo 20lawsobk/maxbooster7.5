@@ -15,3 +15,13 @@ export function requireAcceptedEmail(
   }
   return messageId;
 }
+
+/** Reject missing credentials before BullMQ is allowed to acknowledge a job. */
+export function requireEmailSettings(
+  apiKey: string | undefined,
+  sender: string | undefined,
+): { apiKey: string; sender: string } {
+  if (!apiKey?.trim()) throw new Error("Email provider credentials are not configured");
+  if (!sender?.trim()) throw new Error("Email sender is not configured");
+  return { apiKey: apiKey.trim(), sender: sender.trim() };
+}
