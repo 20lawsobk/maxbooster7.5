@@ -291,12 +291,13 @@ describe("strict release gate", () => {
     );
   });
 
-  it("rejects a warning, non-GO verdict and an incomplete report", () => {
+  it("rejects warnings and incomplete results even if the weighted verdict is GO", () => {
     const checks = passed.filter((check) => check.id !== "ci-config");
     const i = checks.findIndex((check) => check.id === "lint");
     expect(i).toBeGreaterThanOrEqual(0);
     checks[i] = scored("lint", "warn", 1, true);
     const report = buildGaugeReport(baseProfile(), "/repo", checks);
+    expect(report.verdict).toBe("GO");
     const gate = assessReleaseGate(report, resolved);
     expect(gate.ok).toBe(false);
     expect(gate.reasons.join(" ")).toContain("check lint is warn");
