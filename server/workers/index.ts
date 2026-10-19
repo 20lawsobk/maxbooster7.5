@@ -6,7 +6,7 @@ import { AudioService } from "../services/audioService.js";
 import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
-import { requireAcceptedEmail } from "./emailProviderAck.js";
+import { requireAcceptedEmail, requireEmailSettings } from "./emailProviderAck.js";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
@@ -178,18 +178,12 @@ function createEmailWorker(): Worker {
       logger.info(`📧 Email job ${job?.id} starting`);
       checkMemoryUsage("EmailWorker");
 
-      if (!process.env.RESEND_API_KEY) {
-        // Throw so BullMQ retains the failure and applies retry/dead-letter policy.
-        throw new Error("Email provider credentials are not configured");
-      }
-
-      const fromEmail = from || process.env.RESEND_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL;
-      if (!fromEmail) {
-        throw new Error("Email sender is not configured");
-      }
-
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const response = await resend.emails.send({ to, from: fromEmail, subject, html });
+      const { apiKey, sender } = requireEmailSettings(
+        process.env.RESEND_API_KEY,
+        from || process.env.RESEND_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL,
+      );
+      const resend = new Resend(apiKey);
+      const response = await resend.emails.send({ to, from: sender, subject, html });
       // A fulfilled SDK promise may still contain an error. Do not ACK until
       // the provider confirms an ID; this is acceptance, not inbox delivery.
       requireAcceptedEmail(response);
