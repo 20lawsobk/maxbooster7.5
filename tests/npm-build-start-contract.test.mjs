@@ -14,6 +14,14 @@ test("production build aliases do not invoke missing fixers or prune the workspa
   assert.equal(scripts["security-fix"], undefined);
 });
 
+test("GitHub release CI builds through the npm launcher and verifies restored artifact identity", () => {
+  const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+  assert.match(ci, /- name: Build release capsules through the production npm launcher\s+run: npm run build\s+env:\s+NODE_ENV: production\s+DEPLOY_PACK: "1"/);
+  assert.match(ci, /- name: Restore release capsules with the shipped runtime[\s\S]*?- name: Validate source and artifact hashes after restore/);
+  assert.match(ci, /- name: Validate source and artifact hashes after restore[\s\S]*?validateBuild\(process\.cwd\(\)\)/);
+  assert.match(ci, /- name: Verify build output/);
+});
+
 test("a late build failure invalidates its completion marker", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
   const start = source.indexOf("main().catch((err) => {");
