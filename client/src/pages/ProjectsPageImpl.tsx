@@ -188,6 +188,13 @@ export default function ProjectsPageImpl() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioProjectRef = useRef<string | null>(null);
 
+  useEffect(
+    () => () => {
+      editRequestRef.current += 1;
+    },
+    [user?.id],
+  );
+
   const {
     data: projectsData,
     isLoading: projectsLoading,
@@ -388,6 +395,7 @@ export default function ProjectsPageImpl() {
           ? "Pending server confirmation. Review its status below; keep the draft until it is applied."
           : "Your project has been updated successfully.",
       });
+      editRequestRef.current += 1;
       setIsEditOpen(false);
       // Queue acknowledgments below remove only the exact persisted draft version.
       setEditingProject(null);
@@ -516,6 +524,15 @@ export default function ProjectsPageImpl() {
   const handleEdit = async (project: Project) => {
     const requestId = ++editRequestRef.current;
     const identity = offlineIdentity();
+    const isCurrentRequest = () => {
+      if (requestId !== editRequestRef.current) return false;
+      try {
+        assertOfflineIdentity(identity);
+        return true;
+      } catch {
+        return false;
+      }
+    };
     setEditingProject(project);
     setDraftMessage("");
     setEditForm({
@@ -528,8 +545,7 @@ export default function ProjectsPageImpl() {
       const saved = await draftStorage.getDraft<EditForm>(
         `project-edit:${project.id}`,
       );
-      assertOfflineIdentity(identity);
-      if (requestId !== editRequestRef.current) return;
+      if (!isCurrentRequest()) return;
       if (saved) {
         setEditingProject({ ...project, updatedAt: saved.data.expectedUpdatedAt });
         setEditForm(saved.data);
@@ -540,7 +556,7 @@ export default function ProjectsPageImpl() {
         );
       }
     } catch {
-      if (requestId !== editRequestRef.current) return;
+      if (!isCurrentRequest()) return;
       setDraftMessage(
         "Local drafts are unavailable. Keep this form open until your update succeeds.",
       );
@@ -615,7 +631,13 @@ export default function ProjectsPageImpl() {
           />
         </header>
 
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <Dialog
+          open={isEditOpen}
+          onOpenChange={(open) => {
+            if (!open) editRequestRef.current += 1;
+            setIsEditOpen(open);
+          }}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
             <form
@@ -682,7 +704,14 @@ export default function ProjectsPageImpl() {
                 >
                   Save draft on device
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    editRequestRef.current += 1;
+                    setIsEditOpen(false);
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={editMutation.isPending}>
