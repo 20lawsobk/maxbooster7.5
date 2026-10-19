@@ -313,7 +313,7 @@ export default function RegisterPayment() {
                       required
                       minLength={3}
                       maxLength={30}
-                      pattern="[a-zA-Z0-9_]{3,30}"
+                      pattern="[A-Za-z0-9_]{3,30}"
                       autoComplete="username"
                       data-testid="input-username"
                     />

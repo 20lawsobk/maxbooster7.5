@@ -170,6 +170,15 @@ describe("Registration checkout page", () => {
     expect(h.text()).toContain("90-Day Money-Back Guarantee");
     if (tier === "yearly") expect(h.text()).toContain("$39/month equivalent");
   });
+  it("renders the username and artist-name browser validation constraints", () => {
+    const h = harness("RegisterPayment");
+    expect(h.find("id", "username").props).toMatchObject({
+      minLength: 3,
+      maxLength: 30,
+      pattern: "[A-Za-z0-9_]{3,30}",
+    });
+    expect(h.find("id", "artistName").props.maxLength).toBe(100);
+  });
   it("renders the birthdate limit from the shared age policy and enforces that exact boundary", () => {
     const h = harness("RegisterPayment");
     const latestEligibleBirthdate = agePolicy.getLatestEligibleBirthdate();
