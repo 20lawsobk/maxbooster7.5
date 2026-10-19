@@ -114,11 +114,14 @@ test("production startup rejects missing, altered and stale build output", () =>
     assert.throws(() => validateBuild(root), /Public build asset list changed/);
     fs.rmSync(path.join(root, "dist/public/untracked.html"));
     assert.doesNotThrow(() => validateBuild(root));
-    // Reject untracked symlinks as well; they must never bypass the build inventory.
-    fs.symlinkSync("index.html", path.join(root, "dist/public/alias.html"));
-    assert.throws(() => validateBuild(root), /Unsupported public build asset/);
-    fs.rmSync(path.join(root, "dist/public/alias.html"));
-    assert.doesNotThrow(() => validateBuild(root));
+    // Windows hosts may forbid symlink creation without developer mode.
+    if (process.platform !== "win32") {
+      // Reject symlinks; they must never bypass the public asset inventory.
+      fs.symlinkSync("index.html", path.join(root, "dist/public/alias.html"));
+      assert.throws(() => validateBuild(root), /Unsupported public build asset/);
+      fs.rmSync(path.join(root, "dist/public/alias.html"));
+      assert.doesNotThrow(() => validateBuild(root));
+    }
     fs.mkdirSync(path.join(root, "client"), { recursive: true });
     fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
     assert.throws(() => validateBuild(root), /Source file list changed/);
