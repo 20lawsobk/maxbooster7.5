@@ -124,8 +124,12 @@ test("production startup rejects missing, altered and stale build output", () =>
     }
     fs.mkdirSync(path.join(root, "client"), { recursive: true });
     fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
-    assert.throws(() => validateBuild(root), /Source file list changed/);
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: client\/index.html; removed: none\)/);
     writeBuildContract(root);
+    fs.rmSync(path.join(root, "client/index.html"));
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: none; removed: client\/index.html\)/);
+    fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
+    assert.doesNotThrow(() => validateBuild(root));
     fs.writeFileSync(path.join(root, "client/index.html"), "<html>changed</html>");
     assert.throws(() => validateBuild(root), /Changed since build/);
     writeBuildContract(root);
