@@ -51,14 +51,15 @@ release decision in `PRODUCTION_READINESS.md` remains in force.
   `scripts/start-production.mjs`. The publishing shell flow is separate.
 - `client/src/pages` has 71 immediate entries, including nested modules.
   These have **not** all been individually reviewed. The server contains
-  routes, services, workers, and database integration; native, mobile, desktop,
-  and external MaxCore/PDIM subsystems need independent release evidence.
+  routes, services, workers, and database integration. The web/API runtime,
+  external MaxCore/PDIM subsystems and deployment path need independent release evidence.
 - Five GitHub Actions YAML workflows exist. Runs for `main` include a failed
   CI run (`39151672500`) and failed Test Runner (`39254706805`).
-  Desktop/mobile workflow failures were also reported. Failure causes must
-  be diagnosed from reliable logs; the connector did not supply job logs in
-  this inspection. PR descriptions claim billing-related CI limitations,
-  but that is not independent proof of the cause of each failed run.
+  Desktop/mobile workflow failures were also reported, but are excluded from
+  this web/API production-readiness gate per the owner's workflow scope below.
+  The connector did not supply CI job logs in this inspection. PR descriptions
+  claim billing-related CI limitations, but this does not independently explain
+  the failed core CI run.
 - At the checkpoint there are nine open PRs (#84, #85, #87-#93), including
   overlapping changes to authentication, registration, billing, and pages.
   Review/rebase and verify them; do not bulk-merge or reimplement blindly.
@@ -66,11 +67,27 @@ release decision in `PRODUCTION_READINESS.md` remains in force.
   endpoint returned an empty list. Release branch protections and required
   status checks therefore need operator review before enabling merges.
 
+### Owner-defined desktop/mobile scope (2026-10-19)
+
+The owner confirms that desktop and mobile packages completed their original
+one-time builds months earlier and that subsequent pushes use their established
+synchronization process. Accordingly, desktop and mobile build workflows, their
+historical or current failed checks, native packaging, and store-upload jobs
+are **not gates for this web/API production-readiness pass**. Keep the workflows
+untouched; do not spend this pass's engineering effort troubleshooting them.
+This is a scope decision, **not** a newly verified claim that the sync mechanism
+is healthy or the native installers are current. The desktop/mobile workflow
+YAML currently declares build jobs on push; those job statuses may continue to
+appear in GitHub without changing the scoped web/API release decision.
+
+Core web/API CI, build, production start, readiness, security, operational
+recovery, authentication, billing, and data-integrity gates remain required.
+
 ### Updated risk-ranked work ledger
 
 | Priority | Area, evidence and status | Acceptance / stop condition |
 | --- | --- | --- |
-| P0 | CI and release protection — **confirmed failures / gate absent**. `.github/workflows/ci.yml`, Test Runner, branch settings. | Diagnose failed workflows, restore runnable CI, require passing Type Check, Lint, Unit, Integration, Build, Security; enforce protected release branch and reviewer approval. A queued or skipped workflow is not a pass. |
+| P0 | **Web/API** CI and release protection — **confirmed failures / gate absent**. `.github/workflows/ci.yml`, Test Runner, branch settings. | Diagnose failed **web/API** workflows; require Type Check, Lint, Unit, Integration, Web Build, Security, protected release branch and reviewer approval. Desktop/mobile build workflow statuses are not release gates for this scope. A queued or skipped core check is not a pass. |
 | P0 | Build and startup parity — **partial fix proposed, runtime unverified**. `scripts/start-production.mjs`, `script/build.ts`, `build.sh`, `start.sh`, `Dockerfile.prod`, `docs/npm-build-start.md`. | Verify Node and lockfile reproducibility, `npm run build`, artifact integrity, `npm run start`, `/api/health` and `/api/ready`, shutdown/restart, and an isolated publishing pack/restore. Do not execute destructive publishing against shared data. |
 | P0 | Authentication, tenant and payment integrity — **PRs open / needs verification**. `server/routes.ts`, auth services, registrations, notifications, support, developer API; #86 landed, #88-#92 remain open. | Test denial paths, tenant isolation, rate limits, consent atomicity, UTF-8 password policy, Stripe webhooks, idempotency and duplicate charging with disposable accounts and payment fixtures. Rebase conflicting PRs and rerun all affected checks before merge. |
 | P0 | Secrets and vulnerabilities — **needs verification**. `.env.example`, runtime config, dependency trees, upload endpoints. | Secret scanning without emitting values; zero untriaged high/critical reachable vulnerabilities; confirm outbound credentials/PII are redacted and permissions are least-privilege. |
