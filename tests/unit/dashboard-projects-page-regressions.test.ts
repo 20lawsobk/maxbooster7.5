@@ -4,6 +4,7 @@ import * as projectContracts from "../../client/src/lib/projectsPageContracts";
 import { describe, expect, it, vi } from "vitest";
 import { resolveProjectAudioSource } from "../../client/src/lib/projectsPageContracts";
 import { parseOnboardingUpdateResponse } from "../../client/src/lib/onboardingMode";
+import { resolveProjectAudioSource } from "../../client/src/lib/projectsPageContracts";
 
 const paths = {
   dashboard: "client/src/pages/Dashboard.tsx",
@@ -16,7 +17,13 @@ const sources = Object.fromEntries(
 
 // Exercise the actual page callbacks without importing the app, browser storage,
 // auth provider, network clients, or server startup.
-function callback(page: string, name: string, dependencies: Record<string, unknown>, mutation = false) {
+function callback(
+  page: string,
+  name: string,
+  dependencies: Record<string, unknown>,
+  mutation = false,
+  mutationMember = "mutationFn",
+) {
   const file = ts.createSourceFile(paths[page as keyof typeof paths], sources[page], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let expression: ts.Node | undefined;
   function visit(node: ts.Node) {
@@ -24,7 +31,11 @@ function callback(page: string, name: string, dependencies: Record<string, unkno
     if (ts.isVariableDeclaration(node) && node.name.getText(file) === name && node.initializer) {
       if (mutation && ts.isCallExpression(node.initializer)) {
         const options = node.initializer.arguments[0] as ts.ObjectLiteralExpression;
-        expression = (options.properties.find(property => property.name?.getText(file) === "mutationFn") as ts.PropertyAssignment).initializer;
+        expression = (
+          options.properties.find(property => property.name?.getText(file) === mutationMember) as
+            | ts.PropertyAssignment
+            | undefined
+        )?.initializer;
       } else {
         expression = node.initializer;
       }
@@ -128,6 +139,8 @@ describe("dashboard and projects page regressions", () => {
     const play = callback("projects", "handlePlayProject", {
       currentlyPlaying: null, audioRef, audioProjectRef, resolveProjectAudioSource,
       setCurrentlyPlaying, setAudioLoading, toast: vi.fn(),
+      errorMessage: (error: unknown, fallback: string) =>
+        error instanceof Error && error.message ? error.message : fallback,
       window: { location: { href: "https://app.example/projects", origin: "https://app.example" } },
     });
     play({ id: "second", audioUrl: "https://app.example/audio.mp3" });
@@ -170,12 +183,138 @@ describe("dashboard and projects page regressions", () => {
     expect(setEditForm).not.toHaveBeenCalledWith({ title: "Stale first" });
   });
 
-  it("retains version-checked offline cleanup and explicit retry states", () => {
+  it("ignores a late recovery error from an older project but reports the current project's error", async () => {
+    const failures: Array<(error: Error) => void> = [];
+    const setDraftMessage = vi.fn();
+    const edit = callback("projects", "handleEdit", {
+      editRequestRef: { current: 0 },
+      offlineIdentity: () => ({ owner: "owner", epoch: 1 }),
+      assertOfflineIdentity: vi.fn(),
+      setEditingProject: vi.fn(),
+      setDraftMessage,
+      setEditForm: vi.fn(),
+      setIsEditOpen: vi.fn(),
+      draftStorage: {
+        getDraft: () => new Promise((_resolve, reject) => failures.push(reject)),
+      },
+    });
+    const older = edit({ id: "older", title: "Older" });
+    const current = edit({ id: "current", title: "Current" });
+
+    failures[0](new Error("old project storage failure"));
+    await older;
+    expect(setDraftMessage).not.toHaveBeenCalledWith(
+      "Local drafts are unavailable. Keep this form open until your update succeeds.",
+    );
+
+    failures[1](new Error("current project storage failure"));
+    await current;
+    expect(setDraftMessage).toHaveBeenLastCalledWith(
+      "Local drafts are unavailable. Keep this form open until your update succeeds.",
+    );
+  });
+
+  it("does not apply recovered data after the offline account identity changes", async () => {
+    let owner = "account-a";
+    let epoch = 1;
+    let resolveDraft!: (value: unknown) => void;
+    const setEditForm = vi.fn();
+    const setDraftMessage = vi.fn();
+    const edit = callback("projects", "handleEdit", {
+      editRequestRef: { current: 0 },
+      offlineIdentity: () => ({ owner, epoch }),
+      assertOfflineIdentity: (expected: { owner: string; epoch: number }) => {
+        if (expected.owner !== owner || expected.epoch !== epoch) {
+          throw new Error("Account changed during offline operation");
+        }
+      },
+      setEditingProject: vi.fn(),
+      setDraftMessage,
+      setEditForm,
+      setIsEditOpen: vi.fn(),
+      draftStorage: {
+        getDraft: () => new Promise(resolve => { resolveDraft = resolve; }),
+      },
+    });
+
+    const pending = edit({ id: "account-a-project", title: "Account A" });
+    owner = "account-b";
+    epoch += 1;
+    resolveDraft({ data: { title: "Private account A draft" } });
+    await pending;
+
+    expect(setEditForm).not.toHaveBeenCalledWith({
+      title: "Private account A draft",
+    });
+    expect(setDraftMessage).not.toHaveBeenCalledWith(
+      "Recovered a draft saved on this device. Review it before updating.",
+    );
+  });
+
+  it("invalidates an in-flight draft recovery when the edit dialog closes", async () => {
+    let resolveDraft!: (value: unknown) => void;
+    const editRequestRef = { current: 0 };
+    const setEditForm = vi.fn();
+    const setDraftMessage = vi.fn();
+    const dependencies = {
+      editRequestRef,
+      offlineIdentity: () => ({ owner: "owner", epoch: 1 }),
+      assertOfflineIdentity: vi.fn(),
+      setEditingProject: vi.fn(),
+      setDraftMessage,
+      setEditForm,
+      setIsEditOpen: vi.fn(),
+      draftStorage: {
+        getDraft: () => new Promise(resolve => { resolveDraft = resolve; }),
+      },
+    };
+    const pending = callback("projects", "handleEdit", dependencies)({
+      id: "p1",
+      title: "Project",
+    });
+    callback("projects", "handleEditDialogOpenChange", dependencies)(false);
+    resolveDraft({ data: { title: "Closed dialog draft" } });
+    await pending;
+
+    expect(setEditForm).not.toHaveBeenCalledWith({
+      title: "Closed dialog draft",
+    });
+    expect(setDraftMessage).not.toHaveBeenCalledWith(
+      "Recovered a draft saved on this device. Review it before updating.",
+    );
+    expect(dependencies.setIsEditOpen).toHaveBeenCalledWith(false);
+  });
+
+  it("cleans drafts after confirmed saves, retains queued drafts, and keeps version checks", async () => {
     expect(sources.projects).toContain("saved?.version === action.metadata?.draftVersion");
-    expect(sources.projects).not.toContain("deleteDraft(`project-edit:${editingProject.id}`)");
     expect(sources.projects).toContain("if (!user) return null");
     expect(sources.dashboard).toContain("Upcoming releases could not be loaded.");
     expect(sources.dashboard).toContain("Your projects could not be loaded.");
+
+    const deleteDraft = vi.fn(async () => undefined);
+    const dependencies = {
+      editRequestRef: { current: 0 },
+      invalidateProjectQueries: vi.fn(async () => undefined),
+      toast: vi.fn(),
+      setIsEditOpen: vi.fn(),
+      editingProject: { id: "p1" },
+      draftStorage: { deleteDraft },
+      setEditingProject: vi.fn(),
+    };
+    const onSuccess = callback(
+      "projects",
+      "editMutation",
+      dependencies,
+      true,
+      "onSuccess",
+    );
+
+    await onSuccess({ queued: false });
+    expect(deleteDraft).toHaveBeenCalledExactlyOnceWith("project-edit:p1");
+
+    deleteDraft.mockClear();
+    await onSuccess({ queued: true });
+    expect(deleteDraft).not.toHaveBeenCalled();
   });
 
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {

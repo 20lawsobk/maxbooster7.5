@@ -592,6 +592,11 @@ export default function ProjectsPageImpl() {
     setDraftMessage("Loaded the server version. The older device draft remains saved until you explicitly replace it.");
   };
 
+  const handleEditDialogOpenChange = (open: boolean) => {
+    if (!open) editRequestRef.current += 1;
+    setIsEditOpen(open);
+  };
+
   const requestDelete = (project: Project) => {
     if (
       window.confirm(
@@ -631,13 +636,7 @@ export default function ProjectsPageImpl() {
           />
         </header>
 
-        <Dialog
-          open={isEditOpen}
-          onOpenChange={(open) => {
-            if (!open) editRequestRef.current += 1;
-            setIsEditOpen(open);
-          }}
-        >
+        <Dialog open={isEditOpen} onOpenChange={handleEditDialogOpenChange}>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
             <form
@@ -707,10 +706,7 @@ export default function ProjectsPageImpl() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    editRequestRef.current += 1;
-                    setIsEditOpen(false);
-                  }}
+                  onClick={() => handleEditDialogOpenChange(false)}
                 >
                   Cancel
                 </Button>
