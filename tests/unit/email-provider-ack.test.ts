@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { requireAcceptedEmail } from "../../server/workers/emailProviderAck.js";
+import { requireAcceptedEmail, requireEmailSettings } from "../../server/workers/emailProviderAck.js";
 
 describe("email provider acceptance contract", () => {
   it("accepts a confirmed provider message ID", () => {
@@ -19,4 +19,21 @@ describe("email provider acceptance contract", () => {
       expect(() => requireAcceptedEmail(response)).toThrow();
     },
   );
+});
+
+
+describe("email worker configuration", () => {
+  it.each([undefined, "", "   "])("rejects missing provider API key: %j", (apiKey) => {
+    expect(() => requireEmailSettings(apiKey, "verified@example.test")).toThrow(/credentials are not configured/);
+  });
+
+  it.each([undefined, "", "   "])("rejects missing verified sender: %j", (sender) => {
+    expect(() => requireEmailSettings("test-api-key", sender)).toThrow(/sender is not configured/);
+  });
+
+  it("accepts configured provider and sender after trimming", () => {
+    expect(requireEmailSettings(" key ", " sender@example.test ")).toEqual({
+      apiKey: "key", sender: "sender@example.test",
+    });
+  });
 });
