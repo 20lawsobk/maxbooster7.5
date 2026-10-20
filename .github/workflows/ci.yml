@@ -177,14 +177,24 @@ jobs:
       - name: Test isolated deployment contracts
         run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs
 
-      - name: Build release capsules from source
-        run: npx tsx script/build.ts
+      - name: Build release capsules through the production npm launcher
+        # Verify the public npm build entrypoint, not only its inner script.
+        run: npm run build
         env:
           NODE_ENV: production
           DEPLOY_PACK: "1"
 
       - name: Restore release capsules with the shipped runtime
         run: .node_bin/node dist/pdim-restore.mjs all
+
+      - name: Validate source and artifact hashes after restore
+        # Fail closed on stale source/build identities before shipping.
+        run: |
+          .node_bin/node --input-type=module -e '
+            import { validateBuild } from "./scripts/start-production.mjs";
+            validateBuild(process.cwd());
+            console.log("Production source/artifact identity verified");
+          '
 
       - name: Verify build output
         run: |
