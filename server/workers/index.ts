@@ -6,6 +6,8 @@ import { AudioService } from "../services/audioService.js";
 import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
+import { sendEmailOnce } from "../services/emailSendOnce.js";
+import { requireRetrySafeEmailJob, requireEmailSettings } from "./emailProviderAck.js";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
@@ -174,19 +176,27 @@ function createEmailWorker(): Worker {
     "email",
     async (job: Job) => {
       const { to, subject, html, from } = job?.data as EmailJobData;
-      logger.info(`📧 Email job ${job?.id} → ${to}`);
+      logger.info(`📧 Email job ${job?.id} starting`);
       checkMemoryUsage("EmailWorker");
 
-      if (!process.env.RESEND_API_KEY) {
-        logger.warn("⚠️  Resend not configured, skipping email send");
-        return;
+      const { apiKey, sender } = requireEmailSettings(
+        process.env.RESEND_API_KEY,
+        from || process.env.RESEND_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL,
+      );
+      // BullMQ can repeat a job after a worker crash or a lost provider reply.
+      // Resend deduplicates identical requests by key for only 24 hours.
+      // Conservatively fence attempts by the durable original enqueue time.
+      const operationKey = requireRetrySafeEmailJob(job?.id, job?.timestamp);
+      const response = await sendEmailOnce(new Resend(apiKey), {
+        operationKey, to, from: sender, subject, html,
+      });
+      // A resolved SDK call may report rejected or unknown. Neither is an ACK.
+      // Unknown outcomes may retry with the SAME key only within its window;
+      // stale jobs fail closed and need operator reconciliation.
+      if (response.status !== "accepted") {
+        throw new Error(`Email provider acceptance unconfirmed (${response.status}); job not acknowledged`);
       }
-
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail =
-        from || process.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-      await resend?.emails.send({ to, from: fromEmail, subject, html });
-      logger.info(`✅ Email sent to ${to}`);
+      logger.info(`✅ Email provider accepted job ${job?.id}`);
     },
     workerOpts(config?.queue.concurrency?.email),
   );

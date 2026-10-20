@@ -35,6 +35,9 @@ describe("static endpoint audit inventory", () => {
     expect(report.meta.matchedCount).toBeGreaterThan(0);
     expect(report.meta.unmatchedConfirmedCount).toBe(0);
     expect(report.meta.methodUnconfirmedCount).toBe(0);
+    expect(report.frontendCalls).toContainEqual(expect.objectContaining({
+      path: "/api/downloads/latest", status: "matched",
+    }));
     expect(report.mountedRouters.length).toBeGreaterThan(0);
     expect(report.unresolvedDynamic.length).toBe(report.meta.unresolvedDynamicCount);
 

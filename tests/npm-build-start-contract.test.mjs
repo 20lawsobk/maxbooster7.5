@@ -14,6 +14,15 @@ test("production build aliases do not invoke missing fixers or prune the workspa
   assert.equal(scripts["security-fix"], undefined);
 });
 
+test("release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes", () => {
+  const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+  assert.match(ci, /Prepare private PostgreSQL fixture binaries/);
+  assert.match(ci, /- name: Build release capsules through the production npm launcher[\s\S]*?run: npm run build\s+env:\s+NODE_ENV: production\s+DEPLOY_PACK: "1"/);
+  assert.match(ci, /- name: Restore release capsules with the shipped runtime[\s\S]*?- name: Validate source and artifact hashes after restore/);
+  assert.match(ci, /- name: Validate source and artifact hashes after restore[\s\S]*?validateBuild\(process\.cwd\(\)\)/);
+  assert.match(ci, /- name: Verify build output/);
+});
+
 test("a late build failure invalidates its completion marker", () => {
   const source = fs.readFileSync("script/build.ts", "utf8");
   const start = source.indexOf("main().catch((err) => {");
@@ -109,10 +118,27 @@ test("production startup rejects missing, altered and stale build output", () =>
     }
     writeBuildContract(root);
     assert.doesNotThrow(() => validateBuild(root));
+    // An unexpected file added after compilation must invalidate the asset contract.
+    fs.writeFileSync(path.join(root, "dist/public/untracked.html"), "unexpected");
+    assert.throws(() => validateBuild(root), /Public build asset list changed/);
+    fs.rmSync(path.join(root, "dist/public/untracked.html"));
+    assert.doesNotThrow(() => validateBuild(root));
+    // Windows hosts may forbid symlink creation without developer mode.
+    if (process.platform !== "win32") {
+      // Reject symlinks; they must never bypass the public asset inventory.
+      fs.symlinkSync("index.html", path.join(root, "dist/public/alias.html"));
+      assert.throws(() => validateBuild(root), /Unsupported public build asset/);
+      fs.rmSync(path.join(root, "dist/public/alias.html"));
+      assert.doesNotThrow(() => validateBuild(root));
+    }
     fs.mkdirSync(path.join(root, "client"), { recursive: true });
     fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
-    assert.throws(() => validateBuild(root), /Source file list changed/);
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: client\/index.html; removed: none\)/);
     writeBuildContract(root);
+    fs.rmSync(path.join(root, "client/index.html"));
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: none; removed: client\/index.html\)/);
+    fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
+    assert.doesNotThrow(() => validateBuild(root));
     fs.writeFileSync(path.join(root, "client/index.html"), "<html>changed</html>");
     assert.throws(() => validateBuild(root), /Changed since build/);
     writeBuildContract(root);

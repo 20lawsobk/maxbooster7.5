@@ -98,7 +98,22 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund --legacy-peer-deps
 
+      - name: Prepare private PostgreSQL fixture binaries
+        run: |
+          if ! find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit 2>/dev/null | grep -q .; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql
+          fi
+          pg_bin="$(find /usr/lib/postgresql -path '*/bin/initdb' -type f -print -quit | xargs dirname)"
+          test -x "$pg_bin/postgres"
+          "$pg_bin/initdb" --version
+          echo "$pg_bin" >> "$GITHUB_PATH"
+
       - name: Run unit tests
+        # Fixture suites launch private PostgreSQL processes as the runner user.
+        # A configured DATABASE_URL does not supply initdb/postgres binaries.
+        # Keep them separate from any provider or production database.
+        # The preceding step exposes the installed server binaries via PATH.
         run: npm run test:ci
         env:
           NODE_ENV: test
@@ -162,14 +177,24 @@ jobs:
       - name: Test isolated deployment contracts
         run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs
 
-      - name: Build release capsules from source
-        run: npx tsx script/build.ts
+      - name: Build release capsules through the production npm launcher
+        # Verify the public npm build entrypoint, not only its inner script.
+        run: npm run build
         env:
           NODE_ENV: production
           DEPLOY_PACK: "1"
 
       - name: Restore release capsules with the shipped runtime
         run: .node_bin/node dist/pdim-restore.mjs all
+
+      - name: Validate source and artifact hashes after restore
+        # Fail closed on stale source/build identities before shipping.
+        run: |
+          .node_bin/node --input-type=module -e '
+            import { validateBuild } from "./scripts/start-production.mjs";
+            validateBuild(process.cwd());
+            console.log("Production source/artifact identity verified");
+          '
 
       - name: Verify build output
         run: |

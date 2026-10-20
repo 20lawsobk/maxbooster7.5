@@ -24,6 +24,9 @@ fixes, focused checks and remaining backend/acceptance work.
 | Pricing | /pricing |
 | Terms | /terms |
 | Privacy | /privacy |
+| Notifications | /notifications |
+| NotificationDetail | /notifications/:id |
+| CustomerSupportTicket | /support/tickets/:ticketId |
 
 StorefrontBuilder is a reviewed child component, **not** evidence that the
 public Storefront page or its purchase flows have been reviewed.
@@ -48,7 +51,6 @@ public Storefront page or its purchase flows have been reviewed.
 | AuditLogPage | /admin/audit-log |
 | SupportTicketDetail | /admin/support/tickets/:ticketId |
 | SupportDashboard | /admin/support |
-| CustomerSupportTicket | /support/tickets/:ticketId |
 | KYCReview | /admin/kyc |
 | TrainingDashboard | /admin/training |
 | ContentSampler | /admin/content-sampler |
@@ -78,8 +80,6 @@ public Storefront page or its purchase flows have been reviewed.
 | ReleaseCountdown | /release-countdown |
 | Invoices | /invoices |
 | HandleLink | /handle-link |
-| NotificationDetail | /notifications/:id |
-| Notifications | /notifications |
 | MusicWorkflowAutomations | /workflow-automations |
 | Shows | /shows |
 | FanHub | /fan-hub |

@@ -75,17 +75,32 @@ export function validateModelRelease(root: string, options: { readOnly?: boolean
   }
   const sourcePath = path.resolve(root, manifest.sourcePath as string);
   const sourceStat = fs.statSync(sourcePath, { throwIfNoEntry: false });
-  if (!sourceStat?.isFile() || sourceStat.size !== expectedBytes) {
-    throw new Error("immutable model release source is missing or has the wrong size");
-  }
-  const sourceSha256 = sha256File(sourcePath);
-  if (sourceSha256 !== expectedSha256) {
-    throw new Error(
-      `immutable model release source SHA-256 mismatch: expected ${expectedSha256}, got ${sourceSha256}`,
-    );
-  }
   const modelPath = path.resolve(root, releasePath);
   let stat = fs.statSync(modelPath, { throwIfNoEntry: false });
+
+  // A checkout can contain the Git LFS pointer without the large checkpoint.
+  // Packaging must not need an LFS fetch when an already-materialized model.pt
+  // independently passes the exact byte count and SHA-256 checks below.
+  const pointerOnly = sourceStat?.isFile() &&
+    sourceStat.size === lfsPointer.length &&
+    fs.readFileSync(sourcePath).equals(lfsPointer);
+  if (sourceStat?.isFile() && !pointerOnly) {
+    if (sourceStat.size !== expectedBytes) {
+      throw new Error("immutable model release source has the wrong size");
+    }
+    const sourceSha256 = sha256File(sourcePath);
+    if (sourceSha256 !== expectedSha256) {
+      throw new Error(
+        `immutable model release source SHA-256 mismatch: expected ${expectedSha256}, got ${sourceSha256}`,
+      );
+    }
+  } else if (sourceStat && !pointerOnly) {
+    throw new Error("immutable model release source is not a regular file");
+  } else if (!stat?.isFile()) {
+    throw new Error("model checkpoint not available: supply verified model.pt or materialize the LFS source");
+  }
+  // Missing/pointer-only source is accepted ONLY when the existing active
+  // checkpoint is subsequently verified, never as a substitute for bytes.
   if (!stat) {
     if (options.readOnly) throw new Error("Required model.pt is missing; read-only release preparation cannot materialize it in the workspace");
     const temporary = `${modelPath}.release-${process.pid}`;

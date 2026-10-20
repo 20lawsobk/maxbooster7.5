@@ -20,7 +20,23 @@ npm run readiness-gauge -- --profile saas --only secrets-scan,env-config,health-
 npm run readiness-gauge -- --profile-file ./acme-profile.json --out gauge.md
 ```
 
-Exit code is `1` on `NO GO`, `0` otherwise.
+Diagnostic mode exits with code `1` on `NO GO`, `0` otherwise; a
+`CONDITIONAL GO` is **not** a production approval.
+
+For a stricter, fail-closed machine gate, use:
+
+```bash
+npm run readiness-gauge -- --profile media --release-gate
+```
+
+`--release-gate` returns `0` **only** if all enabled checks pass, the full
+critical-check catalog is enabled, the score is 100, and the verdict is
+`GO`. It returns `1` on anything else and `2` for attempted `--only` or
+`--skip` filtering. This avoids false approvals from a high weighted score
+with unverified or skipped checks. A passing CLI gate alone **does not**
+certify full Max Booster production readiness: live auth/payment workflows,
+external integrations, deployment/startup/recovery, migrations and human
+release sign-off require separate evidence.
 
 ## Check catalog
 
