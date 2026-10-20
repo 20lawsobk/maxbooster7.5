@@ -6,7 +6,8 @@ import { AudioService } from "../services/audioService.js";
 import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
-import { requireAcceptedEmail, requireEmailSettings } from "./emailProviderAck.js";
+import { sendEmailOnce } from "../services/emailSendOnce.js";
+import { requireRetrySafeEmailJob, requireEmailSettings } from "./emailProviderAck.js";
 import sgMail from "@sendgrid/mail";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
@@ -182,11 +183,19 @@ function createEmailWorker(): Worker {
         process.env.RESEND_API_KEY,
         from || process.env.RESEND_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL,
       );
-      const resend = new Resend(apiKey);
-      const response = await resend.emails.send({ to, from: sender, subject, html });
-      // A fulfilled SDK promise may still contain an error. Do not ACK until
-      // the provider confirms an ID; this is acceptance, not inbox delivery.
-      requireAcceptedEmail(response);
+      // BullMQ can repeat a job after a worker crash or a lost provider reply.
+      // Resend deduplicates identical requests by key for only 24 hours.
+      // Conservatively fence attempts by the durable original enqueue time.
+      const operationKey = requireRetrySafeEmailJob(job?.id, job?.timestamp);
+      const response = await sendEmailOnce(new Resend(apiKey), {
+        operationKey, to, from: sender, subject, html,
+      });
+      // A resolved SDK call may report rejected or unknown. Neither is an ACK.
+      // Unknown outcomes may retry with the SAME key only within its window;
+      // stale jobs fail closed and need operator reconciliation.
+      if (response.status !== "accepted") {
+        throw new Error(`Email provider acceptance unconfirmed (${response.status}); job not acknowledged`);
+      }
       logger.info(`✅ Email provider accepted job ${job?.id}`);
     },
     workerOpts(config?.queue.concurrency?.email),
