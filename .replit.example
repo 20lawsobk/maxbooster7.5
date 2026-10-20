@@ -1,0 +1,19 @@
+# Safe, versioned starter profile. Keep your real .replit untracked.
+# Node 22 is pinned in .nvmrc / .node-version; configure the Replit Node module
+# in your actual workspace if it is not provisioned automatically.
+entrypoint = "server/index.ts"
+run = "npm run dev"
+
+# Preserve the existing Replit Nix channel/module settings on established apps.
+# The tracked replit.nix defines system dependencies.
+
+[deployment]
+# The packaging flag MUST be set during BUILD, not inferred from a runtime-only ID.
+build = ["bash", "-lc", "DEPLOY_PACK=1 npm run build"]
+# Run the capsule-aware production launcher, not the development script.
+run = ["bash", "start.sh"]
+
+# The ONLY publicly routed listener is the app. Never expose Redis/PDIM/MaxCore.
+[[ports]]
+localPort = 5000
+externalPort = 80
