@@ -14,6 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_CHECKS, collectSecretHits } from "../../scripts/readiness-gauge/lib/checks.js";
 import {
+  assessReleaseGate,
   buildGaugeReport,
   decideVerdict,
   runChecks,
@@ -254,6 +255,54 @@ describe("decideVerdict", () => {
     );
     expect(verdict).toBe("CONDITIONAL GO");
     expect(reasons.join(" ")).toMatch(/capped at CONDITIONAL GO/);
+  });
+});
+
+describe("strict release gate", () => {
+  const resolved = ALL_CHECKS.map((check): ResolvedCheck => ({
+    check, enabled: true, required: true, weight: 1, config: {},
+  }));
+  const passed = resolved.map((item) => scored(item.check.id, "pass", 1, true));
+
+  it("accepts an unfiltered, entirely passing catalog", () => {
+    const report = buildGaugeReport(baseProfile(), "/repo", passed);
+    expect(assessReleaseGate(report, resolved)).toEqual({ ok: true, reasons: [] });
+  });
+
+  it("rejects a partial check selection, even when its weighted score is 100", () => {
+    const partial = resolved.map((item) => ({
+      ...item, enabled: item.check.id === "secrets-scan",
+    }));
+    const report = buildGaugeReport(baseProfile(), "/repo", [scored("secrets-scan", "pass")]);
+    const gate = assessReleaseGate(report, partial, true);
+    expect(gate.ok).toBe(false);
+    expect(gate.reasons.join(" ")).toMatch(/filtered runs/);
+    expect(gate.reasons.join(" ")).toMatch(/critical check not enabled/);
+  });
+
+  it("rejects blocked checks despite an otherwise passing gauge score", () => {
+    const checks = [...passed];
+    const target = checks.findIndex((check) => check.id === "dependency-audit");
+    expect(target).toBeGreaterThanOrEqual(0);
+    checks[target] = scored("dependency-audit", "blocked", 1, true);
+    const report = buildGaugeReport(baseProfile(), "/repo", checks);
+    expect(assessReleaseGate(report, resolved).reasons.join(" ")).toContain(
+      "check dependency-audit is blocked",
+    );
+  });
+
+  it("rejects warnings and incomplete results even if the weighted verdict is GO", () => {
+    const checks = passed.filter((check) => check.id !== "ci-config");
+    const i = checks.findIndex((check) => check.id === "lint");
+    expect(i).toBeGreaterThanOrEqual(0);
+    checks[i] = scored("lint", "warn", 1, true);
+    const report = buildGaugeReport(baseProfile(), "/repo", checks);
+    expect(report.verdict).toBe("GO");
+    const gate = assessReleaseGate(report, resolved);
+    expect(gate.ok).toBe(false);
+    expect(gate.reasons.join(" ")).toContain("check lint is warn");
+    expect(gate.reasons.join(" ")).toContain("check ci-config is missing");
+    expect(gate.reasons.join(" ")).toContain("not 100");
   });
 });
 

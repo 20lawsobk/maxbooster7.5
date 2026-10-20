@@ -109,10 +109,27 @@ test("production startup rejects missing, altered and stale build output", () =>
     }
     writeBuildContract(root);
     assert.doesNotThrow(() => validateBuild(root));
+    // An unexpected file added after compilation must invalidate the asset contract.
+    fs.writeFileSync(path.join(root, "dist/public/untracked.html"), "unexpected");
+    assert.throws(() => validateBuild(root), /Public build asset list changed/);
+    fs.rmSync(path.join(root, "dist/public/untracked.html"));
+    assert.doesNotThrow(() => validateBuild(root));
+    // Windows hosts may forbid symlink creation without developer mode.
+    if (process.platform !== "win32") {
+      // Reject symlinks; they must never bypass the public asset inventory.
+      fs.symlinkSync("index.html", path.join(root, "dist/public/alias.html"));
+      assert.throws(() => validateBuild(root), /Unsupported public build asset/);
+      fs.rmSync(path.join(root, "dist/public/alias.html"));
+      assert.doesNotThrow(() => validateBuild(root));
+    }
     fs.mkdirSync(path.join(root, "client"), { recursive: true });
     fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
-    assert.throws(() => validateBuild(root), /Source file list changed/);
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: client\/index.html; removed: none\)/);
     writeBuildContract(root);
+    fs.rmSync(path.join(root, "client/index.html"));
+    assert.throws(() => validateBuild(root), /Source file list changed since build \(added: none; removed: client\/index.html\)/);
+    fs.writeFileSync(path.join(root, "client/index.html"), "<html></html>");
+    assert.doesNotThrow(() => validateBuild(root));
     fs.writeFileSync(path.join(root, "client/index.html"), "<html>changed</html>");
     assert.throws(() => validateBuild(root), /Changed since build/);
     writeBuildContract(root);
