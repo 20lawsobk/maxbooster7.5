@@ -78,27 +78,6 @@ type DashboardUserPersona =
   | "manager"
   | null;
 
-interface CountdownProgress {
-  completed: number;
-  total: number;
-  percentage: number;
-}
-
-interface CountdownItem {
-  id: string | number;
-  title?: string;
-  releaseDate: string;
-  artworkUrl?: string | null;
-  status?: string;
-  progress?: CountdownProgress;
-  presaveCount?: number;
-}
-
-interface CountdownsResponse {
-  success: boolean;
-  data: CountdownItem[];
-}
-
 interface OnboardingStatusResponse {
   hasCompletedOnboarding: boolean;
   currentStep: number;
@@ -197,15 +176,16 @@ export default function Dashboard() {
 }
 
 function UpcomingReleasesSection() {
-  const { data, isLoading, error, refetch } = useQuery<CountdownsResponse>({
+  const { data, isLoading, error, refetch } = useQuery<unknown, Error, DashboardCountdownItem[]>({
     queryKey: ["/api/countdowns"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/countdowns");
-      return normalizeDashboardCountdowns(await readDashboardJson(response));
+      return readDashboardJson(response);
     },
+    select: normalizeDashboardCountdowns,
   });
 
-  const countdowns = data?.data ?? [];
+  const countdowns = data ?? [];
 
   return (
     <Card>
@@ -300,12 +280,7 @@ function DashboardContent({ user }: { user: User }) {
   const [showFeatureSpotlight, setShowFeatureSpotlight] = useState(false);
 
   // Check if user has paid subscription
-  const hasPaidSubscription = Boolean(
-    user.subscriptionTier &&
-      user.subscriptionTier !== "" &&
-      user.subscriptionTier !== "free" &&
-      user.subscriptionTier !== "trial",
-  );
+  const hasPaidSubscription = hasDashboardPaidAccess(user);
 
   const { data: onboardingStatus } = useQuery<OnboardingStatusResponse>({
     queryKey: ["/api/auth/onboarding-status"],
@@ -558,8 +533,6 @@ function DashboardContent({ user }: { user: User }) {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
-          experienceLevel: "intermediate",
-          userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });
@@ -571,7 +544,6 @@ function DashboardContent({ user }: { user: User }) {
     },
     onSuccess: () => {
       setShowSimplified(false);
-      setUserLevel("intermediate");
       void queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/auth/onboarding-status"] });
     },
@@ -602,10 +574,7 @@ function DashboardContent({ user }: { user: User }) {
     return (
       <OnboardingWizard
         onComplete={handleOnboardingComplete}
-        onSkip={() => {
-          setShowOnboarding(false);
-          setShowSimplified(false);
-        }}
+        onSkip={handleOnboardingSkip}
       />
     );
   }
@@ -613,11 +582,9 @@ function DashboardContent({ user }: { user: User }) {
   if (showSimplified) {
     return (
       <SimplifiedDashboard
-        onUpgrade={() => {
-          setShowSimplified(false);
-          setUserLevel("intermediate");
-        }}
+        onUpgrade={handleUpgradeToFullMode}
         userLevel={userLevel}
+        upgrading={fullDashboardMutation.isPending}
       />
     );
   }
@@ -712,7 +679,7 @@ function DashboardContent({ user }: { user: User }) {
           className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
           aria-label="Performance statistics"
         >
-          {statsCards.map((stat, index) => {
+          {statsCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card
@@ -953,7 +920,7 @@ function DashboardContent({ user }: { user: User }) {
                     </div>
                   ) : (dashboardData?.topPlatforms?.length ?? 0) > 0 ? (
                     <div className="space-y-4">
-                      {dashboardData.topPlatforms.map((platform, index) => (
+                      {(dashboardData?.topPlatforms ?? []).map((platform, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
@@ -1237,14 +1204,7 @@ function DashboardContent({ user }: { user: User }) {
         {showFeatureSpotlight && (
           <FeatureSpotlight
             onClose={() => setShowFeatureSpotlight(false)}
-            onExploreFeature={(featureId) => {
-              setShowFeatureSpotlight(false);
-              setShowFeatureDiscovery(false);
-              toast({
-                title: "Feature Selected",
-                description: `Find ${featureId} in the navigation to get started.`,
-              });
-            }}
+            onExploreFeature={handleExploreFeature}
           />
         )}
         <ContextualFeatureHint />

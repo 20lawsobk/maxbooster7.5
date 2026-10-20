@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { motion } from "framer-motion";
@@ -56,6 +56,7 @@ export default function DeveloperApi() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const createPending = useRef(false);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -104,8 +105,14 @@ export default function DeveloperApi() {
         "POST",
         "/api/developer/keys/create",
         data,
+        { signal: AbortSignal.timeout(30_000) },
       );
-      return response.json();
+      const payload = await response.json();
+      if (payload?.success !== true || typeof payload.apiKey?.id !== "string" ||
+          typeof payload.apiKey?.apiKey !== "string" || !/^mb_live_[a-f0-9]{64}$/.test(payload.apiKey.apiKey)) {
+        throw new Error("The key creation response could not be verified. Review your keys before creating another one.");
+      }
+      return payload;
     },
     onSuccess: (data) => {
       setCreatedApiKey(data.apiKey.apiKey);
@@ -122,6 +129,7 @@ export default function DeveloperApi() {
         variant: "destructive",
       });
     },
+    onSettled: () => { createPending.current = false; },
   });
 
   // Delete API key mutation
@@ -129,9 +137,11 @@ export default function DeveloperApi() {
     mutationFn: async (keyId: string) => {
       const response = await apiRequest(
         "DELETE",
-        `/api/developer/keys/${keyId}`,
+        `/api/developer/keys/${encodeURIComponent(keyId)}`,
       );
-      return response;
+      const payload = await response.json();
+      if (payload?.success !== true) throw new Error("Key revocation was not confirmed. Refresh your keys and try again.");
+      return payload;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/developer/keys"] });
@@ -152,22 +162,25 @@ export default function DeveloperApi() {
   });
 
   const handleCreateKey = () => {
-    if (!newKeyName.trim()) {
+    if (createPending.current || createKeyMutation.isPending) return;
+    if (!newKeyName.trim() || newKeyName.trim().length > 255) {
       toast({
         title: "Error",
-        description: "Please provide a name for your API key",
+        description: "Please provide a name between 1 and 255 characters for your API key",
         variant: "destructive",
       });
       return;
     }
 
+    createPending.current = true;
     createKeyMutation.mutate({
-      keyName: newKeyName,
+      keyName: newKeyName.trim(),
       tier: newKeyTier,
     });
   };
 
   const handleCreateDialogOpenChange = (open: boolean) => {
+    if (createPending.current || createKeyMutation.isPending) return;
     setIsCreateDialogOpen(open);
     if (!open) {
       setCreatedApiKey(null);
@@ -381,6 +394,8 @@ print('Demographics:', demographics)`,
                               id="keyName"
                               placeholder="Production API Key"
                               value={newKeyName}
+                              maxLength={255}
+                              disabled={createKeyMutation.isPending}
                               onChange={(e) => setNewKeyName(e.target.value)}
                             />
                           </div>
