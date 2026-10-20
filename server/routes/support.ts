@@ -1,3 +1,4 @@
+import { supportMessageSchema, supportTicketCreateSchema, supportTicketUpdateSchema } from "../../shared/supportTicketValidation.js";
 import { Router } from "express";
 import { db } from "../db.js";
 import { supportTickets } from "../../shared/schema.js";
@@ -212,11 +213,9 @@ router.post(
       if (typeof ticketId !== "string" || !ticketId.trim()) {
         return res.status(400).json({ error: "A single nonempty ticket ID is required" });
       }
-      const { message } = req.body;
-
-      if (!message || typeof message !== "string" || !message.trim()) {
-        return res.status(400).json({ error: "Message is required" });
-      }
+      const parsed = supportMessageSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "Message must contain 1–10000 characters" });
+      const { message } = parsed.data;
 
       const existing = await db
         .select({ id: supportTickets.id })
@@ -341,33 +340,9 @@ router.patch(
       if (typeof ticketId !== "string" || !ticketId.trim()) {
         return res.status(400).json({ error: "A single nonempty ticket ID is required" });
       }
-      const {
-        status,
-        priority,
-        assignedTo,
-        responseTimeMinutes,
-        satisfactionRating,
-        resolvedAt,
-      } = req.body;
-
-      const allowedStatuses = ["open", "in_progress", "resolved", "closed"];
-      const allowedPriorities = ["low", "medium", "high", "critical"];
-
-      if (status && !allowedStatuses?.includes(status)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid status. Allowed: ${allowedStatuses?.join(", ")}`,
-          });
-      }
-
-      if (priority && !allowedPriorities?.includes(priority)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid priority. Allowed: ${allowedPriorities?.join(", ")}`,
-          });
-      }
+      const parsed = supportTicketUpdateSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "Invalid ticket update", details: parsed.error.flatten() });
+      const { status, priority, assignedTo, responseTimeMinutes, satisfactionRating, resolvedAt } = parsed.data;
 
       const updateData: Record<string, any> = { updatedAt: new Date() };
       if (status !== undefined) updateData.status = status;
@@ -406,30 +381,9 @@ router.patch(
 
 router.post("/tickets", requireAuth, async (req, res) => {
   try {
-    const { subject, description, category, priority } = req.body;
-
-    if (!subject) {
-      return res.status(400).json({ error: "Subject is required" });
-    }
-
-    const allowedCategories = ["general", "billing", "technical", "account"];
-    const allowedPriorities = ["low", "medium", "high", "critical"];
-
-    if (category && !allowedCategories?.includes(category)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid category. Allowed: ${allowedCategories?.join(", ")}`,
-        });
-    }
-
-    if (priority && !allowedPriorities?.includes(priority)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid priority. Allowed: ${allowedPriorities?.join(", ")}`,
-        });
-    }
+    const parsed = supportTicketCreateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Invalid support ticket", details: parsed.error.flatten() });
+    const { subject, description, category, priority } = parsed.data;
 
     const [newTicket] = await db
       .insert(supportTickets)

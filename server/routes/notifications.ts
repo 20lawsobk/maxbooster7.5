@@ -117,10 +117,19 @@ router.get("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const pageInput = req.query.page ?? "1";
+    const limitInput = req.query.limit ?? "50";
+    const page = Number(pageInput);
+    const limit = Number(limitInput);
+    const category = req.query.category;
+    if (typeof pageInput !== "string" || !/^\d+$/.test(pageInput) ||
+        typeof limitInput !== "string" || !/^\d+$/.test(limitInput) ||
+        !Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger((page - 1) * limit) ||
+        (category !== undefined && (typeof category !== "string" || !category || category.length > 100)) ||
+        (req.query.unread !== undefined && req.query.unread !== "true" && req.query.unread !== "false")) {
+      return res.status(400).json({ error: "Invalid notification query" });
+    }
     const offset = (page - 1) * limit;
-    const category = req.query.category as string | undefined;
     const unreadOnly = req.query.unread === "true";
 
     const conditions: unknown[] = [eq(notifications.userId, req.user.id)];
@@ -129,7 +138,7 @@ router.get("/", async (req: Request, res: Response) => {
     }
     if (category) {
       conditions?.push(
-        sql`${notifications.metadata}->>'category' = ${category} OR (${notifications.metadata}->>'category' IS NULL AND ${notifications.type} LIKE ${category + "%"})`,
+        sql`(${notifications.metadata}->>'category' = ${category} OR (${notifications.metadata}->>'category' IS NULL AND ${notifications.type} LIKE ${category + "%"}))`,
       );
     }
 
@@ -1187,7 +1196,14 @@ router.get(
         .limit(1);
       if (!notification)
         return res.status(404).json({ error: "Notification not found" });
-      res.json(notification);
+      res.json({
+        ...notification,
+        priority: notification.metadata?.priority || "normal",
+        category: notification.metadata?.category || getCategory(notification.type),
+        actionLabel: notification.metadata?.actionLabel || null,
+        groupId: notification.metadata?.groupId || null,
+        expiresAt: notification.metadata?.expiresAt || null,
+      });
     } catch (error) {
       logger.warn({ err: error }, "Get notification error:");
       res.status(500).json({ error: "Failed to fetch notification" });

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getNotificationAction } from "@/lib/notificationAction";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import {
@@ -38,19 +39,19 @@ export default function NotificationDetail() {
   const { user, isLoading: isAuthLoading } = useRequireAuth();
 
   const {
-    data: notifications = [],
+    data: notification,
     isLoading,
     isError,
     error,
     refetch,
-  } = useQuery<Notification[]>({
-    // The notifications API is intentionally a collection endpoint. Reuse it
-    // here so the detail always renders the exact records shown in the list,
-    // rather than requesting a nonexistent /api/notifications/:id endpoint.
-    queryKey: ["/api/notifications"],
-    enabled: !!user,
+  } = useQuery<Notification>({
+    queryKey: ["/api/notifications", id],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/notifications/${encodeURIComponent(id!)}`);
+      return response.json();
+    },
+    enabled: !!user && !!id,
   });
-  const notification = notifications.find((item) => item.id === id);
 
   const markAsReadMutation = useMutation({
     mutationFn: async () => apiRequest("PUT", `/api/notifications/${id}/read`),
@@ -94,10 +95,12 @@ export default function NotificationDetail() {
 
   const handleOpenAction = () => {
     if (!notification?.actionUrl) return;
-    if (notification.actionUrl.startsWith("http")) {
-      window.open(notification.actionUrl, "_blank");
+    const action = getNotificationAction(notification.actionUrl);
+    if (!action) return;
+    if (action.external) {
+      window.open(action.url, "_blank", "noopener,noreferrer");
     } else {
-      navigate(resolveActionUrl(notification.actionUrl));
+      navigate(resolveActionUrl(action.url));
     }
   };
 
@@ -107,6 +110,7 @@ export default function NotificationDetail() {
         <div className="flex items-center gap-3 mb-6">
           <Button
             variant="ghost"
+            aria-label="Back to notifications"
             size="icon"
             onClick={() => navigate("/notifications")}
           >
@@ -208,7 +212,7 @@ export default function NotificationDetail() {
               )}
 
               <div className="flex flex-wrap items-center gap-2 pt-2">
-                {notification.actionUrl && (
+                {notification.actionUrl && getNotificationAction(notification.actionUrl) && (
                   <Button onClick={handleOpenAction}>
                     <ExternalLink className="h-4 w-4 mr-2" />
                     {notification.actionLabel || "View related page"}
