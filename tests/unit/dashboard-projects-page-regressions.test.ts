@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
+import { resolveProjectAudioSource } from "../../client/src/lib/projectsPageContracts";
 
 const paths = {
   dashboard: "client/src/pages/Dashboard.tsx",
   simplified: "client/src/pages/SimplifiedDashboard.tsx",
-  projects: "client/src/pages/Projects.tsx",
+  projects: "client/src/pages/ProjectsPageImpl.tsx",
 };
 const sources = Object.fromEntries(
   Object.entries(paths).map(([key, path]) => [key, readFileSync(path, "utf8")]),
@@ -17,7 +18,7 @@ function callback(page: string, name: string, dependencies: Record<string, unkno
   const file = ts.createSourceFile(paths[page as keyof typeof paths], sources[page], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let expression: ts.Node | undefined;
   function visit(node: ts.Node) {
-    if (ts.isVariableDeclaration(node) && node.name.getText(file) === name && node.initializer) {
+    if (!expression && ts.isVariableDeclaration(node) && node.name.getText(file) === name && node.initializer) {
       if (mutation && ts.isCallExpression(node.initializer)) {
         const options = node.initializer.arguments[0] as ts.ObjectLiteralExpression;
         expression = (options.properties.find(property => property.name?.getText(file) === "mutationFn") as ts.PropertyAssignment).initializer;
@@ -46,7 +47,7 @@ describe("dashboard and projects page regressions", () => {
   });
 
   it.each(["dashboard", "simplified"])("patches only changed full-mode preferences without resending stale onboarding metadata (%s)", async page => {
-    const preferences = { persona: "producer", experienceLevel: "beginner", goals: ["release"], preferSimplifiedView: true };
+    const preferences = { persona: "producer", experienceLevel: "advanced", userLevel: "advanced", goals: ["release"], preferSimplifiedView: true };
     const apiRequest = vi.fn(async (_method: string, _url: string, _body: { onboardingData: Record<string, unknown> }) => ({
       json: async () => ({ success: true }),
     }));
@@ -60,14 +61,14 @@ describe("dashboard and projects page regressions", () => {
     expect(apiRequest).toHaveBeenCalledWith("POST", "/api/auth/update-onboarding", {
       hasCompletedOnboarding: true,
       onboardingData: {
-        experienceLevel: "intermediate",
-        userLevel: "intermediate",
         preferSimplifiedView: false,
       },
     });
     const submittedPreferences = apiRequest.mock.calls[0][2].onboardingData;
     expect(submittedPreferences).not.toHaveProperty("persona");
     expect(submittedPreferences).not.toHaveProperty("goals");
+    expect(submittedPreferences).not.toHaveProperty("experienceLevel");
+    expect(submittedPreferences).not.toHaveProperty("userLevel");
   });
 
   it.each(["dashboard", "simplified"])("does not claim a preference was saved for an unsuccessful response (%s)", async page => {
@@ -86,7 +87,7 @@ describe("dashboard and projects page regressions", () => {
     expect(sources.simplified).toContain('queryKey: ["/api/auth/me"]');
     expect(sources.simplified).toContain("useRequireSubscription()");
     expect(sources.dashboard).not.toContain('localStorage.getItem("onboardingSkipped")');
-    expect(sources.dashboard).toContain('user.subscriptionTier !== "free"');
+    expect(sources.dashboard).toContain('hasDashboardPaidAccess(user)');
   });
 
   it("rebinds playback completion to the current project when projects share an audio URL", async () => {
@@ -97,10 +98,13 @@ describe("dashboard and projects page regressions", () => {
     };
     const setCurrentlyPlaying = vi.fn();
     const audioProjectRef = { current: "first" };
+    const audioRef = { current: audio };
+    const setAudioLoading = vi.fn();
+    const stopPlayback = callback("projects", "stopPlayback", { audioRef, audioProjectRef, setCurrentlyPlaying, setAudioLoading });
     const play = callback("projects", "handlePlayProject", {
-      currentlyPlaying: null, audioRef: { current: audio }, audioProjectRef,
-      setCurrentlyPlaying, setAudioLoading: vi.fn(), toast: vi.fn(),
-      window: { location: { href: "https://app.example/projects" } },
+      currentlyPlaying: null, audioRef, audioProjectRef, resolveProjectAudioSource, stopPlayback,
+      setCurrentlyPlaying, setAudioLoading, toast: vi.fn(),
+      window: { location: { href: "https://app.example/projects", origin: "https://app.example" } },
     });
     play({ id: "second", audioUrl: "https://app.example/audio.mp3" });
     await Promise.resolve();
@@ -153,7 +157,8 @@ describe("dashboard and projects page regressions", () => {
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {
     const route = readFileSync("server/routes/releaseCountdown.ts", "utf8");
     expect(route).toContain("data: countdownsWithProgress");
-    expect(sources.dashboard).toContain("const countdowns = data?.data ?? []");
+    expect(sources.dashboard).toContain("select: normalizeDashboardCountdowns");
+    expect(sources.dashboard).toContain("const countdowns = data ?? []");
     expect(sources.dashboard).not.toContain("data?.countdowns");
   });
 });

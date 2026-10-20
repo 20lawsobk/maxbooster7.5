@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +79,7 @@ const features = [
     icon: DollarSign,
     title: "Royalty Management",
     description:
-      "Automated royalty collection and distribution with Stripe integration for instant, guaranteed payouts.",
+      "Track royalty collection and request payouts through supported payment providers. Eligibility and processing times apply.",
     color: "from-blue-500 to-indigo-600",
     glow: "rgba(59,130,246,0.3)",
   },
@@ -135,7 +136,7 @@ const plans = [
   },
 ];
 
-async function getRequiredCsrfToken(): Promise<string> {
+async function getRequiredCsrfToken(signal: AbortSignal): Promise<string> {
   const existingToken = getCsrfTokenFromCookie();
   if (existingToken) {
     return existingToken;
@@ -143,6 +144,7 @@ async function getRequiredCsrfToken(): Promise<string> {
 
   const response = await fetch("/api/csrf-token", {
     credentials: "include",
+    signal,
   });
   const body = (await response.json()) as { csrfToken?: unknown };
 
@@ -260,6 +262,9 @@ function ParticleField() {
 
 export default function Landing() {
   const { toast } = useToast();
+  const { user, isLoading, authenticate } = useAuth();
+  const [, navigate] = useLocation();
+  const demoPending = useRef(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -273,19 +278,34 @@ export default function Landing() {
   }, []);
 
   const startDemo = async () => {
+    if (demoPending.current || isLoading) return;
+    if (user) {
+      navigate("/dashboard");
+      return;
+    }
+    demoPending.current = true;
     setIsDemoLoading(true);
     try {
-      const csrfToken = await getRequiredCsrfToken();
-      const response = await fetch("/api/auth/demo", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": csrfToken,
-        },
+      const signal = AbortSignal.timeout(30_000);
+      const { response, data } = await authenticate(async () => {
+        const csrfToken = await getRequiredCsrfToken(signal);
+        const response = await fetch("/api/auth/demo", {
+          method: "POST",
+          credentials: "include",
+          signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
+        });
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("The demo returned an invalid response. Please try again.");
+        }
+        return { response, data: data as Record<string, unknown> };
       });
       if (response.ok) {
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       } else if (response.status === 429) {
         toast({
           title: "Too many requests",
@@ -293,15 +313,11 @@ export default function Landing() {
           variant: "destructive",
         });
       } else {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-          error?: string;
-        } | null;
         toast({
           title: "Unable to start demo",
           description:
-            payload?.message ??
-            payload?.error ??
+            (typeof data.message === "string" ? data.message : null) ??
+            (typeof data.error === "string" ? data.error : null) ??
             "The demo account could not be started. Please try again.",
           variant: "destructive",
         });
@@ -316,6 +332,7 @@ export default function Landing() {
         variant: "destructive",
       });
     } finally {
+      demoPending.current = false;
       setIsDemoLoading(false);
     }
   };
@@ -477,7 +494,7 @@ export default function Landing() {
               size="lg"
               className="landing-secondary-btn"
               onClick={startDemo}
-              disabled={isDemoLoading}
+              disabled={isDemoLoading || isLoading}
               data-testid="button-watch-demo"
             >
               {isDemoLoading ? (
@@ -781,7 +798,7 @@ export default function Landing() {
                 {[
                   { label: "About", href: "/about" },
                   { label: "Blog", href: "/blog" },
-                  { label: "API", href: "/api" },
+                  { label: "API", href: "/api-docs" },
                 ].map((link) => (
                   <li key={link.href}>
                     <Link href={link.href}>
