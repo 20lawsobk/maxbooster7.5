@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getNewPasswordError } from "@shared/passwordPolicy";
 
 interface PasswordStrength {
   score: number;
@@ -53,8 +54,6 @@ async function readResetResponse(response: Response): Promise<Record<string, unk
     ? data as Record<string, unknown>
     : {};
 }
-
-import { getNewPasswordError } from "@shared/passwordPolicy";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
