@@ -995,6 +995,13 @@ class TestPocketAcceleratorBehavior:
     TestHyperGPUGemmComputePath above.
     """
 
+    @pytest.fixture(autouse=True)
+    def _enable_pocket_cache_for_contracts(self, monkeypatch):
+        # Runtime may disable caching globally (e.g. POCKET_ACCEL_ENABLED=0).
+        # These tests verify cache semantics, so explicitly opt in per test.
+        # The dedicated disable-flag test overrides this to 0 itself.
+        monkeypatch.setenv("POCKET_ACCEL_ENABLED", "1")
+
     def test_first_call_is_miss_second_is_hit(self):
         accel = PocketAccelerator(min_flops=0)
         A, B = f32(4, 4), f32(4, 4)
