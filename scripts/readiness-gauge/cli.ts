@@ -17,7 +17,7 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_CHECKS } from "./lib/checks.js";
-import { buildGaugeReport, runChecks } from "./lib/engine.js";
+import { assessReleaseGate, buildGaugeReport, runChecks } from "./lib/engine.js";
 import {
   listProfiles,
   loadProfile,
@@ -51,6 +51,7 @@ function usage(): string {
     "  --list-checks           print the check catalog",
     "  --only <id,id>          run only these checks",
     "  --skip <id,id>          skip these checks",
+    "  --release-gate          fail closed unless all core/enabled checks pass (no filters)",
     "  --format <md|json>      output format (default: md)",
     "  --out <file>            write report to file (default: stdout)",
     "  --cwd <dir>             repository root (default: current directory)",
@@ -88,12 +89,15 @@ async function main(): Promise<void> {
     : loadProfile(profilesDir, profileName);
 
   const cwd = resolve(argValue(args, "--cwd") ?? process.cwd());
-  const resolved = resolveChecks(
-    profile,
-    ALL_CHECKS,
-    parseList(argValue(args, "--only")),
-    parseList(argValue(args, "--skip")),
-  );
+  const only = parseList(argValue(args, "--only"));
+  const skip = parseList(argValue(args, "--skip"));
+  const releaseGate = hasFlag(args, "--release-gate");
+  if (releaseGate && (hasFlag(args, "--only") || hasFlag(args, "--skip"))) {
+    console.error("readiness-gauge: --release-gate requires the full check set; --only/--skip are forbidden.");
+    process.exitCode = 2;
+    return;
+  }
+  const resolved = resolveChecks(profile, ALL_CHECKS, only, skip);
   const enabledCount = resolved.filter((r) => r.enabled).length;
   if (enabledCount === 0) {
     console.error("readiness-gauge: no checks enabled — nothing to run.");
@@ -122,7 +126,14 @@ async function main(): Promise<void> {
   console.error(
     `readiness-gauge: score ${report.score ?? "n/a"} — ${report.verdict}`,
   );
-  process.exitCode = report.verdict === "NO GO" ? 1 : 0;
+  if (releaseGate) {
+    const gate = assessReleaseGate(report, resolved);
+    for (const reason of gate.reasons) console.error(`readiness-gauge: release gate blocked — ${reason}`);
+    process.exitCode = gate.ok ? 0 : 1;
+  } else {
+    // Preserve diagnostic mode's historical conditional-success semantics.
+    process.exitCode = report.verdict === "NO GO" ? 1 : 0;
+  }
 }
 
 const isMain =
