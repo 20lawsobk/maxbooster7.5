@@ -25,3 +25,27 @@ export function requireEmailSettings(
   if (!sender?.trim()) throw new Error("Email sender is not configured");
   return { apiKey: apiKey.trim(), sender: sender.trim() };
 }
+
+/** Resend only promises idempotency inside a 24-hour provider window.
+ * Use the original durable BullMQ enqueue timestamp as a conservative lower
+ * bound on the first send. An old job must be reconciled, never silently sent
+ * again with an expired idempotency key.
+ */
+export const EMAIL_IDEMPOTENCY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function requireRetrySafeEmailJob(
+  jobId: string | undefined,
+  queuedAtMs: number | undefined,
+  nowMs = Date.now(),
+): string {
+  if (typeof jobId !== "string" || jobId.trim().length === 0 ||
+      jobId.length > 200 || /[\r\n]/.test(jobId)) {
+    throw new Error("Email job requires a stable bounded queue ID");
+  }
+  if (!Number.isSafeInteger(queuedAtMs) || !Number.isSafeInteger(nowMs) ||
+      (queuedAtMs ?? 0) <= 0 || nowMs < (queuedAtMs ?? 0) ||
+      nowMs - (queuedAtMs ?? 0) >= EMAIL_IDEMPOTENCY_WINDOW_MS) {
+    throw new Error("Email job is outside the safe provider retry window; manual reconciliation required");
+  }
+  return `maxbooster-email-${jobId}`;
+}
