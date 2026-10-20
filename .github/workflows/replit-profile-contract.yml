@@ -1,0 +1,38 @@
+name: Replit profile contract
+
+on:
+  push:
+    paths:
+      - ".replit.example"
+      - "replit.nix"
+      - "tests/replit-profile.contract.test.mjs"
+      - ".github/workflows/replit-profile-contract.yml"
+      - "scripts/port-contract.sh"
+      - ".nvmrc"
+      - ".node-version"
+  pull_request:
+    paths:
+      - ".replit.example"
+      - "replit.nix"
+      - "tests/replit-profile.contract.test.mjs"
+      - ".github/workflows/replit-profile-contract.yml"
+      - "scripts/port-contract.sh"
+      - ".nvmrc"
+      - ".node-version"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Validate versioned Replit profile contract
+        run: node --test tests/replit-profile.contract.test.mjs
+      - name: Validate template TOML syntax
+        run: python3 -c 'import tomllib; tomllib.load(open(".replit.example","rb"))'
