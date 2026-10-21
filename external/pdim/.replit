@@ -1,0 +1,146 @@
+modules = ["web", "bash", "nodejs-24"]
+
+[[artifacts]]
+id = "artifacts/api-server"
+
+[[artifacts]]
+id = "artifacts/mockup-sandbox"
+
+[deployment]
+router = "application"
+deploymentTarget = "vm"
+build = ["sh", "-c", "pnpm run build"]
+run = ["sh", "-c", "while true; do PORT=8080 pnpm --filter @workspace/api-server run start; echo '[PDIM] Process exited — restarting in 3s...'; sleep 3; done"]
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "typecheck-libs"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "typecheck-api"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "typecheck-dashboard"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "format"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "(while true; do PORT=5000 BASE_PATH=/ pnpm --filter @workspace/dashboard run dev; echo '[Dashboard] Exited — restarting in 2s...'; sleep 2; done) & (while true; do PORT=3000 pnpm --filter @workspace/api-server run dev; echo '[PDIM] Server exited — restarting in 2s...'; sleep 2; done)"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "typecheck-libs"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm run typecheck:libs"
+
+[[workflows.workflow]]
+name = "typecheck-api"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm run typecheck:libs && pnpm --filter @workspace/api-server run typecheck"
+
+[[workflows.workflow]]
+name = "typecheck-dashboard"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --filter @workspace/dashboard run typecheck"
+
+[[workflows.workflow]]
+name = "format"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm exec prettier --check \"**/*.{ts,tsx,js,json}\" --ignore-path .gitignore"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[agent]
+stack = "BEST_EFFORT_FALLBACK"
+expertMode = true
+integrations = ["javascript_object_storage:2.0.0"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+AGENT_TOKEN = "62f13338cc6f313fee4bbd601a9da514a54840f537f0f055770ed212a85eeec8"
+TRAINING_API_KEY = "f242bf97d7e46b7ca0b17cd6b01ca9239bc327b862a86b703556565523849701"
+FABRIC_BACKEND = "pocket-dimension"
+
+[userenv.production]
+PDIM_APP_URL = "https://pocketdimensionstorage.replit.app"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-8db7d82c-a9e5-4992-88a2-5f103d16ef2a"
+
+[[ports]]
+localPort = 3000
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 80
+
+[[ports]]
+localPort = 23183
+externalPort = 3000
