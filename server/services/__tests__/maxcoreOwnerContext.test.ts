@@ -10,6 +10,7 @@ vi.mock("../../config/index.js", () => ({ config: {
 } }));
 vi.mock("../../logger.js", () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 import { MaxCoreAIClient } from "../maxcoreClient.js";
+import { maxCoreControlTransport } from "../maxcoreControlTransport.js";
 
 describe("public Node session -> private MaxCore ownership", () => {
   it("does not accept a background-owner argument while inside an unauthenticated public request", () => {
@@ -20,6 +21,9 @@ describe("public Node session -> private MaxCore ownership", () => {
     });
   });
   it("binds actual authenticated request owner, not public body/header or service argument", async () => {
+    const context = vi.spyOn(maxCoreControlTransport, "request").mockResolvedValue({
+      snapshot_id: "canonical-public", awareness: "Public live signals", expires_at: Date.now() / 1000 + 60,
+    });
     const sent: any[] = [];
     const transport = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
       sent.push(init);
@@ -57,6 +61,7 @@ describe("public Node session -> private MaxCore ownership", () => {
       expect(modelOwnedBody(JSON.parse(forwarded.body), pythonHeaders))
         .toEqual({ text: "music", userId: "session-owner", user_id: "session-owner", owner_id: "session-owner" });
     } finally {
+      context.mockRestore();
       transport.mockRestore();
       if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
     }

@@ -133,7 +133,8 @@ describe("simplified dashboard route contract", () => {
     expect(page).not.toContain("@ts-nocheck");
     expect(page).toContain("useRequireSubscription");
     expect(page).toContain("hasDashboardPaidAccess");
-    expect(page).toContain("buildFullModeUpgradePayload");
+    expect(page).toContain("preferSimplifiedView: false");
+    expect(page).toContain("handleUpgrade");
     expect(page).toContain('queryKey: ["/api/auth/me"]');
 
     expect(serverGuard).toContain('"/api/dashboard/comprehensive"');

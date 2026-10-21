@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import sharp from "sharp";
 import { getMaxcoreOrigin } from "../../server/services/maxcoreConnector.js";
 import {
   buildAdGenerationRequest,
@@ -102,34 +103,24 @@ describe("advertising MaxCore contracts", () => {
   });
 
   it("mirrors a mocked /uploads/images response into PDIM", async () => {
-    const bytes = Buffer.alloc(16);
-    bytes.set([0x89, 0x50, 0x4e, 0x47], 0);
-    const fetchImpl = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: new Headers({ "content-type": "image/png" }),
-      arrayBuffer: async () => bytes,
-    });
+    const bytes = await sharp({ create: { width: 32, height: 24, channels: 3, background: "blue" } }).png().toBuffer();
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(bytes, {
+      headers: { "content-type": "image/png" },
+    }));
     const pdim = {
-      uploadFile: vi.fn().mockResolvedValue("images/id/generated.png"),
-      getDownloadUrl: vi.fn().mockResolvedValue(
-        "/api/storage/file/images%2Fid%2Fgenerated.png",
-      ),
+      uploadGeneratedFile: vi.fn().mockResolvedValue("users/user-1/generated-images/generated.png"),
+      downloadFile: vi.fn().mockResolvedValue(bytes),
     };
-
     const url = await mirrorGeneratedImageToPDIM(
       `${getMaxcoreOrigin()}/uploads/images/generated.png`,
-      { fetchImpl, storage: pdim as never },
+      { fetchImpl, storage: pdim as never, ownerId: "user-1" },
     );
-
     expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(pdim.uploadFile).toHaveBeenCalledWith(
-      bytes,
-      "images",
-      "generated.png",
-      "image/png",
+    expect(pdim.uploadGeneratedFile).toHaveBeenCalledWith(
+      bytes, "user-1", "generated-images", expect.stringMatching(/^[a-f0-9]{64}\.png$/), "image/png",
     );
-    expect(url).toBe("/api/storage/file/images%2Fid%2Fgenerated.png");
+    expect(pdim.downloadFile).toHaveBeenCalledOnce();
+    expect(url).toBe("/api/storage/file/users%2Fuser-1%2Fgenerated-images%2Fgenerated.png");
   });
 
   it("passes the MaxCore image_url response shape to the server-side mirror", () => {
@@ -152,7 +143,7 @@ describe("advertising MaxCore contracts", () => {
   it("rejects an image URL outside the MaxCore uploads path", async () => {
     await expect(
       mirrorGeneratedImageToPDIM("https://attacker.invalid/uploads/images/x.png", {
-        fetchImpl: vi.fn(),
+        fetchImpl: vi.fn(), ownerId: "user-1",
       }),
     ).rejects.toThrow("not an allowed /uploads/images asset");
   });

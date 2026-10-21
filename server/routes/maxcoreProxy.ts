@@ -28,6 +28,8 @@ import { timingSafeEqual } from "node:crypto";
 import { validateGeneratedArtifact } from "../services/generatedArtifactValidation.js";
 import { requireAdmin, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
+import { prepareGenerationAwareness } from "../services/generationAwareness.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import {
   absolutizeMaxcoreMediaUrls,
   getMaxcoreAdminHeaders,
@@ -102,6 +104,7 @@ generatedArtifactRouter.post("/api/internal/generated-artifacts/commit",
 // It is routed separately below so application-level admin authorization is
 // required before Max Booster supplies that trusted credential upstream.
 const ADMIN_PATH_SUFFIXES = [
+  "/training/live/status",
   "/platform/model/reload",
   "/training/start",
   "/training/stop",
@@ -248,9 +251,14 @@ async function proxyToMaxCore(
       src.userId = authUser.id;
     }
     try {
-      body = JSON.stringify(src);
-    } catch (e) {
-      // fall back to undefined body
+      body = JSON.stringify(await prepareGenerationAwareness(req.originalUrl, src));
+    } catch (error) {
+      res.status(error instanceof MaxCoreControlError ? 503 : 400).json({
+        error: error instanceof MaxCoreControlError
+          ? "Live awareness unavailable for generation"
+          : "Invalid MaxCore request body",
+      });
+      return;
     }
   }
 
@@ -556,6 +564,7 @@ router.get("/api/models/advertising/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/content/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/models/engagement/state", requireAuthOnly, proxyToMaxCore);
 router.get("/api/training/status", requireAdmin, proxyToMaxCore);
+router.get("/api/training/live/status", requireAdmin, proxyToMaxCore);
 router.get("/api/training/logs", requireAdmin, proxyToMaxCore);
 router.get("/api/training/datasets", requireAdmin, proxyToMaxCore);
 router.get("/api/training/continuous/status", requireAdmin, proxyToMaxCore);

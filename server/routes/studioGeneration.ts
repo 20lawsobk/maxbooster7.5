@@ -8,6 +8,7 @@ import { randomBytes } from "crypto";
 import {
   generateFromText as _generateFromText,
   generateFromReference,
+  persistMaxCoreAudio,
 } from "../services/aiAudioGeneratorService.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import {
@@ -23,8 +24,15 @@ import fsPromises from "fs/promises";
 import { execFile } from "child_process";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { promisify } from "util";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 
 const execFileAsync = promisify(execFile);
+
+function normalizeGenerationFailure(error: unknown): unknown {
+  return error instanceof MaxCoreControlError
+    ? new AIUnavailableError("studio generation dependency")
+    : error;
+}
 
 interface GenerationParams {
   instrument: string;
@@ -464,32 +472,40 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
 
     // Submit job to MaxCore — returns {job_id} almost immediately.
     const submitted = requireMaxCore(
-      await MaxCoreAIClient.generate<{ job_id?: string; audioUrl?: string; audio_url?: string; status?: string }>(
+      await MaxCoreAIClient.generate<{ job_id?: string; url?: string; audioUrl?: string; audio_url?: string; status?: string }>(
         "/api/generate/audio",
         {
-          text: enhancedText,
+          prompt: enhancedText,
+          instruction: enhancedText,
           duration: validatedData.duration ?? null,
           bars: validatedData.bars ?? null,
-          tempo: validatedData.tempo ?? null,
+          bpm: validatedData.tempo ?? null,
           genre: validatedData.genre ?? null,
           key: validatedData.key ?? null,
           intent: validatedData.intent,
           direction: validatedData.direction,
           context: validatedData.context,
           awareness: validatedData.awareness,
-        },
+        }, req.user?.id,
       ),
       "studio audio generation",
     );
 
     // If MaxCore returned audio synchronously (rare fast path), serve it directly.
-    const syncAudioUrl = submitted.audioUrl ?? submitted.audio_url ?? null;
-    if (syncAudioUrl && !submitted.job_id) {
-      return res.json({ success: true, audioUrl: syncAudioUrl, status: "completed", sourceType: "MaxCoreAI" });
+    const syncAudioUrl = submitted.audioUrl ?? submitted.audio_url ?? submitted.url ?? null;
+    if (syncAudioUrl) {
+      if (["failed", "error", "cancelled", "canceled"].includes(submitted.status ?? "")) {
+        throw new AIUnavailableError("studio audio generation failed");
+      }
+      const audioUrl = await persistMaxCoreAudio(syncAudioUrl, null, {}, req.user!.id);
+      return res.json({ success: true, audioUrl, jobId: submitted.job_id,
+        status: "completed", sourceType: "MaxCoreAI" });
     }
 
     const jobId = submitted.job_id;
-    if (!jobId) throw new AIUnavailableError("studio audio generation — no job_id returned");
+    if (!jobId || !/^[A-Za-z0-9_-]{1,256}$/.test(jobId)) {
+      throw new AIUnavailableError("studio audio generation — no valid job_id returned");
+    }
 
     logger.info(`[Studio Generation] Audio job ${jobId} submitted — client should poll /api/audio-job/${jobId}`);
 
@@ -504,7 +520,8 @@ router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
       midiUrl: `/api/audio/${jobId}/midi`,
       sourceType: "MaxCoreAI",
     });
-  } catch (error) {
+  } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
     logger.warn({ err: error }, "[Studio Generation] Text-to-audio failed:");
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, message: "Invalid request parameters", errors: error.issues });
@@ -582,7 +599,8 @@ router.post(
         generatedNotes: result.generatedNotes || [],
         generatedChords: result.generatedChords || [],
       });
-    } catch (error) {
+    } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
       logger.warn(
         { err: error },
         "[Studio Generation] Audio generation failed:",
@@ -595,7 +613,6 @@ router.post(
           errors: error.issues,
         });
       }
-
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -792,7 +809,8 @@ router.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => {
       melody: generatedPattern,
       params,
     });
-  } catch (error) {
+  } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (melody): ${error.message}`);
       return res
@@ -818,7 +836,8 @@ router.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
       String(req.user?.id ?? ""),
     );
     return res.json({ success: true, pattern: generatedPattern, params });
-  } catch (error) {
+  } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (drums): ${error.message}`);
       return res
@@ -848,7 +867,8 @@ router.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => {
       progression: generatedProgression,
       params,
     });
-  } catch (error) {
+  } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
     if (error instanceof AIUnavailableError) {
       logger.warn(`[Generation] MaxCore unavailable (chords): ${error.message}`);
       return res
@@ -882,7 +902,8 @@ router.post(
         arrangement: generatedArrangement,
         params,
       });
-    } catch (error) {
+    } catch (caught) {
+    const error = normalizeGenerationFailure(caught);
       if (error instanceof AIUnavailableError) {
         logger.warn(
           `[Generation] MaxCore unavailable (arrangement): ${error.message}`,

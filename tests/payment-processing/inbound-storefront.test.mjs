@@ -64,7 +64,8 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
     "../middleware/uploadHandler.js": "export function createHardenedUpload(){const u=()=>{};u.single=()=>()=>{};u.array=()=>()=>{};u.fields=()=>()=>{};u.any=()=>()=>{};return u;}export async function storeUploadedFile(){return {};}",
     "../services/storefrontService": "export const storefrontService={};",
     "../services/hybridStorageService": "export const hybridStorageService={};",
-    "@shared/schema": "export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={};",
+    "../services/storageService.js": "export const storageService={};",
+    "@shared/schema": "export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={},userStorageFiles={};",
     stripe: stripeStub,
     "../config/defaults": "export const getBaseUrl=()=> 'https://app.invalid';",
     "../db": "export const db=globalThis.__inboundStore.db,pool=globalThis.__inboundStore.pool;",
@@ -96,19 +97,24 @@ test("storefront cart executes auth, ownership, catalog pricing, amount, metadat
   assert.equal((await invoke(checkout, { isAuthenticated: () => true, user: { id: "seller-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1"] } })).statusCode, 400);
   const badCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer" }, params: { id: "store-1" }, body: { listingIds: new Array(21).fill("beat-1") } });
   assert.equal(badCart.statusCode, 400);
-  const goodCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-1" : undefined });
+  const invalidCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-1" : undefined });
+  assert.equal(invalidCart.statusCode, 400, "unavailable cart IDs must fail closed");
+  assert.equal(stripeCalls.sessions.length, 0);
+  const goodCart = await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-1" }, params: { id: "store-1" }, body: { listingIds: ["beat-1"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-valid-cart-buyer-1" : undefined });
   assert.equal(goodCart.statusCode, 200);
   assert.equal(stripeCalls.sessions.length, 1);
   const { payload: session } = stripeCalls.sessions[0];
   assert.equal(session.line_items.length, 1);
   assert.equal(session.line_items[0].price_data.unit_amount, 2000);
   assert.equal(session.metadata.buyerId, "buyer-1");
-  assert.deepEqual(JSON.parse(session.metadata.listingIds), ["beat-1"]);
+  assert.equal(session.metadata.commerceVersion, "2");
+  assert.equal(session.metadata.commerceKind, "merchant");
+  assert.equal(orderWrites[0].params[3], "beat-1");
   assert.equal(orderWrites.length, 1);
   assert.equal(orderWrites[0].params[5], 2000);
   assert.equal(orderWrites[0].params[6], "cs_store_1");
   globalThis.__inboundStore.listings[0].discountExpiresAt = "2000-01-01";
-  await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-2" }, params: { id: "store-1" }, body: { listingIds: ["beat-1", "untrusted-id"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-2" : undefined });
+  await invoke(checkout, { isAuthenticated: () => true, user: { id: "buyer-2" }, params: { id: "store-1" }, body: { listingIds: ["beat-1"], licenseType: "basic" }, get: name => name === "Idempotency-Key" ? "storefront-route-command-buyer-2" : undefined });
   assert.equal(stripeCalls.sessions.length, 2, "distinct buyers receive independent provider sessions");
   assert.equal(stripeCalls.sessions[1].payload.line_items[0].price_data.unit_amount, 2500, "expired promotional price must not be applied");
   assert.equal(orderWrites.length, 2);

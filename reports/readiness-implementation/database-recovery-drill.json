@@ -1,17 +1,17 @@
 {
   "reportVersion": 1,
-  "startedAt": "2026-09-23T15:15:36.128Z",
-  "completedAt": "2026-09-23T15:19:20.522Z",
+  "startedAt": "2026-10-19T20:44:56.258Z",
+  "completedAt": "2026-10-19T20:46:06.162Z",
   "status": "pass",
   "liveSource": true,
-  "durableBackupCreated": true,
-  "recoveryMode": "private-retained-app-storage",
+  "durableBackupCreated": false,
+  "recoveryMode": "ephemeral",
   "sourceAccess": "read-only exported snapshot",
-  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" DATABASE_RECOVERY_BUCKET_ID=\"$DATABASE_RECOVERY_BUCKET_ID\" node --import tsx scripts/database-recovery-drill.mjs --retained-app-storage",
+  "runCommand": "env -i PATH=\"$PATH\" HOME=/tmp NEON_DATABASE_URL=\"$NEON_DATABASE_URL\" node --import tsx scripts/database-recovery-drill.mjs",
   "safety": {
     "sourceMutation": false,
     "appStarted": false,
-    "providerCalls": true,
+    "providerCalls": false,
     "dumpScratchMode": "0600",
     "scratchRemoved": true,
     "targetNetwork": "loopback and private Unix socket only"
@@ -19,29 +19,29 @@
   "evidence": {
     "source": {
       "serverMajor": 17,
-      "tableCount": 321,
-      "schemaDefinitionRecordCount": 6864,
-      "schemaFingerprint": "3ff3148f2b151dfb74684463507bed43979505b66207b068373625333f7f63dd",
+      "tableCount": 341,
+      "schemaDefinitionRecordCount": 7280,
+      "schemaFingerprint": "ad5e571a491f4475470a3ae854c706bd8ee34632b936cb3a00c71fb55058f071",
       "schemaSections": {
         "relations": {
-          "count": 1026,
-          "fingerprint": "78a147e20af2010ea2f297c7596368c71f3df605eaf6a8db8fe409b1f8e28e83"
+          "count": 1088,
+          "fingerprint": "397bdda9a21c5c4c7cbe861cc3c40ae686b7dc04730e01db2d18be4d109430cc"
         },
         "columns": {
-          "count": 4709,
-          "fingerprint": "11b82bcba71d1b1211e9d3ede461d27b51faf8952763995eb650a2bc185afd79"
+          "count": 4962,
+          "fingerprint": "c0f05345fe724ed6508e9248c7df7514ccb72965feab7ef590584b094e9b76df"
         },
         "types": {
           "count": 0,
           "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
         },
         "constraints": {
-          "count": 419,
-          "fingerprint": "a90fd8605021e5481ef10bd65d88857029b585977505afced43dbd3023c1c7e6"
+          "count": 478,
+          "fingerprint": "b6e94fe082efe3ad2aee5d60815d997422413a66f64347654429baaac747f202"
         },
         "indexes": {
-          "count": 691,
-          "fingerprint": "9d1a749eb2587efc0934c5351c648011f67b6f614bda04bb93ff0682a68fdc76"
+          "count": 733,
+          "fingerprint": "2cf0d7abab172be379414f5278a80ebc6f42d5f2688d27652c53ff055b19836f"
         },
         "functions": {
           "count": 2,
@@ -63,49 +63,58 @@
     },
     "dump": {
       "durability": "uncommitted",
-      "bytes": 27469691,
-      "sha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
+      "bytes": 24037616,
+      "sha256": "e6cb48a9aa772a3f88625b2aa47d91e25e014e22671561123d29a57b11c55a46",
       "sourceVersion": "17.11",
       "consistentSnapshot": true
     },
-    "retained": {
-      "bucketId": "replit-objstore-06ebdcab-c632-491d-bd64-04e3e146f0e0",
-      "storageContract": {
-        "privacy": "private Replit App Storage; authenticated access required",
-        "retention": "retained-until-explicit-delete",
-        "fixedDurationLocked": false,
-        "privacyProbe": "authenticated generation-bound read matched; anonymous exact-object fetch denied",
-        "anonymousStatus": 403,
-        "canaryRemoved": true
-      },
-      "prefix": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f",
-      "dumpObject": {
-        "name": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f/source.sql",
-        "generation": "1790176753074258",
-        "crc32c": "877KIQ==",
-        "size": "27469691"
-      },
-      "manifestObject": {
-        "name": "private-database-recovery/2026-09-23T15-19-12-586Z-b2b51cdf-567c-467b-8d81-49fa71d92c3f/manifest.json",
-        "generation": "1790176753238982",
-        "crc32c": "dTv1zg==",
-        "size": "1168",
-        "sha256": "8abe49bce6afc4f7f4272baef2fe97f9ca89ac225d4cb82ab9b0f47f2701a20b"
-      },
-      "readback": {
-        "sha256": "ed904938c6c661132fcbe45bf6af13133eb732c9b4c6c851d1a9f8acea31c4f6",
-        "crc32c": "877KIQ==",
-        "bytes": 27469691
-      },
-      "restoreInputWasGenerationBoundReadback": true,
-      "sourceRevision": "7c3ffa434314c22fcfd7aee39502444bc3bff5df",
-      "currentSourceHash": "617750ea33753f39254bb0c3ac70e3f9ef1fe6f23172364512d9896842c34c06"
+    "restoredSchema": {
+      "count": 7280,
+      "fingerprint": "ad5e571a491f4475470a3ae854c706bd8ee34632b936cb3a00c71fb55058f071",
+      "sections": {
+        "relations": {
+          "count": 1088,
+          "fingerprint": "397bdda9a21c5c4c7cbe861cc3c40ae686b7dc04730e01db2d18be4d109430cc"
+        },
+        "columns": {
+          "count": 4962,
+          "fingerprint": "c0f05345fe724ed6508e9248c7df7514ccb72965feab7ef590584b094e9b76df"
+        },
+        "types": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "constraints": {
+          "count": 478,
+          "fingerprint": "b6e94fe082efe3ad2aee5d60815d997422413a66f64347654429baaac747f202"
+        },
+        "indexes": {
+          "count": 733,
+          "fingerprint": "2cf0d7abab172be379414f5278a80ebc6f42d5f2688d27652c53ff055b19836f"
+        },
+        "functions": {
+          "count": 2,
+          "fingerprint": "da9abec49ba1fe1fc4d13da1241e12de7c7e6bdc0d44991cf9599d9cc08f0c62"
+        },
+        "sequences": {
+          "count": 14,
+          "fingerprint": "26b8c586bcc85f4d5a1580d103c965f2c9f26fb7b545d58328f664b578613709"
+        },
+        "triggers": {
+          "count": 3,
+          "fingerprint": "9b154857aeb2f23c860a2ed1e57cb23c8a00cd8d2c1d9b31ecfdca8563ecca6b"
+        },
+        "policies": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      }
     },
     "restore": {
       "targetMajor": 17,
-      "schemaDefinitionRecordCount": 6864,
-      "tableCount": 321,
-      "aggregateRowCount": "44868",
+      "schemaDefinitionRecordCount": 7280,
+      "tableCount": 341,
+      "aggregateRowCount": "35792",
       "exactPerTableCountsMatched": true,
       "exactPerTableContentHashesMatched": true,
       "targetIdentityMatched": true,
@@ -124,21 +133,6 @@
       "detail": "mode=0600"
     },
     {
-      "name": "managed storage privacy is empirically verified",
-      "status": "pass",
-      "detail": "authenticated canary read matched; anonymous exact-object fetch denied (403); canary removed"
-    },
-    {
-      "name": "managed backup retention contract is recorded",
-      "status": "pass",
-      "detail": "retained until explicit deletion; no fixed-duration or locked-retention claim"
-    },
-    {
-      "name": "retained generation readback matches dump",
-      "status": "pass",
-      "detail": "27469691 bytes matched CRC32C and SHA-256"
-    },
-    {
       "name": "restore target identity is exact",
       "status": "pass",
       "detail": "database, role, data directory, listener, and unique port matched"
@@ -151,22 +145,22 @@
     {
       "name": "restored schema fingerprint matches source snapshot",
       "status": "pass",
-      "detail": "6864 canonical schema-definition records matched"
+      "detail": "7280 canonical schema-definition records compared"
     },
     {
       "name": "restored table inventory matches source snapshot",
       "status": "pass",
-      "detail": "321 table row counts matched exactly"
+      "detail": "341 table row counts matched exactly"
     },
     {
       "name": "restored row content hashes match source snapshot",
       "status": "pass",
-      "detail": "321 deterministic per-table content hashes matched"
+      "detail": "341 deterministic per-table content hashes matched"
     },
     {
       "name": "restored database is nonempty",
       "status": "pass",
-      "detail": "6864 canonical schema-definition records restored"
+      "detail": "7280 canonical schema-definition records restored"
     }
   ],
   "failures": []

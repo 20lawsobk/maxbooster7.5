@@ -346,6 +346,21 @@ async function proxyRequest(
   // Credential validation happens in Python. A path-only cache cannot safely
   // return a prior authorized response to an unvalidated credential.
   const isGet = req.method === "GET" || req.method === "HEAD";
+  const awarenessOnly = path === "/api/awareness/unified/status" ||
+    path === "/api/awareness/unified/context";
+  const plannerOnly = path === "/api/generate/text" && req.body?.mode === "planner";
+  const receipt = req.body?.awareness;
+  const mediaGeneration = ["/api/generate/image", "/api/generate/audio",
+    "/api/generate-video", "/api/video/generate-ai", "/platform/video/generate",
+    "/api/video/extend", "/platform/daw/generate"].includes(path);
+  const liveGeneration = (mediaGeneration || ["/api/generate/content", "/api/generate/text",
+    "/api/platform/social/generate", "/api/platform/ads/generate", "/api/generate/campaign"].includes(path)) &&
+    receipt && typeof receipt === "object" &&
+    typeof receipt.snapshot_id === "string" && receipt.snapshot_id.length > 0 &&
+    typeof receipt.expires_at === "number" && Number.isFinite(receipt.expires_at) &&
+    receipt.expires_at * 1000 > Date.now();
+  const directDeadline = awarenessOnly ? 4_000 : plannerOnly ? 30_000 :
+    liveGeneration ? (mediaGeneration ? 600_000 : 60_000) : undefined;
   const startTime = Date.now();
   // Track per-route and total request counts
   recordRequest(req.path ?? path);
@@ -355,7 +370,7 @@ async function proxyRequest(
   // waitForRecovery polls every 300 ms until both the circuit breaker is closed
   // and the pythonRestarting flag is clear (set by python-server.ts after the
   // warm-up pass completes).  Guaranteed-completion: the hold is indefinite.
-  if (_cbIsOpen() || isPythonRestarting()) {
+  if (!directDeadline && (_cbIsOpen() || isPythonRestarting())) {
     console.log(`[Proxy] Python unavailable — holding ${req.method} ${path} (up to ${REQUEST_HOLD_MS / 1000}s)`);
     await waitForRecovery(); // holds indefinitely — resolves once Python recovers
   }
@@ -367,13 +382,19 @@ async function proxyRequest(
       "Content-Type": "application/json",
       ...authHeaders,
     };
-    const upstreamRes = await _upstreamRequest(url, {
+    // Awareness/planning do not require weights. A live-conditioned generation
+    // request must also reach Python's authoritative capability check rather
+    // than hang behind a model-recovery flag. This never bypasses Python auth,
+    // snapshot validation or generation quality gates.
+    const send = directDeadline ? undiciRequest : _upstreamRequest;
+    const upstreamRes = await send(url, {
       method: req.method as any,
       dispatcher: _keepAlivePool,
       headers,
       body: !isGet && req.body ? JSON.stringify(modelOwnedBody(req.body, authHeaders)) : undefined,
-      headersTimeout: 0,
-      bodyTimeout: 0,
+      headersTimeout: directDeadline ?? 0,
+      bodyTimeout: directDeadline ?? 0,
+      ...(directDeadline ? { signal: AbortSignal.timeout(directDeadline) } : {}),
     });
 
     const data = await parseBodyText(upstreamRes.body);
@@ -729,6 +750,25 @@ router.get("/gpu/capabilities", async (req, res) => {
 
 router.get("/training/status", async (req, res) => {
   await proxyRequest(req, res, "/training/status");
+});
+
+// Management must remain reachable while waiting for the first reviewed model.
+// Python validates the caller's admin credential; never insert a server key.
+router.get("/training/live/status", async (req, res) => {
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
+  }
+  try {
+    const upstream = await undiciRequest(`${MODEL_API_BASE}/api/training/live/status`, {
+      method: "GET", dispatcher: _keepAlivePool, headers,
+      signal: AbortSignal.timeout(5_000), headersTimeout: 5_000, bodyTimeout: 5_000,
+    });
+    res.status(upstream.statusCode).json(await parseBodyText(upstream.body));
+  } catch {
+    res.status(503).json({ error: "Local live-learning service unavailable" });
+  }
 });
 
 router.post("/training/start", async (req, res) => {

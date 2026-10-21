@@ -3,8 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { it, expect } from "vitest";
 import { packCapsule, packCapsuleMembers } from "../../script/lib/capsulePack";
-import { cachedCapsule, verifyCapsule } from "../../script/lib/preparedCapsules";
+import { cachedCapsule, verifyCapsule, treeIdentity } from "../../script/lib/preparedCapsules";
 import { inventory } from "../../script/lib/releaseInventory";
+import { NODE_MODULE_CAPSULE_EXCLUDE_PATHS } from "../../script/lib/releaseCapsuleInputs.mjs";
+import { execFileSync } from "node:child_process";
 
 it("packs and production-restores capsules without changing source bytes or permissions", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "nondestructive-release-"));
@@ -22,6 +24,51 @@ it("packs and production-restores capsules without changing source bytes or perm
     await packCapsuleMembers({ root: source, members: ["example/content"], capsule: "members.pdim", outputRoot: output, preserveSource: true, threads: 1 });
     expect(await inventory(source)).toEqual(before);
     await verifyCapsule(process.cwd(), root, output, "members", "example");
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}, 60000);
+
+it("ignores changing Vite build caches in dependency identities and actual capsule bytes", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "release-cache-exclusions-"));
+  try {
+    fs.mkdirSync(path.join(root, "node_modules/runtime-package"), { recursive: true });
+    fs.writeFileSync(path.join(root, "node_modules/runtime-package/index.js"), "export const value = 1;");
+    for (const dir of NODE_MODULE_CAPSULE_EXCLUDE_PATHS) {
+      fs.mkdirSync(path.join(root, "node_modules", dir));
+      fs.writeFileSync(path.join(root, "node_modules", dir, "transient"), "before");
+    }
+    const before = await treeIdentity(root, "node_modules", NODE_MODULE_CAPSULE_EXCLUDE_PATHS);
+    for (const dir of NODE_MODULE_CAPSULE_EXCLUDE_PATHS) {
+      fs.writeFileSync(path.join(root, "node_modules", dir, "transient"), "changed during verification");
+    }
+    expect(await treeIdentity(root, "node_modules", NODE_MODULE_CAPSULE_EXCLUDE_PATHS)).toBe(before);
+    await packCapsule({ root, dir: "node_modules", capsule: "node_modules.pdim", outputRoot: path.join(root, "output"),
+      preserveSource: true, threads: 1, excludePaths: [...NODE_MODULE_CAPSULE_EXCLUDE_PATHS] });
+    const members = execFileSync("tar", ["--zstd", "-tf", path.join(root, "output/node_modules.pdim")], { encoding: "utf8" });
+    expect(members).toContain("node_modules/runtime-package/index.js");
+    for (const dir of NODE_MODULE_CAPSULE_EXCLUDE_PATHS) expect(members).not.toContain(`node_modules/${dir}/`);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}, 60000);
+
+it("never commits a capsule when round-trip verification detects changed source", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "release-cache-source-change-"));
+  try {
+    const source = path.join(root, "source"), cache = path.join(root, "cache"), payload = path.join(root, "payload");
+    fs.mkdirSync(path.join(source, "example"), { recursive: true });
+    fs.mkdirSync(payload);
+    fs.writeFileSync(path.join(source, "example/content"), "before packing");
+    const before = await treeIdentity(source, "example");
+    await expect(cachedCapsule({ cache, payload, name: "example", key: before,
+      build: async output => {
+        await packCapsule({ root: source, dir: "example", capsule: "example.pdim", outputRoot: output, preserveSource: true, threads: 1 });
+        fs.writeFileSync(path.join(source, "example/content"), "changed during preparation");
+      },
+      verify: async output => {
+        await verifyCapsule(process.cwd(), root, output, "example", "example");
+        if (before !== await treeIdentity(source, "example")) throw new Error("source changed during preparation");
+      },
+    })).rejects.toThrow(/source changed/);
+    expect(fs.readdirSync(cache)).toEqual([]);
+    expect(fs.readdirSync(payload)).toEqual([]);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 }, 60000);
 

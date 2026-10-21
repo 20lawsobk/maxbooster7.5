@@ -6,6 +6,7 @@ import {spawn} from "node:child_process";
 import {setTimeout as delay} from "node:timers/promises";
 import {liveCapacity} from "./capacity.mjs";
 import {buildPlan,startPlan} from "./plans.mjs";
+import {createOwnedProcessTracker} from "./owned-processes.mjs";
 
 export function validatePlan(tasks) {
   const map=new Map(tasks.map(t=>[t.id,t]));
@@ -22,10 +23,6 @@ export function validatePlan(tasks) {
     t.deps.forEach(visit); visiting.delete(id); done.add(id);
   }
   tasks.forEach(t=>visit(t.id));
-}
-
-function signalGroup(child, signal) {
-  try { process.kill(-child.pid,signal); } catch(e) { if(e.code!=="ESRCH") throw e; }
 }
 
 export async function runExecutive(tasks, {
@@ -46,6 +43,7 @@ export async function runExecutive(tasks, {
       if(signal?.aborted) abort();
       if(!ready && Date.now()-start>budgetMs) failure ??= Error(`Executive deadline expired; running=${[...active.keys()]} waiting=${[...pending.keys()]}`);
       for(const [id,job] of active) {
+        job.owned?.capture();
         if(!job.closed && !(ready && job.task.application) && Date.now()-job.started>(job.task.timeoutMs??budgetMs)) failure ??= Error(`Task deadline expired: ${id}`);
         if(!job.closed) continue;
         active.delete(id);
@@ -73,7 +71,8 @@ export async function runExecutive(tasks, {
         const child=spawn(task.command,task.args,{cwd,detached:true,stdio:"inherit",env:{
           ...env,DEPLOY_TASK_CPU:String(assignedCPU),CARGO_BUILD_JOBS:String(assignedCPU),
         }});
-        const job={task,child,cpu:assignedCPU,closed:false,started:Date.now()};
+        const job={task,child,cpu:assignedCPU,closed:false,started:Date.now(),
+          owned:child.pid?createOwnedProcessTracker(child.pid):null};
         children.add(job);
         child.once("error",error=>{job.error=error;job.closed=true;});
         child.once("close",code=>{job.code=code;job.closed=true;});
@@ -96,12 +95,13 @@ export async function runExecutive(tasks, {
     return {completed:[...done],ready};
   } finally {
     signal?.removeEventListener("abort",abort);
-    // Kill the entire session, not only bash; a failed sibling must not leave
-    // tar/zstd/npm descendants writing while callers attempt recovery.
-    for(const job of children) if(job.child.pid) signalGroup(job.child,"SIGTERM");
-    const until=Date.now()+5000;
-    while([...children].some(j=>!j.closed) && Date.now()<until) await delay(50);
-    for(const job of children) if(job.child.pid) signalGroup(job.child,"SIGKILL");
+    // Application sidecars can create their own sessions. A group-only kill
+    // misses those descendants; cutting the app off at5s also prevented its
+    // existing25s graceful worker drain from reaching subsystem shutdown.
+    const stopped=await Promise.all([...children].map(job=>job.owned?.stop({
+      graceMs:job.task.application?26000:5000,descendantGraceMs:2000,
+    })));
+    if(stopped.some(result=>result?.remaining.length))throw Error('Owned deployment descendants did not stop');
     await Promise.all([...children].filter(j=>!j.closed).map(j=>new Promise(resolve=>j.child.once("close",resolve))));
   }
 }

@@ -132,6 +132,12 @@ export function useProjectSync(projectId: string | null) {
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncRef = useRef<number>(0);
   const stateVersionRef = useRef<number>(0);
+  const loadedProjectRef = useRef<string | null>(null);
+  const currentProjectRef = useRef(projectId);
+  if (currentProjectRef.current !== projectId) {
+    currentProjectRef.current = projectId;
+    loadedProjectRef.current = null;
+  }
 
   const getStoreState = useCallback(() => useStudioStore?.getState(), []);
 
@@ -420,7 +426,8 @@ export function useProjectSync(projectId: string | null) {
   );
 
   const saveFullState = useCallback(async (): Promise<boolean> => {
-    if (!projectId) return false;
+    // Reset/loading state must never overwrite an unread saved project.
+    if (!projectId || loadedProjectRef.current !== projectId) return false;
 
     try {
       const dawState = serializeFullState();
@@ -456,6 +463,7 @@ export function useProjectSync(projectId: string | null) {
         result?.persistedStateVersion === stateVersionRef.current &&
         result?.persistedStateMatches === true
       ) {
+        if (currentProjectRef.current !== projectId) return false;
         getStoreState().markSaved();
         logger.info(
           `[ProjectSync] Full DAW state saved for project ${projectId}`,
@@ -486,10 +494,13 @@ export function useProjectSync(projectId: string | null) {
 
       if (!response?.ok) {
         logger.error("[ProjectSync] Failed to load DAW state");
-        return false;
+        throw new Error(`Saved project state is unavailable (HTTP ${response.status})`);
       }
 
       const data = await response.json();
+      if (currentProjectRef.current !== projectId) {
+        throw new Error("Project changed while loading saved state");
+      }
 
       if (data?.dawState) {
         try {
@@ -515,6 +526,9 @@ export function useProjectSync(projectId: string | null) {
             );
           }
           const tracksData = await tracksResponse.json();
+          if (currentProjectRef.current !== projectId) {
+            throw new Error("Project changed while loading tracks");
+          }
           dawState = mergeRelationalTracksIntoDawState(dawState, {
             tracks: tracksData?.tracks || [],
             clips: tracksData?.clips || [],
@@ -550,14 +564,14 @@ export function useProjectSync(projectId: string | null) {
   }, [projectId, store, deserializeAndRestoreState]);
 
   const syncToBackend = useCallback(async () => {
-    if (!projectId) return;
+    if (!projectId || loadedProjectRef.current !== projectId || !getStoreState().project.isDirty) return;
 
     const now = Date.now();
     if (now - lastSyncRef?.current < SYNC_DEBOUNCE_MS) return;
     lastSyncRef.current = now;
 
     await saveFullState();
-  }, [projectId, saveFullState]);
+  }, [projectId, saveFullState, getStoreState]);
 
   const debouncedSync = useCallback(() => {
     if (syncTimeoutRef?.current) {
@@ -623,6 +637,7 @@ export function useProjectSync(projectId: string | null) {
 
   const loadProjectData = useCallback(async () => {
     if (!projectId) return false;
+    loadedProjectRef.current = null;
 
     store?.resetForNewProject();
 
@@ -633,6 +648,8 @@ export function useProjectSync(projectId: string | null) {
       return false;
     }
     if (fullStateLoaded) {
+      if (currentProjectRef.current !== projectId) return false;
+      loadedProjectRef.current = projectId;
       return true;
     }
 
@@ -655,6 +672,7 @@ export function useProjectSync(projectId: string | null) {
 
       const projectData = await projectRes?.json();
       const tracksData = await tracksRes?.json();
+      if (currentProjectRef.current !== projectId) return false;
 
       if (projectData) {
         store?.setProject({
@@ -683,6 +701,7 @@ export function useProjectSync(projectId: string | null) {
       // downloading audio files twice just to check duration.
 
       store?.markSaved();
+      loadedProjectRef.current = projectId;
       logger.info(
         `[ProjectSync] Loaded project ${projectId} with ${mergedState.tracks.length} tracks from database`,
       );

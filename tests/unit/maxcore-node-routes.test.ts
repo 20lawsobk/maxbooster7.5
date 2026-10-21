@@ -10,11 +10,15 @@ describe("MaxCore Node route contracts", () => {
   let nextReady = true;
   let audioMode: "missing" | "drop" | "hang" = "missing";
   let lastPlannerUser: string | undefined;
+  let oldRestarting: boolean;
   const oldPort = process.env.MODEL_API_PORT;
   const oldToken = process.env.PDIM_LOCAL_CHANNEL_TOKEN;
   const oldKeepalive = process.env.MAXCORE_KEEPALIVE;
 
   beforeAll(async () => {
+    const state = await import("../../external/maxcore/artifacts/api-server/src/server-state.js");
+    oldRestarting = state.isPythonRestarting();
+    state.setPythonRestarting(false);
     upstream = createServer(async (req, res) => {
       const url = req.url ?? "";
       if (url === "/health") {
@@ -28,6 +32,15 @@ describe("MaxCore Node route contracts", () => {
         res.setHeader("Content-Type", "application/json");
         res.statusCode = nextReady ? 200 : 503;
         res.end(JSON.stringify({ ready: nextReady }));
+      } else if (url === "/api/awareness/unified/context") {
+        if (req.headers.authorization !== "Bearer test-private-channel") {
+          res.statusCode = 401;
+          res.end("{}");
+          return;
+        }
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ready: true, snapshot_id: "fixture-live",
+          expires_at: Date.now() / 1000 + 60, awareness: "public fixture signals" }));
       } else if (url === "/analyze") {
         res.setHeader("Content-Type", "application/json");
         res.end("{}");
@@ -65,6 +78,8 @@ describe("MaxCore Node route contracts", () => {
   });
 
   afterAll(async () => {
+    const state = await import("../../external/maxcore/artifacts/api-server/src/server-state.js");
+    state.setPythonRestarting(oldRestarting);
     await Promise.all([gateway, upstream].map((server) =>
       new Promise<void>((resolve) => server.close(() => resolve()))));
     if (oldPort === undefined) delete process.env.MODEL_API_PORT;

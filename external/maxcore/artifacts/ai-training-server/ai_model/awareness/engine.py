@@ -20,6 +20,7 @@ POINTER = "awareness:v1:current"
 BLOB = "awareness:v1:snapshot:"
 OBSERVATIONS_PREFIX = "awareness:v1:source-observations:"
 TTL = 3600
+MAX_OBSERVATION_TEXT = 4096
 MAX_SOURCE_OBSERVATIONS = 240
 MAX_DOMAIN_TRAINING_OBSERVATIONS = 60
 _bound = contextvars.ContextVar("maxcore_awareness", default=None)
@@ -124,14 +125,14 @@ def _text_validation_diagnostic(domains):
             text = row.get("text")
             if not isinstance(text, str):
                 return {"domain": domain, "source": row.get("source"), "issue": "non_string"}
-            normalized = clean(text)
+            normalized = clean(text, MAX_OBSERVATION_TEXT)
             if text and normalized == text:
                 continue
             if not text:
                 issue = "empty"
             elif not normalized:
                 issue = "cleaned_to_empty"
-            elif len(text) > 240:
+            elif len(text) > MAX_OBSERVATION_TEXT:
                 issue = "over_limit"
             elif html.unescape(text) != text:
                 issue = "encoded_entity"
@@ -195,7 +196,7 @@ def validate_source_observation_document(document, source, domain, now):
                 raise failure
             text, url, metric = row["text"], row["citation"], row["metric"]
             if (row["source"] != source or not isinstance(text, str) or not text
-                    or clean(text) != text or not isinstance(url, str)
+                    or clean(text, MAX_OBSERVATION_TEXT) != text or not isinstance(url, str)
                     or citation(url) != url or not isinstance(metric, str)
                     or not metric or clean(metric, 80) != metric):
                 raise failure
@@ -278,7 +279,7 @@ class Snapshot:
                         raise ValueError("observation provenance mismatch")
                     if expires > r["observed_at"] + TTL:
                         raise ValueError("extended source freshness")
-                    if not r["text"] or clean(r["text"]) != r["text"]:
+                    if not r["text"] or clean(r["text"], MAX_OBSERVATION_TEXT) != r["text"]:
                         raise ValueError("unsafe text")
                     if not r["citation"] or citation(r["citation"]) != r["citation"]:
                         raise ValueError("citation")
@@ -348,7 +349,7 @@ def bind(snapshot):
 def conditioning(snapshot, platform="", modality=""):
     snap = validate_snapshot(snapshot)
     doc = snap.to_dict()
-    data = {domain: [{"id": r["id"], "text": r["text"], "citation": r["citation"],
+    data = {domain: [{"id": r["id"], "text": clean(r["text"]), "citation": r["citation"],
                       "source": r["source"], "observed_at": r["observed_at"],
                       "metric": r["metric"], "score": r["score"]}
                      for r in rows[:6]] for domain, rows in doc["domains"].items()}
@@ -627,7 +628,7 @@ class Engine:
         for raw in rows[:60]:
             if not isinstance(raw, dict):
                 continue
-            text, cite = clean(raw.get("text")), citation(raw.get("citation"))
+            text, cite = clean(raw.get("text"), MAX_OBSERVATION_TEXT), citation(raw.get("citation"))
             value = raw.get("value")
             if (not text or not cite or type(value) not in (float, int)
                     or not math.isfinite(value) or value < 0):
@@ -691,7 +692,7 @@ class Engine:
         writer(source, document, self._owner)
         self._observation_record_count += len(rows)
 
-    def training_observations(self):
+    def training_observations(self, *, _peak=False):
         """Read the fresh rolling source corpus without requiring a full snapshot."""
         now = self.clock()
         by_domain = {domain: [] for domain in DOMAINS}
@@ -715,6 +716,8 @@ class Engine:
                     ) from exc
             rows = validate_source_observation_document(document, source, domain, now)
             by_domain[domain].extend({**row, "domain": domain} for row in rows)
+        if _peak:
+            return self._select_peak_observations(by_domain, now)
         from ai_model.gpu.awareness_kernels import rank_signals
         selected = []
         for domain in sorted(by_domain):
@@ -737,6 +740,69 @@ class Engine:
             "domains": sorted({row["domain"] for row in selected}),
             "records": selected,
         }
+
+    def peak_training_observations(self):
+        """Fresh measured public content, separate from contextual trend feeds.
+
+        Actual engagement is ranked only within a source. Round-robin quotas
+        prevent a large platform/domain from erasing smaller public sources.
+        This does not claim worldwide superiority or prove downstream quality.
+        """
+        return self.training_observations(_peak=True)
+
+    @staticmethod
+    def _select_peak_observations(by_domain, now):
+        from .sources import PEAK_METRIC, relevant_peak_text
+        selected = []
+        seen = set()
+        for domain in sorted(by_domain):
+            by_source = {}
+            for row in by_domain[domain]:
+                source = row["source"]
+                host = urlsplit(row["citation"]).hostname
+                allowed = ((source == "bluesky_peak_" + domain and host == "bsky.app")
+                           or (source == "mastodon_peak_" + domain and host == "mastodon.social")
+                           or (source == "mastodon_trending" and domain == "social"
+                               and host == "mastodon.social"))
+                if (not allowed or row["metric"] != PEAK_METRIC or row["value"] <= 0
+                        or not 60 <= len(row["text"]) <= MAX_OBSERVATION_TEXT
+                        or len(row["text"].split()) < 8
+                        or not relevant_peak_text(row["text"], domain)):
+                    continue
+                by_source.setdefault(source, []).append(row)
+            # Scores are normalized per source and intentionally never compared
+            # here. Observed_at is collection freshness, not publication time;
+            # source adapters independently reject old publication timestamps.
+            pools = []
+            for source in sorted(by_source):
+                rows = sorted(by_source[source],
+                              key=lambda r: (-r["value"], -r["observed_at"], r["id"]))
+                # Limit source contribution; top half (at least one) are the
+                # measured leading examples in that fetched source/topic pool.
+                pools.append(rows[:min(30, max(1, (len(rows) + 1) // 2))])
+            domain_count = 0
+            while any(pools) and domain_count < MAX_DOMAIN_TRAINING_OBSERVATIONS:
+                for pool in pools:
+                    if not pool or domain_count >= MAX_DOMAIN_TRAINING_OBSERVATIONS:
+                        continue
+                    row = pool.pop(0)
+                    fingerprint = hashlib.sha256(row["text"].casefold().encode()).hexdigest()
+                    if row["citation"] in seen or fingerprint in seen:
+                        continue
+                    seen.update((row["citation"], fingerprint))
+                    selected.append(row)
+                    domain_count += 1
+        selected.sort(key=lambda row: (row["domain"], row["id"]))
+        identity = {"schema": 1, "policy": "public-peak-shortform-v1",
+                    "records": [{key: row[key] for key in
+                                 ("id", "source", "domain", "observed_at")}
+                                for row in selected]}
+        return {"schema": 1, "policy": "public-peak-shortform-v1",
+                "id": hashlib.sha256(canonical(identity).encode()).hexdigest(),
+                "collected_at": now,
+                "sources": sorted({row["source"] for row in selected}),
+                "domains": sorted({row["domain"] for row in selected}),
+                "records": selected}
 
     def _loop(self):
         try:

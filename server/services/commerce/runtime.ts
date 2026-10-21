@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import { createStripeClient } from "../../lib/stripeClient";
 import { pool } from "../../db";
 import { CommerceRepository } from "./repository";
 import { StripeCommerceProvider } from "./provider";
@@ -7,7 +7,7 @@ export const commerceRepository=new CommerceRepository(pool);
 export function commerceStripe() {
   const key=process.env.STRIPE_SECRET_KEY;
   if(!key) throw new Error("Stripe is not configured");
-  return new Stripe(key);
+  return createStripeClient(key);
 }
 export function commerceEngine() {
   return new CommerceEngine(commerceRepository,new StripeCommerceProvider(commerceStripe()));

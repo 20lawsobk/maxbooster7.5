@@ -51,7 +51,7 @@ class LiveLearningTests(unittest.TestCase):
             if x_admin_key != "test-admin":
                 raise HTTPException(403, "admin required")
         app = FastAPI()
-        app.include_router(live.create_router(admin, lambda: self.engine))
+        app.include_router(live.create_router(admin, lambda: self.engine, peak_content=False))
         return TestClient(app)
 
     def test_actual_router_auth_and_validation(self):
@@ -74,7 +74,7 @@ class LiveLearningTests(unittest.TestCase):
         self.assertGreater(len(records), 0)
         self.assertEqual(excluded, 0)
         self.assertTrue(all(r["license"] == "NOASSERTION" for r in records))
-        self.assertTrue(all(r["private"] == "unknown" for r in records))
+        self.assertTrue(all(r["private"] is False and r["live_provenance"]["access"] == "public" for r in records))
         self.assertTrue(all(
             r["provenance_type"] == "maxcore_live_awareness_observation"
             for r in records
@@ -100,7 +100,7 @@ class LiveLearningTests(unittest.TestCase):
     def test_empty_observation_cache_blocks_without_starting_training(self):
         empty_engine = Engine(sources=sources(), store=MemoryStore(), timeout=1)
         with self.assertRaises(live.Blocked) as error:
-            live.execute(empty_engine, 1)
+            live.execute(empty_engine, 1, peak_content=False)
         self.assertEqual(error.exception.code, "blocked_observations")
 
     def test_server_wires_real_admin_and_keeps_write_guard(self):
@@ -118,7 +118,7 @@ class LiveLearningTests(unittest.TestCase):
     def test_status_endpoint_is_authorized_and_does_not_expose_text(self):
         self.inputs()
         with patch.object(live.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)):
-            result = live.execute(self.engine, 1)
+            result = live.execute(self.engine, 1, peak_content=False)
         with self.client() as client:
             url = "/api/training/candidates/live/" + result["run_id"]
             self.assertEqual(client.get(url).status_code, 403)
@@ -170,7 +170,7 @@ class LiveLearningTests(unittest.TestCase):
             with self.subTest(change=change):
                 with patch.object(live.subprocess, "run",
                                   side_effect=lambda cmd, **kw: self.fake_worker(cmd, change, **kw)):
-                    result = live.execute(self.engine, 1)
+                    result = live.execute(self.engine, 1, peak_content=False)
                 self.assertEqual(result["status"], "failed_execution_evidence")
                 self.assertTrue((live.candidate_path(result["run_id"]) / "FAILED").exists())
                 self.assertEqual(json.loads((live.JOBS / result["run_id"] / "result.json").read_text()), result)
@@ -182,7 +182,7 @@ class LiveLearningTests(unittest.TestCase):
         with patch.object(live.subprocess, "run",
                           side_effect=lambda cmd, **kw: self.fake_worker(cmd, interrupt=True, **kw)):
             with self.assertRaises(KeyboardInterrupt):
-                live.execute(self.engine, 1)
+                live.execute(self.engine, 1, peak_content=False)
         folder = next(p for p in live.JOBS.iterdir() if p.is_dir())
         candidate = live.candidate_path(folder.name)
         with self.assertRaisesRegex(ValueError, "pending or uncertified"):
@@ -199,7 +199,7 @@ class LiveLearningTests(unittest.TestCase):
         with patch.object(live.subprocess, "run",
                           side_effect=lambda cmd, **kw: self.fake_worker(cmd, interrupt=True, **kw)):
             with self.assertRaises(KeyboardInterrupt):
-                live.execute(self.engine, 1)
+                live.execute(self.engine, 1, peak_content=False)
         with (live.JOBS / ".lock").open("a") as lock:
             live.fcntl.flock(lock, live.fcntl.LOCK_EX)
             worker = subprocess.Popen([live.sys.executable, "-c",
@@ -216,7 +216,7 @@ class LiveLearningTests(unittest.TestCase):
         with (live.JOBS / ".lock").open("a") as lock:
             live.fcntl.flock(lock, live.fcntl.LOCK_EX | live.fcntl.LOCK_NB)
             with self.assertRaises(live.Blocked) as error:
-                live.execute(self.engine)
+                live.execute(self.engine, peak_content=False)
         self.assertEqual(error.exception.code, "blocked_busy")
 
     def test_timeout_and_failure_are_not_success(self):
@@ -225,7 +225,7 @@ class LiveLearningTests(unittest.TestCase):
                                   (subprocess.CompletedProcess([], 1), "failed_training")):
             with patch.object(live.subprocess, "run", side_effect=outcome if isinstance(outcome, Exception) else None,
                               return_value=outcome):
-                result = live.execute(self.engine, 1)
+                result = live.execute(self.engine, 1, peak_content=False)
             self.assertEqual(result["status"], expected)
             self.assertFalse(result["promotion_performed"])
             folder = live.JOBS / result["run_id"]
@@ -249,7 +249,10 @@ class LiveLearningTests(unittest.TestCase):
         )
         candidates = self.root / "candidates"
         def isolated(command, **kwargs):
-            return actual_run([command[0], "-c", harness, str(candidates), *command[5:]], **kwargs)
+            arguments = list(command[5:])
+            deadline = arguments.index("--worker-timeout")
+            del arguments[deadline:deadline + 2]
+            return actual_run([command[0], "-c", harness, str(candidates), *arguments], **kwargs)
         # Service report lookup uses ROOT; only artifact lookup is redirected.
         original_root = live.ROOT
         def redirected(command, **kwargs):
@@ -258,7 +261,7 @@ class LiveLearningTests(unittest.TestCase):
         with patch.object(live, "ROOT", self.root), patch.object(live.subprocess, "run", side_effect=redirected):
             # Match the service's fixed candidate artifact layout in the temp root.
             candidates = self.root / "ai_model/training/candidate_runs"
-            result = live.execute(self.engine, 1)
+            result = live.execute(self.engine, 1, peak_content=False)
         self.assertEqual(result["status"], "candidate_trained_unreviewed")
         report = json.loads((candidates / result["run_id"] / "report.json").read_text())
         self.assertTrue(report["backend_exclusive"])

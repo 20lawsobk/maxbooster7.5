@@ -27,6 +27,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { billingAccountStatus } from "../services/billingAccountStatus";
 import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripeClient";
 import { db, pool } from "../db";
 import { users, workspaceAuditLog } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -63,7 +64,7 @@ if (!stripeSecretKey) {
 }
 
 const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
+  ? createStripeClient(stripeSecretKey, {
       apiVersion: "2026-02-25.clover",
     })
   : null;

@@ -10,6 +10,7 @@ import express from "express";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { AIUnavailableError } from "../../server/lib/aiSource.js";
+import { MaxCoreControlError } from "../../server/services/maxcoreControlTransport.js";
 
 const { handleGeneration } = vi.hoisted(() => ({
   handleGeneration: vi.fn(),
@@ -233,6 +234,20 @@ describe("multimodal route request contract", () => {
     expect(response.status).toBe(503);
     expect(body).not.toContain(diagnostic);
     expect(body).toContain("temporarily unavailable");
+  });
+
+  it("keeps a required awareness/transport failure as a redacted dependency503", async () => {
+    const diagnostic = "private upstream prompt https://internal.example?token=sentinel";
+    handleGeneration.mockRejectedValueOnce(new MaxCoreControlError(diagnostic, 503));
+    const response = await post({
+      input: { modality: "text", payload: "announce the single" },
+      platforms: ["instagram"],
+    });
+    const body = await response.text();
+    expect(response.status).toBe(503);
+    expect(body).toContain("temporarily unavailable");
+    expect(body).not.toContain(diagnostic);
+    expect(body).not.toContain("sentinel");
   });
 
   it("passes a public URL as a URL input without substituting body identity", async () => {

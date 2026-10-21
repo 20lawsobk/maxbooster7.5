@@ -8,6 +8,8 @@ import {
 } from "../services/contentAwarenessService.js";
 import {
   buildGenerationEnrichment,
+  generationAwarenessPayload,
+  assertFreshGenerationAwareness,
   type GenerationEnrichment,
 } from "../services/autoPostGenerator.js";
 import { MAXCORE_URL, MAXCORE_API_KEY } from "../config/maxcore.js";
@@ -482,8 +484,7 @@ async function normalizeInput(
     artistProfileId: req.artistProfileId,
     platforms: req.platforms,
     intent: req.intent,
-    ...(req.awareness !== undefined ? { awareness: req.awareness } : {}),
-    ...(req.extra_context !== undefined ? { extra_context: req.extra_context } : {}),
+    ...generationAwarenessPayload(enrichment.receipt, req.awareness, req.extra_context),
   });
 }
 
@@ -492,11 +493,13 @@ async function normalizeInput(
 async function planTasks(
   normalized: unknown,
   req: GenerationRequest,
+  enrichment: GenerationEnrichment,
 ): Promise<TaskPlan> {
   const packSpec = req.packId ? PACK_DEFINITIONS[req.packId] : null;
 
   const raw = await maxcorePost("/generate/text", {
     mode: "planner",
+    ...generationAwarenessPayload(enrichment.receipt, req.awareness, req.extra_context),
     input: {
       normalized,
       request: req,
@@ -759,9 +762,8 @@ const workers: Record<
 async function handleGeneration(
   req: GenerationRequest,
 ): Promise<MultimodalPackage> {
-  // Assemble generation-time enrichment (artist profile, releases, proven hook
-  // patterns, trending) from the platform data layer. Guarded so it never
-  // blocks or fails the pipeline; absent data is simply omitted.
+  // Fetch public live context before analysis/planning. No private profile or
+  // historical corpus substitutes for a missing or expired Core receipt.
   const enrichment = await buildGenerationEnrichment({
     userId: req.userId,
     artistProfileId: req.artistProfileId,
@@ -769,31 +771,26 @@ async function handleGeneration(
   });
 
   const normalized = await normalizeInput(req, enrichment);
-  const plan = await planTasks(normalized, req);
+  const plan = await planTasks(normalized, req, enrichment);
 
   // Core supplies required snapshot receipts; failures must abort generation.
+  const platform = req.platforms.length === 1 ? req.platforms[0] : "general";
   const [textAwareness, imageAwareness, audioAwareness, videoAwareness] =
     await Promise.all([
-      contentAwarenessService.getContextForMode("social"),
-      contentAwarenessService.getContextForMode("content"),
-      contentAwarenessService.getContextForMode("music"),
-      contentAwarenessService.getContextForMode("video_script"),
+      contentAwarenessService.getContextForMode("social", platform),
+      contentAwarenessService.getContextForMode("content", platform),
+      contentAwarenessService.getContextForMode("music", platform),
+      contentAwarenessService.getContextForMode("video_script", platform),
     ]);
 
-  // Merge the enrichment block with live per-modality awareness into a single
-  // awareness string per worker. Enrichment leads so artist/release/hook
-  // context is the first signal the model conditions on.
+  // Keep each modality's canonical receipt and append caller conditioning.
   const mergeAwareness = (
     ctx: ContentAwarenessContext | null,
   ): WorkerAwareness => {
     if (!ctx?.snapshot_id) {
       throw Object.assign(new Error("Required awareness receipt missing"), { status: 503 });
     }
-    return {
-      ...ctx,
-      ...(req.awareness !== undefined ? { awareness: req.awareness } : {}),
-      ...(req.extra_context !== undefined ? { extra_context: req.extra_context } : {}),
-    };
+    return generationAwarenessPayload(ctx, req.awareness, req.extra_context);
   };
 
   const awarenessMap: Record<string, WorkerAwareness> = {
@@ -847,6 +844,11 @@ async function handleGeneration(
                 ),
               };
 
+        const conditioning = awarenessMap[step.worker];
+        if (!conditioning?.snapshot_id) {
+          throw Object.assign(new Error("Required awareness receipt missing"), { status: 503 });
+        }
+        assertFreshGenerationAwareness(conditioning as ContentAwarenessContext);
         const assets = await worker.run(
           step,
           inputs,
@@ -901,38 +903,6 @@ async function fetchCurriculumStyleTags(
     return [...new Set(tags)].slice(0, 8);
   } catch {
     return [];
-  }
-}
-
-function recordGenerationToFlywheel(
-  pkg: MultimodalPackage,
-  req: GenerationRequest,
-): void {
-  const seen = new Set<string>();
-  for (const asset of pkg.assets) {
-    if (!asset.platform) continue;
-    const key = `${asset.platform}:${asset.modality}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    undiciFetch(`${MAXCORE_URL}/storage/feedback`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key": MAXCORE_API_KEY,
-      },
-      body: JSON.stringify({
-        user_id: req.userId,
-        platform: asset.platform,
-        engagement_rate: 0.5,
-        content_type: asset.modality,
-        style_tags: [
-          ...(req.constraints?.styleTags ?? []),
-          req.intent ?? "engagement",
-          asset.modality,
-        ].filter(Boolean),
-      }),
-      dispatcher: _modelPool,
-    }).catch(() => {});
   }
 }
 
@@ -1003,7 +973,6 @@ router.post("/multimodal/generate", async (req: Request, res: Response) => {
 
   try {
     const pkg = await handleGeneration(genReq);
-    recordGenerationToFlywheel(pkg, genReq);
     res.json(pkg);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

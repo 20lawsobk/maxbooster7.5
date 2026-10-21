@@ -1662,6 +1662,58 @@ router.post("/marketplace-disputes", async (req: Request, res: Response) => {
 });
 
 router.get(
+  "/marketplace-disputes/stats",
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userId = req.user!.id;
+      const isAdmin = isAdminUser(req.user);
+
+      let userDisputes;
+      if (isAdmin) {
+        userDisputes = await db.select().from(marketplaceDisputes).limit(200);
+      } else {
+        userDisputes = await db
+          .select()
+          .from(marketplaceDisputes)
+          .where(
+            or(
+              eq(marketplaceDisputes.buyerId, userId),
+              eq(marketplaceDisputes.sellerId, userId),
+            ),
+          );
+      }
+
+      const stats = {
+        total: userDisputes.length,
+        open: userDisputes.filter((d) => d?.status === "open").length,
+        underReview: userDisputes.filter((d) => d?.status === "under_review")
+          .length,
+        pendingResponse: userDisputes.filter(
+          (d) =>
+            d?.status === "pending_seller_response" ||
+            d?.status === "pending_buyer_response",
+        ).length,
+        resolved: userDisputes.filter((d) => d?.status === "resolved").length,
+        escalated: userDisputes.filter((d) => d?.status === "escalated").length,
+        closed: userDisputes.filter((d) => d?.status === "closed").length,
+        asBuyer: userDisputes.filter((d) => d?.buyerId === userId).length,
+        asSeller: userDisputes.filter((d) => d?.sellerId === userId).length,
+      };
+
+      return res.json({ stats });
+    } catch (error) {
+      logger.warn({ err: error }, "Error fetching dispute stats:");
+      res.status(500).json({ error: "Failed to fetch dispute stats" });
+    }
+  },
+);
+
+
+router.get(
   "/marketplace-disputes/:disputeId",
   async (req: Request, res: Response) => {
     try {
@@ -2140,57 +2192,6 @@ router.post(
     } catch (error) {
       logger.warn({ err: error }, "Error withdrawing dispute:");
       res.status(500).json({ error: "Failed to withdraw dispute" });
-    }
-  },
-);
-
-router.get(
-  "/marketplace-disputes/stats",
-  async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
-
-      const userId = req.user!.id;
-      const isAdmin = isAdminUser(req.user);
-
-      let userDisputes;
-      if (isAdmin) {
-        userDisputes = await db.select().from(marketplaceDisputes).limit(200);
-      } else {
-        userDisputes = await db
-          .select()
-          .from(marketplaceDisputes)
-          .where(
-            or(
-              eq(marketplaceDisputes.buyerId, userId),
-              eq(marketplaceDisputes.sellerId, userId),
-            ),
-          );
-      }
-
-      const stats = {
-        total: userDisputes.length,
-        open: userDisputes.filter((d) => d?.status === "open").length,
-        underReview: userDisputes.filter((d) => d?.status === "under_review")
-          .length,
-        pendingResponse: userDisputes.filter(
-          (d) =>
-            d?.status === "pending_seller_response" ||
-            d?.status === "pending_buyer_response",
-        ).length,
-        resolved: userDisputes.filter((d) => d?.status === "resolved").length,
-        escalated: userDisputes.filter((d) => d?.status === "escalated").length,
-        closed: userDisputes.filter((d) => d?.status === "closed").length,
-        asBuyer: userDisputes.filter((d) => d?.buyerId === userId).length,
-        asSeller: userDisputes.filter((d) => d?.sellerId === userId).length,
-      };
-
-      return res.json({ stats });
-    } catch (error) {
-      logger.warn({ err: error }, "Error fetching dispute stats:");
-      res.status(500).json({ error: "Failed to fetch dispute stats" });
     }
   },
 );

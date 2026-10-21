@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,7 +131,7 @@ interface BusinessInfo {
 }
 
 export default function Verification() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -324,10 +324,10 @@ export default function Verification() {
     },
   });
 
-  if (!user) {
-    setLocation("/login");
-    return null;
+  if (authLoading) {
+    return <div role="status" aria-label="Loading account" className="p-6">Loading account…</div>;
   }
+  if (!user) return null;
 
   const currentVerificationId = verificationId || status?.verificationId;
 

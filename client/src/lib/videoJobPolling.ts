@@ -31,6 +31,9 @@ const TERMINAL_STATUSES = new Set([
   "error",
   "failed",
   "cancelled",
+  "canceled",
+  "timed_out",
+  "timeout",
   "not_found",
 ]);
 
@@ -69,6 +72,10 @@ export async function pollVideoJobUntilDone<T extends VideoJobResponse>(
         throw new Error("Unexpected response from server");
       }
 
+      if ([401, 403, 404, 410].includes(response.status)) {
+        throw new TerminalJobError("unavailable", data.error || "Video job is no longer available");
+      }
+
       if (TERMINAL_STATUSES.has(data.status || "")) {
         throw new TerminalJobError(
           data.status!,
@@ -83,10 +90,10 @@ export async function pollVideoJobUntilDone<T extends VideoJobResponse>(
 
       consecutiveErrors = 0;
       const videoUrl = data.url || data.video_url;
-      if (
-        (data.status === "done" || data.status === "completed") &&
-        videoUrl
-      ) {
+      if (data.status === "done" || data.status === "completed") {
+        if (!videoUrl || !/^\/(?!\/)|^https?:\/\//i.test(videoUrl)) {
+          throw new TerminalJobError("failed", "Video completed without a playable file URL");
+        }
         return { ...data, success: true, url: videoUrl };
       }
 

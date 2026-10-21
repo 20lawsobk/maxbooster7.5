@@ -6,7 +6,7 @@ import { shouldCopyProductionSimulationPath } from "../../scripts/lib/production
 export type ReleaseEntry = { path: string; sha256: string; mode: number; bytes: number };
 
 export function buildEnvironmentDigest(env: NodeJS.ProcessEnv) {
-  const publicBuildInputs = Object.keys(env).filter(key => key.startsWith("VITE_")).sort()
+  const publicBuildInputs = Object.keys(env).filter(key => key.startsWith("VITE_") || key === "MAXCORE_SERVING_RELEASE").sort()
     .map(key => [key, env[key]]);
   return createHash("sha256").update(JSON.stringify(publicBuildInputs)).digest("hex");
 }
@@ -19,9 +19,10 @@ export async function fileDigest(file: string) {
 
 export function sourceIncluded(relative: string): boolean {
   const parts = relative.split("/");
+  if (["test-results.xml", "junit.xml"].includes(relative)) return false;
   // These Vite aliases are build inputs even though they are not shipped as
   // raw runtime directories. Changes must invalidate a prepared frontend.
-  if (["attached_assets", "built-in plugins dsp"].includes(parts[0])) return true;
+  if (relative === ".replit" || ["attached_assets", "built-in plugins dsp"].includes(parts[0])) return true;
   if (relative === "external/maxcore/artifacts/ai-training-server/ai_model/weights/model.corrupt") return true;
   if ([".prepared-release", ".node_bin", "python_runtime", ".deployment-pack-state"].includes(parts[0])) return false;
   if (parts.includes("node_modules") || parts.includes("target")) return false;

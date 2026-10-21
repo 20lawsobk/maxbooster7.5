@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { normalizeGeneratedMidiNotes } from "./studioAudioDelivery";
 
 interface MelodyNote {
   pitch: number;
@@ -33,7 +34,7 @@ interface MelodySuggestion {
   name: string;
   notes: MelodyNote[];
   style: string;
-  confidence: number;
+  confidence?: number;
   isFavorite: boolean;
 }
 
@@ -114,7 +115,7 @@ const analyzeLyrics = (text: string): LyricLine[] => {
 export function FlowStateLyricsToMelody({
   onExportMelody,
   currentKey = "C",
-  _currentTempo = 120,
+  currentTempo = 120,
   className,
 }: FlowStateLyricsToMelodyProps) {
   const { toast } = useToast();
@@ -172,7 +173,6 @@ export function FlowStateLyricsToMelody({
         name: nameOverride || styleNames[suggIdx] || styleNames[0],
         notes: backendNotes,
         style: selectedStyle,
-        confidence: 0.95,
         isFavorite: false,
       };
     };
@@ -183,22 +183,33 @@ export function FlowStateLyricsToMelody({
         "POST",
         "/api/studio/generation/pattern/melody",
         {
+          instrument: "piano",
           genre: selectedStyle.toLowerCase().replace(/[^a-z]/g, "_"),
+          tempo: currentTempo,
           key: selectedKey,
           scale: useScaleNotes ? "major" : "chromatic",
           complexity: rhythmComplexity[0] / 100,
           bars: Math.ceil(totalSyllables / 4) || 2,
+          direction: {
+            lyrics,
+            mood: selectedMood,
+            pitchRange: melodyRange,
+            melodicMovement: melodicMovement[0] / 100,
+          },
+          context: { lyricLines: analyzedLyrics },
         },
       );
       const data = (await res.json()) as Record<string, unknown>;
-      if (data?.melody?.notes?.length > 0) {
-        const mappedNotes: MelodyNote[] = data.melody.notes.map(
-          (n: Record<string, unknown>, i: number) => ({
-            pitch: n.note + (n.octave || 4) * 12,
-            noteName: NOTES[n.note % 12] + (n.octave || 4),
-            duration: n.duration || 0.5,
+      const generatedNotes = normalizeGeneratedMidiNotes(data?.melody?.notes);
+      if (generatedNotes.length > 0) {
+        const stresses = analyzedLyrics.flatMap(line => line.stressPattern);
+        const mappedNotes: MelodyNote[] = generatedNotes.map(
+          (n, i) => ({
+            pitch: n.pitch,
+            noteName: NOTES[n.pitch % 12] + (Math.floor(n.pitch / 12) - 1),
+            duration: n.duration,
             syllable: analyzedLyrics.flatMap((l) => l.syllables)[i] || "",
-            stress: i % 2 === 0,
+            stress: stresses[i] ?? false,
           }),
         );
         backendSuggestion = buildClientSuggestion(4, "AI Model", mappedNotes);
@@ -243,6 +254,7 @@ export function FlowStateLyricsToMelody({
     useScaleNotes,
     analyzedLyrics,
     totalSyllables,
+    currentTempo,
     toast,
   ]);
 
@@ -282,7 +294,6 @@ export function FlowStateLyricsToMelody({
           name: `From Audio${data.detected_key ? ` (${data.detected_key})` : ""}`,
           notes,
           style: "Detected",
-          confidence: 0.96,
           isFavorite: false,
         };
         setSuggestions((prev) => [suggestion, ...prev]);
@@ -756,8 +767,9 @@ Leads me to where I belong"
                                 {suggestion.notes.length} notes
                               </span>
                               <span className="text-xs text-zinc-500">
-                                Confidence:{" "}
-                                {(suggestion.confidence * 100).toFixed(0)}%
+                                {typeof suggestion.confidence === "number"
+                                  ? `Confidence: ${(suggestion.confidence * 100).toFixed(0)}%`
+                                  : "Confidence not provided"}
                               </span>
                             </div>
                           </div>

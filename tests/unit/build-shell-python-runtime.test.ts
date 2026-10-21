@@ -15,9 +15,10 @@ function isolatedEntrypoint(exitCode: number) {
   fs.mkdirSync(project);
   fs.mkdirSync(bin);
   fs.copyFileSync(path.join(root, "build.sh"), path.join(project, "build.sh"));
-  const npm = path.join(bin, "npm");
+  fs.mkdirSync(path.join(project, "script/deployment"), { recursive: true });
+  const npm = path.join(project, "script/deployment/bootstrap.sh");
   fs.writeFileSync(npm, `#!/bin/sh
-printf '%s\\n' "cwd=$PWD" "deploy=$DEPLOY_PACK" "args=$*" > "$BUILD_ENTRYPOINT_CAPTURE"
+printf '%s\\n' "cwd=$PWD" "bootstrap=true" > "$BUILD_ENTRYPOINT_CAPTURE"
 exit ${exitCode}
 `, { mode: 0o755 });
   const capture = path.join(scratch, "capture");
@@ -40,23 +41,24 @@ afterEach(() => {
   }
 });
 
-describe("legacy build.sh delegates to the canonical deployment build", () => {
-  it("starts from its own project root and executes only DEPLOY_PACK=1 npm run build", () => {
+describe("build.sh delegates to the production executive bootstrap", () => {
+  it("starts from its own project root and executes the bootstrap once", () => {
     const { result, capture, project } = isolatedEntrypoint(0);
     expect(result.status).toBe(0);
-    expect(capture).toBe(`cwd=${project}\ndeploy=1\nargs=run build\n`);
+    expect(capture).toBe(`cwd=${project}\nbootstrap=true\n`);
   });
 
   it("propagates the canonical build failure without fallback or a second path", () => {
     const { result, capture, project } = isolatedEntrypoint(37);
     expect(result.status).toBe(37);
-    expect(capture).toBe(`cwd=${project}\ndeploy=1\nargs=run build\n`);
+    expect(capture).toBe(`cwd=${project}\nbootstrap=true\n`);
   });
 
-  it("remains valid shell and has no legacy installer or capsule packer", () => {
+  it("keeps resource-mutating phases behind explicit executive tasks", () => {
     execFileSync("bash", ["-n", path.join(root, "build.sh")]);
     const source = fs.readFileSync(path.join(root, "build.sh"), "utf8");
-    expect(source).toContain("exec npm run build");
-    expect(source).not.toMatch(/pip install|_pdim_pack|npm ci|source\.pdim/);
+    expect(source).toContain('exec bash script/deployment/bootstrap.sh');
+    expect(source).toContain('if [ "${1:-}" = "--executive-task" ]');
+    expect(source).toContain('*) echo "Unknown build task" >&2; exit 1');
   });
 });

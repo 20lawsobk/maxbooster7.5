@@ -4,6 +4,8 @@
 // env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load
 import { spawn, spawnSync } from "node:child_process";
 import {
+  accessSync,
+  constants,
   createWriteStream,
   mkdtempSync,
   mkdirSync,
@@ -19,6 +21,7 @@ import http from "node:http";
 import net from "node:net";
 import pg from "pg";
 import WebSocket from "ws";
+import { isExpectedIsolatedReadiness } from "./lib/isolated-acceptance-readiness.mjs";
 
 const httpLoadOnly = process.argv.length === 3 && process.argv[2] === "--http-load";
 if (process.argv.length !== (httpLoadOnly ? 3 : 2)) {
@@ -46,6 +49,7 @@ async function reserveEphemeralPort() {
 }
 const pgPort = await reserveEphemeralPort();
 const appPort = await reserveEphemeralPort();
+const pdimPort = await reserveEphemeralPort();
 const startedAt = new Date().toISOString();
 const reportStem = httpLoadOnly ? "assembled-authenticated-http-load" : "assembled-acceptance-drill";
 const reportJson = join(root, `reports/readiness-implementation/${reportStem}.json`);
@@ -195,13 +199,15 @@ async function runHttpAuthJourney(email, username, password) {
   response = await authRequest(jar, "/api/auth/register", {
     method: "POST",
     csrf,
-    body: { email, username, password, confirmPassword: password, firstName: "Acceptance", lastName: "User" },
+    body: { email, username, password, confirmPassword: password, firstName: "Acceptance", lastName: "User", birthdate: "1990-01-01" },
   });
   const registered = jsonBody(response);
   if (response.status !== 200 || typeof registered.id !== "string" || "password" in registered) {
     throw new Error(`registration contract failed with HTTP ${response.status}`);
   }
 
+  await client.query("UPDATE users SET subscription_tier='pro', subscription_status='active', onboarding_completed=true WHERE id=$1", [registered.id]);
+  evidence.syntheticEntitlement = "paid entitlement provisioned only in disposable local database; no provider or payment bypass in application";
   response = await authRequest(jar, "/api/auth/me");
   if (response.status !== 200 || jsonBody(response)?.id !== registered.id) {
     throw new Error("registration session was not persisted");
@@ -229,12 +235,43 @@ async function runHttpAuthJourney(email, username, password) {
   }
   response = await authRequest(jar, "/api/auth/me");
   if (jsonBody(response)?.id !== registered.id) throw new Error("login session was not persisted");
+  evidence.projectCrud = await runProjectCrud(jar, csrf, registered.id);
   response = await authRequest(jar, "/api/auth/logout", { method: "POST", csrf });
   if (response.status !== 200) throw new Error(`final logout returned HTTP ${response.status}`);
   response = await authRequest(jar, "/api/auth/me");
   if (jsonBody(response) !== null) throw new Error("final logout did not invalidate the session");
 
   return { userId: registered.id };
+}
+
+async function runProjectCrud(jar, csrf, ownerId) {
+  const createdResponse = await authRequest(jar, "/api/projects", { method: "POST", csrf,
+    body: { title: "Disposable CRUD project", description: "sealed acceptance" } });
+  const created = jsonBody(createdResponse);
+  if (createdResponse.status !== 200 || !created.id) throw new Error(`project create failed HTTP ${createdResponse.status}: ${createdResponse.body.slice(0,200)}`);
+  const path = `/api/studio/projects/${encodeURIComponent(created.id)}`;
+  const get = await authRequest(jar, path);
+  if (get.status !== 200 || jsonBody(get).userId !== ownerId) throw new Error("owned project read failed");
+  const originalVersion = jsonBody(get).updatedAt;
+  const missing = await authRequest(jar, path, { method: "PATCH", csrf, body: { title: "unsafe" } });
+  if (missing.status !== 428) throw new Error("project missing-version mutation was not rejected");
+  const updated = await authRequest(jar, path, { method: "PATCH", csrf,
+    body: { title: "Updated acceptance project", expectedUpdatedAt: originalVersion } });
+  if (updated.status !== 200 || jsonBody(updated).title !== "Updated acceptance project") throw new Error(`project update failed HTTP ${updated.status}: ${updated.body.slice(0,500)} originalVersion=${originalVersion}`);
+  const stale = await authRequest(jar, path, { method: "PATCH", csrf,
+    body: { title: "stale overwrite", expectedUpdatedAt: originalVersion } });
+  if (stale.status !== 409) throw new Error("stale project write was not rejected");
+  const second = await createLoadSession(`owner-${randomBytes(8).toString("hex")}@example.invalid`, `owner_${randomBytes(8).toString("hex")}`, `Owner!${randomBytes(12).toString("hex")}9a`, true);
+  for (const method of ["GET", "PATCH", "DELETE"]) {
+    const denied = await authRequest(second.jar, path, { method, csrf: second.csrf,
+      ...(method === "GET" ? {} : {body: { title: "cross-owner mutation", expectedUpdatedAt: jsonBody(updated).updatedAt }}) });
+    if (denied.status !== 404) throw new Error(`cross-owner ${method} returned ${denied.status}, expected404`);
+  }
+  const deleted = await authRequest(jar, path, { method: "DELETE", csrf, body: { expectedUpdatedAt: jsonBody(updated).updatedAt } });
+  if (deleted.status !== 200) throw new Error(`project delete failed HTTP ${deleted.status}`);
+  const gone = await authRequest(jar, path);
+  if (gone.status !== 404) throw new Error("deleted project still readable");
+  return { create: true, read: true, update: true, delete: true, missingVersion428: true, staleVersion409: true, crossOwnerReadUpdateDelete404: true, deletedRead404: true };
 }
 
 async function fetchJsonFromPort(port, path) {
@@ -253,7 +290,10 @@ async function fetchJsonFromPort(port, path) {
 }
 
 async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
-  const chromium = "/repl/tools/bin/chromium";
+  const chromium = ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome", "/repl/tools/bin/chromium",
+    ...String(browserEnv.PATH ?? "").split(":").map(directory => join(directory, "chromium"))]
+    .find(candidate => { try { accessSync(candidate, constants.X_OK); return true; } catch { return false; } });
+  if (!chromium) throw new Error("Install Chromium or add its executable to PATH before browser acceptance");
   const debuggerPort = await reserveEphemeralPort();
   const profile = join(temp, "chromium-profile");
   const browser = spawn(chromium, [
@@ -309,8 +349,16 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     let documentGeneration = 0;
     let contextTransitionsRecovered = 0;
     let transportFailure;
+    let inspectedRoute = "/login";
+    const browserErrors = [];
     ws.on("message", (raw) => {
       const message = JSON.parse(String(raw));
+      if (message.method === "Runtime.exceptionThrown") {
+        browserErrors.push({ path: inspectedRoute, message: String(message.params?.exceptionDetails?.exception?.description ?? message.params?.exceptionDetails?.text ?? "runtime exception").slice(0, 1600) });
+      }
+      if (message.method === "Runtime.consoleAPICalled" && message.params?.type === "error") {
+        browserErrors.push({ path: inspectedRoute, message: (message.params.args ?? []).map(value => value.description ?? value.value ?? "").join(" ").slice(0,1600) });
+      }
       if (message.method === "Page.frameNavigated" && !message.params?.frame?.parentId) {
         mainFrameId = message.params.frame.id;
         mainLoaderId = message.params.frame.loaderId;
@@ -380,7 +428,11 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
             awaitPromise: true,
             returnByValue: true,
           });
-          if (result.exceptionDetails) throw new Error("browser evaluation failed");
+          if (result.exceptionDetails) {
+            const detail = String(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? "unknown exception")
+              .replaceAll(password, "[redacted]").replaceAll(email, "[redacted]").slice(0, 1000);
+            throw new Error(`browser evaluation failed: ${detail}`);
+          }
           return result.result?.value;
         } catch (error) {
           if (!isContextTransition(error)) throw error;
@@ -419,7 +471,8 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
       await new Promise((resolveWait) => setTimeout(resolveWait, 250));
     }
     const hydrated = await evaluate(`Boolean(document.querySelector('[data-testid="button-login-submit"]'))`);
-    await command("Page.stopLoading");
+    // Keep lazy chunks and in-flight authentication requests alive. Stopping
+    // page loading here can abort them after the login form first appears.
     await command("Emulation.setDeviceMetricsOverride", {
       width: 1280,
       height: 900,
@@ -484,8 +537,109 @@ async function runBrowserJourney(email, password, expectedUserId, browserEnv) {
     }
     const persisted = await evaluate(`fetch('/api/auth/me?acceptance-persist='+crypto.randomUUID(),{credentials:'include',cache:'no-store'}).then(r=>r.json()).then(u=>u?.id===${JSON.stringify(expectedUserId)})`);
     if (!persisted) throw new Error("browser session did not persist");
+    async function browserApi(path, method = "GET", body, anonymous = false) {
+      return await evaluate(`(async()=>{const csrf=decodeURIComponent(document.cookie.split('; ').find(x=>x.startsWith('csrf-token='))?.slice(11)??'');const r=await fetch(${JSON.stringify(path)},{method:${JSON.stringify(method)},credentials:${JSON.stringify(anonymous ? "omit" : "include")},cache:'no-store',headers:{'content-type':'application/json',...(csrf?{'x-csrf-token':csrf}:{})},${body === undefined ? "" : `body:JSON.stringify(${JSON.stringify(body)}),`}});const text=await r.text();let value;try{value=JSON.parse(text)}catch{value=text.slice(0,400)}return {status:r.status,value}})()`);
+    }
+    async function navigateUntil(path, expression) {
+      await command("Page.navigate", { url: `http://localhost:${appPort}${path}` });
+      const deadline = Date.now() + 20_000;
+      while (Date.now() < deadline) {
+        try { if (await evaluate(expression)) return; } catch {}
+        await new Promise(resolveWait => setTimeout(resolveWait, 200));
+      }
+      throw new Error(`saved-data page did not rehydrate: ${path}`);
+    }
+    const preferenceValue = `acceptance-${randomBytes(5).toString("hex")}`;
+    const savedPreference = await browserApi("/api/user/preferences", "POST", { acceptanceJourney: preferenceValue });
+    const readPreference = await browserApi("/api/user/preferences");
+    if (savedPreference.status !== 200 || readPreference.value.acceptanceJourney !== preferenceValue) throw new Error("browser preferences save/re-read failed");
+    evidence.savedDataJourneys = { preferences: { browserSessionWrite: true, independentReadPersisted: true } };
+
+    const workspaceName = `Acceptance workspace ${randomBytes(4).toString("hex")}`;
+    const workspace = await browserApi("/api/workspace/create", "POST", { name: workspaceName, type: "artist", description: "Disposable browser acceptance" });
+    const workspaceId = workspace.value?.workspace?.id;
+    if (workspace.status !== 201 || !workspaceId) throw new Error(`browser workspace create failed: ${JSON.stringify(workspace)}`);
+    const ownedWorkspace = await browserApi(`/api/workspace/${workspaceId}`);
+    const workspaceMembers = await browserApi(`/api/workspace/${workspaceId}/members`);
+    if (ownedWorkspace.status !== 200 || ownedWorkspace.value.workspace?.name !== workspaceName || workspaceMembers.status !== 200 || !workspaceMembers.value.members?.some(member => member.userId === expectedUserId && member.role === "owner")) throw new Error(`workspace persisted ownership/member check failed: ${JSON.stringify(workspaceMembers)}`);
+    const outsideWorkspace = await createLoadSession(`workspace-${randomBytes(8).toString("hex")}@example.invalid`, `workspace_${randomBytes(8).toString("hex")}`, `Workspace!${randomBytes(12).toString("hex")}9a`, true);
+    for (const method of ["GET", "PUT", "DELETE"]) {
+      const denied = await authRequest(outsideWorkspace.jar, `/api/workspace/${workspaceId}`, { method, csrf: outsideWorkspace.csrf,
+        ...(method === "PUT" ? { body: { name: "Unowned workspace mutation" } } : {}) });
+      if (denied.status !== 403) throw new Error(`nonmember workspace ${method} returned ${denied.status}, expected403`);
+    }
+    await navigateUntil("/workspaces", `document.querySelector('#root')?.innerText.includes(${JSON.stringify(workspaceName)})`);
+    evidence.savedDataJourneys.workspace = { browserSessionCreate: true, independentReadPersisted: true, ownerMembership: true, nonmemberReadUpdateDelete403: true, savedNameRendered: true };
+
+    const artistName = `Acceptance artist ${randomBytes(4).toString("hex")}`;
+    const bio = "Disposable artist biography saved through the actual browser form.";
+    await navigateUntil("/press-kit", "Boolean(document.querySelector('form #artistName'))");
+    await evaluate(`(()=>{for(const [id,value] of Object.entries(${JSON.stringify({ artistName, bio, shortBio: "A saved browser press kit", genres: "Electronic", contactEmail: "artist@example.test", bookingEmail: "booking@example.test", website: "https://example.test" })})){const input=document.getElementById(id);if(!input)throw Error('Missing press kit field '+id);const proto=input instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}document.querySelector('form').requestSubmit();return true})()`);
+    let savedKit;
+    const saveDeadline = Date.now() + 15_000;
+    while (Date.now() < saveDeadline) {
+      savedKit = await browserApi("/api/press-kit");
+      if (savedKit.status === 200 && savedKit.value?.artistName === artistName && savedKit.value?.bio === bio) break;
+      await new Promise(resolveWait => setTimeout(resolveWait, 200));
+    }
+    if (savedKit?.value?.artistName !== artistName || savedKit.value.bio !== bio) throw new Error(`press kit browser form save failed: ${JSON.stringify(savedKit)}`);
+    await navigateUntil("/press-kit", `document.getElementById('artistName')?.value===${JSON.stringify(artistName)}&&document.getElementById('bio')?.value===${JSON.stringify(bio)}`);
+    const slug = `acceptance-${randomBytes(8).toString("hex")}`;
+    const published = await browserApi("/api/press-kit/publish", "POST", { slug, isPublic: true });
+    const publicKit = await browserApi(`/api/press-kit/public/${slug}`, "GET", undefined, true);
+    if (published.status !== 200 || publicKit.status !== 200 || publicKit.value.artistName !== artistName || "userId" in publicKit.value || "id" in publicKit.value) throw new Error("public press kit projection/publish failed");
+    const updatedBio = `${bio} Updated after the anonymous cache was populated.`;
+    const editedKit = await browserApi("/api/press-kit", "PUT", { artistName, bio: updatedBio, isPublic: true });
+    const refreshedPublic = await browserApi(`/api/press-kit/public/${slug}`, "GET", undefined, true);
+    if (editedKit.status !== 200 || refreshedPublic.value.bio !== updatedBio) throw new Error("public press kit cache did not reflect saved update");
+    const unpublished = await browserApi("/api/press-kit/publish", "POST", { slug, isPublic: false });
+    const hiddenPublic = await browserApi(`/api/press-kit/public/${slug}`, "GET", undefined, true);
+    if (unpublished.status !== 200 || hiddenPublic.status !== 404) throw new Error("unpublished press kit remained publicly readable");
+    evidence.savedDataJourneys.pressKit = { actualFormSubmit: true, savedFieldsRehydrated: true, publicProjection: true, cacheInvalidatedAfterEdit: true, unpublishRevokesAnonymousRead: true };
+    async function sweepRoutes(paths, authenticated) {
+      const results = [];
+      for (const path of paths) {
+        inspectedRoute = path;
+        const errorStart = browserErrors.length;
+        // Desktop downloads require an account; anonymous access must reach login.
+        const expectedPath = !authenticated && path === "/desktop-app" ? "/login" : path;
+        await command("Page.navigate", { url: `http://localhost:${appPort}${path}` });
+        const deadline = Date.now() + 20_000;
+        let state;
+        while (Date.now() < deadline) {
+          try {
+            state = await evaluate(`({path:location.pathname,ready:document.readyState,text:(document.querySelector('#root') ?? document.querySelector('.swagger-ui'))?.innerText ?? '',children:(document.querySelector('#root') ?? document.querySelector('.swagger-ui'))?.childElementCount ?? 0})`);
+            if ((state?.path?.replace(/\/$/, "") || "/") === (expectedPath.replace(/\/$/, "") || "/") && state?.children && state.text.trim().length > 30 && !/^Loading[.\\s]*$/.test(state.text.trim())) break;
+          } catch {}
+          await new Promise(resolveWait => setTimeout(resolveWait, 250));
+        }
+        const crashed = /something went wrong|application error|failed to load module|unexpected application error/i.test(state?.text ?? "");
+        const hydrated = Boolean(state?.children && state.text.trim().length > 30);
+        const permissionState = /upgrade|subscription|premium|not found|404|not available|unavailable|connect.*account|no .*yet/i.test(state?.text ?? "");
+        const pass = hydrated && !crashed && (state.path.replace(/\/$/, "") || "/") === (expectedPath.replace(/\/$/, "") || "/");
+        results.push({ requestedPath:path, expectedPath, finalPath:state?.path, hydrated, crashed, permissionOrEmptyState:permissionState, pass, ...(!pass ? { visibleText: state?.text?.slice(0,1600), errors:browserErrors.slice(errorStart) } : {}) });
+      }
+      return results;
+    }
+    const authenticatedPages = await sweepRoutes(["/dashboard", "/projects", "/distribution", "/social-media", "/advertising", "/analytics", "/settings", "/storefront", "/royalties", "/contracts", "/notifications", "/simplified-dashboard", "/developer-api", "/studio", "/show", "/verification", "/workspaces", "/collaborations", "/career-coach", "/assistant", "/release-countdown", "/invoices", "/handle-link", "/workflow-automations", "/shows", "/fan-hub", "/fan-memberships", "/ar-intelligence", "/outreach", "/merch", "/press-kit", "/playlist-pitching", "/publishing", "/sync-licensing"], true);
+    evidence.pageRoutes = { authenticated: authenticatedPages };
+    if (authenticatedPages.some(page => !page.pass)) failures.push("authenticated browser route acceptance failed; see pageRoutes evidence");
     const logoutResult = await evaluate(`(async()=>{const token=document.cookie.split('; ').find(x=>x.startsWith('csrf-token='))?.split('=').slice(1).join('='); if(!token)return {ok:false,stage:'csrf'}; const r=await fetch('/api/auth/logout',{method:'POST',credentials:'include',cache:'no-store',headers:{'x-csrf-token':token}}); if(!r.ok)return {ok:false,stage:'logout',status:r.status}; const me=await fetch('/api/auth/me?acceptance-logout='+crypto.randomUUID(),{credentials:'include',cache:'no-store'}); const user=await me.json(); return {ok:user===null,stage:'me',status:me.status,authenticated:Boolean(user?.id)}})()`);
     if (!logoutResult?.ok) throw new Error(`browser logout did not invalidate the session: ${JSON.stringify(logoutResult)}`);
+    const publicPages = await sweepRoutes(["/", "/security", "/dmca", "/api-docs", "/solo-founder-story", "/desktop-app", "/blog", "/forgot-password", "/reset-password", "/register", "/about", "/features", "/pricing", "/terms", "/privacy", "/help", "/documentation", "/epk/missing", "/s/missing", "/storefront/missing", "/marketplace/beat/missing", "/marketplace/producer/missing"], false);
+    evidence.pageRoutes.public = publicPages;
+    if (publicPages.some(page => !page.pass)) failures.push("public browser route acceptance failed; see pageRoutes evidence");
+    await command("Page.addScriptToEvaluateOnNewDocument", { source: "window.electronAPI = { isElectron: true };" });
+    await command("Page.navigate", { url: `http://localhost:${appPort}/login` });
+    const nativeLoginDeadline = Date.now() + 15_000;
+    let nativeLogin = false;
+    while (Date.now() < nativeLoginDeadline) {
+      try { nativeLogin = await evaluate(`location.pathname === '/login' && Boolean(document.querySelector('[data-testid="button-login-submit"]'))`); } catch {}
+      if (nativeLogin) break;
+      await new Promise(resolveWait => setTimeout(resolveWait, 250));
+    }
+    evidence.nativeSignedOutLogin = { electronBridgePresent: true, hydratedLoginRemainsAccessible: nativeLogin };
+    if (!nativeLogin) failures.push("signed-out native login failed hydration/accessibility");
     ws.close();
     ws = undefined;
     return {
@@ -514,7 +668,7 @@ async function waitFor(path, predicate, timeout) {
   let last;
   while (Date.now() < deadline) {
     if (app?.exitCode !== null) {
-      throw new Error(`application exited ${app?.exitCode}; sanitized tail:\n${sanitizedLogTail()}`);
+      throw new Error(`application exited ${app?.exitCode}; sanitized tail:\n${sanitizedLogTail().slice(-1400)}`);
     }
     try {
       last = await request(path);
@@ -524,7 +678,7 @@ async function waitFor(path, predicate, timeout) {
     }
     await new Promise((resolveWait) => setTimeout(resolveWait, 750));
   }
-  throw new Error(`timed out waiting for ${path}; last status ${last?.status ?? last?.error ?? "none"}`);
+  throw new Error(`timed out waiting for ${path}; last status ${last?.status ?? last?.error ?? "none"}; sanitized tail:\n${sanitizedLogTail().slice(-1400)}`);
 }
 
 function sha256(text) {
@@ -601,13 +755,14 @@ async function createLoadSession(email, username, password, register) {
     method: "POST",
     csrf,
     body: register
-      ? { email, username, password, confirmPassword: password, firstName: "Load", lastName: "User" }
+      ? { email, username, password, confirmPassword: password, firstName: "Load", lastName: "User", birthdate: "1990-01-01" }
       : { email, password },
   });
   const user = jsonBody(response);
   if (response.status !== 200 || typeof user.id !== "string") {
     throw new Error(`${register ? "registration" : "login"} setup returned HTTP ${response.status}`);
   }
+  if (register) await client.query("UPDATE users SET subscription_tier='pro', subscription_status='active', onboarding_completed=true WHERE id=$1", [user.id]);
   return { jar, csrf, userId: user.id };
 }
 
@@ -631,6 +786,7 @@ async function runAuthenticatedHttpLoad() {
     sessions.push(await createLoadSession(email, username, password, false));
   }
 
+  evidence.projectCrud = await runProjectCrud(sessions[0].jar, sessions[0].csrf, sessions[0].userId);
   const invalidCsrf = await authRequest(sessions[0].jar, "/api/auth/heartbeat", { method: "POST" });
   if (invalidCsrf.status !== 403) {
     throw new Error(`missing-CSRF mutation was not rejected (HTTP ${invalidCsrf.status})`);
@@ -642,6 +798,7 @@ async function runAuthenticatedHttpLoad() {
     body: { title: "Disposable load project", description: "isolated acceptance data", metadata: { synthetic: true } },
   });
   const projectWritesCompatible = projectProbe.status === 200 && typeof jsonBody(projectProbe).id === "string";
+  if (!projectWritesCompatible) throw new Error(`paid project creation failed: HTTP ${projectProbe.status} ${projectProbe.body.slice(0,200)}`);
   const operations = projectWritesCompatible
     ? ["session-read", "project-read", "session-write", "project-write"]
     : ["session-read", "session-write"];
@@ -792,7 +949,9 @@ try {
   mkdirSync(join(temp, "cwd"));
   mkdirSync(join(temp, "schema"));
   symlinkSync(join(root, "node_modules"), join(temp, "node_modules"), "dir");
+  symlinkSync(join(root, "node_modules"), join(temp, "cwd", "node_modules"), "dir");
   symlinkSync(join(root, "dist"), join(temp, "cwd", "dist"), "dir");
+  symlinkSync(join(root, "package.json"), join(temp, "cwd", "package.json"), "file");
   symlinkSync(join(root, "shared"), join(temp, "cwd", "shared"), "dir");
   symlinkSync(join(root, "tsconfig.json"), join(temp, "cwd", "tsconfig.json"), "file");
   symlinkSync(join(root, "tsconfig.server.json"), join(temp, "cwd", "tsconfig.server.json"), "file");
@@ -842,6 +1001,8 @@ try {
     MAXCORE_LOCAL: "0",
     MAXCORE_API_URL: "http://127.0.0.1:9",
     MAXCORE_BASE_URL: "http://127.0.0.1:9",
+    LOCAL_PDIM_PORT: String(pdimPort),
+    LOCAL_PDIM_STORE_FILE: join(temp, "local-pdim-store.json"),
     ENABLE_BACKUPS: "false",
     ENABLE_FAN_DELIVERY_WORKER: "false",
     ACME_ENABLED: "false",
@@ -899,6 +1060,12 @@ try {
     bytes: frontend.bytes,
     sha256: sha256(frontend.body),
   };
+
+  // Liveness and static HTML are served before asynchronous API registration.
+  // Wait for the real read-only auth bootstrap before attempting credentials.
+  await waitFor("/api/csrf-token", (response) =>
+    response.status === 200 && /application\/json/.test(response.contentType) &&
+    typeof jsonBody(response).csrfToken === "string", 90_000);
 
   if (httpLoadOnly) {
     evidence.browser = "intentionally skipped only for explicit --http-load mode";
@@ -961,11 +1128,13 @@ try {
     }
   }
 
+  // This deliberately sealed fixture has no model or MaxCore child process.
+  // Assert its degraded contract rather than falsely treating it as full readiness.
   const ready = await waitFor("/api/ready", (response) => {
-    if (response.status !== 200) return false;
+    if (response.status !== 503) return false;
     try {
       const body = JSON.parse(response.body);
-      return body && typeof body === "object" && body.status === "ok";
+      return isExpectedIsolatedReadiness(response.status, body);
     } catch {
       return false;
     }
@@ -991,6 +1160,10 @@ try {
         ]),
       );
   evidence.readiness = {
+    scope: "sealed non-ML authentication, projects, and frontend acceptance",
+    fullStackReadiness: "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+    expectedDegradedReadinessAsserted: true,
+    unifiedAwarenessReady: readyBody.unifiedAwareness?.ready,
     status: ready.status,
     aggregate: readyBody.status ?? readyBody.phase ?? readyBody.ready ?? "unknown",
     ready: readyBody.ready,
@@ -1006,7 +1179,7 @@ try {
       ? "A real headless Chromium page hydrated the login UI, submitted the login form, persisted its cookie session, logged out, and captured a pre-credential screenshot."
       : "A real headless Chromium page hydrated the login UI and captured a pre-credential screenshot, but the assembled browser login failed; HTTP auth evidence remains distinct and the artifact prerequisite is recorded.",
   );
-  if (ready.status !== 200 || readyBody.ready === false) {
+  if (ready.status !== 503 || readyBody.unifiedAwareness?.ready !== false) {
     failures.push(
       `critical readiness gate did not pass: HTTP ${ready.status}, aggregate ${evidence.readiness.aggregate}`,
     );
@@ -1044,6 +1217,7 @@ const revisionResult = spawnSync("git", ["rev-parse", "HEAD"], {
 const sourceFiles = [
   "scripts/readiness-assembled-acceptance.mjs",
   "scripts/readiness-egress-guard.mjs",
+  "scripts/lib/isolated-acceptance-readiness.mjs",
   "server/index.ts",
   "server/routes.ts",
   "server/middleware/csrf.ts",
@@ -1055,8 +1229,8 @@ const result = {
   decision: failures.length ? "FAIL" : "PASS_WITH_UNTESTED_CATEGORIES",
   command: `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs${httpLoadOnly ? " --http-load" : ""}`,
   artifactLabel: httpLoadOnly
-    ? "source application authenticated HTTP simulation; not packed application acceptance"
-    : "source application assembled acceptance; not packed application acceptance",
+    ? "sealed non-ML authenticated HTTP load; not full-stack or packed acceptance"
+    : "sealed non-ML source application acceptance; not full-stack or packed acceptance",
   sourceRevision: revisionResult.status === 0 ? revisionResult.stdout.trim() : "unavailable",
   sourceFileDigestsSha256: Object.fromEntries(sourceFiles.map((file) => [
     file,
@@ -1066,7 +1240,7 @@ const result = {
     inheritedSecretNamesRejected: true,
     database: "ephemeral local PostgreSQL containing generated synthetic empty schema only",
     network: "child preloader permits loopback TCP/Unix sockets only; rejects wrapper and direct-socket external TCP, UDP, and child processes",
-    pdim: "no real PDIM; no Redis credential or non-loopback endpoint is available",
+    pdim: "local imported PDIM on an ephemeral loopback port with disposable state; no production Redis credential or non-loopback endpoint is available",
     maxCore: "not started; loopback port 9 is a closed sentinel and no model is loaded",
     providerCredentialsPresent: false,
     productionDataPresent: false,
@@ -1076,7 +1250,7 @@ const result = {
   failures,
   observations,
   untested: [
-    "authenticated browser journeys beyond the completed login/session/logout path",
+    "authenticated business journeys beyond login/session/logout, project CRUD, preferences persistence, workspace ownership/list rendering, and press-kit form/publish/cache/unpublish checks",
     "provider sandbox delivery, OAuth, webhooks, messaging, push, email, social posting, and DSP contracts",
     "real-money payment, payout, refund, royalty, and financial reconciliation",
     "production-source restore/upgrade/rollback and durable backup recovery",

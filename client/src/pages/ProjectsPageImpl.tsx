@@ -89,9 +89,10 @@ import {
 type EditForm = Pick<Project, "title"> & {
   description: string;
   genre: string;
+  expectedUpdatedAt?: string | null;
 };
 
-type MutationResult = { queued: boolean };
+type MutationResult = { queued: boolean; draftVersion?: number };
 
 const EMPTY_SONG: SongwritingDraftInput = {
   title: "",
@@ -104,6 +105,9 @@ const EMPTY_SONG: SongwritingDraftInput = {
 };
 
 function errorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "status" in error && error.status === 409) {
+    return "This project changed on the server. Refresh and review before trying again.";
+  }
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
@@ -180,6 +184,7 @@ export default function ProjectsPageImpl() {
   });
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState<string | null>(null);
+  const editRequestRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioProjectRef = useRef<string | null>(null);
 
@@ -218,15 +223,15 @@ export default function ProjectsPageImpl() {
         throw new Error("Refresh your projects before deleting this item.");
       }
 
+      if (project.updatedAt === undefined) throw new Error("This item has no saved project version. Refresh before deleting.");
+      const expectedUpdatedAt = project.updatedAt === null ? null : new Date(project.updatedAt).toISOString();
       let action: Awaited<ReturnType<typeof offlineQueue.enqueue>> | undefined;
       try {
         action = await offlineQueue.enqueue(
           "project.delete",
           {
             projectId,
-            expectedUpdatedAt: project.updatedAt
-              ? new Date(project.updatedAt).toISOString()
-              : null,
+            expectedUpdatedAt,
           },
           { conflictStrategy: "manual" },
         );
@@ -257,6 +262,7 @@ export default function ProjectsPageImpl() {
       const response = await apiRequest(
         "DELETE",
         `/api/studio/projects/${encodeURIComponent(projectId)}`,
+        { expectedUpdatedAt },
       );
       normalizeMutationSuccess(await readProjectsJson(response));
       return { queued: false };
@@ -306,8 +312,8 @@ export default function ProjectsPageImpl() {
       const identity = offlineIdentity();
       const normalized: EditForm = {
         title: data.title.trim(),
-        description: data.description.trim(),
-        genre: data.genre.trim(),
+        description: (data.description ?? "").trim(),
+        genre: (data.genre ?? "").trim(),
       };
       if (!normalized.title || normalized.title.length > 255) {
         throw new Error("Project title must be between 1 and 255 characters.");
@@ -319,10 +325,15 @@ export default function ProjectsPageImpl() {
         throw new Error("Genre must be 100 characters or fewer.");
       }
 
+      if (!editingProject || editingProject.id !== id || editingProject.updatedAt === undefined) {
+        throw new Error("This draft has no saved project version. Reopen the current project and review your changes.");
+      }
+      const expectedUpdatedAt = editingProject.updatedAt === null
+        ? null : new Date(editingProject.updatedAt).toISOString();
       let draftVersion: number | undefined;
       try {
         draftVersion = (
-          await draftStorage.saveDraft(`project-edit:${id}`, normalized)
+          await draftStorage.saveDraft(`project-edit:${id}`, { ...normalized, expectedUpdatedAt })
         ).version;
       } catch {
         setDraftMessage(
@@ -338,9 +349,7 @@ export default function ProjectsPageImpl() {
             projectId: id,
             changes: normalized,
             isStudio: false,
-            expectedUpdatedAt: editingProject?.updatedAt
-              ? new Date(editingProject.updatedAt).toISOString()
-              : null,
+            expectedUpdatedAt,
           },
           {
             conflictStrategy: "manual",
@@ -357,13 +366,13 @@ export default function ProjectsPageImpl() {
               "This project changed on the server. Review pending changes.",
           );
         }
-        return { queued: !result?.success };
+        return { queued: !result?.success, draftVersion };
       }
 
       const response = await apiRequest(
         "PATCH",
         `/api/studio/projects/${encodeURIComponent(id)}`,
-        normalized,
+        { ...normalized, expectedUpdatedAt },
       );
       normalizeProjectResponse(await readProjectsJson(response));
       return { queued: false };
@@ -379,24 +388,21 @@ export default function ProjectsPageImpl() {
           : "Your project has been updated successfully.",
       });
       setIsEditOpen(false);
-      if (editingProject && !result.queued) {
-        void draftStorage
-          .deleteDraft(`project-edit:${editingProject.id}`)
-          .catch(() =>
-            toast({
-              title: "Project saved",
-              description:
-                "The old local draft could not be removed. Review it before restoring.",
-              variant: "destructive",
-            }),
-          );
+      if (editingProject && !result.queued && result.draftVersion !== undefined) {
+        const formId = `project-edit:${editingProject.id}`;
+        void (async () => {
+          const saved = await draftStorage.getDraft(formId);
+          if (saved?.version === result.draftVersion) await draftStorage.deleteDraft(formId);
+        })().catch(() => setDraftMessage("The project was saved, but its old draft could not be removed."));
       }
       setEditingProject(null);
     },
     onError: (error) =>
       toast({
         title: "Update Failed",
-        description: errorMessage(error, "Failed to update project."),
+        description: error && "status" in error && error.status === 409
+          ? "Your form is still here. " + errorMessage(error, "Refresh and review your changes.")
+          : errorMessage(error, "Failed to update project."),
         variant: "destructive",
       }),
   });
@@ -513,6 +519,7 @@ export default function ProjectsPageImpl() {
   };
 
   const handleEdit = async (project: Project) => {
+    const request = ++editRequestRef.current;
     const identity = offlineIdentity();
     setEditingProject(project);
     setDraftMessage("");
@@ -527,13 +534,16 @@ export default function ProjectsPageImpl() {
         `project-edit:${project.id}`,
       );
       assertOfflineIdentity(identity);
+      if (request !== editRequestRef.current) return;
       if (saved) {
+        setEditingProject({ ...project, updatedAt: saved.data.expectedUpdatedAt });
         setEditForm(saved.data);
         setDraftMessage(
           "Recovered a draft saved on this device. Review it before updating.",
         );
       }
     } catch {
+      if (request !== editRequestRef.current) return;
       setDraftMessage(
         "Local drafts are unavailable. Keep this form open until your update succeeds.",
       );

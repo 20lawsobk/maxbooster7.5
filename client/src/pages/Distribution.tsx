@@ -52,6 +52,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { pollMusicVideoJobUntilDone } from "@/lib/musicVideoJobs";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
 import { VideoPlayer } from "@/components/ui/video-player";
@@ -6581,7 +6582,6 @@ function MusicVideosContent() {
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
-  const pollErrorNotifiedRef = useRef(false);
 
   const { data: voiceProfiles = [] } = useQuery<any[]>({
     queryKey: ["/api/social/voice-profiles"],
@@ -6591,62 +6591,30 @@ function MusicVideosContent() {
   });
 
   useEffect(() => {
-    if (
-      !jobId ||
-      jobStatus?.status === "completed" ||
-      jobStatus?.status === "failed"
-    )
-      return;
-    const interval = setInterval(async () => {
+    if (!jobId) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    void (async () => {
       try {
-        const res = await apiRequest(
-          "GET",
-          `/api/social/music-video-job/${jobId}`,
-        );
-        const data = await res.json();
-        pollErrorNotifiedRef.current = false;
+        const data = await pollMusicVideoJobUntilDone(jobId, {
+          signal: controller.signal,
+          isCancelled: () => cancelled,
+          onStatus: status => { if (!cancelled) setJobStatus(status); },
+        });
+        if (cancelled) return;
+        setCompletedVideoUrl(data.url);
+        setCompletedPosterUrl(data.thumbnail_url || null);
         setJobStatus(data);
-        if (data.status === "completed") {
-          const videoUrl = data.videoUrl || data.result?.url;
-          if (!videoUrl) {
-            setJobStatus({ status: "failed", error: "Render completed without a playable video URL" });
-            toast({
-              title: "Generation Failed",
-              description: "Render completed without a playable video URL",
-              variant: "destructive",
-            });
-            return;
-          }
-          setCompletedVideoUrl(
-            videoUrl,
-          );
-          setCompletedPosterUrl(
-            data.thumbnailUrl || data.result?.thumbnail_url || null,
-          );
-          toast({
-            title: "Music Video Ready!",
-            description: "Your AI music video has been generated.",
-          });
-        } else if (data.status === "failed") {
-          toast({
-            title: "Generation Failed",
-            description: data.error || "Something went wrong.",
-            variant: "destructive",
-          });
-        }
+        toast({ title: "Music Video Ready!", description: "Your music video is ready." });
       } catch (error) {
-        if (!pollErrorNotifiedRef.current) {
-          pollErrorNotifiedRef.current = true;
-          toast({
-            title: "Unable to check video status",
-            description: error instanceof Error ? error.message : "Retrying automatically.",
-            variant: "destructive",
-          });
-        }
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "Unable to finish video generation";
+        setJobStatus({ status: "failed", error: message });
+        toast({ title: "Generation Failed", description: message, variant: "destructive" });
       }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [jobId, jobStatus?.status, toast]);
+    })();
+    return () => { cancelled = true; controller.abort(); };
+  }, [jobId, toast]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(
@@ -6677,7 +6645,6 @@ function MusicVideosContent() {
     }
     setIsSubmitting(true);
     setJobId(null);
-    pollErrorNotifiedRef.current = false;
     setJobStatus(null);
     setCompletedVideoUrl(null);
     setCompletedPosterUrl(null);

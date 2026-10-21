@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripeClient";
 import { env } from "../config/env.js";
 import { consentService } from "./consentService.js";
 import { logger } from "../logger.js";
@@ -36,7 +36,7 @@ export async function finalizePaidRegistrationConsent(
     throw new Error("Stripe is not configured");
   }
 
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+  const stripe = createStripeClient(env.STRIPE_SECRET_KEY, {
     apiVersion: "2026-02-25.clover",
   });
   const session = await stripe.checkout.sessions.retrieve(input.sessionId);

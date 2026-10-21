@@ -29,13 +29,19 @@ export class ContentGenerationAwarenessService {
           !("snapshot_id" in receipt) || typeof receipt.snapshot_id !== "string" || !receipt.snapshot_id ||
           !("awareness" in receipt)) throw new Error("Invalid awareness receipt");
       const awareness = receipt.awareness;
-      if (!(typeof awareness === "string" ? awareness.length > 0 : isRecord(awareness))) {
+      if ((typeof awareness !== "string" && !isRecord(awareness)) ||
+          (typeof awareness === "string" && awareness.length === 0)) {
         throw new Error("Invalid awareness receipt");
       }
       const contextString = typeof awareness === "string" ? awareness
         : "contextString" in awareness ? awareness.contextString : undefined;
       if (contextString !== undefined && typeof contextString !== "string") {
         throw new Error("Invalid awareness receipt");
+      }
+      if (("ready" in receipt && receipt.ready === false) ||
+          !("expires_at" in receipt) || typeof receipt.expires_at !== "number" ||
+          !Number.isFinite(receipt.expires_at) || receipt.expires_at * 1000 <= Date.now()) {
+        throw new Error("Awareness snapshot is missing or expired");
       }
       return {
         ...receipt,

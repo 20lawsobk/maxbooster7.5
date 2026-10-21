@@ -6,8 +6,12 @@ import { readFile } from "node:fs/promises";
 // Bundle only actual commerce subjects; every external boundary is intercepted.
 // Run with env -i to prevent accidental credential/provider access.
 async function subject(entry, mocks) {
+  mocks={"./beatMoneyLoopService.js":"export const beatMoneyLoopService={};",...mocks};
   const result = await build({
     entryPoints: [entry], bundle: true, write: false, platform: "node", format: "esm",
+    // The production ESM bundle supplies Node require for bundled CommonJS
+    // dependencies (including the verified HTTPS proxy transport).
+    banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(process.cwd() + '/package.json');" },
     plugins: [{ name: "isolated-boundaries", setup(b) {
       b.onResolve({ filter: /.*/ }, args => {
         if (Object.hasOwn(mocks, args.path)) return { path: args.path, namespace: "mock" };
@@ -127,7 +131,7 @@ test("simulated beta: actual purchase producer -> registered webhook -> settleme
   }},paymentIntents:{retrieve:async()=>({id:"pi_beta",status:"succeeded",amount_received:1000,currency:"usd",metadata:sessions[0].metadata})}};
   const orderView=()=>({...order,userId:order.user_id,sellerId:order.seller_id,listingId:order.listing_id,
     licenseType:order.license_type,stripePaymentIntentId:order.stripe_payment_intent_id});
-  globalThis.__chainStorage={getOrder:async()=>orderView()};
+  globalThis.__chainStorage={getOrder:async()=>orderView(),getBeatListing:async()=>({id:"beat",userId:"seller",metadata:{}})};
   globalThis.__chainDb={
     update:()=>({set:changes=>({where:()=>({returning:async()=>{order.stripe_payment_intent_id=changes.stripePaymentIntentId;return [orderView()];}})})}),
     insert:()=>({values:()=>({onConflictDoNothing:async()=>{}})}),

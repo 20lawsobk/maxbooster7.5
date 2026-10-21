@@ -7,7 +7,8 @@ export {
 } from "./platformAwarenessOptimization.js";
 
 export type AwarenessMode = "social" | "ad_copy" | "video_script" | "email" |
-  "press_release" | "blog" | "melody" | "music" | "songwriting" | "content" | "advertising";
+  "press_release" | "blog" | "melody" | "music" | "songwriting" | "content" | "advertising" |
+  "image" | "audio" | "video";
 
 export interface AwarenessContext {
   snapshot_id?: string;

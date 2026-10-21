@@ -54,8 +54,19 @@ describe("deployment execution", () => {
         const relative = path.relative(path.dirname(entry), "common.ts").replaceAll("\\", "/");
         fs.writeFileSync(path.join(root, entry), `import { shared } from ${JSON.stringify(relative.startsWith(".") ? relative : "./" + relative)}; console.log(${JSON.stringify(name)} + ':' + (shared+1));`);
       }
+      fs.cpSync("script/deployment", path.join(root, "script/deployment"), { recursive: true });
+      for (const file of ["scripts/port-contract.sh", "scripts/boot-stub-server.mjs", "scripts/check-port-contract.ts", "server/config/ports.ts"]) {
+        fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+        fs.copyFileSync(file, path.join(root, file));
+      }
+      fs.writeFileSync(path.join(root, ".replit"), "[[ports]]\nlocalPort = 5000\nexternalPort = 80\n");
       await buildServerBundles(root);
-      expect(fs.readdirSync(path.join(root, "dist")).sort()).toEqual(Object.keys(SERVER_ENTRIES).map(n => `${n}.mjs`).sort());
+      expect(fs.readdirSync(path.join(root, "dist")).sort()).toEqual(["deployment", ...Object.keys(SERVER_ENTRIES).map(n => `${n}.mjs`)].sort());
+      expect(fs.existsSync(path.join(root, "dist/deployment/executive.mjs"))).toBe(true);
+      expect(fs.existsSync(path.join(root, "dist/deployment/restore-one.mjs"))).toBe(true);
+      expect(execFileSync(process.execPath, [path.join(root, "dist/deployment/check-port-contract.mjs")], {
+        cwd: root, encoding: "utf8", env: { PATH: process.env.PATH },
+      })).toContain("all internal service ports are distinct");
       for (const name of Object.keys(SERVER_ENTRIES)) {
         expect(execFileSync(process.execPath, [path.join(root, "dist", name + ".mjs")], { encoding: "utf8" }).trim()).toBe(name + ":42");
       }

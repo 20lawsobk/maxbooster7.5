@@ -82,11 +82,11 @@ export default function SyncLicensing() {
   const [editingItem, setEditingItem] = useState<SyncSubmission | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const { data: catalog = [], isLoading } = useQuery<SyncSubmission[]>({
+  const { data: catalog = [], isLoading, error: catalogReadError, refetch: refetchCatalog } = useQuery<SyncSubmission[]>({
     queryKey: ["/api/sync-licensing"],
   });
 
-  const { data: stats } = useQuery<SyncStats>({
+  const { data: stats, error: statsReadError, refetch: refetchStats } = useQuery<SyncStats>({
     queryKey: ["/api/sync-licensing/stats"],
   });
 
@@ -208,6 +208,18 @@ export default function SyncLicensing() {
   };
 
   if (!user) return null;
+
+  if ([catalogReadError, statsReadError].some(Boolean)) {
+    return (
+      <AppLayout>
+        <section role="alert" className="mx-auto max-w-xl space-y-4 p-8">
+          <h1 className="text-xl font-semibold">Unable to load sync licensing</h1>
+          <p>Your saved data is temporarily unavailable. Please retry.</p>
+          <Button onClick={() => { void Promise.allSettled([refetchCatalog(), refetchStats()]); }}>Retry</Button>
+        </section>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

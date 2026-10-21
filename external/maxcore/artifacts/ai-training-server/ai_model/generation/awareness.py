@@ -23,9 +23,9 @@ def generation_guard(method):
 
 
 def require_context(platform="general", modality="text"):
-    from ai_model.quality_awareness import self_sufficiency
-    if self_sufficiency(modality)["retired"]:
-        return ""
+    # Live trends remain relevant regardless of historical corpus size.
+    # Use the same engine as /api/awareness/unified/context, pinned to the
+    # immutable generation plan so a worker cannot mix scan revisions.
     snapshot = sampling_snapshot()
     if snapshot is None:
         return ""

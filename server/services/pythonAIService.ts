@@ -1,6 +1,8 @@
 import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { ensureMaxCoreAudioAsset } from "./maxcoreAssetTransport.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
+import { MaxCoreControlError, maxCoreControlTransport } from "./maxcoreControlTransport.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 
 interface AIModelResponse<T> {
   success: boolean;
@@ -103,10 +105,9 @@ export interface VideoResult {
 
 export interface HealthResult {
   status: string;
+  reachable: boolean;
   model_loaded: boolean;
-  vocab_size: number;
-  device: string;
-  version: string;
+  generation_ready: boolean;
 }
 
 export class PythonAIService {
@@ -120,7 +121,9 @@ export class PythonAIService {
   }
 
   async isAvailable(): Promise<boolean> {
-    return MaxCoreAIClient.isAvailable();
+    // Audio measurements do not require a trained text generator. Availability
+    // means the actual supervised Python process is reachable, not model-ready.
+    return (await this.checkHealth()).success;
   }
 
   resetAvailability(): void {
@@ -399,19 +402,37 @@ export class PythonAIService {
   }
 
   async checkHealth(): Promise<AIModelResponse<HealthResult>> {
-    const available = await MaxCoreAIClient.isAvailable();
-    return available
-      ? {
-          success: true,
-          data: {
-            status: "available",
-            model_loaded: true,
-            vocab_size: 0,
-            device: "maxcore",
-            version: "maxcore",
-          },
-        }
-      : { success: false, error: "MaxCore unavailable" };
+    let observed: unknown;
+    try {
+      observed = await maxCoreControlTransport.request("/api/system/readiness", {
+        authScope: "generation", timeoutMs: 7_000,
+      });
+    } catch (error) {
+      // The real readiness response is 503 while generation is unavailable;
+      // its independently measured Python liveness still admits audio analysis.
+      if (!(error instanceof MaxCoreControlError) || error.status !== 503) {
+        return { success: false, error: "MaxCore health probe unavailable" };
+      }
+      observed = error.details;
+    }
+    const status = observed && typeof observed === "object" && !Array.isArray(observed)
+      ? observed as Record<string, unknown> : null;
+    const python = status?.python && typeof status.python === "object" && !Array.isArray(status.python)
+      ? status.python as Record<string, unknown> : null;
+    if (typeof status?.ready !== "boolean" || typeof python?.reachable !== "boolean" ||
+        typeof python.model_loaded !== "boolean" || typeof python.generation_ready !== "boolean") {
+      return { success: false, error: "MaxCore returned an invalid health receipt" };
+    }
+    return {
+      success: python.reachable,
+      data: {
+        status: status.ready ? "ready" : "degraded",
+        reachable: python.reachable,
+        model_loaded: python.model_loaded,
+        generation_ready: python.generation_ready,
+      },
+      ...(!python.reachable ? { error: "MaxCore Python process is unreachable" } : {}),
+    };
   }
 
   async analyzeAudio(
@@ -420,7 +441,8 @@ export class PythonAIService {
     userId?: string,
   ): Promise<AIModelResponse<unknown>> {
     try {
-      if (!userId) {
+      const ownerId = trustedMaxcoreOwner(userId);
+      if (!ownerId) {
         return {
           success: false,
           error: "Authenticated owner identity is required for audio analysis",
@@ -445,14 +467,15 @@ export class PythonAIService {
           error: "Invalid owned audio asset path",
         };
       }
-      const audioUrl = await ensureMaxCoreAudioAsset(filePath, userId);
+      const audioUrl = await ensureMaxCoreAudioAsset(filePath, ownerId);
       const data = await MaxCoreAIClient.generate<Record<string, unknown>>(
         "/api/audio/analyze",
         {
-          user_id: userId,
+          user_id: ownerId,
           audio_url: audioUrl,
           context: { detailed },
         },
+        ownerId,
       );
       if (!data || data.source !== "maxcore_audio_conductor") {
         return { success: false, error: "MaxCore audio conductor unavailable" };
@@ -467,10 +490,14 @@ export class PythonAIService {
   }
 
   async getAudioFeatureInfo(): Promise<AIModelResponse<unknown>> {
+    const health = await this.checkHealth();
+    if (!health.success) return { success: false, error: health.error || "Audio analysis service unavailable" };
     return {
       success: true,
       data: {
         available: true,
+        availability_scope: "python_process_reachable",
+        generation_ready: health.data?.generation_ready,
         source: "maxcore_audio_conductor",
         features: [
           "bpm",

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { LocalMediaRenderer } from "./LocalMediaRenderer";
 import {
   Image,
   Loader2,
@@ -85,9 +86,9 @@ interface VisualSpec {
 
 interface GeneratedImage {
   url: string | null;
-  width: number;
-  height: number;
-  format: string;
+  width?: number;
+  height?: number;
+  format?: string;
   platform: string;
   prompt_used: string;
   color_scheme: {
@@ -96,8 +97,25 @@ interface GeneratedImage {
     accent: string;
     background: string;
   };
-  processing_time_ms: number;
+  processing_time_ms?: number;
   visual_spec?: VisualSpec;
+}
+
+/** Specifications and scratch previews cannot stand in for a delivered image. */
+export function readGeneratedImageFile(data: unknown): Record<string, unknown> {
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("No image file was returned.");
+  const value = data as Record<string, unknown>;
+  const url = value.url ?? value.image_url;
+  if (value.kind === "specification" || value.asset_status === "spec_only" ||
+      typeof url !== "string" || !/^\/api\/storage\/file\/[^?#]+$/.test(url)) {
+    throw new Error("Image generation did not deliver a saved image file.");
+  }
+  return { ...value, url,
+    width: typeof value.width === "number" && Number.isFinite(value.width) && value.width > 0 ? value.width : undefined,
+    height: typeof value.height === "number" && Number.isFinite(value.height) && value.height > 0 ? value.height : undefined,
+    format: typeof value.format === "string" && value.format ? value.format : undefined,
+    processing_time_ms: typeof value.processing_time_ms === "number" && Number.isFinite(value.processing_time_ms) && value.processing_time_ms >= 0 ? value.processing_time_ms : undefined,
+  };
 }
 
 const STYLES: Array<{
@@ -177,6 +195,8 @@ export function AIImageGenerator({
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<GeneratedImage | null>(null);
   const [copied, setCopied] = useState(false);
+  const [creationMode, setCreationMode] = useState<"artwork" | "poster">("artwork");
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const apiEndpoint = endpoint || "/api/social/generate-image";
   const isMultimodalEndpoint = apiEndpoint.includes("/multimodal/generate");
@@ -193,6 +213,7 @@ export function AIImageGenerator({
 
     setIsGenerating(true);
     setResult(null);
+    setGenerationError(null);
 
     try {
       let data: Record<string, unknown>;
@@ -208,6 +229,7 @@ export function AIImageGenerator({
           "youtube",
           "google_business",
           "linkedin",
+          "twitter",
         ];
         if (!validPlatforms.includes(mmPlatform)) {
           throw new Error(`Image generation is not supported for ${platform}.`);
@@ -220,7 +242,7 @@ export function AIImageGenerator({
           },
           platforms: [resolvedPlatform],
           intent: `${selectedTone} image creative for ${artistName || "artist"}`,
-          constraints: { styleTags: [selectedStyle, selectedTone] },
+          constraints: { outputModality: "image", styleTags: [selectedStyle, selectedTone] },
         });
         const mmData = await response.json();
         const imageAsset = (mmData.assets || []).find(
@@ -233,22 +255,8 @@ export function AIImageGenerator({
         ) {
           throw new Error("No image file was returned.");
         }
-        data = {
-          success: true,
-          url: imageAsset.payload,
-          width: 1080,
-          height: 1080,
-          format: "png",
-          platform,
-          prompt_used: imageAsset.metadata?.prompt || topic,
-          color_scheme: {
-            primary: "#000000",
-            secondary: "#ffffff",
-            accent: "#6366f1",
-            background: "#000000",
-          },
-          processing_time_ms: 0,
-        };
+        data = readGeneratedImageFile({ ...(imageAsset.metadata || {}), kind: imageAsset.kind ?? imageAsset.metadata?.kind,
+          url: imageAsset.payload, platform });
       } else {
         const response = await apiRequest("POST", apiEndpoint, {
           topic,
@@ -263,6 +271,7 @@ export function AIImageGenerator({
           throw new Error(
             data.message || data.error || "Image generation failed",
           );
+        data = readGeneratedImageFile(data);
       }
 
       if (typeof data.url !== "string" || !data.url.trim()) {
@@ -281,6 +290,7 @@ export function AIImageGenerator({
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : "Image generation failed";
+      setGenerationError(msg);
       toast({
         title: "Generation Failed",
         description: msg,
@@ -314,11 +324,10 @@ export function AIImageGenerator({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Image className="w-5 h-5 text-indigo-500" />
-          AI Image Creative Generator
+          Image Creative Generator
         </CardTitle>
         <CardDescription>
-          Generate platform-optimized image creatives using the Max Booster AI
-          model — cinematic, styled, and ready to post.
+          Choose AI artwork, or place your headline on a poster layout.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -337,6 +346,17 @@ export function AIImageGenerator({
             {topic.length > 40 ? "…" : ""}
           </Badge>
         </div>
+
+        <div className="flex gap-2" role="group" aria-label="Image creation mode">
+          <Button type="button" variant={creationMode === "artwork" ? "default" : "outline"}
+            aria-pressed={creationMode === "artwork"} disabled={isGenerating} onClick={() => setCreationMode("artwork")}>AI artwork</Button>
+          <Button type="button" variant={creationMode === "poster" ? "default" : "outline"}
+            aria-pressed={creationMode === "poster"} disabled={isGenerating} onClick={() => setCreationMode("poster")}>Poster layout</Button>
+        </div>
+
+        {creationMode === "poster" ? <LocalMediaRenderer kind="image" initialHeadline={topic}
+          platform={platform === "instagram_reels" ? "instagram" : platform}
+          onGenerated={media => onImageGenerated?.(media.url)} /> : <>
 
         <div className="space-y-2">
           <Label>Visual Style</Label>
@@ -397,12 +417,14 @@ export function AIImageGenerator({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Image
+                  {generationError ? "Retry image" : "Generate Image"}
                 </>
               )}
             </Button>
           </div>
         </div>
+
+        {generationError && <p role="alert" className="text-sm text-destructive">{generationError}</p>}
 
         {result && (
           <div className="space-y-4 pt-2 border-t">
@@ -416,15 +438,15 @@ export function AIImageGenerator({
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">
+                  {result.width && result.height && <Badge variant="secondary">
                     {result.width}×{result.height}
-                  </Badge>
-                  <Badge variant="secondary">
+                  </Badge>}
+                  {result.format && <Badge variant="secondary">
                     {result.format?.toUpperCase()}
-                  </Badge>
-                  <Badge variant="secondary">
+                  </Badge>}
+                  {result.processing_time_ms !== undefined && <Badge variant="secondary">
                     {result.processing_time_ms}ms
-                  </Badge>
+                  </Badge>}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -538,6 +560,7 @@ export function AIImageGenerator({
             ) : null}
           </div>
         )}
+        </>}
       </CardContent>
     </Card>
   );

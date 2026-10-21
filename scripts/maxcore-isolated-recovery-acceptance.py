@@ -50,6 +50,8 @@ def child(root, port):
         "_request_job_owner": ContextVar("acceptance_owner", default=None),
         "_api_jobs_lock": threading.Lock(), "_render_manager": object(),
         "_model_ready": False,
+        "_model_init_error": "No certified release selected in isolated fixture",
+        "_serving_release_status": {"mode": "live-awareness", "status": "waiting_for_candidate"},
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SERVICE / "server.py"), "exec"), scope)
 

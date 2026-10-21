@@ -5,7 +5,7 @@
  * from process.env. It does not load dotenv, application runtime/configuration,
  * database code, webhooks, or connector credentials.
  */
-import Stripe from "stripe";
+import { assertDedicatedTestBindings, createTestStripe, readWithTestPublishableKey } from "./helpers-stripe-test-transport.mjs";
 import { build } from "esbuild";
 import { randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
@@ -499,14 +499,13 @@ async function establishPreflight() {
       "Both dedicated Stripe test credentials must be supplied in process.env.");
     return false;
   }
-  if (!secret.startsWith("sk_test_") || !publishable.startsWith("pk_test_")) {
+  try { assertDedicatedTestBindings(); } catch {
     addRow("preflight test-key prefixes and test-mode balance", "FAIL",
-      "Strict sk_test_ and pk_test_ prefixes are required; no Stripe writes were made.");
+      "Dedicated test binding validation failed; no Stripe writes were made.");
     safeExitCode = 1;
     return false;
   }
-
-  stripe = new Stripe(secret, { maxNetworkRetries: 1, timeout: 15_000 });
+  stripe = createTestStripe(secret, { maxNetworkRetries: 1, timeout: 15_000 });
   realStripeClient = stripe;
   try {
     const balance = await stripe.balance.retrieve();
@@ -520,7 +519,7 @@ async function establishPreflight() {
     }
     apiEnabled = true;
     addRow("preflight test-key prefixes and test-mode balance", "PASS",
-      "Strict test-key prefixes accepted and Stripe balance livemode was false.");
+      "Dedicated test bindings accepted and actual Stripe balance livemode was false.");
     return true;
   } catch (error) {
     addRow("preflight test-key prefixes and test-mode balance", "FAIL",
@@ -591,11 +590,7 @@ async function verifyPublishablePairing() {
     markCreatedPaymentIntent(pi);
     if (!pi.client_secret) throw new Error("pairing");
     const endpoint = `https://api.stripe.com/v1/payment_intents/${encodeURIComponent(pi.id)}?client_secret=${encodeURIComponent(pi.client_secret)}`;
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: { authorization: `Bearer ${process.env.STRIPE_TEST_CLIENT}` },
-      signal: AbortSignal.timeout(15_000),
-    });
+    const response = await readWithTestPublishableKey(endpoint);
     if (!response.ok) throw new Error("pairing");
     const fetched = await response.json();
     if (fetched?.id !== pi.id || fetched?.livemode !== false) throw new Error("pairing");

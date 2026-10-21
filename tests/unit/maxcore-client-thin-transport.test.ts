@@ -8,6 +8,7 @@ vi.mock("../../server/config/index.js", () => ({
 }));
 vi.mock("../../server/services/maxcoreConnector.js", () => ({
   getMaxcoreOrigin: () => "https://maxcore.example.test",
+  getMaxcoreGenerationHeaders: () => ({ Authorization: "Bearer test-generation-key" }),
 }));
 vi.mock("../../server/services/awarenessContext.js", () => {
   throw new Error("The HTTP transport must not initialize application AI context");
@@ -21,11 +22,13 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
   });
 
   it.each(["generate", "infer"] as const)(
-    "%s forwards explicit context and returns the unmodified MaxCore output",
+    "%s fetches canonical context without local planning and returns the unmodified MaxCore output",
     async (method) => {
       const output = { text: "MaxCore output", score: 0.417, variants: ["A", "B"], snapshot_id: "core-receipt" };
-      const fetchMock = vi.fn().mockResolvedValue(
-        new Response(JSON.stringify(output), {
+      const receipt = { snapshot_id: "canonical-live", awareness: "Public live observations",
+        expires_at: Date.now() / 1000 + 60 };
+      const fetchMock = vi.fn().mockImplementation(async url =>
+        new Response(JSON.stringify(String(url).endsWith("/api/awareness/unified/context") ? receipt : output), {
           headers: { "content-type": "application/json" },
         }),
       );
@@ -41,11 +44,13 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
       const result = await MaxCoreAIClient[method]("/platform/social/generate", input, "authenticated-caller");
       expect(result).toEqual(output);
       expect(input).toEqual(original);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [url, request] = fetchMock.mock.calls[0];
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toBe("https://maxcore.example.test/api/awareness/unified/context");
+      const [url, request] = fetchMock.mock.calls[1];
       expect(url).toBe("https://maxcore.example.test/api/platform/social/generate");
       expect(JSON.parse(request.body)).toEqual({
         ...original, owner_id: "authenticated-caller", userId: "authenticated-caller",
+        awareness: { ...receipt, caller_context: original.awareness },
       });
       expect(request.headers.Authorization).toBe("Bearer test-generation-key");
       expect(request.headers["X-MaxCore-User-Id"]).toBe("authenticated-caller");
@@ -57,7 +62,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
   ).MaxCoreAIClient, fetchMock: ReturnType<typeof vi.fn>) {
     fetchMock.mockRejectedValue(new Error("ECONNREFUSED"));
     for (let i = 0; i < 3; i++) {
-      await expect(MaxCoreAIClient.infer("/platform/social/generate", {})).rejects.toMatchObject({ status: 503 });
+      await expect(MaxCoreAIClient.infer("/content/score", {})).rejects.toMatchObject({ status: 503 });
     }
     expect(MaxCoreAIClient.getCircuitBreakerState().open).toBe(true);
   }
@@ -125,7 +130,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
     // probe, then cached health rejects the call before it reaches fetch.
     (MaxCoreAIClient as any)._remoteAvailable = false;
     fetchMock.mockReset();
-    await expect(MaxCoreAIClient.infer("/platform/social/generate", {})).rejects.toMatchObject({ status: 503 });
+    await expect(MaxCoreAIClient.infer("/content/score", {})).rejects.toMatchObject({ status: 503 });
     expect(fetchMock).not.toHaveBeenCalled();
 
     // Once health recovers, the next request must still own a probe slot.
@@ -136,7 +141,7 @@ describe("MaxCore client is transport, not another AI processing layer", () => {
       }),
     );
     await expect(
-      MaxCoreAIClient.infer("/platform/social/generate", {}),
+      MaxCoreAIClient.infer("/content/score", {}),
     ).resolves.toEqual({ text: "recovered" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

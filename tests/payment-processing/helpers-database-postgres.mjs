@@ -59,6 +59,13 @@ export async function startDisposablePostgres() {
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 5_000,
     });
+    // Pool.end resolves after scheduling idle client shutdown. Wait for socket
+    // closure as well before stopping the disposable server under concurrent tests.
+    const clients = new Set();
+    pool.on("connect", client => {
+      clients.add(client);
+      client.once("end", () => clients.delete(client));
+    });
     const settings = await pool.query("SELECT current_user, current_database(), current_setting('listen_addresses') AS listen_addresses, current_setting('unix_socket_directories') AS socket_directories");
     if (
       settings.rows[0]?.current_user !== user ||
@@ -72,7 +79,9 @@ export async function startDisposablePostgres() {
     return {
       pool,
       async stop() {
+        const disconnected = [...clients].map(client => new Promise(resolve => client.once("end", resolve)));
         await pool.end();
+        await Promise.all(disconnected);
         try {
           run("pg_ctl", ["-D", data, "-m", "fast", "-w", "stop"], env);
         } finally {
@@ -132,13 +141,15 @@ export async function createCommerceFixtureSchema(pool) {
     );
     CREATE TABLE listings (
       id text PRIMARY KEY,
+      user_id text NOT NULL DEFAULT 'seller-a',
       metadata jsonb NOT NULL DEFAULT '{}'
     );
     CREATE TABLE royalty_splits (
       id text PRIMARY KEY,
       release_id text NOT NULL,
       user_id text NOT NULL,
-      percentage numeric NOT NULL
+      percentage numeric NOT NULL,
+      status text NOT NULL DEFAULT 'active'
     );
     CREATE TABLE revenue_events (
       id bigserial PRIMARY KEY,
@@ -159,6 +170,7 @@ export async function createCommerceFixtureSchema(pool) {
 }
 
 export async function loadDatabaseSubject(entryPoint, boundaries = {}, defines = {}) {
+  boundaries = { "../../logger.js": "export const logger={info(){},warn(){},error(){}};", ...boundaries };
   const directory = await mkdtemp(path.join(tmpdir(), "commerce-subject-"));
   const outfile = path.join(directory, "subject.mjs");
   try {
@@ -169,6 +181,7 @@ export async function loadDatabaseSubject(entryPoint, boundaries = {}, defines =
       packages: "bundle",
       platform: "node",
       format: "esm",
+      banner: { js: 'import { createRequire as __commerceCreateRequire } from "node:module"; const require = __commerceCreateRequire(process.cwd() + "/package.json");' },
       target: "node22",
       define: defines,
       logLevel: "silent",

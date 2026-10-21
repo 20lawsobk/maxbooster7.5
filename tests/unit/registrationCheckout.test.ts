@@ -91,6 +91,7 @@ describe("registration checkout", () => {
       getStripeCheckoutUrl({ url: "https://stripe.com.evil.invalid/phish" }),
     ).toThrow(/unsafe checkout link/i);
     expect(() =>
+      // eslint-disable-next-line no-script-url -- Deliberate hostile URL fixture verifies the production boundary rejects script URLs.
       getStripeCheckoutUrl({ url: "javascript:alert(1)" }),
     ).toThrow(/unsafe checkout link|invalid checkout link/i);
   });

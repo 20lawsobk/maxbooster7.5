@@ -101,15 +101,24 @@ try {
   }));
   process.exitCode = 1;
 } finally {
-  await httpOwner?.stopLocalPdimServer();
-  fs.rmSync(scratch, { recursive: true });
-  store?.closeEmbedded();
-  if (bucket) {
-    const [files] = await bucket.getFiles({ prefix: `${prefix}/` });
-    for (const file of files) {
-      if (!file.metadata.generation) throw new Error("Missing fixture generation during cleanup");
-      await file.delete({ ifGenerationMatch: file.metadata.generation });
+  try {
+    await httpOwner?.stopLocalPdimServer();
+    fs.rmSync(scratch, { recursive: true });
+    store?.closeEmbedded();
+    if (bucket) {
+      const [files] = await bucket.getFiles({ prefix: `${prefix}/` });
+      for (const file of files) {
+        if (!file.metadata.generation) {
+          console.error("Missing fixture generation during cleanup; refusing an unguarded delete.");
+          process.exitCode = 1;
+          continue;
+        }
+        await file.delete({ ifGenerationMatch: file.metadata.generation });
+      }
+      console.log("Removed isolated fixture objects only.");
     }
-    console.log("Removed isolated fixture objects only.");
+  } catch (error) {
+    console.error("Isolated fixture cleanup failed:", error instanceof Error ? error.message : "unknown error");
+    process.exitCode = 1;
   }
 }

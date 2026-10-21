@@ -755,11 +755,13 @@ _digital_gpu_backend = None
 _silicon_simt_backend = None
 _model_config: dict[str, Any] = {}
 _serving_release_status: dict[str, Any] = {
-    "requested": "legacy", "active": None, "candidate_quality": "not_selected",
+    "requested": os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness"), "active": None, "candidate_quality": "not_selected",
     "backend_exclusive": "not_verified",
 }
 
 _model_lock = threading.Lock()
+_live_serving_model = None
+_live_learning_loop = None
 
 # ─── Workers (DataPuller + ContinuousTrainer + Watchdog) ─────────────────────
 
@@ -782,15 +784,90 @@ def _hyper_gpu_sizing() -> tuple[int, int]:
     from ai_model.gpu.sizing import hyper_gpu_sizing
     return hyper_gpu_sizing()
 
+def _init_live_awareness_model():
+    global _live_serving_model, _live_learning_loop, _creative_model, _tokenizer
+    global _script_agent, _visual_spec_agent, _distribution_agent, _optimization_agent
+    global _repo, _adapter, _render_manager, _image_engine, _model_config
+    from ai_model.generation.live_serving import LiveServingModel, LiveLearningLoop
+    from ai_model.awareness import get_engine
+    from ai_model.agents.script_agent import ScriptAgent
+    from ai_model.agents.visual_spec_agent import VisualSpecAgent
+    from ai_model.agents.distribution_agent import DistributionAgent
+    from ai_model.agents.optimization_agent import OptimizationAgent
+    from ai_model.boostsheets.repository import BoostSheetRepository
+    from ai_model.adapters.url_adapter import UrlToBoostSheetAdapter
+    from ai_model.render_manager import RenderManager
+    from ai_model.image.image_engine import ImageEngine
+    if _live_learning_loop is not None:
+        return
+    model = LiveServingModel()
+    _live_serving_model = _creative_model = model
+    _script_agent, _visual_spec_agent = ScriptAgent(model), VisualSpecAgent(model)
+    _distribution_agent, _optimization_agent = DistributionAgent(model), OptimizationAgent(model)
+    _repo = BoostSheetRepository(path="boostsheets_db")
+    _adapter = UrlToBoostSheetAdapter(_repo)
+    if _render_manager is None:
+        _render_manager = _create_durable_render_manager(RenderManager)
+    _image_engine = ImageEngine()
+    public_model_config = {
+        "width": int(os.environ.get("MAXCORE_PUBLIC_MODEL_WIDTH", "256")),
+        "layers": int(os.environ.get("MAXCORE_PUBLIC_MODEL_LAYERS", "6")),
+        "heads": int(os.environ.get("MAXCORE_PUBLIC_MODEL_HEADS", "8")),
+        "expansion": int(os.environ.get("MAXCORE_PUBLIC_MODEL_EXPANSION", "4")),
+    }
+    _model_config = {"release": "live-awareness", "automatic_learning": True,
+                     "learning_policy": "public-peak-shortform-v1",
+                     "training_architecture": "public-content-transformer-v2",
+                     "training_model_config": public_model_config}
+
+    def changed(ready, status):
+        global _model_ready, _model_init_error, _serving_release_status, _tokenizer
+        with _model_lock:
+            _model_ready = ready
+            _model_init_error = None if ready else status.get(
+                "unavailable_reason", "No operationally capable public peak-content model is selected")
+            _serving_release_status = status
+            _tokenizer = model.tokenizer if ready else None
+
+    private = Path(os.environ.get("MAXCORE_PRIVATE_STATE_DIR", str(Path.home() / ".local/state/maxcore")))
+    _live_learning_loop = LiveLearningLoop(
+        get_engine, model, private, notify=changed,
+        interval=int(os.environ.get("MAXCORE_LIVE_LEARNING_INTERVAL_SECONDS", "900")),
+        poll=int(os.environ.get("MAXCORE_LIVE_RELOAD_SECONDS", "30")),
+        steps=int(os.environ.get("MAXCORE_LIVE_LEARNING_STEPS", "4")),
+        context_tokens=int(os.environ.get("MAXCORE_LIVE_CONTEXT_TOKENS", "2048")),
+        peak_content=True,
+        model_config=public_model_config,
+        bootstrap_steps=int(os.environ.get("MAXCORE_BOOTSTRAP_STEPS", "8")),
+        bootstrap_cooldown=int(os.environ.get("MAXCORE_BOOTSTRAP_COOLDOWN_SECONDS", "300")),
+        bootstrap_window=int(os.environ.get("MAXCORE_BOOTSTRAP_WINDOW_SECONDS", "3600")),
+        bootstrap_max_runs=int(os.environ.get("MAXCORE_BOOTSTRAP_MAX_RUNS", "12")),
+        worker_timeout=int(os.environ.get("MAXCORE_LEARNING_WORKER_TIMEOUT_SECONDS", "120")),
+    )
+    changed(False, model.status())
+    _live_learning_loop.start()
+
+
 def _init_ai_model():
     global _serving_release_status, _model_ready, _model_init_error
     global _creative_model, _tokenizer, _script_agent, _visual_spec_agent
     global _distribution_agent, _optimization_agent, _repo, _adapter, _render_manager
     global _image_engine, _model_config
     from ai_model.generation.release import load_selected_release
-    mode = os.environ.get("MAXCORE_SERVING_RELEASE", "legacy")
+    mode = os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness")
     _model_ready = False
     try:
+        if mode == "live-awareness":
+            _init_live_awareness_model()
+            return
+        # Resolve and authenticate bytes before allocating a model/GPU. Legacy
+        # startup used to treat a missing LFS download like incompatible weights.
+        if mode == "legacy":
+            from ai_model.model.checkpoint_release import prepare_checkpoint
+            prepare_checkpoint(
+                Path(__file__).parent / "ai_model" / "weights",
+                supplied_path=os.environ.get("MAXCORE_CHECKPOINT_PATH"),
+            )
         selected, status = load_selected_release(mode)
         _serving_release_status = status
         if selected is None:
@@ -798,11 +875,14 @@ def _init_ai_model():
                 raise RuntimeError("Requested reviewed release is unavailable; legacy substitution is forbidden")
             _init_legacy_ai_model()
             if _model_ready:
-                weights = Path(__file__).parent / "ai_model" / "weights" / "model.pt"
+                weights = Path(os.environ.get("MAXCORE_CHECKPOINT_PATH") or
+                               Path(__file__).parent / "ai_model" / "weights" / "model.pt")
                 _serving_release_status = {
                     **status, "active": "legacy-explicit-release",
                     "checkpoint_sha256": hashlib.sha256(weights.read_bytes()).hexdigest(),
                 }
+            else:
+                raise RuntimeError(_model_init_error or "Legacy checkpoint initialization failed")
             return
         # The selected serving object is passed directly to the existing agents;
         # its generate/generate_batch reject unsupported sampling, never remap it.
@@ -907,7 +987,7 @@ def _init_legacy_ai_model():
             _digital_gpu_backend = None
 
         weights_dir  = Path(__file__).parent / "ai_model" / "weights"
-        weights_path = weights_dir / "model.pt"
+        weights_path = Path(os.environ.get("MAXCORE_CHECKPOINT_PATH") or weights_dir / "model.pt")
 
         state_dict = None
         if weights_path.exists():
@@ -2508,6 +2588,8 @@ def _load_checkpoint_from_storage():
 @app.on_event("shutdown")
 async def stop_awareness():
     from ai_model.awareness import get_engine
+    if _live_learning_loop is not None:
+        await _in_thread(_live_learning_loop.stop)
     get_engine().stop()
 
 
@@ -2522,6 +2604,15 @@ async def unified_awareness_status(_key=Depends(require_scope("generate"))):
 from ai_model.training.live_learning import create_router as _live_learning_router
 from ai_model.awareness import get_engine as _live_learning_engine
 app.include_router(_live_learning_router(verify_admin, _live_learning_engine))
+
+
+@app.get("/api/training/live/status")
+async def live_learning_status(_admin=Depends(verify_admin)):
+    return {
+        "mode": os.environ.get("MAXCORE_SERVING_RELEASE", "live-awareness"),
+        "learning": _live_learning_loop.status() if _live_learning_loop is not None else {"training": "disabled"},
+        "serving": _live_serving_model.status() if _live_serving_model is not None else _serving_release_status,
+    }
 from ai_model.training.media_learning import create_router as _media_learning_router
 app.include_router(_media_learning_router(verify_admin))
 
@@ -2547,9 +2638,10 @@ async def generation_readiness():
     from ai_model.awareness import get_engine
     from fastapi.responses import JSONResponse
     awareness = get_engine().status()
-    ready = bool(_model_ready)
+    ready = bool(_model_ready and awareness.get("ready") is True)
     return JSONResponse(status_code=200 if ready else 503, content={
-        "ready": ready, "model_loaded": _model_ready, "awareness": awareness})
+        "ready": ready, "model_loaded": _model_ready, "awareness": awareness,
+        "model_error": _model_init_error, "serving_release": _serving_release_status})
 
 
 @app.get("/health")
@@ -4269,7 +4361,8 @@ async def url_parser_inspect(url: str = "", _key = Depends(require_scope("genera
     }
 
 
-def _planned_generation(modality, *, specification=False):
+def _planned_generation(modality, *, specification=False, deterministic_planner=False,
+                        dedicated_media=False):
     """Apply the same immutable contract to direct and HTTP handler calls."""
     import functools
     import inspect
@@ -4288,16 +4381,41 @@ def _planned_generation(modality, *, specification=False):
             try:
                 plan_input = (await req.json() if isinstance(req, Request) else
                               {"operation": handler.__name__} if req is None else req)
+                # Only the explicitly opted-in text entrypoints have this
+                # deterministic branch. It routes requested modality slots;
+                # it never samples a generative checkpoint or produces copy.
+                planning_only = deterministic_planner and getattr(req, "mode", None) == "planner"
+                controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
+                            else getattr(req, "dedicated_controls", None))
+                rendering_only = dedicated_media and controls is not None
+                if controls is not None:
+                    if not dedicated_media or specification or planning_only:
+                        raise HTTPException(status_code=422, detail="This route does not support dedicated media controls")
+                    if modality not in {"image", "audio", "video"} or not isinstance(controls, dict):
+                        raise HTTPException(status_code=422, detail="dedicated_controls must be a media controls object")
+                    if not _request_job_owner.get():
+                        raise HTTPException(status_code=403, detail="Authenticated private owner required for durable media")
+                model_independent = planning_only or rendering_only
                 snapshot = sampling_snapshot() if active_plan.get() is not None else current_snapshot()
                 if snapshot is not None:
                     try:
                         scope.enter_context(bind(snapshot))
                     except AwarenessUnavailable:
                         snapshot = None
-                if not _model_ready:
+                if model_independent and snapshot is None:
+                    raise AwarenessUnavailable("Live awareness unavailable for model-independent generation")
+                pinned_release = None
+                if not model_independent and globals().get("_live_serving_model") is not None:
+                    from ai_model.generation.live_serving import LiveModelUnavailable
+                    try:
+                        pinned_release = scope.enter_context(_live_serving_model.pin())
+                    except LiveModelUnavailable as exc:
+                        raise HTTPException(status_code=503, detail=str(exc)) from exc
+                if not model_independent and pinned_release is None and not _model_ready:
                     raise HTTPException(status_code=503, detail="Selected model unavailable")
                 plan = GenerationPlan.from_request(plan_input, modality,
-                    checkpoint=_serving_release_status.get("checkpoint_sha256", ""))
+                    checkpoint=("" if model_independent else
+                                (pinned_release or _serving_release_status).get("checkpoint_sha256", "")))
             except AwarenessUnavailable as exc:
                 scope.close()
                 raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -4312,13 +4430,7 @@ def _planned_generation(modality, *, specification=False):
             previous_failures = candidate_errors.get()
             failure_token = candidate_errors.set(previous_failures if previous_failures is not None else [])
             try:
-                controls = (plan_input.get("dedicated_controls") if isinstance(plan_input, dict)
-                            else getattr(req, "dedicated_controls", None))
                 if controls is not None:
-                    if specification:
-                        raise HTTPException(status_code=422, detail="Specification routes cannot render dedicated media")
-                    if not isinstance(controls, dict):
-                        raise HTTPException(status_code=422, detail="dedicated_controls must be an object")
                     # Never drop unsupported semantic controls simply because
                     # the caller put them outside the dedicated control object.
                     controls = dict(controls)
@@ -4329,6 +4441,17 @@ def _planned_generation(modality, *, specification=False):
                             if name in controls and controls[name] != value:
                                 raise HTTPException(status_code=422, detail=f"Conflicting {name} controls")
                             controls[name] = value
+                    if modality == "video":
+                        supplied_audio = request_data.get("user_audio_path")
+                        if supplied_audio is not None:
+                            if "audio_path" in controls and controls["audio_path"] != supplied_audio:
+                                raise HTTPException(status_code=422, detail="Conflicting video audio controls")
+                            controls["audio_path"] = supplied_audio
+                        if controls.get("audio_path") is not None:
+                            http_request = bound.arguments.get("request")
+                            if not isinstance(http_request, Request):
+                                raise HTTPException(status_code=422, detail="Video audio requires an owner-scoped upload request")
+                            controls["audio_path"] = _resolve_owner_audio_upload(controls["audio_path"], http_request)
                     from ai_model.generation.dedicated import render
                     owner_id = _request_job_owner.get()
                     if not owner_id:
@@ -4420,9 +4543,14 @@ def _planned_generation(modality, *, specification=False):
                         raise HTTPException(status_code=503, detail=result.get("error", "Generation failed"))
                     is_spec = specification or getattr(req, "mode", None) == "planner"
                     try:
+                        if model_independent:
+                            # Recheck the bound receipt before returning the
+                            # specification, including through nested aliases.
+                            from ai_model.awareness import bound_snapshot
+                            bound_snapshot()
                         validation = (result["validation"] if controls is not None
                                       else validate_output(plan, result, specification=is_spec))
-                    except ValueError as exc:
+                    except (ValueError, AwarenessUnavailable) as exc:
                         raise HTTPException(status_code=503, detail=str(exc)) from exc
                     result = dict(result)
                     result["generation_plan"] = plan.to_dict()
@@ -4437,6 +4565,9 @@ def _planned_generation(modality, *, specification=False):
                         "quality": "not_evaluated",
                         "digital_gpu_exclusive": "not_verified",
                     }
+                    if rendering_only:
+                        result["source"] = result["capability"]["renderer"]
+                        result["checkpoint_inference"] = False
                     if is_spec:
                         result["kind"] = "specification"
                 return result
@@ -5692,7 +5823,7 @@ async def maxcore_analyze(req: MaxcoreAnalyzeRequest, _key = Depends(require_sco
 
 
 @app.post("/generate/text")
-@_planned_generation("text")
+@_planned_generation("text", deterministic_planner=True)
 async def maxcore_generate_text(req: MaxcoreTextRequest, _key = Depends(require_scope("generate"))):
     """
     Dual-mode text endpoint:
@@ -7282,6 +7413,8 @@ def _run_gpu_job(job_id: str, worker) -> None:
             except AwarenessUnavailable:
                 pass
         with scope, _get_gpu_pool().spawn_sync(f"render:{job_id}"):
+            if globals().get("_live_serving_model") is not None:
+                scope.enter_context(_live_serving_model.pin(saved.get("checkpoint")))
             plan = GenerationPlan.from_request(saved["request"], saved["modality"], saved["checkpoint"])
             saved_seed = saved.get("seed")
             if isinstance(saved_seed, int) and not isinstance(saved_seed, bool) and 0 <= saved_seed < 2**32:
@@ -8585,7 +8718,7 @@ async def api_campaign_schedule(campaign_id: str, req: CampaignScheduleRequest,
 
 
 @app.post("/api/generate/text")
-@_planned_generation("text")
+@_planned_generation("text", deterministic_planner=True)
 async def api_generate_text(req: ApiGenerateTextRequest, _key=Depends(require_scope("generate"))):
     """Two-mode text generation — planner or content."""
     start = time.time()
@@ -9277,7 +9410,7 @@ async def api_predict_engagement(req: ApiPredictEngagementRequest, _key=Depends(
 # -- Media Generation ----------------------------------------------------------
 
 @app.post("/api/generate/image")
-@_planned_generation("image")
+@_planned_generation("image", dedicated_media=True)
 async def api_generate_image(req: ApiGenerateImageRequest, _key=Depends(require_scope("generate"))):
     """
     Generate platform-sized images rendered in-house via PIL.
@@ -10292,7 +10425,7 @@ def _auto_soundtrack_path(job_id: str, duration_sec: float,
 
 
 @app.post("/api/generate/audio")
-@_planned_generation("audio")
+@_planned_generation("audio", dedicated_media=True)
 async def api_generate_audio(req: ApiGenerateAudioRequest, _key=Depends(require_scope("generate"))):
     """Async audio generation — style-conditioned via AI model for concept, BPM/key, creative direction."""
     _creative_prompt = (req.prompt or req.instruction or "").strip()
@@ -11163,7 +11296,7 @@ def _start_video_job(req: ApiGenerateVideoRequest, platform: str) -> tuple[str, 
 
 
 @app.post("/api/generate-video")
-@_planned_generation("video")
+@_planned_generation("video", dedicated_media=True)
 async def api_generate_video(req: ApiGenerateVideoRequest, request: Request, _key=Depends(require_scope("generate"))):
     """
     Kick off a fully AI-driven async video render job.
@@ -11441,7 +11574,7 @@ async def api_video_extend(req: ApiVideoExtendRequest, request: Request, _key=De
 # ── AI-driven video generation ─────────────────────────────────────────────────
 
 @app.post("/api/video/generate-ai")
-@_planned_generation("video")
+@_planned_generation("video", dedicated_media=True)
 async def api_video_generate_ai(request: Request, _key=Depends(require_scope("generate"))):
     """
     Generate a video where ALL text content is produced by the trained model.
@@ -12279,7 +12412,8 @@ async def api_warm(_admin=Depends(verify_admin)):
         plan = active_plan.get()
         if plan is None:
             raise RuntimeError("Warm-up inference requires an active generation plan")
-        prompt = select_representable_probe_prompt(_tokenizer)
+        prompt = ("music" if globals().get("_live_serving_model") is not None
+                  else select_representable_probe_prompt(_tokenizer))
         output = _creative_model.generate(
             prompt,
             max_new_tokens=4,
@@ -12290,7 +12424,8 @@ async def api_warm(_admin=Depends(verify_admin)):
             seed=plan.seed,
             snapshot_hash=plan.snapshot_hash,
         )
-        return f"prompt_tokens={len(_tokenizer.encode(prompt).ids)} generated_chars={len(output)}"
+        encoded = _tokenizer.encode(prompt)
+        return f"prompt_tokens={len(getattr(encoded, 'ids', encoded))} generated_chars={len(output)}"
 
     # ── 2. DistributionAgent binding ──────────────────────────────────────────
     # DistributionAgent shares the same model; it is not an independent scorer.

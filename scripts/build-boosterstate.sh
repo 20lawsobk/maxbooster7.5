@@ -19,10 +19,6 @@ _PINNED_NIXPKGS="https://github.com/NixOS/nixpkgs/archive/650e572363c091045cdbc5
   echo "[BoosterStateBuild] FATAL: Cargo.lock is required for --locked production builds" >&2
   exit 1
 }
-command -v nix-shell >/dev/null 2>&1 || {
-  echo "[BoosterStateBuild] FATAL: nix-shell is required for the pinned build-only Rust toolchain" >&2
-  exit 1
-}
 
 # Dependency installation clears workspace caches concurrently with this phase.
 # Give every invocation private scratch paths outside that cleanup domain.
@@ -41,10 +37,23 @@ _COMMAND=(
   cargo build --locked --release --manifest-path "$_MANIFEST"
 )
 
-echo "[BoosterStateBuild] Building from Cargo.lock with pinned nixpkgs/Rust toolchain"
-nix-shell "${_SCRIPT_DIR}/boosterstate-toolchain.nix" \
-  -I "nixpkgs=${_PINNED_NIXPKGS}" \
-  --run "$(printf '%q ' "${_COMMAND[@]}")"
+if [[ -n "${BOOSTERSTATE_PORTABLE_RUST_DIR:-}" ]]; then
+  # Explicit alternative for cloud builders without a writable /nix store.
+  # Verification provisions only pinned official archives and rejects changed files.
+  python3 "${_SCRIPT_DIR}/prepare-rust-toolchain.py" "$BOOSTERSTATE_PORTABLE_RUST_DIR"
+  export PATH="${BOOSTERSTATE_PORTABLE_RUST_DIR}/bin:${PATH}"
+  echo "[BoosterStateBuild] Building from Cargo.lock with verified portable Rust 1.93.1"
+  "${_COMMAND[@]}"
+else
+  command -v nix-shell >/dev/null 2>&1 || {
+    echo "[BoosterStateBuild] FATAL: install nix-shell or set BOOSTERSTATE_PORTABLE_RUST_DIR for the verified portable toolchain" >&2
+    exit 1
+  }
+  echo "[BoosterStateBuild] Building from Cargo.lock with pinned nixpkgs/Rust toolchain"
+  nix-shell "${_SCRIPT_DIR}/boosterstate-toolchain.nix" \
+    -I "nixpkgs=${_PINNED_NIXPKGS}" \
+    --run "$(printf '%q ' "${_COMMAND[@]}")"
+fi
 
 _BINARY="${_TARGET_DIR}/release/boosterstate"
 [[ -x "$_BINARY" ]] || {

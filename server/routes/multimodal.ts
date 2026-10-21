@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
 import { requireAuthOnly } from "../middleware/auth.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { logger } from "../logger.js";
 import { handleGeneration } from "../services/multimodalGenerationService.js";
 import { assertPublicHttpUrl } from "../services/safeUrlFetch.js";
@@ -186,7 +187,8 @@ router.post(
         { errorType: err instanceof Error ? err.name : typeof err },
         "[POST /multimodal/generate]",
       );
-      if (err instanceof AIUnavailableError) {
+      if (err instanceof AIUnavailableError ||
+          (err instanceof MaxCoreControlError && err.status === 503)) {
         return res
           .status(503)
           .json({ error: "AI generation is temporarily unavailable" });

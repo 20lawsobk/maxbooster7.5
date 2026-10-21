@@ -17,6 +17,8 @@ import { MaxCoreAIClient } from "./maxcoreClient.js";
 import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { getMaxcoreOriginOrDefault } from "./maxcoreConnector.js";
 import { getMaxcoreGenerationKey } from "./maxcoreConnector.js";
+import { resolveMaxCoreAudioJob, maxcoreAudioSource, maxcoreAudioBytes } from "./maxcoreAudioJob.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 
 // Initialize generator
 const audioGenerator = new AIAudioGenerator(48000);
@@ -158,6 +160,8 @@ async function saveToWav(
 export async function generateFromText(
   request: TextToAudioRequest,
 ): Promise<GenerationResult> {
+  const owner = trustedMaxcoreOwner(request.userId);
+  if (!owner) throw new AIUnavailableError("audio generation requires an authenticated owner");
   logger.info(`[AI Audio] Generating from text: "${request.text}"`);
 
   // ── MaxCore audio generation (async job pattern) ─────────────────────────
@@ -179,73 +183,36 @@ export async function generateFromText(
 
   const submitted = requireMaxCore(
     await MaxCoreAIClient.generate<AudioJobResponse>("/api/generate/audio", {
-      text: request.text,
+      prompt: request.text,
+      instruction: request.text,
       duration: request.duration ?? null,
       bars: request.bars ?? null,
-      tempo: request.tempo ?? null,
+      bpm: request.tempo ?? null,
       project_id: request.projectId ?? null,
       intent: request.intent,
       direction: request.direction,
       context: request.context,
       awareness: request.awareness,
-    }),
+    }, owner),
     "audio generation",
   );
 
-  let mcAudio: AudioJobResponse = submitted;
-
-  // If MaxCore returned a job_id, poll until the job completes.
-  if (submitted.job_id && !submitted.url && !submitted.audioUrl && !submitted.audio_url && !submitted.audio_data) {
-    const POLL_BUDGET_MS = 600_000; // 10 min — MaxCore has no server-side timeouts
-    const POLL_INTERVAL_MS = 5_000;
-    const deadline = Date.now() + POLL_BUDGET_MS;
-    const jobPath = `/api/audio-job/${submitted.job_id}`;
-
-    logger.info(`[AI Audio] Job submitted: ${submitted.job_id} — polling…`);
-
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      const jr = await MaxCoreAIClient.poll<AudioJobResponse>(jobPath);
-      if (!jr) continue;
-      if (jr.status === "failed" || jr.status === "error") {
-        throw new AIUnavailableError(`audio generation job ${submitted.job_id} failed`);
-      }
-
-      const done =
-        jr.status === "completed" ||
-        jr.status === "done" ||
-        jr.status === "succeeded" ||
-        !!(jr.url ?? jr.audioUrl ?? jr.audio_url ?? jr.audio_data);
-
-      if (done) {
-        mcAudio = jr;
-        logger.info(`[AI Audio] Job ${submitted.job_id} completed`);
-        break;
-      }
-    }
-
-    if (!mcAudio.url && !mcAudio.audioUrl && !mcAudio.audio_url && !mcAudio.audio_data) {
-      throw new AIUnavailableError(
-        `audio generation — job ${submitted.job_id} did not complete within ${Math.round(POLL_BUDGET_MS / 60000)} min`,
-      );
-    }
-  }
-
-  const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? mcAudio?.url ?? null;
-  const audioData = mcAudio?.audio_data ?? null;
+  const mcAudio = await resolveMaxCoreAudioJob(submitted, owner);
+  const audioSrc = maxcoreAudioSource(mcAudio) ?? null;
+  const audioData = maxcoreAudioBytes(mcAudio) ?? null;
 
   if (!(audioSrc || audioData)) {
     throw new Error("MaxCore audio generation returned no audio");
   }
 
-  const audioFilePath = await persistMaxCoreAudio(audioSrc, audioData, {}, request.userId);
+  const audioFilePath = await persistMaxCoreAudio(audioSrc, audioData, {}, owner);
   logger.info("[AI Audio] MaxCore audio generated and persisted to PDIM");
   return {
     success: true,
     audioFilePath,
     parameters: {
       type: "music" as GenerationType,
-      tempo: mcAudio?.tempo ?? request.tempo ?? 120,
+      tempo: mcAudio?.bpm ?? mcAudio?.tempo ?? request.tempo ?? 120,
       key: mcAudio?.key ?? "C",
       scale: mcAudio?.scale ?? "major",
       genre: mcAudio?.genre ?? "electronic",
@@ -259,6 +226,8 @@ export async function generateFromText(
 export async function generateFromReference(
   request: AudioToAudioRequest,
 ): Promise<GenerationResult> {
+  const owner = trustedMaxcoreOwner(request.userId);
+  if (!owner) throw new AIUnavailableError("audio generation requires an authenticated owner");
   logger.info(
     `[AI Audio] Generating ${request?.targetType} from audio reference`,
   );
@@ -290,7 +259,8 @@ export async function generateFromReference(
     }>("/api/generate/audio", {
       mode: "audio-to-audio",
       target_type: request.targetType,
-      text: request.text ?? null,
+      prompt: request.text ?? null,
+      instruction: request.text ?? null,
       bars: request.bars ?? null,
       project_id: request.projectId ?? null,
       intent: request.intent,
@@ -300,40 +270,25 @@ export async function generateFromReference(
       // Style transfer needs the reference audio itself — send it to MaxCore.
       reference_audio: request.audioBuffer.toString("base64"),
       reference_format: "wav",
-    }),
+    }, owner),
     "audio style transfer",
   );
 
-  let mcAudio = submitted;
-  if (submitted.job_id && !submitted.url && !submitted.audioUrl && !submitted.audio_url && !submitted.audio_data) {
-    const deadline = Date.now() + 600_000;
-    while (Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 5_000));
-      const status = await MaxCoreAIClient.poll<typeof submitted>(`/api/audio-job/${submitted.job_id}`);
-      if (!status) continue;
-      if (status.status === "failed" || status.status === "error") {
-        throw new AIUnavailableError(`audio style transfer job ${submitted.job_id} failed`);
-      }
-      if (status.audioUrl || status.audio_url || status.audio_data || status.url) {
-        mcAudio = status;
-        break;
-      }
-    }
-  }
-  const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? mcAudio?.url ?? null;
-  const audioData = mcAudio?.audio_data ?? null;
+  const mcAudio = await resolveMaxCoreAudioJob(submitted, owner);
+  const audioSrc = maxcoreAudioSource(mcAudio) ?? null;
+  const audioData = maxcoreAudioBytes(mcAudio) ?? null;
   if (!(audioSrc || audioData)) {
     throw new AIUnavailableError("audio style transfer");
   }
 
-  const audioFilePath = await persistMaxCoreAudio(audioSrc, audioData, {}, request.userId);
+  const audioFilePath = await persistMaxCoreAudio(audioSrc, audioData, {}, owner);
   logger.info("[AI Audio] MaxCore reference audio persisted to PDIM");
   return {
     success: true,
     audioFilePath,
     parameters: {
       type: request.targetType,
-      tempo: mcAudio?.tempo ?? 120,
+      tempo: mcAudio?.bpm ?? mcAudio?.tempo ?? 120,
       key: mcAudio?.key ?? "C",
       scale: mcAudio?.scale ?? "major",
       genre: mcAudio?.genre ?? "electronic",

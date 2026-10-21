@@ -6,6 +6,22 @@ import { createHash } from "crypto";
 import { computeRemainingAppMembers } from "../../script/lib/dockerignoreScan.js";
 
 describe("deployment .dockerignore sensitive path coverage", () => {
+  it("ships the fs-read platform registry without unrelated shared source or secrets", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "dockerignore-runtime-registry-"));
+    try {
+      await fs.copyFile(path.join(process.cwd(), ".dockerignore"), path.join(root, ".dockerignore"));
+      await fs.mkdir(path.join(root, "shared"));
+      for (const file of ["social-platform-optimization.json", "schema.ts", ".env"]) {
+        await fs.writeFile(path.join(root, "shared", file), "fixture");
+      }
+      const members = computeRemainingAppMembers(root);
+      expect(members).toContain("shared/social-platform-optimization.json");
+      expect(members).not.toContain("shared/schema.ts");
+      expect(members).not.toContain("shared/.env");
+    } finally {
+      await fs.rm(root, { recursive:true, force:true });
+    }
+  });
   it("excludes workspace credentials and local-only files from the app remainder", async () => {
     const temporaryRoot = await fs.mkdtemp(
       path.join(os.tmpdir(), "dockerignore-sensitive-paths-"),

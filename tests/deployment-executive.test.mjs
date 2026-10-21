@@ -42,7 +42,8 @@ test("admission adapts when available memory recovers",async()=>{
  assert.ok(samples>=3);
 });
 test("startup plan requires all restores before launching app; source deletion is last",()=>{
- assert.equal(startPlan(process.execPath).at(-1).deps.length,4);
+ assert.deepEqual(startPlan(process.execPath).at(-1).deps.sort(),
+ ["restore-app", "restore-node", "restore-python", "restore-maxcore", "restore-pdim"].sort());
  assert.equal(startPlan(process.execPath).find(t=>t.id==="restore-python").args.at(-1),".pdim-restored-py");
  const plan=buildPlan();
  assert.deepEqual(plan.find(t=>t.id==="source").deps.sort(),["pack_maxcore","pack_node","pack_pdim","pack_python"]);
@@ -66,12 +67,13 @@ test("actual build.sh pack task removes only its fixture source and restores it"
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  fs.mkdirSync(path.join(root,"dist"),{recursive:true});
  fs.mkdirSync(path.join(root,"python_runtime"));
+ fs.copyFileSync("build.sh",path.join(root,"build.sh"));
  fs.writeFileSync(path.join(root,"python_runtime/payload"),"roundtrip fixture".repeat(100));
  fs.copyFileSync("dist/pdim-restore.mjs",path.join(root,"dist/pdim-restore.mjs"));
  buildSync({entryPoints:["script/publish-capsules.ts"],bundle:true,platform:"node",format:"esm",
    outfile:path.join(root,"dist/publish-capsules.mjs")});
  const job={...buildPlan().find(t=>t.id==="pack_python"),deps:[],
-   args:[path.resolve("build.sh"),"--executive-task","pack_python"]};
+   args:[path.join(root,"build.sh"),"--executive-task","pack_python"]};
  await runExecutive([job],{cwd:root,capacity,pollMs:10,budgetMs:10000,log(){}});
  assert.equal(fs.existsSync(path.join(root,"python_runtime")),false);
  const {restoreCapsule}=await import(pathToFileURL(path.join(root,"dist/pdim-restore.mjs")));

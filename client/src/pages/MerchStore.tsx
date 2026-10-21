@@ -124,13 +124,13 @@ function MerchManagement() {
   const [addVariants, setAddVariants] = useState<Variant[]>([]);
   const [editVariants, setEditVariants] = useState<Variant[]>([]);
 
-  const { data: items, isLoading: itemsLoading } = useQuery<MerchItem[]>({
+  const { data: items, isLoading: itemsLoading, error: itemsReadError, refetch: refetchItems } = useQuery<MerchItem[]>({
     queryKey: ["/api/merch"],
   });
-  const { data: orders, isLoading: ordersLoading } = useQuery<MerchOrder[]>({
+  const { data: orders, isLoading: ordersLoading, error: ordersReadError, refetch: refetchOrders } = useQuery<MerchOrder[]>({
     queryKey: ["/api/merch/orders"],
   });
-  const { data: stats, isLoading: statsLoading } = useQuery<MerchStats>({
+  const { data: stats, isLoading: statsLoading, error: statsReadError, refetch: refetchStats } = useQuery<MerchStats>({
     queryKey: ["/api/merch/stats"],
   });
 
@@ -595,6 +595,18 @@ function MerchManagement() {
     delivered: "#22c55e",
     refunded: "#ef4444",
   };
+
+  if ([itemsReadError, ordersReadError, statsReadError].some(Boolean)) {
+    return (
+      <AppLayout>
+        <section role="alert" className="mx-auto max-w-xl space-y-4 p-8">
+          <h1 className="text-xl font-semibold">Unable to load merchandise</h1>
+          <p>Your saved data is temporarily unavailable. Please retry.</p>
+          <Button onClick={() => { void Promise.allSettled([refetchItems(), refetchOrders(), refetchStats()]); }}>Retry</Button>
+        </section>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

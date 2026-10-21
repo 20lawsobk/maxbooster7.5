@@ -5,6 +5,7 @@
 import { spawn } from "node:child_process";
 import { readdir, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { assertDedicatedTestBindings } from "./helpers-stripe-test-transport.mjs";
 
 const args = new Set(process.argv.slice(2));
 if (args.has("--help")) {
@@ -18,13 +19,11 @@ if ([...args].some((arg) => arg !== "--stripe")) {
   process.exit(2);
 }
 const remote = args.has("--stripe");
-if (
-  remote &&
-  (!process.env.STRIPE_TEST_SECRET?.startsWith("sk_test_") ||
-    !process.env.STRIPE_TEST_CLIENT?.startsWith("pk_test_"))
-) {
-  console.error("BLOCKED: both dedicated Stripe test credentials are required; no fallback is allowed.");
-  process.exit(2);
+if (remote) {
+  try { assertDedicatedTestBindings(); } catch {
+    console.error("BLOCKED: dedicated Stripe test bindings are required; no fallback is allowed.");
+    process.exit(2);
+  }
 }
 const root = process.cwd();
 const testDir = path.join(root, "tests/payment-processing");
@@ -41,7 +40,7 @@ const env = Object.fromEntries(
   ["PATH", "HOME", "LANG", "TMPDIR"].filter((name) => process.env[name]).map((name) => [name, process.env[name]]),
 );
 const remoteEnv = remote
-  ? { ...env, STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET, STRIPE_TEST_CLIENT: process.env.STRIPE_TEST_CLIENT }
+  ? { ...env, ...Object.fromEntries(["HTTPS_PROXY", "NODE_EXTRA_CA_CERTS"].filter(key => process.env[key]).map(key => [key, process.env[key]])), STRIPE_TEST_SECRET: process.env.STRIPE_TEST_SECRET, STRIPE_TEST_CLIENT: process.env.STRIPE_TEST_CLIENT }
   : env;
 const groups = [
   {

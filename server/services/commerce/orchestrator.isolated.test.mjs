@@ -1,10 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {build} from "esbuild";
-async function load(file) {
-  const r=await build({entryPoints:[file],bundle:true,write:false,platform:"node",format:"esm",packages:"external"});
-  return import(`data:text/javascript;base64,${Buffer.from(r.outputFiles[0].text).toString("base64")}`);
-}
+import {loadDatabaseSubject as load} from "../../../tests/payment-processing/helpers-database-postgres.mjs";
 const {CommerceEngine}=await load("server/services/commerce/engine.ts");
 const {allocateNet}=await load("server/services/commerce/contract.ts");
 const {StripeCommerceProvider}=await load("server/services/commerce/provider.ts");

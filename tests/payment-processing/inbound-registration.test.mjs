@@ -2,6 +2,7 @@ import { test } from "node:test";
 import { strict as assert } from "node:assert";
 import { readFile } from "node:fs/promises";
 import { build } from "esbuild";
+import path from "node:path";
 import { responseHarness } from "./helpers-inbound.mjs";
 
 function namesFromImport(source) {
@@ -50,10 +51,13 @@ async function loadRegistrationRoutes() {
       setup(builder) {
         builder.onResolve({ filter: /.*/ }, args => {
           if (!args.importer) return null;
+          if (["./lib/stripeClient", "./lib/stripeClient.js"].includes(args.path)) return { path: path.resolve("server/lib/stripeClient.ts") };
           return { path: args.path, namespace: "registration-mock" };
         });
-        builder.onLoad({ filter: /.*/, namespace: "registration-mock" }, args => {
+        builder.onLoad({ filter: /.*/, namespace: "registration-mock" }, async args => {
+          if (["../shared/agePolicy.js", "../shared/passwordPolicy.js"].includes(args.path)) return {contents:await readFile(args.path.replace("../", "").replace(/\.js$/, ".ts"),"utf8"),loader:"ts"};
           let contents = proxySource(importedNames);
+          if (args.path === "https-proxy-agent") contents = "export class HttpsProxyAgent {}";
           if (args.path === "./storage.js") contents = `
             export const storage=globalThis.__inboundRegistration.storage;export default storage;`;
           if (args.path === "./db.js") contents = `
@@ -109,9 +113,9 @@ test("registration checkout, verification, and account creation execute payment/
     async createUser(user) { const result = { id: "new-user", ...user, password: user.password }; created.push(result); return result; },
     async updateUser(id, change) { updated.push({ id, change }); },
   };
-  const noRowsDb = new Proxy({}, { get: () => () => new Proxy({}, { get: () => () => new Proxy({}, { get: () => async () => [] }) }) });
+  const registrationTransaction = async fn => fn({insert:()=>({values: value => ({returning:async()=>{const user={id:"new-user",...value};created.push(user);return [user];}})})});
   const noRowsPool = { query: async () => ({ rows: [] }), connect: async () => ({ query: async () => ({ rows: [] }), release() {} }) };
-  globalThis.__inboundRegistration = { stripe, storage: memoryStore, db: noRowsDb, pool: noRowsPool };
+  globalThis.__inboundRegistration = { stripe, storage: memoryStore, db: {transaction: registrationTransaction}, pool: noRowsPool };
 
   const { registerRoutes } = await loadRegistrationRoutes();
   const routes = new Map();
@@ -137,7 +141,7 @@ test("registration checkout, verification, and account creation execute payment/
   assert.equal(typeof finish, "function");
   const invoke = async (handler, body, extras = {}) => {
     const res = responseHarness();
-    const req = { body, session: { regenerate: callback => callback(), save: callback => callback() }, ...extras };
+    const req = { body, get:()=>undefined, session: { regenerate: callback => callback(), save: callback => callback() }, ...extras };
     await handler(req, res);
     return res;
   };
@@ -158,7 +162,7 @@ test("registration checkout, verification, and account creation execute payment/
 
   currentSession = {
     id: "cs_registration", payment_status: "unpaid", mode: "subscription",
-    customer_email: "new@example.invalid", metadata: { tier: "yearly", username: "new_user" },
+    customer_email: "new@example.invalid", metadata: { tier: "yearly", username: "new_user", birthdate:"1990-01-01" },
     line_items: { data: [{ price: { id: "price_yearly_contract" } }] },
   };
   assert.equal((await invoke(verify, { sessionId: "cs_registration" })).statusCode, 400);
@@ -175,11 +179,11 @@ test("registration checkout, verification, and account creation execute payment/
   assert.equal(created.length, 0);
   currentSession.payment_status = "paid";
   const completedRegistration = await invoke(finish, { sessionId: "cs_registration", password: "long-password", tosAccepted: true, privacyAccepted: true });
-  assert.equal(completedRegistration.statusCode, 200);
+  assert.equal(completedRegistration.statusCode, 200, JSON.stringify(completedRegistration.body));
   assert.equal(created.length, 1);
   assert.equal(created[0].password, "hash:long-password");
-  assert.equal(updated[0].change.subscriptionTier, "yearly");
-  assert.equal(updated[0].change.subscriptionEndsAt instanceof Date, true);
+  assert.equal(created[0].subscriptionTier, "yearly");
+  assert.equal(created[0].subscriptionEndsAt instanceof Date, true);
   if (originalKey === undefined) delete process.env.STRIPE_SECRET_KEY;
   else process.env.STRIPE_SECRET_KEY = originalKey;
 });

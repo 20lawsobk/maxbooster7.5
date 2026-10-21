@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { acquireAccountLease, changeAccount, registerAccountCleanup } from "@/lib/offline/accountCoordinator";
 import { resetStudioOfflineState } from "@/lib/offline/studioOfflineLifecycle";
 import { completeAuthentication, type AuthenticationExchange } from "@/lib/authenticationBoundary";
+import { probeSession, SessionProbeUnavailable } from "@/lib/sessionProbe";
 
 interface AuthContextType {
   authenticate: <T extends AuthenticationExchange>(request: () => Promise<T>) => Promise<T>;
@@ -27,28 +28,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Silent auth check that doesn't throw errors on timeout
+// Temporary transport failures are not authoritative anonymous sessions.
 async function silentAuthCheck(): Promise<User | null> {
   await acquireAccountLease();
-  try {
-    // A deployed legacy worker may still control this tab during its upgrade.
-    // A never-reused URL cannot authenticate from that worker's URL-only cache.
-    const response = await fetch(`/api/auth/me?account-check=${crypto.randomUUID()}`, {
-      credentials: "include",
-      cache: "no-store",
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (response.status === 401) {
-      return null;
-    }
-    if (!response.ok) {
-      return null;
-    }
-    return await response.json();
-  } catch {
-    // Silent fail - return null on any error (timeout, network, etc.)
-    return null;
-  }
+  return probeSession<User>();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -61,12 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: userData,
     isLoading: queryLoading,
     isFetched,
+    isError: authFailed,
+    failureCount: authFailures,
+    refetch: retrySession,
+    isFetching: checkingSession,
   } = useQuery({
     queryKey: ["/api/auth/me"],
     queryFn: silentAuthCheck,
     enabled: !accountLocked,
     retry: 2,
-    retryDelay: 1000,
+    retryDelay: (_attempt, error) => error instanceof SessionProbeUnavailable ? error.retryAfterMs : 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
@@ -75,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const user = !accountLocked && userData && userData.id ? userData : null;
-  const isLoading = queryLoading && !isFetched;
+  const sessionUnavailable = !accountLocked && (authFailed || authFailures > 0);
+  const isLoading = (queryLoading && !isFetched) || (sessionUnavailable && !userData);
   const { data: accountPreferences, isSuccess: preferencesLoaded } = useQuery<{ theme?: string }>({
     queryKey: ["/api/auth/preferences"],
     enabled: !!user,
@@ -191,7 +179,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, isLoading],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>
+    {sessionUnavailable && <div role="alert" className="border-b border-amber-500 bg-amber-50 p-3 text-center text-slate-900">
+      <p>Session verification is temporarily unavailable.</p>
+      <button type="button" disabled={checkingSession} onClick={() => { void retrySession(); }}>
+        {checkingSession ? "Retrying session verification…" : "Retry session verification"}
+      </button>
+    </div>}
+    {children}
+  </AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {

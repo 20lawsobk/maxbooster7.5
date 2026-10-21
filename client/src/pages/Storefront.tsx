@@ -598,6 +598,19 @@ export default function Storefront() {
     }
   };
 
+  const handleCopyLink = useCallback(async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied",
+        description: "Storefront URL copied to clipboard",
+      });
+    } catch {
+      toast({ title: "Link", description: url });
+    }
+  }, [toast]);
+
   if (storefrontLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -655,18 +668,6 @@ export default function Storefront() {
     fontFamily: bodyFont,
   } as React.CSSProperties;
 
-  const handleCopyLink = useCallback(async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast({
-        title: "Link copied",
-        description: "Storefront URL copied to clipboard",
-      });
-    } catch {
-      toast({ title: "Link", description: url });
-    }
-  }, [toast]);
 
   return (
     <div className="min-h-screen" style={customStyles}>

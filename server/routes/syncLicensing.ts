@@ -66,6 +66,34 @@ router.get("/stats", requireAuth, async (req, res) => {
   }
 });
 
+// Auth: GET /api/sync-licensing/inquiries
+// Track owner views their supervisor inbox.
+router.get("/inquiries", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const rawPage = parseInt(String(req.query.page ?? "1"), 10);
+    const rawLimit = parseInt(String(req.query.limit ?? "20"), 10);
+    const page =
+      Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(100, rawLimit) : 20;
+    const offset = Math.min((page - 1) * limit, 100_000);
+
+    const rows = await db
+      .select()
+      .from(syncLicenseInquiries)
+      .where(eq(syncLicenseInquiries.userId, userId))
+      .orderBy(desc(syncLicenseInquiries.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch inquiries" });
+  }
+});
+
+
 // GET /api/sync-licensing/:id - get single listing
 router.get("/:id", requireAuth, async (req, res) => {
   try {
@@ -291,33 +319,6 @@ router.post("/:syncId/inquire", async (req, res) => {
     res.status(201).json({ ok: true, inquiryId: inquiry.id });
   } catch (err) {
     res.status(500).json({ error: "Failed to submit inquiry" });
-  }
-});
-
-// Auth: GET /api/sync-licensing/inquiries
-// Track owner views their supervisor inbox.
-router.get("/inquiries", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const rawPage = parseInt(String(req.query.page ?? "1"), 10);
-    const rawLimit = parseInt(String(req.query.limit ?? "20"), 10);
-    const page =
-      Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
-    const limit =
-      Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(100, rawLimit) : 20;
-    const offset = Math.min((page - 1) * limit, 100_000);
-
-    const rows = await db
-      .select()
-      .from(syncLicenseInquiries)
-      .where(eq(syncLicenseInquiries.userId, userId))
-      .orderBy(desc(syncLicenseInquiries.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch inquiries" });
   }
 });
 

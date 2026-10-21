@@ -15,7 +15,9 @@ function sourceInputs(root) {
     if (!fs.existsSync(path.join(root, dir))) return;
     for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
       const name = `${dir}/${entry.name}`;
-      if (entry.isDirectory()) walk(name);
+      // Dependencies are represented by lockfiles, not generated loader caches.
+      // Imported workspace packages can have nested node_modules directories.
+      if (entry.isDirectory() && entry.name !== "node_modules") walk(name);
       else if (/\.(ts|tsx|js|jsx|mjs|cjs|sh)$/.test(name) ||
                (name.startsWith("shared/") && name.endsWith(".json"))) files.push(name);
     }
@@ -26,7 +28,7 @@ function sourceInputs(root) {
     files.push("external/maxcore/artifacts/api-server/build.ts");
   }
   for (const file of ["client/index.html", "dns-node/package.json", "dns-node/tsconfig.json",
-    "tsconfig.json", "tsconfig.server.json", "tsconfig.client.json",
+    "tsconfig.json", "tsconfig.server.json", "tsconfig.client.json", ".replit",
     ...["external/maxcore", "external/pdim"].flatMap(dir =>
       ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"].map(name => `${dir}/${name}`))]) {
     if (fs.existsSync(path.join(root, file))) files.push(file);

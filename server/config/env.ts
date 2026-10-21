@@ -26,13 +26,13 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(32),
 
   // ── Stripe ────────────────────────────────────────────────────────────────
-  STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
   STRIPE_PRICE_ID_PRO_MONTHLY: z.string().optional(),
   STRIPE_PRICE_ID_PRO_ANNUAL: z.string().optional(),
   STRIPE_PRICE_ID_ELITE_MONTHLY: z.string().optional(),
   STRIPE_PRICE_ID_ELITE_ANNUAL: z.string().optional(),
-  TESTING_STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
+  TESTING_STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_CONNECT_CLIENT_ID: z.string().optional(),
 
   // ── Email ─────────────────────────────────────────────────────────────────

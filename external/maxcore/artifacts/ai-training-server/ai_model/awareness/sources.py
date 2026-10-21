@@ -6,8 +6,27 @@ An observation timestamp means fetched now, not necessarily published now.
 import functools
 import json
 import os
+import math
+import re
+import time
+from datetime import datetime, timezone
+from urllib.parse import urlencode
 from ai_model.safe_feed_xml import parse_feed_xml
 from workers import quality_harvester as legacy
+
+
+def _fetch(url):
+    # Explicit operator opt-in for cloud egress; the public HTTP reader retains
+    # address pinning, redirect validation, TLS verification and size/deadlines.
+    if os.environ.get("MAXCORE_AWARENESS_USE_PROXY") == "1":
+        data, _ = legacy.fetch_bytes(
+            url, max_bytes=8 * 1024 * 1024,
+            allowed_content_types=("application", "text"),
+            deadline_seconds=legacy._TIMEOUT,
+            proxy_url=os.environ.get("HTTPS_PROXY"),
+        )
+        return data
+    return legacy._fetch(url)
 
 
 def _row(text, citation, value, metric):
@@ -15,32 +34,175 @@ def _row(text, citation, value, metric):
 
 
 def apple():
-    data = json.loads(legacy._fetch(legacy.APPLE_SONGS_URL))
+    data = json.loads(_fetch(legacy.APPLE_SONGS_URL))
     return [_row(r.get("name"), r.get("url"), i, "chart_position")
             for i, r in enumerate(data["feed"]["results"][:50], start=1)]
 
 
 def deezer():
     url = legacy.DEEZER_CHART_URL.format(id=0)
-    data = json.loads(legacy._fetch(url))
+    data = json.loads(_fetch(url))
     return [_row(r.get("title"), r.get("link"), r.get("rank", 0),
                  "deezer_popularity") for r in data.get("data", [])[:25]]
 
 
+# Only complete short-form text accompanied by actual public counters is a
+# learning example. Headlines, chart labels and search scores remain context.
+PEAK_METRIC = "public_complete_post_likes_plus_reposts_v1"
+PEAK_TOPICS = {
+    "music": ("music", "song", "album", "artist", "musician", "guitar", "concert"),
+    "social": ("creator", "creators", "social media", "content creation", "reels"),
+    "advertising": ("marketing", "advertising", "campaign", "brand", "brands"),
+    "culture": ("culture", "art", "arts", "film", "cinema", "literature", "theatre"),
+}
+PEAK_QUERIES = {"music": "music", "social": "creator", "advertising": "marketing",
+                "culture": "art"}
+BLUESKY_SEARCH = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+
+
+def relevant_peak_text(text, domain):
+    return domain in PEAK_TOPICS and any(
+        re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", text, re.I)
+        for word in PEAK_TOPICS[domain])
+
+
+def _counter(value):
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+
+def _recent_publication(value, now=None):
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            return False
+        age = (time.time() if now is None else now) - stamp.timestamp()
+        return -5 <= age <= 7 * 86400
+    except (AttributeError, TypeError, ValueError, OverflowError):
+        return False
+
+
+def _complete_text(value):
+    from .engine import clean
+    if not isinstance(value, str) or len(value) > 20000:
+        return ""
+    # Clean before checking size: never relabel a truncated excerpt as a
+    # complete post. Masked links/identifiers are safe, but prompt payloads fail.
+    text = clean(value, 20000)
+    return text if 60 <= len(text) <= 4096 and len(text.split()) >= 8 else ""
+
+
 def social():
-    data = json.loads(legacy._fetch(legacy.MASTODON_TRENDS_STATUSES))
-    from ai_model.gpu.awareness_kernels import sum_counts
-    posts = data[:20]
-    if not posts:
+    data = json.loads(_fetch(legacy.MASTODON_TRENDS_STATUSES))
+    if not isinstance(data, list):
         return []
-    counts = sum_counts([[int(p.get("reblogs_count", 0)), int(p.get("favourites_count", 0))]
-                         for p in posts])
-    return [_row(p.get("content"), p.get("url"), count,
-                 "mastodon_reblogs_plus_favourites") for p, count in zip(posts, counts)]
+    rows = []
+    for post in data[:40]:
+        if (not isinstance(post, dict) or post.get("visibility") != "public"
+                or post.get("sensitive") is not False or post.get("reblog")):
+            continue
+        likes, reposts = post.get("favourites_count"), post.get("reblogs_count")
+        if not _counter(likes) or not _counter(reposts):
+            continue
+        text = _complete_text(post.get("content"))
+        eligible = (text and post.get("visibility") == "public"
+                    and post.get("sensitive") is False and not post.get("reblog")
+                    and _recent_publication(post.get("created_at"))
+                    and relevant_peak_text(text, "social") and likes + reposts > 0)
+        rows.append(_row(text if eligible else post.get("content"), post.get("url"),
+                         likes + reposts, PEAK_METRIC if eligible else
+                         "mastodon_reblogs_plus_favourites"))
+    return rows
+
+
+MASTODON_TAGS = {"music": "music", "social": "creator", "advertising": "marketing", "culture": "art"}
+MASTODON_PUBLIC_TAG = "https://mastodon.social/api/v1/timelines/tag/"
+
+
+def mastodon_peak(domain):
+    """Fixed anonymous public topic timeline with actual engagement counters."""
+    from urllib.parse import urlsplit
+    if domain not in MASTODON_TAGS:
+        return []
+    data = json.loads(_fetch(MASTODON_PUBLIC_TAG + MASTODON_TAGS[domain] + "?limit=40"))
+    if not isinstance(data, list):
+        return []
+    # Include the server's explicitly trending public content as well as the
+    # topical timeline. Both expose identical counters; filter relevance before
+    # choosing leaders, never manufacture performance from tag presence.
+    try:
+        trending = json.loads(_fetch(legacy.MASTODON_TRENDS_STATUSES))
+    except Exception:
+        trending = []
+    candidates = (trending[:20] if isinstance(trending, list) else []) + data[:40]
+    rows = []
+    seen = set()
+    for post in candidates:
+        if (not isinstance(post, dict) or post.get("visibility") != "public"
+                or post.get("sensitive") is not False or post.get("reblog")):
+            continue
+        text = _complete_text(post.get("content"))
+        likes, reposts = post.get("favourites_count"), post.get("reblogs_count")
+        url = post.get("url")
+        try:
+            public_citation = isinstance(url, str) and urlsplit(url).hostname == "mastodon.social"
+        except ValueError:
+            public_citation = False
+        if (not text or not relevant_peak_text(text, domain) or not public_citation
+                or not _recent_publication(post.get("created_at"))
+                or not _counter(likes) or not _counter(reposts) or likes + reposts <= 0):
+            continue
+        if url not in seen:
+            rows.append(_row(text, url, likes + reposts, PEAK_METRIC))
+            seen.add(url)
+    return rows
+
+
+def bluesky_peak(domain):
+    """Anonymous official public search; topic-filtered complete public posts.
+
+    Public API counters are observations, not evidence of causality or rights.
+    No tokens, private feeds, arbitrary source URLs or synthetic zero defaults.
+    """
+    if domain not in PEAK_QUERIES:
+        return []
+    since = datetime.fromtimestamp(time.time() - 7 * 86400, timezone.utc).isoformat()
+    url = BLUESKY_SEARCH + "?" + urlencode({
+        "q": PEAK_QUERIES[domain], "sort": "top", "limit": 50, "since": since,
+    })
+    data = json.loads(_fetch(url))
+    posts = data.get("posts", []) if isinstance(data, dict) else []
+    if not isinstance(posts, list):
+        return []
+    rows = []
+    for post in posts[:50]:
+        if not isinstance(post, dict):
+            continue
+        record = post.get("record")
+        author = post.get("author")
+        if not isinstance(record, dict) or not isinstance(author, dict):
+            continue
+        # Labels can indicate sensitive/removed content. Conservative omission
+        # also prevents using account-level flagged material as examples.
+        if post.get("labels") or author.get("labels") or (isinstance(post.get("embed"), dict) and post["embed"].get("blocked")):
+            continue
+        text = _complete_text(record.get("text"))
+        likes, reposts = post.get("likeCount"), post.get("repostCount")
+        if (not text or not relevant_peak_text(text, domain)
+                or not _recent_publication(record.get("createdAt"))
+                or not _counter(likes) or not _counter(reposts) or likes + reposts <= 0):
+            continue
+        uri = post.get("uri", "")
+        # Address the canonical record by DID, never an untrusted author URL.
+        match = re.fullmatch(r"at://(did:plc:[a-z2-7]{24})/app\.bsky\.feed\.post/([a-zA-Z0-9]+)", uri)
+        if not match or author.get("did") != match[1]:
+            continue
+        cite = "https://bsky.app/profile/" + match[1] + "/post/" + match[2]
+        rows.append(_row(text, cite, likes + reposts, PEAK_METRIC))
+    return rows
 
 
 def rss(url):
-    root = parse_feed_xml(legacy._fetch(url))
+    root = parse_feed_xml(_fetch(url))
     rows = []
     for entry in root.findall(".//item")[:30]:
         rows.append(_row(entry.findtext("title"), entry.findtext("link"), 1,
@@ -101,7 +263,7 @@ def search(provider, query):
 
 
 def hn(url):
-    data = json.loads(legacy._fetch(url))
+    data = json.loads(_fetch(url))
     return [_row(h.get("title"), "https://news.ycombinator.com/item?id=" + str(h["objectID"]),
                  h.get("points") or 0, "hn_story_votes")
             for h in data.get("hits", [])[:30] if str(h.get("objectID", "")).isdigit()]
@@ -146,7 +308,7 @@ def landscape_feed(kind):
     if not url:
         return []
     try:
-        data = json.loads(legacy._fetch(url))
+        data = json.loads(_fetch(url))
     except Exception:
         return []
     trends = data.get("trends") if isinstance(data, dict) else None
@@ -206,7 +368,7 @@ def trends_lines(rows, platform=""):
 
 
 def youtube(url):
-    root = parse_feed_xml(legacy._fetch(url))
+    root = parse_feed_xml(_fetch(url))
     atom = "{http://www.w3.org/2005/Atom}"
     media = "{http://search.yahoo.com/mrss/}"
     rows = []
@@ -236,6 +398,13 @@ def configured_sources():
         "hn_marketing_discussion": ("advertising", legacy.HN_ADS_URL,
                                     functools.partial(hn, legacy.HN_ADS_URL)),
     }
+    for domain in MASTODON_TAGS:
+        sources["mastodon_peak_" + domain] = (
+            domain, MASTODON_PUBLIC_TAG + MASTODON_TAGS[domain],
+            functools.partial(mastodon_peak, domain))
+    for domain in PEAK_QUERIES:
+        sources["bluesky_peak_" + domain] = (
+            domain, BLUESKY_SEARCH, functools.partial(bluesky_peak, domain))
     for feed in legacy.YOUTUBE_FEEDS:
         sources["youtube_" + feed["name"]] = (
             "music", feed["url"], functools.partial(youtube, feed["url"]))

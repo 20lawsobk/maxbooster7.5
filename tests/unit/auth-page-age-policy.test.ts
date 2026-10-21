@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { getNewPasswordError } from "../../shared/passwordPolicy";
 import ts from "typescript";
 import { ACCOUNT_AGE_REQUIREMENT, MINIMUM_ACCOUNT_AGE, calculateAgeUtc, getAccountEligibilityError, parseBirthdate } from "../../shared/agePolicy";
 import { createCheckoutSessionSchema, registerSchema } from "../../server/schemas/index";
@@ -98,7 +99,7 @@ function backendHarness(existingAccount = false) {
     line_items: { data: [{ price: { id: "unit-price" } }] },
   };
   const scope: Record<string, any> = {
-    Date, Number, URLSearchParams, AbortSignal, getAccountEligibilityError, MINIMUM_ACCOUNT_AGE,
+    Date, Number, URLSearchParams, AbortSignal, getAccountEligibilityError, MINIMUM_ACCOUNT_AGE, getNewPasswordError,
     process: { env: { GOOGLE_CLIENT_ID: "unit-id", GOOGLE_CLIENT_SECRET: "unit-not-a-secret", APP_URL: "https://unit.example.test" } },
     crypto: { randomBytes: () => ({ toString: () => "unit-oauth-state" }) },
     logger: { info() {}, warn() {} },

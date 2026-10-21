@@ -28,6 +28,11 @@ import {
   pollVideoJobUntilDone,
   TerminalJobError,
 } from "@/lib/videoJobPolling";
+import {
+  fetchMusicVideoJobStatus,
+  pollMusicVideoJobUntilDone,
+} from "@/lib/musicVideoJobs";
+import { LocalMediaRenderer } from "@/components/content/LocalMediaRenderer";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -57,7 +62,7 @@ interface ServerVideoGeneratorProps {
   autoStart?: boolean;
 }
 
-type InputMode = "text" | "audio" | "image" | "studio";
+type InputMode = "text" | "audio" | "image" | "studio" | "promo";
 
 /**
  * Shape of a video-generation job record returned by `/api/social/generate-video`
@@ -383,6 +388,8 @@ export function ServerVideoGenerator({
   const [generatingElapsed, setGeneratingElapsed] = useState(0);
   // Persists the active job ID so the visibilitychange handler can resume polling
   const activeJobIdRef = useRef<string | null>(null);
+  const activeJobKindRef = useRef<"video" | "music-video">("video");
+  const completedJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setAspectRatio(PLATFORM_DEFAULT_RATIO[platform] || "9:16");
@@ -399,13 +406,22 @@ export function ServerVideoGenerator({
     const onVisible = () => {
       const jobId = activeJobIdRef.current;
       if (!jobId || document.visibilityState !== "visible") return;
-      fetch(`/api/social/video-job/${jobId}`, { credentials: "include" })
-        .then((r) => r.json() as Promise<VideoJobData>)
+      const statusRequest = activeJobKindRef.current === "music-video"
+        ? fetchMusicVideoJobStatus(jobId)
+        : fetch(`/api/social/video-job/${encodeURIComponent(jobId)}`, {
+            credentials: "include", signal: AbortSignal.timeout(15_000),
+          });
+      statusRequest
+        .then((r) => {
+          if (!r.ok) throw new Error(`Video status unavailable (${r.status})`);
+          return r.json() as Promise<VideoJobData>;
+        })
         .then((data) => {
+          if (activeJobIdRef.current !== jobId) return;
           const url = data.url || data.video_url;
           if ((data.status === "done" || data.status === "completed") && url) {
             activeJobIdRef.current = null;
-            applyVideoResult({ ...data, success: true, url });
+            applyVideoResult({ ...data, success: true, url }, jobId);
             setIsGenerating(false);
             setGeneratingStage("");
             setGeneratingElapsed(0);
@@ -433,6 +449,8 @@ export function ServerVideoGenerator({
   // Revoke any blob URL when the component unmounts or a new video replaces it
   useEffect(() => {
     return () => {
+      userCancelledRef.current = true;
+      abortControllerRef.current?.abort();
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
@@ -440,7 +458,9 @@ export function ServerVideoGenerator({
     };
   }, []);
 
-  const applyVideoResult = (data: VideoJobData) => {
+  const applyVideoResult = (data: VideoJobData, jobId?: string) => {
+    if (jobId && completedJobIdRef.current === jobId) return;
+    if (jobId) completedJobIdRef.current = jobId;
     const finalUrl = data.url ?? data.video_url ?? "";
     setVideoUrl(finalUrl || null);
     setPosterUrl(data.thumbnail_url ?? null);
@@ -466,6 +486,7 @@ export function ServerVideoGenerator({
 
   const pollJobUntilDone = async (jobId: string): Promise<VideoJobData> => {
     activeJobIdRef.current = jobId;
+    activeJobKindRef.current = "video";
     // Server-side render budget is 5 min (POLL_MAX_ATTEMPTS=150 × 2s in
     // advancedVideoRendererService.ts) plus up to ~60s to cache the finished
     // file locally before the job map is updated to "done". The client must
@@ -498,6 +519,7 @@ export function ServerVideoGenerator({
     // handlers may hold this request until MaxCore returns a persisted file.
     // Keep the timeout configurable rather than aborting a valid MaxCore job.
     userCancelledRef.current = false;
+    completedJobIdRef.current = null;
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
@@ -559,6 +581,7 @@ export function ServerVideoGenerator({
           data?.message || data?.error || "Video generation failed",
         );
 
+      const submittedJobId = data.job_id;
       if (data.job_id && ["processing", "queued", "running", "committing", "coalesced"].includes(data.status || "")) {
         setGeneratingStage("Rendering frames…");
         data = await pollJobUntilDone(data.job_id);
@@ -568,7 +591,7 @@ export function ServerVideoGenerator({
         // MaxCore returns a real H.264 MP4 (moov-first / faststart).
         // Use the server URL directly — no client-side re-render needed.
         clearTimeout(timeoutId);
-        applyVideoResult(data);
+        applyVideoResult(data, submittedJobId);
         const w = data.width || 1080;
         const h = data.height || 1920;
         const dur = data.duration || duration || 10;
@@ -903,6 +926,11 @@ export function ServerVideoGenerator({
     setIsGenerating(true);
     setGeneratingStage("Analyzing beats…");
     setRenderProgress(0);
+    userCancelledRef.current = false;
+    completedJobIdRef.current = null;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
     try {
       const fd = new FormData();
       fd.append("audio", studioAudioFile);
@@ -923,53 +951,54 @@ export function ServerVideoGenerator({
         credentials: "include",
         headers: { "X-CSRF-Token": csrf || "" },
         body: fd,
+        signal: controller.signal,
       });
       const initData = await resp.json();
       if (!resp.ok || !initData.success) throw new Error(initData.error || "Job start failed");
+      clearTimeout(timeoutId);
 
       const jobId = initData.jobId as string;
+      if (!jobId) throw new Error("Music video generation returned no job id");
       setStudioMvJobId(jobId);
       activeJobIdRef.current = jobId;
+      activeJobKindRef.current = "music-video";
       setGeneratingStage("Generating AI scenes…");
 
-      // Poll music-video-job endpoint
-      const poll = async (): Promise<void> => {
-        const jobResp = await fetch(`/api/social/music-video-job/${jobId}`, { credentials: "include" });
-        const jobData = await jobResp.json();
-        if (jobData.status === "done") {
-          const r = jobData.result as Record<string, unknown>;
-          const url = (r?.url as string) || "";
-          applyVideoResult({
-            success: true,
-            url,
-            hook: studioHook || undefined,
-            bpm: r?.bpm as number,
-            viral_score: r?.viralScore as number,
-            viral_recommendation: r?.viralRecommendation as string,
-            duration: r?.durationSeconds as number,
-            scenes_count: (r?.scenes as unknown[])?.length,
-          });
-          setIsGenerating(false);
-          setGeneratingStage("");
-          activeJobIdRef.current = null;
-          if (r?.viralScore) {
-            toast({ title: `Viral Score: ${r.viralScore}/100`, description: (r.viralRecommendation as string) || undefined });
-          }
-          return;
-        }
-        if (jobData.status === "error") {
-          throw new Error(jobData.error || "Music video generation failed");
-        }
-        await new Promise((r) => setTimeout(r, 3000));
-        return poll();
-      };
-
       setGeneratingStage("Rendering beat-synced video…");
-      await poll();
+      const jobData = await pollMusicVideoJobUntilDone(jobId, {
+        signal: controller.signal,
+        isCancelled: () => userCancelledRef.current,
+        onProgress: elapsed => {
+          setGeneratingElapsed(elapsed);
+          setGeneratingStage(`Rendering beat-synced video… (${elapsed}s)`);
+        },
+      });
+      const r = jobData.result ?? {};
+      applyVideoResult({
+        ...r,
+        ...jobData,
+        success: true,
+        url: jobData.url,
+        hook: studioHook || undefined,
+        bpm: r?.bpm as number,
+        viral_score: r?.viralScore as number,
+        viral_recommendation: r?.viralRecommendation as string,
+        duration: r?.durationSeconds as number,
+        scenes_count: (r?.scenes as unknown[])?.length,
+      }, jobId);
+      if (r?.viralScore) {
+        toast({ title: `Viral Score: ${r.viralScore}/100`, description: (r.viralRecommendation as string) || undefined });
+      }
     } catch (err) {
       toast({ title: "Music Video Failed", description: errMessage(err), variant: "destructive" });
+    } finally {
+      clearTimeout(timeoutId);
+      abortControllerRef.current = null;
+      activeJobIdRef.current = null;
+      userCancelledRef.current = false;
       setIsGenerating(false);
       setGeneratingStage("");
+      setGeneratingElapsed(0);
     }
   };
 
@@ -986,6 +1015,7 @@ export function ServerVideoGenerator({
       { id: "audio", label: "Audio", icon: <Mic className="h-3.5 w-3.5" /> },
       { id: "image", label: "Image", icon: <Image className="h-3.5 w-3.5" /> },
       { id: "studio", label: "MV Studio", icon: <Music className="h-3.5 w-3.5" /> },
+      { id: "promo", label: "Promotional clip", icon: <Film className="h-3.5 w-3.5" /> },
     ];
 
   // In autoStart mode show only the progress/result view — no form
@@ -1179,6 +1209,18 @@ export function ServerVideoGenerator({
                   </button>
                 ))}
               </div>
+
+              {inputMode === "promo" && (
+                <LocalMediaRenderer kind="video" platform={platform} initialHeadline={textTopic || topicProp}
+                  onGenerated={result => applyVideoResult({
+                    success: true,
+                    url: result.url,
+                    width: result.width,
+                    height: result.height,
+                    duration: result.durationSec,
+                    source: "promotional_clip_renderer",
+                  })} />
+              )}
 
               {/* ── TEXT MODE ── */}
               {inputMode === "text" && (

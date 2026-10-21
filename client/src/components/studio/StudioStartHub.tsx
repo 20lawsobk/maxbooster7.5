@@ -176,7 +176,7 @@ export function StudioStartHub({
     "recent" | "songs" | "projects" | "shows"
   >("recent");
 
-  const { data: hubData, isLoading } = useQuery<StartHubData>({
+  const { data: hubData, isLoading, isError, refetch } = useQuery<StartHubData>({
     queryKey: ["/api/studio/start-hub/summary"],
   });
 
@@ -365,6 +365,16 @@ export function StudioStartHub({
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isError || !hubData) {
+    return (
+      <div role="alert" className="min-h-screen bg-[#1a1a1a] text-white p-6">
+        <h1 className="text-xl font-semibold">Could not load Studio projects</h1>
+        <p className="my-3">Your projects are unavailable right now. Please try again.</p>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }

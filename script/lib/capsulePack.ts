@@ -49,6 +49,7 @@ export const CAPSULE_COMPRESSION_LEVEL = 19;
 export const CAPSULE_COMPRESSION_ID = `zstd-${CAPSULE_COMPRESSION_LEVEL}`;
 
 export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
+  "**/node_modules/.cache",
   ".npmrc",
   ".env*",
   ".cloudflared",
@@ -66,6 +67,7 @@ export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
 ];
 
 export const PDIM_CAPSULE_EXCLUDE_PATHS = [
+  "**/node_modules/.cache",
   ".npmrc",
   ".env*",
   ".cloudflared",

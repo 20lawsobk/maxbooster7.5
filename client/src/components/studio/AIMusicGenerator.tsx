@@ -27,6 +27,7 @@ import {
   normalizeGeneratedMidiNotes,
   resolveStudioGenerationResponse,
 } from "./studioAudioDelivery";
+import { LocalMediaRenderer } from "@/components/content/LocalMediaRenderer";
 
 interface AIMusicGeneratorProps {
   projectId?: string | null;
@@ -251,6 +252,7 @@ export function AIMusicGenerator({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [generationMode, setGenerationMode] = useState<"model" | "synthesis">("model");
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
     null,
   );
@@ -379,7 +381,7 @@ export function AIMusicGenerator({
       )?.name || selectedInstrument.replace(/_/g, " ");
     onTrackGenerated({
       ...generatedTrack,
-      name: `AI ${instrumentName}`,
+      name: generationMode === "synthesis" ? "Synthesized instrumental" : `AI ${instrumentName}`,
       type: "audio",
     });
     toast({
@@ -391,6 +393,7 @@ export function AIMusicGenerator({
     onTrackGenerated,
     selectedInstrumentCategory,
     selectedInstrument,
+    generationMode,
     toast,
   ]);
 
@@ -411,6 +414,7 @@ export function AIMusicGenerator({
         "POST",
         "/api/studio/generation/pattern/arrangement",
         {
+          instrument: selectedInstrument,
           genre: selectedGenre,
           key,
           scale: scale.toLowerCase(),
@@ -512,9 +516,11 @@ export function AIMusicGenerator({
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">
-              AI Music Generator
+              {generationMode === "synthesis" ? "Instrumental Synthesis" : "AI Music Generator"}
             </h2>
-            <p className="text-xs text-zinc-500">Create music with AI</p>
+            <p className="text-xs text-zinc-500">
+              {generationMode === "synthesis" ? "Create a synthesized instrumental" : "Generate custom music with MaxCore"}
+            </p>
           </div>
         </div>
         {onClose && (
@@ -530,6 +536,32 @@ export function AIMusicGenerator({
         )}
       </div>
 
+      <div className="flex gap-2 px-4 pt-3" role="group" aria-label="Music generation method">
+        <Button type="button" variant={generationMode === "model" ? "default" : "outline"}
+          onClick={() => { setGenerationMode("model"); setGeneratedTrack(null); }}>
+          Custom music
+        </Button>
+        <Button type="button" variant={generationMode === "synthesis" ? "default" : "outline"}
+          onClick={() => { setGenerationMode("synthesis"); setGeneratedTrack(null); }}>
+          Instrumental synthesis
+        </Button>
+      </div>
+      {generationMode === "synthesis" ? (
+        <div className="p-4 space-y-3 overflow-y-auto">
+          <LocalMediaRenderer kind="audio" initialBpm={tempo}
+            onGenerated={result => setGeneratedTrack({
+              audioFilePath: result.url,
+              duration: result.durationSec,
+              generatedNotes: [],
+              parameters: { key: result.key ?? "", scale: "", genre: "", tempo: result.bpm ?? 0 },
+            })} />
+          {generatedTrack?.audioFilePath && (
+            <Button type="button" onClick={handleAddToProject}>
+              <Plus className="w-4 h-4 mr-2" /> Add synthesized audio to project
+            </Button>
+          )}
+        </div>
+      ) : <>
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="p-3 rounded-lg bg-amber-900/20 border border-amber-700/30">
           <div className="flex items-start gap-2">
@@ -867,6 +899,7 @@ export function AIMusicGenerator({
           )}
         </Button>
       </div>
+      </>}
     </div>
   );
 }

@@ -171,7 +171,8 @@ describe("retained PDIM operator recovery boundary", () => {
     expect(capsuleVerification).toContain('"dist/retained-pdim-recovery-worker.mjs"');
     expect(capsuleVerification).toContain('if (!result.ready) throw new Error');
     expect(legacyBuildSource).toContain("PUBLISH_SHELL_PACKS_CAPSULES=1 npm run build");
-    expect(JSON.parse(readFileSync("package.json", "utf8")).scripts.build).toContain("script/build.ts");
+    expect(JSON.parse(readFileSync("package.json", "utf8")).scripts.build).toBe("node scripts/build-production.mjs");
+    expect(readFileSync("scripts/build-production.mjs", "utf8")).toContain('"script/build.ts"');
     expect(dockerignore).toContain("!scripts/retained-pdim-recovery-worker.ts");
     expect(dockerignore).toContain("!scripts/recovery-private-store.mjs");
     expect(serviceSource).toMatch(

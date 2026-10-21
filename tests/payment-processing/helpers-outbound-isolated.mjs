@@ -6,12 +6,14 @@ import { build } from "esbuild";
  * empty environment and never need a database, Stripe client, or network.
  */
 export async function loadOutboundSubject(entryPoint, boundaries = {}) {
+  boundaries = { "../../logger.js": "export const logger={info(){},warn(){},error(){}};", ...boundaries };
   const result = await build({
     entryPoints: [entryPoint],
     bundle: true,
     write: false,
     platform: "node",
     format: "esm",
+      banner: { js: 'import { createRequire as __commerceCreateRequire } from "node:module"; const require = __commerceCreateRequire(process.cwd() + "/package.json");' },
     plugins: [{
       name: "outbound-payment-isolated-boundaries",
       setup(buildContext) {

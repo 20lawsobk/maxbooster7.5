@@ -242,6 +242,66 @@ router.delete("/clear-all", async (req: Request, res: Response) => {
   }
 });
 
+router.delete("/mobile-tokens", async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+  try {
+    const { token } = req.body ?? {};
+    if (token !== undefined && (typeof token !== "string" || !token.trim() || token.length > 8192)) {
+      return res.status(400).json({ error: "A valid device token is required" });
+    }
+    const { mobilePushService } = await import(
+      "../services/mobilePushService.js"
+    );
+
+    if (token) {
+      await mobilePushService.deactivateToken(token, req.user.id);
+    } else {
+      await mobilePushService.removeUserTokens(req.user.id);
+    }
+
+    return res.json({
+      success: true,
+      outcome: {
+        type: "channel_toggled",
+        success: true,
+        message: token
+          ? "Mobile device unregistered"
+          : "All mobile devices unregistered",
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, "Mobile token remove error:");
+    return res
+      .status(500)
+      .json({ error: "Failed to remove mobile device token" });
+  }
+});
+
+
+// Remove a push subscription from the DB
+router.delete("/push-subscriptions", async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+
+  try {
+    const { endpoint } = req.body ?? {};
+    if (endpoint !== undefined && (typeof endpoint !== "string" || !endpoint.trim() || endpoint.length > 8192)) {
+      return res.status(400).json({ error: "A valid push endpoint is required" });
+    }
+    if (endpoint) {
+      await webPushService.removeSubscription(endpoint, req.user.id);
+    } else {
+      await webPushService.removeUserSubscriptions(req.user.id);
+    }
+    return res.json({ success: true, message: "Push subscription removed" });
+  } catch (error) {
+    logger.warn({ err: error }, "Push unsubscribe error:");
+    return res
+      .status(500)
+      .json({ error: "Failed to remove push subscription" });
+  }
+});
+
+
 router.delete(
   "/:id",
   requireUUIDParam("id"),
@@ -817,38 +877,6 @@ router.post("/mobile-tokens", async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/mobile-tokens", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-  try {
-    const { token } = req.body;
-    const { mobilePushService } = await import(
-      "../services/mobilePushService.js"
-    );
-
-    if (token) {
-      await mobilePushService.deactivateToken(token);
-    } else {
-      await mobilePushService.removeUserTokens(req.user.id);
-    }
-
-    return res.json({
-      success: true,
-      outcome: {
-        type: "channel_toggled",
-        success: true,
-        message: token
-          ? "Mobile device unregistered"
-          : "All mobile devices unregistered",
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "Mobile token remove error:");
-    return res
-      .status(500)
-      .json({ error: "Failed to remove mobile device token" });
-  }
-});
-
 router.get("/mobile-tokens", async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Not authenticated" });
   try {
@@ -1054,26 +1082,6 @@ router.post("/push-subscriptions", async (req: Request, res: Response) => {
   } catch (error) {
     logger.warn({ err: error }, "Push subscribe error:");
     return res.status(500).json({ error: "Failed to save push subscription" });
-  }
-});
-
-// Remove a push subscription from the DB
-router.delete("/push-subscriptions", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
-
-  try {
-    const { endpoint } = req.body;
-    if (endpoint) {
-      await webPushService.removeSubscription(endpoint);
-    } else {
-      await webPushService.removeUserSubscriptions(req.user.id);
-    }
-    return res.json({ success: true, message: "Push subscription removed" });
-  } catch (error) {
-    logger.warn({ err: error }, "Push unsubscribe error:");
-    return res
-      .status(500)
-      .json({ error: "Failed to remove push subscription" });
   }
 });
 

@@ -2,15 +2,15 @@
 
 Decision: **PASS_WITH_UNTESTED_CATEGORIES**
 
-Artifact label: **source application authenticated HTTP simulation; not packed application acceptance**
+Artifact label: **sealed non-ML authenticated HTTP load; not full-stack or packed acceptance**
 
 ## Replay
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/readiness-assembled-acceptance.mjs --http-load`
 
-Run started: 2026-09-23T15:08:39.019Z
+Run started: 2026-10-19T20:46:26.530Z
 
-Report generated: 2026-09-23T15:09:38.710Z
+Report generated: 2026-10-19T20:47:14.209Z
 
 ## Safety boundary
 
@@ -27,19 +27,19 @@ Report generated: 2026-09-23T15:09:38.710Z
 {
   "capacityAdmission": {
     "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-    "hostMemAvailableBytes": 4746096640,
+    "hostMemAvailableBytes": 31234162688,
     "cgroup": {
-      "currentBytes": 2129342464,
-      "maximumBytes": 8589934592,
-      "headroomBytes": 6460592128,
-      "anonymousBytes": 1172770816,
-      "filePageCacheBytes": 874819584,
-      "inactiveFileBytes": 252100608,
-      "activeFileBytes": 609972224,
-      "kernelBytes": 80171008,
-      "reclaimableKernelSlabBytes": 0
+      "currentBytes": 11735719936,
+      "maximumBytes": 34359738368,
+      "headroomBytes": 22624018432,
+      "anonymousBytes": 2843103232,
+      "filePageCacheBytes": 7909711872,
+      "inactiveFileBytes": 4431302656,
+      "activeFileBytes": 2962698240,
+      "kernelBytes": 981483520,
+      "reclaimableKernelSlabBytes": 879432864
     },
-    "effectiveAvailableBytes": 4746096640,
+    "effectiveAvailableBytes": 22624018432,
     "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
     "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
     "minimumAvailableBytes": 1610612736
@@ -52,8 +52,12 @@ Report generated: 2026-09-23T15:09:38.710Z
     "contentType": "application/json; charset=utf-8"
   },
   "readiness": {
-    "status": 200,
-    "aggregate": "ok",
+    "scope": "sealed non-ML authentication, projects, and frontend acceptance",
+    "fullStackReadiness": "NOT_PROVEN: separate real imported MaxCore/model acceptance required",
+    "expectedDegradedReadinessAsserted": true,
+    "unifiedAwarenessReady": false,
+    "status": 503,
+    "aggregate": "degraded",
     "subsystems": {
       "database": {
         "status": "ok"
@@ -83,7 +87,7 @@ Report generated: 2026-09-23T15:09:38.710Z
     "status": 200,
     "contentType": "text/html; charset=utf-8",
     "bytes": 16213,
-    "sha256": "ed615b681ce2448b892b13749f3b828d32eb802432420ffc63424f59652ab563"
+    "sha256": "82ed348afb9fabd104961f0ae70926f2d7662904dff61664079461086e47a38f"
   },
   "authHttp": {
     "csrfCookieHeaderBinding": "pass",
@@ -98,19 +102,19 @@ Report generated: 2026-09-23T15:09:38.710Z
     "label": "source application HTTP simulation; not packed application acceptance",
     "admission": {
       "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-      "hostMemAvailableBytes": 4746096640,
+      "hostMemAvailableBytes": 31234162688,
       "cgroup": {
-        "currentBytes": 2129342464,
-        "maximumBytes": 8589934592,
-        "headroomBytes": 6460592128,
-        "anonymousBytes": 1172770816,
-        "filePageCacheBytes": 874819584,
-        "inactiveFileBytes": 252100608,
-        "activeFileBytes": 609972224,
-        "kernelBytes": 80171008,
-        "reclaimableKernelSlabBytes": 0
+        "currentBytes": 11735719936,
+        "maximumBytes": 34359738368,
+        "headroomBytes": 22624018432,
+        "anonymousBytes": 2843103232,
+        "filePageCacheBytes": 7909711872,
+        "inactiveFileBytes": 4431302656,
+        "activeFileBytes": 2962698240,
+        "kernelBytes": 981483520,
+        "reclaimableKernelSlabBytes": 879432864
       },
-      "effectiveAvailableBytes": 4746096640,
+      "effectiveAvailableBytes": 22624018432,
       "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
       "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
       "minimumAvailableBytes": 1610612736
@@ -184,8 +188,8 @@ Report generated: 2026-09-23T15:09:38.710Z
         "successful": 70,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 273.864519,
-        "p99Ms": 329.542474,
+        "p95Ms": 126.613845,
+        "p99Ms": 141.199051,
         "durationDefinition": "all completed request durations, including failed requests"
       },
       {
@@ -196,8 +200,8 @@ Report generated: 2026-09-23T15:09:38.710Z
         "successful": 80,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 396.740921,
-        "p99Ms": 492.552765,
+        "p95Ms": 296.319556,
+        "p99Ms": 312.829596,
         "durationDefinition": "all completed request durations, including failed requests"
       }
     ],
@@ -206,7 +210,17 @@ Report generated: 2026-09-23T15:09:38.710Z
   },
   "browser": "intentionally skipped only for explicit --http-load mode",
   "egressGuard": "pass (external net.connect, direct Socket.connect, UDP, and child processes denied in preflight)",
-  "cleanup": "pass"
+  "cleanup": "pass",
+  "projectCrud": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true,
+    "missingVersion428": true,
+    "staleVersion409": true,
+    "crossOwnerReadUpdateDelete404": true,
+    "deletedRead404": true
+  }
 }
 ```
 

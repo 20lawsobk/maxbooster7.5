@@ -27,6 +27,25 @@ class ReleaseSelectionTests(unittest.TestCase):
         self.assertEqual(status["candidate_quality"], "no_selected_candidate")
         factory.assert_not_called()
 
+    def test_live_mode_requires_a_certified_live_run_and_never_legacy_weights(self):
+        with tempfile.TemporaryDirectory() as directory:
+            adapter, status = load_selected_release("live-awareness", registry=directory)
+            self.assertIsNone(adapter)
+            self.assertEqual(status["requested"], "live-awareness")
+            pointer = Path(directory) / "selected.json"
+            pointer.write_text(json.dumps({"schema": 1, "scope": "candidate-only-not-production",
+                "fingerprints": {"run": "/runs/authored-1", "checkpoint_sha256": "abc"}}))
+            factory = Mock()
+            with self.assertRaisesRegex(ValueError, "live-observation"):
+                load_selected_release("live-awareness", registry=directory, factory=factory)
+            factory.assert_not_called()
+            pointer.write_text(json.dumps({"schema": 1, "scope": "candidate-only-not-production",
+                "fingerprints": {"run": "/runs/live-123", "checkpoint_sha256": "abc"}}))
+            factory.side_effect = ValueError("Independent review signature invalid")
+            with self.assertRaisesRegex(ValueError, "signature"):
+                load_selected_release("live-awareness", registry=directory, factory=factory)
+            factory.assert_called_once_with(runtime_only=False, require_exclusive_backend=True)
+
     def test_selected_adapter_always_requires_review_and_exclusive_policy(self):
         with tempfile.TemporaryDirectory() as directory:
             pointer = Path(directory) / "selected.json"
@@ -80,7 +99,7 @@ class ReleaseSelectionTests(unittest.TestCase):
         output = adapter.generate("prompt", max_new_tokens=12, temperature=.8,
                                   top_p=.92, top_k=20, repetition_penalty=1.1,
                                   min_length=3, seed=42)
-        self.assertEqual(output, "promptcontinuation")
+        self.assertEqual(output, "continuation")
         model.generate.assert_called_once_with(
             "prompt", 12, temperature=.8, top_p=.92, top_k=20,
             repetition_penalty=1.1, min_length=3, seed=42, snapshot_hash=None)

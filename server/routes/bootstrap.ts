@@ -7,8 +7,8 @@
  * pre-populates its query cache with the response so every page renders
  * instantly without waiting for individual API calls.
  *
- * Response is tagged `private, max-age=30, stale-while-revalidate=60` so
- * the browser can serve a cached copy immediately and refresh in the background.
+ * Responses contain account data and must never survive an account transition
+ * in a browser, shared cache, or generic API response cache.
  */
 
 import { Router, Request, Response } from "express";
@@ -114,7 +114,7 @@ router.get(
 
       res.set(
         "Cache-Control",
-        "private, max-age=30, stale-while-revalidate=60",
+        "private, no-store",
       );
       res.json({
         user,

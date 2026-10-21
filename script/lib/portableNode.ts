@@ -3,10 +3,11 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { PORTABLE_NODE_VERSION } from "./portableNodePolicy.mjs";
 
 /** Official glibc binary, not a copy of the build host's Nix-linked executable. */
 export function buildPortableNode(root: string): void {
-  const version = "22.22.0";
+  const version = PORTABLE_NODE_VERSION;
   const name = `node-v${version}-linux-x64`;
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "maxbooster-node-"));
   try {

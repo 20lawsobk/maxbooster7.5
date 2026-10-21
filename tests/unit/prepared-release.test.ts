@@ -3,6 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { inventory, sourceIncluded, buildEnvironmentDigest } from "../../script/lib/releaseInventory";
+import { DEPLOYMENT_BOOTSTRAP_FILES } from "../../script/lib/deploymentControlFiles";
+import { treeIdentity } from "../../script/lib/preparedCapsules";
 import { spawnSync } from "node:child_process";
 import { verifyPreparedRelease, installPreparedRelease } from "../../script/publish-release";
 
@@ -20,7 +22,7 @@ async function fixture() {
   write("package.json", '{"name":"fixture","type":"module"}');
   write(".dockerignore", ".cache/\n");
   const payloadRoot = path.join(root, ".prepared-release/payload");
-  const required = ["start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
+  const required = [...DEPLOYMENT_BOOTSTRAP_FILES, "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
     "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
     ...["node_modules", "python_runtime", "external_maxcore", "external_pdim", "app_remainder"]
       .flatMap(name => [name + ".pdim", name + ".manifest.json"])];
@@ -46,8 +48,7 @@ it("installs only the verified payload into an explicitly disposable fixture", a
   fs.symlinkSync(path.resolve("node_modules"), path.join(root, "node_modules"), "dir");
   manifest.source = await inventory(root, sourceIncluded);
   write(".prepared-release/release.json", JSON.stringify(manifest));
-  const section = fs.readFileSync(".replit", "utf8").match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)![1];
-  const command = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)![1]);
+  const command = [process.execPath, "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", root];
   const env = { ...process.env };
   for (const key of ["DEPLOY_PACK", "PUBLISH_BUILD_ROOT", "PUBLISH_PAYLOAD_CLEANUP"]) delete env[key];
   const result = spawnSync(command[0], command.slice(1), { cwd: root, env, encoding: "utf8", timeout: 60000 });
@@ -56,13 +57,14 @@ it("installs only the verified payload into an explicitly disposable fixture", a
   expect(fs.existsSync(path.join(root, "server/input.ts"))).toBe(false);
   expect(await inventory(root)).toEqual(manifest.payload);
 }, 60000);
-for (const change of ["edit", "add", "remove", "lock"]) {
+for (const change of ["edit", "add", "remove", "lock", "port mapping"]) {
   it(`rejects ${change} of release inputs`, async () => {
     const { root, write } = await fixture();
     if (change === "edit") write("server/input.ts", "changed");
     if (change === "add") write("server/added.ts");
     if (change === "remove") fs.rmSync(path.join(root, "server/input.ts"));
     if (change === "lock") write("pnpm-lock.yaml", "changed");
+    if (change === "port mapping") write(".replit", "[[ports]]\nlocalPort=5001\nexternalPort=80");
     await expect(verifyPreparedRelease(root)).rejects.toThrow(/Production source changed/);
   });
 }
@@ -88,4 +90,29 @@ it("rejects missing releases and external source links", async () => {
   await expect(verifyPreparedRelease(root)).rejects.toThrow(/No prepared release/);
   fs.symlinkSync("/etc/hosts", path.join(root, "server/external"));
   await expect(inventory(root, sourceIncluded)).rejects.toThrow(/External release input link/);
+});
+it("capsule identity ignores excluded transient caches and still detects admitted input changes", async () => {
+  const { root, write } = await fixture();
+  write("external/maxcore/lib/pkg/node_modules/.cache/jiti/cache.mjs", "first");
+  write("external/maxcore/lib/pkg/index.ts", "first");
+  const excluded = ["**/node_modules/.cache"];
+  const before = await treeIdentity(root, "external/maxcore", excluded);
+  write("external/maxcore/lib/pkg/node_modules/.cache/jiti/cache.mjs", "changed");
+  expect(await treeIdentity(root, "external/maxcore", excluded)).toBe(before);
+  write("external/maxcore/lib/pkg/index.ts", "changed");
+  expect(await treeIdentity(root, "external/maxcore", excluded)).not.toBe(before);
+});
+
+it("does not invalidate or ship a prepared release for generated JUnit output", async () => {
+  const { root, write } = await fixture();
+  write("test-results.xml", "<testsuites tests='1'/>");
+  await expect(verifyPreparedRelease(root)).resolves.toHaveProperty("payloadRoot");
+});
+
+it("rejects a self-consistent release that omits the pre-extraction bootstrap", async () => {
+  const { root, manifest, write } = await fixture();
+  fs.rmSync(path.join(root, ".prepared-release/payload/dist/deployment/executive.mjs"));
+  manifest.payload = await inventory(path.join(root, ".prepared-release/payload"));
+  write(".prepared-release/release.json", JSON.stringify(manifest));
+  await expect(verifyPreparedRelease(root)).rejects.toThrow(/Required prepared artifact missing: dist\/deployment\/executive/);
 });

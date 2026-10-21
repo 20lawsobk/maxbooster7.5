@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import { assertDedicatedTestBindings, createTestStripe } from "./helpers-stripe-test-transport.mjs";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { topupExitCode } from "./helpers-topup-cleanup.mjs";
@@ -32,9 +32,9 @@ async function save() {
   await writeFile(".local/payment-processing/topup-report.json", JSON.stringify(report, null, 2) + "\n", { mode: 0o600 });
 }
 try {
-  if (!secret?.startsWith("sk_test_") || !publishable?.startsWith("pk_test_")) throw new Error("Dedicated test credentials required; no fallback.");
+  assertDedicatedTestBindings();
   await save();
-  stripe = new Stripe(secret, { timeout: 15000, maxNetworkRetries: 0 });
+  stripe = createTestStripe(secret, { timeout: 15000, maxNetworkRetries: 0 });
   report.phase = "mode_and_webhook_preflight";
   await save();
   if ((await stripe.balance.retrieve()).livemode !== false) throw new Error("Stripe test-mode guard failed.");

@@ -12,8 +12,11 @@ import { stripLeakedDirectives, isBrokenHashtag } from "../lib/contentPostProces
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
+  isAllowedMaxcoreMediaPath,
 } from "./maxcoreConnector.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { maxcoreAudioBytes, maxcoreAudioSource, resolveMaxCoreAudioJob } from "./maxcoreAudioJob.js";
+import { validateGeneratedArtifact } from "./generatedArtifactValidation.js";
 import { assertPublicHttpUrl, safeFetchText } from "./safeUrlFetch.js";
 import { sharpImageService as _sharpImageService } from "./sharpImageService.js";
 import { storageService } from "./storageService.js";
@@ -143,18 +146,20 @@ async function mirrorRemoteAssetLocally(
 ): Promise<string> {
   if (rawUrl.startsWith("/api/storage/file/")) {
     const key = decodeURIComponent(rawUrl.slice("/api/storage/file/".length));
-    if (!userId || !key.startsWith(`users/${userId}/`)) {
+    if (!userId || !key.startsWith(`users/${userId}/`) || /[\\\0]/.test(key) ||
+        key.split("/").some(part => part === "." || part === "..")) {
       throw new AIUnavailableError("Generated media ownership mismatch");
     }
     return rawUrl;
   }
   const absolute = absolutizeMaxCoreUrl(rawUrl);
   if (!absolute) return "";
-  // SECURITY: only fetch (and only ever send the Bearer key to) the MaxCore
-  // origin. A non-MaxCore absolute URL in a MaxCore response must NOT be
-  // fetched server-side (SSRF pivot) nor receive our credentials — pass it
-  // through untouched for the client to resolve, matching prior behavior.
-  if (!isMaxCoreOrigin(absolute)) return absolute;
+  // Only the private generator or an owner-scoped durable receipt can supply
+  // media. External URLs and asset:// specifications are not verified assets.
+  if (!isMaxCoreOrigin(absolute) || !/^https?:/.test(absolute) ||
+      !isAllowedMaxcoreMediaPath(new URL(absolute).pathname)) {
+    throw new AIUnavailableError("multimodal media returned an untrusted asset URL");
+  }
   try {
     const res = await fetch(absolute, {
       headers: MAXCORE_KEY
@@ -164,14 +169,33 @@ async function mirrorRemoteAssetLocally(
           }
         : undefined,
       signal: AbortSignal.timeout(30_000),
+      redirect: "manual",
     });
     if (!res.ok) throw new Error(`MaxCore media download failed (${res.status})`);
-    const buffer = Buffer.from(await res.arrayBuffer());
+    const limit = (kind === "images" ? 20 : 100) * 1024 * 1024;
+    if (!res.body) throw new Error("MaxCore media response has no bytes");
+    const reader = res.body.getReader();
+    const chunks: Buffer[] = [];
+    let size = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > limit) throw new Error("MaxCore media exceeds the artifact limit");
+        chunks.push(Buffer.from(value));
+      }
+    } finally {
+      await reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+    }
+    const buffer = Buffer.concat(chunks);
     // MaxCore's SPA answers unknown paths with HTML 200 — magic bytes are the
     // only trustworthy validation.
     if (buffer.length < 128 || buffer.length > (kind === "images" ? 20 : 100) * 1024 * 1024 || !MEDIA_MAGIC[kind](buffer)) {
       throw new Error("MaxCore media response did not contain valid media bytes");
     }
+    await validateGeneratedArtifact(buffer, kind === "images" ? "image" : "audio");
 
     const baseName = path
       .basename(absolute.split("?")[0])
@@ -3115,6 +3139,8 @@ const imageWorker = {
         const slotId =
           typeof o.slotId === "string"
             ? o.slotId
+            : typeof o.slot === "string"
+              ? o.slot
             : slotsWithRules.length === 1 &&
                 typeof slotsWithRules[0].id === "string"
               ? slotsWithRules[0].id
@@ -3138,6 +3164,8 @@ const imageWorker = {
               : expectedSlot?.purpose,
           metadata: {
             ...(o.meta ?? {}),
+            ...(o.capability ? { capability: o.capability } : {}),
+            ...(o.validation ? { validation: o.validation } : {}),
             aspectRatio: o.aspectRatio ?? step.params!.recommendedAspectRatio,
             platformRules: platform ? getRules(platform).image : null,
           },
@@ -3145,10 +3173,18 @@ const imageWorker = {
       });
 
     try {
+      const normalized = inputs.normalized as Record<string, unknown> | undefined;
+      const semantic = normalized?.semantic as Record<string, unknown> | undefined;
+      const prompt = typeof semantic?.topic === "string" && semantic.topic.trim()
+        ? semantic.topic
+        : req.input.modality === "text" ? req.input.payload
+          : typeof normalized?.payload_summary === "string" ? normalized.payload_summary : undefined;
       const result = await maxcorePost("/generate/image", {
         step,
         inputs,
         slots: slotsWithRules,
+        prompt,
+        ...(req.input.modality === "text" ? { instruction: req.input.payload } : {}),
         constraints: req.constraints,
         artistProfileId: req.artistProfileId,
         intent: req.intent,
@@ -3159,7 +3195,14 @@ const imageWorker = {
           req.platforms.map((p) => [p, getRules(p).image]),
         ),
       }, 90_000, req.userId);
-      const allOutputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
+      const response = result as Record<string, unknown>;
+      if (response.kind === "specification" || response.success === false ||
+          ["failed", "error", "cancelled", "canceled"].includes(String(response.status))) {
+        throw new AIUnavailableError("multimodal image generation returned no artifact");
+      }
+      const allOutputs = Array.isArray(response.outputs) && response.outputs.length > 0 ? response.outputs
+        : slotsWithRules.length === 1 && typeof response.url === "string"
+          ? [response] : [];
       // MaxCore returns relative /uploads/images/... URLs — absolute-ize them
       // against the MaxCore origin and mirror locally so they serve same-origin.
       const outputs = (
@@ -3226,6 +3269,10 @@ const audioWorker = {
         // "music"/30s defaults.
         ...(genre ? { genre } : {}),
         duration,
+        platform,
+        prompt: req.input.modality === "text" ? req.input.payload
+          : typeof semantic?.topic === "string" ? semantic.topic : undefined,
+        ...(req.input.modality === "text" ? { instruction: req.input.payload } : {}),
         constraints: req.constraints,
         artistProfileId: req.artistProfileId,
         intent: req.intent,
@@ -3235,68 +3282,39 @@ const audioWorker = {
         platformRules: audioRules,
       }, 90_000, req.userId);
 
-      // Inline outputs (legacy shape) — use them directly.
-      let outputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
-
-      // Async job shape — MaxCore returns { job_id, status: "processing" }.
-      // Poll GET /api/audio-job/:id until done/error, bounded so the caller's
-      // HTTP request cannot hang indefinitely.
-      const jobId =
-        outputs.length === 0 && typeof (result as any)?.job_id === "string"
-          ? ((result as any).job_id as string)
-          : null;
-      if (jobId) {
-        const AUDIO_POLL_ATTEMPTS = 20;
-        const AUDIO_POLL_INTERVAL_MS = 3_000;
-        logger.info(
-          `[MultimodalGen] MaxCore audio job ${jobId} — polling /audio-job (max ${AUDIO_POLL_ATTEMPTS} × ${AUDIO_POLL_INTERVAL_MS / 1000}s)`,
-        );
-        for (let attempt = 0; attempt < AUDIO_POLL_ATTEMPTS; attempt++) {
-          await new Promise((r) => setTimeout(r, AUDIO_POLL_INTERVAL_MS));
-          let jobStatus: Record<string, unknown> | null = null;
-          try {
-            const pollRes = await fetch(`${MAXCORE_URL}/audio-job/${jobId}`, {
-              headers: MAXCORE_KEY
-                ? {
-                    Authorization: `Bearer ${MAXCORE_KEY}`,
-                    "X-MaxCore-User-Id": req.userId,
-                  }
-                : undefined,
-              signal: AbortSignal.timeout(15_000),
-            });
-            if ([401, 403, 404].includes(pollRes.status)) {
-              throw new AIUnavailableError("MaxCore audio job is unavailable");
+      // Preserve inline batches, or resolve the canonical synchronous/job
+      // response with the same owner-bound, deadline-limited transport used by
+      // the other audio entrypoints.
+      const response = result as Record<string, unknown>;
+      if (["failed", "error", "cancelled", "canceled", "timed_out", "timeout", "expired"].includes(
+        String(response.status).toLowerCase())) {
+        throw new AIUnavailableError("multimodal audio generation failed");
+      }
+      let outputs = Array.isArray(response.outputs) ? response.outputs : [];
+      if (outputs.length === 0) {
+        const resolved = await resolveMaxCoreAudioJob(response, req.userId, {
+          timeoutMs: 60_000, intervalMs: 3_000,
+        });
+        let url = maxcoreAudioSource(resolved);
+        if (!url) {
+          const encoded = maxcoreAudioBytes(resolved);
+          if (encoded && /^[A-Za-z0-9+/]*={0,2}$/.test(encoded)) {
+            const bytes = Buffer.from(encoded, "base64");
+            if (bytes.length < 128 || bytes.length > 100 * 1024 * 1024 || !MEDIA_MAGIC.audio(bytes)) {
+              throw new AIUnavailableError("multimodal audio generation returned invalid bytes");
             }
-            if (!pollRes.ok) continue;
-            const ct = pollRes.headers.get("content-type") ?? "";
-            if (!ct.includes("application/json")) continue;
-            jobStatus = (await pollRes.json()) as Record<string, unknown>;
-          } catch (pollError) {
-            if (pollError instanceof AIUnavailableError) throw pollError;
-            continue; // transient poll failure — retry
-          }
-          const st = String(jobStatus?.status ?? "");
-          if (st === "error" || st === "failed") {
-            throw new Error(
-              `MaxCore audio job ${jobId} failed: ${String(jobStatus?.error ?? "unknown")}`,
-            );
-          }
-          if ((st === "done" || st === "completed") && jobStatus?.url) {
-            outputs = [
-              {
-                url: String(jobStatus.url),
-                platform,
-                meta: { maxcoreJobId: jobId },
-              },
-            ];
-            break;
+            await validateGeneratedArtifact(bytes, "audio");
+            const contentType = sniffContentType("audio", bytes);
+            const extension = { "audio/wav": "wav", "audio/mpeg": "mp3",
+              "audio/ogg": "ogg", "audio/flac": "flac", "audio/mp4": "m4a" }[contentType] ?? "audio";
+            const key = await storageService.uploadGeneratedFile(bytes, req.userId,
+              "generated-audio", `mc_${randomUUID()}.${extension}`, contentType);
+            url = await storageService.getDownloadUrl(key);
           }
         }
-        if (outputs.length === 0) {
-          throw new Error(
-            `MaxCore audio job ${jobId} did not finish within the poll budget`,
-          );
-        }
+        if (url) outputs = [{ url, platform,
+          meta: { maxcoreJobId: resolved.job_id, capability: resolved.capability,
+            validation: resolved.validation } }];
       }
 
       if (outputs.length > 0) {

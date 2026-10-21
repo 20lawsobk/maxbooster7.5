@@ -1,0 +1,26 @@
+# Development and deployment share the repository entrypoints.
+entrypoint = "server/index.ts"
+modules = ["nodejs-22", "python-3.11"]
+run = "npm run dev"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix"]
+
+[deployment]
+# Replit executes this in its disposable publishing copy, never the editor.
+build = ["bash", "build.sh"]
+run = ["bash", "start.sh"]
+ignorePorts = false
+
+[env]
+NODE_ENV = "development"
+PORT = "5000"
+MAXCORE_LOCAL = "1"
+PDIM_FORCE_REMOTE = "0"
+MAXCORE_SERVING_RELEASE = "live-awareness"
+STRIPE_ALLOW_CATALOG_PROVISIONING = "0"
+
+# Child services stay on loopback and must not receive public mappings.
+[[ports]]
+localPort = 5000
+externalPort = 80

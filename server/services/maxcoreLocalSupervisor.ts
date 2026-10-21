@@ -16,11 +16,15 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { config } from "../config/index.js";
 import { runtimePorts, loopbackUrl } from "../config/ports.js";
 import { logger } from "../logger.js";
 import { computeWorkerSizing, computeHyperGpuSizing, type ComputeSizingResult } from "../computeSizing.js";
 import { isDevEnv } from "../lib/envHelpers.js";
+import { startNeonPostgresBridge } from "../lib/neonPostgresBridge.js";
+
+let databaseBridge: Awaited<ReturnType<typeof startNeonPostgresBridge>> | null = null;
 
 const MAXCORE_ROOT = path.resolve(process.cwd(), "external", "maxcore");
 const API_SERVER_DIR = path.join(MAXCORE_ROOT, "artifacts", "api-server");
@@ -351,9 +355,22 @@ async function attemptDevSelfRestore(): Promise<void> {
 async function spawnChild(): Promise<void> {
   if (shuttingDown || child) return;
 
+  // Imported Node pg and Python psycopg2 retain their native session and
+  // transaction semantics while Neon traffic uses verified TLS WebSockets.
+  // This also works on hosts where outbound PostgreSQL TCP is unavailable.
+  if (config.dbUrl && new URL(config.dbUrl).hostname.endsWith(".neon.tech") && !databaseBridge) {
+    databaseBridge = await startNeonPostgresBridge(config.dbUrl);
+    if (shuttingDown) {
+      databaseBridge.close();
+      databaseBridge = null;
+      return;
+    }
+  }
+  const childDbUrl = databaseBridge?.databaseUrl ?? config.dbUrl;
+
   // Non-fatal on failure: the child will crash, and the backoff loop retries
   // the bootstrap on the next spawn (e.g. DB briefly unreachable at boot).
-  await ensureMaxcoreSchema(config.dbUrl);
+  await ensureMaxcoreSchema(childDbUrl);
   if (shuttingDown || child) return;
 
   const { port, modelApiPort } = config.maxcoreLocal;
@@ -393,6 +410,8 @@ async function spawnChild(): Promise<void> {
       ...resourceEnv,
       NODE_ENV: production ? "production" : "development",
       MAXBOOSTER_EMBEDDED: "1",
+      MAXCORE_MODEL_STATE_DIR: process.env.MAXCORE_MODEL_STATE_DIR || path.join(
+        process.env.MAXCORE_PRIVATE_STATE_DIR || path.join(os.homedir(), ".local", "state", "maxcore"), "models"),
       // The child runs in artifacts/api-server; its cwd is not the directory
       // containing the parent application's packaged interpreter.
       ...(production ? {
@@ -417,7 +436,7 @@ async function spawnChild(): Promise<void> {
       // It shares the app database but is confined to its own `maxcore`
       // schema via search_path — its DDL (e.g. api_keys with varchar ids)
       // collides with Max Booster's own tables in `public` otherwise.
-      DATABASE_URL: withMaxcoreSchema(config.dbUrl),
+      DATABASE_URL: withMaxcoreSchema(childDbUrl),
     },
     stdio: ["ignore", "pipe", "pipe"],
     // Own process group so cluster workers / the Python child can be swept
@@ -703,6 +722,8 @@ export function stopMaxcoreLocal(): void {
     return;
   }
   shuttingDown = true;
+  databaseBridge?.close();
+  databaseBridge = null;
   // Invalidate the readiness cache immediately — nothing is ready once we
   // begin stopping, and a later re-start must not inherit a stale `true`.
   lastReady = false;

@@ -979,7 +979,12 @@ class ScriptAgent:
         prompt = _script_prompt(req)
 
         try:
-            output = self.model.generate(prompt, max_new_tokens=80, temperature=0.8, top_p=0.92,
+            max_new_tokens = 80  # Legacy checkpoint vocabulary measures words.
+            if getattr(self.model, "generation_token_unit", None) == "utf8_byte":
+                max_new_tokens = self.model.script_generation_budget(prompt, req.caption_length)
+                if type(max_new_tokens) is not int or not 1 <= max_new_tokens <= 1024:
+                    raise ValueError("Byte-model script generation budget is invalid")
+            output = self.model.generate(prompt, max_new_tokens=max_new_tokens, temperature=0.8, top_p=0.92,
                                          seed=sampling_seed(), snapshot_hash=snapshot_hash())
 
             # Garble check — the live model run IS the probe; no separate probe needed.

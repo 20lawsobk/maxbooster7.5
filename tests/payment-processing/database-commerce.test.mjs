@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import Stripe from "stripe";
+import { assertDedicatedTestBindings, createTestStripe, readWithTestPublishableKey } from "./helpers-stripe-test-transport.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import {
   applyCommerceMigrations,
@@ -76,7 +76,7 @@ async function ensureIdentity(id) {
 }
 
 async function seedListing(listingId, splits = [["seller-a", 70], ["seller-b", 30]]) {
-  await pool.query("INSERT INTO listings(id,metadata) VALUES($1,'{}') ON CONFLICT(id) DO NOTHING", [listingId]);
+  await pool.query("INSERT INTO listings(id,user_id,metadata) VALUES($1,$2,'{}') ON CONFLICT(id) DO NOTHING", [listingId, splits[0]?.[0] ?? "seller-a"]);
   for (const [index, [userId, percentage]] of splits.entries()) {
     await ensureIdentity(userId);
     await pool.query(
@@ -151,6 +151,45 @@ function sanitizedStripeError(error, secret, publishable, knownClientSecrets = [
   const message = redact(error?.message || "(no message)");
   return `Stripe error type=${redact(error?.type || error?.name || "(unknown)")}; code=${code}; param=${param}; message=${message}`;
 }
+
+test("durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments", async () => {
+  const { reserveCheckoutOperation, completeCheckoutOperation, findCheckoutOperation, checkoutIntentHash } =
+    await loadDatabaseSubject("server/services/stripeCheckoutOperations.ts");
+  await pool.query("CREATE TABLE checkout_receipt_probe (operation_id text PRIMARY KEY, session_id text NOT NULL)");
+  const input = {
+    scope: "storefront_checkout", userId: `checkout-buyer-${testRun}`,
+    requestKey: `checkout-command-${testRun}`,
+    intentHash: checkoutIntentHash({ listingIds: ["beat-checkout"], licenseType: "basic" }),
+    amountCents: 2500, currency: "usd", snapshot: { orderRows: [{ listingId: "beat-checkout", amountCents: 2500 }] },
+  };
+  const reservations = await Promise.all(Array.from({ length: 8 }, () => reserveCheckoutOperation(pool, input)));
+  const reservation = reservations[0];
+  assert.ok(reservations.every(row => row.id === reservation.id));
+  assert.equal((await pool.query("SELECT count(*)::int AS count FROM commerce_operations WHERE id=$1", [reservation.id])).rows[0].count, 1);
+  await assert.rejects(reserveCheckoutOperation(pool, { ...input, intentHash: "changed-cart" }), /different checkout/);
+  const result = { sessionId: "cs_disposable_receipt", url: "https://checkout.invalid/disposable" };
+  const completion = { id: reservation.id, scope: input.scope, userId: input.userId, result };
+  await assert.rejects(completeCheckoutOperation(pool, {
+    ...completion,
+    beforeCommit: async client => {
+      await client.query("INSERT INTO checkout_receipt_probe VALUES($1,$2)", [reservation.id, result.sessionId]);
+      throw new Error("order write failed after provider receipt");
+    },
+  }), /order write failed/);
+  assert.equal((await pool.query("SELECT count(*)::int AS count FROM checkout_receipt_probe")).rows[0].count, 0);
+  assert.equal((await findCheckoutOperation(pool, input)).state, "checkout_creating");
+  const receipts = await Promise.all(Array.from({ length: 8 }, () => completeCheckoutOperation(pool, {
+    ...completion,
+    beforeCommit: client => client.query("INSERT INTO checkout_receipt_probe VALUES($1,$2)", [reservation.id, result.sessionId]),
+  })));
+  assert.ok(receipts.every(receipt => receipt.sessionId === result.sessionId));
+  assert.equal((await pool.query("SELECT count(*)::int AS count FROM checkout_receipt_probe")).rows[0].count, 1);
+  assert.deepEqual((await reserveCheckoutOperation(pool, input)).result, result);
+  await assert.rejects(completeCheckoutOperation(pool, { ...completion, result: { ...result, sessionId: "cs_conflicting" } }), /conflicting provider receipt/);
+  const expired = await reserveCheckoutOperation(pool, { ...input, requestKey: `expired-command-${testRun}` });
+  await pool.query("UPDATE commerce_operations SET created_at=now()-interval '24 hours' WHERE id=$1", [expired.id]);
+  await assert.rejects(findCheckoutOperation(pool, { ...input, requestKey: `expired-command-${testRun}` }), /reconcile/);
+});
 
 test("PostgreSQL migrations and real CommerceRepository settlement/fulfillment", async (t) => {
   await t.test("applies additive 0022/0023 migrations and books one balanced, allocated order atomically", async () => {
@@ -559,8 +598,8 @@ test(
     let stage = "test-key validation";
     let failureKind = "verification-error";
     try {
-      assert.ok(secret?.startsWith("sk_test_") && publishable?.startsWith("pk_test_"), "test-only Stripe keys required");
-      stripe = new Stripe(secret, { maxNetworkRetries: 1, timeout: 15_000 });
+      assertDedicatedTestBindings();
+      stripe = createTestStripe(secret, { maxNetworkRetries: 1, timeout: 15_000 });
       stage = "test-mode balance and webhook endpoint inspection";
       const balance = await stripe.balance.retrieve();
       assert.equal(balance.livemode, false, "Stripe account must be in test mode");
@@ -617,7 +656,7 @@ test(
         "SELECT metadata,license_type FROM orders WHERE id=$1",
         [checkoutOrderId],
       );
-      assert.equal(frozenCheckout.rows[0].metadata.settlementTerms.version, 1);
+      assert.equal(frozenCheckout.rows[0].metadata.settlementTerms.version, 2);
       assert.equal(frozenCheckout.rows[0].metadata.sessionId, checkoutSessionId);
       assert.equal(frozenCheckout.rows[0].license_type, "basic");
       context.diagnostic("Production marketplace checkout succeeded in Stripe test mode; its open session is expired during cleanup.");
@@ -666,12 +705,8 @@ test(
       // Exercise publishable-key retrieval without ever printing the URL or
       // client_secret. The response body is held only in memory.
       stage = "publishable-key pairing";
-      const clientResponse = await fetch(
+      const clientResponse = await readWithTestPublishableKey(
         `https://api.stripe.com/v1/payment_intents/${encodeURIComponent(paymentIntent.id)}?client_secret=${encodeURIComponent(paymentIntent.client_secret)}`,
-        {
-          headers: { authorization: `Bearer ${publishable}` },
-          signal: AbortSignal.timeout(15_000),
-        },
       );
       const clientPaymentIntent = clientResponse.ok ? await clientResponse.json() : null;
       assert.equal(clientPaymentIntent?.id, paymentIntent.id, "publishable key must retrieve its paired test intent");

@@ -2,9 +2,13 @@
 import { randomBytes } from "crypto";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore } from "../lib/aiSource.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { storageService } from "./storageService.js";
 import { logger as mgLogger } from "../logger.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
+import { persistMaxCoreAudio } from "./aiAudioGeneratorService.js";
+import { resolveMaxCoreAudioJob, maxcoreAudioSource, maxcoreAudioBytes, type MaxCoreAudioJob } from "./maxcoreAudioJob.js";
+import { validateGeneratedArtifact } from "./generatedArtifactValidation.js";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -430,57 +434,47 @@ export async function synthesizeToWAV(
   notes: Note[],
   chords: Chord[],
   params: MusicParameters,
+  userId?: string,
 ): Promise<{ url: string; sizeBytes: number }> {
+  const owner = trustedMaxcoreOwner(userId);
+  if (!owner) throw new AIUnavailableError("music generation requires an authenticated owner");
+  const duration = ((params.structure ?? 8) * 4 * 60) / params.tempo;
+  const musicalKey = `${params.key} ${params.scale}`;
+  const instruction = JSON.stringify({ notes: notes.slice(0, 64), chords: chords.slice(0, 32),
+    bars: params.structure ?? 8, key: musicalKey, bpm: params.tempo,
+    mood: params.mood, genre: params.genre });
   // ── MaxCore primary audio synthesis ──────────────────────────────────────
-  const mcAudio = requireMaxCore(
-    await MaxCoreAIClient.generate<{
-      audioUrl?: string;
-      audio_url?: string;
-      audio_data?: string;
-      duration?: number;
-    }>("/api/generate/audio", {
+  const submitted = requireMaxCore(
+    await MaxCoreAIClient.generate<MaxCoreAudioJob>("/api/generate/audio", {
+      prompt: instruction,
+      instruction,
       notes: notes.slice(0, 64),
       chords: chords.slice(0, 32),
-      key: params.key,
+      key: musicalKey,
       scale: params.scale,
-      tempo: params.tempo,
+      bpm: params.tempo,
       mood: params.mood,
       genre: params.genre,
       bars: params.structure ?? 8,
-    }),
+      duration,
+      format: "wav",
+    }, owner),
     "music generation",
   );
-
-  const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
-  const audioData = mcAudio?.audio_data ?? null;
-
-  if (!(audioSrc || audioData)) {
-    throw new Error("MaxCore music generation returned no audio");
+  const mcAudio = await resolveMaxCoreAudioJob(submitted, owner);
+  const url = await persistMaxCoreAudio(maxcoreAudioSource(mcAudio) ?? null,
+    maxcoreAudioBytes(mcAudio) ?? null, {}, owner);
+  const prefix = "/api/storage/file/";
+  if (!url.startsWith(prefix)) throw new AIUnavailableError("music generation returned no durable audio");
+  const storageKey = decodeURIComponent(url.slice(prefix.length));
+  if (!storageKey.startsWith(`users/${owner}/`)) throw new AIUnavailableError("music generation ownership mismatch");
+  const buffer = await storageService.downloadFile(storageKey);
+  try {
+    await validateGeneratedArtifact(buffer, "audio");
+  } catch {
+    throw new AIUnavailableError("music generation returned unplayable audio");
   }
-
-  const filename = `melody_mc_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
-
-  let buffer: Buffer;
-  if (audioData) {
-    buffer = Buffer.from(audioData, "base64");
-  } else {
-    const resp = await fetch(audioSrc!);
-    if (!resp.ok) {
-      throw new Error(`MaxCore audio download failed: ${resp.status}`);
-    }
-    buffer = Buffer.from(await resp.arrayBuffer());
-  }
-
-  // PDIM-backed storage is the only durable/servable copy — no local write.
-  const storageKey = await storageService.uploadFile(
-    buffer,
-    "audio",
-    filename,
-    "audio/wav",
-  );
-  const url = await storageService.getDownloadUrl(storageKey);
-
-  mgLogger.info(`[MusicGen] MaxCore audio synthesized → ${filename}`);
+  mgLogger.info("[MusicGen] MaxCore audio synthesized and validated in owned storage");
   return { url, sizeBytes: buffer.length };
 }
 

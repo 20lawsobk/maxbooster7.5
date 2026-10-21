@@ -21,6 +21,7 @@ function method(name: string, database?: object) {
   const fail = () => { throw failure; };
   const db = database ?? new Proxy({}, { get: () => fail });
   const logger = { warn: vi.fn() };
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   const Subject = new Function("db", "dbRead", "logger", "listings", "users", "orders", "sql", "eq", "and", "desc", "asc",
     `${js}; return Subject;`)(db, db, logger, {}, {}, {}, sql, eq, and, desc, asc);
   return { instance: new Subject(), failure, logger };

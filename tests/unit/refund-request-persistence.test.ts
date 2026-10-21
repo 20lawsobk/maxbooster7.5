@@ -6,6 +6,7 @@ describe("refund request durability", () => {
   const start = source.indexOf("// Persist the refund request so admins can review it");
   const end = source.indexOf("    } catch (error: unknown)", start);
   const body = source.slice(start, end);
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   const execute = new Function("db", "workspaceAuditLog", "logger", "res",
     "userId", "refundRequestId", "refundRequestPayload", "invoiceId", "chargeId", "reason", "refundAmount",
     `return (async () => { ${body} })();`);

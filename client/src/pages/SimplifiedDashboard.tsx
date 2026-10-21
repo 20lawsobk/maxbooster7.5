@@ -5,9 +5,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  buildFullModeUpgradePayload,
   getOnboardingUserLevel,
-  parseOnboardingUpdateResponse,
   prefersSimplifiedDashboard,
 } from "@/lib/onboardingMode";
 import {
@@ -22,14 +20,23 @@ export default function SimplifiedDashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const onboardingData =
-    user?.onboardingData && typeof user.onboardingData === "object"
-      ? user.onboardingData
-      : {};
-
   const hasAccess = user ? hasDashboardPaidAccess(user) : false;
   const userLevel = getOnboardingUserLevel(user?.onboardingData);
   const preferSimplified = prefersSimplifiedDashboard(user?.onboardingData);
+
+  const { data: onboardingStatus } = useQuery<{ hasCompletedOnboarding: boolean }>({
+    queryKey: ["/api/auth/onboarding-status"],
+    enabled: Boolean(user) && hasAccess,
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/auth/onboarding-status");
+      const result = await readDashboardJson(response);
+      if (!result || typeof result !== "object" || !("hasCompletedOnboarding" in result) ||
+          typeof result.hasCompletedOnboarding !== "boolean") {
+        throw new Error("Invalid onboarding status response");
+      }
+      return { hasCompletedOnboarding: result.hasCompletedOnboarding };
+    },
+  });
 
   const upgradeToFullModeMutation = useMutation({
     mutationFn: async () => {
@@ -77,11 +84,11 @@ export default function SimplifiedDashboard() {
   useEffect(() => {
     if (
       onboardingStatus?.hasCompletedOnboarding &&
-      onboardingData.preferSimplifiedView === false
+      !preferSimplified
     ) {
       setLocation("/dashboard");
     }
-  }, [onboardingStatus, onboardingData.preferSimplifiedView, setLocation]);
+  }, [onboardingStatus, preferSimplified, setLocation]);
 
   if (isLoading) {
     return (
@@ -95,10 +102,12 @@ export default function SimplifiedDashboard() {
     );
   }
 
+  if (!user || !hasAccess) return null;
+
   return (
     <AppLayout>
       <SimplifiedDashboardComponent
-        onUpgrade={() => upgradeToFullModeMutation.mutate()}
+        onUpgrade={handleUpgrade}
         userLevel={userLevel}
         upgrading={upgradeToFullModeMutation.isPending}
       />

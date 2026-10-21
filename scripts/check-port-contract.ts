@@ -61,7 +61,11 @@ console.log(
 );
 
 // ── 3, 4 & 5. Cross-check against .replit's [[ports]] table ────────────────
-const replitPath = resolve(process.cwd(), ".replit");
+const workspaceMapping = resolve(process.cwd(), ".replit");
+// The packed image excludes platform/editor configuration. Build emits only
+// its public/private port tables as a dependency-free runtime contract.
+const replitPath = existsSync(workspaceMapping) ? workspaceMapping :
+  resolve(process.cwd(), "dist/deployment/ports.replit");
 if (!existsSync(replitPath)) {
   fail(`${replitPath} does not exist; cannot verify the public port mapping`);
 }

@@ -419,6 +419,7 @@ export class DistributedRateLimiter {
       res.setHeader("X-RateLimit-Remaining", result?.remaining);
 
       if (result?.limited) {
+        res.setHeader("Retry-After", Math.ceil(this.config.windowMs / 1000));
         if (this.config.onRateLimit) {
           this.config.onRateLimit(req, res);
         } else {

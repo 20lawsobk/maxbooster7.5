@@ -24,7 +24,7 @@ import {
   membershipTiers,
   customerMemberships,
 } from "@shared/schema";
-import Stripe from "stripe";
+import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
 import { getBaseUrl } from "../config/defaults";
 import { storageService } from "../services/storageService.js";
 import { db, pool } from "../db";
@@ -814,7 +814,7 @@ router.post("/subscribe/:tierId", async (req, res) => {
     }
 
     const stripeKey = env?.STRIPE_SECRET_KEY;
-    if (!stripeKey?.startsWith("sk_")) {
+    if (!hasStripeCredential(stripeKey)) {
       return res
         .status(503)
         .json({
@@ -822,7 +822,7 @@ router.post("/subscribe/:tierId", async (req, res) => {
         });
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
+    const stripe = createStripeClient(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
 
     let stripeCustomerId = (user as unknown as Record<string, unknown>)
       .stripeCustomerId as string | undefined;
@@ -1587,7 +1587,7 @@ router.post("/:id/checkout", async (req, res) => {
           error: "Payment processing is not available. Please contact support.",
         });
     }
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
+    const stripe = createStripeClient(stripeKey, { apiVersion: "2024-06-20" as unknown as "2026-02-25.clover" });
     if (reservation) {
       const resumed = await finishStorefrontCheckout(
         stripe,

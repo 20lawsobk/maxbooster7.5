@@ -56,8 +56,8 @@ import { distributedCache } from "../infrastructure/distributedCache.js";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import {
   getAwarenessContext,
-  buildMaxCoreAwarenessPayload,
 } from "./awarenessContext.js";
+import { prepareGenerationAwareness } from "./generationAwareness.js";
 import {
   normalizeHashtags,
   cleanMaxCoreContent,
@@ -987,6 +987,7 @@ class BeatMoneyLoopService {
       bass_weight?: string;
     };
   }> {
+    const ownerId = await this._requireAdminId();
     const base = getMaxcoreOriginOrDefault();
     const key = getMaxcoreGenerationKey();
     // Beat duration. Default 180 s (full-length sellable beat).
@@ -995,7 +996,7 @@ class BeatMoneyLoopService {
       300,
       Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 180),
     );
-    const body: Record<string, unknown> = {
+    let body: Record<string, unknown> = {
       ...(scan.genre !== undefined ? { genre: scan.genre } : {}),
       ...(scan.tempo !== undefined ? { bpm: scan.tempo } : {}),
       ...(scan.mood !== undefined ? { mood: scan.mood } : {}),
@@ -1013,18 +1014,16 @@ class BeatMoneyLoopService {
     if (scan.hooks.length > 0)
       body.context = scan.hooks.slice(0, 5).join("; ");
 
-    // Awareness cascade — live trend/CTA/emotional-trigger signals so this
-    // cycle's audio generation is conditioned like every other MaxCore call.
-    // This call bypasses MaxCoreAIClient via a raw fetch below, so it must
-    // build its own awareness payload rather than relying on the shared
-    // transport-layer injection. Best-effort: never blocks generation.
-    const awarenessPayload = await buildMaxCoreAwarenessPayload("music");
-    Object.assign(body, awarenessPayload);
+    // This legacy raw transport must use the same canonical live receipt as
+    // the shared client, and bind the existing administrative listing owner.
+    body = await prepareGenerationAwareness("/api/generate/audio", body);
+    Object.assign(body, { user_id: ownerId, userId: ownerId, owner_id: ownerId });
+    const awarenessPayload = body.awareness as Record<string, unknown>;
 
     // Bearer ONLY — MaxCore 401s the whole request when X-API-Key/X-Admin-Key
     // are present (see replit.md / maxcore-auth-header memory).
     const authHeaders: Record<string, string> = key
-      ? { Authorization: `Bearer ${key}` }
+      ? { Authorization: `Bearer ${key}`, "X-MaxCore-User-Id": ownerId }
       : {};
 
     logger.info(
@@ -1144,6 +1143,13 @@ class BeatMoneyLoopService {
       }
       const rawUrl = d.url ?? d.audio_url;
       if (rawUrl) {
+        if (rawUrl.startsWith("/api/storage/file/")) {
+          const storageKey = decodeURIComponent(rawUrl.slice("/api/storage/file/".length));
+          if (!storageKey.startsWith(`users/${ownerId}/`)) {
+            throw new Error("MaxCore returned audio owned by a different user");
+          }
+          return { wavBytes: validateWav(await storageService.downloadFile(storageKey)), ...extras };
+        }
         const abs = /^https?:\/\//i.test(rawUrl) ? rawUrl : `${base}${rawUrl}`;
         // SSRF / credential-leak guard: only download from the MaxCore origin.
         // Never forward the Bearer token to a host we don't control.
@@ -1225,7 +1231,7 @@ class BeatMoneyLoopService {
         const job = (await jr.json()) as typeof data & { error?: string };
         const st = (job.status ?? "").toLowerCase();
         logger.info(`[BeatMoneyLoop] mode=${mode} job ${data.job_id} status=${st}`);
-        if (st === "error" || st === "failed") {
+        if (["error", "failed", "cancelled", "canceled"].includes(st)) {
           throw new Error(
             `MaxCore audio job failed: ${(job.error ?? "unknown").slice(0, 200)}`,
           );

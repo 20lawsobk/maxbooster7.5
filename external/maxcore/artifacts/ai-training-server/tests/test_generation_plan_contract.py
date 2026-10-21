@@ -40,6 +40,11 @@ def handler_tools():
 
 
 class GenerationPlanTests(unittest.TestCase):
+    def setUp(self):
+        from ai_model.awareness import bind
+        from test_generation_route_bindings import snapshot
+        self.enterContext(bind(snapshot()))
+
     def test_immutable_nested_data_and_stable_hash(self):
         data = {"topic": "Real release", "facts": [{"title": "My Song"}],
                 "artist_context": {"name": "Artist"}, "provenance": {"source": "caller"},
@@ -102,10 +107,11 @@ class GenerationPlanTests(unittest.TestCase):
         async def forbidden(req):
             self.fail("Legacy generator must not consume dedicated controls")
         controls = {"duration_sec": 1.25, "sample_rate": 16000, "instrument": "piano"}
-        decorated = handler_tools()["_planned_generation"]("audio")(forbidden)
+        decorated = handler_tools()["_planned_generation"]("audio", dedicated_media=True)(forbidden)
         with patch("ai_model.generation.dedicated.render", return_value={
                 "url": "/uploads/test.wav", "validation": {
-                    "artifact_validated": True, "quality": "not_evaluated"}}) as render:
+                    "artifact_validated": True, "quality": "not_evaluated"},
+                "capability": {"renderer": "contract-renderer", "trained": False}}) as render:
             output = asyncio.run(decorated(SimpleNamespace(dedicated_controls=controls)))
         self.assertEqual(render.call_args.args[:2], ("audio", controls))
         self.assertTrue(output["validation"]["artifact_validated"])
@@ -179,7 +185,7 @@ class GenerationPlanTests(unittest.TestCase):
         scope["_request_job_owner"] = SimpleNamespace(get=lambda: None)
         async def forbidden(req):
             self.fail("Must not render without origin authentication")
-        decorated = scope["_planned_generation"]("audio")(forbidden)
+        decorated = scope["_planned_generation"]("audio", dedicated_media=True)(forbidden)
         with self.assertRaises(HTTPError) as raised:
             asyncio.run(decorated(SimpleNamespace(dedicated_controls={})))
         self.assertEqual(raised.exception.status_code, 403)

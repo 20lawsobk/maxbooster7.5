@@ -2,8 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,8 +101,7 @@ async function getResponseError(res: Response, fallback: string): Promise<Error>
 }
 
 export default function Contracts() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useRequireAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -593,10 +591,10 @@ export default function Contracts() {
     setCurrentOutcome("template_selected");
   };
 
-  if (!user) {
-    setLocation("/login");
-    return null;
+  if (authLoading) {
+    return <div role="status" aria-label="Loading account" className="p-6">Loading account…</div>;
   }
+  if (!user) return null;
 
   return (
     <AppLayout>

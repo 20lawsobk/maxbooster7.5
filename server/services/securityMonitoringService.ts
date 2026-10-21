@@ -280,8 +280,7 @@ export async function getPentestResults() {
   }
 
   if (
-    !process.env.STRIPE_SECRET_KEY ||
-    !process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+    !process.env.STRIPE_SECRET_KEY?.trim()
   ) {
     vulnerabilities?.push({
       id: "vuln-stripe-001",

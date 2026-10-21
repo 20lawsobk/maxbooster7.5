@@ -55,7 +55,8 @@ class GenericCandidateTests(unittest.TestCase):
                 self.assertTrue(adapter.inference_backend_exclusive)
                 self.assertFalse(adapter.training_backend_exclusive)
                 output = adapter.generate("A quartz disk", max_new_tokens=4)
-                self.assertTrue(output.startswith("A quartz disk"))
+                self.assertIsInstance(output, str)
+                self.assertFalse(output.startswith("A quartz disk"))
                 with self.assertRaisesRegex(ValueError, "no prompt truncation"):
                     adapter.generate("x" * 128, max_new_tokens=1)
                 with self.assertRaises(ValueError):

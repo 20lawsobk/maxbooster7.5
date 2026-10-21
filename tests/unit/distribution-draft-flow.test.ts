@@ -71,6 +71,7 @@ describe("distribution wizard draft persistence", () => {
     const apiRequest = vi.fn().mockResolvedValue({ json: async () => ({ id: "owned-release" }) });
     const persistMedia = vi.fn().mockRejectedValueOnce(new Error("Upload failed")).mockResolvedValue(undefined);
     const ref = { current: undefined as string | undefined };
+    // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
     const save = new Function("apiRequest", "releasePayload", "releaseIdRef", "setDraftReleaseId", "persistMedia", code)(
       apiRequest, () => payload, ref, vi.fn(), persistMedia,
     );

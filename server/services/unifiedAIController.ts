@@ -11,12 +11,9 @@
  * - Time Series Forecasting
  * - Model Registry Management
  *
- * Inference priority:
- *   1. MaxCore remote training server (AI_SERVER_URL / AI_SERVER_KEY)
- *   2. MaxCore Local Engine (always available — in-process, zero latency)
- *
- * MaxCore is the ONLY source. The local engine guarantees MaxCore always
- * succeeds — source label 'MaxCoreAI' on every response.
+ * MaxCore owns inference and public live awareness. Its shared HTTP client
+ * obtains canonical context before content generation; unavailable awareness
+ * or generation capability is an explicit dependency error.
  */
 
 import { logger } from "../logger.js";
@@ -347,7 +344,7 @@ export class UnifiedAIController {
 
       const ctx = options?.userContext;
 
-      // MaxCore is the ONLY source — always succeeds via remote + local engine
+      // MaxCore is the only generation source; no fabricated local fallback.
       //
       // ── Two-tier payload strategy ────────────────────────────────────────────
       // TIER 1 — topic (short subject keyword, ≤300 chars)

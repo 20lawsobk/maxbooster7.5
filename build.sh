@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
 phase_cleanup() {
 
 # ─── Purge agent/platform state from the build container ─────────────────────
@@ -18,37 +19,8 @@ phase_node() {
 # The Replit deployment (VM) container has a MINIMAL Nix store: bash, coreutils,
 # xz, tar — but ZERO nodejs.  The node binary must travel with the project files.
 # start.sh strategy [a] looks for .node_bin/node first — that is what we produce.
-echo "==> Bundling Node.js v22 → .node_bin/node ..."
-mkdir -p .node_bin
-if [ -f ".node_bin/node" ] && ".node_bin/node" --version >/dev/null 2>&1; then
-  echo "   Cached: $(.node_bin/node --version) ($(du -sh .node_bin/node | cut -f1))"
-else
-  _NODE_VER="22.22.0"
-  _NODE_ARCH="node-v${_NODE_VER}-linux-x64"
-  _NODE_URL="https://nodejs.org/dist/v${_NODE_VER}/${_NODE_ARCH}.tar.xz"
-  echo "   Downloading ${_NODE_ARCH} from nodejs.org..."
-  if curl -fsSL "$_NODE_URL" | \
-       tar -xJf - --strip-components=2 -C .node_bin "${_NODE_ARCH}/bin/node" 2>/dev/null; then
-    chmod +x .node_bin/node
-    if ".node_bin/node" --version >/dev/null 2>&1; then
-      echo "   ✅ $(.node_bin/node --version) → .node_bin/node ($(du -sh .node_bin/node | cut -f1))"
-    else
-      # NixOS glibc: try patchelf to fix ELF interpreter path
-      echo "   Node binary exists but won't run — attempting patchelf fix..."
-      if command -v patchelf >/dev/null 2>&1; then
-        _INTERP=$(find /nix/store -name 'ld-linux-x86-64.so.2' 2>/dev/null | head -1 || echo "")
-        [ -n "$_INTERP" ] && patchelf --set-interpreter "$_INTERP" .node_bin/node 2>/dev/null || true
-        ".node_bin/node" --version >/dev/null 2>&1 \
-          && echo "   ✅ patchelf fix applied → $(.node_bin/node --version)" \
-          || echo "   ERROR: patchelf failed — deployment may fail"
-      else
-        echo "   ERROR: patchelf not available — deployment may fail"
-      fi
-    fi
-  else
-    echo "   ERROR: Download/extraction failed — deployment will fail"
-  fi
-fi
+bash script/deployment/provision-node.sh
+
 echo "==> Build env: node $(node --version 2>/dev/null || echo n/a)  npm $(npm --version 2>/dev/null || echo n/a)"
 }
 

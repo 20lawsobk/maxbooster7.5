@@ -1,6 +1,6 @@
 """Candidate-only registry. No writes to legacy weights or running-server state.
 
-Quality selection requires an operator-installed trust policy and an independent
+Traditional-corpus quality selection requires an operator-installed trust policy and an independent
 RSA/ECDSA review signature verified by openssl, not a caller approval boolean.
 Trust policy is an OS/operator trust boundary; this cannot defend against an
 attacker who controls that policy, reviewer private keys, or this Python code.
@@ -19,6 +19,8 @@ signature covers the exact JSON bytes. Private keys never enter this codebase.
 No real trust policy, review, acceptance score or signature is supplied here.
 The default scope checks both inference and training; no policy weakening is
 needed for manual-digital-v1 training plus manual transformer inference.
+Certified public scanner observations have a separate signature-free numerical
+serving policy (public_live_eligibility); this does not certify general quality.
 An inference-only policy must explicitly declare scope "inference"; it does not
 retroactively claim older torch-autograd training was exclusive.
 """
@@ -38,6 +40,7 @@ from ai_model.gpu.candidate_training import array
 from ai_model.model.candidate_model import CandidateModel
 from ai_model.training.candidate_corpus import build_manifest, digest, smoke_records
 from ai_model.training.candidate_lifecycle import ROOT, CANDIDATES, sha256
+from ai_model.training.public_curriculum import PEAK_ARCHITECTURE, PEAK_POLICY, peak_stream, validate_peak_record
 
 REGISTRY = CANDIDATES.parent / "candidate_registry"
 
@@ -55,8 +58,41 @@ def canonical_hash(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=True).encode()).hexdigest()
 
 
+def resolve_public_run(reference, candidates):
+    """Resolve immutable historical identities inside the current state root only.
+
+    Older checkpoints bind an absolute run path. Its basename is the portable
+    run identity; never inspect that historical filesystem location. Callers
+    still verify the bound digest and the complete certified ancestor chain.
+    """
+    if not isinstance(reference, str) or not reference or "\\" in reference:
+        raise ValueError("Invalid public run identity")
+    value = Path(reference)
+    if ".." in value.parts or (not value.is_absolute() and len(value.parts) != 1):
+        raise ValueError("Invalid public run identity")
+    name = value.name
+    if not name.startswith("live-") or name in {".", ".."}:
+        raise ValueError("Invalid public run identity")
+    root = Path(candidates)
+    if root.resolve() != root.absolute():
+        raise ValueError("Public candidate root cannot contain symlinks")
+    local = root / name
+    if local.is_symlink() or local.resolve().parent != root.resolve():
+        raise ValueError("Public run cannot escape candidate root")
+    return local
+
+
 def verify_bundle(run):
-    run = Path(run).resolve()
+    run = Path(run)
+    if run.resolve() != run.absolute():
+        raise ValueError("Candidate bundle cannot contain symlink ancestors")
+    run = run.resolve()
+    marker_root = run.parent.parent / "live_candidate_admissions" / run.name
+    for directory in (run, marker_root):
+        if directory.resolve() != directory.absolute():
+            raise ValueError("Candidate evidence cannot contain symlinks")
+        if directory.exists() and any(path.is_symlink() for path in directory.iterdir()):
+            raise ValueError("Candidate evidence cannot contain symlinks")
     if (run / "FAILED").exists():
         raise ValueError("Failed training run")
     report = json.loads((run / "report.json").read_text())
@@ -92,6 +128,119 @@ def verify_bundle(run):
             report.get("smoke_only") != manifest.get("smoke_only") or
             report.get("architecture") != data.get("architecture")):
         raise ValueError("Checkpoint/data/report bindings mismatch")
+    if data.get("learning_generation", 0) != report.get("learning_generation", 0):
+        raise ValueError("Checkpoint learning-generation binding mismatch")
+    if data.get("training_parent") != report.get("training_parent"):
+        raise ValueError("Checkpoint training-parent binding mismatch")
+    coverage = report.get("coverage")
+    curriculum = report.get("curriculum")
+    if data.get("curriculum") != curriculum:
+        raise ValueError("Checkpoint curriculum binding mismatch")
+    texts = [row["text"] for row in manifest["records"]]
+    if curriculum is not None:
+        from .public_curriculum import training_texts
+        texts, expected_curriculum = training_texts(manifest["records"])
+        if (report.get("learning_stream") is None or curriculum != expected_curriculum):
+            raise ValueError("Source-derived curriculum does not match public source text")
+    if data.get("coverage") != coverage:
+        raise ValueError("Checkpoint coverage binding mismatch")
+    if coverage is not None:
+        if not isinstance(coverage, dict):
+            raise ValueError("Invalid training coverage metadata")
+        steps, context = report.get("steps"), report.get("context_tokens")
+        start = coverage.get("start_step")
+        if (coverage.get("schema") != 1 or coverage.get("policy") != "rolling-chunk-cursor-v1"
+                or coverage.get("manifest_sha256") != fingerprint
+                or type(start) is not int or start < 0
+                or type(steps) is not int or not 1 <= steps <= 64
+                or type(context) is not int or context < 128
+                or data.get("steps") != steps or data.get("context_tokens") != context
+                or data.get("architecture") not in {"byte-causal-transformer-v1", PEAK_ARCHITECTURE}):
+            raise ValueError("Invalid training coverage metadata")
+        # Byte tokenizer plus explicit BOS/EOS; every packed target belongs to
+        # exactly one chunk. Counts are derived, not trusted report telemetry.
+        target_total = sum(len(text.encode("utf-8")) + 2 for text in texts) - 1
+        chunk_count = (target_total + context - 1) // context
+        expected_indices = [(start + step) % chunk_count for step in range(steps)]
+        expected_counts = [min(context, target_total - index * context)
+                           for index in expected_indices]
+        if (coverage.get("end_step") != start + steps
+                or coverage.get("chunk_indices") != expected_indices
+                or coverage.get("target_counts") != expected_counts
+                or report.get("corpus_chunks") != chunk_count
+                or report.get("chunks_seen") != len(set(expected_indices))
+                or report.get("trained_tokens") != sum(expected_counts)
+                or report.get("training_tokens") != expected_counts[-1]):
+            raise ValueError("Training coverage measurements do not match targets")
+        expected_start = report.get("training_parent", {}).get("coverage_steps", 0) if report.get("training_parent") else 0
+        if start != expected_start:
+            raise ValueError("Training coverage does not continue parent cursor")
+    parent = report.get("training_parent")
+    generation = report.get("learning_generation", 0)
+    if type(generation) is not int or generation < 0 or (parent is None and generation != 0):
+        raise ValueError("Invalid cumulative learning generation")
+    stream = report.get("learning_stream")
+    if data.get("learning_stream") != stream or data.get("model_config") != report.get("model_config"):
+        raise ValueError("Checkpoint public learning-stream binding mismatch")
+    if stream is not None:
+        if (not isinstance(stream, dict) or stream != peak_stream(stream.get("model_config"))
+                or data.get("architecture") != PEAK_ARCHITECTURE
+                or data.get("model_config") != stream["model_config"]):
+            raise ValueError("Invalid public peak-content architecture migration")
+        for record in manifest["records"]:
+            validate_peak_record(record)
+        optimizer = data.get("optimizer_state")
+        if (not isinstance(optimizer, dict) or type(optimizer.get("step")) is not int
+                or optimizer["step"] < 1 or data.get("optimizer", {}).get("type") != "candidate-dispatched-adamw"):
+            raise ValueError("Public peak-content optimizer evidence missing")
+        from .public_resume import optimizer_digest
+        if (report.get("optimizer_sha256") != optimizer_digest(optimizer)
+                or report.get("initial_optimizer_sha256") != data.get("initial_optimizer_sha256")):
+            raise ValueError("Public peak-content optimizer binding mismatch")
+        if parent is None and (optimizer["step"] != report["steps"]
+                               or data["initial_optimizer_sha256"] != optimizer_digest({})):
+            raise ValueError("New public peak-content stream has invalid optimizer origin")
+        for kind in ("m", "v"):
+            moments = optimizer.get(kind, {})
+            if set(moments) != set(data["state_dict"]):
+                raise ValueError("Incomplete public peak-content optimizer state")
+            for name, value in moments.items():
+                values = array(value)
+                if (values.shape != array(data["state_dict"][name]).shape
+                        or not torch.isfinite(value).all()
+                        or (kind == "v" and (value < 0).any())):
+                    raise ValueError("Invalid public peak-content optimizer state")
+    elif data.get("architecture") == PEAK_ARCHITECTURE:
+        raise ValueError("Public-content architecture requires explicit peak learning stream")
+    if parent is not None:
+        parent_run = resolve_public_run(parent["run"], run.parent)
+        if (parent.get("policy") != PUBLIC_LIVE_POLICY or parent_run.is_symlink()
+                or parent_run.resolve().parent != run.parent or parent_run == run
+                or sha256(parent_run / "candidate.pt") != parent.get("checkpoint_sha256")
+                or not (run.parent.parent / "live_candidate_admissions" / parent_run.name / "certified.json").is_file()):
+            raise ValueError("Invalid public learning-parent checkpoint")
+        from .public_resume import weights_digest
+        parent_decision = public_live_eligibility(parent_run)
+        if (not parent_decision["eligible"]
+                or parent_decision["fingerprints"]["checkpoint_sha256"] != parent["checkpoint_sha256"]):
+            raise ValueError("Learning ancestor is no longer certified public data")
+        parent_report = json.loads((parent_run / "report.json").read_text())
+        if parent.get("coverage_steps", 0) != parent_report.get("coverage", {}).get("end_step", 0):
+            raise ValueError("Learning parent coverage cursor mismatch")
+        if (parent.get("learning_generation") != parent_report.get("learning_generation", 0)
+                or report.get("learning_generation") != parent["learning_generation"] + 1):
+            raise ValueError("Cumulative learning generation does not match parent")
+        parent_data = torch.load(parent_run / "candidate.pt", map_location="cpu", weights_only=True)
+        if any(parent_data.get(key) != data.get(key)
+               for key in ("architecture", "context_tokens", "training_backend_scope", "model_config", "learning_stream")):
+            raise ValueError("Public parent configuration changed without explicit migration")
+        if stream and data["optimizer_state"]["step"] != parent_data["optimizer_state"]["step"] + report["steps"]:
+            raise ValueError("Public peak-content optimizer step did not continue parent")
+        if stream and data["initial_optimizer_sha256"] != optimizer_digest(parent_data["optimizer_state"]):
+            raise ValueError("Public peak-content optimizer did not resume parent moments")
+        if (report.get("initial_weights_sha256") != weights_digest(parent_data["state_dict"])
+                or data.get("initial_weights_sha256") != report.get("initial_weights_sha256")):
+            raise ValueError("Resumed training weights do not match public parent")
     if data.get("holdout_sha256") != report.get("holdout_sha256"):
         raise ValueError("Checkpoint holdout binding mismatch")
     if data.get("training_backend_scope") != report.get("training_backend_scope"):
@@ -105,6 +254,8 @@ def verify_bundle(run):
     if any(record.get("provenance_type") == "maxcore_live_awareness_observation"
            for record in manifest.get("records", [])):
         input_document = json.loads((run / "input.manifest.json").read_text())
+        if input_document.get("learning_stream") != stream:
+            raise ValueError("Public learning-stream input binding mismatch")
         input_records = input_document.get("records") if isinstance(input_document, dict) else None
         if (not isinstance(input_records, list) or not input_records
                 or type(input_document.get("schema")) is not int
@@ -138,6 +289,8 @@ def verify_bundle(run):
                 )
             ],
         }
+        if stream:
+            identity["policy"] = PEAK_POLICY
         observed_set_id = hashlib.sha256(json.dumps(
             identity, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
         ).encode()).hexdigest()
@@ -183,13 +336,16 @@ def verify_bundle(run):
     if report.get("gemm_backward_calls", 0) <= 0 or not report.get("changed_parameters"):
         raise ValueError("No measured training updates")
     model = CandidateModel.load_candidate(checkpoint)
+    if report.get("context_tokens", 128) != getattr(model, "context", 128):
+        raise ValueError("Candidate context does not match its training report")
     if not all(model.backend.dispatch("finite", array(p)) for p in model.parameters()):
         raise ValueError("Nonfinite checkpoint")
     with torch.no_grad():
-        if model.architecture == "byte-causal-transformer-v1":
+        if model.architecture in {"byte-causal-transformer-v1", PEAK_ARCHITECTURE}:
             ids = model.backend.dispatch("token_array", [[257]])
             weights = {name: array(p) for name, p in model.named_parameters()}
-            result, _ = model.backend.dispatch("transformer_forward", weights, ids)
+            result, _ = model.backend.dispatch("transformer_forward", weights, ids,
+                                               getattr(model, "model_config", None))
             result = result[:, -1, :]
         else:
             ids = torch.tensor([[257] + [256] * (model.context - 1)])
@@ -297,6 +453,131 @@ def eligibility(run, evaluation=None, protocol=None, review=None, signature=None
             "promotion_performed": False}
 
 
+PUBLIC_LIVE_POLICY = "certified-public-live-v1"
+
+
+from contextvars import ContextVar
+from functools import wraps
+_learning_ancestry = ContextVar("learning_ancestry", default=None)
+
+
+def _bounded_public_ancestry(function):
+    """Verify oldest-to-newest once, with no Python recursion or lifetime cap."""
+    @wraps(function)
+    def checked(run):
+        identity = str(Path(run).absolute())
+        cache = _learning_ancestry.get()
+        def rejected(reason):
+            return {"eligible": False, "reasons": [reason], "fingerprints": {},
+                    "promotion_performed": False, "quality_claim": "not_evaluated"}
+        if cache is not None:
+            return cache.get(identity, rejected("Cyclic or unverified public learning ancestry"))
+        token = _learning_ancestry.set({})
+        cache = _learning_ancestry.get()
+        try:
+            maximum = int(os.environ.get("MAXCORE_ANCESTRY_VALIDATION_MAX_RUNS", "10000"))
+            if not 128 <= maximum <= 100000:
+                raise ValueError("Invalid public ancestry validation resource budget")
+            chain, seen = [], set()
+            current = Path(run).absolute()
+            while True:
+                key = str(current)
+                if key in seen:
+                    raise ValueError("Cyclic public learning ancestry")
+                if len(chain) >= maximum:
+                    raise ValueError("Public ancestry validation resource budget exceeded")
+                if current.resolve() != current or (current / "report.json").is_symlink():
+                    raise ValueError("Public learning ancestry cannot contain symlinks")
+                report_file = current / "report.json"
+                if report_file.stat().st_size > 2_000_000:
+                    raise ValueError("Oversized public learning ancestor report")
+                report = json.loads(report_file.read_bytes())
+                seen.add(key)
+                chain.append(current)
+                parent = report.get("training_parent")
+                if parent is None:
+                    break
+                current = resolve_public_run(parent["run"], current.parent).absolute()
+            for ancestor in reversed(chain):
+                cache[str(ancestor)] = function(ancestor)
+            return cache[identity]
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as exc:
+            return rejected(str(exc))
+        finally:
+            _learning_ancestry.reset(token)
+    return checked
+
+
+@_bounded_public_ancestry
+def public_live_eligibility(run):
+    """Scanner-certified public observations need no human review signature.
+
+    This is numerical/provenance validation, never a general quality score.
+    Traditional, mixed, private and smoke corpora cannot enter this path.
+    """
+    reasons, fingerprints = [], {}
+    try:
+        fingerprints, report, manifest = verify_bundle(run)
+        records = manifest.get("records", [])
+        if (not Path(run).name.startswith("live-") or manifest.get("smoke_only") is not False
+                or not records or any(row.get("provenance_type") != "maxcore_live_awareness_observation"
+                    or row.get("private") is True
+                    or row.get("live_provenance", {}).get("access", "public") != "public"
+                    for row in records)):
+            raise ValueError("Public live selection requires only certified scanner observations")
+        if (report.get("architecture") not in {"byte-causal-transformer-v1", PEAK_ARCHITECTURE}
+                or report.get("training_backend_scope") != "manual-digital-v1"):
+            raise ValueError("Public live serving requires exclusive inference and training backends")
+        from urllib.parse import urlsplit
+        import ipaddress
+        for row in records:
+            url = urlsplit(row["source"])
+            host = (url.hostname or "").rstrip(".").lower()
+            if (url.scheme not in {"http", "https"} or not host or url.username or url.password
+                    or host == "localhost" or host.endswith((".localhost", ".local", ".internal"))):
+                raise ValueError("Live observation must cite a credential-free public HTTP source")
+            try:
+                address = ipaddress.ip_address(host)
+            except ValueError:
+                if "." not in host:
+                    raise ValueError("Live observation source is not public")
+            else:
+                if not address.is_global:
+                    raise ValueError("Live observation source is not public")
+        # verify_bundle checks parent certification, privacy screening, exact
+        # observation identity, finite measured training and inference logits.
+        fingerprints.update(serving_policy=PUBLIC_LIVE_POLICY,
+            observation_set_id=records[0]["live_provenance"]["observation_set_id"],
+            observed_at=max(row["live_provenance"]["observed_at"] for row in records))
+        if report.get("learning_stream"):
+            fingerprints.update(learning_policy=report["learning_stream"]["policy"],
+                                model_config=report["model_config"],
+                                learning_generation=report.get("learning_generation", 0))
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as exc:
+        reasons.append(str(exc))
+    return {"eligible": not reasons, "reasons": reasons, "fingerprints": fingerprints,
+            "promotion_performed": False, "quality_claim": "not_evaluated"}
+
+
+def selected_eligibility(pointer):
+    policy = pointer.get("eligibility_policy", "signed-review-v1")
+    if policy == PUBLIC_LIVE_POLICY:
+        if set(pointer["evidence"]) != {"run"}:
+            raise ValueError("Invalid public live selection evidence")
+        reference = pointer["evidence"]["run"]
+        local = resolve_public_run(reference, REGISTRY.parent / "candidate_runs")
+        # Selection is mutable runtime state, unlike ancestry in an immutable
+        # checkpoint. A relocated installation must reselect locally, ensuring
+        # serving capability is probed again before writing its new pointer.
+        if Path(reference).absolute() != local.absolute():
+            return {"eligible": False, "reasons": ["Selected candidate requires local reselection"],
+                    "fingerprints": {}, "promotion_performed": False}
+        return public_live_eligibility(local)
+    if policy != "signed-review-v1":
+        raise ValueError("Unknown model selection policy")
+    return eligibility(**pointer["evidence"])
+
+
 def register_runtime(run):
     entry, _, _ = verify_bundle(run)
     safe_registry()
@@ -309,8 +590,9 @@ def register_runtime(run):
     return entry
 
 
-def select_candidate(**evidence):
-    decision = eligibility(**evidence)
+def select_candidate(*, live_awareness=False, **evidence):
+    validate = public_live_eligibility if live_awareness else eligibility
+    decision = validate(**evidence)
     if not decision["eligible"]:
         raise ValueError("; ".join(decision["reasons"]))
     register_runtime(evidence["run"])
@@ -318,14 +600,15 @@ def select_candidate(**evidence):
     safe_registry()
     with (REGISTRY / ".selection.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        decision = eligibility(**evidence)
+        decision = validate(**evidence)
         if not decision["eligible"]:
             raise ValueError("Evidence changed before atomic selection")
         pointer = REGISTRY / "selected.json"
         previous = json.loads(pointer.read_text()) if pointer.exists() else None
         selected = {"schema": 1, "scope": "candidate-only-not-production",
                     "evidence": {k: str(Path(v).resolve()) for k, v in evidence.items()},
-                    "fingerprints": decision["fingerprints"], "previous": previous}
+                    "fingerprints": decision["fingerprints"], "previous": previous,
+                    "eligibility_policy": PUBLIC_LIVE_POLICY if live_awareness else "signed-review-v1"}
         fd, temporary = tempfile.mkstemp(prefix=".selection-", dir=REGISTRY)
         try:
             with os.fdopen(fd, "w") as stream:
@@ -348,16 +631,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("runtime-check", "register", "eligibility", "select"))
     parser.add_argument("--run", required=True)
+    parser.add_argument("--live-awareness", action="store_true")
     for flag in ("evaluation", "protocol", "review", "signature"):
         parser.add_argument("--" + flag)
     args = vars(parser.parse_args())
     action = args.pop("action")
+    live = args.pop("live_awareness")
+    if live:
+        args = {"run": args["run"]}
     if action == "runtime-check":
         result = verify_bundle(args["run"])[0]
     elif action == "register":
         result = register_runtime(args["run"])
     else:
-        result = (eligibility if action == "eligibility" else select_candidate)(**args)
+        result = ((public_live_eligibility if live else eligibility)(**args) if action == "eligibility"
+                  else select_candidate(live_awareness=live, **args))
     print(json.dumps(result, indent=2))
 
 

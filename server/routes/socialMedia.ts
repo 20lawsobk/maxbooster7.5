@@ -32,6 +32,8 @@ import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
+import { generatedImageUrl, persistGeneratedImage } from "../services/generatedImageAsset.js";
 import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
 import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
 import { generateSocialDirect } from "../services/maxcoreDomainAdapter.js";
@@ -499,6 +501,44 @@ router.post(
   },
 );
 
+// Batch publish: immediately publish multiple posts
+router.post(
+  "/calendar/batch/publish",
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { postIds } = req.body as { postIds: string[] };
+
+      if (!Array.isArray(postIds) || postIds?.length === 0) {
+        return res
+          .status(400)
+          .json({ error: "postIds must be a non-empty array" });
+      }
+
+      const existing = await db
+        .select()
+        .from(posts)
+        .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
+
+      if (existing?.length === 0) {
+        return res.status(404).json({ error: "No matching posts found" });
+      }
+
+      // As with the single-post route, do not claim delivery by changing a
+      // terminal status before a platform API has accepted each post.
+      return res.status(409).json({
+        error:
+          "Direct calendar publishing is unavailable until a platform delivery is configured",
+        postIds: existing.map((post) => post.id),
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Batch publish error");
+      res.status(500).json({ error: "Failed to batch publish posts" });
+    }
+  },
+);
+
 router.post(
   "/calendar/:postId/publish",
   requireAuth,
@@ -941,44 +981,6 @@ router.patch(
     } catch (error) {
       logger.warn({ err: error }, "Batch calendar update error");
       res.status(500).json({ error: "Failed to batch update posts" });
-    }
-  },
-);
-
-// Batch publish: immediately publish multiple posts
-router.post(
-  "/calendar/batch/publish",
-  requireAuth,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { postIds } = req.body as { postIds: string[] };
-
-      if (!Array.isArray(postIds) || postIds?.length === 0) {
-        return res
-          .status(400)
-          .json({ error: "postIds must be a non-empty array" });
-      }
-
-      const existing = await db
-        .select()
-        .from(posts)
-        .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
-
-      if (existing?.length === 0) {
-        return res.status(404).json({ error: "No matching posts found" });
-      }
-
-      // As with the single-post route, do not claim delivery by changing a
-      // terminal status before a platform API has accepted each post.
-      return res.status(409).json({
-        error:
-          "Direct calendar publishing is unavailable until a platform delivery is configured",
-        postIds: existing.map((post) => post.id),
-      });
-    } catch (error) {
-      logger.warn({ err: error }, "Batch publish error");
-      res.status(500).json({ error: "Failed to batch publish posts" });
     }
   },
 );
@@ -5575,6 +5577,7 @@ router.post(
         topic,
         platform,
         tone,
+        style,
         
         artist_name,
         
@@ -5636,7 +5639,8 @@ router.post(
       type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
       const imgData = await MaxCoreAIClient.infer<McImgResp>("/api/generate/image", {
         prompt: enrichedTopic || topic,
-        style: resolvedTone,
+        tone: resolvedTone,
+        style: typeof style === "string" ? style : undefined,
         platform: resolvedPlatform,
         genre: genre || "",
         intent,
@@ -5644,55 +5648,13 @@ router.post(
         context,
         awareness,
       });
-      const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
-      // MaxCore may return relative paths like /uploads/images/img_xxx.png —
-      // make them absolute so the browser can load them.
-      const imageUrl =
-        raw && /^https?:\/\//i.test(raw)
-          ? raw
-          : raw
-            ? `${getMaxcoreOriginOrDefault()}${raw.startsWith("/") ? "" : "/"}${raw}`
-            : null;
-      if (!imageUrl) {
-        throw new AIUnavailableError(
-          "Image generation did not return an image URL",
-        );
-      }
-
-      // ── Build visual spec for the generated image ────────────────────────
-      const toneColorMap: Record<string, string[]> = {
-        energetic: ["#ff6b35", "#f7c59f", "#1a1a2e", "#ffffff"],
-        chill: ["#a8dadc", "#457b9d", "#1d3557", "#f1faee"],
-        professional: ["#2b2d42", "#8d99ae", "#edf2f4", "#ef233c"],
-        playful: ["#ffbe0b", "#fb5607", "#ff006e", "#8338ec"],
-        nostalgic: ["#d4a373", "#ccd5ae", "#e9edc9", "#fefae0"],
-      };
-      const colorPalette = toneColorMap[resolvedTone] ?? toneColorMap.energetic;
-
-      const visualSpec = getVisualSpec(resolvedPlatform, "short_video", colorPalette);
-
-      const specData = {
-        ...visualSpec,
-        topic: enrichedTopic || topic,
-        platform: resolvedPlatform,
-        tone: resolvedTone,
-        artist: resolvedArtist || "",
-        track: resolvedTrack || "",
-        genre: genre || "",
-        keywords: Array.isArray(keywords) ? keywords : [],
-        description: description || urlDescription || "",
-        source: "MaxCoreAI",
-      };
-
-      res.json({
-        success: true,
-        visual_spec: specData,
-        image_url: imageUrl,
-        ...(imageUrl ? { image_url: imageUrl } : {}),
-        ...specData,
-      });
+      const raw = generatedImageUrl(imgData);
+      if (!raw) throw new AIUnavailableError("Image generation did not return an image file");
+      const media = await persistGeneratedImage(raw, req.user!.id);
+      res.json({ success: true, ...media, image_url: media.url,
+        platform: resolvedPlatform, tone: resolvedTone });
     } catch (error) {
-      if (error instanceof AIUnavailableError) {
+      if (error instanceof AIUnavailableError || error instanceof MaxCoreControlError && error.status === 503) {
         return res.status(503).json({
           success: false,
           code: error.code,

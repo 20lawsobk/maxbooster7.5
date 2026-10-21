@@ -89,8 +89,8 @@ class FailClosedCandidateAdapter:
 
 
 def load_selected_release(mode="legacy", *, registry=None, factory=None):
-    if mode not in {"legacy", "reviewed-candidate"}:
-        raise ValueError("MAXCORE_SERVING_RELEASE must be legacy or reviewed-candidate")
+    if mode not in {"legacy", "reviewed-candidate", "live-awareness"}:
+        raise ValueError("MAXCORE_SERVING_RELEASE must be legacy, reviewed-candidate or live-awareness")
     status = {"requested": mode, "active": None, "candidate_quality": "not_selected",
               "backend_exclusive": "not_verified"}
     if mode == "legacy":
@@ -107,11 +107,16 @@ def load_selected_release(mode="legacy", *, registry=None, factory=None):
     selected = json.loads(raw)
     if selected.get("schema") != 1 or selected.get("scope") != "candidate-only-not-production":
         raise ValueError("Invalid selected candidate registry schema/scope")
+    public_live = selected.get("eligibility_policy") == "certified-public-live-v1"
+    if mode == "reviewed-candidate" and public_live:
+        raise ValueError("Reviewed-candidate mode requires signed review selection")
+    if mode == "live-awareness" and not Path(selected["fingerprints"]["run"]).name.startswith("live-"):
+        raise ValueError("Live-awareness serving requires a certified live-observation candidate")
     if factory is None:
         from ai_model.model.candidate_serving import create_candidate_adapter
         factory = create_candidate_adapter
-    # Production cannot opt out of backend policy, bypass review, or load smoke
-    # artifacts. Inference and training exclusivity are distinct capabilities.
+    # Backend checks and smoke exclusion remain mandatory for both policies.
+    # The selected policy verifies public certification or traditional review.
     adapter = factory(runtime_only=False, require_exclusive_backend=True)
     if pointer.read_bytes() != raw:
         raise ValueError("Selected candidate changed during startup")
@@ -119,14 +124,22 @@ def load_selected_release(mode="legacy", *, registry=None, factory=None):
         raise ValueError("Runtime-only/smoke adapter cannot serve production")
     if not getattr(adapter, "backend_exclusive", False):
         raise ValueError("Selected candidate cannot satisfy production backend policy")
+    capability = None
+    if public_live:
+        from .capability import verify_text_capability
+        capability = verify_text_capability(adapter)
     parameters = inspect.signature(adapter.generate).parameters
     sampling = {name: parameter.default for name, parameter in parameters.items()
                 if name in {"temperature", "top_p", "top_k", "repetition_penalty", "min_length", "seed"}
                 and parameter.default is not inspect.Parameter.empty}
     return FailClosedCandidateAdapter(adapter), {
-        **status, "active": "reviewed-candidate",
+        **status, "active": ("certified-live-awareness" if public_live else
+                    "reviewed-live-awareness" if mode == "live-awareness" else "reviewed-candidate"),
         "checkpoint_sha256": selected["fingerprints"]["checkpoint_sha256"],
-        "candidate_quality": "independently_reviewed_not_general_quality_certification",
+        "candidate_quality": ("runtime_verified_public_live_not_quality_evaluated" if public_live
+                              else "independently_reviewed_not_general_quality_certification"),
+        "review_required": not public_live,
+        "operational_text_capability": capability,
         "backend_exclusive": bool(getattr(adapter, "training_backend_exclusive", False)),
         "inference_backend_exclusive": bool(getattr(adapter, "inference_backend_exclusive", False)),
         "training_backend_exclusive": bool(getattr(adapter, "training_backend_exclusive", False)),

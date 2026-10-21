@@ -51,6 +51,12 @@ describe("MaxCore proxy route contract", () => {
         if (mediaResponseFactory && u.includes("/uploads/")) {
           return mediaResponseFactory();
         }
+        if (u.endsWith("/api/awareness/unified/context")) {
+          return new Response(JSON.stringify({ snapshot_id: "canonical-live",
+            awareness: "Public live observations", expires_at: Date.now() / 1000 + 60 }), {
+            status: 200, headers: { "content-type": "application/json" },
+          });
+        }
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -106,15 +112,17 @@ describe("MaxCore proxy route contract", () => {
       body: JSON.stringify({ prompt: "hi", user_id: "someone-else" }),
     });
     expect(res.status).toBe(200);
-    expect(upstreamCalls.length).toBe(1);
-    expect(upstreamCalls[0].url).toBe("https://maxcore.test/api/generate/content");
-    const headers = upstreamCalls[0].init.headers as Record<string, string>;
+    expect(upstreamCalls.length).toBe(2);
+    expect(upstreamCalls[0].url).toBe("https://maxcore.test/api/awareness/unified/context");
+    expect(upstreamCalls[1].url).toBe("https://maxcore.test/api/generate/content");
+    const headers = upstreamCalls[1].init.headers as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer gen-key-123");
     expect(headers["X-Admin-Key"]).toBeUndefined();
-    const body = JSON.parse(String(upstreamCalls[0].init.body));
+    const body = JSON.parse(String(upstreamCalls[1].init.body));
     // Identity binding: the caller-supplied user_id must be overwritten.
     expect(body.user_id).toBe("user-1");
     expect(body.prompt).toBe("hi");
+    expect(body.awareness.snapshot_id).toBe("canonical-live");
   });
 
   it("serves allowlisted media forwarding the MaxCore Bearer key upstream", async () => {

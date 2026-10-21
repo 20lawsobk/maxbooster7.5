@@ -1,9 +1,10 @@
-"""Opt-in adapter only. This module never alters server globals or legacy weights.
+"""Validated candidate adapter. Never writes serving pointers or legacy weights.
 
 Integration contract for the server owner:
-1. Keep the current CreativeModel initializer/release as the default.
-2. Construct create_candidate_adapter(runtime_only=False) only in a separately
-   configured candidate slot after registry selection. Inference exclusivity
+1. The live-awareness controller uses this adapter after registry selection.
+   Explicit legacy mode retains the original CreativeModel initializer.
+2. Construct create_candidate_adapter(runtime_only=False) only after validated
+   registry selection. Inference exclusivity
    and training exclusivity are separately checked and exposed.
 3. Manual transformer inference uses only dispatched DigitalGPU math/sampling.
    Older autograd training checkpoints still disclose their training limitation.
@@ -12,7 +13,7 @@ Integration contract for the server owner:
 5. Treat context/parameter errors as explicit client errors, not truncation or
    fallback. Readiness must expose unreleased and scoped backend capabilities; it cannot
    advertise quality merely because runtime_only validation passed.
-No server.py changes or production opt-in are performed by this module.
+The controller owns scheduling, request pinning and loading selected releases.
 """
 import json
 from pathlib import Path
@@ -29,9 +30,19 @@ class CandidateServingAdapter:
         self.tokenizer = model.tokenizer
         self.runtime_only = runtime_only
         self.unreleased = True
-        self.backend_exclusive = model.architecture == "byte-causal-transformer-v1"
+        self.backend_exclusive = model.architecture in ("byte-causal-transformer-v1", "public-content-transformer-v2")
         self.inference_backend_exclusive = self.backend_exclusive
         self.training_backend_exclusive = training_exclusive
+
+    @property
+    def generation_token_unit(self):
+        return getattr(self.model, "generation_token_unit", None)
+
+    def script_generation_budget(self, prompt, caption_length="optimal"):
+        budget = getattr(self.model, "script_generation_budget", None)
+        if not callable(budget):
+            raise ValueError("Selected model does not declare byte-model script budgets")
+        return budget(prompt, caption_length)
 
     def generate(self, prompt, max_new_tokens=200, temperature=0.85, top_p=0.92,
                  top_k=50, repetition_penalty=1.15, min_length=10, seed=None,
@@ -41,8 +52,9 @@ class CandidateServingAdapter:
                                      repetition_penalty=repetition_penalty,
                                      min_length=min_length, seed=seed,
                                      snapshot_hash=snapshot_hash)
-        # Match current CreativeModel's prompt-plus-continuation string contract.
-        return prompt + result["text"]
+        # Match CreativeModel: only checkpoint-emitted continuation is output.
+        # Conditioning contains caller metadata and must never become generated prose.
+        return result["text"]
 
     def generate_batch(self, prompts, max_new_tokens=30, temperature=0.85, top_p=0.92,
                        top_k=50, repetition_penalty=1.15, min_length=5, chunk_size=4,
@@ -68,9 +80,9 @@ def create_candidate_adapter(run=None, *, runtime_only=False, require_exclusive_
         verified, report, _ = candidate_registry.verify_bundle(run)
     else:
         if run is not None:
-            raise ValueError("Reviewed serving must use the atomically selected registry entry")
+            raise ValueError("Serving must use the atomically selected registry entry")
         pointer = json.loads((candidate_registry.REGISTRY / "selected.json").read_text())
-        decision = candidate_registry.eligibility(**pointer["evidence"])
+        decision = candidate_registry.selected_eligibility(pointer)
         if not decision["eligible"] or decision["fingerprints"] != pointer["fingerprints"]:
             raise ValueError("Selected candidate evidence is missing, changed or ineligible")
         verified = decision["fingerprints"]
@@ -83,7 +95,7 @@ def create_candidate_adapter(run=None, *, runtime_only=False, require_exclusive_
     if hashlib.sha256(raw).hexdigest() != verified["checkpoint_sha256"]:
         raise ValueError("Checkpoint changed before adapter load")
     model = CandidateModel.load_candidate(io.BytesIO(raw))
-    inference_exclusive = model.architecture == "byte-causal-transformer-v1"
+    inference_exclusive = model.architecture in ("byte-causal-transformer-v1", "public-content-transformer-v2")
     training_exclusive = report.get("training_backend_scope") == "manual-digital-v1"
     if require_exclusive_backend and not inference_exclusive:
         raise ValueError("Exclusive candidate inference is implemented for transformer only")

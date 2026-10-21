@@ -1,19 +1,20 @@
 // @ts-nocheck
 import Stripe from "stripe";
+import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
 import { logger } from "../logger.js";
 
 const stripeKey =
   process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
 
-if (!stripeKey || !stripeKey?.startsWith("sk_")) {
+if (!hasStripeCredential(stripeKey)) {
   logger.warn("⚠️  Stripe setup skipped - invalid API key");
 } else {
   logger.info("✅ Initializing Stripe product and price setup...");
 }
 
 const stripe =
-  stripeKey && stripeKey?.startsWith("sk_")
-    ? new Stripe(stripeKey, { apiVersion: "2026-01-28.clover" })
+  hasStripeCredential(stripeKey)
+    ? createStripeClient(stripeKey, { apiVersion: "2026-01-28.clover" })
     : null;
 
 export interface StripePriceIds {
@@ -24,7 +25,9 @@ export interface StripePriceIds {
 
 let cachedPriceIds: StripePriceIds | null = null;
 
-export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
+export async function ensureStripeProductsAndPrices(
+  { allowCreate = process.env.STRIPE_ALLOW_CATALOG_PROVISIONING === "1" } = {},
+): Promise<StripePriceIds> {
   // Return cached IDs if already set up
   if (cachedPriceIds) {
     return cachedPriceIds;
@@ -52,6 +55,9 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
 
     // Create product if it doesn't exist
     if (!product) {
+      if (!allowCreate) {
+        throw new Error("Stripe subscription catalog is missing; explicitly provision it before accepting subscription checkout");
+      }
       product = await stripe?.products.create({
         name: "Max Booster Subscription",
         description: "AI-Powered Music Distribution & Marketing Platform",
@@ -96,6 +102,9 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       }
 
       // Create new price
+      if (!allowCreate) {
+        throw new Error(`Stripe ${type} subscription price is missing; explicitly provision the catalog before checkout`);
+      }
       const priceParams: Stripe.PriceCreateParams = {
         product: product!.id,
         unit_amount: amount * 100, // Convert to cents

@@ -10,13 +10,13 @@ import {
   chmodSync,
   mkdtempSync,
   readFileSync,
-  readdirSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import pg from "pg";
+import { discoverPostgresBins, RECOVERY_COLUMN_ORDINAL_SQL } from "./database-recovery-tools.mjs";
 import { generateUncommittedDatabaseDump } from "../server/services/backup/databaseDump.ts";
 import { safePostgresDiagnostic } from "../server/services/backup/postgresTools.ts";
 
@@ -58,33 +58,7 @@ for (const [key, value] of Object.entries(inherited)) {
 }
 process.env.TZ = "UTC";
 
-function discoverPostgresBins() {
-  const candidates = new Set();
-  for (const directory of readdirSync("/nix/store")) {
-    if (/^[^-]+-postgresql-\d/.test(directory)) candidates.add(`/nix/store/${directory}/bin`);
-  }
-  for (const directory of inherited.PATH.split(":").filter(Boolean)) candidates.add(directory);
-  const byMajor = new Map();
-  for (const directory of candidates) {
-    const probe = spawnSync(join(directory, "pg_dump"), ["--version"], {
-      env: { PATH: inherited.PATH, HOME: "/tmp", LANG: "C" },
-      encoding: "utf8",
-      timeout: 5_000,
-    });
-    const match = probe.status === 0 && probe.stdout.match(/\(PostgreSQL\)\s+(\d+)(?:\.(\d+))?/);
-    if (!match) continue;
-    const major = Number(match[1]);
-    const minor = Number(match[2] ?? 0);
-    if (!byMajor.has(major) || byMajor.get(major).minor < minor) {
-      byMajor.set(major, { directory, minor });
-    }
-  }
-  return [...byMajor.entries()]
-    .sort(([left], [right]) => right - left)
-    .map(([, value]) => value.directory);
-}
-
-const postgresBins = discoverPostgresBins();
+const postgresBins = discoverPostgresBins(inherited.PATH);
 process.env.PATH = [...postgresBins, ...inherited.PATH.split(":").filter(Boolean)].join(":");
 const temp = mkdtempSync("/tmp/database-recovery-drill-");
 chmodSync(temp, 0o700);
@@ -126,6 +100,7 @@ const digest = value => createHash("sha256").update(value).digest("hex");
 const currentRecoverySource = () => {
   const files = [
     "scripts/database-recovery-drill.mjs",
+    "scripts/database-recovery-tools.mjs",
     "scripts/recovery-private-store.mjs",
     "server/services/backup/databaseDump.ts",
     "server/services/backup/postgresTools.ts",
@@ -214,7 +189,7 @@ async function schemaEvidence(client) {
       WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
       ORDER BY 1,2,3`,
     columns: `
-      SELECT n.nspname AS schema_name,c.relname AS table_name,a.attnum,a.attname,
+      SELECT n.nspname AS schema_name,c.relname AS table_name,${RECOVERY_COLUMN_ORDINAL_SQL},a.attname,
         format_type(a.atttypid,a.atttypmod) AS data_type,a.attnotnull,a.attidentity,a.attgenerated,
         COALESCE(coll.collname,'') AS collation,
         COALESCE(pg_get_expr(d.adbin,d.adrelid),'') AS default_definition
@@ -435,9 +410,10 @@ try {
   await target.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
   const targetInventory = await tableInventory(target);
   const targetSchema = await schemaEvidence(target);
+  result.evidence.restoredSchema = { count: targetSchema.count, fingerprint: targetSchema.fingerprint, sections: targetSchema.sections };
   recordCheck("restored schema fingerprint matches source snapshot",
     targetSchema.fingerprint === sourceSchema.fingerprint,
-    `${targetSchema.count} canonical schema-definition records matched`);
+    `${targetSchema.count} canonical schema-definition records compared`);
   recordCheck("restored table inventory matches source snapshot",
     JSON.stringify(targetInventory.counts) === JSON.stringify(sourceInventory.counts),
     `${sourceInventory.tables.length} table row counts matched exactly`);

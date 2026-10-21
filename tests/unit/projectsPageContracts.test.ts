@@ -82,6 +82,7 @@ describe("Projects playback boundary", () => {
 
   it.each([
     "http://cdn.example.com/a.wav",
+    // eslint-disable-next-line no-script-url -- Deliberate hostile URL fixture verifies the production boundary rejects script URLs.
     "javascript:alert(1)",
     "data:audio/wav;base64,AAAA",
     "//cdn.example.com/a.wav",
@@ -99,6 +100,14 @@ describe("Projects playback boundary", () => {
 });
 
 describe("direct project mutation boundary", () => {
+  it.each([null, "2026-10-19T20:40:01.177Z"])("preserves expectedUpdatedAt %s through normalization", (expectedUpdatedAt) => {
+    expect(normalizeProjectDetailsUpdate({ title: "Updated", expectedUpdatedAt })).toEqual({
+      ok: true, value: { title: "Updated", expectedUpdatedAt },
+    });
+  });
+  it.each(["not-a-date", 42, {}, "2026-10-19", "2026-10-19T20:40:01+01:00"])("rejects invalid mutation timestamp %o", (expectedUpdatedAt) => {
+    expect(normalizeProjectDetailsUpdate({ title: "Updated", expectedUpdatedAt }).ok).toBe(false);
+  });
   it("normalizes legacy bpm onto the studio route's tempo field", () => {
     expect(
       normalizeProjectDetailsUpdate({

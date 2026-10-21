@@ -108,11 +108,11 @@ test("storefront membership tier mutations require ownership of the tier's paren
       export const updateMembershipTierSchema={parse:value=>value};
       export const storefrontFollows={},storefrontLikes={},storefrontRatings={},
         storefrontOrders={},listings={},listingLicenseTiers={},storefrontDomains={},
-        users={},bogoPromotions={},customerMemberships={};
+        users={},bogoPromotions={},customerMemberships={},userStorageFiles={};
     `,
     stripe: `export default class Stripe {}`,
     "../config/defaults": `export const getBaseUrl=()=>"https://example.invalid";`,
-    "../db": `export const db=globalThis.__outboundMembershipAuth.db;`,
+    "../db": `export const db=globalThis.__outboundMembershipAuth.db;export const pool={query(){throw new Error("Unexpected SQL")}};`,
     "drizzle-orm": `
       export const eq=(field,value)=>({field,value});
       export const and=(...values)=>values,or=(...values)=>values;

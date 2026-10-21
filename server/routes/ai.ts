@@ -16,6 +16,7 @@ import {
 } from "../services/unifiedAIController.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { notificationService } from "../services/notificationService.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
@@ -97,6 +98,9 @@ router.post(
     } catch (error) {
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
+      }
+      if (error instanceof MaxCoreControlError && error.status === 503) {
+        return res.status(503).json({ error: "Content generation is temporarily unavailable" });
       }
       logger.warn({ err: error }, "Content generation route error:");
       res.status(500).json({ error: "Failed to generate content" });

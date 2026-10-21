@@ -1759,6 +1759,7 @@ router.post(
 
       // Auto-tag BPM/key via Python librosa analysis if not provided by user
       if (files?.audioFile?.[0] && (!tempo || !key)) {
+        const autoTagOwnerId = req.user!.id;
         const audioBuffer = files?.audioFile[0].buffer;
         const ext = path?.extname(files?.audioFile[0].originalname) || ".mp3";
         const tmpPath = path?.join(
@@ -1771,8 +1772,9 @@ router.post(
             const available = await pythonAIService?.isAvailable();
             if (available) {
               const analysis = await pythonAIService?.analyzeAudio(
-                tmpPath,
+                `/api/storage/file/${encodeURIComponent(uploadedAudioKey)}`,
                 false,
+                autoTagOwnerId,
               );
               if (analysis?.success && analysis?.data) {
                 const tagUpdates: Record<string, unknown> = {};

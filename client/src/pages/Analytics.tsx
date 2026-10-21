@@ -1837,6 +1837,16 @@ export default function Analytics() {
     },
   });
 
+  const getTimeSinceUpdate = useCallback(() => {
+    if (!lastUpdate) return "not yet updated";
+    const seconds = Math.floor((Date.now() - lastUpdate) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  }, [lastUpdate]);
+
   if (authLoading) {
     return (
       <AppLayout>
@@ -1904,15 +1914,7 @@ export default function Analytics() {
       : displayValue;
   };
 
-  const getTimeSinceUpdate = useCallback(() => {
-    if (!lastUpdate) return "not yet updated";
-    const seconds = Math.floor((Date.now() - lastUpdate) / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
-  }, [lastUpdate]);
+
 
   if (!user) return null;
 
@@ -2305,7 +2307,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data.streams?.daily && data.streams.daily.length > 0 ? (
+                ) : data?.streams?.daily && data.streams.daily.length > 0 ? (
                   <SimpleAreaChart
                     data={data.streams.daily
                       .slice(-14)
@@ -2338,7 +2340,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data.streams?.byPlatform &&
+                ) : data?.streams?.byPlatform &&
                   data.streams.byPlatform.length > 0 ? (
                   <PlatformBreakdown
                     platforms={data.streams.byPlatform
@@ -2396,7 +2398,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data.audience?.listenerJourney &&
+                ) : data?.audience?.listenerJourney &&
                   data.audience.listenerJourney.length > 0 ? (
                   <SimpleAreaChart
                     data={data.audience.listenerJourney.map(

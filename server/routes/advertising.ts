@@ -8,6 +8,9 @@ import { storage } from "../storage.js";
 import { notificationService } from "../services/notificationService.js";
 import { pythonAIService } from "../services/pythonAIService.js";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
+import { persistGeneratedImage } from "../services/generatedImageAsset.js";
+import { trustedMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 import { generateAdsDirect } from "../services/maxcoreDomainAdapter.js";
 import { storageService } from "../services/storageService.js";
 import {
@@ -242,54 +245,10 @@ export function extractGeneratedImageUrl(value: unknown): string | null {
  */
 export async function mirrorGeneratedImageToPDIM(
   rawUrl: string,
-  deps: {
-    fetchImpl?: typeof fetch;
-    storage?: typeof storageService;
-  } = {},
+  deps: { fetchImpl?: typeof fetch; storage?: typeof storageService; ownerId?: string } = {},
 ): Promise<string> {
-  const origin = getMaxcoreOrigin();
-  const fetchImpl = deps.fetchImpl || fetch;
-  const pdim = deps.storage || storageService;
-  let remote: URL;
-  try {
-    remote = new URL(rawUrl, origin);
-  } catch {
-    throw new Error("MaxCore image URL is invalid");
-  }
-
-  if (
-    !origin ||
-    remote.origin !== new URL(origin).origin ||
-    !isAllowedMaxcoreMediaPath(remote.pathname) ||
-    !/^\/uploads\/images\//i.test(remote.pathname)
-  ) {
-    throw new Error("MaxCore image URL is not an allowed /uploads/images asset");
-  }
-
-  const response = await fetchImpl(remote.toString(), {
-    headers: getMaxcoreGenerationHeaders(),
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) {
-    throw new Error(`MaxCore image download failed (${response.status})`);
-  }
-
-  const contentLength = Number(response.headers.get("content-length") || 0);
-  if (contentLength > 10 * 1024 * 1024) {
-    throw new Error("MaxCore image exceeds the 10 MB limit");
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length === 0 || bytes.length > 10 * 1024 * 1024 || !imageMagic(bytes)) {
-    throw new Error("MaxCore image response is not a valid image");
-  }
-
-  const basename =
-    remote.pathname.split("/").pop()?.replace(/[^A-Za-z0-9._-]/g, "_") ||
-    "generated.png";
-  const contentType =
-    response.headers.get("content-type")?.split(";")[0] || "image/png";
-  const key = await pdim.uploadFile(bytes, "images", basename, contentType);
-  return pdim.getDownloadUrl(key);
+  const result = await persistGeneratedImage(rawUrl, deps.ownerId ?? trustedMaxcoreOwner() ?? "", deps);
+  return result.url;
 }
 
 /**
@@ -2585,12 +2544,11 @@ router.post(
       const imageUrl = extractGeneratedImageUrl(mcImageData);
       if (imageUrl) {
         try {
-          const pdimUrl = await mirrorGeneratedImageToPDIM(imageUrl);
+          const media = await persistGeneratedImage(imageUrl, req.user!.id);
           return res.json({
             success: true,
-            ...mcImageData,
-            url: pdimUrl,
-            image_url: pdimUrl,
+            ...media,
+            image_url: media.url,
           });
         } catch (mirrorError) {
           logger.warn(
@@ -2614,7 +2572,7 @@ router.post(
           .status(400)
           .json({ success: false, message: error.message });
       }
-      if (error instanceof AIUnavailableError) {
+      if (error instanceof AIUnavailableError || error instanceof MaxCoreControlError && error.status === 503) {
         return res.status(error.statusCode).json({
           success: false,
           code: error.code,

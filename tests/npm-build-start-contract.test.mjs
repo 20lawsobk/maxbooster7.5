@@ -4,8 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import vm from "node:vm";
+import http from "node:http";
+import { spawn } from "node:child_process";
 import { transformSync } from "esbuild";
-import { validateBuild, writeBuildContract } from "../scripts/start-production.mjs";
+import { validateBuild, writeBuildContract, readBuildInputs } from "../scripts/start-production.mjs";
 
 test("production build aliases do not invoke missing fixers or prune the workspace", () => {
   const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -130,4 +132,46 @@ test("production startup rejects missing, altered and stale build output", () =>
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+ test("build input identity ignores nested dependency caches but tracks imported source", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "build-input-cache-"));
+  try {
+    for (const file of ["package.json", "package-lock.json", "vite.config.ts", "start.sh"]) {
+      fs.writeFileSync(path.join(root, file), "fixture");
+    }
+    const lib = path.join(root, "external/maxcore/lib/api-spec");
+    fs.mkdirSync(path.join(lib, "node_modules/.cache/jiti"), { recursive: true });
+    fs.writeFileSync(path.join(lib, "index.ts"), "export const version = 1;");
+    const before = readBuildInputs(root);
+    const cache = path.join(lib, "node_modules/.cache/jiti/generated.mjs");
+    fs.writeFileSync(cache, "export default 1;");
+    assert.deepEqual(readBuildInputs(root), before);
+    fs.rmSync(cache);
+    assert.deepEqual(readBuildInputs(root), before);
+    fs.writeFileSync(path.join(lib, "index.ts"), "export const version = 2;");
+    assert.notDeepEqual(readBuildInputs(root), before);
+    fs.writeFileSync(path.join(lib, "added.ts"), "export default 1;");
+    assert.ok(Object.hasOwn(readBuildInputs(root), "external/maxcore/lib/api-spec/added.ts"));
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("startup sidecar reuse probes the configured health listener", async t => {
+  let status = 200;
+  const server = http.createServer((_req, res) => { res.writeHead(status); res.end("ok"); });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const source = fs.readFileSync("start.sh", "utf8");
+  const start = source.indexOf("_service_healthy() {");
+  const helper = source.slice(start, source.indexOf("\n}\n", start) + 3);
+  const probe = () => new Promise((resolve, reject) => {
+    const child = spawn("bash", ["-c", helper + '\n_service_healthy "$CHECK_PORT"'], {
+      env: { PATH: process.env.PATH, _NODE_BIN: process.execPath, CHECK_PORT: String(server.address().port) },
+      stdio: "ignore",
+    });
+    child.once("error", reject); child.once("exit", resolve);
+  });
+  assert.equal(await probe(), 0);
+  status = 503;
+  assert.equal(await probe(), 1);
 });

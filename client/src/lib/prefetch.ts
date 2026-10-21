@@ -26,15 +26,20 @@
  */
 
 import type { QueryClient } from "@tanstack/react-query";
+import { offlineIdentity, assertOfflineIdentity } from "./offline/identity";
 
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
-let _bootstrapped = false;
+let _bootstrapped: ReturnType<typeof offlineIdentity> | null = null;
 
 let isAuthenticated = false;
 
 export function setAuthState(authenticated: boolean): void {
   isAuthenticated = authenticated;
+  if (!authenticated) {
+    _bootstrapped = null;
+    prefetchedData.clear();
+  }
 }
 
 function shouldPrefetch(): boolean {
@@ -200,27 +205,30 @@ export function prefetchAdjacentRoutes(currentPath: string) {
  * no loading state, no spinner.
  */
 export async function bootstrapUserData(qc: QueryClient): Promise<void> {
-  if (_bootstrapped) return;
-  _bootstrapped = true;
+  const identity = offlineIdentity();
+  if (!identity.owner || (_bootstrapped?.owner === identity.owner && _bootstrapped?.epoch === identity.epoch)) return;
+  _bootstrapped = identity;
 
   try {
-    const res = await fetch("/api/bootstrap", { credentials: "include" });
-    if (!res?.ok) return;
+    const res = await fetch(`/api/bootstrap?account-check=${crypto.randomUUID()}`, {
+      credentials: "include", cache: "no-store",
+    });
+    if (!res?.ok) throw new Error("Bootstrap unavailable");
 
     const data: {
-      user?: unknown;
+      user?: { id?: unknown };
       projects?: unknown[];
       notifications?: unknown[];
       releases?: unknown[];
       _ts?: number;
     } = await res?.json();
+    assertOfflineIdentity(identity);
+    if (data.user?.id !== identity.owner) throw new Error("Bootstrap account mismatch");
 
     const now = Date?.now();
     const fresh = { updatedAt: now };
 
-    if (data?.user) {
-      qc?.setQueryData(["/api/auth/me"], data?.user, fresh);
-    }
+    // Only AuthProvider's verified session may populate authentication state.
     if (Array.isArray(data?.projects)) {
       // `/api/projects` returns `{ data: Project[] }`; keep the bootstrap
       // cache shape identical so consumers do not render an empty list until
@@ -253,6 +261,7 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
       qc?.setQueryData(["/api/distribution/releases"], data?.releases, fresh);
     }
   } catch {
+    if (_bootstrapped === identity) _bootstrapped = null;
     // Silent — bootstrap is a best-effort optimisation; individual queries
     // will still fire normally if this call fails.
   }

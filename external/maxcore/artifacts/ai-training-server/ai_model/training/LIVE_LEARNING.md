@@ -1,11 +1,14 @@
 # Operator contract: live text candidate learning
 
-This service consumes fresh, validated snapshots from the existing live awareness
-engine. It does not replace awareness with a static corpus, train serving weights,
-claim quality, or promote candidates. It trains only on text already present in
-the validated awareness snapshot; this endpoint does not fetch or scrape sources.
-Candidate provenance records `NOASSERTION` and unknown privacy/attribution status,
-not a claim that observations have a particular license or are nonprivate.
+This service consumes fresh, validated observations from the existing live
+awareness engine. The default `live-awareness` serving mode now runs a background
+learning loop and loads registry-selected live candidates. Training never writes
+serving weights or claims quality. It trains only on text already collected by
+the awareness engine; the training worker does not fetch or scrape sources.
+The awareness systems target public HTTP sources only, never traditional
+corpora or private inputs. New observations record public access and `private: false`;
+license remains `NOASSERTION` and attribution remains explicit. Previously
+certified public scanner records with legacy privacy metadata remain readable.
 
 ## Admin endpoints
 
@@ -19,9 +22,64 @@ admin bearer credential). Ordinary generation/train-scoped keys are insufficient
   metadata. Use this after a disconnected POST or server restart.
 * `GET /api/training/candidates/live/{run_id}` returns that run's metadata.
   Neither GET exposes source text, holdout prompts or operator file paths.
+* `GET /api/training/live/status` reports the automatic loop and serving release.
+  It is also available through the imported Node service and the app's admin
+  proxy, including while the first model is not ready.
+
+## Automatic learning and serving
+
+`MAXCORE_SERVING_RELEASE=live-awareness` is the server default. It never loads the
+old LFS checkpoint. `legacy` and `reviewed-candidate` remain explicit alternatives.
+The loop reads the rolling observation ledger, fingerprints source content and
+measured values, and uses the existing bounded/certified trainer. Timestamp-only
+refreshes do not retrain unchanged content. A private fsynced state file retains
+successful content identity and retry cooldown across restarts; a file lock
+prevents concurrent automatic owners. The existing training lock also excludes
+manual/automatic overlapping training jobs.
+
+Configuration: `MAXCORE_LIVE_LEARNING_INTERVAL_SECONDS=900` (60..86400),
+`MAXCORE_LIVE_RELOAD_SECONDS=30` (1..300), `MAXCORE_LIVE_LEARNING_STEPS=4` (1..64),
+and `MAXCORE_LIVE_CONTEXT_TOKENS=2048` (128..4096). The context bound is saved in
+each candidate and restored on load; overlong requests fail explicitly rather
+than losing part of their prompt. Private loop state lives under
+`MAXCORE_PRIVATE_STATE_DIR` (also used by the service's other private state).
+For cloud hosts requiring an egress proxy, set `MAXCORE_AWARENESS_USE_PROXY=1`
+to use the injected `HTTPS_PROXY` for public feed requests. This explicitly
+enabled route tunnels the validated public IP, retains original-host TLS
+verification, and revalidates redirects. It resolves addresses through the
+fixed verified HTTPS DNS endpoint `cloudflare-dns.com` so local DNS need not
+egress; every returned address still passes the public-address checks.
+Ambient proxy variables alone do not
+change the public reader's behavior. Provider-specific search APIs keep their
+own configured transports.
+
+Automatic learning retains the historical `candidate_trained_unreviewed` result
+label, but public scanner candidates no longer need human review, signatures,
+reviewer trust keys or manually supplied evaluation datasets. With
+`MAXCORE_AUTO_SELECT=1` (default), the controller discovers completed candidates
+under the durable `candidate_runs` directory and selects the freshest eligible
+observation set. It verifies parent certification, exact observation provenance,
+source access, manifest/checkpoint hashes, privacy screening, finite training
+measurements, inference logits and exclusive inference/training backends.
+Traditional, mixed, smoke-only, private-source, incomplete and tampered artifacts
+cannot use the `certified-public-live-v1` policy. No general quality score is
+inferred from these numerical checks.
+
+Selection and adapter loading are atomic. In-flight requests keep their pinned
+model identity; rejected updates retain the previous model. Status exposes
+`review_required: false`, `active: certified-live-awareness`, and
+`candidate_quality: runtime_verified_public_live_not_quality_evaluated`. With no
+eligible completed candidate, status is `waiting_for_candidate` and generation
+stays unavailable. Deferred jobs never silently change their original model.
+
+Traditional-corpus / `reviewed-candidate` operation keeps its explicit signed
+review policy and evaluation checks. `candidate_registry select --live-awareness
+--run /absolute/path/to/live-RUN` is available for explicit public-live selection;
+the normal automatic flow needs no submission command.
 
 HTTP 201 / `candidate_trained_unreviewed` means measured isolated training and
 parent certification succeeded, **not** that generation quality is acceptable.
+This historical result label is not a signature requirement for public live models.
 Admission failures include `blocked_corpus`,
 `blocked_awareness`, `blocked_busy`, `blocked_capacity`, and `blocked_bounds`.
 Worker outcomes include `failed_training`, `failed_execution_evidence`,
@@ -34,28 +92,22 @@ inherited worker, not that a checkpoint is eligible for review.
 There is no rights-grant file or license-permission gate for this endpoint.
 Each training record retains its awareness snapshot ID, observation ID, source,
 citation, and text hash. Candidate metadata explicitly marks the license
-`NOASSERTION`, privacy `unknown`, and attribution `unattributed live observation`.
+`NOASSERTION`, public access with `private: false`, and attribution `unattributed live observation`.
 The endpoint does not claim that sources granted training rights. It does not
 turn feed visibility into a license, and does not retrieve any content outside
 the already-collected snapshot.
 
 Existing secret/personal-data screening and holdout-overlap checks still apply.
-They are data-quality safeguards, not rights checks. Independently review
-candidate provenance and applicable source constraints before release selection.
+They remain automatic data-quality safeguards and do not introduce a manual
+review or signature gate for the public-source awareness flow.
 
-## Automatic snapshot holdout
+## Validation boundaries
 
-The endpoint deterministically reserves one non-overlapping observation from the
-current live snapshot and trains on the remaining observations. This split is
-created and hash-bound for each run; there is no rights-grant or holdout file to
-provision. If the snapshot has too little distinct content to make a valid split,
-the run returns `blocked_corpus`.
-
-This same-snapshot holdout prevents direct training/evaluation leakage for the
-bounded candidate-training job. It is **not** an independent quality evaluation,
-does not certify useful generation, and is not sufficient for release promotion.
-Candidates still require the existing separate frozen, held-out quality protocol
-and review before selection.
+The trainer uses the complete validated public observation set. It does not
+manufacture holdouts or describe training loss as general output quality. Public
+live selection uses the measured numerical and provenance checks above, without
+a manually maintained evaluation dataset or signed review. The separate
+traditional-corpus policy retains its frozen evaluation protocol and signatures.
 
 ## Isolation, certification, recovery and retention
 
@@ -77,8 +129,9 @@ The parent publishes `result.json`, then atomically publishes `certified.json`
 **last**, binding admission, result, report and checkpoint hashes. Files and
 containing directories are fsynced. The registry refuses every `live-*` candidate
 (and any manifest containing live provenance) unless this certification verifies.
-Certification authorizes only the existing independent review process; it is
-not promotion or a quality verdict. Do not edit or manually manufacture markers.
+Certification makes a public scanner candidate eligible for automatic numerical
+serving validation. It is not a general quality verdict. Do not edit or manually
+manufacture markers.
 
 On startup, GET/list and new admission, reconciliation attempts the global lock.
 While an inherited worker owns it, nothing is reconciled or concurrently trained.
@@ -93,4 +146,41 @@ Audit snapshots, corpus and automatically reserved holdouts live under
 under `candidate_runs/{run_id}/`. Keep admission/certification sidecars with
 candidate bundles during archival; missing sidecars fail closed. Operators must
 archive retained jobs deliberately before capacity is exhausted. No automatic
-deletion, production promotion, or retrospective quality fabrication occurs.
+deletion or retrospective quality fabrication occurs.
+
+
+Production packaging defaults to live awareness and does not require Git LFS,
+`model.corrupt` or `model.pt`. Only explicit `MAXCORE_SERVING_RELEASE=legacy`
+requires the pinned legacy checkpoint. Model state is independent of the
+replaceable application capsules: the supervisor defaults `MAXCORE_MODEL_STATE_DIR`
+to `models` beneath `MAXCORE_PRIVATE_STATE_DIR` (or `~/.local/state/maxcore`).
+Mount that directory durably at the same absolute path on replacement instances.
+It contains candidate runs, parent certifications, training audit and the registry;
+traditional-mode review evidence and trust keys also need stable operator-managed paths. The
+packager excludes those private runtime artifacts and does not serialize a
+workspace's selected pointer into a capsule. A clean instance may start collecting
+signals, but remains unready for generation until a verified release is available.
+
+### Operational admission is distinct from public-source certification
+
+Public scanner certification remains signature-free. It verifies provenance,
+privacy and finite training/inference, not whether a checkpoint can write usable
+content. Automatic selection now executes two bounded synthetic requests through
+the actual ScriptAgent with its existing readability, metadata, safety and
+required-section checks. These requests are interface probes, not a training
+corpus or human review requirement. A failed candidate cannot replace an
+operational incumbent. Startup repeats the probe on the selected public model;
+without an operational model, readiness remains false and generation fails
+explicitly. Successful probes do not certify general semantic quality.
+
+The serving adapter returns only emitted continuation tokens, matching
+CreativeModel. Conditioning/prompt text must never count as generated content.
+The trainer initializes a small transformer only when no certified public learning
+history exists. Later runs resume the newest verified public checkpoint, including
+models that cannot yet serve prose. The checkpoint and report bind the parent hash
+and exact initial weight digest. Changed ancestry or incompatible configuration
+blocks the run rather than silently resetting. Only the configured bounded
+optimization steps run; live public observations and finite loss alone do not
+establish language generation capability. Improving
+that capability requires a genuinely capable model/training path and measured
+serving results; do not mask it with templates or relax the guards.

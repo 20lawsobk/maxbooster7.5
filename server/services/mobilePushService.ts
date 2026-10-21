@@ -232,14 +232,16 @@ class MobilePushService {
     }
   }
 
-  async deactivateToken(token: string): Promise<void> {
+  async deactivateToken(token: string, userId?: string): Promise<void> {
     try {
       await db
         .update(mobileDeviceTokens)
         .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(mobileDeviceTokens.token, token));
+        .where(and(eq(mobileDeviceTokens.token, token),
+          userId !== undefined ? eq(mobileDeviceTokens.userId, userId) : undefined));
     } catch (error) {
       logger.warn({ err: error }, "Failed to deactivate mobile device token:");
+      throw error;
     }
   }
 

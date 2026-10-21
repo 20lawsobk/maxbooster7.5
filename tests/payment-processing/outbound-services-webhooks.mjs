@@ -314,7 +314,7 @@ test("webhook receipt transaction retries failed settlement and ignores a succes
     compensate: async () => {},
   };
   const { bookMarketplace } = await loadOutboundSubject("server/services/commerce/settlement.ts", {
-    "../../db": "export const pool={query:async()=>({rows:[]})};",
+    "../../db": "export const pool={query:async(sql)=>({rows:sql.includes('FROM listings')?[{user_id:'seller'}]:[]})};",
     "./runtime": "export const commerceRepository=globalThis.__outboundWebhookSettlementRepo;",
     "./verification": `export async function verifiedPayment(){
       if(globalThis.__outboundWebhookVerificationFails) throw new Error("provider payment not settled");

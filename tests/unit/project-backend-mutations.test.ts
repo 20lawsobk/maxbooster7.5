@@ -23,6 +23,7 @@ function compile(text: string, dependencies: Record<string, unknown>) {
   const result = ts.transpileModule(text, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
   });
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   return new Function(...Object.keys(dependencies), result.outputText)(...Object.values(dependencies));
 }
 

@@ -115,11 +115,11 @@ export default function Shows() {
   });
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
-  const { data: showsData, isLoading } = useQuery<Show[]>({
+  const { data: showsData, isLoading, error: showsDataReadError, refetch: refetchShowsData } = useQuery<Show[]>({
     queryKey: ["/api/shows"],
   });
 
-  const { data: statsData } = useQuery<{
+  const { data: statsData, error: statsDataReadError, refetch: refetchStatsData } = useQuery<{
     totalShows: number;
     totalRevenue: number;
     avgTicketsSold: number;
@@ -181,7 +181,7 @@ export default function Shows() {
     },
   });
 
-  const { data: setlistsData = [] } = useQuery<Setlist[]>({
+  const { data: setlistsData = [], error: setlistsDataReadError, refetch: refetchSetlistsData } = useQuery<Setlist[]>({
     queryKey: ["/api/shows/setlists"],
   });
 
@@ -229,6 +229,18 @@ export default function Shows() {
   const upcomingShows =
     showsData?.filter((s) => isFuture(new Date(s.date))) || [];
   const pastShows = showsData?.filter((s) => isPast(new Date(s.date))) || [];
+
+  if ([showsDataReadError, statsDataReadError, setlistsDataReadError].some(Boolean)) {
+    return (
+      <AppLayout>
+        <section role="alert" className="mx-auto max-w-xl space-y-4 p-8">
+          <h1 className="text-xl font-semibold">Unable to load shows</h1>
+          <p>Your saved data is temporarily unavailable. Please retry.</p>
+          <Button onClick={() => { void Promise.allSettled([refetchShowsData(), refetchStatsData(), refetchSetlistsData()]); }}>Retry</Button>
+        </section>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout title="Shows & Tour Management">

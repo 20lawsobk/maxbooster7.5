@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import * as projectContracts from "../../client/src/lib/projectsPageContracts";
 import { describe, expect, it, vi } from "vitest";
 
 const paths = {
-  projects: "client/src/pages/Projects.tsx",
+  projects: "client/src/pages/ProjectsPageImpl.tsx",
   hub: "client/src/components/studio/StudioStartHub.tsx",
   selector: "client/src/components/studio/FlowStateProjectSelector.tsx",
   settings: "client/src/components/studio/ProjectSettingsDialog.tsx",
@@ -18,6 +19,7 @@ function actual(page: Page, name: string, dependencies: Record<string, unknown>,
   const file = ts.createSourceFile(paths[page], sources[page], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let expression: ts.Node | undefined;
   function visit(node: ts.Node) {
+    if (expression) return;
     if (name === "openingEffect" && ts.isCallExpression(node) && node.expression.getText(file) === "useEffect") {
       expression = node.arguments[0];
     } else if (name === "tempoHydrationEffect" && ts.isCallExpression(node) &&
@@ -36,9 +38,24 @@ function actual(page: Page, name: string, dependencies: Record<string, unknown>,
   }
   visit(file);
   if (!expression) throw new Error(`Missing ${page}.${name}.${member ?? ""}`);
-  const output = ts.transpileModule(`return (${expression.getText(file)});`, {
+  dependencies = { ...projectContracts, ...dependencies };
+  const helperNodes: ts.Node[] = [];
+  function collect(node: ts.Node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === "errorMessage") helperNodes.push(node);
+    if (ts.isVariableDeclaration(node) && node.name.getText(file) === "stopPlayback" && node.initializer) {
+      helperNodes.push(ts.factory.createVariableStatement(undefined,
+        ts.factory.createVariableDeclarationList([node], ts.NodeFlags.Const)));
+    }
+    ts.forEachChild(node, collect);
+  }
+  collect(file);
+  const helpers = helperNodes.map(node => ts.isVariableStatement(node)
+    ? "const stopPlayback = " + ((node.declarationList.declarations[0].initializer)!.getText(file)) + ";"
+    : node.getText(file)).join("\n");
+  const output = ts.transpileModule(`${helpers}\nreturn (${expression.getText(file)});`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.None },
   }).outputText;
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   return new Function(...Object.keys(dependencies), output)(...Object.values(dependencies));
 }
 
@@ -61,14 +78,14 @@ describe("direct project caller version contracts", () => {
   });
 
   it("Projects PATCH fallback sends the edit-start version when local draft persistence fails", async () => {
-    const apiRequest = vi.fn(async () => ({ json: async () => ({ updatedAt: version }) }));
+    const apiRequest = vi.fn(async () => ({ json: async () => ({ id: "p1", userId: "owner", title: "Unsaved", createdAt: version, updatedAt: version }) }));
     const save = actual("projects", "editMutation", {
       ...identity, apiRequest, editingProject: project,
       draftStorage: { saveDraft: vi.fn(async () => { throw new Error("storage offline"); }) },
       setDraftMessage: vi.fn(),
     }, "mutationFn");
     await expect(save({ id: "p1", data: { title: "Unsaved" } })).resolves.toEqual({ queued: false });
-    expect(apiRequest).toHaveBeenCalledWith("PATCH", "/api/studio/projects/p1", { title: "Unsaved", expectedUpdatedAt: version });
+    expect(apiRequest).toHaveBeenCalledWith("PATCH", "/api/studio/projects/p1", { title: "Unsaved", description: "", genre: "", expectedUpdatedAt: version });
   });
 
   it("Projects keeps the same saved base version in the local draft and offline queue", async () => {
@@ -82,9 +99,9 @@ describe("direct project caller version contracts", () => {
       setDraftMessage: vi.fn(),
     }, "mutationFn");
     await save({ id: "p1", data: { title: "Unsaved" } });
-    expect(saveDraft).toHaveBeenCalledWith("project-edit:p1", { title: "Unsaved", expectedUpdatedAt: staleVersion });
+    expect(saveDraft).toHaveBeenCalledWith("project-edit:p1", { title: "Unsaved", description: "", genre: "", expectedUpdatedAt: staleVersion });
     expect(enqueue).toHaveBeenCalledWith("project.update", {
-      projectId: "p1", changes: { title: "Unsaved" }, isStudio: false, expectedUpdatedAt: staleVersion,
+      projectId: "p1", changes: { title: "Unsaved", description: "", genre: "" }, isStudio: false, expectedUpdatedAt: staleVersion,
     }, { conflictStrategy: "manual", metadata: { formId: "project-edit:p1", draftVersion: 7 } });
     expect(forceSyncAction).toHaveBeenCalledWith("action1");
     expect(apiRequest).not.toHaveBeenCalled();

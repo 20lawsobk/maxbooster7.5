@@ -2,7 +2,7 @@
 import webpush from "web-push";
 import { db } from "../db";
 import { pushSubscriptions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 import type { RichPushPayload } from "./pushNotificationTypes.js";
 
@@ -97,11 +97,12 @@ class WebPushService {
     }
   }
 
-  async removeSubscription(endpoint: string): Promise<void> {
+  async removeSubscription(endpoint: string, userId?: string): Promise<void> {
     try {
       await db
         .delete(pushSubscriptions)
-        .where(eq(pushSubscriptions.endpoint, endpoint));
+        .where(and(eq(pushSubscriptions.endpoint, endpoint),
+          userId !== undefined ? eq(pushSubscriptions.userId, userId) : undefined));
       logger.info("Push subscription removed");
     } catch (error) {
       logger.warn({ err: error }, "Failed to remove push subscription:");

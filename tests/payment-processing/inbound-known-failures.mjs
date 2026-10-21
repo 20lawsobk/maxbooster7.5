@@ -192,12 +192,13 @@ test("storefront cart retries reuse one session and one set of pending orders", 
   } } } };
   state.pool = memoryCommercePool(writes);
   globalThis.__inboundStore = state;
-  const schemaModule = `export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={};`;
+  const schemaModule = `export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={},userStorageFiles={};`;
   await loadIsolated("server/routes/storefront.ts", {
     express: "export const Router=()=>globalThis.__inboundStore.router;",
     "../middleware/uploadHandler.js": "export function createHardenedUpload(){const u=()=>{};u.single=()=>()=>{};u.array=()=>()=>{};u.fields=()=>()=>{};u.any=()=>()=>{};return u;}export async function storeUploadedFile(){return {};}",
     "../services/storefrontService": "export const storefrontService={};",
     "../services/hybridStorageService": "export const hybridStorageService={};",
+    "../services/storageService.js": "export const storageService={};",
     "@shared/schema": schemaModule,
     stripe: "export default class Stripe {constructor(){return globalThis.__inboundStore.stripe;}}",
     "../config/defaults": "export const getBaseUrl=()=> 'https://app.invalid';",

@@ -32,6 +32,7 @@ function callback(source: string, name: string, dependencies: Record<string, unk
   const compiled = ts.transpileModule(`const callback = ${expression.getText(file)};`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
   }).outputText;
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   return new Function(...Object.keys(dependencies), `${compiled}; return callback;`)(...Object.values(dependencies));
 }
 

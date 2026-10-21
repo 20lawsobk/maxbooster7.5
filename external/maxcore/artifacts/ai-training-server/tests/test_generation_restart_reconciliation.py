@@ -38,6 +38,7 @@ class RestartTests(unittest.TestCase):
             "_api_jobs_lock": threading.Lock(), "_active_jobs_lock": threading.Lock(),
             "_active_jobs": {}, "_JOB_TTL_S": 600, "_render_manager": None,
             "_model_ready": False, "_create_durable_render_manager": Mock(return_value=object()),
+            "_model_init_error": None, "_serving_release_status": {},
         }
         exec(compile(ast.Module(body=nodes, type_ignores=[]), str(ROOT / "server.py"), "exec"),
              self.scope)

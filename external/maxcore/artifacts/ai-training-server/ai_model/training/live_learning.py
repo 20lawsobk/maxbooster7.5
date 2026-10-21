@@ -13,9 +13,11 @@ import uuid
 
 from ai_model.awareness.engine import canonical
 from ai_model.training.candidate_corpus import build_manifest
+from ai_model.training.public_curriculum import PEAK_POLICY, peak_stream, validate_peak_record
 
 ROOT = Path(__file__).resolve().parents[2]
-JOBS = ROOT / "ai_model" / "training" / "live_learning_runs"
+from ai_model.training.storage import training_root
+JOBS = training_root(ROOT) / "live_learning_runs"
 
 
 class Blocked(Exception):
@@ -27,8 +29,8 @@ class Blocked(Exception):
 def eligible_records(observation_set):
     """Use fresh scanner observations without requiring a complete snapshot.
 
-    Candidate metadata records unknown licensing and attribution explicitly;
-    independent candidate evaluation remains mandatory before any promotion.
+    Candidate metadata records public scanner access and unknown licensing and
+    attribution explicitly. Public-live serving retains numerical validation.
     """
     rows = observation_set.get("records") if isinstance(observation_set, dict) else None
     set_id = observation_set.get("id") if isinstance(observation_set, dict) else None
@@ -43,6 +45,10 @@ def eligible_records(observation_set):
         "records": [{key: row[key] for key in
                      ("id", "source", "domain", "observed_at")} for row in rows],
     }
+    if observation_set.get("policy") is not None:
+        if observation_set["policy"] != PEAK_POLICY:
+            raise Blocked("blocked_observations", "Unknown public learning policy")
+        identity["policy"] = PEAK_POLICY
     sources = sorted({row["source"] for row in rows})
     domains = sorted({row["domain"] for row in rows})
     if (not isinstance(set_id, str)
@@ -56,17 +62,25 @@ def eligible_records(observation_set):
     records, excluded = [], 0
     for row in rows:
         records.append({
-            "text": row["text"], "license": "NOASSERTION", "private": "unknown",
+            "text": row["text"], "license": "NOASSERTION", "private": False,
             "source": row["citation"], "author": "unattributed live observation",
             "purpose": "training",
             "provenance_type": "maxcore_live_awareness_observation",
             "live_provenance": {
+                "access": "public",
                 "observation_set_id": set_id, "record_id": row["id"],
                 "domain": row["domain"], "source": row["source"],
                 "observed_at": row["observed_at"],
                 "text_sha256": hashlib.sha256(row["text"].encode()).hexdigest(),
             },
         })
+        if observation_set.get("policy") == PEAK_POLICY:
+            records[-1]["live_provenance"].update(
+                learning_policy=PEAK_POLICY, metric=row["metric"], value=row["value"])
+            try:
+                validate_peak_record(records[-1])
+            except ValueError as exc:
+                raise Blocked("waiting_for_public_peak_content", str(exc), 503) from exc
     if not records:
         raise Blocked("blocked_observations", "No recent validated source observations are available")
     return records, excluded
@@ -95,11 +109,11 @@ def sync_directory(path):
 
 
 def candidate_path(run_id):
-    return ROOT / "ai_model/training/candidate_runs" / run_id
+    return training_root(ROOT) / "candidate_runs" / run_id
 
 
 def admission_path(run_id):
-    return ROOT / "ai_model/training/live_candidate_admissions" / run_id
+    return training_root(ROOT) / "live_candidate_admissions" / run_id
 
 
 def file_hash(path):
@@ -221,10 +235,16 @@ def list_runs():
         return results
 
 
-def execute(engine, steps=4):
+def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
+            model_config=None, worker_timeout=120):
     """One bounded subprocess globally; serving process never imports the trainer."""
     if type(steps) is not int or not 1 <= steps <= 64:
         raise Blocked("blocked_bounds", "steps must be an integer in 1..64", 422)
+    if type(context_tokens) is not int or not 128 <= context_tokens <= 4096:
+        raise Blocked("blocked_bounds", "context_tokens must be an integer in 128..4096", 422)
+    if type(worker_timeout) is not int or not 10 <= worker_timeout <= 600:
+        raise Blocked("blocked_bounds", "worker_timeout must be an integer in 10..600", 422)
+    stream = peak_stream(model_config) if peak_content else None
     JOBS.mkdir(parents=True, exist_ok=True, mode=0o700)
     if JOBS.is_symlink() or JOBS.resolve() != JOBS:
         raise Blocked("blocked_storage", "Learning directory cannot contain symlinks")
@@ -235,9 +255,19 @@ def execute(engine, steps=4):
             raise Blocked("blocked_busy", "An isolated learning run is already active", 429) from exc
         reconcile_locked()
         # Bounded retained jobs; never silently delete audit/provenance records.
-        if sum(p.is_dir() for p in JOBS.iterdir()) >= 100:
+        maximum_runs = int(os.environ.get("MAXCORE_LEARNING_MAX_RETAINED_RUNS", "10000"))
+        if not 100 <= maximum_runs <= 100000:
+            raise Blocked("blocked_bounds", "Learning retained run limit must be 100..100000", 422)
+        if sum(p.is_dir() for p in JOBS.iterdir()) >= maximum_runs:
             raise Blocked("blocked_capacity", "Learning audit capacity reached; operator archival required", 507)
-        observation_set = engine.training_observations()
+        if peak_content:
+            if not callable(getattr(engine, "peak_training_observations", None)):
+                raise Blocked("waiting_for_public_peak_content", "Public peak-content scanner unavailable", 503)
+            observation_set = engine.peak_training_observations()
+            if observation_set.get("policy") != PEAK_POLICY:
+                raise Blocked("waiting_for_public_peak_content", "Public peak-content policy required", 503)
+        else:
+            observation_set = engine.training_observations()
         records, excluded = eligible_records(observation_set)
         try:
             manifest = build_manifest(
@@ -262,7 +292,10 @@ def execute(engine, steps=4):
         sync_directory(marker.parent.parent)
         write_new(marker / "admission.json", canonical({"schema": 1, "run_id": run_id,
                                                       "state": "pending"}).encode())
-        corpus = canonical({"schema": 1, "records": records}).encode()
+        corpus_document = {"schema": 1, "records": records}
+        if stream:
+            corpus_document["learning_stream"] = stream
+        corpus = canonical(corpus_document).encode()
         corpus_hash = hashlib.sha256(corpus).hexdigest()
         observation_manifest = {
             "schema": 1, "id": observation_set["id"],
@@ -286,13 +319,15 @@ def execute(engine, steps=4):
         command = [sys.executable, "-m", "ai_model.training.live_learning",
                    "--worker", str(lock.fileno()),
                    "--corpus", str(folder / "corpus.json"), "--corpus-sha256", corpus_hash,
-                   "--run-id", run_id, "--steps", str(steps), "--manual-backward"]
+                   "--run-id", run_id, "--steps", str(steps),
+                   "--context-tokens", str(context_tokens), "--manual-backward"]
+        command.extend(["--worker-timeout", str(worker_timeout)])
         try:
             # Output stays off the HTTP surface. Trainer has no network/source fetch
             # and uses only the existing manual DigitalGPU reverse-mode backend.
             with (folder / "worker.log").open("xb") as output:
                 completed = subprocess.run(command, cwd=ROOT, stdout=output,
-                                           stderr=subprocess.STDOUT, timeout=120,
+                                           stderr=subprocess.STDOUT, timeout=worker_timeout + 10,
                                            pass_fds=(lock.fileno(),))
             if completed.returncode == 124:
                 result["status"] = "blocked_timeout"
@@ -322,7 +357,7 @@ def execute(engine, steps=4):
         return result
 
 
-def create_router(authorize, engine_factory):
+def create_router(authorize, engine_factory, *, peak_content=True):
     from fastapi import APIRouter, Depends
     from fastapi.responses import JSONResponse
     from pydantic import BaseModel, ConfigDict, Field
@@ -352,7 +387,7 @@ def create_router(authorize, engine_factory):
     @router.post("/api/training/candidates/live")
     def learn(body: LearningRequest, _admin=Depends(authorize)):
         try:
-            result = execute(engine_factory(), body.steps)
+            result = execute(engine_factory(), body.steps, peak_content=peak_content)
             return JSONResponse(result, status_code=201 if result["status"] == "candidate_trained_unreviewed" else 409)
         except Blocked as exc:
             return JSONResponse({"status": exc.code, "detail": str(exc),
@@ -376,10 +411,18 @@ def worker_main(arguments):
     if len(arguments) < 3 or arguments[0] != "--worker":
         raise ValueError("Internal bounded worker invocation required")
     lock_fd = int(arguments[1])
+    trainer_arguments = list(arguments[2:])
+    timeout_index = trainer_arguments.index("--worker-timeout") if "--worker-timeout" in trainer_arguments else None
+    timeout = 110
+    if timeout_index is not None:
+        timeout = int(trainer_arguments[timeout_index + 1])
+        del trainer_arguments[timeout_index:timeout_index + 2]
+    if not 10 <= timeout <= 600:
+        raise ValueError("Worker deadline outside bounds")
     try:
         return subprocess.run(
-            [sys.executable, "-m", "ai_model.training.candidate_manifest_train", *arguments[2:]],
-            timeout=110, pass_fds=(lock_fd,),
+            [sys.executable, "-m", "ai_model.training.candidate_manifest_train", *trainer_arguments],
+            timeout=timeout, pass_fds=(lock_fd,),
         ).returncode
     except subprocess.TimeoutExpired:
         return 124

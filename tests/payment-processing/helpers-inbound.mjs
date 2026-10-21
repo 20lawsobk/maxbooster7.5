@@ -1,5 +1,6 @@
 import { build } from "esbuild";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 let isolatedModuleSequence = 0;
 
@@ -10,6 +11,7 @@ export async function loadIsolated(entry, mocks = {}) {
     write: false,
     platform: "node",
     format: "esm",
+    banner: { js: `import {createRequire as __inboundCreateRequire} from "node:module";const require=__inboundCreateRequire(${JSON.stringify(path.resolve("package.json"))});` },
     plugins: [{
       name: "inbound-dependency-boundaries",
       setup(builder) {
@@ -72,6 +74,11 @@ export async function loadIsolatedClosed(entry, mocks = {}) {
       setup(builder) {
         builder.onResolve({ filter: /.*/ }, async args => {
           if (!args.importer) return null;
+          // Execute the real credential/factory policy against the caller's
+          // closed Stripe boundary instead of fabricating a callable proxy.
+          if (/(?:^|\/)lib\/stripeClient(?:\.js)?$/.test(args.path)) {
+            return { path: path.resolve("server/lib/stripeClient.ts") };
+          }
           return {
             path: args.path,
             namespace: "closed-inbound-mock",

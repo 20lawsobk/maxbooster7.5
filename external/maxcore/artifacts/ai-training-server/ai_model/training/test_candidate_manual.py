@@ -59,7 +59,8 @@ class CandidateManualTests(unittest.TestCase):
             other = adapter.generate("A plum.", **{**kwargs, "seed": 124})
         self.assertEqual(first, second)
         self.assertNotEqual(first, other)
-        self.assertTrue(first.startswith("A plum."))
+        self.assertEqual(first, model.generate("A plum.", **kwargs)["text"])
+        self.assertFalse(first.startswith("A plum."))
         count = model.backend.dispatch_counts["transformer_forward"]
         with self.assertRaisesRegex(ValueError, "no prompt truncation"):
             adapter.generate("x" * 120, **kwargs)

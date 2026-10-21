@@ -38,6 +38,7 @@ export function startPlan(node) {
   const restoreData = fs.existsSync("dist/deployment/runtime-data-required") ||
     fs.existsSync("dist/deployment/runtime-data-backup.json");
   const definitions=[
+    ["restore-app","app_remainder.pdim","app_remainder.manifest.json",".",".pdim-restored-app"],
     ["restore-node","node_modules.pdim","node_modules.manifest.json","node_modules",".pdim-restored"],
     ["restore-python","python_runtime.pdim","python_runtime.manifest.json","python_runtime",".pdim-restored-py"],
     ["restore-maxcore","external_maxcore.pdim","external_maxcore.manifest.json","external/maxcore",".pdim-restored-maxcore"],

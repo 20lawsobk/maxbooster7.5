@@ -1,38 +1,33 @@
-# ─── Stage 1: Builder ────────────────────────────────────────────────────────
-# Installs dependencies and runs build.sh.  The fast path in build.sh detects
-# pre-committed dist/ artifacts and runs `npm ci --omit=dev` only, keeping this
-# stage lean.  The .dockerignore excludes node_modules/ and .cache/ from the
-# COPY context so they are never present in any layer.
-FROM node:22 AS builder
+# Build after `npm run release:prepare && npm run release:verify`.
+# Only the verified portable payload enters this image. Runtime extraction uses
+# the same executive and imported local services as the normal release.
+FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587 AS runtime-base
+RUN --mount=type=secret,id=build_ca,mode=0444 \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && if [ -f /run/secrets/build_ca ]; then export APT_CA=/run/secrets/build_ca; else export APT_CA=/etc/ssl/certs/ca-certificates.crt; fi \
+    && apt-get -o Acquire::https::CaInfo="$APT_CA" update \
+    && apt-get -o Acquire::https::CaInfo="$APT_CA" install -y --no-install-recommends \
+    bash ca-certificates curl libarchive-tools libgomp1 libsndfile1 libstdc++6 procps zstd \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 maxbooster \
+    && useradd --uid 10001 --gid 10001 --home-dir /app --no-create-home maxbooster \
+    && mkdir -p /app /var/lib/maxcore \
+    && chmod 700 /var/lib/maxcore \
+    && chown 10001:10001 /app /var/lib/maxcore
 
+FROM runtime-base AS production
 WORKDIR /app
-
-COPY . .
-
-RUN bash build.sh
-
-# ─── Stage 2: Production ─────────────────────────────────────────────────────
-# Only the minimum runtime artifacts are copied from the builder stage.
-# The final image contains no source code, no dev dependencies, no build tools.
-FROM node:22-slim AS production
-
-WORKDIR /app
-
-COPY --from=builder /app/dist                                        ./dist
-COPY --from=builder /app/node_modules                                ./node_modules
-COPY --from=builder /app/package.json                                ./package.json
-COPY --from=builder /app/boosterstate/target/release/boosterstate    ./boosterstate/target/release/boosterstate
-
-RUN chmod +x ./boosterstate/target/release/boosterstate
-
-ENV NODE_ENV=production
-ENV PORT=5000
-ENV BOOSTERSTATE_SIDECAR_PORT=9877
-ENV PYTHON_AI_PORT=9880
-ENV UV_THREADPOOL_SIZE=8
-ENV TF_NUM_INTEROP_THREADS=2
-ENV TF_NUM_INTRAOP_THREADS=2
-
-EXPOSE 5000 9877
-
-CMD ["npm", "run", "start"]
+COPY --chown=10001:10001 .prepared-release/payload/ ./
+RUN test -x .node_bin/node && test -f start.sh \
+    && test -f dist/deployment/executive.mjs \
+    && test -f python_runtime.manifest.json \
+    && test -f external_maxcore.manifest.json \
+    && test -f external_pdim.manifest.json \
+    && .node_bin/node --version
+ENV NODE_ENV=production PORT=5000 \
+    MAXCORE_LOCAL=1 PDIM_FORCE_REMOTE=0 MAXCORE_SERVING_RELEASE=live-awareness \
+    MAXCORE_PRIVATE_STATE_DIR=/var/lib/maxcore \
+    HOME=/app PATH=/app/.node_bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+USER 10001:10001
+EXPOSE 5000
+CMD ["bash", "start.sh"]

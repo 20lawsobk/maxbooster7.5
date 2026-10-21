@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,7 +134,7 @@ const displayName = (person?: {
   "Anonymous Artist";
 
 export default function Collaborations() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -361,10 +361,10 @@ export default function Collaborations() {
     },
   });
 
-  if (!user) {
-    setLocation("/login");
-    return null;
+  if (authLoading) {
+    return <div role="status" aria-label="Loading account" className="p-6">Loading account…</div>;
   }
+  if (!user) return null;
 
   const connections = connectionsData || [];
   const pendingRequests = pendingData || [];

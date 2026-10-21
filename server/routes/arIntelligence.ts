@@ -25,38 +25,10 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { requirePremium } from "../middleware/requirePremium.js";
 import { logger } from "../logger.js";
+import { getAwarenessContext } from "../services/awarenessContext.js";
 
 const router = Router();
 router.use(requireAuth, requirePremium);
-
-// ─── Awareness layer loader (same pattern as maxcoreProxy) ────────────────────
-
-async function getAwarenessContext(mode: string) {
-  const candidates = [
-    "../services/contentAwarenessService.js",
-    "../../awareness layer/ContentGenerationAwarenessService.js",
-    "../awareness layer/ContentGenerationAwarenessService.js",
-  ];
-  for (const p of candidates) {
-    try {
-      // @ts-ignore dynamic import
-      const mod = await import(p);
-      const svc =
-        mod?.contentAwarenessService ??
-        mod?.default?.contentAwarenessService ??
-        mod?.default;
-      if (svc && typeof svc.getContextForMode === "function") {
-        return await Promise.race([
-          svc.getContextForMode(mode),
-          new Promise<null>((r) => setTimeout(() => r(null), 3000)),
-        ]);
-      }
-    } catch {
-      // try next candidate
-    }
-  }
-  return null;
-}
 
 // ─── Trend Forecast ──────────────────────────────────────────────────────────
 
@@ -156,6 +128,8 @@ router.get("/catalog-gap", async (req, res) => {
       "N/A";
 
     res.json({
+      snapshot_id: ctx.snapshot_id,
+      expires_at: ctx.expires_at,
       catalog: {
         totalBeats: catalog.length,
         genreBreakdown: Object.entries(catalogGenres)
@@ -174,7 +148,8 @@ router.get("/catalog-gap", async (req, res) => {
     });
   } catch (err) {
     logger.warn({ err }, "[ARIntelligence] /catalog-gap failed");
-    res.status(500).json({ error: "Failed to compute catalog gap" });
+    res.status((err as { status?: number })?.status === 503 ? 503 : 500)
+      .json({ error: "Failed to compute catalog gap" });
   }
 });
 

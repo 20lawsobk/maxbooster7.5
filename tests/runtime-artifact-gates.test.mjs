@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { inspectDependencies, inspectDeploymentDependencies, inspectArtifacts, inspectRestored, digest } from "../scripts/verify-runtime-artifacts.mjs";
+import { PORTABLE_NODE_VERSION } from "../script/lib/portableNodePolicy.mjs";
 
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "runtime-gate-"));
@@ -129,4 +130,16 @@ test("restored output gate rejects absent artifacts and invalid JS without execu
   assert.ok(!inspectRestored(root).failures.some(x => x.startsWith("dist/index.mjs:")));
   write(root, "dist/index.mjs", "export const = ;");
   assert.match(inspectRestored(root).failures.join(), /syntax check failed/);
+});
+test("restored Node provenance admits the provisioned pin and rejects stale or malformed records", t => {
+  const root = fixture(t);
+  const record = { version: PORTABLE_NODE_VERSION, platform: "linux-x64", archiveSha256: "a".repeat(64) };
+  const check = value => {
+    write(root, ".node_bin/provenance.json", JSON.stringify(value));
+    return inspectRestored(root, [".node_bin/provenance.json"]);
+  };
+  assert.equal(check(record).ready, true);
+  for (const changed of [{ version: "22.22.0" }, { platform: "darwin-arm64" }, { archiveSha256: "invalid" }]) {
+    assert.match(check({ ...record, ...changed }).failures.join(), /invalid pinned Node provenance/);
+  }
 });

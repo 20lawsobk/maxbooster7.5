@@ -18,6 +18,7 @@ from pathlib import Path
 
 from ai_model.training.candidate_corpus import build_manifest, digest, smoke_records
 from ai_model.training.candidate_lifecycle import train_validated
+from ai_model.training.public_curriculum import peak_stream, validate_peak_record
 
 
 def read_pinned(path, expected, max_bytes=2_000_000):
@@ -31,12 +32,20 @@ def read_pinned(path, expected, max_bytes=2_000_000):
 
 
 def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None,
-                        run_id=None, steps=4, seed=1729, lr=0.1, manual_backward=False):
+                        run_id=None, steps=4, seed=1729, lr=None, manual_backward=False,
+                        context_tokens=128):
+    data = read_pinned(corpus, corpus_sha256)
+    stream = data.get("learning_stream")
+    if stream is not None:
+        if stream != peak_stream(stream.get("model_config")):
+            raise ValueError("Unknown or inconsistent public learning stream")
+        for record in data.get("records", []):
+            validate_peak_record(record)
+    lr = (0.0003 if stream else 0.1) if lr is None else lr
     if not 1 <= steps <= 64 or not 0 < lr <= 0.2:
         raise ValueError("Bounded training requires steps 1..64 and learning rate (0,0.2]")
     if not isinstance(run_id, str) or not run_id:
         raise ValueError("Run ID required")
-    data = read_pinned(corpus, corpus_sha256)
     holdouts = []
     if (holdout is None) != (holdout_sha256 is None):
         raise ValueError("Holdout path and SHA256 must be supplied together")
@@ -76,9 +85,10 @@ def train_from_manifest(corpus, corpus_sha256, holdout=None, holdout_sha256=None
     )
     if any(r["reason"] != "duplicate" for r in manifest["rejected"]):
         raise ValueError("Corpus contains holdout overlap or secret/PII; training refused")
-    result = train_validated(run_id, steps, seed, "transformer", manifest,
+    result = train_validated(run_id, steps, seed, "public-content" if stream else "transformer", manifest,
                              holdout_sha256=holdout_sha256, input_sha256=corpus_sha256, lr=lr,
-                             manual_backward=manual_backward)
+                             manual_backward=manual_backward, context_tokens=context_tokens,
+                             learning_stream=stream)
     from ai_model.training.candidate_lifecycle import CANDIDATES
     # Preserve exact approved input bytes so the data fingerprint is verifiable.
     raw = Path(corpus).read_bytes()
@@ -98,7 +108,8 @@ def main():
     parser.add_argument("--holdout-sha256")
     parser.add_argument("--steps", type=int, default=4)
     parser.add_argument("--seed", type=int, default=1729)
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--lr", type=float)
+    parser.add_argument("--context-tokens", type=int, default=128)
     parser.add_argument("--manual-backward", action="store_true",
                         help="Fully DigitalGPU-dispatched reverse mode; no torch autograd accumulation")
     print(json.dumps(train_from_manifest(**vars(parser.parse_args())), indent=2))

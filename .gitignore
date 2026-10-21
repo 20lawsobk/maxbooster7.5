@@ -12,9 +12,9 @@ dist/cluster.mjs
 server/public
 vite.config.ts.*
 .local/
+.prepared-release/
 logs/
 uploads/
-.replit
 *.log
 .env
 .env.local
@@ -197,3 +197,8 @@ public/generated-content/
 .replit.new
 .replit.new
 .env
+# Automatically learned model bundles and their complete audit sidecars are
+# retained locally; do not commit rolling source data or generated weights.
+external/maxcore/artifacts/ai-training-server/ai_model/training/candidate_runs/live-*/
+external/maxcore/artifacts/ai-training-server/ai_model/training/live_candidate_admissions/live-*/
+external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning_runs/live-*/

@@ -949,7 +949,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult?.value ?? {};
     app.use("/api", invalidateCacheOnMutation());
     const cachedRoutes: Record<string, number> = {
-      "/api/bootstrap": 30,
       "/api/auth/me": 15,
       "/api/projects": 20,
       "/api/studio/projects": 20,
@@ -981,7 +980,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // Add stale-while-revalidate headers so browsers can serve cached API
     // responses immediately and refresh in background on repeat visits.
     const SWR_ROUTES: Record<string, string> = {
-      "/api/bootstrap": "private, max-age=30, stale-while-revalidate=300",
       "/api/auth/me": "private, max-age=15, stale-while-revalidate=120",
       "/api/projects": "private, max-age=20, stale-while-revalidate=180",
       "/api/notifications": "private, max-age=10, stale-while-revalidate=60",

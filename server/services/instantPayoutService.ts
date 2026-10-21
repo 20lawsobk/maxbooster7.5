@@ -1,5 +1,6 @@
 // @ts-nocheck
 import Stripe from "stripe";
+import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
 import { db } from "../db";
 import { users, instantPayouts, notifications, ledgerEntries, splitPayments } from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
@@ -10,8 +11,8 @@ import { requestCommercePayout, payOrderBeneficiaries } from "./commerce/payouts
 import { legacyReconciliation, withdrawalView, commercePayoutReport } from "./commerce/readModels";
 
 // Initialize Stripe
-const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = hasStripeCredential(process.env.STRIPE_SECRET_KEY)
+  ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2025-08-27.basil",
     })
   : null;

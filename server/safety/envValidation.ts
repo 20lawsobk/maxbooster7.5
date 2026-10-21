@@ -193,7 +193,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: true,
     category: "payment",
     description: "Stripe secret API key",
-    validator: (v) => v?.startsWith("sk_"),
+    validator: (v) => Boolean(v?.trim()),
   },
   {
     name: "STRIPE_PUBLISHABLE_KEY",

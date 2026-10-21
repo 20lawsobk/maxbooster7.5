@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,8 +62,7 @@ interface WorkspaceMember {
 }
 
 export default function Workspaces() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useRequireAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -425,10 +423,10 @@ export default function Workspaces() {
     },
   });
 
-  if (!user) {
-    setLocation("/login");
-    return null;
+  if (authLoading) {
+    return <div role="status" aria-label="Loading account" className="p-6">Loading account…</div>;
   }
+  if (!user) return null;
 
   const workspaces = workspacesData?.workspaces || [];
   const members = membersData?.members || [];

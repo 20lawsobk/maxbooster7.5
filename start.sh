@@ -168,10 +168,21 @@ if [ "$_PYENV_ACTIVATED" = "0" ]; then
   echo "[start.sh] WARNING: .venv Python not functional — Python features disabled (video/audio analysis unavailable)"
 fi
 
+# Check the configured listener, not global process names: several isolated
+# application instances can legitimately run the same sidecar executable.
+_service_healthy() {
+  "$_NODE_BIN" --input-type=module -e '
+    try {
+      const response = await fetch(`http://127.0.0.1:${process.argv[1]}/health`, {signal: AbortSignal.timeout(1000)});
+      process.exit(response.status === 200 ? 0 : 1);
+    } catch { process.exit(1); }
+  ' "$1" >/dev/null 2>&1
+}
+
 # ── 3. Start boosterstate sidecar ────────────────────────────────────────────
 # Check ./bin/boosterstate first (compiled by build.sh, not in .dockerignore),
 # then fall back to the dev-build path in boosterstate/target/release/.
-if ! pgrep -x boosterstate >/dev/null 2>&1; then
+if ! _service_healthy "$BOOSTERSTATE_SIDECAR_PORT"; then
   _BOOSTER_BIN=""
   [ -x "./bin/boosterstate" ] && _BOOSTER_BIN="./bin/boosterstate"
   [ -z "$_BOOSTER_BIN" ] && [ -x "./boosterstate/target/release/boosterstate" ] && \
@@ -244,11 +255,11 @@ fi
 # Max Booster and MaxCore AI for video/image diffusion training and relay.
 # The gateway is transport/orchestration only. AI inference must remain in
 # MaxCore's Digital GPU/HyperGPU path; local model fallback is not permitted.
-if ! pgrep -f "dist/gateway.mjs" >/dev/null 2>&1; then
+if ! _service_healthy "$VIDEO_DIFFUSION_PORT"; then
   if [ -f "dist/gateway.mjs" ]; then
     "$_NODE_BIN" dist/gateway.mjs >> /tmp/diffusion_gateway.log 2>&1 &
     _GW_PID=$!
-    echo "[start.sh] MaxCore Diffusion Gateway started (pid $_GW_PID) on port 8008"
+    echo "[start.sh] MaxCore Diffusion Gateway started (pid $_GW_PID) on port $VIDEO_DIFFUSION_PORT"
     # Brief pause so the gateway is listening before the cluster boots and checks it
     sleep 2
   else

@@ -54,6 +54,25 @@ def production_gates():
 
 
 class RouteBindings(unittest.IsolatedAsyncioTestCase):
+    async def test_main_generation_conditions_on_live_snapshot_even_with_large_corpus(self):
+        from ai_model.generation.awareness import require_context
+        from ai_model.awareness import conditioning
+        gate = self.ns["_planned_generation"]
+        observed = []
+
+        @gate("text")
+        async def generate(req):
+            observed.append(require_context("general", "text"))
+            return {"text": "contract fixture output"}
+
+        with patch("ai_model.quality_awareness.self_sufficiency",
+                   return_value={"retired": True}) as corpus_gate:
+            result = await generate({"topic": "public trends"})
+        self.assertEqual(observed, [conditioning(self.snap, "general", "text")])
+        self.assertTrue(observed[0])
+        self.assertEqual(result["snapshot_id"], self.snap.id)
+        corpus_gate.assert_not_called()
+
     def setUp(self):
         self.ns = production_gates()
         self.snap = snapshot()

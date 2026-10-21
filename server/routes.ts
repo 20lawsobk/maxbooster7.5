@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
 import { isProductionEnv } from "./lib/envHelpers.js";
+import { createAwarenessReadinessHandler } from "./lib/awarenessReadiness.js";
 import { storage } from "./storage.js";
 import { db, pool } from "./db.js";
 import { onboardingUpdateSchema } from "./lib/onboardingUpdate.js";
@@ -27,6 +28,7 @@ import { issueAdminApiToken, revokeAdminApiToken } from "./services/adminApiToke
 import { consumeTotp } from "./services/totpReplay.js";
 import { requireUUIDParam } from "./middleware/requestValidation.js";
 import Stripe from "stripe";
+import { createStripeClient } from "./lib/stripeClient";
 import { getStripePriceIds } from "./services/stripeSetup.js";
 import {
   createSubscriptionCheckout,
@@ -7974,6 +7976,13 @@ export async function registerRoutes(
   app.get("/api/health", livenessHandler);
   app.get("/api/health/live", livenessHandler);
 
+  // Scope this probe to live awareness. The aggregate /api/ready also checks
+  // generation and must not be interpreted as an awareness-only verdict.
+  app.get("/api/health/awareness/ready", createAwarenessReadinessHandler(async () => {
+    const { getUnifiedAwarenessStatus } = await import("./services/awarenessContext.js");
+    return getUnifiedAwarenessStatus();
+  }));
+
   // Readiness — checks downstream subsystems (DB, Redis, audit, automation).
   // Returns 200 only when every subsystem is fully `ok`; `degraded` or `down`
   // both return 503 so a caller relying on the status code alone never reads
@@ -7995,7 +8004,11 @@ export async function registerRoutes(
       ]);
       // Readiness only: never add an external fetch to the liveness endpoint.
       const { getUnifiedAwarenessStatus } = await import("./services/awarenessContext.js");
-      const unifiedAwareness = await getUnifiedAwarenessStatus();
+      // A failed optional transport probe must remain a failed readiness gate,
+      // while preserving evidence from the independent local dependencies.
+      const unifiedAwareness = await getUnifiedAwarenessStatus().catch(() => ({
+        ready: false, status: "unavailable",
+      }));
       const { endpointLatencyRegistry } = await import("./services/monitoringService.js");
       const slowestEndpoints = endpointLatencyRegistry
         .getSlowestEndpoints(10)
@@ -8055,7 +8068,7 @@ export async function registerRoutes(
 
   // Stripe checkout session creation for subscription plans
   const stripe = process.env.STRIPE_SECRET_KEY
-    ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+    ? createStripeClient(process.env.STRIPE_SECRET_KEY, {
         apiVersion: "2026-02-25.clover",
       })
     : null;

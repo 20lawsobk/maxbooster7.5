@@ -1,5 +1,6 @@
 import { billingAccountStatus } from "./billingAccountStatus";
 import Stripe from "stripe";
+import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
 import { validateCustomerRefund } from "./commercePolicy";
 import { initiateCommerceRefund } from "./commerce/compensation";
 import { storage } from "../storage";
@@ -17,14 +18,14 @@ import { isProductionEnv } from "../lib/envHelpers.js";
 let actualStripeKey: string | undefined;
 if (isProductionEnv()) {
   // Production: Only use STRIPE_SECRET_KEY
-  if (env?.STRIPE_SECRET_KEY?.startsWith("sk_")) {
+  if (hasStripeCredential(env?.STRIPE_SECRET_KEY)) {
     actualStripeKey = env?.STRIPE_SECRET_KEY;
   }
 } else {
   // Development: Try TESTING_STRIPE_SECRET_KEY first, then STRIPE_SECRET_KEY
-  if (env?.TESTING_STRIPE_SECRET_KEY?.startsWith("sk_")) {
+  if (hasStripeCredential(env?.TESTING_STRIPE_SECRET_KEY)) {
     actualStripeKey = env?.TESTING_STRIPE_SECRET_KEY;
-  } else if (env?.STRIPE_SECRET_KEY?.startsWith("sk_")) {
+  } else if (hasStripeCredential(env?.STRIPE_SECRET_KEY)) {
     actualStripeKey = env?.STRIPE_SECRET_KEY;
   }
 }
@@ -35,13 +36,13 @@ if (!actualStripeKey) {
   logger.warn(
     "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
   );
-  logger.warn("   Format: sk_test_... or sk_live_...");
+  logger.warn("   Configure a Stripe secret key or supported proxy credential binding.");
   throw new Error(
     "Invalid Stripe configuration - cannot initialize payment service",
   );
 }
 
-const stripe = new Stripe(actualStripeKey, {
+const stripe = createStripeClient(actualStripeKey, {
   apiVersion: "2026-02-25.clover" as any,
 });
 

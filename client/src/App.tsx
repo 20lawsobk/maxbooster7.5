@@ -13,6 +13,7 @@ import { UndoProvider } from "@/contexts/UndoContext";
 import { ShortcutProvider } from "@/contexts/ShortcutContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoUpdate } from "@/hooks/useAutoUpdate";
+import { isPublicPageRoute, shouldRedirectNativeLanding } from "@/lib/pageAccess";
 import { useKeyboardShortcuts, announce } from "@/lib/accessibility";
 import {
   setupLinkPrefetching,
@@ -169,21 +170,33 @@ const PublicPressKit = lazy(() => import("@/pages/PublicPressKit"));
 // Inline component: resolves /s/:label → /storefront/:slug
 function StorefrontShortLink({ params }: { params?: { label?: string } }) {
   const [, setLocation] = useLocation();
+  const [unavailable, setUnavailable] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    setUnavailable(false);
     const label = params?.label;
     if (!label) {
-      setLocation("/marketplace");
+      setUnavailable(true);
       return;
     }
-    fetch(`/api/storefront-domains/resolve/${encodeURIComponent(label)}`)
-      .then((r) => r.json())
+    fetch(`/api/storefront-domains/resolve/${encodeURIComponent(label)}`, { signal: controller.signal })
+      .then((r) => r.ok ? r.json() : null)
       .then((d) => {
-        if (d.ok && d.slug) setLocation(`/storefront/${d.slug}`);
-        else setLocation("/marketplace");
+        if (cancelled) return;
+        if (d?.ok && typeof d.slug === "string" && d.slug) setLocation(`/storefront/${encodeURIComponent(d.slug)}`);
+        else setUnavailable(true);
       })
-      .catch(() => setLocation("/marketplace"));
-  }, [params?.label]);
-  return null;
+      .catch(() => { if (!cancelled) setUnavailable(true); });
+    return () => { cancelled = true; controller.abort(); };
+  }, [params?.label, setLocation]);
+  return unavailable ? (
+    <section className="min-h-screen flex flex-col items-center justify-center gap-3 p-6">
+      <h1 className="text-2xl font-semibold">Storefront link unavailable</h1>
+      <p>This storefront link could not be opened. Check the link or contact the creator.</p>
+      <a href="/">Go to Max Booster</a>
+    </section>
+  ) : <div role="status" aria-label="Opening storefront" className="p-6">Opening storefront…</div>;
 }
 
 function Router() {
@@ -289,33 +302,6 @@ function isNativeApp(): boolean {
   );
 }
 
-const PUBLIC_ONLY_ROUTES = [
-  "/",
-  "/about",
-  "/blog",
-  "/features",
-  "/pricing",
-  "/security",
-  "/dmca",
-  "/terms",
-  "/privacy",
-  "/api-docs",
-  "/documentation",
-  "/solo-founder-story",
-  "/desktop-app",
-  "/help",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-];
-const PUBLIC_ONLY_PREFIXES = [
-  "/blog/",
-  "/blog",
-  "/register/payment/",
-  "/register/",
-];
-
 // Scroll the page to the top whenever the user navigates to a new route.
 function ScrollToTop() {
   const [location] = useLocation();
@@ -342,32 +328,19 @@ function AppWithKeyboardShortcuts() {
   useEffect(() => {
     if (isLoading) return;
     if (user) return;
-    const isPublic =
-      PUBLIC_ONLY_ROUTES.includes(location) ||
-      PUBLIC_ONLY_PREFIXES.some((p) => location.startsWith(p)) ||
-      location.startsWith("/storefront/") ||
-      location.startsWith("/store/") ||
-      // A specific beat's landing page must be viewable by anonymous ad
-      // clickers — only this deep-link path is public, not the full
-      // marketplace browse/grid experience.
-      location.startsWith("/marketplace/beat/") ||
-      location.startsWith("/handle-link") ||
-      location === "/verification" ||
-      location === "/pricing";
-    if (!isPublic) {
+    if (!isPublicPageRoute(location)) {
       setLocation(`/login?redirect=${encodeURIComponent(location)}`);
     }
-  }, [user, isLoading, location]);
+  }, [user, isLoading, location, setLocation]);
 
   useEffect(() => {
     if (
       isNativeApp() &&
-      (PUBLIC_ONLY_ROUTES.includes(location) ||
-        PUBLIC_ONLY_PREFIXES.some((p) => location.startsWith(p)))
+      shouldRedirectNativeLanding(location, !!user, isLoading)
     ) {
       setLocation("/dashboard");
     }
-  }, [location]);
+  }, [location, user, isLoading, setLocation]);
 
   useEffect(() => {
     const metaEl = document.querySelector(

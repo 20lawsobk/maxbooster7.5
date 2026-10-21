@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEPLOYMENT_BOOTSTRAP_FILES } from "./lib/deploymentControlFiles.js";
 import { inventory, sourceIncluded, assertInventory, buildEnvironmentDigest } from "./lib/releaseInventory.js";
 import { assertPublishingPayloadClean, measurePublishingPayload } from "./lib/publishingPayload.js";
 import { isPublishingEnvironment } from "./lib/deploymentPackRecovery.mjs";
@@ -26,6 +27,7 @@ export async function verifyPreparedRelease(root: string) {
   if (fs.realpathSync(payloadRoot) !== payloadRoot) throw new Error("Payload directory must not be a symlink");
   assertInventory(manifest.payload, await inventory(payloadRoot), "Prepared artifacts");
   for (const required of [
+    ...DEPLOYMENT_BOOTSTRAP_FILES,
     "start.sh", ".node_bin/node", "dist/pdim-restore.mjs",
     "scripts/boot-stub-server.mjs", "scripts/port-contract.sh",
     ...["node_modules", "python_runtime", "external_maxcore", "external_pdim", "app_remainder"]

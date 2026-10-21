@@ -6,6 +6,7 @@ the numerical kernels below execute inside this backend. Existing HyperGPU GEMM,
 attention and normalization remain in the existing backend.
 """
 from collections import Counter
+from ai_model.model.inference_budget import check_inference_budget
 import numpy as np
 import torch
 
@@ -42,6 +43,7 @@ class CandidateTrainingBackend(HyperGPUBackend):
             "cross_entropy": self._cross_entropy,
             "cross_entropy_backward": lambda grad, upstream: grad * upstream,
             "sgd": self._sgd,
+            "adamw": self._adamw,
             "finite": lambda value: bool(np.isfinite(value).all()),
             "equal": np.array_equal,
             "greedy": self._greedy,
@@ -50,6 +52,8 @@ class CandidateTrainingBackend(HyperGPUBackend):
             "token_array": lambda ids: np.asarray(ids, dtype=np.int64),
             "initialize": self._initialize,
             "transformer_forward": self._transformer_forward,
+            "transformer_prefill": self._transformer_prefill,
+            "transformer_decode": self._transformer_decode,
             "transformer_backward": self._transformer_backward,
         }
         if operation not in kernels:
@@ -130,6 +134,42 @@ class CandidateTrainingBackend(HyperGPUBackend):
         return updated
 
     @staticmethod
+    def _adamw(weights, gradients, state, lr, max_grad_norm, weight_decay):
+        if (not np.isfinite(lr) or not 0 < lr <= 1 or
+                not np.isfinite(max_grad_norm) or max_grad_norm <= 0 or
+                not np.isfinite(weight_decay) or not 0 <= weight_decay <= 1):
+            raise ValueError("Invalid AdamW configuration")
+        if set(weights) != set(gradients):
+            raise ValueError("Missing optimizer gradient")
+        step = state.get("step", 0)
+        if type(step) is not int or step < 0:
+            raise ValueError("Invalid optimizer step")
+        previous_m, previous_v = state.get("m", {}), state.get("v", {})
+        if step and (set(previous_m) != set(weights) or set(previous_v) != set(weights)):
+            raise ValueError("Incomplete optimizer state")
+        norm_squared = 0.0
+        for name, weight in weights.items():
+            grad = gradients[name]
+            if weight.shape != grad.shape or not np.isfinite(weight).all() or not np.isfinite(grad).all():
+                raise ValueError("Invalid optimizer parameter or gradient")
+            norm_squared += float(np.sum(grad.astype(np.float64) ** 2))
+        scale = min(1.0, max_grad_norm / (np.sqrt(norm_squared) + 1e-12))
+        updates, moments, variances = {}, {}, {}
+        for name, weight in weights.items():
+            grad = gradients[name] * np.float32(scale)
+            m = array(previous_m[name]) if name in previous_m else np.zeros_like(weight)
+            v = array(previous_v[name]) if name in previous_v else np.zeros_like(weight)
+            if m.shape != weight.shape or v.shape != weight.shape or not np.isfinite(m).all() or not np.isfinite(v).all() or np.any(v < 0):
+                raise ValueError("Invalid optimizer moments")
+            m = np.float32(.9) * m + np.float32(.1) * grad
+            v = np.float32(.999) * v + np.float32(.001) * grad * grad
+            updated = weight * np.float32(1 - lr * weight_decay) - np.float32(lr) * (m / (1 - .9 ** (step + 1))) / (np.sqrt(v / (1 - .999 ** (step + 1))) + np.float32(1e-8))
+            if not np.isfinite(updated).all():
+                raise ValueError("Nonfinite optimizer update")
+            updates[name], moments[name], variances[name] = updated, tensor(m), tensor(v)
+        return updates, {"step": step + 1, "m": moments, "v": variances}
+
+    @staticmethod
     def _greedy(logits, banned):
         result = logits.copy()
         result[list(banned)] = -np.inf
@@ -194,31 +234,146 @@ class CandidateTrainingBackend(HyperGPUBackend):
         axes = tuple(range(grad.ndim - 1))
         return dx, (grad * normalized).sum(axis=axes), grad.sum(axis=axes)
 
-    def _transformer_forward(self, w, ids):
-        """Explicit tape; every numerical operation lives inside this GPU kernel."""
-        if ids.ndim != 2 or not 1 <= ids.shape[1] <= 128:
-            raise ValueError("Manual transformer expects [batch, length<=128]")
+    def _transformer_forward(self, w, ids, config=None):
+        """Causal multiblock reverse-mode tape; v1 retains its parameter layout."""
+        context = w["position.weight"].shape[0]
+        if ids.ndim != 2 or not 1 <= ids.shape[1] <= context <= 4096:
+            raise ValueError("Manual transformer exceeds the checkpoint context bound")
         if np.any(ids < 0) or np.any(ids >= 259):
             raise ValueError("Invalid token ID")
+        if "blocks.0.norm1.gamma" in w and config is None:
+            raise ValueError("Public content forward requires explicit model configuration")
+        config = config or {"heads": 4, "layers": 1}
+        heads, layers = config["heads"], config["layers"]
+        width = w["embedding.weight"].shape[1]
+        if width % heads:
+            raise ValueError("Attention width must be divisible by heads")
         batch, length = ids.shape
+        head_dim = width // heads
+        # Backward attention materializes scores; bound actual batch as well as
+        # checkpoint construction before allocating the training tape.
+        expansion = config.get("expansion", 2)
+        working_bytes = sum(value.nbytes for value in w.values()) * 6 + batch * layers * (length * width * (20 + expansion) * 4 + heads * length * length * 16)
+        if working_bytes > 8 * 1024 ** 3:
+            raise ValueError("Transformer batch exceeds 8 GiB working budget")
         positions = np.broadcast_to(np.arange(length), ids.shape)
         x = self.dispatch("add", self.dispatch("embedding", w["embedding.weight"], ids),
                           self.dispatch("embedding", w["position.weight"], positions))
-        n1, nc1 = self._norm(x, w["norm1.gamma"], w["norm1.beta"])
-        qkv = self._linear(n1, w["attention.qkv_proj.weight"])
-        q, k, v = [np.ascontiguousarray(part.reshape(batch, length, 4, 8)
-                    .transpose(0, 2, 1, 3).reshape(batch * 4, length, 8))
-                   for part in np.split(qkv, 3, axis=-1)]
-        attention = self.gpu.flash_attention(q, k, v, causal=True, block_size=64)
-        merged = attention.reshape(batch, 4, length, 8).transpose(0, 2, 1, 3).reshape(batch, length, 32)
-        y = self.dispatch("add", x, self._linear(merged, w["attention.out_proj.weight"]))
-        n2, nc2 = self._norm(y, w["norm2.gamma"], w["norm2.beta"])
-        hidden = self.dispatch("tanh", self._linear(n2, w["hidden.weight"]))
-        z = self.dispatch("add", y, self._linear(hidden, w["contract.weight"]))
-        logits = self._linear(z, w["output.weight"])
-        return logits, {"ids": ids, "positions": positions, "n1": n1, "nc1": nc1,
-                        "q": q, "k": k, "v": v, "merged": merged, "n2": n2,
-                        "nc2": nc2, "hidden": hidden, "z": z}
+        blocks = []
+        for index in range(layers):
+            check_inference_budget()
+            prefix = f"blocks.{index}." if "blocks.0.norm1.gamma" in w else ""
+            get = lambda name: w[prefix + name]
+            n1, nc1 = self._norm(x, get("norm1.gamma"), get("norm1.beta"))
+            qkv = self._linear(n1, get("attention.qkv_proj.weight"))
+            q, k, v = [np.ascontiguousarray(part.reshape(batch, length, heads, head_dim)
+                        .transpose(0, 2, 1, 3).reshape(batch * heads, length, head_dim))
+                       for part in np.split(qkv, 3, axis=-1)]
+            attention = self.gpu.flash_attention(q, k, v, causal=True, block_size=64)
+            merged = attention.reshape(batch, heads, length, head_dim).transpose(0, 2, 1, 3).reshape(batch, length, width)
+            y = self.dispatch("add", x, self._linear(merged, get("attention.out_proj.weight")))
+            n2, nc2 = self._norm(y, get("norm2.gamma"), get("norm2.beta"))
+            hidden = self.dispatch("tanh", self._linear(n2, get("hidden.weight")))
+            x = self.dispatch("add", y, self._linear(hidden, get("contract.weight")))
+            blocks.append({"prefix": prefix, "n1": n1, "nc1": nc1, "q": q, "k": k,
+                           "v": v, "merged": merged, "n2": n2, "nc2": nc2, "hidden": hidden})
+        logits = self._linear(x, w["output.weight"])
+        return logits, {"ids": ids, "positions": positions, "blocks": blocks,
+                        "heads": heads, "width": width, "z": x}
+
+    def _transformer_prefill(self, w, ids, config):
+        """V2 inference only: retain bounded K/V, never the reverse-mode tape.
+
+        The returned cache belongs to this backend and this request's parameter
+        views. Earlier hidden states cannot change under causal attention, so a
+        later one-token decode can reuse their keys and values exactly.
+        """
+        if not isinstance(config, dict) or "blocks.0.norm1.gamma" not in w:
+            raise ValueError("Incremental inference requires public content configuration")
+        context, width = w["position.weight"].shape
+        heads, layers = config["heads"], config["layers"]
+        if (ids.ndim != 2 or ids.shape[0] < 1 or not 1 <= ids.shape[1] <= context <= 4096
+                or not np.issubdtype(ids.dtype, np.integer)
+                or np.any(ids < 0) or np.any(ids >= 259)
+                or type(heads) is not int or heads < 1 or width % heads
+                or type(layers) is not int or layers < 1):
+            raise ValueError("Invalid bounded incremental transformer input")
+        batch, length = ids.shape
+        head_dim = width // heads
+        # Include full-capacity K/V plus conservative prefill working storage.
+        working_bytes = (sum(value.nbytes for value in w.values()) * 2
+                         + 2 * batch * layers * context * width * 4
+                         + batch * layers * (length * width * (20 + config["expansion"]) * 4
+                                             + heads * length * length * 16))
+        if working_bytes > 8 * 1024 ** 3:
+            raise ValueError("Incremental transformer exceeds 8 GiB working budget")
+        positions = np.broadcast_to(np.arange(length), ids.shape)
+        x = self.dispatch("add", self.dispatch("embedding", w["embedding.weight"], ids),
+                          self.dispatch("embedding", w["position.weight"], positions))
+        blocks = []
+        for index in range(layers):
+            check_inference_budget()
+            prefix = f"blocks.{index}."
+            get = lambda name: w[prefix + name]
+            n1 = self.gpu.layer_norm(x, get("norm1.gamma"), get("norm1.beta"), eps=1e-5)
+            qkv = self._linear(n1, get("attention.qkv_proj.weight"))
+            q, k, v = [np.ascontiguousarray(part.reshape(batch, length, heads, head_dim)
+                        .transpose(0, 2, 1, 3).reshape(batch * heads, length, head_dim))
+                       for part in np.split(qkv, 3, axis=-1)]
+            key = np.empty((batch * heads, context, head_dim), dtype=np.float32)
+            value = np.empty_like(key)
+            key[:, :length], value[:, :length] = k, v
+            blocks.append({"k": key, "v": value})
+            attention = self.gpu.flash_attention(q, k, v, causal=True, block_size=64)
+            merged = attention.reshape(batch, heads, length, head_dim).transpose(0, 2, 1, 3).reshape(batch, length, width)
+            y = self.dispatch("add", x, self._linear(merged, get("attention.out_proj.weight")))
+            n2 = self.gpu.layer_norm(y, get("norm2.gamma"), get("norm2.beta"), eps=1e-5)
+            hidden = self.dispatch("tanh", self._linear(n2, get("hidden.weight")))
+            x = self.dispatch("add", y, self._linear(hidden, get("contract.weight")))
+        cache = {"owner": self, "weight_ids": tuple((name, id(value)) for name, value in w.items()),
+                 "config": dict(config), "batch": batch, "length": length,
+                 "context": context, "width": width, "blocks": blocks}
+        return self._linear(x[:, -1:], w["output.weight"]), cache
+
+    def _transformer_decode(self, w, ids, cache, config):
+        """Append one token at its absolute position using request-local K/V."""
+        if (cache.get("owner") is not self or cache.get("config") != config
+                or cache.get("weight_ids") != tuple((name, id(value)) for name, value in w.items())):
+            raise ValueError("Incremental cache does not belong to these model views")
+        batch, position = cache["batch"], cache["length"]
+        width, heads = cache["width"], config["heads"]
+        if (ids.shape != (batch, 1) or not np.issubdtype(ids.dtype, np.integer)
+                or np.any(ids < 0) or np.any(ids >= 259)
+                or not 1 <= position < cache["context"]):
+            raise ValueError("Decode token or checkpoint context bound invalid")
+        head_dim = width // heads
+        positions = np.full((batch, 1), position, dtype=np.int64)
+        x = self.dispatch("add", self.dispatch("embedding", w["embedding.weight"], ids),
+                          self.dispatch("embedding", w["position.weight"], positions))
+        for index, block in enumerate(cache["blocks"]):
+            check_inference_budget()
+            prefix = f"blocks.{index}."
+            get = lambda name: w[prefix + name]
+            n1 = self.gpu.layer_norm(x, get("norm1.gamma"), get("norm1.beta"), eps=1e-5)
+            qkv = self._linear(n1, get("attention.qkv_proj.weight"))
+            q, k, v = [np.ascontiguousarray(part.reshape(batch, 1, heads, head_dim)
+                        .transpose(0, 2, 1, 3).reshape(batch * heads, 1, head_dim))
+                       for part in np.split(qkv, 3, axis=-1)]
+            block["k"][:, position:position + 1] = k
+            block["v"][:, position:position + 1] = v
+            # All retained keys are at or before this final query position.
+            # A zero-origin triangular mask would incorrectly hide the prefix.
+            attention = self.gpu.flash_attention(q, block["k"][:, :position + 1],
+                                                  block["v"][:, :position + 1],
+                                                  causal=False, block_size=64)
+            merged = attention.reshape(batch, heads, 1, head_dim).transpose(0, 2, 1, 3).reshape(batch, 1, width)
+            y = self.dispatch("add", x, self._linear(merged, get("attention.out_proj.weight")))
+            n2 = self.gpu.layer_norm(y, get("norm2.gamma"), get("norm2.beta"), eps=1e-5)
+            hidden = self.dispatch("tanh", self._linear(n2, get("hidden.weight")))
+            x = self.dispatch("add", y, self._linear(hidden, get("contract.weight")))
+        logits = self._linear(x, w["output.weight"])
+        cache["length"] = position + 1
+        return logits
 
     def _attention_backward(self, q, k, v, grad):
         scale = np.float32(1 / np.sqrt(q.shape[-1]))
@@ -235,48 +390,58 @@ class CandidateTrainingBackend(HyperGPUBackend):
         return dq, dk, dv
 
     def _transformer_backward(self, w, tape, grad):
-        """Manual reverse mode including residual gradient accumulation."""
+        """Reverse every block, accumulating both residual branches before embeddings."""
         result = {}
-        dz, result["output.weight"] = self._linear_backward(tape["z"], w["output.weight"], grad)
-        dh, result["contract.weight"] = self._linear_backward(tape["hidden"], w["contract.weight"], dz)
-        dh = self.dispatch("tanh_backward", tape["hidden"], dh)
-        dn2, result["hidden.weight"] = self._linear_backward(tape["n2"], w["hidden.weight"], dh)
-        dy2, result["norm2.gamma"], result["norm2.beta"] = self._norm_backward(
-            dn2, w["norm2.gamma"], tape["nc2"])
-        dy = self.dispatch("add", dz, dy2)
-        merged_grad, result["attention.out_proj.weight"] = self._linear_backward(
-            tape["merged"], w["attention.out_proj.weight"], dy)
+        dx, result["output.weight"] = self._linear_backward(tape["z"], w["output.weight"], grad)
         batch, length = tape["ids"].shape
-        attention_grad = merged_grad.reshape(batch, length, 4, 8).transpose(
-            0, 2, 1, 3).reshape(batch * 4, length, 8)
-        head_grads = self._attention_backward(tape["q"], tape["k"], tape["v"], attention_grad)
-        qkv_grad = np.concatenate([g.reshape(batch, 4, length, 8).transpose(
-            0, 2, 1, 3).reshape(batch, length, 32) for g in head_grads], axis=-1)
-        dn1, result["attention.qkv_proj.weight"] = self._linear_backward(
-            tape["n1"], w["attention.qkv_proj.weight"], qkv_grad)
-        dx1, result["norm1.gamma"], result["norm1.beta"] = self._norm_backward(
-            dn1, w["norm1.gamma"], tape["nc1"])
-        dx = self.dispatch("add", dy, dx1)
+        heads, width = tape["heads"], tape["width"]
+        head_dim = width // heads
+        for block in reversed(tape["blocks"]):
+            prefix = block["prefix"]
+            get = lambda name: w[prefix + name]
+            local = {}
+            dh, local["contract.weight"] = self._linear_backward(block["hidden"], get("contract.weight"), dx)
+            dh = self.dispatch("tanh_backward", block["hidden"], dh)
+            dn2, local["hidden.weight"] = self._linear_backward(block["n2"], get("hidden.weight"), dh)
+            dy2, local["norm2.gamma"], local["norm2.beta"] = self._norm_backward(dn2, get("norm2.gamma"), block["nc2"])
+            dy = self.dispatch("add", dx, dy2)
+            merged_grad, local["attention.out_proj.weight"] = self._linear_backward(block["merged"], get("attention.out_proj.weight"), dy)
+            attention_grad = merged_grad.reshape(batch, length, heads, head_dim).transpose(0, 2, 1, 3).reshape(batch * heads, length, head_dim)
+            head_grads = self._attention_backward(block["q"], block["k"], block["v"], attention_grad)
+            qkv_grad = np.concatenate([g.reshape(batch, heads, length, head_dim).transpose(0, 2, 1, 3).reshape(batch, length, width) for g in head_grads], axis=-1)
+            dn1, local["attention.qkv_proj.weight"] = self._linear_backward(block["n1"], get("attention.qkv_proj.weight"), qkv_grad)
+            dx1, local["norm1.gamma"], local["norm1.beta"] = self._norm_backward(dn1, get("norm1.gamma"), block["nc1"])
+            dx = self.dispatch("add", dy, dx1)
+            result.update({prefix + name: value for name, value in local.items()})
         for name, ids in (("embedding.weight", tape["ids"]), ("position.weight", tape["positions"])):
             result[name] = self.dispatch("embedding_backward", w[name].shape, ids, dx)
         return result
 
-    def manual_train_step(self, model, ids, targets, lr, phase_hook=None):
-        if model.architecture != "byte-causal-transformer-v1":
+    def manual_train_step(self, model, ids, targets, lr, phase_hook=None, *,
+                          optimizer_state=None, max_grad_norm=1.0, weight_decay=0.01):
+        if model.architecture not in ("byte-causal-transformer-v1", "public-content-transformer-v2"):
             raise ValueError("Manual backward supports candidate transformer only")
         weights = {name: array(p) for name, p in model.named_parameters()}
-        logits, tape = self.dispatch("transformer_forward", weights, ids)
+        logits, tape = self.dispatch("transformer_forward", weights, ids, getattr(model, "model_config", None))
         if phase_hook:
             phase_hook("forward")
         loss, gradient = self.dispatch("cross_entropy", logits.reshape(-1, 259), targets.reshape(-1))
         gradients = self.dispatch("transformer_backward", weights, tape, gradient.reshape(logits.shape))
         if phase_hook:
             phase_hook("backward")
-        updates = {name: self.dispatch("sgd", weights[name], gradients[name], lr) for name in weights}
+        if optimizer_state is None:
+            updates = {name: self.dispatch("sgd", weights[name], gradients[name], lr) for name in weights}
+        else:
+            updates, next_state = self.dispatch("adamw", weights, gradients, optimizer_state,
+                                                lr, max_grad_norm, weight_decay)
+        # Validate the entire update before committing parameters or optimizer state.
         # Only tensor storage writes occur in torch; no grad graph/AccumulateGrad.
         with torch.no_grad():
             for name, parameter in model.named_parameters():
                 parameter.copy_(tensor(updates[name]))
+        if optimizer_state is not None:
+            optimizer_state.clear()
+            optimizer_state.update(next_state)
         return float(loss), gradients
 
     def embedding(self, weight, ids):

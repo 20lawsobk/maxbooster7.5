@@ -9,8 +9,12 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { build } from "esbuild";
+import path from "node:path";
+import { HttpsProxyAgent } from "https-proxy-agent";
 import Stripe from "stripe";
-import { loadBillingRoutes, responseHarness } from "./helpers-inbound.mjs";
+import { catalogProductOwnedByRun } from "./helpers-stripe-resource-ownership.mjs";
+import { assertDedicatedTestBindings, createTestStripe } from "./helpers-stripe-test-transport.mjs";
+import { loadBillingRoutes, responseHarness, memoryCommercePool, loggerStub } from "./helpers-inbound.mjs";
 
 let step = "credential validation";
 let tracker;
@@ -49,6 +53,7 @@ const report = {
   apiVersions: [],
   tests: Object.fromEntries(realHandlerCases.map(name => [name, { status: "BLOCKED", reason: "not reached" }])),
   resources: [],
+  catalogReferences: [],
   cleanup: [],
   previousRuns: [],
   priorCleanupUnresolved: false,
@@ -235,19 +240,36 @@ async function trackInlineCatalog(session, previous = null) {
     const price = item?.price;
     if (typeof price?.id === "string" && price.id.startsWith("price_") &&
         !wasCleaned("price", price.id) && !priceIds.includes(price.id)) {
-      priceIds.push(price.id);
-      report.resources.push({ type: "price", id: price.id, status: "CREATED", runId: ownerRunId, discoveredFrom: "owned checkout session" });
+      if (catalogProductOwnedByRun(price, ownerRunId)) {
+        priceIds.push(price.id);
+        report.resources.push({ type: "price", id: price.id, status: "CREATED", runId: ownerRunId, discoveredFrom: "owned checkout session with matching price ownership marker" });
+      } else {
+        recordCatalogReference(price.id, ownerRunId, "price");
+      }
       changed = true;
     }
     const productId = typeof price?.product === "string" ? price.product : price?.product?.id;
     if (typeof productId === "string" && productId.startsWith("prod_") &&
         !wasCleaned("product", productId) && !productIds.includes(productId)) {
-      productIds.push(productId);
-      report.resources.push({ type: "product", id: productId, status: "CREATED", runId: ownerRunId, discoveredFrom: "owned checkout session" });
+      const product = typeof price.product === "object" ? price.product : await realStripe.products.retrieve(productId);
+      if (catalogProductOwnedByRun(product, ownerRunId)) {
+        productIds.push(productId);
+        report.resources.push({ type: "product", id: productId, status: "CREATED", runId: ownerRunId, discoveredFrom: "owned checkout session with matching product ownership marker" });
+      } else {
+        recordCatalogReference(productId, ownerRunId);
+      }
       changed = true;
     }
   }
   if (changed) await persistReport();
+}
+
+function recordCatalogReference(id, referencedByRun, type = "product") {
+  if (!report.catalogReferences.some(item => item.id === id && item.referencedByRun === referencedByRun)) {
+    report.catalogReferences.push({ type, id, referencedByRun,
+      ownership: "not_established", mutated: false,
+      reason: "Checkout references do not authorize mutation of a catalog object lacking this run's ownership marker" });
+  }
 }
 
 function addOwnedResource(type, id, fields = {}) {
@@ -310,6 +332,7 @@ function instrument(client) {
 function configureGuardedStripe(secret) {
   tracker = { accepted: [], constructors: 0, apiVersions: [] };
   testStripeClass = class GuardedStripe {
+    static createNodeHttpClient(...args) { return Stripe.createNodeHttpClient(...args); }
     constructor(receivedSecret, options) {
       if (receivedSecret !== secret) {
         throw new Error("A production/non-test Stripe key was rejected");
@@ -319,10 +342,10 @@ function configureGuardedStripe(secret) {
       tracker.apiVersions.push(String(apiVersion));
       // Pass the production constructor's full options through unchanged. Only
       // replace the key with the same explicitly validated sk_test credential.
-      return instrument(new Stripe(secret, options));
+      return instrument(createTestStripe(secret, options));
     }
   };
-  realStripe = instrument(new Stripe(secret));
+  realStripe = instrument(createTestStripe(secret));
   tracker.apiVersions.push(String(Stripe.API_VERSION || "SDK_DEFAULT"));
   globalThis.__inboundRealStripeClass = testStripeClass;
   return realStripe;
@@ -380,6 +403,7 @@ function mockedImports(source) {
 }
 
 async function loadRegistrationRoutes(state) {
+  globalThis.__inboundHttpsProxyAgent = HttpsProxyAgent;
   const source = await readFile("server/routes.ts", "utf8");
   const names = mockedImports(source);
   const proxySource = names => `
@@ -401,12 +425,15 @@ async function loadRegistrationRoutes(state) {
       setup(builder) {
         builder.onResolve({ filter: /.*/ }, args => {
           if (!args.importer) return null;
+          if (["./lib/stripeClient", "./lib/stripeClient.js"].includes(args.path)) return { path: path.resolve("server/lib/stripeClient.ts") };
           if (args.path === "crypto" || args.path === "node:crypto") return { path: args.path, external: true };
           return { path: args.path, namespace: "registration-test-boundary" };
         });
-        builder.onLoad({ filter: /.*/, namespace: "registration-test-boundary" }, args => {
+        builder.onLoad({ filter: /.*/, namespace: "registration-test-boundary" }, async args => {
+          if (args.path === "../shared/agePolicy.js") return { contents: await readFile("shared/agePolicy.ts", "utf8"), loader: "ts" };
           let contents = proxySource(names);
           if (args.path === "stripe") contents = "export default globalThis.__inboundRealStripeClass;";
+          if (args.path === "https-proxy-agent") contents = "export const HttpsProxyAgent=globalThis.__inboundHttpsProxyAgent;";
           if (args.path === "./storage.js") contents = "export const storage=globalThis.__inboundRegistration.storage;export default storage;";
           if (args.path === "./db.js") contents = "export const db=globalThis.__inboundRegistration.db,pool=globalThis.__inboundRegistration.pool;";
           if (args.path === "./services/stripeSetup.js") contents = "export function getStripePriceIds(){return globalThis.__inboundRegistration.priceIds;}";
@@ -490,6 +517,7 @@ async function exerciseBillingAndRegistration(secret, prices) {
     RealStripe: testStripeClass,
     user: { id: `inbound-billing-${runId}`, email: `billing-inbound-${runId}@example.invalid`, stripeCustomerId: null },
     stripeService: {},
+    pool: memoryCommercePool(),
   };
   billing.db = {
     select: () => ({ from: () => ({ where: () => ({ limit: async () => billing.user ? [billing.user] : [] }) }) }),
@@ -502,7 +530,7 @@ async function exerciseBillingAndRegistration(secret, prices) {
     step = "actual billing create-checkout-session route";
     if (billingLoadError) throw billingLoadError;
     const checkout = await callHandler(billing.routes, "POST", "/create-checkout-session", {
-      body: { planId: "monthly" }, user: billingUser,
+      body: { planId: "monthly" }, user: billingUser, get: () => `billing-${runId}`,
     });
     await assertStripeResponse(checkout);
     assert.ok(typeof checkout.body.sessionId === "string");
@@ -585,6 +613,7 @@ async function exerciseStorefront(secret, prices) {
     tier: { id: `tier-${runId}`, storefrontId: `store-${runId}`, isActive: true, priceCents: 4900, currency: "usd", interval: "month", name: "Supporter", stripePriceId: prices.monthlyPrice.id },
     memberships: [],
     writes: [],
+    pool: memoryCommercePool(),
   };
   state.db = {
     select() {
@@ -611,7 +640,7 @@ async function exerciseStorefront(secret, prices) {
   };
   globalThis.__inboundStore = state;
   const stripeModule = "export default globalThis.__inboundStore.RealStripe;";
-  const schemaModule = `export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={};`;
+  const schemaModule = `export const storefronts=globalThis.__inboundStore.schema.storefronts,listings=globalThis.__inboundStore.schema.listings,listingLicenseTiers={},bogoPromotions=globalThis.__inboundStore.schema.bogoPromotions,storefrontOrders=globalThis.__inboundStore.schema.storefrontOrders,membershipTiers=globalThis.__inboundStore.schema.membershipTiers,customerMemberships=globalThis.__inboundStore.schema.customerMemberships,users=globalThis.__inboundStore.schema.users;export const insertStorefrontSchema={},updateStorefrontSchema={},insertMembershipTierSchema={},updateMembershipTierSchema={},storefrontFollows={},storefrontLikes={},storefrontRatings={},storefrontDomains={},userStorageFiles={};`;
   let routeLoadError;
   try {
     globalThis.__inboundStore = state;
@@ -621,10 +650,11 @@ async function exerciseStorefront(secret, prices) {
       "../middleware/uploadHandler.js": "export function createHardenedUpload(){const u=()=>{};u.single=()=>()=>{};u.array=()=>()=>{};u.fields=()=>()=>{};u.any=()=>()=>{};return u;}export async function storeUploadedFile(){return {};}",
       "../services/storefrontService": "export const storefrontService={};",
       "../services/hybridStorageService": "export const hybridStorageService={};",
+    "../services/storageService.js": "export const storageService={};",
       "@shared/schema": schemaModule,
       stripe: stripeModule,
       "../config/defaults": "export const getBaseUrl=()=> 'https://inbound-test.invalid';",
-      "../db": "export const db=globalThis.__inboundStore.db;",
+      "../db": "export const db=globalThis.__inboundStore.db,pool=globalThis.__inboundStore.pool;",
       "drizzle-orm": "export const eq=(...x)=>x,and=(...x)=>x,or=(...x)=>x,inArray=(...x)=>x,count=(...x)=>x,avg=(...x)=>x,lte=(...x)=>x,gte=(...x)=>x,isNull=(...x)=>x,desc=(...x)=>x,sum=(...x)=>x,sql=(...x)=>x;",
       zod: "export class ZodError extends Error{};export const z={};",
       "../logger.js": "export const logger={info(){},warn(){},error(){},debug(){}};",
@@ -649,13 +679,15 @@ async function exerciseStorefront(secret, prices) {
       user: { id: `buyer-inbound-${runId}`, email: `store-buyer-${runId}@example.invalid` },
       params: { id: state.storefront.id },
       body: { listingIds: [state.listing.id], licenseType: "basic" },
+      get: () => `cart-${runId}`,
     });
     await assertStripeResponse(cart);
     const cartId = sessionIds.at(-1);
     const cartSession = await realStripe.checkout.sessions.retrieve(cartId, { expand: ["line_items.data.price"] });
     assert.equal(cartSession.mode, "payment");
     assert.equal(cartSession.metadata.buyerId, `buyer-inbound-${runId}`);
-    assert.equal(JSON.parse(cartSession.metadata.listingIds)[0], state.listing.id);
+    assert.equal(cartSession.metadata.commerceVersion, "2");
+    assert.equal(cartSession.metadata.commerceKind, "merchant");
     assert.equal(cartSession.line_items.data[0].price.unit_amount, prices.cartPrice.unit_amount);
   });
 
@@ -712,7 +744,7 @@ async function exerciseMarketplaceAndMerchant(prices) {
   try {
     marketplace = await loadIsolated("server/services/commerce/marketplaceCheckout.ts", {
       "../../db": "export const pool=globalThis.__inboundRealMarketPool;",
-      "./settlement": "export async function snapshotMarketplaceTerms(input){return {grossCents:input.metadata.amountCents,feeCents:100};}",
+      "./settlement": "export async function snapshotMarketplaceTerms(input){return {version:2,sellerId:input.sellerId,listingId:input.listingId,grossCents:input.metadata.amountCents,feeCents:100,allocations:[{userId:input.sellerId,amountCents:input.metadata.amountCents-100}]};}",
       "./contract": "export function majorUnits(cents){return cents/100;}",
     });
   } catch (error) {
@@ -751,6 +783,7 @@ async function exerciseMarketplaceAndMerchant(prices) {
       "../../db": "export const pool=globalThis.__inboundRealMerchant;",
       "stripe": "export default globalThis.__inboundRealStripeClass;",
       "./verification": "export async function verifiedPayment(){return {processingFeeCents:100,refundedCents:0,pendingCents:0,disputed:false};}",
+      "../../logger.js": loggerStub,
       // Preserve the production runtime's repository/provider classes and its
       // commerceStripe constructor; only the SQL pool and Stripe SDK class cross
       // the test boundary.
@@ -793,6 +826,7 @@ async function exerciseMerchAdapter(prices) {
       "../../db": "export const pool=globalThis.__inboundRealGrowth;",
       "stripe": "export default globalThis.__inboundRealStripeClass;",
       "./verification": "export async function verifiedPayment(){return {processingFeeCents:80,refundedCents:0,pendingCents:0,disputed:false};}",
+      "../../logger.js": loggerStub,
       "../../config/defaults": "export const getBaseUrl=()=> 'https://inbound-test.invalid';",
       // Keep the production runtime's Stripe constructor/API options unchanged.
     });
@@ -1057,11 +1091,23 @@ async function cleanupPreviousManifest(stripe, previous) {
       report.priorCleanupEvidence.push({ status: "UNRESOLVED", reason: "Prior registry contains a malformed resource entry; that entry was not touched." });
       continue;
     }
-    if (resource.status === "CLEANED") continue;
+    if (["CLEANED", "REFERENCE_ONLY"].includes(resource.status)) continue;
     if (resource.runId !== previous.runId) {
       report.priorCleanupUnresolved = true;
       report.priorCleanupEvidence.push({ status: "UNRESOLVED", reason: "Prior registry contains an entry without matching run ownership; that entry was not touched." });
       continue;
+    }
+    if (["product", "price"].includes(resource.type) && typeof resource.id === "string" &&
+        resource.id.startsWith(resource.type === "product" ? "prod_" : "price_")) {
+      const product = await stripe[resource.type === "product" ? "products" : "prices"].retrieve(resource.id);
+      if (!catalogProductOwnedByRun(product, previous.runId)) {
+        recordCatalogReference(resource.id, previous.runId, resource.type);
+        resource.reclassifiedFrom = resource.status;
+        resource.status = "REFERENCE_ONLY";
+        resource.ownershipCorrection = "Provider catalog object has no matching run ownership marker; no mutation authorized";
+        await persistReport();
+        continue;
+      }
     }
     const bucket = {
       checkout_session: sessionIds,
@@ -1090,7 +1136,7 @@ async function cleanupPreviousManifest(stripe, previous) {
   }
 
   const needsOrphanScan = previous.status === "RUNNING" ||
-    (previous.resources || []).some(resource => resource?.status !== "CLEANED") ||
+    (previous.resources || []).some(resource => !["CLEANED", "REFERENCE_ONLY"].includes(resource?.status)) ||
     (previous.cleanup || []).some(entry => entry.status === "FAIL");
   if (needsOrphanScan) {
     try {
@@ -1163,9 +1209,8 @@ async function main() {
   await loadAndArchivePriorManifests();
   const secret = process.env.STRIPE_TEST_SECRET;
   const client = process.env.STRIPE_TEST_CLIENT;
-  if (!/^sk_test_[A-Za-z0-9]+$/.test(secret || "")) throw new Error("STRIPE_TEST_SECRET must be an explicit sk_test key");
-  if (!/^pk_test_[A-Za-z0-9]+$/.test(client || "")) throw new Error("STRIPE_TEST_CLIENT must be an explicit pk_test key");
-  report.credentialValidation = { status: "PASS", secretKeyKind: "explicit test secret", publishableKeyKind: "explicit test publishable key" };
+  assertDedicatedTestBindings();
+  report.credentialValidation = { status: "PASS", secretKeyKind: "dedicated test binding; observed-mode preflight follows", publishableKeyKind: "dedicated publishable binding" };
 
   // Remove every other Stripe environment source and install only the explicitly
   // supplied test credential for production constructors exercised in this process.

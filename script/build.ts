@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { buildServerBundles } from "./lib/serverBundles.js";
 import fs from "fs";
 import path from "path";
@@ -7,6 +7,26 @@ import { publishCapsule } from "./publish-capsules.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
+
+/** Measure literal paths without shell interpolation. Unreadable paths stay unknown. */
+export function duBytesOrNull(target: string): number | null {
+  try {
+    const output = execFileSync("du", ["-s", "--apparent-size", "--count-links", "--block-size=1", "--", target],
+      { encoding: "utf8", timeout: 30_000 });
+    const bytes = Number(output.match(/^\d+/)?.[0]);
+    return Number.isSafeInteger(bytes) && bytes >= 0 ? bytes : null;
+  } catch { return null; }
+}
+
+/** Conservatively count the entire shipped store, including unreferenced paths. */
+export function getNixClosureSize() {
+  const store = "/nix/store";
+  if (!fs.existsSync(store)) return { roots: [] as string[], coveredRoots: [] as string[], totalBytes: 0 };
+  const roots = fs.readdirSync(store).map(name => path.join(store, name));
+  const totalBytes = duBytesOrNull(store);
+  if (totalBytes === null) throw new Error("Cannot measure the publishing Nix store; image size is unknown");
+  return { roots, coveredRoots: [...roots], totalBytes };
+}
 
 async function main() {
   fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });
@@ -116,7 +136,7 @@ async function main() {
   // restored at first boot alongside node_modules and external/maxcore.
 }
 
-main().catch((err) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((err) => {
   // Later provisioning/packing can fail after compilation created the marker.
   // Never allow startup to accept artifacts from a failed build invocation.
   fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });

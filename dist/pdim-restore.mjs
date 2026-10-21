@@ -149,8 +149,8 @@ function resolveBsdtar() {
 // which is exactly what produced tar's "Directory renamed before its status
 // could be extracted" warnings. A simple PID lockfile makes a fresh restore
 // attempt wait for (or clean up after) a prior one instead of racing it.
-async function acquireRestoreLock(targetDir) {
-  const lockPath = resolve(ROOT, `${targetDir.replace(/[\/]/g, "_")}.pdim-restore.lock`);
+export async function acquireRestoreLock(targetDir, { root = ROOT, timeoutMs = 120_000 } = {}) {
+  const lockPath = resolve(root, `${targetDir.replace(/[\/]/g, "_")}.pdim-restore.lock`);
   const isPidAlive = (pid) => {
     try {
       process.kill(pid, 0);
@@ -160,16 +160,19 @@ async function acquireRestoreLock(targetDir) {
     }
   };
 
-  for (let waited = 0; waited < 120_000; waited += 500) {
+  const deadline = Date.now() + timeoutMs;
+  let announced = false;
+  while (Date.now() < deadline) {
     if (existsSync(lockPath)) {
       const heldPid = Number(readFileSync(lockPath, "utf8").trim());
       if (heldPid && isPidAlive(heldPid)) {
-        if (waited === 0) {
+        if (!announced) {
+          announced = true;
           console.log(
             `[pdim-restore] ${targetDir}/ restore already in progress (pid ${heldPid}) — waiting instead of racing it`,
           );
         }
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, Math.min(500, Math.max(1, deadline - Date.now()))));
         continue;
       }
       // Stale lock from a killed process — safe to reclaim.
@@ -190,10 +193,7 @@ async function acquireRestoreLock(targetDir) {
     }
   }
 
-  console.error(
-    `[pdim-restore] WARN: gave up waiting for ${targetDir}/ restore lock after 120s — proceeding anyway`,
-  );
-  return () => {};
+  throw new Error(`[pdim-restore] ${targetDir}/ restore lock timed out; refusing concurrent extraction`);
 }
 
 function readManifest(manifestPath) {

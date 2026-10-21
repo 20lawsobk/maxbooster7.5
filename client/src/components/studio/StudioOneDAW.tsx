@@ -113,6 +113,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const { forceSave, loadProjectData } = useProjectSync(projectId);
+  const projectLoaderRef = useRef(loadProjectData);
+  projectLoaderRef.current = loadProjectData;
   const audioEngine = useAudioEngine();
   const audioInitializedRef = useRef(false);
   const loadedClipsRef = useRef<Set<string>>(new Set());
@@ -122,6 +124,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const prevProjectIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [projectLoadError, setProjectLoadError] = useState(false);
+  const [projectLoadAttempt, setProjectLoadAttempt] = useState(0);
   const [livePosition, setLivePosition] = useState(0);
   const [_showInspector, setShowInspector] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
@@ -253,6 +257,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }, []);
 
   useEffect(() => {
+    if (!projectId) {
+      projectLoadedRef.current = null;
+      setProjectLoadError(false);
+      setIsLoading(false);
+      return;
+    }
     if (projectId && projectId !== projectLoadedRef.current) {
       // Clear previous project's loaded clips/tracks refs
       loadedClipsRef.current.clear();
@@ -260,11 +270,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       // Clear version history for new project (will be loaded from localStorage in separate effect)
       setProjectVersions([]);
 
-      projectLoadedRef.current = projectId;
       setIsLoading(true);
-      loadProjectData().finally(() => setIsLoading(false));
+      setProjectLoadError(false);
+      let active = true;
+      projectLoaderRef.current().then(loaded => {
+        if (!active) return;
+        if (loaded) projectLoadedRef.current = projectId;
+        else setProjectLoadError(true);
+      }).catch(() => { if (active) setProjectLoadError(true); })
+        .finally(() => { if (active) setIsLoading(false); });
+      return () => { active = false; };
     }
-  }, [projectId, loadProjectData]);
+  }, [projectId, projectLoadAttempt]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1704,6 +1721,17 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   );
 
   const selectedTrack = tracks.find((t) => t.id === selectedTrackId);
+
+  if (projectId && (isLoading || projectLoadedRef.current !== projectId)) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-[#1a1a1e] text-white">
+        <div role={projectLoadError ? "alert" : "status"} className="text-center space-y-3">
+          <p>{projectLoadError ? "Your project could not be loaded. Editing and saving are paused." : "Loading your project…"}</p>
+          {projectLoadError && <Button onClick={() => setProjectLoadAttempt(attempt => attempt + 1)}>Retry loading project</Button>}
+        </div>
+      </div>
+    );
+  }
 
   if (!projectId && !isLoading) {
     return (

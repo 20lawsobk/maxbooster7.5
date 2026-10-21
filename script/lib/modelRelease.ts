@@ -132,3 +132,12 @@ export function validateModelRelease(root: string, options: { readOnly?: boolean
     sha256: expectedSha256,
   };
 }
+/** Live-awareness models are durable runtime state, not a mandatory legacy blob.
+ * The serving registry still verifies review signatures and checkpoint hashes.
+ */
+export function modelReleaseRequirements(root: string, env: NodeJS.ProcessEnv = process.env): ModelReleaseRequirement[] {
+  const mode = env.MAXCORE_SERVING_RELEASE || "live-awareness";
+  if (mode === "legacy") return [validateModelRelease(root, { readOnly: true })];
+  if (mode !== "live-awareness") throw new Error("Production packaging supports live-awareness or explicit legacy mode");
+  return [];
+}

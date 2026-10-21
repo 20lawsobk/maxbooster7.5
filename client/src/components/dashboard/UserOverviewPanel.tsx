@@ -7,12 +7,12 @@ import { formatDistanceToNow } from "date-fns";
 interface UserOverviewPanelProps {
   user: {
     id: string;
-    username: string;
+    username: string | null;
     email: string;
-    avatarUrl?: string;
+    avatarUrl?: string | null;
     subscriptionTier?: string | null;
-    createdAt?: string | Date;
-    lastLogin?: string | Date;
+    createdAt?: string | Date | null;
+    lastLogin?: string | Date | null;
   };
 }
 
@@ -77,7 +77,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
     );
   };
 
-  const formatDate = (date?: string | Date) => {
+  const formatDate = (date?: string | Date | null) => {
     if (!date) return "N/A";
     try {
       return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -101,7 +101,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
           >
             <AvatarImage
               src={user.avatarUrl || undefined}
-              alt={user.username}
+              alt={user.username || user.email}
             />
             <AvatarFallback className="bg-blue-600 text-white text-lg font-bold">
               {getInitials(user.username)}
@@ -115,7 +115,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
                 className="text-xl font-bold text-gray-900 dark:text-white"
                 data-testid="user-name"
               >
-                {user.username}
+                {user.username || user.email}
               </h3>
               <Badge
                 variant={badge.variant}

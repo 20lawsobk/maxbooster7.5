@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import ignore from "ignore";
 import { inspectElectronBuilderTransport } from "./patch-electron-builder-transport.mjs";
+import { PORTABLE_NODE_VERSION } from "../script/lib/portableNodePolicy.mjs";
 
 export const floors = {
   "proxy-addr": "2.0.8", "source-map-js": "1.2.2", compression: "1.8.2",
@@ -178,7 +179,7 @@ export function inspectRestored(root, files = ["dist/index.mjs", "dist/cluster.m
       if ([".node_bin/node", "bin/boosterstate", "python_runtime/bin/python3"].includes(file)) fs.accessSync(target, fs.constants.X_OK);
       if (file === ".node_bin/provenance.json") {
         const provenance = JSON.parse(fs.readFileSync(target, "utf8"));
-        if (provenance.version !== "22.22.0" || provenance.platform !== "linux-x64" || !/^[a-f0-9]{64}$/.test(provenance.archiveSha256)) throw new Error("invalid pinned Node provenance");
+        if (provenance.version !== PORTABLE_NODE_VERSION || provenance.platform !== "linux-x64" || !/^[a-f0-9]{64}$/.test(provenance.archiveSha256)) throw new Error("invalid pinned Node provenance");
       }
       if (file.endsWith(".mjs") || file.endsWith(".sh")) {
         const result = spawnSync(file.endsWith(".sh") ? "bash" : process.execPath,

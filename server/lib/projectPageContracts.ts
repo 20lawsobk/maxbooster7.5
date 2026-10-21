@@ -15,6 +15,7 @@ const PROJECT_UPDATE_FIELDS = new Set([
   "workflowStage",
   "status",
   "version",
+  "expectedUpdatedAt",
 ]);
 
 function boundedOptionalString(
@@ -53,6 +54,17 @@ export function normalizeProjectDetailsUpdate(
   }
 
   const output: Record<string, unknown> = {};
+  // Preserve the optimistic-concurrency precondition through this shared
+  // normalization boundary. The route enforces omission as HTTP428.
+  if (input.expectedUpdatedAt !== undefined) {
+    if (input.expectedUpdatedAt !== null &&
+        (typeof input.expectedUpdatedAt !== "string" ||
+         !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(input.expectedUpdatedAt) ||
+         !Number.isFinite(Date.parse(input.expectedUpdatedAt)))) {
+      return { ok: false, message: "Invalid project update timestamp" };
+    }
+    output.expectedUpdatedAt = input.expectedUpdatedAt;
+  }
 
   const strings: Array<[
     string,

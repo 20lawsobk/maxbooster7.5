@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripeClient";
 import { logger } from "../logger.js";
 import { pool } from "../db";
 import { env } from "../config/env.js";
@@ -58,7 +59,7 @@ export function stripeWebhookMiddleware(
   }
 
   try {
-    const stripe = new Stripe(env?.STRIPE_SECRET_KEY as string, {
+    const stripe = createStripeClient(env?.STRIPE_SECRET_KEY as string, {
       apiVersion: "2026-02-25.clover" as any,
     });
 

@@ -23,6 +23,7 @@ import { config } from "../config/index.js";
 import { trustedMaxcoreOwner, bindMaxcoreOwner } from "../lib/maxcoreOwnerContext.js";
 import { getMaxcoreOrigin } from "./maxcoreConnector.js";
 import { MaxCoreControlError } from "./maxcoreControlTransport.js";
+import { prepareGenerationAwareness, usesGenerationAwareness } from "./generationAwareness.js";
 
 // Resolved through the shared connector — the single MaxCore contract boundary.
 const MC_AI_URL = getMaxcoreOrigin();
@@ -367,7 +368,7 @@ export class MaxCoreAIClient {
     // Health-probe fast-fail: if the lightweight ping already confirmed MaxCore
     // is unreachable, don't queue a 600 s hanging socket — return null now.
     // (null → false means "no info yet" → allow through on first call)
-    if (MaxCoreAIClient._remoteAvailable === false) {
+    if (MaxCoreAIClient._remoteAvailable === false && !usesGenerationAwareness(path)) {
       // cbBlocked() may just have reserved the sole half-open probe. This
       // request did not make an HTTP round-trip, so release that reservation;
       // otherwise every later request remains blocked even after cooldown.
@@ -376,8 +377,9 @@ export class MaxCoreAIClient {
       throw new MaxCoreControlError("MaxCore generation unavailable", 503);
     }
 
-    // Transport preserves caller input. MaxCore owns awareness and inference;
-    // this layer must not add a second application-side planning pass.
+    // Live-conditioned generation probes the canonical awareness endpoint and
+    // lets the actual generation route enforce capability. Cached model-info
+    // readiness must not prevent an independently healthy awareness request.
 
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
@@ -389,6 +391,13 @@ export class MaxCoreAIClient {
 
     try {
       const attempt = async (): Promise<{ r: Response; text: string } | null> => {
+        let conditioned: Record<string, unknown>;
+        try {
+          conditioned = await prepareGenerationAwareness(path, body);
+        } catch (error) {
+          MaxCoreAIClient.cbAbortProbe();
+          throw error;
+        }
         try {
           const r = await fetch(`${MC_AI_URL}${path}`, {
             method: "POST",
@@ -396,7 +405,7 @@ export class MaxCoreAIClient {
               "Content-Type": "application/json",
               ...MaxCoreAIClient.authHeaders(owner),
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(conditioned),
             signal: AbortSignal.timeout(timeoutMs),
             redirect: "manual",
           });
@@ -500,7 +509,7 @@ export class MaxCoreAIClient {
 
     // Health-probe fast-fail: avoids queuing a 600 s hanging socket when the
     // lightweight ping already confirmed MaxCore is unreachable.
-    if (MaxCoreAIClient._remoteAvailable === false) {
+    if (MaxCoreAIClient._remoteAvailable === false && !usesGenerationAwareness(path)) {
       // Do not leak the half-open reservation when the cached health result
       // fast-fails before an HTTP request is attempted.
       MaxCoreAIClient.cbAbortProbe();
@@ -508,7 +517,8 @@ export class MaxCoreAIClient {
       throw new MaxCoreControlError("MaxCore inference unavailable", 503);
     }
 
-    // Preserve caller-supplied context without injecting local AI decisions.
+    // MaxCore owns the canonical context and inference; attach its live
+    // receipt after bulkhead admission, including before a circuit retry.
 
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
@@ -520,6 +530,13 @@ export class MaxCoreAIClient {
 
     try {
       const attempt = async (): Promise<{ r: Response; text: string } | null> => {
+        let conditioned: Record<string, unknown>;
+        try {
+          conditioned = await prepareGenerationAwareness(path, body);
+        } catch (error) {
+          MaxCoreAIClient.cbAbortProbe();
+          throw error;
+        }
         try {
           const r = await fetch(`${MC_AI_URL}${path}`, {
             method: "POST",
@@ -527,7 +544,7 @@ export class MaxCoreAIClient {
               "Content-Type": "application/json",
               ...MaxCoreAIClient.authHeaders(owner),
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(conditioned),
             signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
             redirect: "manual",
           });

@@ -29,6 +29,25 @@ async function listen(handler: RequestListener) {
 }
 
 describe("video job polling", () => {
+  it.each(["canceled", "timed_out", "timeout"])("stops immediately on %s", async status => {
+    let calls = 0;
+    await expect(pollVideoJobUntilDone("job", { sleep: async () => {},
+      fetchStatus: async () => { calls++; return Response.json({ status }); },
+    })).rejects.toMatchObject({ status });
+    expect(calls).toBe(1);
+  });
+  it.each([undefined, "asset://video-plan", ["java", "script:alert(1)"].join("")])("rejects completed non-file output %s", async url => {
+    let calls = 0;
+    await expect(pollVideoJobUntilDone("job", { sleep: async () => {},
+      fetchStatus: async () => { calls++; return Response.json({ status: "completed", url }); },
+    })).rejects.toThrow(/playable file/);
+    expect(calls).toBe(1);
+  });
+  it("returns a playable file from a completed job", async () => {
+    await expect(pollVideoJobUntilDone("job", { sleep: async () => {},
+      fetchStatus: async () => Response.json({ status: "completed", video_url: "/api/storage/file/users/owner/video.mp4" }),
+    })).resolves.toMatchObject({ success: true, url: "/api/storage/file/users/owner/video.mp4" });
+  });
   it("stops after one non-2xx response reports a terminal job error", async () => {
     let requestCount = 0;
     const origin = await listen((_request, response) => {

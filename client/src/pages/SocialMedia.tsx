@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
+import { isDeliveredGenerationAsset } from "@/lib/generatedAssetDelivery";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -831,7 +832,7 @@ export default function SocialMedia() {
 
     return (assets || [])
       .filter(
-        (a) => !filterModality || a.modality === filterModality,
+        (a) => (!filterModality || a.modality === filterModality) && isDeliveredGenerationAsset(a),
       )
       .map((a) => {
         const m: AssetMetadata = a.metadata ?? {};

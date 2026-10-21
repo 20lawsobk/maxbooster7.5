@@ -5,6 +5,7 @@ import { careerCoachService } from "../services/careerCoachService";
 import { logger } from "../logger";
 import { z } from "zod";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
 import { requireSafeParam } from "../middleware/requestValidation.js";
 import { db } from "../db";
 import {
@@ -57,8 +58,9 @@ router.get(
         "Error fetching career coach recommendations:",
         (error as any)?.message,
       );
-      if (error instanceof AIUnavailableError) {
-        return res.status(503).json({ error: error.message });
+      if (error instanceof AIUnavailableError ||
+          (error instanceof MaxCoreControlError && error.status === 503)) {
+        return res.status(503).json({ error: "Career coaching is temporarily unavailable. Please try again." });
       }
       res.status(500).json({ error: "Failed to process request" });
     }

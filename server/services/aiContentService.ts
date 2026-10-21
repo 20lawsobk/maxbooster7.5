@@ -680,7 +680,7 @@ export class AIContentService {
       case "video":
         return this.generateVideoContent(prompt, platform, tone);
       case "audio":
-        return this.generateAudioContent(prompt, platform, tone);
+        return this.generateAudioContent(prompt, platform, tone, options.userId);
       default:
         return this.generateTextContent(prompt, platform, tone, length);
     }
@@ -828,6 +828,7 @@ export class AIContentService {
     prompt: string,
     platform: string,
     tone?: string,
+    userId?: string,
   ): Promise<GeneratedContent> {
     try {
       // Use in-house music generation service
@@ -837,7 +838,7 @@ export class AIContentService {
       // synthesizeToWAV uploads to PDIM-backed storage itself and returns
       // the servable URL directly — no local file ever exists for this
       // caller to read back.
-      const { url, sizeBytes } = await synthesizeToWAV(melody, chords, musicParams);
+      const { url, sizeBytes } = await synthesizeToWAV(melody, chords, musicParams, userId);
 
       logger.info(`✅ Generated audio: ${url} (${sizeBytes} bytes)`);
 
@@ -925,11 +926,12 @@ export class AIContentService {
 
   async generateAudio(options: {
     text: string;
+    userId?: string;
     voice?: string;
     language?: string;
     speed?: number;
   }): Promise<GeneratedContent> {
-    return this.generateAudioContent(options?.text, "instagram", "creative");
+    return this.generateAudioContent(options?.text, "instagram", "creative", options.userId);
   }
 
   async generateVariations(

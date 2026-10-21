@@ -31,11 +31,13 @@ def _valid_live_awareness_record(record):
             or record.get("provenance_type") not in LIVE_AWARENESS_TYPES
             or not isinstance(record.get("live_provenance"), dict)
             or record.get("license") != "NOASSERTION"
-            or record.get("private") != "unknown"
+            or (record.get("private") != "unknown" and record.get("private") is not False)
             or record.get("author") != "unattributed live observation"
             or not isinstance(record.get("text"), str)):
         return False
     provenance = record["live_provenance"]
+    if provenance.get("access", "public") != "public":
+        return False
     if record["provenance_type"] == "maxcore_live_awareness":
         return True
     observed_at = provenance.get("observed_at")

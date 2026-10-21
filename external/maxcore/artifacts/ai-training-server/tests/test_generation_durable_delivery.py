@@ -10,6 +10,7 @@ import tempfile
 import unittest
 import wave
 from functools import partial
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -107,7 +108,6 @@ class DeliveryTests(unittest.TestCase):
 
     def test_http_private_node_header_contract_against_actual_middleware(self):
         from fastapi import FastAPI, Request
-        import httpx
         app = FastAPI()
         owner_context = ContextVar("test_http_owner", default=None)
         source = Path(__file__).resolve().parents[1] / "server.py"
@@ -124,10 +124,37 @@ class DeliveryTests(unittest.TestCase):
             return {"owner_id": owner_context.get(), "submitted_owner": body.get("owner_id")}
 
         async def send(headers, peer="127.0.0.1"):
-            transport = httpx.ASGITransport(app=app, client=(peer, 45221))
-            async with httpx.AsyncClient(transport=transport, base_url="http://maxcore.test") as client:
-                return await client.post("/api/generate/audio", headers=headers,
-                                         json={"owner_id": "body-spoof", "user_id": "body-spoof"})
+            # Exercise the real ASGI middleware and route without a separate
+            # HTTP client dependency or any runtime/provider process.
+            path = "/api/generate/audio"
+            payload = json.dumps({"owner_id": "body-spoof", "user_id": "body-spoof"}).encode()
+            messages, received = [], False
+            connected = asyncio.Event()
+
+            async def receive():
+                nonlocal received
+                if not received:
+                    received = True
+                    return {"type": "http.request", "body": payload, "more_body": False}
+                # Keep the peer connected until the middleware finishes its
+                # streamed response; an early disconnect cancels that body.
+                await connected.wait()
+                return {"type": "http.disconnect"}
+
+            async def collect(message):
+                messages.append(message)
+
+            await app({"type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
+                       "method": "POST", "scheme": "http", "path": path, "raw_path": path.encode(),
+                       "root_path": "", "query_string": b"",
+                       "headers": [(b"content-type", b"application/json"),
+                                   *[(key.lower().encode(), value.encode()) for key, value in headers.items()]],
+                       "client": (peer, 45221), "server": ("maxcore.test", 80)}, receive, collect)
+            status = next(message["status"] for message in messages
+                          if message["type"] == "http.response.start")
+            body = b"".join(message.get("body", b"") for message in messages
+                            if message["type"] == "http.response.body")
+            return SimpleNamespace(status_code=status, json=lambda: json.loads(body))
 
         with patch.dict(os.environ, {"PDIM_LOCAL_CHANNEL_TOKEN": "unit-channel"}, clear=False):
             node_headers = {"Authorization": "Bearer unit-channel", "X-MaxCore-User-Id": "real_owner-1"}

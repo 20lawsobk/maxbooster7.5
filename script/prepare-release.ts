@@ -11,13 +11,16 @@ import { packCapsule, packCapsuleMembers, MAXCORE_CAPSULE_EXCLUDE_PATHS, PDIM_CA
 import { cachedCapsule, verifyCapsule, treeIdentity, identity } from "./lib/preparedCapsules.js";
 import { preparePython } from "./prepare-runtime.js";
 import { buildPortableNode } from "./lib/portableNode.js";
-import { validateModelRelease } from "./lib/modelRelease.js";
+import { modelReleaseRequirements } from "./lib/modelRelease.js";
 import { assertNoSelectedMaxCoreCandidate } from "./lib/deploymentPreflight.js";
 import { getNixClosureSize } from "./build.js";
 import { assertPublishingPayloadClean, measurePublishingPayload } from "./lib/publishingPayload.js";
 import { inspectArtifacts, inspectRestored } from "../scripts/verify-runtime-artifacts.mjs";
+import { releaseCapsuleThreads } from "./lib/releaseThreads.mjs";
+import { NODE_MODULE_CAPSULE_EXCLUDE_PATHS } from "./lib/releaseCapsuleInputs.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const capsuleThreads = releaseCapsuleThreads(process.env.RELEASE_CAPSULE_THREADS);
 const destination = path.join(root, ".prepared-release");
 const parent = path.join(root, ".local/prepared-releases");
 fs.mkdirSync(parent, { recursive: true });
@@ -55,11 +58,11 @@ try {
   const environment = buildEnvironmentDigest(process.env);
   const policies = await Promise.all([
     "script/lib/capsulePack.ts", "script/lib/preparedCapsules.ts", "scripts/verify-runtime-artifacts.mjs",
-    "dist/pdim-restore.mjs", "script/lib/verifyPortablePython.py",
+    "dist/pdim-restore.mjs", "script/lib/verifyPortablePython.py", "script/lib/portableNodePolicy.mjs",
   ].map(async file => [file, await fileDigest(path.join(root, file))]));
   const policyKey = identity({ policies, platform: process.platform, arch: process.arch, version: 2 });
-  assertNoSelectedMaxCoreCandidate(root);
-  const model = validateModelRelease(root, { readOnly: true });
+  const model = modelReleaseRequirements(root);
+  if ((process.env.MAXCORE_SERVING_RELEASE || "live-awareness") === "legacy") assertNoSelectedMaxCoreCandidate(root);
   await runBuildProcess(process.execPath, ["scripts/verify-runtime-artifacts.mjs", "deployment-dependencies", root], root);
   fs.mkdirSync(payload, { recursive: true });
   fs.mkdirSync(app);
@@ -79,7 +82,7 @@ try {
   const nativeInputs = await inventory(root, file =>
     (file === "boosterstate" || file.startsWith("boosterstate/")) && !file.startsWith("boosterstate/target") ||
     ["script", "script/lib", "scripts"].includes(file) ||
-    ["script/lib/portableNode.ts", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix"].includes(file));
+    ["script/lib/portableNode.ts", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix", "scripts/prepare-rust-toolchain.py"].includes(file));
   const nativeKey = identity({ policyKey, nativeInputs });
   const native = path.join(parent, `native-${nativeKey}`);
   if (!fs.existsSync(native)) {
@@ -105,22 +108,28 @@ try {
   copy(path.join(native, "bin/boosterstate"), path.join(app, "bin/boosterstate"));
 
   for (const [name, dir, excludePaths] of [
-    ["node_modules", "node_modules", []],
+    ["node_modules", "node_modules", NODE_MODULE_CAPSULE_EXCLUDE_PATHS],
     ["external_maxcore", "external/maxcore", MAXCORE_CAPSULE_EXCLUDE_PATHS],
     ["external_pdim", "external/pdim", PDIM_CAPSULE_EXCLUDE_PATHS],
   ] as const) {
-    const before = await treeIdentity(root, dir);
+    const before = await treeIdentity(root, dir, excludePaths);
     const key = identity({ policyKey, before, excludePaths, model: name === "external_maxcore" ? model : null });
     await cachedCapsule({ cache, payload, name, key,
       build: async output => {
         const packed = await packCapsule({ root, dir, capsule: name + ".pdim", outputRoot: output,
-          preserveSource: true, threads: 1, excludePaths: [...excludePaths],
-          requiredMembers: name === "external_maxcore" ? [model] : [] });
+          preserveSource: true, threads: capsuleThreads, excludePaths: [...excludePaths],
+          requiredMembers: name === "external_maxcore" ? model : [] });
         if (!packed) throw new Error(`Missing capsule source: ${dir}`);
       },
-      verify: output => verifyCapsule(root, work, output, name, dir),
+      verify: async output => {
+        await verifyCapsule(root, work, output, name, dir);
+        // A capsule built while its source changed must never enter immutable
+        // cache under the earlier source identity, even when the final release
+        // source guard would later reject the preparation.
+        if (before !== await treeIdentity(root, dir, excludePaths)) throw new Error(`${dir} changed during preparation`);
+      },
     });
-    if (before !== await treeIdentity(root, dir)) throw new Error(`${dir} changed during preparation`);
+    if (before !== await treeIdentity(root, dir, excludePaths)) throw new Error(`${dir} changed during preparation`);
   }
   const pythonInputs = await Promise.all([
     "script/prepare-runtime.ts", "script/lib/pythonRequirements.py", "script/lib/portablePython.mjs",
@@ -133,15 +142,17 @@ try {
       try {
         preparePython(runtime, root);
         await packCapsule({ root: runtime, dir: "python_runtime", capsule: "python_runtime.pdim",
-          outputRoot: output, preserveSource: true, threads: 1 });
+          outputRoot: output, preserveSource: true, threads: capsuleThreads });
       } finally { fs.rmSync(runtime, { recursive: true, force: true }); }
     },
     verify: output => verifyCapsule(root, work, output, "python_runtime", "python_runtime"),
   });
 
-  const appMembers = (await inventory(app)).filter(entry => !fs.lstatSync(path.join(app, entry.path)).isDirectory()).map(entry => entry.path);
+  copy(path.join(app, "dist/deployment"), path.join(payload, "dist/deployment"));
+
+  const appMembers = (await inventory(app)).filter(entry => !entry.path.startsWith("dist/deployment/") && !fs.lstatSync(path.join(app, entry.path)).isDirectory()).map(entry => entry.path);
   const packed = await packCapsuleMembers({ root: app, members: appMembers, capsule: "app_remainder.pdim",
-    outputRoot: payload, preserveSource: true, threads: 1 });
+    outputRoot: payload, preserveSource: true, threads: capsuleThreads });
   if (!packed) throw new Error("Application capsule is empty");
   fs.rmSync(app, { recursive: true, force: true }); // Own generated staging only.
   await verifyCapsule(root, work, payload, "app_remainder", "");
@@ -163,6 +174,7 @@ try {
   fs.writeFileSync(path.join(work, "candidate/release.json"), JSON.stringify({
     schemaVersion: 1, createdAt: new Date().toISOString(), source, payload: await inventory(payload),
     buildEnvironment: environment,
+    modelServing: { mode: process.env.MAXCORE_SERVING_RELEASE || "live-awareness", state: "runtime-managed", readinessRequired: true },
     verification: { capsules: true, restoredArtifacts: true, runtimeImports: true, applicationReadiness: false },
   }, null, 2));
   const previous = path.join(work, "previous-release");

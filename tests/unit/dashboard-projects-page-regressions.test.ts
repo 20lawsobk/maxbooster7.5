@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
+import * as projectContracts from "../../client/src/lib/projectsPageContracts";
 import { describe, expect, it, vi } from "vitest";
 
 const paths = {
   dashboard: "client/src/pages/Dashboard.tsx",
   simplified: "client/src/pages/SimplifiedDashboard.tsx",
-  projects: "client/src/pages/Projects.tsx",
+  projects: "client/src/pages/ProjectsPageImpl.tsx",
 };
 const sources = Object.fromEntries(
   Object.entries(paths).map(([key, path]) => [key, readFileSync(path, "utf8")]),
@@ -17,6 +18,7 @@ function callback(page: string, name: string, dependencies: Record<string, unkno
   const file = ts.createSourceFile(paths[page as keyof typeof paths], sources[page], ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let expression: ts.Node | undefined;
   function visit(node: ts.Node) {
+    if (expression) return;
     if (ts.isVariableDeclaration(node) && node.name.getText(file) === name && node.initializer) {
       if (mutation && ts.isCallExpression(node.initializer)) {
         const options = node.initializer.arguments[0] as ts.ObjectLiteralExpression;
@@ -29,9 +31,24 @@ function callback(page: string, name: string, dependencies: Record<string, unkno
   }
   visit(file);
   if (!expression) throw new Error(`Callback ${name} not found`);
-  const output = ts.transpileModule(`const callback = ${expression.getText(file)};`, {
+  dependencies = { ...projectContracts, ...dependencies };
+  const helperNodes: ts.Node[] = [];
+  function collect(node: ts.Node) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === "errorMessage") helperNodes.push(node);
+    if (ts.isVariableDeclaration(node) && node.name.getText(file) === "stopPlayback" && node.initializer) {
+      helperNodes.push(ts.factory.createVariableStatement(undefined,
+        ts.factory.createVariableDeclarationList([node], ts.NodeFlags.Const)));
+    }
+    ts.forEachChild(node, collect);
+  }
+  collect(file);
+  const helpers = helperNodes.map(node => ts.isVariableStatement(node)
+    ? "const stopPlayback = " + ((node.declarationList.declarations[0].initializer)!.getText(file)) + ";"
+    : node.getText(file)).join("\n");
+  const output = ts.transpileModule(`${helpers}\nconst callback = ${expression.getText(file)};`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
   }).outputText;
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   return new Function(...Object.keys(dependencies), `${output}\nreturn callback;`)(...Object.values(dependencies));
 }
 
@@ -86,7 +103,7 @@ describe("dashboard and projects page regressions", () => {
     expect(sources.simplified).toContain('queryKey: ["/api/auth/me"]');
     expect(sources.simplified).toContain("useRequireSubscription()");
     expect(sources.dashboard).not.toContain('localStorage.getItem("onboardingSkipped")');
-    expect(sources.dashboard).toContain('user.subscriptionTier !== "free"');
+    expect(sources.dashboard).toContain("hasDashboardPaidAccess(user)");
   });
 
   it("rebinds playback completion to the current project when projects share an audio URL", async () => {
@@ -100,7 +117,7 @@ describe("dashboard and projects page regressions", () => {
     const play = callback("projects", "handlePlayProject", {
       currentlyPlaying: null, audioRef: { current: audio }, audioProjectRef,
       setCurrentlyPlaying, setAudioLoading: vi.fn(), toast: vi.fn(),
-      window: { location: { href: "https://app.example/projects" } },
+      window: { location: { origin: "https://app.example", href: "https://app.example/projects" } },
     });
     play({ id: "second", audioUrl: "https://app.example/audio.mp3" });
     await Promise.resolve();
@@ -153,7 +170,7 @@ describe("dashboard and projects page regressions", () => {
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {
     const route = readFileSync("server/routes/releaseCountdown.ts", "utf8");
     expect(route).toContain("data: countdownsWithProgress");
-    expect(sources.dashboard).toContain("const countdowns = data?.data ?? []");
+    expect(sources.dashboard).toContain("const countdowns = data ?? []");
     expect(sources.dashboard).not.toContain("data?.countdowns");
   });
 });

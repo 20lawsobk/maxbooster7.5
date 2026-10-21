@@ -1,14 +1,16 @@
 """Small, bounded HTTP client for untrusted public URLs.
 
-The client deliberately bypasses environment proxies and connects to an IP
-address that was validated immediately before the connection.  HTTPS still
-uses the original hostname for SNI and certificate verification.
+The client ignores ambient proxies unless its caller explicitly supplies one.
+Direct and proxy CONNECT routes both target the freshly validated public IP.
+HTTPS uses the original hostname for SNI and certificate verification.
 """
 
 from __future__ import annotations
 
 import http.client
+import base64
 import ipaddress
+import json
 import socket
 import ssl
 import queue
@@ -17,7 +19,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit, unquote, urlencode
 
 
 class SafeHTTPError(Exception):
@@ -39,7 +41,45 @@ class FetchResult:
     size: int
 
 
-def _public_addresses(host: str, port: int, timeout: float = 5.0) -> list[str]:
+def _proxy_dns_records(host, port, timeout, proxy_url):
+    """Resolve over a fixed verified HTTPS origin when local DNS cannot egress."""
+    import urllib.request
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            raise SafeHTTPError("Public DNS service redirects are not allowed")
+    try:
+        address = ipaddress.ip_address(host)
+        return [(socket.AF_INET6 if address.version == 6 else socket.AF_INET,
+                 socket.SOCK_STREAM, 6, "", (str(address), port))]
+    except ValueError:
+        pass
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({"https": proxy_url}),
+        urllib.request.HTTPSHandler(context=ssl.create_default_context()), NoRedirect())
+    request = urllib.request.Request(
+        "https://cloudflare-dns.com/dns-query?" + urlencode({"name": host, "type": "A"}),
+        headers={"Accept": "application/dns-json"})
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            raw = response.read(65537)
+            if len(raw) > 65536:
+                raise SafeHTTPError("Public DNS response exceeds size limit")
+            document = json.loads(raw)
+        if document.get("Status") != 0:
+            raise SafeHTTPError("Public DNS resolution failed")
+        records = []
+        for row in document.get("Answer", []):
+            if row.get("type") in (1, 28):
+                records.append((socket.AF_INET if row["type"] == 1 else socket.AF_INET6,
+                                socket.SOCK_STREAM, 6, "", (row["data"], port)))
+        return records
+    except SafeHTTPError:
+        raise
+    except Exception as exc:
+        raise SafeHTTPError("Public DNS resolution through egress failed") from exc
+
+
+def _public_addresses(host: str, port: int, timeout: float = 5.0, *, proxy_url=None) -> list[str]:
     answers: queue.Queue[object] = queue.Queue(maxsize=1)
 
     def resolve() -> None:
@@ -51,11 +91,14 @@ def _public_addresses(host: str, port: int, timeout: float = 5.0) -> list[str]:
     # libc DNS has no portable timeout argument. A daemon resolver plus bounded
     # wait keeps the request deadline enforceable even if the system resolver
     # stalls; the late answer is never used for a connection.
-    threading.Thread(target=resolve, name="analysis-dns", daemon=True).start()
-    try:
-        resolved = answers.get(timeout=max(0.001, timeout))
-    except queue.Empty as exc:
-        raise SafeHTTPError("URL hostname resolution timed out") from exc
+    if proxy_url:
+        resolved = _proxy_dns_records(host, port, timeout, proxy_url)
+    else:
+        threading.Thread(target=resolve, name="analysis-dns", daemon=True).start()
+        try:
+            resolved = answers.get(timeout=max(0.001, timeout))
+        except queue.Empty as exc:
+            raise SafeHTTPError("URL hostname resolution timed out") from exc
     if isinstance(resolved, BaseException):
         raise SafeHTTPError("URL hostname could not be resolved") from resolved
     records = resolved
@@ -122,24 +165,51 @@ def _validate_url(url: str) -> tuple[str, str, int, str]:
     return parsed.scheme, host, port, target
 
 
+def _connect_pinned(ip, port, timeout, proxy_url=None):
+    if not proxy_url:
+        return socket.create_connection((ip, port), timeout)
+    proxy = urlsplit(proxy_url)
+    if (proxy.scheme != "http" or not proxy.hostname or proxy.path not in {"", "/"}
+            or proxy.query or proxy.fragment):
+        raise SafeHTTPError("Public fetch proxy must be a configured HTTP CONNECT origin")
+    connection = http.client.HTTPConnection(proxy.hostname, proxy.port or 80, timeout=timeout)
+    headers = {}
+    if proxy.username is not None:
+        credentials = unquote(proxy.username) + ":" + unquote(proxy.password or "")
+        headers["Proxy-Authorization"] = "Basic " + base64.b64encode(credentials.encode()).decode()
+    # Tunnel the IP we validated, never let the proxy re-resolve an untrusted
+    # hostname. Proxy authentication is confined to CONNECT, not the origin.
+    connection.set_tunnel(ip, port, headers=headers)
+    try:
+        connection.connect()
+        raw = connection.sock
+        connection.sock = None
+        return raw
+    except Exception:
+        connection.close()
+        raise
+
+
 class _PinnedHTTPConnection(http.client.HTTPConnection):
-    def __init__(self, host: str, port: int, ip: str, timeout: float):
+    def __init__(self, host: str, port: int, ip: str, timeout: float, proxy_url=None):
         super().__init__(host, port, timeout=timeout)
         self._ip = ip
+        self._proxy_url = proxy_url
 
     def connect(self) -> None:
-        self.sock = socket.create_connection((self._ip, self.port), self.timeout)
+        self.sock = _connect_pinned(self._ip, self.port, self.timeout, self._proxy_url)
 
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
-    def __init__(self, host: str, port: int, ip: str, timeout: float):
+    def __init__(self, host: str, port: int, ip: str, timeout: float, proxy_url=None):
         super().__init__(
             host, port, timeout=timeout, context=ssl.create_default_context()
         )
         self._ip = ip
+        self._proxy_url = proxy_url
 
     def connect(self) -> None:
-        raw = socket.create_connection((self._ip, self.port), self.timeout)
+        raw = _connect_pinned(self._ip, self.port, self.timeout, self._proxy_url)
         try:
             self.sock = self._context.wrap_socket(raw, server_hostname=self.host)
         except Exception:
@@ -157,6 +227,7 @@ def fetch_to_file(
     max_redirects: int = 3,
     headers: Mapping[str, str] | None = None,
     append: bool = False,
+    proxy_url: str | None = None,
 ) -> FetchResult:
     """Stream a public URL into ``destination`` under strict limits."""
     allowed = tuple(item.lower().rstrip("/") for item in allowed_content_types)
@@ -169,11 +240,13 @@ def fetch_to_file(
             raise SafeHTTPError("Remote fetch deadline exceeded")
         scheme, host, port, target = _validate_url(current)
         # Resolve and validate every redirect, then pin this exact address.
-        ip = _public_addresses(host, port, min(remaining, 5.0))[0]
+        ip = _public_addresses(host, port, min(remaining, 5.0),
+                               **({"proxy_url": proxy_url} if proxy_url else {}))[0]
         connection_class = (
             _PinnedHTTPSConnection if scheme == "https" else _PinnedHTTPConnection
         )
-        connection = connection_class(host, port, ip, min(remaining, 10.0))
+        connection = connection_class(host, port, ip, min(remaining, 10.0),
+                                      **({"proxy_url": proxy_url} if proxy_url else {}))
         try:
             display_host = f"[{host}]" if ":" in host else host
             default_port = 443 if scheme == "https" else 80
@@ -257,6 +330,7 @@ def fetch_bytes(
     deadline_seconds: float = 20.0,
     max_redirects: int = 3,
     headers: Mapping[str, str] | None = None,
+    proxy_url: str | None = None,
 ) -> tuple[bytes, FetchResult]:
     """Fetch bytes without leaving a partial file behind."""
     import tempfile
@@ -274,6 +348,7 @@ def fetch_bytes(
             deadline_seconds=deadline_seconds,
             max_redirects=max_redirects,
             headers=headers,
+            **({"proxy_url": proxy_url} if proxy_url else {}),
         )
         return path.read_bytes(), result
     finally:

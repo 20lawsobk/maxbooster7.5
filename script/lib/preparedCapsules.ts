@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import ignore from "ignore";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { inventory, fileDigest } from "./releaseInventory.js";
@@ -7,8 +8,10 @@ import { inspectArtifacts, inspectRestored } from "../../scripts/verify-runtime-
 
 export const identity = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-export async function treeIdentity(root: string, directory: string) {
-  return identity(await inventory(root, file => directory === file || file.startsWith(directory + "/")));
+export async function treeIdentity(root: string, directory: string, excludePaths: readonly string[] = []) {
+  const excluded = ignore().add([...excludePaths]);
+  return identity(await inventory(root, file => directory === file || directory.startsWith(file + "/") ||
+    file.startsWith(directory + "/") && !excluded.ignores(file.slice(directory.length + 1))));
 }
 
 /** Only checksum-verified, previously restored artifacts enter this cache.

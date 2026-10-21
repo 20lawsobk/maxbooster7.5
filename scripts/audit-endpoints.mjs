@@ -47,7 +47,7 @@
  * static matches, confirmed unmatched calls, and unresolved dynamic URLs.
  */
 
-import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, relative, extname, dirname, resolve as pathResolve } from "node:path";
 import { stripRouteTypeArguments } from "./lib/route-call-source.mjs";
 
@@ -106,7 +106,7 @@ function levenshtein(a, b) {
 // Phase 0: resolve module specifiers to real files on disk (ESM .js -> .ts)
 // ---------------------------------------------------------------------------
 
-function resolveSpecifier(fromFile, specifier) {
+function resolveSpecifier(fromFile, specifier, seen = new Set()) {
   if (!specifier.startsWith(".")) return null;
   const base = pathResolve(dirname(fromFile), specifier);
   const candidates = [
@@ -118,7 +118,14 @@ function resolveSpecifier(fromFile, specifier) {
     join(base, "index.ts"),
     join(base, "index.tsx"),
   ];
-  for (const c of candidates) if (existsSync(c)) return c;
+  for (const c of candidates) {
+    if (!existsSync(c) || !statSync(c).isFile()) continue;
+    if (seen.has(c)) return null;
+    seen.add(c);
+    const source = readFileSync(c, "utf8");
+    const forwarded = source.match(/export\s*\{\s*default\s*\}\s*from\s*["']([^"']+)["']/);
+    return forwarded ? resolveSpecifier(c, forwarded[1], seen) : c;
+  }
   return null;
 }
 

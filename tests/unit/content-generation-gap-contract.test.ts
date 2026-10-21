@@ -42,7 +42,7 @@ describe("Dashboard MaxCore content optimization", () => {
     expect(dashboardPage).toContain("optimizableDrafts");
     expect(dashboardPage).toContain("dashboard-optimizer-existing-draft");
     expect(dashboardPage).toContain("optimizeContentMutation.mutate({");
-    expect(dashboardPage).toContain("setOptimizedDraft(data.draft)");
+    expect(dashboardPage).toContain("setOptimizedDraft({ ...draft, updatedExisting })");
     expect(dashboardPage).toContain('data-testid="dashboard-optimized-draft"');
     expect(dashboardPage).toContain("Not published");
   });

@@ -79,7 +79,8 @@ describe("multimodal MaxCore transport contract", () => {
     expect(source).not.toMatch(
       /fetch\(`\$\{MAXCORE_URL\}\$\{path\}`/,
     );
-    expect(source).toContain("[401, 403, 404].includes(pollRes.status)");
+    expect(source).toContain("resolveMaxCoreAudioJob(response, req.userId");
+    expect(source).toContain("maxcoreAudioSource(resolved)");
   });
 });
 

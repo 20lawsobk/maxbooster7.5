@@ -298,3 +298,78 @@ class AwarenessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+class PeakObservationSelectionTests(unittest.TestCase):
+    def setUp(self):
+        from .sources import PEAK_METRIC
+        self.metric = PEAK_METRIC
+        self.store = MemoryStore()
+        self.engine = Engine(store=self.store, sources={}, clock=lambda: 1000)
+        self.engine.sources = {}
+
+    def ledger(self, source, domain, values, metric=None):
+        records = []
+        for index, value in enumerate(values):
+            text = ("Music artist album concert " if domain == "music" else "A creator explains social media ") + (
+                f"performance story number {index} from {source} connecting the community through a fresh original perspective.")
+            url = ("https://bsky.app/profile/did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/post/" if source.startswith("bluesky")
+                   else "https://mastodon.social/@creator/") + source + str(index)
+            row = {"source": source, "text": text, "citation": url,
+                   "value": value, "metric": metric or self.metric,
+                   "observed_at": 999, "score": 1 - index / 100}
+            row["id"] = hashlib.sha256(canonical([source, url, text]).encode()).hexdigest()
+            records.append(row)
+        self.engine.sources[source] = (domain, "https://example.org/", lambda: [])
+        self.store.data[OBSERVATIONS_PREFIX + source] = resign({
+            "schema": 1, "source": source, "domain": domain,
+            "updated_at": 999, "records": records})
+        return records
+
+    def test_contextual_headlines_and_unsupported_sources_do_not_become_peak_examples(self):
+        self.ledger("bluesky_peak_music", "music", [3, 100], metric="editorial_feed_presence")
+        self.ledger("random_source", "social", [9999])
+        self.assertEqual(self.engine.peak_training_observations()["records"], [])
+        self.assertTrue(self.engine.training_observations()["records"])
+
+    def test_full_content_top_engagement_within_source_domain_balance_and_policy_hash(self):
+        self.ledger("bluesky_peak_music", "music", [3, 100, 4, 6])
+        self.ledger("bluesky_peak_social", "social", [2, 8])
+        self.ledger("mastodon_trending", "social", [10000, 99999])
+        doc = self.engine.peak_training_observations()
+        self.assertEqual(doc["policy"], "public-peak-shortform-v1")
+        self.assertEqual(len(doc["records"]), 4)
+        self.assertEqual(sorted(r["value"] for r in doc["records"] if r["domain"] == "music"), [6, 100])
+        self.assertEqual({r["source"] for r in doc["records"]}, {"bluesky_peak_music", "bluesky_peak_social", "mastodon_trending"})
+        self.assertEqual(doc["id"], self.engine.peak_training_observations()["id"])
+
+    def test_ledger_full_body_preserved_and_stale_observations_excluded(self):
+        records = self.ledger("bluesky_peak_music", "music", [42])
+        source = "bluesky_peak_music"
+        row = records[0]
+        row["text"] += " The artist explains the full album story through a thoughtful community perspective." * 8
+        row["id"] = hashlib.sha256(canonical([source, row["citation"], row["text"]]).encode()).hexdigest()
+        self.store.data[OBSERVATIONS_PREFIX + source] = resign({
+            "schema": 1, "source": source, "domain": "music", "updated_at": 999, "records": records})
+        self.assertEqual(self.engine.peak_training_observations()["records"][0]["text"], row["text"])
+        self.engine.clock = lambda: 5000
+        self.assertEqual(self.engine.peak_training_observations()["records"], [])
+
+    def test_peak_selection_excludes_fake_origin_zero_and_irrelevant(self):
+        rows = self.ledger("bluesky_peak_music", "music", [42, 4, 0, 20])
+        source = "bluesky_peak_music"
+        rows[1]["citation"] = "https://private.example.org/private"
+        rows[3]["text"] = "Garden birds gather around the oak tree with bright feathers every morning in a wonderful park."
+        for row in rows:
+            row["id"] = hashlib.sha256(canonical([source, row["citation"], row["text"]]).encode()).hexdigest()
+        self.store.data[OBSERVATIONS_PREFIX + source] = resign({
+            "schema": 1, "source": source, "domain": "music", "updated_at": 999, "records": rows})
+        self.assertEqual([r["value"] for r in self.engine.peak_training_observations()["records"]], [42])
+
+    def test_duplicate_full_content_does_not_amplify_training_weight(self):
+        rows = self.ledger("bluesky_peak_music", "music", [10, 10, 10, 10])
+        source = "bluesky_peak_music"
+        for row in rows:
+            row["text"] = rows[0]["text"]
+            row["id"] = hashlib.sha256(canonical([source, row["citation"], row["text"]]).encode()).hexdigest()
+        self.store.data[OBSERVATIONS_PREFIX + source] = resign({
+            "schema": 1, "source": source, "domain": "music", "updated_at": 999, "records": rows})
+        self.assertEqual(len(self.engine.peak_training_observations()["records"]), 1)

@@ -170,7 +170,7 @@ export default function Royalties() {
     useState("");
 
   // Fetch royalties data
-  const { data: royaltiesResponse, isLoading } = useQuery<{
+  const { data: royaltiesResponse, isLoading, error: royaltiesResponseReadError, refetch: refetchRoyaltiesResponse } = useQuery<{
     data: Royalty[];
     pagination: Record<string, unknown>;
     totalEarnings: number;
@@ -187,7 +187,7 @@ export default function Royalties() {
   const royalties = royaltiesResponse?.data ?? [];
 
   // Fetch additional data
-  const { data: platformBreakdown = [], isLoading: platformLoading } = useQuery<
+  const { data: platformBreakdown = [], isLoading: platformLoading, error: platformBreakdownReadError, refetch: refetchPlatformBreakdown } = useQuery<
     PlatformBreakdown[]
   >({
     queryKey: ["/api/royalties/platform-breakdown", { period: selectedPeriod }],
@@ -195,7 +195,7 @@ export default function Royalties() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: topTracks = [], isLoading: tracksLoading } = useQuery<
+  const { data: topTracks = [], isLoading: tracksLoading, error: topTracksReadError, refetch: refetchTopTracks } = useQuery<
     TopTrack[]
   >({
     queryKey: ["/api/royalties/top-tracks", { period: selectedPeriod }],
@@ -203,7 +203,7 @@ export default function Royalties() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: paymentMethods = [], isLoading: paymentsLoading } = useQuery<
+  const { data: paymentMethods = [], isLoading: paymentsLoading, error: paymentMethodsReadError, refetch: refetchPaymentMethods } = useQuery<
     PaymentMethod[]
   >({
     queryKey: ["/api/royalties/payment-methods"],
@@ -211,14 +211,14 @@ export default function Royalties() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: payoutSettings, isLoading: payoutSettingsLoading } =
+  const { data: payoutSettings, isLoading: payoutSettingsLoading, error: payoutSettingsReadError, refetch: refetchPayoutSettings } =
     useQuery<PayoutSettings>({
       queryKey: ["/api/royalties/payout-settings"],
       enabled: !!user,
       staleTime: 5 * 60 * 1000,
     });
 
-  const { data: splits = [], isLoading: splitsLoading } = useQuery<
+  const { data: splits = [], isLoading: splitsLoading, error: splitsReadError, refetch: refetchSplits } = useQuery<
     RoyaltySplit[]
   >({
     queryKey: ["/api/royalties/splits"],
@@ -226,7 +226,7 @@ export default function Royalties() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: payoutHistoryData, isLoading: payoutHistoryLoading } =
+  const { data: payoutHistoryData, isLoading: payoutHistoryLoading, error: payoutHistoryDataReadError, refetch: refetchPayoutHistoryData } =
     useQuery<{ payouts: PayoutHistoryItem[] }>({
       queryKey: ["/api/payouts/history"],
       enabled: !!user,
@@ -234,7 +234,7 @@ export default function Royalties() {
     });
   const payoutHistory = payoutHistoryData?.payouts ?? [];
 
-  const { data: statementsData, isLoading: statementsLoading } = useQuery<{
+  const { data: statementsData, isLoading: statementsLoading, error: statementsDataReadError, refetch: refetchStatementsData } = useQuery<{
     statements: StatementPeriod[];
   }>({
     queryKey: ["/api/payouts/statements"],
@@ -243,7 +243,7 @@ export default function Royalties() {
   });
   const statements = statementsData?.statements ?? [];
 
-  const { data: disputesData, isLoading: disputesLoading } = useQuery<{
+  const { data: disputesData, isLoading: disputesLoading, error: disputesDataReadError, refetch: refetchDisputesData } = useQuery<{
     disputes: Dispute[];
   }>({
     queryKey: ["/api/payouts/disputes"],
@@ -252,7 +252,7 @@ export default function Royalties() {
   });
   const disputes = disputesData?.disputes ?? [];
 
-  const { data: taxFormsData } = useQuery<{
+  const { data: taxFormsData, error: taxFormsDataReadError, refetch: refetchTaxFormsData } = useQuery<{
     forms: Array<{
       formType?: string | null;
       status?: string;
@@ -272,14 +272,14 @@ export default function Royalties() {
     useState(false);
 
   // Publishing Queries
-  const { data: publishingWorks = [], isLoading: publishingLoading } = useQuery<
+  const { data: publishingWorks = [], isLoading: publishingLoading, error: publishingWorksReadError, refetch: refetchPublishingWorks } = useQuery<
     PublishingWork[]
   >({
     queryKey: ["/api/publishing"],
     enabled: !!user,
   });
 
-  const { data: publishingStats } = useQuery<PublishingStats>({
+  const { data: publishingStats, error: publishingStatsReadError, refetch: refetchPublishingStats } = useQuery<PublishingStats>({
     queryKey: ["/api/publishing/stats"],
     enabled: !!user,
   });
@@ -826,6 +826,18 @@ export default function Royalties() {
     .slice(0, 4);
 
   if (!user) return null;
+
+  if ([royaltiesResponseReadError, platformBreakdownReadError, topTracksReadError, paymentMethodsReadError, payoutSettingsReadError, splitsReadError, payoutHistoryDataReadError, statementsDataReadError, disputesDataReadError, taxFormsDataReadError, publishingWorksReadError, publishingStatsReadError].some(Boolean)) {
+    return (
+      <AppLayout>
+        <section role="alert" className="mx-auto max-w-xl space-y-4 p-8">
+          <h1 className="text-xl font-semibold">Unable to load royalties</h1>
+          <p>Your saved data is temporarily unavailable. Please retry.</p>
+          <Button onClick={() => { void Promise.allSettled([refetchRoyaltiesResponse(), refetchPlatformBreakdown(), refetchTopTracks(), refetchPaymentMethods(), refetchPayoutSettings(), refetchSplits(), refetchPayoutHistoryData(), refetchStatementsData(), refetchDisputesData(), refetchTaxFormsData(), refetchPublishingWorks(), refetchPublishingStats()]); }}>Retry</Button>
+        </section>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

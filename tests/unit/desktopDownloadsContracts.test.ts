@@ -27,6 +27,7 @@ describe("Desktop download metadata boundary", () => {
       "http://github.com/20lawsobk/maxbooster7.5/releases/download/v1/a.exe",
       "https://github.com/another/repository/releases/download/v1/a.exe",
       "https://example.com/a.exe",
+      // eslint-disable-next-line no-script-url -- Deliberate hostile URL fixture verifies the production boundary rejects script URLs.
       "javascript:alert(1)",
     ]) {
       expect(() => normalizeGithubReleaseUrl(url)).toThrow();

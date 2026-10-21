@@ -47,7 +47,7 @@ describe("PythonAIService MaxCore audio analysis", () => {
       audio_url:
         "/uploads/audio-inputs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/id.wav",
       context: { detailed: true },
-    });
+    }, "u1");
     expect(result).toEqual({
       success: true,
       data: { source: "maxcore_audio_conductor", bpm: 120 },

@@ -7,6 +7,7 @@
  */
 
 import Stripe from "stripe";
+import { createStripeClient } from "../lib/stripeClient";
 import { registerCommerceCompensationHandlers, reconcileCharge, initiateCommerceRefund } from "../services/commerce/compensation";
 import { commerceRepository } from "../services/commerce/runtime";
 import { db } from "../db";
@@ -62,7 +63,7 @@ function getStripe(): Stripe {
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
   }
-  return new Stripe(secretKey, { apiVersion: "2023-10-16" });
+  return createStripeClient(secretKey, { apiVersion: "2023-10-16" });
 }
 
 /**

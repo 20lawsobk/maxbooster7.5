@@ -42,6 +42,7 @@ it("performs concurrent dispatch creates and status changes inside the locked tr
     },
   };
   const sql = (chunks: TemplateStringsArray) => chunks.join("?");
+  // eslint-disable-next-line no-new-func -- Execute only repository-owned, transpiled AST fixtures with injected test dependencies; no untrusted input.
   const Subject = new Function("db", "sql", "systemSettings", "eq", "and", "randomBytes",
     `${compiled}; return Subject;`)(db, sql, { key: "key", id: "id" }, () => null, () => null, randomBytes);
   const storage = new Subject();
