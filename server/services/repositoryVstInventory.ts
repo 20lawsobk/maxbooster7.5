@@ -1,11 +1,12 @@
-import { readdir, readFile, realpath, stat, open } from 'node:fs/promises';
+import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
+import { inspectWindowsVst3File } from './vstBinaryInspection.js';
 
 export interface RepositoryVstPlugin {
   id: string; name: string; vendor: string; version: string; format: 'vst3';
   bundle: string; classId: string; platforms: string[]; architecture: 'x86_64';
   available: false; reason: string; sha256: string; exportDirectoryPresent: boolean;
+  vst3FactoryExported: boolean; exportedEntrypoints: string[];
 }
 
 // Steinberg's generated moduleinfo.json may contain trailing separators.
@@ -43,24 +44,18 @@ export async function repositoryVstInventory(root = process.cwd()) {
       const classes = Array.isArray(manifest.Classes) ? manifest.Classes as Record<string, unknown>[] : [];
       const component = classes.find(c => c.Category === 'Audio Module Class');
       if (!component || typeof component.CID !== 'string' || !/^[0-9a-f]{32}$/i.test(component.CID)) throw new Error('No valid audio component class');
-      const handle = await open(binaryPath, 'r');
-      let exportDirectoryPresent = false;
-      try {
-        const header = Buffer.alloc(64); await handle.read(header, 0, header.length, 0);
-        if (header.toString('ascii', 0, 2) !== 'MZ') throw new Error('Windows bundle has no PE executable');
-        const peOffset = header.readUInt32LE(60);
-        const pe = Buffer.alloc(6); await handle.read(pe, 0, pe.length, peOffset);
-        if (pe.toString('ascii', 0, 4) !== 'PE\0\0' || pe.readUInt16LE(4) !== 0x8664) throw new Error('Expected a Windows x64 VST3 binary');
-        const exports = Buffer.alloc(8); await handle.read(exports, 0, exports.length, peOffset + 24 + 112);
-        exportDirectoryPresent = exports.readUInt32LE(0) !== 0 && exports.readUInt32LE(4) !== 0;
-      } finally { await handle.close(); }
-      if ((await stat(binaryPath)).size > 128 * 1024 * 1024) throw new Error('Plugin binary exceeds inventory limit');
+      const inspected = await inspectWindowsVst3File(binaryPath);
       plugins.push({ id: `repository-vst3-${component.CID}`, classId: component.CID,
         name: String(component.Name || manifest.Name || entry.name), vendor: String(component.Vendor || ''), version: String(component.Version || manifest.Version || ''),
         bundle: entry.name, format: 'vst3', platforms: ['windows'], architecture: 'x86_64', available: false,
-        reason: exportDirectoryPresent ? 'Linux rebuild requires the original JUCE/C++ project and a native host.' : 'This Windows build has no VST3 export directory. Restore the original JUCE/C++ project to build and validate the Linux plugin.',
-        exportDirectoryPresent,
-        sha256: createHash('sha256').update(await readFile(binaryPath)).digest('hex') });
+        reason: inspected.vst3FactoryExported
+          ? 'Windows VST3 factory export found; processing is unverified. Linux rebuild requires the original JUCE/C++ project and a native host.'
+          : inspected.exportDirectoryPresent
+            ? 'This Windows build does not export a local executable GetPluginFactory. Restore the original JUCE/C++ project to build and validate the Linux plugin.'
+            : 'This Windows build has no VST3 export directory. Restore the original JUCE/C++ project to build and validate the Linux plugin.',
+        exportDirectoryPresent: inspected.exportDirectoryPresent,
+        vst3FactoryExported: inspected.vst3FactoryExported, exportedEntrypoints: inspected.exportedEntrypoints,
+        sha256: inspected.sha256 });
     } catch (error) { errors.push(`${entry.name}: ${error instanceof Error ? error.message : 'Invalid bundle'}`); }
   }
   return { plugins, errors, nativeProcessing: false, reason: 'A native VST3 execution host is not installed' };

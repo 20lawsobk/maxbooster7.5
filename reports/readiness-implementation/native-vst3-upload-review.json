@@ -1,0 +1,79 @@
+{
+  "scope": "Static inspection of the supplied native plugin artifacts and verification of the Studio inventory changes",
+  "productionReady": false,
+  "nativeLinuxStatus": "blocked_original_source_project_missing",
+  "repositoryBinary": {
+    "file": "VST3/NewProject.dll",
+    "bytes": 9728,
+    "sha256": "947346d0d0641fd502bc248892bf922bcfad9cf1a98b9c585a467130f72c1733",
+    "exportDirectoryPresent": false,
+    "vst3FactoryExported": false
+  },
+  "uploadedBinary": {
+    "file": "Max Booster.dll",
+    "bytes": 6390272,
+    "sha256": "b3b03582516da2991fc261a431882f225ce22ff4953852a0ec95d23d770ae5c9",
+    "platform": "windows",
+    "architecture": "x86_64",
+    "exportDirectoryPresent": true,
+    "vst3FactoryExported": true,
+    "exportedEntrypoints": ["ExitDll", "GetPluginFactory", "InitDll"],
+    "loadedInHost": false,
+    "processingVerified": false,
+    "matchesRepositoryPluginIdentity": "unverified",
+    "installedInRepositoryOrLinuxPayload": false
+  },
+  "linkerEvidence": {
+    "log": "Max Booster_VST3.log",
+    "error": "LINK : fatal error LNK1181: cannot open input file 'NewProject.lib'",
+    "sameAttemptAsUploadedDll": "unverified",
+    "suppliedLibrary": {
+      "file": "Max Booster.lib",
+      "bytes": 2118,
+      "sha256": "c11009e92a7b53952667831451bd65d220994e4748458e0f3e6aef44bd5c1448",
+      "kind": "DLL import library",
+      "symbols": ["__IMPORT_DESCRIPTOR_Max Booster", "__imp_ExitDll", "__imp_GetPluginFactory", "__imp_InitDll"],
+      "providesMissingProcessorImplementation": false
+    },
+    "wrapperObject": {
+      "file": "juce_audio_plugin_client_VST3.obj",
+      "bytes": 12705686,
+      "sha256": "a9fe3a1134b4053e65a1fdc7ab320a9eb4de6c107dd65bfd069bbfcdffd7596f",
+      "processorFactoryReference": "createPluginFilter",
+      "providesBuildableSourceProject": false
+    }
+  },
+  "readableUploadedFiles": [
+    "Max Booster.Build.CppClean.log", "Max Booster.dll.recipe", "Max Booster.exp",
+    "Max Booster.dll", "Max Booster.lib", "juce_audio_plugin_client_VST3.obj",
+    "Max Booster_VST3.log", "Max Booster_VST3.vcxproj.FileListAbsolute.txt"
+  ],
+  "unreadUploads": {
+    "files": ["VST3.zip", "Max Booster.pdb", "Max Booster.iobj"],
+    "reason": "Each exceeded the file reader's 32 MiB transfer limit; contents were not inspected"
+  },
+  "sourceRequired": {
+    "projectRoot": "NewProject, above Builds/VisualStudio2026 in the supplied logs",
+    "files": ["Original .jucer or CMakeLists.txt", "Source/ processor, editor, supporting C++ and headers", "Referenced resources, custom modules and dependencies", "Compatible JUCE version"],
+    "archiveGuidance": "Preserve relative paths; exclude Builds/ and DLL/PDB/OBJ/LIB/IOBJ outputs; keep each archive within 32 MiB"
+  },
+  "verification": {
+    "focusedNativeTests": {"command": "npm run test:vst3", "passed": 23, "failed": 0},
+    "runtimeContracts": {"command": "npm run test:runtime-contracts", "passed": 65, "failed": 0, "exitCode": 0},
+    "serverAndClientTypes": {"command": "npm run check", "exitCode": 0},
+    "lint": {"command": "npm run lint", "exitCode": 0},
+    "productionBuild": {"command": "npm run build", "exitCode": 0},
+    "linuxSourcePreflight": {
+      "command": "python3 scripts/build-linux-vst3.py",
+      "exitCode": 1,
+      "built": false,
+      "reason": "Original .jucer source project is missing from VST3"
+    }
+  },
+  "limits": [
+    "Factory exports alone do not establish successful loading, processing quality or plugin identity",
+    "No original Linux plugin was compiled or executed",
+    "The existing native bridge has no connected execution host",
+    "This native audit does not certify all application business flows or a deployed Replit release"
+  ]
+}

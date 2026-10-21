@@ -80,13 +80,15 @@
     "test:integration:ci": "vitest run --config vitest.integration.config.ts --reporter=verbose --reporter=junit --outputFile=test-results-integration.xml",
     "test:watch": "vitest watch --config vitest.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
-    "test:runtime-contracts": "node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/desktop-runtime-policy.test.mjs tests/audio-metadata-security.test.mjs",
+    "test:runtime-contracts": "node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/desktop-runtime-policy.test.mjs tests/audio-metadata-security.test.mjs tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs",
     "test:ci": "npm run test:runtime-contracts && npm run test:sharp-security && vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml",
     "gateway": "npx tsx server/diffusion-gateway/index.ts",
     "check:fast": "tsgo -p tsconfig.json --noEmit",
     "readiness-gauge": "npx tsx scripts/readiness-gauge/cli.ts",
     "check:tools": "node scripts/check-environment-tools.mjs",
     "vst3:build:linux": "python3 scripts/build-linux-vst3.py",
+    "vst3:inspect": "tsx scripts/inspect-vst3-binary.ts",
+    "test:vst3": "node --test tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs",
     "test:beat-loop": "node --test tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs"
   },
   "build": {

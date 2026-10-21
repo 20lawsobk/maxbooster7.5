@@ -32,6 +32,7 @@ test('repository inventory verifies actual bundle metadata and never reports a n
   assert.equal(inventory.plugins.length, 1);
   const plugin = inventory.plugins[0]; assert.equal(plugin.name, 'Max Booster'); assert.equal(plugin.available, false);
   assert.equal(plugin.exportDirectoryPresent, false); assert.match(plugin.reason, /no VST3 export/); assert.match(plugin.sha256, /^[a-f0-9]{64}$/);
+  assert.equal(plugin.vst3FactoryExported, false); assert.deepEqual(plugin.exportedEntrypoints, []);
   const { vstPluginBridge } = await loadDatabaseSubject('server/services/vstPluginBridge.ts', {
     '../logger.js': 'export const logger={info(){},warn(){},error(){}};',
   });
