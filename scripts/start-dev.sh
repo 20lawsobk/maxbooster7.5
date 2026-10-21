@@ -201,7 +201,9 @@ if ! _http_responds "$PYTHON_AI_PORT"; then
 fi
 
 set +e
-NODE_ENV=development node --import tsx server/index.ts &
+# Same heap ceiling and override as the production launcher (start.sh); passed as a
+# direct flag so spawned child processes do not inherit it via NODE_OPTIONS.
+NODE_ENV=development node --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" --import tsx server/index.ts &
 _APP_PID=$!
 set -e
 

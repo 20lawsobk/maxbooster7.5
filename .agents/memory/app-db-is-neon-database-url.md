@@ -43,3 +43,8 @@ DB the app never reads. This exact mismatch caused the Beat Loop "Data Load Erro
    to the same wrong managed DB. Treat "subagent DB check found nothing" as inconclusive, not
    proof the write failed; re-check with a direct `psql "$NEON_DATABASE_URL"` query before
    concluding a registration/write didn't persist.
+
+## Missing-secret failure mode (observed 2026-10-21)
+
+The `NEON_DATABASE_URL` secret can disappear from the workspace. The app then silently falls back to the nearly empty managed `DATABASE_URL` (heliumdb). Boot fails on the first fail-closed schema check (`relation "integration_catalog_jobs" does not exist`) even though most of the core schema is also missing there.
+**How to apply:** If many core tables (tracks, payouts, earnings) are missing, check whether `NEON_DATABASE_URL` is set before treating it as pending migrations. Never migrate the managed DB to "fix" boot.
