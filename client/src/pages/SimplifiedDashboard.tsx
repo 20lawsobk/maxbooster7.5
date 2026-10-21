@@ -9,6 +9,7 @@ import {
   getOnboardingUserLevel,
   prefersSimplifiedDashboard,
   parseOnboardingStatusResponse,
+  parseOnboardingUpdateResponse,
 } from "@/lib/onboardingMode";
 import {
   hasDashboardPaidAccess,
@@ -30,7 +31,7 @@ export default function SimplifiedDashboard() {
 
   const { data: onboardingStatus } = useQuery({
     queryKey: ["/api/auth/onboarding-status"],
-    enabled: Boolean(user) && !isLoading,
+    enabled: Boolean(user) && !isLoading && hasAccess,
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/auth/onboarding-status");
       return parseOnboardingStatusResponse(await readDashboardJson(response));
@@ -42,20 +43,6 @@ export default function SimplifiedDashboard() {
       setLocation("/pricing");
     }
   }, [isLoading, user, hasAccess, setLocation]);
-
-  const { data: onboardingStatus } = useQuery<{ hasCompletedOnboarding: boolean }>({
-    queryKey: ["/api/auth/onboarding-status"],
-    enabled: Boolean(user) && hasAccess,
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/auth/onboarding-status");
-      const result = await readDashboardJson(response);
-      if (!result || typeof result !== "object" || !("hasCompletedOnboarding" in result) ||
-          typeof result.hasCompletedOnboarding !== "boolean") {
-        throw new Error("Invalid onboarding status response");
-      }
-      return { hasCompletedOnboarding: result.hasCompletedOnboarding };
-    },
-  });
 
   const upgradeToFullModeMutation = useMutation({
     mutationFn: async () => {

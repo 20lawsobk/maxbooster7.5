@@ -24,7 +24,6 @@ import {
   getAccountEligibilityError,
   getLatestEligibleBirthdate,
 } from "@shared/agePolicy";
-import { getStripeCheckoutUrl, readRegistrationCheckoutPayload } from "@/lib/registrationCheckout";
 
 const plans = {
   monthly: {

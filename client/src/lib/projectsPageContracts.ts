@@ -26,15 +26,6 @@ export interface Project {
   progress?: number | null;
 }
 
-export interface ProjectEditDraftData {
-  form: {
-    title: string;
-    description: string;
-    genre: string;
-  };
-  expectedUpdatedAt?: string | null;
-}
-
 export interface SongwritingSession {
   id: string;
   userId?: string | null;
@@ -86,54 +77,6 @@ function asNullableFiniteNumber(value: unknown): number | null | undefined {
     : typeof value === "number" && Number.isFinite(value)
       ? value
       : undefined;
-}
-
-export function normalizeProjectVersion(
-  value: unknown,
-): string | null | undefined {
-  if (value === null) return null;
-  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) {
-    return undefined;
-  }
-  return new Date(value).toISOString();
-}
-
-export function createProjectEditDraft(
-  form: ProjectEditDraftData["form"],
-  expectedUpdatedAt: string | null | undefined,
-): ProjectEditDraftData {
-  return expectedUpdatedAt === undefined
-    ? { form: { ...form } }
-    : { form: { ...form }, expectedUpdatedAt };
-}
-
-export function parseProjectEditDraft(
-  value: unknown,
-): (ProjectEditDraftData & { expectedUpdatedAt: string | null | undefined }) | null {
-  if (!isRecord(value)) return null;
-
-  const hasEnvelope = Object.prototype.hasOwnProperty.call(value, "form");
-  const candidateForm = hasEnvelope ? value.form : value;
-  if (
-    !isRecord(candidateForm) ||
-    typeof candidateForm.title !== "string" ||
-    typeof candidateForm.description !== "string" ||
-    typeof candidateForm.genre !== "string"
-  ) {
-    return null;
-  }
-
-  const expectedUpdatedAt = hasEnvelope
-    ? normalizeProjectVersion(value.expectedUpdatedAt)
-    : undefined;
-  return {
-    form: {
-      title: candidateForm.title,
-      description: candidateForm.description,
-      genre: candidateForm.genre,
-    },
-    expectedUpdatedAt,
-  };
 }
 
 export async function readProjectsJson(

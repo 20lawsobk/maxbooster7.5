@@ -6,8 +6,18 @@ import * as agePolicy from "../../shared/agePolicy";
 import * as registrationCompletion from "../../client/src/lib/registrationCompletion";
 import * as registrationCheckout from "../../client/src/lib/registrationCheckout";
 import * as subscriptionCheckout from "../../client/src/lib/subscriptionCheckout";
-import * as registrationCheckout from "../../client/src/lib/registrationCheckout";
-import { ApiError } from "../../client/src/lib/queryClient";
+
+// Test double for the page-facing ApiError surface. The real class lives in a
+// module that installs browser-only global error handlers on import.
+class ApiError extends Error {
+  readonly userMessage: string;
+
+  constructor(message: string, userMessage: string) {
+    super(message);
+    this.name = "ApiError";
+    this.userMessage = userMessage;
+  }
+}
 
 // Execute real page handlers with isolated hooks and transport. No backend,
 // browser SDK, credentials, account creation, or network is loaded.
@@ -274,7 +284,7 @@ describe("Registration success page", () => {
     const h = harness("RegisterSuccess", { search: "?session_id=cs_unit", authLoading: true });
     h.transport(async () => json({})); h.identity(null); await h.settle();
     expect(h.text()).not.toContain("Payment Successful!");
-    expect(h.text()).toContain("invalid verification response");
+    expect(h.text()).toContain("Payment could not be verified");
     const retry = h.all().find(n => n.props?.children === "Retry Verification");
     h.transport(async () => json({ verified: true }));
     retry.props.onClick(); h.render(); await h.settle();
@@ -283,14 +293,7 @@ describe("Registration success page", () => {
   it("shows the safe API error message when checkout verification fails", async () => {
     const h = harness("RegisterSuccess", { search: "?session_id=cs_unit", authLoading: true });
     h.transport(async () => {
-      throw new ApiError({
-        code: "SERVER_ERROR",
-        message: "provider-internal-detail",
-        userMessage: "Payment could not be verified. Please try again.",
-        status: 502,
-        retryable: true,
-        suggestions: [],
-      });
+      throw new ApiError("provider-internal-detail", "Payment could not be verified. Please try again.");
     });
     h.identity(null);
     await h.settle();

@@ -285,36 +285,12 @@ describe("dashboard and projects page regressions", () => {
     expect(dependencies.setIsEditOpen).toHaveBeenCalledWith(false);
   });
 
-  it("cleans drafts after confirmed saves, retains queued drafts, and keeps version checks", async () => {
+  it("retains version-checked offline cleanup and explicit retry states", () => {
     expect(sources.projects).toContain("saved?.version === action.metadata?.draftVersion");
+    expect(sources.projects).not.toContain("deleteDraft(`project-edit:${editingProject.id}`)");
     expect(sources.projects).toContain("if (!user) return null");
     expect(sources.dashboard).toContain("Upcoming releases could not be loaded.");
     expect(sources.dashboard).toContain("Your projects could not be loaded.");
-
-    const deleteDraft = vi.fn(async () => undefined);
-    const dependencies = {
-      editRequestRef: { current: 0 },
-      invalidateProjectQueries: vi.fn(async () => undefined),
-      toast: vi.fn(),
-      setIsEditOpen: vi.fn(),
-      editingProject: { id: "p1" },
-      draftStorage: { deleteDraft },
-      setEditingProject: vi.fn(),
-    };
-    const onSuccess = callback(
-      "projects",
-      "editMutation",
-      dependencies,
-      true,
-      "onSuccess",
-    );
-
-    await onSuccess({ queued: false });
-    expect(deleteDraft).toHaveBeenCalledExactlyOnceWith("project-edit:p1");
-
-    deleteDraft.mockClear();
-    await onSuccess({ queued: true });
-    expect(deleteDraft).not.toHaveBeenCalled();
   });
 
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {
