@@ -312,6 +312,7 @@ class VSTPluginBridge extends EventEmitter {
       throw new Error(`Instance not found: ${request?.instanceId}`);
     }
 
+    // Bypass is a genuine pass-through by definition.
     if (instance?.bypassed) {
       return request?.inputBuffers;
     }

@@ -17,13 +17,33 @@ test("schema failure prevents startup and probes are read only", async () => {
     return queries.length === 1
       ? { rows: [{ current_schema: "public", missing_relations: [] }] }
       : { rows: [] };
-  }, false, false);
-  assert.equal(queries.length, 2);
+  }, true, true);
+  assert.equal(queries.length, 9);
   assert.match(queries[0], /current_schema\(\)[\s\S]*to_regclass/);
-  assert.match(queries[1], /^SELECT .* LIMIT 0$/);
+  assert.ok(queries.slice(1).every(sql => /^SELECT .* LIMIT 0$/.test(sql)));
   await assert.rejects(assertWorkerSchema(async () => {
     throw new Error("migration missing");
   }, true, true), /migration missing/);
+});
+
+test("missing relation names the selected database variable and the fallback cause", async () => {
+  const missing = Object.assign(new Error('relation "integration_catalog_jobs" does not exist'), { code: "42P01" });
+  await assert.rejects(assertWorkerSchema(async () => { throw missing; }, false, false, "DATABASE_URL"),
+    err => err.name === "WorkerSchemaUnavailableError" && err.cause === missing &&
+      /selected by DATABASE_URL/.test(err.message) && /NEON_DATABASE_URL is not set/.test(err.message) &&
+      /integration_catalog_jobs/.test(err.message) && /performs no DDL/.test(err.message));
+  await assert.rejects(assertWorkerSchema(async () => { throw missing; }, false, false, "NEON_DATABASE_URL"),
+    err => /selected by NEON_DATABASE_URL/.test(err.message) && !/fell back/.test(err.message));
+  const network = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+  await assert.rejects(assertWorkerSchema(async () => { throw network; }, false, false, "DATABASE_URL"),
+    err => err === network);
+});
+
+test("database source mirrors application precedence", () => {
+  const { databaseSourceName } = mod.exports;
+  assert.equal(databaseSourceName({ NEON_DATABASE_URL: "postgres://a", DATABASE_URL: "postgres://b" }), "NEON_DATABASE_URL");
+  assert.equal(databaseSourceName({ DATABASE_URL: "postgres://b" }), "DATABASE_URL");
+  assert.equal(databaseSourceName({}), "none");
 });
 
 test("scheduler serializes work, stops future ticks, and drains active work", async () => {

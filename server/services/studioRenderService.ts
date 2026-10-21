@@ -24,8 +24,8 @@ import fsPromises from "fs/promises";
 import os from "os";
 import { randomUUID } from "crypto";
 import { db } from "../db.js";
-import { studioTracks, audioClips, projects } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { studioTracks, audioClips, projects, pluginInstances } from "@shared/schema";
+import { and, eq, inArray } from "drizzle-orm";
 import { resolveAudioUrlToLocalFile } from "./audioSourceResolver.js";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
@@ -65,18 +65,90 @@ async function ensureRenderDir() {
 }
 
 // Delegates to the shared resolver (also used by warp/transient processing)
-// which additionally understands the `/api/storage/file/<key>` form. Render
-// keeps its existing lenient policy of skipping a clip it can't resolve
-// rather than failing the whole mixdown.
-async function resolveClipToLocalFile(audioUrl: string, userId: string): Promise<string | null> {
-  if (!audioUrl) return null;
-  try {
-    const { localPath } = await resolveAudioUrlToLocalFile(audioUrl, userId);
-    return localPath;
-  } catch (err) {
-    logger.warn({ err, audioUrl }, "[StudioRender] failed to resolve clip audio");
-    return null;
+// which additionally understands the `/api/storage/file/<key>` form. A clip
+// that cannot be resolved fails the whole render: a mixdown silently missing
+// audible clips is a corrupt result, not a partial success.
+async function resolveClipToLocalFile(audioUrl: string, userId: string): Promise<string> {
+  const { localPath } = await resolveAudioUrlToLocalFile(audioUrl, userId);
+  if (!localPath) throw new Error("resolver returned no local file");
+  return localPath;
+}
+
+export class MixdownSourceUnavailableError extends Error {
+  readonly unresolvedClipIds: string[];
+  constructor(unresolved: { clipId: string; reason: string }[]) {
+    super(
+      `Cannot render: ${unresolved.length} audible clip(s) have no retrievable audio (` +
+      unresolved.map((u) => `${u.clipId}: ${u.reason}`).join("; ") +
+      "). Re-upload or remove these clips, or mute their tracks, then render again.",
+    );
+    this.name = "MixdownSourceUnavailableError";
+    this.unresolvedClipIds = unresolved.map((u) => u.clipId);
   }
+}
+
+type ClipFileResolver = (audioUrl: string, userId: string) => Promise<string>;
+
+/** Resolve every audible clip or fail with the complete list of unresolved clips. */
+export async function resolveRenderSources<C extends { id: string; audioUrl: string | null }>(
+  clips: C[],
+  userId: string,
+  resolve: ClipFileResolver = resolveClipToLocalFile,
+): Promise<{ clip: C; localPath: string }[]> {
+  const resolved: { clip: C; localPath: string }[] = [];
+  const unresolved: { clipId: string; reason: string }[] = [];
+  for (const clip of clips) {
+    try {
+      if (!clip.audioUrl) throw new Error("clip has no audio URL");
+      resolved.push({ clip, localPath: await resolve(clip.audioUrl, userId) });
+    } catch (err) {
+      unresolved.push({ clipId: clip.id, reason: (err as Error)?.message || "unresolvable" });
+    }
+  }
+  if (unresolved.length > 0) {
+    // Downloaded temp copies of the clips that did resolve must not leak.
+    await Promise.all(resolved
+      .filter((r) => r.localPath.startsWith(os.tmpdir()))
+      .map((r) => fsPromises.unlink(r.localPath).catch(() => {})));
+    logger.warn({ unresolved }, "[StudioRender] refusing to render with unresolved clip audio");
+    throw new MixdownSourceUnavailableError(unresolved);
+  }
+  return resolved;
+}
+
+/** Cut interleaved stereo PCM to [startSec, endSec); a range beyond the mix is silence. */
+export function sliceStereoRange(
+  interleaved: Float32Array,
+  sampleRate: number,
+  startSec: number,
+  endSec: number,
+): Float32Array {
+  if (!(startSec >= 0) || !(endSec > startSec)) {
+    throw new Error(`Invalid render range: ${startSec}s to ${endSec}s`);
+  }
+  const startFrame = Math.round(startSec * sampleRate);
+  const endFrame = Math.round(endSec * sampleRate);
+  const out = new Float32Array((endFrame - startFrame) * 2);
+  const available = interleaved.subarray(
+    Math.min(startFrame * 2, interleaved.length),
+    Math.min(endFrame * 2, interleaved.length),
+  );
+  out.set(available);
+  return out;
+}
+
+/** Peak-normalize to the given dBFS ceiling. Digital silence stays silent. */
+export function normalizeToPeak(interleaved: Float32Array, ceilingDbfs = -1): Float32Array {
+  let peak = 0;
+  for (let i = 0; i < interleaved.length; i++) {
+    const a = Math.abs(interleaved[i]);
+    if (a > peak) peak = a;
+  }
+  if (peak === 0) return interleaved;
+  const gain = Math.pow(10, ceilingDbfs / 20) / peak;
+  const out = new Float32Array(interleaved.length);
+  for (let i = 0; i < interleaved.length; i++) out[i] = interleaved[i] * gain;
+  return out;
 }
 
 interface RenderInput {
@@ -296,6 +368,20 @@ export interface RenderProjectOptions {
   targetLufs?: number;
   /** Auto-mix engine: role-based per-track EQ + leveling compression before the mixdown. */
   applyAutoMix?: boolean;
+  /** Bounce: render only these project tracks (their mute/solo state is ignored). */
+  trackIds?: string[];
+  /** Bounce: output exactly this timeline range, in seconds. */
+  rangeSec?: { start: number; end: number };
+  /** Peak-normalize the final buffer to -1 dBFS. */
+  normalizePeak?: boolean;
+  /** Storage category for the durable copy. */
+  storageCategory?: string;
+  /**
+   * Bounce with track effects. The server renderer has no plugin host, so any
+   * active (non-bypassed) plugin on a selected track makes the request
+   * unrenderable rather than silently rendered dry.
+   */
+  includeTrackEffects?: boolean;
 }
 
 export interface RenderProjectResult {
@@ -333,32 +419,67 @@ export async function renderProjectMixdown(
     where: eq(audioClips.projectId, projectId),
   });
 
-  const hasSolo = tracks.some((t) => t.isSolo);
-  const activeTrackIds = new Set(
-    tracks
-      .filter((t) => {
-        if (t.isMuted && !t.isSolo) return false;
-        if (hasSolo && !t.isSolo) return false;
-        return true;
-      })
-      .map((t) => t.id),
+  let activeTrackIds: Set<string>;
+  if (options.trackIds) {
+    const projectTrackIds = new Set(tracks.map((t) => t.id));
+    const unknown = options.trackIds.filter((id) => !projectTrackIds.has(id));
+    if (options.trackIds.length === 0 || unknown.length > 0) {
+      throw new Error(
+        unknown.length > 0
+          ? `Tracks not found in this project: ${unknown.join(", ")}`
+          : "Select at least one track to render",
+      );
+    }
+    activeTrackIds = new Set(options.trackIds);
+  } else {
+    const hasSolo = tracks.some((t) => t.isSolo);
+    activeTrackIds = new Set(
+      tracks
+        .filter((t) => {
+          if (t.isMuted && !t.isSolo) return false;
+          if (hasSolo && !t.isSolo) return false;
+          return true;
+        })
+        .map((t) => t.id),
+    );
+  }
+
+  const activeClips = clips.filter((c) =>
+    c.audioUrl &&
+    (options.trackIds ? !!c.trackId && activeTrackIds.has(c.trackId) : !c.trackId || activeTrackIds.has(c.trackId)),
   );
 
-  const activeClips = clips.filter(
-    (c) => c.audioUrl && (!c.trackId || activeTrackIds.has(c.trackId)),
-  );
+  if (options.includeTrackEffects && options.trackIds) {
+    const active = await db.select({ name: pluginInstances.name, trackId: pluginInstances.trackId })
+      .from(pluginInstances)
+      .where(and(
+        eq(pluginInstances.projectId, projectId),
+        inArray(pluginInstances.trackId, options.trackIds),
+        eq(pluginInstances.isBypassed, false),
+      ));
+    if (active.length > 0) {
+      throw new Error(
+        `Cannot bounce with effects: server rendering cannot apply the ${active.length} active plugin(s) ` +
+        `on the selected tracks (${active.map((a) => a.name || "unnamed").join(", ")}). ` +
+        "Bounce with includeEffects=false, or bypass those plugins first.",
+      );
+    }
+  }
 
   if (activeClips.length === 0) {
-    throw new Error("No audible clips found for this project — add audio before rendering");
+    throw new Error(
+      options.trackIds
+        ? "The selected tracks contain no audio clips to render"
+        : "No audible clips found for this project — add audio before rendering",
+    );
   }
 
   const tempFiles: string[] = [];
   const inputs: RenderInput[] = [];
 
   try {
-    for (const clip of activeClips) {
-      const localPath = await resolveClipToLocalFile(clip.audioUrl!, project.userId);
-      if (!localPath) continue;
+    const sources = await resolveRenderSources(activeClips, project.userId);
+    for (const { clip, localPath } of sources) {
       const isTemp = localPath.startsWith(os.tmpdir());
       if (isTemp) tempFiles.push(localPath);
 
@@ -387,7 +508,9 @@ export async function renderProjectMixdown(
       );
     }
 
-    const { pcmPath, durationSec } = await mixToRawPcm(inputs, options.sampleRate);
+    const mixed = await mixToRawPcm(inputs, options.sampleRate);
+    const pcmPath = mixed.pcmPath;
+    let durationSec = mixed.durationSec;
     tempFiles.push(pcmPath);
 
     let finalPcm = await pcmFileToFloat32(pcmPath);
@@ -410,6 +533,14 @@ export async function renderProjectMixdown(
         confidence: suggestion.confidence,
         reasoning: suggestion.reasoning,
       };
+    }
+
+    if (options.rangeSec) {
+      finalPcm = sliceStereoRange(finalPcm, options.sampleRate, options.rangeSec.start, options.rangeSec.end);
+      durationSec = options.rangeSec.end - options.rangeSec.start;
+    }
+    if (options.normalizePeak) {
+      finalPcm = normalizeToPeak(finalPcm);
     }
 
     await ensureRenderDir();
@@ -442,7 +573,7 @@ export async function renderProjectMixdown(
     const storageKey = await storageService.uploadGeneratedFile(
       finalBuffer,
       project.userId,
-      "studio-renders",
+      options.storageCategory || "studio-renders",
       `${renderId}.${ext}`,
       contentTypeMap[options.format] || "application/octet-stream",
     );

@@ -29,7 +29,7 @@ import { createServer } from "http";
 import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
-import { assertWorkerSchema, scheduleDrainingWork } from "./lib/readinessWorkerLifecycle.js";
+import { assertWorkerSchema, databaseSourceName, scheduleDrainingWork } from "./lib/readinessWorkerLifecycle.js";
 const readinessWorkerStops: Array<() => void | Promise<void>> = [];
 import { serializeResponseForLog } from "./lib/responseLogSerialization.js";
 import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
@@ -1105,10 +1105,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
   }
   const { pool: readinessPool } = await import("./db.js");
-  await assertWorkerSchema(sql => readinessPool.query(sql), backupsEnabled, fanMailEnabled);
-  // Check the durable consumer's full column contract before worker startup.
-  await readinessPool.query(
-    "SELECT id,user_id,type,title,message,link,frequency,due_at,state,owner,provider_id,error,updated_at FROM public.integration_notification_digest LIMIT 0",
+  const databaseSource = databaseSourceName();
+  logger.info({ databaseSource }, "[Boot] Verifying worker schema on the selected application database");
+  // Checks every durable consumer before starting any readiness background work.
+  await assertWorkerSchema(
+    sql => readinessPool.query(sql),
+    backupsEnabled,
+    fanMailEnabled,
+    databaseSource,
   );
   app.use((await import("./lib/maxcoreOwnerContext.js")).maxcoreOwnerContext);
   await registerRoutes(httpServer, app);
@@ -1670,6 +1674,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         typeof AutomationSystemClass?.getInstance === "function"
       ) {
         const system = AutomationSystemClass?.getInstance();
+        // Shutdown stops dispatch and drains in-flight workflow steps.
+        readinessWorkerStops.push(() => system.shutdown());
         logger.info("✅ [Autonomy] Automation System initialized");
         killSwitch?.registerSystem("automation-system", {
           kill: () => {

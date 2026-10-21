@@ -9,8 +9,8 @@ import {
   PluginCategory,
 } from "../services/pluginHostService";
 import { db } from "../db";
-import { projects } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { projects, userStorageFiles } from "@shared/schema";
+import { eq, and, desc, isNull } from "drizzle-orm";
 import { modulationRouting } from "../services/modulationRoutingRepository";
 
 const router = Router();
@@ -800,10 +800,15 @@ router.post(
   },
 );
 
+const bounceStorageFolder = (projectId: string) => `studio-bounces/${projectId}`;
+
 router.post("/bounce", requireAuth, async (req, res) => {
   try {
     const data = bounceSchema?.parse(req.body);
     const userId = req.user!.id;
+    if (data.endTime <= data.startTime) {
+      return res.status(400).json({ error: "endTime must be greater than startTime" });
+    }
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, data?.projectId), eq(projects.userId, userId)),
@@ -813,32 +818,46 @@ router.post("/bounce", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    const bounceId = `bounce_${Date?.now()}_${randomBytes(4).toString("hex")}`;
-    const fileName = `${data?.targetTrackName || "Bounced Track"}_${bounceId}.${data?.format}`;
+    const { renderProjectMixdown } = await import("../services/studioRenderService.js");
+    let rendered;
+    try {
+      rendered = await renderProjectMixdown(project.id, {
+        format: data.format,
+        sampleRate: data.sampleRate,
+        bitDepth: data.bitDepth,
+        trackIds: data.sourceTrackIds,
+        rangeSec: { start: data.startTime, end: data.endTime },
+        normalizePeak: data.normalize,
+        includeTrackEffects: data.includeEffects,
+        storageCategory: bounceStorageFolder(project.id),
+      });
+    } catch (renderErr: unknown) {
+      logger.warn({ err: renderErr, projectId: project.id }, "Bounce render failed");
+      return res.status(422).json({ error: (renderErr as Error)?.message || "Failed to render bounce" });
+    }
 
-    const bouncedTrack = {
-      id: bounceId,
-      name: data.targetTrackName || "Bounced Track",
-      projectId: data.projectId,
-      sourceTrackIds: data.sourceTrackIds,
-      startTime: data.startTime,
-      endTime: data.endTime,
-      duration: data.endTime - data?.startTime,
-      format: data.format,
-      sampleRate: data.sampleRate,
-      bitDepth: data.bitDepth,
-      normalized: data.normalize,
-      includesEffects: data.includeEffects,
-      filePath: `/uploads/bounces/${fileName}`,
-      createdAt: new Date().toISOString(),
-      status: "completed",
-    };
-
-    logger.info(`Bounce created: ${bounceId} for project ${data?.projectId}`);
+    logger.info(`Bounce rendered: ${rendered.renderId} for project ${project.id}`);
 
     res.status(201).json({
       success: true,
-      bounce: bouncedTrack,
+      bounce: {
+        id: rendered.renderId,
+        name: data.targetTrackName || "Bounced Track",
+        projectId: project.id,
+        sourceTrackIds: data.sourceTrackIds,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        duration: rendered.durationSec,
+        format: data.format,
+        sampleRate: data.sampleRate,
+        bitDepth: data.bitDepth,
+        normalized: data.normalize,
+        includesEffects: data.includeEffects,
+        filePath: rendered.downloadPath,
+        fileSize: rendered.fileSize,
+        createdAt: new Date().toISOString(),
+        status: "completed",
+      },
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error bouncing track:");
@@ -864,9 +883,26 @@ router.get("/bounce/:projectId", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Project not found" });
     }
 
+    const rows = await db.select().from(userStorageFiles).where(and(
+      eq(userStorageFiles.userId, userId),
+      eq(userStorageFiles.folder, bounceStorageFolder(project.id)),
+      isNull(userStorageFiles.deletedAt),
+    )).orderBy(desc(userStorageFiles.createdAt));
+    const { storageService } = await import("../services/storageService.js");
+    const bounces = await Promise.all(rows.map(async (row) => ({
+      id: row.fileName.replace(/\.[^.]+$/, ""),
+      projectId: project.id,
+      fileName: row.fileName,
+      format: row.fileName.split(".").pop(),
+      fileSize: row.sizeBytes,
+      filePath: await storageService.getDownloadUrl(row.fileKey),
+      createdAt: row.createdAt,
+      status: "completed",
+    })));
+
     res.json({
       success: true,
-      bounces: [],
+      bounces,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching bounces:");

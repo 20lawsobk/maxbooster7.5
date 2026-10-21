@@ -19,7 +19,18 @@ if [[ "${1:-}" == "--inner" ]]; then
   # Absolute paths in the application resolve to the disposable copy, never
   # the live checkout. All descendants also inherit the private network.
   mount --bind "$alias/app" "$root"
-  ip link set lo up
+  # Bring up loopback in the private network namespace. iproute2 is not part
+  # of this environment, so set IFF_UP directly (SIOCGIFFLAGS/SIOCSIFFLAGS);
+  # any failure aborts the rehearsal under `set -e`.
+  python3 - <<'PY'
+import fcntl, socket, struct
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+req = struct.pack("16sh", b"lo", 0)
+flags = struct.unpack("16sh", fcntl.ioctl(s, 0x8913, req))[1]
+fcntl.ioctl(s, 0x8914, struct.pack("16sh", b"lo", flags | 0x1))
+if not struct.unpack("16sh", fcntl.ioctl(s, 0x8913, req))[1] & 0x1:
+    raise SystemExit("loopback did not come up")
+PY
   export HOME="$alias/home" TMPDIR="$alias/tmp"
   export XDG_CONFIG_HOME="$alias/config" XDG_CACHE_HOME="$alias/cache"
   export XDG_DATA_HOME="$alias/user-data" XDG_STATE_HOME="$alias/state"

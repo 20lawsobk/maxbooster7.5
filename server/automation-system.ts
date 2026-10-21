@@ -1000,39 +1000,64 @@ export class AutomationSystem extends EventEmitter {
   }
 
   // Start automation engine
-  private startAutomationEngine(): void {
-    // Start monitoring workflows
-    setInterval(() => {
-      this.monitorWorkflows();
-    }, 5000);
+  private engineTimers: NodeJS.Timeout[] = [];
+  /** Workflow ids with a step currently executing; a workflow never runs two steps at once. */
+  private readonly inFlightSteps = new Map<string, Promise<void>>();
+  /** Workflow ids whose trigger evaluation is in progress. */
+  private readonly evaluatingTriggers = new Set<string>();
+  /** Set by the kill switch; while true no trigger is evaluated and no step starts. */
+  public _killSwitchPaused = false;
 
-    // Start executing workflows
-    setInterval(() => {
-      this.executeWorkflows();
-    }, 1000);
+  private startAutomationEngine(): void {
+    this.engineTimers.push(
+      setInterval(() => this.monitorWorkflows(), 5000),
+      setInterval(() => {
+        this.executeWorkflows().catch((err) =>
+          logger.error({ err }, "[AutomationSystem] workflow dispatch tick failed"));
+      }, 1000),
+    );
+    for (const timer of this.engineTimers) timer.unref();
 
     logger.info("🚀 Automation engine started");
   }
 
+  /** Stop dispatching and wait for in-flight steps to settle. */
+  public async shutdown(): Promise<void> {
+    for (const timer of this.engineTimers.splice(0)) clearInterval(timer);
+    await Promise.allSettled([...this.inFlightSteps.values()]);
+  }
+
   // Monitor workflows
   private monitorWorkflows(): void {
-    for (const [_id, workflow] of this.workflows) {
-      if (workflow?.status === "active") {
-        this.checkWorkflowTriggers(workflow);
+    if (this._killSwitchPaused) return;
+    for (const [id, workflow] of this.workflows) {
+      if (workflow?.status === "active" && !this.evaluatingTriggers.has(id)) {
+        this.evaluatingTriggers.add(id);
+        this.checkWorkflowTriggers(workflow)
+          .finally(() => this.evaluatingTriggers.delete(id));
       }
     }
   }
 
-  // Execute workflows
-  private async executeWorkflows(): Promise<void> {
-    for (const [_id, workflow] of this.workflows) {
+  // Dispatch the next step of every triggered workflow. Steps of different
+  // workflows run concurrently; a workflow whose previous step is still
+  // running is skipped, so a slow action is never started twice.
+  public async executeWorkflows(): Promise<void> {
+    if (this._killSwitchPaused) return;
+    const started: Promise<void>[] = [];
+    for (const [id, workflow] of this.workflows) {
       if (
         workflow?.status === "triggered" &&
-        workflow?.nextAction < workflow?.actions.length
+        workflow?.nextAction < workflow?.actions.length &&
+        !this.inFlightSteps.has(id)
       ) {
-        await this.executeWorkflowStep(workflow);
+        const step = this.executeWorkflowStep(workflow)
+          .finally(() => this.inFlightSteps.delete(id));
+        this.inFlightSteps.set(id, step);
+        started.push(step);
       }
     }
+    await Promise.all(started);
   }
 
   // Check workflow triggers
@@ -1063,7 +1088,14 @@ export class AutomationSystem extends EventEmitter {
   private async triggerWorkflow(workflow: Workflow): Promise<void> {
     // Scheduler/webhook triggers can race while a prior run is still active.
     // Never reset its cursor or start time while an action is in flight.
-    if (workflow.status === "inactive" || workflow.status === "triggered") {
+    if (
+      workflow.status === "inactive" ||
+      workflow.status === "triggered" ||
+      this.inFlightSteps.has(workflow.id)
+    ) {
+      if (workflow.status !== "inactive") {
+        logger.info(`Workflow ${workflow?.name} already running; trigger ignored`);
+      }
       return;
     }
     if (workflow.status === "completed" || workflow.status === "failed") {
@@ -1102,7 +1134,7 @@ export class AutomationSystem extends EventEmitter {
 
     try {
       if (!actionConfig) {
-        this.completeWorkflow(workflow);
+        this.completeIfFinished(workflow);
         return;
       }
       if (!action) {
@@ -1113,23 +1145,24 @@ export class AutomationSystem extends EventEmitter {
       if (actionConfig?.conditions) {
         for (const conditionConfig of actionConfig?.conditions ?? []) {
           const condition = this.conditions.get(conditionConfig?.type);
-          if (!condition) {
-            throw new Error(
-              `Condition not registered: ${conditionConfig?.type}`,
-            );
+          // An unknown condition cannot be evaluated, so the guarded action
+          // must not run: fail the workflow rather than fail open.
+          if (!condition || typeof condition.evaluate !== "function") {
+            throw new Error(`Unknown workflow condition: ${conditionConfig?.type}`);
           }
           const conditionMet = await condition.evaluate(
             conditionConfig?.parameters,
           );
-          if (workflow.status !== "triggered") {
-            return;
+          if (workflow.status !== "triggered") return;
+          if (conditionMet !== true && conditionMet !== false) {
+            throw new Error(`Condition ${conditionConfig?.type} returned a non-boolean result`);
           }
           if (!conditionMet) {
             logger.info(`Condition not met for action: ${actionConfig?.type}`);
             workflow.nextAction++;
-            if (workflow.nextAction >= workflow.actions.length) {
-              this.completeWorkflow(workflow);
-            }
+            // A skipped final action still ends the run; otherwise the
+            // workflow would stay "triggered" and never run again.
+            this.completeIfFinished(workflow);
             return;
           }
         }
@@ -1172,18 +1205,17 @@ export class AutomationSystem extends EventEmitter {
 
       // Move to next action
       workflow.nextAction++;
-
-      // Check if workflow is complete
-      if (workflow?.nextAction >= workflow?.actions.length) {
-        this.completeWorkflow(workflow);
-      }
+      this.completeIfFinished(workflow);
     } catch (error: unknown) {
       this.failWorkflow(workflow, error);
     }
   }
 
-  private completeWorkflow(workflow: Workflow): void {
-    if (workflow.status !== "triggered") {
+  private completeIfFinished(workflow: Workflow): void {
+    if (
+      workflow.status !== "triggered" ||
+      workflow.nextAction < workflow.actions.length
+    ) {
       return;
     }
     workflow.status = "completed";
@@ -1360,8 +1392,9 @@ export class AutomationSystem extends EventEmitter {
   // Load workflows from storage
   private async loadWorkflows(): Promise<void> {
     try {
-      // Implement workflow loading from database
-      logger.info("📂 Loading workflows from storage...");
+      // Workflows are process-local: none are persisted, so there is nothing
+      // to restore after a restart. Say so instead of implying a restore.
+      logger.info("📂 Automation workflows are in-memory only; no persisted workflows to restore");
     } catch (error: unknown) {
       logger.warn(
         { errorType: safeAutomationErrorType(error) },

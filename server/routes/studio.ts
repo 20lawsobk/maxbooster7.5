@@ -5993,10 +5993,32 @@ router.post(
         return res.status(404).json({ error: "Track not found" });
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!["wav", "mp3", "flac", "ogg", "aiff"].includes(String(format))) {
+        return res.status(400).json({ error: `Unsupported bounce format: ${format}` });
+      }
+
+      const { renderProjectMixdown } = await import(
+        "../services/studioRenderService.js"
+      );
+      let rendered;
+      try {
+        rendered = await renderProjectMixdown(projectId, {
+          format: String(format),
+          sampleRate: 44100,
+          bitDepth: 24,
+          trackIds: [trackId],
+          normalizePeak: normalize === true,
+          includeTrackEffects: includeEffects === true,
+          storageCategory: `studio-bounces/${projectId}`,
+        });
+      } catch (renderErr: unknown) {
+        logger.warn({ err: renderErr, projectId, trackId }, "[Studio] Track bounce render failed");
+        return res.status(422).json({
+          error: (renderErr as Error)?.message || "Failed to render track bounce",
+        });
+      }
 
       const filename = `${track?.name.replace(/[^a-zA-Z0-9-_]/g, "_")}_bounce.${format}`;
-      const downloadUrl = `/api/studio/downloads/${filename}`;
 
       res.json({
         success: true,
@@ -6009,8 +6031,10 @@ router.post(
             format,
             normalize,
             includeEffects,
-            downloadUrl,
+            downloadUrl: rendered.downloadPath,
             filename,
+            fileSize: rendered.fileSize,
+            durationSec: rendered.durationSec,
           },
         },
       });

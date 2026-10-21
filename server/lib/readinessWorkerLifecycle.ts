@@ -21,8 +21,53 @@ export function scheduleDrainingWork(
   };
 }
 
+export type DatabaseSource = "NEON_DATABASE_URL" | "DATABASE_URL" | "none";
+
+/** Mirrors config/defaults.ts database.url precedence, naming only the variable. */
+export function databaseSourceName(env: NodeJS.ProcessEnv = process.env): DatabaseSource {
+  if (env.NEON_DATABASE_URL) return "NEON_DATABASE_URL";
+  if (env.DATABASE_URL) return "DATABASE_URL";
+  return "none";
+}
+
+// Postgres SQLSTATEs for a missing relation or column.
+const SCHEMA_MISSING_CODES = new Set(["42P01", "42703"]);
+
+export class WorkerSchemaUnavailableError extends Error {
+  constructor(source: DatabaseSource, cause: Error) {
+    const fallbackNote = source === "DATABASE_URL"
+      ? " NEON_DATABASE_URL is not set, so the connection fell back to DATABASE_URL;" +
+        " if the application database is Neon, set NEON_DATABASE_URL in Secrets."
+      : "";
+    super(
+      `Database selected by ${source} is missing required worker schema (${cause.message}).` +
+      `${fallbackNote} Boot performs no DDL: apply the approved migrations to this database` +
+      " through deployment tooling, or point the app at the provisioned application database.",
+      { cause },
+    );
+    this.name = "WorkerSchemaUnavailableError";
+  }
+}
+
 /** Read-only capability checks, not migration application or provenance approval. */
 export async function assertWorkerSchema(
+  query: (sql: string) => Promise<unknown>,
+  backups: boolean,
+  fanMail: boolean,
+  source: DatabaseSource = databaseSourceName(),
+) {
+  try {
+    await probeWorkerSchema(query, backups, fanMail);
+  } catch (error) {
+    const code = (error as { code?: unknown })?.code;
+    if (error instanceof Error && typeof code === "string" && SCHEMA_MISSING_CODES.has(code)) {
+      throw new WorkerSchemaUnavailableError(source, error);
+    }
+    throw error;
+  }
+}
+
+async function probeWorkerSchema(
   query: (sql: string) => Promise<unknown>,
   backups: boolean,
   fanMail: boolean,
@@ -65,6 +110,9 @@ export async function assertWorkerSchema(
   }
   await query(
     "SELECT id, profile_id, user_id, state, attempts, lease_owner, lease_until, available_at, result, error, updated_at FROM public.integration_catalog_jobs LIMIT 0",
+  );
+  await query(
+    "SELECT id, user_id, type, title, message, link, frequency, due_at, state, owner, provider_id, error, updated_at FROM public.integration_notification_digest LIMIT 0",
   );
   if (backups) {
     await query("SELECT key, name, size, checksum, state, created_at FROM public.runtime_backup_catalog LIMIT 0");
