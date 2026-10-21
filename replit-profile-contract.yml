@@ -1,0 +1,14 @@
+on:
+push:
+  paths:
+    - ".replit"
+    - ".replit.example"
+    - "replit.nix"
+    - "tests/replit-profile.contract.test.mjs"
+    - ".node-version"
+pull_request:
+  paths:
+    - ".replit"
+    - ".replit.example"
+    - "replit.nix"
+    - "tests/replit-profile.contract.test.mjs"
