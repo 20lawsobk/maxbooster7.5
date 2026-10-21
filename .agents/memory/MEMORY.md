@@ -189,4 +189,4 @@
 - [Shutdown exit ownership](shutdown-owner-exit.md) — imported worker drains must return to the app owner; early process exits bypass otherwise-correct subsystem cleanup.
 - [Page-scoped readiness reviews](page-scoped-readiness.md) — review each page with its backend; track child panels and shared-service gaps explicitly.
 - [Minimum account age](minimum-account-age.md) — user selected 16 as the consistent registration and policy minimum; preserve existing accounts.
-- [.replit Nix channel pin](replit-nix-channel-required.md) — missing `[nix] channel = "stable-25_05"` drops to legacy nixpkgs (no postgresql_17), killing node/checkpoints/workflows
+- [.replit Nix channel pin](replit-nix-channel-required.md) — missing `[nix] channel` drops to legacy nixpkgs (no node/postgresql_17); upstream syncs of tracked .replit drop it again
