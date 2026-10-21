@@ -40,7 +40,7 @@
 - [Multi-member capsule restore merge](capsule-multi-member-merge-restore.md) — a scattered-file-list capsule restore must recursively MERGE into a pre-existing destination dir, never rmSync-then-replace it (destroyed a real tests/ dir once)
 - [GPU compute lessons](gpu-compute-lessons-index.md) — buildable GPU scope, GIL/process-pool measurements, scheduler correctness, BLAS rounding and cache cost accounting.
 - [Deploy boot-stub → primary port gap](deploy-boot-stub-port-gap.md) — anything sync/CPU-blocking before the real server's listen() call reopens the port-unbound window the boot-stub was meant to close
-- [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed some-routes-work/some-404 after restart means registration still in progress, check "[Boot] Routes registered"
+- [Boot-window 404s](boot-window-404s.md) — registerRoutes takes minutes; mixed 404s = still booting; boot stubs must hand off when their real handler registers, not at end of boot
 - [PDIM tuning history](pdim-tuning-index.md) — queue separation, startup gap caps, worker floors, coalescing and parallel-lane lessons.
 - [MaxCore reachability distinction](maxcore-reachability-distinction.md) — fetchers must return `{value, reachable}` so callers don't log "unreachable" when MaxCore is up but has no data yet
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist

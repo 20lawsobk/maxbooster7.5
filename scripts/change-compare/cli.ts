@@ -21,7 +21,8 @@
  *
  * Exit codes: 0 = report produced (even when empty), 1 = usage/runtime error.
  */
-import { writeFileSync } from "node:fs";
+import { realpathSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   buildFileChangeSkeleton,
   endpointLabel,
@@ -255,7 +256,21 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  console.error(`change-compare: ${err?.message ?? err}`);
-  process.exit(1);
-});
+// Run only when executed as the CLI entry point. The module also exports its
+// parsers for tests; importing it must not parse the importer's argv and exit.
+function isDirectInvocation(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectInvocation()) {
+  main().catch((err) => {
+    console.error(`change-compare: ${err?.message ?? err}`);
+    process.exit(1);
+  });
+}

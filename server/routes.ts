@@ -72,6 +72,7 @@ import { achievementService } from "./services/achievementService.js";
 import { notificationService } from "./services/notificationService.js";
 import { jwtAuthService } from "./services/jwtAuthService.js";
 import { artistProfileService } from "./services/artistProfileService.js";
+import { setAuthRoutesReady } from "./lib/bootState.js";
 
 const log = (msg: string) => logger.info(msg);
 
@@ -348,6 +349,9 @@ export async function registerRoutes(
     }
     return res.json(null);
   });
+  // The early-boot /api/auth/me stub in index.ts must stop shadowing this
+  // handler now: register/login below go live in this same pass.
+  setAuthRoutesReady();
 
   // Auth: Register
   app.post(

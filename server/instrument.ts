@@ -142,9 +142,14 @@ process.on("unhandledRejection", (reason: Record<string, unknown>) => {
 });
 
 if (isProduction) {
-  if (Sentry) {
+  if (Sentry && dsn) {
     logger.info(
       "✅ [Observability] Sentry active — errors will be captured and reported",
+    );
+  } else if (Sentry) {
+    // The SDK is installed but init() received no DSN, so it sends nothing.
+    logger.warn(
+      "⚠️  [Observability] Sentry disabled — SENTRY_DSN is not set; structured JSON logging only",
     );
   } else {
     logger.warn(

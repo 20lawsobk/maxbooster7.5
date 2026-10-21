@@ -29,6 +29,7 @@ import { createServer } from "http";
 import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
+import { isAuthRoutesReady } from "./lib/bootState.js";
 import { assertWorkerSchema, databaseSourceName, scheduleDrainingWork } from "./lib/readinessWorkerLifecycle.js";
 const readinessWorkerStops: Array<() => void | Promise<void>> = [];
 import { serializeResponseForLog } from "./lib/responseLogSerialization.js";
@@ -402,7 +403,10 @@ app.get("/api/version", async (_req: Request, res: Response) => {
 });
 
 app.get("/api/auth/me", (_req: Request, res: Response, next: NextFunction) => {
-  if (_routesReady) return next();
+  // Hand off as soon as the real handler exists, not when every route module
+  // has loaded: register/login are live from that point, so answering
+  // "unauthenticated" here would contradict a session they just created.
+  if (_routesReady || isAuthRoutesReady()) return next();
   // During the boot window we cannot check the session store (PDIM may be cold).
   // Return unauthenticated so the React app shows the login screen rather than
   // hanging or routing to a broken state.
