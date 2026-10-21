@@ -7,6 +7,8 @@ ensureDnsSyncSecret();
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
 // BEFORE any other module reads PDIM-related environment settings — must stay first.
 import "./lib/pdimEnvFix.js";
+// Give the packaged Python runtime a CA bundle before anything spawns Python.
+import "./lib/pythonTrustStore.js";
 // Start the internal PDIM subsystem (:5556) BEFORE any client's first call —
 // pdimEnvFix above has already pointed every PDIM/storage URL at it.
 import { startLocalPdimServer } from "./lib/localPdimServer.js";

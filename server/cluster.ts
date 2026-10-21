@@ -1,5 +1,7 @@
 import cluster from "cluster";
 import "./lib/pdimEnvFix.js";
+// Give the packaged Python runtime a CA bundle before anything spawns Python.
+import "./lib/pythonTrustStore.js";
 import os from "os";
 import path from "path";
 import http from "http";

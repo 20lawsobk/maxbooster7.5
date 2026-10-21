@@ -28,6 +28,7 @@ import {
   resolveMaxcoreCheckpointForStartup,
   withMaxcoreCheckpointPath,
 } from "./maxcoreCheckpointStorage.js";
+import { pythonTrustStoreEnv } from "../lib/pythonTrustStore.js";
 
 let databaseBridge: Awaited<ReturnType<typeof startNeonPostgresBridge>> | null = null;
 
@@ -424,6 +425,7 @@ async function spawnChild(): Promise<void> {
 
   const production = process.env.NODE_ENV === "production";
   const productionEntry = path.join(API_SERVER_DIR, "dist", "index.mjs");
+  const packagedPython = path.resolve(process.cwd(), "python_runtime", "bin", "python3");
   if (production && !fs.existsSync(productionEntry)) {
     throw new Error("MaxCore production bundle is missing; run npm run build before starting");
   }
@@ -437,11 +439,16 @@ async function spawnChild(): Promise<void> {
       MAXCORE_MODEL_STATE_DIR: process.env.MAXCORE_MODEL_STATE_DIR || path.join(
         process.env.MAXCORE_PRIVATE_STATE_DIR || path.join(os.homedir(), ".local", "state", "maxcore"), "models"),
       // The child runs in artifacts/api-server; its cwd is not the directory
-      // containing the parent application's packaged interpreter.
-      ...(production ? {
-        MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON ||
-          path.resolve(process.cwd(), "python_runtime", "bin", "python3"),
+      // containing the parent application's packaged interpreter, so its own
+      // lookup would fall through to an unvalidated `python3` on PATH (which
+      // lacks MaxCore's dependencies, e.g. psycopg2). Production always pins
+      // the packaged runtime; development pins it whenever it is present.
+      ...(production || fs.existsSync(packagedPython) ? {
+        MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON || packagedPython,
       } : {}),
+      // Resolved at spawn time: a runtime restored after boot still gets its
+      // CA bundle (no-op when SSL_CERT_FILE is already set).
+      ...pythonTrustStoreEnv(),
       PORT: String(port),
       // MODEL_API_PORT set ⇒ this instance is the Python owner (see the
       // imported python-server.ts PYTHON_SPAWN_DISABLED logic).
