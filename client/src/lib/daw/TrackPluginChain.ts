@@ -9,6 +9,15 @@ export interface TrackInsert {
   parameters: Record<string, unknown>;
 }
 export const supportsBrowserEffect = (type: string) => BROWSER_EFFECT_TYPES.includes(type as typeof BROWSER_EFFECT_TYPES[number]);
+export function trackInsertType(insert: Pick<TrackInsert, 'type' | 'pluginSlug' | 'pluginId' | 'name'>): string {
+  if (insert.type && supportsBrowserEffect(insert.type)) return insert.type;
+  const slug = insert.pluginSlug || insert.pluginId || insert.name;
+  const prefixes: Record<string, string> = { eq: 'eq', comp: 'compressor', compressor: 'compressor',
+    reverb: 'reverb', delay: 'delay', dist: 'distortion', distortion: 'distortion',
+    chorus: 'chorus', flanger: 'flanger', phaser: 'phaser' };
+  const prefix = /^mb-([a-z]+)(?:-|$)/.exec(slug)?.[1];
+  return prefix ? prefixes[prefix] || insert.type || '' : insert.type || '';
+}
 
 /** One processor per instance, in saved order, ahead of the track fader. */
 export class TrackPluginChain {
@@ -25,7 +34,7 @@ export class TrackPluginChain {
     const unavailable: string[] = []; const active: string[] = [];
     const retained = new Set<string>();
     for (const insert of inserts) {
-      const type = insert.type ?? '';
+      const type = trackInsertType(insert);
       if (!supportsBrowserEffect(type)) { unavailable.push(insert.id); continue; }
       if (retained.has(insert.id)) throw new Error('Duplicate plugin instance');
       retained.add(insert.id);

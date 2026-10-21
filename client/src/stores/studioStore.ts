@@ -57,6 +57,9 @@ export interface PluginInstance {
   id: string;
   pluginId: string;
   pluginSlug: string;
+  type?: string;
+  bypass?: boolean;
+  expanded?: boolean;
   name: string;
   bypassed: boolean;
   parameters: Record<string, number | boolean | string>;

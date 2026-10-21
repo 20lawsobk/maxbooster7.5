@@ -321,6 +321,7 @@ export function useProjectSync(projectId: string | null) {
             plugins: (serializedTrack?.plugins || []).map((p) => ({
               id: p.id,
               pluginId: p.pluginId,
+              type: p.type,
               pluginSlug: p.pluginSlug,
               name: p.name,
               bypassed: p.bypassed ?? false,
@@ -395,6 +396,7 @@ export function useProjectSync(projectId: string | null) {
           plugins: (mt?.plugins || []).map((p) => ({
             id: p.id,
             pluginId: p.pluginId,
+            type: p.type,
             pluginSlug: p.pluginSlug,
             name: p.name,
             bypassed: p.bypassed ?? false,

@@ -34,7 +34,7 @@ The [generation page inventory](../reports/readiness-implementation/generation-p
 maps all 80 route declarations to generation references. Static import closure
 over-approximates shared barrel imports and does not prove that every imported
 component renders. Fresh browser acceptance against integrated application
-revision `a8a3c6ca` passed all 80 route cases: 42 authenticated, 11 administrator
+application revision `d648e6e7` passed all 80 route cases: 42 authenticated, 11 administrator
 and 27 public. The runner uses disposable PostgreSQL, a synthetic account and
 real password/session/TOTP boundaries. It preserves saved-data journeys for
 preferences, projects, workspace ownership and the press kit, honors throttling,
@@ -127,3 +127,21 @@ Native configuration/inventory and real Studio audio contracts passed. The
 offline payment runner again passed 73 contracts and 14 SQL/handler tests with
 one remote Stripe test intentionally skipped; production audit reported zero
 vulnerabilities. Provider credentials are not inherited by isolated tests.
+
+The final follow-up also repeated all 80 route scenarios against application
+revision `d648e6e7`: 42 authenticated, 11 administrator and 27 public cases,
+with no failures and successful fixture cleanup. The updated per-page report
+retains the real authentication/TOTP and saved-data journey assertions.
+
+Studio's final save/reopen regression also verifies restoration of processor
+type, parameter values and bypass for track and master inserts. Known legacy
+plugin slugs resolve to their browser processor when old saved projects lack a
+type field. Master inserts process the mixed playback signal and the toolbar's
+master-volume control now reaches that same engine. The real audio regression
+checks master EQ and master bypass as well as the per-track effect chain.
+
+A subsequently supplied `VST3.zip` could not be inspected: the attachment
+transfer tool rejected it for exceeding its 32 MiB limit. The absence of source
+in the repository does not establish what is inside that uninspected archive.
+A source-only archive within the transfer limit is needed to continue the
+native Linux port.

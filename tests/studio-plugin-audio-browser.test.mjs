@@ -19,18 +19,19 @@ test("Studio playback processes saved inserts, edits, bypass, ordering and remov
   const bundle = await build({
     stdin: { contents: `import {AudioWorkletEngine} from './client/src/lib/daw/AudioWorkletEngine.ts';
       window.fixtureReady=true;
-      window.renderPlugins=async(inserts,mutation)=>{
+      window.renderPlugins=async(inserts,mutation,master)=>{
         const context=new OfflineAudioContext(1,48000,48000);const engine=new AudioWorkletEngine();
         engine.audioContext=context;engine.masterGain=context.createGain();engine.masterGain.connect(context.destination);
         engine.createTrack('one');const unavailable=engine.setTrackPlugins('one',inserts);
         if(mutation)engine.setTrackPlugins('one',mutation);
+        if(master)engine.setTrackPlugins('master',master);
         const buffer=context.createBuffer(1,48000,48000);const samples=buffer.getChannelData(0);
         for(let i=0;i<samples.length;i++)samples[i]=.05*Math.sin(2*Math.PI*1000*i/48000);
         engine.scheduleClipPlayback({id:'clip',trackId:'one',buffer,startSample:0,durationSamples:48000,offsetSamples:0,gain:1,fadeInSamples:0,fadeOutSamples:0});
         const output=(await context.startRendering()).getChannelData(0);let sum=0;
         for(let i=12000;i<output.length;i++)sum+=output[i]*output[i];
         const rms=Math.sqrt(sum/(output.length-12000));
-        engine.trackNodes.get('one').inserts.destroy();return {rms,unavailable};
+        engine.trackNodes.get('one').inserts.destroy();engine.masterInserts?.destroy();return {rms,unavailable};
       };`, resolveDir: root, sourcefile: 'studio-insert-regression.ts' },
     alias: {'@':path.join(root,'client/src'),'@plugins':path.join(root,'built-in plugins dsp')}, bundle:true,write:false,format:'iife',define:{'process.env.NODE_ENV':'"development"','import.meta.env.DEV':'false'},
   });
@@ -88,7 +89,12 @@ test("Studio playback processes saved inserts, edits, bypass, ordering and remov
     const render=async(plugins,mutation)=>evaluate(`window.renderPlugins(${JSON.stringify(plugins)},${JSON.stringify(mutation)??'undefined'})`);
     const eq={id:'eq-one',name:'EQ',type:'eq',parameters:{mid:12,midFreq:1000},bypassed:false};
     const dry=await render([]);const wet=await render([eq]);
+    const master=await evaluate(`window.renderPlugins([],undefined,${JSON.stringify([eq])})`);
+    assert(master.rms>dry.rms*3.5,'Master inserts must process the mixed playback signal');
+    const masterBypass=await evaluate(`window.renderPlugins([],undefined,${JSON.stringify([{...eq,bypassed:true}])})`);
+    assert(Math.abs(masterBypass.rms-dry.rms)<1e-5,'Master bypass must preserve the mix');
     assert(wet.rms>dry.rms*3.5,'Saved EQ inserts must affect the real Studio playback signal');
+    const legacy=await render([{...eq,type:undefined,pluginSlug:'mb-eq-parametric'}]);assert(Math.abs(legacy.rms-wet.rms)<1e-5,'Known saved plugin slugs must retain their processor');
     const bypass=await render([{...eq,bypassed:true}]);assert(Math.abs(bypass.rms-dry.rms)<1e-5);
     const removed=await render([eq],[]);assert(Math.abs(removed.rms-dry.rms)<1e-5,'Removing the last effect must reconnect the dry path');
     const edited=await render([eq],[{...eq,parameters:{mid:-12,midFreq:1000}}]);assert(edited.rms<dry.rms*.3,'Parameter edits must reach the live processor');

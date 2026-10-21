@@ -1,6 +1,6 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-10-21T11:51:27.802Z without live requests.
+Generated 2026-10-21T15:44:03.717Z without live requests.
 
 - Backend route registrations: **2391** (2371 unique method/path pairs).
 - Mounted router files: **157**.
@@ -457,16 +457,16 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/studio/projects` via fetch — client/src/components/studio/SaveAsDialog.tsx:48 → server/routes/studio.ts:192
 - `GET /api/studio/projects/:param/stems/status/:param` via apiRequest — client/src/components/studio/StemExportDialog.tsx:110 → server/routes/studioStems.ts:138
 - `POST /api/studio/projects/:param/stems/export` via apiRequest — client/src/components/studio/StemExportDialog.tsx:201 → server/routes/studioStems.ts:72
-- `PATCH /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1237 → server/routes/studio.ts:1806
-- `DELETE /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1267 → server/routes/studio.ts:1934
-- `POST /api/studio/ai-mix/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1342 → server/routes/studio.ts:2736
-- `POST /api/studio/ai-master/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1367 → server/routes/studio.ts:2674
-- `POST /api/studio/clips/:param/analyze` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1576 → server/routes/studio.ts:2161
-- `POST /api/studio/generation/pattern/chords` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1666 → server/routes/studioGeneration.ts:852
-- `GET /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5464 → server/routes/studio.ts:3896
-- `POST /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5477 → server/routes/studio.ts:3801
-- `POST /api/studio/projects/:param/mix-snapshots/:param/recall` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5493 → server/routes/studio.ts:3979
-- `DELETE /api/studio/projects/:param/mix-snapshots/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5507 → server/routes/studio.ts:4152
+- `PATCH /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1240 → server/routes/studio.ts:1806
+- `DELETE /api/studio/tracks/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1270 → server/routes/studio.ts:1934
+- `POST /api/studio/ai-mix/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1345 → server/routes/studio.ts:2736
+- `POST /api/studio/ai-master/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1370 → server/routes/studio.ts:2674
+- `POST /api/studio/clips/:param/analyze` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1579 → server/routes/studio.ts:2161
+- `POST /api/studio/generation/pattern/chords` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:1669 → server/routes/studioGeneration.ts:852
+- `GET /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5467 → server/routes/studio.ts:3896
+- `POST /api/studio/projects/:param/mix-snapshots` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5480 → server/routes/studio.ts:3801
+- `POST /api/studio/projects/:param/mix-snapshots/:param/recall` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5496 → server/routes/studio.ts:3979
+- `DELETE /api/studio/projects/:param/mix-snapshots/:param` via apiRequest — client/src/components/studio/StudioOneDAW.tsx:5510 → server/routes/studio.ts:4152
 - `POST /api/uploads/chunk` via fetch — client/src/components/studio/StudioProjectDialog.tsx:122 → server/routes.ts:6743
 - `POST /api/uploads/assemble` via fetch — client/src/components/studio/StudioProjectDialog.tsx:163 → server/routes.ts:6810
 - `POST /api/studio/upload-from-url` via fetch — client/src/components/studio/StudioProjectDialog.tsx:197 → server/routes/studio.ts:3026
@@ -501,9 +501,9 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/retention/feature-event` via fetch — client/src/hooks/useFeatureTracking.ts:34 → server/routes/retention.ts:121
 - `GET /api/health` via fetch — client/src/hooks/useOnlineStatus.ts:142 → server/routes.ts:7976
 - `GET /api/personalization/optimal-schedule` via useQuery — client/src/hooks/usePersonalizedLayout.ts:195 → server/routes/personalization.ts:238
-- `POST /api/studio/projects/:param/save-daw-state` via fetch — client/src/hooks/useProjectSync.ts:438 → server/routes/studio.ts:1159
-- `GET /api/studio/projects/:param/daw-state` via fetch — client/src/hooks/useProjectSync.ts:491 → server/routes/studio.ts:1255
-- `GET /api/studio/projects/:param/tracks` via fetch — client/src/hooks/useProjectSync.ts:520 → server/routes/studio.ts:1636
+- `POST /api/studio/projects/:param/save-daw-state` via fetch — client/src/hooks/useProjectSync.ts:440 → server/routes/studio.ts:1159
+- `GET /api/studio/projects/:param/daw-state` via fetch — client/src/hooks/useProjectSync.ts:493 → server/routes/studio.ts:1255
+- `GET /api/studio/projects/:param/tracks` via fetch — client/src/hooks/useProjectSync.ts:522 → server/routes/studio.ts:1636
 - `GET /api/notifications/push-key` via useQuery — client/src/hooks/usePushNotifications.ts:36 → server/routes.ts:3548
 - `GET /api/notifications/push-subscriptions/status` via useQuery — client/src/hooks/usePushNotifications.ts:45 → server/routes.ts:3675
 - `DELETE /api/notifications/push-subscriptions` via apiRequest — client/src/hooks/usePushNotifications.ts:119 → server/routes.ts:3205, server/routes.ts:3639
@@ -1374,11 +1374,11 @@ Resolved source traces: **12**; generic/unverified call sites: **7**.
 - `cache-key: /api/studio/projects` — client/src/components/studio/StudioLoader.tsx:185
 - `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioLoader.tsx:188
 - `cache-key: /api/projects` — client/src/components/studio/StudioLoader.tsx:190
-- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:1764
-- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:1766
-- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioOneDAW.tsx:1769
-- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:2724
-- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:2725
+- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:1767
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:1769
+- `cache-key: /api/studio/start-hub/summary` — client/src/components/studio/StudioOneDAW.tsx:1772
+- `cache-key: /api/projects` — client/src/components/studio/StudioOneDAW.tsx:2727
+- `cache-key: /api/studio/projects` — client/src/components/studio/StudioOneDAW.tsx:2728
 - `not-api-reference: /api/studio/upload` — client/src/components/studio/StudioProjectDialog.tsx:221
 - `cache-key: /api/projects` — client/src/components/studio/StudioProjectDialog.tsx:490
 - `cache-key: /api/studio/projects` — client/src/components/studio/StudioProjectDialog.tsx:491
@@ -1552,8 +1552,8 @@ Resolved source traces: **12**; generic/unverified call sites: **7**.
 - `cache-key: /api/preferences/user` — client/src/hooks/useUserPreferences.ts:161
 - `not-api-reference: /api/` — client/src/lib/audioEngine.ts:765
 - `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/lib/audioEngine.ts:768
-- `not-api-reference: /api/` — client/src/lib/daw/AudioWorkletEngine.ts:771
-- `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/lib/daw/AudioWorkletEngine.ts:774
+- `not-api-reference: /api/` — client/src/lib/daw/AudioWorkletEngine.ts:781
+- `not-api-reference: /api/marketplace/audio/${cleanPath}` — client/src/lib/daw/AudioWorkletEngine.ts:784
 - `not-api-reference: /api/storage/file/` — client/src/lib/generatedAssetDelivery.ts:10
 - `not-api-reference: /api/storage/file/` — client/src/lib/generatedAssetDelivery.ts:12
 - `not-api-reference: /api/auth/me` — client/src/lib/idbPersister.ts:85

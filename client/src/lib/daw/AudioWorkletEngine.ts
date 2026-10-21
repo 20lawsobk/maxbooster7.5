@@ -69,6 +69,7 @@ export class AudioWorkletEngine {
   private audioContext: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private masterAnalyzer: AnalyserNode | null = null;
+  private masterInserts: TrackPluginChain | null = null;
   private trackNodes: Map<
     string,
     {
@@ -307,7 +308,7 @@ export class AudioWorkletEngine {
 
     gain?.connect(panner);
     panner?.connect(analyzer);
-    analyzer?.connect(this.masterGain);
+    analyzer?.connect(this.masterInserts?.input ?? this.masterGain);
 
     this.trackNodes.set(trackId, {
       inserts: new TrackPluginChain(this.audioContext, gain),
@@ -336,6 +337,15 @@ export class AudioWorkletEngine {
   }
 
   setTrackPlugins(trackId: string, plugins: TrackInsert[]): string[] {
+    if (trackId === "master" && this.audioContext && this.masterGain) {
+      if (!this.masterInserts) {
+        this.masterInserts = new TrackPluginChain(this.audioContext, this.masterGain);
+        for (const nodes of this.trackNodes.values()) {
+          nodes.analyzer.disconnect(); nodes.analyzer.connect(this.masterInserts.input);
+        }
+      }
+      return this.masterInserts.sync(plugins);
+    }
     const track = this.trackNodes.get(trackId);
     if (!track) return plugins.map(plugin => plugin.id);
     return track.inserts.sync(plugins);
@@ -879,6 +889,8 @@ export class AudioWorkletEngine {
       nodes?.gain.disconnect();
     });
     this.trackNodes.clear();
+    this.masterInserts?.destroy();
+    this.masterInserts = null;
 
     if (this.masterAnalyzer) {
       this.masterAnalyzer.disconnect();

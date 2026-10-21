@@ -31,6 +31,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { FlowStatePluginBrowser } from "./FlowStatePluginBrowser";
 import { PluginRack } from "./PluginRack";
 import type { PluginInstance } from "./PluginRack";
+import { trackInsertType } from "@/lib/daw/TrackPluginChain";
 import { FlowStateAIPanel } from "./FlowStateAIPanel";
 import { AIMusicGenerator } from "./AIMusicGenerator";
 import { FlowStateKeyboardShortcuts } from "./FlowStateKeyboardShortcuts";
@@ -989,6 +990,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         audioEngine.setTrackMute(track.id, track.muted ?? false);
         audioEngine.setTrackSolo(track.id, track.solo ?? false);
       }
+      audioEngine.setTrackPlugins("master", masterTrack?.plugins || []);
+      audioEngine.setMasterVolume(masterTrack?.volume ?? 0.8);
 
       // Load and schedule audio clips
       for (const track of tracks) {
@@ -1076,7 +1079,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     if (tracks.length > 0) {
       initAndLoadAudio();
     }
-  }, [tracks, audioEngine]);
+  }, [tracks, masterTrack, audioEngine]);
 
   const prevPositionRef = useRef(transport.position);
   useEffect(() => {
@@ -1834,7 +1837,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onMasterVolumeChange={(v) => {
           if (masterTrack) {
             store.updateTrack(masterTrack.id, { volume: v });
-            audioEngine.setTrackVolume(masterTrack.id, v);
+            audioEngine.setMasterVolume(v);
           }
         }}
       />
@@ -2805,7 +2808,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
       {/* ── Per-Track Plugin Rack Dialog ── */}
       {showPluginRackTrackId !== null && (() => {
-        const pluginTrack = tracks.find((t) => t.id === showPluginRackTrackId);
+        const pluginTrack = tracks.find((t) => t.id === showPluginRackTrackId) || (masterTrack?.id === showPluginRackTrackId ? masterTrack : null);
         if (!pluginTrack) return null;
         return (
           <Dialog open onOpenChange={(o) => { if (!o) setShowPluginRackTrackId(null); }}>
@@ -2820,7 +2823,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 <PluginRack
                   managedByPlaybackEngine
                   trackId={pluginTrack.id as string}
-                  plugins={(pluginTrack.plugins || []).map(p => ({ ...p, bypass: p.bypassed ?? p.bypass ?? false, expanded: p.expanded ?? true }))}
+                  plugins={(pluginTrack.plugins || []).map(p => ({ ...p, type: trackInsertType(p), bypass: p.bypassed ?? p.bypass ?? false, expanded: p.expanded ?? true }))}
                   onPluginsChange={(plugins) =>
                     store.updateTrack(pluginTrack.id as string, { plugins: plugins.map(p => ({ ...p, bypassed: p.bypass })) })
                   }

@@ -20,7 +20,7 @@ test("Studio never saves an unread project and permits an empty project only aft
     stdin: { contents: `import React from 'react';import {createRoot} from 'react-dom/client';import {useProjectSync} from './client/src/hooks/useProjectSync.ts';import {useStudioStore} from './client/src/stores/studioStore.ts';
       window.fixture={id:'project-a',mode:'failure',reads:[],writes:[]};
       window.fetch=async(url,options={})=>{if(options.method==='POST'){const data=JSON.parse(options.body);window.fixture.writes.push({url,data});return new Response(JSON.stringify({success:true,projectId:window.fixture.id,persistedStateVersion:data.version,persistedStateMatches:true}));}
-      window.fixture.reads.push(url);if(window.fixture.mode==='failure')return new Response('{}',{status:503});if(url.endsWith('/daw-state'))return new Response(JSON.stringify({dawState:null}));if(url.endsWith('/tracks'))return new Response(JSON.stringify({tracks:[],clips:[]}));return new Response(JSON.stringify({id:window.fixture.id,title:'Empty verified project'}));};
+      window.fixture.reads.push(url);if(window.fixture.mode==='failure')return new Response('{}',{status:503});if(url.endsWith('/daw-state'))return new Response(JSON.stringify({dawState:window.fixture.mode==='roundtrip'?window.fixture.saved:null}));if(url.endsWith('/tracks'))return new Response(JSON.stringify({tracks:[],clips:[]}));return new Response(JSON.stringify({id:window.fixture.id,title:'Empty verified project'}));};
       function Harness(){window.sync=useProjectSync(window.fixture.id);return React.createElement('div',null,'Studio hook mounted')};const root=createRoot(document.getElementById('app'));window.render=()=>root.render(React.createElement(Harness));window.store=useStudioStore;window.render();`, resolveDir: root, sourcefile: 'studio-sync-regression.tsx' },
     alias: {'@':path.join(root,'client/src')}, bundle:true,write:false,format:'iife',jsx:'automatic',define:{'process.env.NODE_ENV':'"development"','import.meta.env.DEV':'false'},
     plugins:[{name:'isolated-hook-services',setup(api){
@@ -90,16 +90,27 @@ test("Studio never saves an unread project and permits an empty project only aft
     assert.equal(await evaluate('window.sync.forceSave()'),true);
     assert.equal(await evaluate('window.fixture.writes.length'),1);
     assert.equal(await evaluate('window.fixture.writes[0].data.title'),'Empty verified project');
+    await evaluate(`{
+      const state=window.store.getState();window.fixture.track=state.addTrack('audio','Saved inserts');
+      const plugin={pluginId:'mb-eq',pluginSlug:'mb-eq',type:'eq',name:'EQ',bypassed:true,parameters:{mid:-6,midFreq:1000}};
+      state.addPlugin(window.fixture.track,plugin);state.addPlugin('master',{...plugin,type:'compressor',pluginId:'mb-comp-studio',pluginSlug:'mb-comp-studio'});
+    }`);
+    assert.equal(await evaluate('window.sync.forceSave()'),true);
+    await evaluate(`window.fixture.saved=window.fixture.writes.at(-1).data.dawState;window.fixture.mode='roundtrip';window.store.setState({tracks:[]})`);
+    assert.equal(await evaluate('window.sync.loadProjectData()'),true);
+    const restored=await evaluate(`({track:window.store.getState().tracks.find(t=>t.id===window.fixture.track)?.plugins[0],master:window.store.getState().masterTrack.plugins[0]})`);
+    assert.equal(restored.track.type,'eq');assert.equal(restored.track.bypassed,true);assert.equal(restored.track.parameters.mid,-6);
+    assert.equal(restored.master.type,'compressor');assert.equal(restored.master.bypassed,true);
     await evaluate('window.fixture.id="project-b";window.render()');
     await new Promise(resolve=>setTimeout(resolve,100));
     assert.equal(await evaluate('window.sync.forceSave()'),false,'Switching project blocks writes until that project is loaded');
-    assert.equal(await evaluate('window.fixture.writes.length'),1);
+    assert.equal(await evaluate('window.fixture.writes.length'),2);
     assert.deepEqual(errors, []);
   } finally {
     socket?.terminate();
     browser.kill("SIGTERM");
     await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
