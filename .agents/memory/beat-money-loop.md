@@ -21,3 +21,8 @@ Beat Money Loop is a social-driven marketplace sales loop only; it must not enqu
 **Why:** The product owner clarified on 2026-10-01 that generated beats are meant to sell through social promotion to the marketplace, not through DSP distribution.
 
 **How to apply:** Keep BML generation/listing/campaign code independent from release creation and Too Lost submission; do not let a distribution setting create release drafts for BML.
+
+## Where cycle rows come from
+As of 2026-10-21 Max Booster had never been successfully published (no deployment, no build). Every beat_money_loop_cycles row in the shared Neon DB came from the dev workflow, which runs the scheduler against that same DB. A long "production" failure streak can therefore be dev running old code.
+**Why:** 64 consecutive MaxCore 403 failures ("private owner required") looked like a prod outage; the owner-header fix had landed but the dev process hadn't restarted, and nothing was deployed.
+**How to apply:** check getDeploymentInfo() and the deploy URL before attributing cycle rows to production; compare failure timestamps with when the fix was committed.

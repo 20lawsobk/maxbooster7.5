@@ -71,7 +71,7 @@
 - [musicIndustryTrainingData stub shapes](music-industry-training-stub.md) — file was missing, silently killed 10+ routes at startup (3 rounds of fixes); EMOTIONAL_TRIGGER_PATTERNS must be RECORD not array, PAID_AD_BENCHMARKS.platformMetrics needs avgCTR as object; full shape contract in file
 - [MaxCore operational index](maxcore-operational-index.md) — shared map for local topology, availability, auth, transport, generation contracts and endpoint-specific constraints.
 - [Beat Loop + MaxCore Audit](beat-loop-maxcore-audit.md) — live endpoint map, failure analysis, structural bugs fixed (scan context, adDeliveryLogs, adCampaigns columns, musicIndustryTrainingData)
-- [Beat Money Loop](beat-money-loop.md) — admin-only loop; MaxCore audio is async (job_id → poll audio-job), Bearer only; Tier-3 "fallback" is also MaxCore-gated by design
+- [Beat Money Loop](beat-money-loop.md) — admin-only loop; MaxCore audio async + owner header; cycle rows may come from DEV (shared DB), not prod
 - [Embedded-string ?. debris](embedded-string-oc-debris.md) — `?.` in string literals is a bug only when the embedded language isn't JS (GLSL/shell/SQL/URLs/paths); scan with scripts/_scan_oc.cjs; the SQL fixer can append a stray trailing backtick
 - [PDIM startup exec-chain probe flood](pdim-startup-probe-flood.md) — startup-probes/maxcoreSync/sessionConfig all called getPdimClient().ping() via exec() chain; replace with native fetch(); also workers need consecutiveOk≥2 before starting to avoid HSET burst on a still-warming PDIM
 - [Beat loop orphan-recovery guard](beat-loop-orphan-guard.md) — scheduler calls recoverOrphanedCycles ~75s after boot; it must exclude cycles started in the current process (startedAt < process-start cutoff) or it kills live cycles
@@ -190,3 +190,4 @@
 - [Page-scoped readiness reviews](page-scoped-readiness.md) — review each page with its backend; track child panels and shared-service gaps explicitly.
 - [Minimum account age](minimum-account-age.md) — user selected 16 as the consistent registration and policy minimum; preserve existing accounts.
 - [.replit Nix channel pin](replit-nix-channel-required.md) — missing `[nix] channel` drops to legacy nixpkgs (no node/postgresql_17); upstream syncs of tracked .replit drop it again
+- [MaxCore Python test invocation](maxcore-python-test-invocation.md) — unittest with PYTHONPATH=.:tests; pytest/httpx2 absent; live-server files need running MaxCore

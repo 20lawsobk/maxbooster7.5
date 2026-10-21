@@ -1,7 +1,8 @@
 // Real React DOM transitions in isolated Chromium. API/query fixtures provide
 // pending/data states; this verifies component lifecycle, not payment delivery.
 import { test } from "node:test";
-import { trackBrowserProcesses, findChromium } from "./helpers-browser-processes.mjs";
+import { findChromium } from "./helpers-browser-processes.mjs";
+import { stopBrowserProcessGroup } from "./browser-process-group.mjs";
 import assert from "node:assert/strict";
 import { build } from "esbuild";
 import fs from "node:fs";
@@ -46,8 +47,7 @@ test("Explicit media renderers show errors, retry and preview delivered artifact
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const port = server.address().port;
-  const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
-  const stopBrowser = trackBrowserProcesses(browser);
+  const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"], detached: true });
   let socket;
   try {
     const endpoint = await new Promise((resolve, reject) => {
@@ -114,9 +114,19 @@ test("Explicit media renderers show errors, retry and preview delivered artifact
     assert.equal(await evaluate('window.fixture.results.length'),3);
     assert.deepEqual(errors, []);
   } finally {
-    socket?.terminate();
-    await stopBrowser();
-    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    try {
+      socket?.terminate();
+    } finally {
+      try {
+        await stopBrowserProcessGroup(browser);
+      } finally {
+        server.closeAllConnections();
+        try {
+          await new Promise(resolve => server.close(resolve));
+        } finally {
+          fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+        }
+      }
+    }
   }
 });
