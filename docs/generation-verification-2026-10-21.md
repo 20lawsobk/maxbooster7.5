@@ -33,8 +33,8 @@ generation limitation, not a missing hosted-model API key.
 The [generation page inventory](../reports/readiness-implementation/generation-page-wiring.md)
 maps all 80 route declarations to generation references. Static import closure
 over-approximates shared barrel imports and does not prove that every imported
-component renders. Fresh browser acceptance against integrated application
-application revision `d648e6e7` passed all 80 route cases: 42 authenticated, 11 administrator
+component renders. Fresh browser acceptance against application
+revision `b5c835fe` passed all 80 route cases: 42 authenticated, 11 administrator
 and 27 public. The runner uses disposable PostgreSQL, a synthetic account and
 real password/session/TOTP boundaries. It preserves saved-data journeys for
 preferences, projects, workspace ownership and the press kit, honors throttling,
@@ -145,3 +145,14 @@ transfer tool rejected it for exceeding its 32 MiB limit. The absence of source
 in the repository does not establish what is inside that uninspected archive.
 A source-only archive within the transfer limit is needed to continue the
 native Linux port.
+
+Final application revision `b5c835fe` repeated all 80 page scenarios successfully
+(42 authenticated, 11 administrator, 27 public), including saved-data and
+session-bound TOTP checks. Fixture cleanup passed. Root CI again passed all
+2,332 tests with zero failures/errors after the Studio persistence/master fixes;
+types, quiet lint, production build and the five browser/native contracts passed.
+The final prepared release verified and booted from its own restored payload
+with real imported services and no checkout dependency fallback. Startup passed;
+`productionReady` remained `false` under the actual unavailable-generation gate.
+All 40 owned cold-rehearsal processes were cleaned up. This verifies host payload
+startup; Replit Publishing and an actual Docker image startup remain unverified.
