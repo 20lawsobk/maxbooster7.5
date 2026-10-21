@@ -1,14 +1,14 @@
 {
   "meta": {
     "mode": "static",
-    "backendCount": 2390,
-    "uniqueBackendCount": 2370,
-    "frontendCallCount": 1197,
-    "uniqueFrontendCount": 931,
-    "matchedCount": 931,
+    "backendCount": 2391,
+    "uniqueBackendCount": 2371,
+    "frontendCallCount": 1198,
+    "uniqueFrontendCount": 932,
+    "matchedCount": 932,
     "unmatchedConfirmedCount": 0,
     "methodUnconfirmedCount": 0,
-    "frontendReferenceCount": 948,
+    "frontendReferenceCount": 949,
     "externalReferenceCount": 42,
     "spaReferenceCount": 258,
     "unresolvedDynamicCount": 13,
@@ -102,7 +102,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-10-21T10:55:30.362Z",
+  "generatedAt": "2026-10-21T11:51:27.757Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -928,7 +928,7 @@
       "method": "GET",
       "rawPath": "/status",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 21,
+      "line": 28,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -946,7 +946,7 @@
       "method": "POST",
       "rawPath": "/enable",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 31,
+      "line": 38,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -964,7 +964,7 @@
       "method": "POST",
       "rawPath": "/disable",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 41,
+      "line": 48,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -982,7 +982,7 @@
       "method": "POST",
       "rawPath": "/run-now",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 51,
+      "line": 58,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -1000,7 +1000,7 @@
       "method": "GET",
       "rawPath": "/cycles",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 93,
+      "line": 98,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -1018,7 +1018,7 @@
       "method": "GET",
       "rawPath": "/health-score",
       "file": "server/routes/admin/beatMoneyLoop.ts",
-      "line": 127,
+      "line": 132,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -38719,9 +38719,27 @@
     },
     {
       "method": "GET",
+      "rawPath": "/repository",
+      "file": "server/routes/vstBridge.ts",
+      "line": 10,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/studio/vst/repository",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7521"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "GET",
       "rawPath": "/status",
       "file": "server/routes/vstBridge.ts",
-      "line": 35,
+      "line": 40,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38739,7 +38757,7 @@
       "method": "POST",
       "rawPath": "/initialize",
       "file": "server/routes/vstBridge.ts",
-      "line": 53,
+      "line": 59,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38757,7 +38775,7 @@
       "method": "POST",
       "rawPath": "/connect-desktop",
       "file": "server/routes/vstBridge.ts",
-      "line": 66,
+      "line": 72,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38775,7 +38793,7 @@
       "method": "POST",
       "rawPath": "/disconnect-desktop",
       "file": "server/routes/vstBridge.ts",
-      "line": 102,
+      "line": 108,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38793,7 +38811,7 @@
       "method": "POST",
       "rawPath": "/scan",
       "file": "server/routes/vstBridge.ts",
-      "line": 115,
+      "line": 121,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38811,7 +38829,7 @@
       "method": "GET",
       "rawPath": "/plugins",
       "file": "server/routes/vstBridge.ts",
-      "line": 135,
+      "line": 141,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38829,7 +38847,7 @@
       "method": "GET",
       "rawPath": "/plugins/:id",
       "file": "server/routes/vstBridge.ts",
-      "line": 162,
+      "line": 168,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38847,7 +38865,7 @@
       "method": "POST",
       "rawPath": "/instances",
       "file": "server/routes/vstBridge.ts",
-      "line": 181,
+      "line": 187,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38865,7 +38883,7 @@
       "method": "GET",
       "rawPath": "/instances",
       "file": "server/routes/vstBridge.ts",
-      "line": 209,
+      "line": 215,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38883,7 +38901,7 @@
       "method": "GET",
       "rawPath": "/instances/:id",
       "file": "server/routes/vstBridge.ts",
-      "line": 234,
+      "line": 240,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38901,7 +38919,7 @@
       "method": "PUT",
       "rawPath": "/instances/:id/parameters",
       "file": "server/routes/vstBridge.ts",
-      "line": 253,
+      "line": 259,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38919,7 +38937,7 @@
       "method": "PUT",
       "rawPath": "/instances/:id/bypass",
       "file": "server/routes/vstBridge.ts",
-      "line": 275,
+      "line": 281,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38937,7 +38955,7 @@
       "method": "POST",
       "rawPath": "/instances/:id/program",
       "file": "server/routes/vstBridge.ts",
-      "line": 296,
+      "line": 302,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38955,7 +38973,7 @@
       "method": "POST",
       "rawPath": "/instances/:id/editor/open",
       "file": "server/routes/vstBridge.ts",
-      "line": 318,
+      "line": 324,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38973,7 +38991,7 @@
       "method": "POST",
       "rawPath": "/instances/:id/editor/close",
       "file": "server/routes/vstBridge.ts",
-      "line": 333,
+      "line": 339,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -38991,7 +39009,7 @@
       "method": "DELETE",
       "rawPath": "/instances/:id",
       "file": "server/routes/vstBridge.ts",
-      "line": 348,
+      "line": 354,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -39009,7 +39027,7 @@
       "method": "GET",
       "rawPath": "/formats",
       "file": "server/routes/vstBridge.ts",
-      "line": 360,
+      "line": 366,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -42508,8 +42526,8 @@
       "mountedFrom": [
         "server/routes/adaptivePricing.ts:18",
         "server/routes/admin/auditLog.ts:20",
-        "server/routes/admin/beatMoneyLoop.ts:18",
         "server/routes/admin/beatMoneyLoop.ts:19",
+        "server/routes/admin/beatMoneyLoop.ts:20",
         "server/routes/admin/contentSampler.ts:16",
         "server/routes/admin/index.ts:22",
         "server/routes/admin/metrics.ts:23",
@@ -53330,7 +53348,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/studio/AIMusicGenerator.tsx:271",
-        "client/src/components/studio/StudioOneDAW.tsx:1459",
+        "client/src/components/studio/StudioOneDAW.tsx:1460",
         "client/src/components/studio/UltimateDAW.tsx:392"
       ],
       "status": "matched",
@@ -53355,7 +53373,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/studio/AIMusicGenerator.tsx:415",
-        "client/src/components/studio/StudioOneDAW.tsx:1623"
+        "client/src/components/studio/StudioOneDAW.tsx:1624"
       ],
       "status": "matched",
       "backendMatches": [
@@ -53494,7 +53512,7 @@
       "methodConfidence": "assumed",
       "occurrences": [
         "client/src/components/studio/BrowserPanel.tsx:522",
-        "client/src/components/studio/FlowStatePluginBrowser.tsx:216",
+        "client/src/components/studio/FlowStatePluginBrowser.tsx:221",
         "client/src/components/studio/PluginBrowser.tsx:77",
         "client/src/components/studio/StudioBrowser.tsx:55",
         "client/src/components/studio/StudioOneBrowser.tsx:308"
@@ -53805,7 +53823,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/studio/FlowStateAddTrack.tsx:108",
-        "client/src/components/studio/StudioOneDAW.tsx:1289",
+        "client/src/components/studio/StudioOneDAW.tsx:1290",
         "client/src/hooks/useFlowStateAdapter.ts:178",
         "client/src/hooks/useFlowStateAdapter.ts:216"
       ],
@@ -53894,13 +53912,13 @@
       "path": "/api/studio/plugins/instantiate/:param?projectId=:param",
       "rawPath": "/api/studio/plugins/instantiate/${pluginId}?projectId=${projectId}",
       "file": "client/src/components/studio/FlowStatePluginBrowser.tsx",
-      "line": 232,
+      "line": 237,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/FlowStatePluginBrowser.tsx:232"
+        "client/src/components/studio/FlowStatePluginBrowser.tsx:237"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54206,6 +54224,29 @@
       ]
     },
     {
+      "path": "/api/studio/vst/repository",
+      "rawPath": "/api/studio/vst/repository",
+      "file": "client/src/components/studio/RepositoryVstPlugins.tsx",
+      "line": 8,
+      "source": "fetch",
+      "kind": "fetch",
+      "method": "GET",
+      "methodConfidence": "assumed",
+      "occurrences": [
+        "client/src/components/studio/RepositoryVstPlugins.tsx:8"
+      ],
+      "status": "matched",
+      "backendMatches": [
+        {
+          "method": "GET",
+          "path": "/api/studio/vst/repository",
+          "file": "server/routes/vstBridge.ts",
+          "line": 10,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
       "path": "/api/studio/projects",
       "rawPath": "/api/studio/projects",
       "file": "client/src/components/studio/SaveAsDialog.tsx",
@@ -54283,13 +54324,13 @@
       "path": "/api/studio/tracks/:param",
       "rawPath": "/api/studio/tracks/${trackId}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1236,
+      "line": 1237,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PATCH",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1236"
+        "client/src/components/studio/StudioOneDAW.tsx:1237"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54306,13 +54347,13 @@
       "path": "/api/studio/tracks/:param",
       "rawPath": "/api/studio/tracks/${trackId}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1266,
+      "line": 1267,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1266",
+        "client/src/components/studio/StudioOneDAW.tsx:1267",
         "client/src/hooks/useFlowStateAdapter.ts:198"
       ],
       "status": "matched",
@@ -54330,13 +54371,13 @@
       "path": "/api/studio/ai-mix/:param",
       "rawPath": "/api/studio/ai-mix/${projectId}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1341,
+      "line": 1342,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1341",
+        "client/src/components/studio/StudioOneDAW.tsx:1342",
         "client/src/components/studio/UltimateDAW.tsx:279"
       ],
       "status": "matched",
@@ -54354,13 +54395,13 @@
       "path": "/api/studio/ai-master/:param",
       "rawPath": "/api/studio/ai-master/${projectId}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1366,
+      "line": 1367,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1366",
+        "client/src/components/studio/StudioOneDAW.tsx:1367",
         "client/src/components/studio/UltimateDAW.tsx:299"
       ],
       "status": "matched",
@@ -54378,13 +54419,13 @@
       "path": "/api/studio/clips/:param/analyze",
       "rawPath": "/api/studio/clips/${encodeURIComponent(selectedClip.id)}/analyze",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1575,
+      "line": 1576,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1575"
+        "client/src/components/studio/StudioOneDAW.tsx:1576"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54401,13 +54442,13 @@
       "path": "/api/studio/generation/pattern/chords",
       "rawPath": "/api/studio/generation/pattern/chords",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1665,
+      "line": 1666,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:1665"
+        "client/src/components/studio/StudioOneDAW.tsx:1666"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54424,13 +54465,13 @@
       "path": "/api/studio/projects/:param/mix-snapshots",
       "rawPath": "/api/studio/projects/${projectId}/mix-snapshots",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 5455,
+      "line": 5464,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:5455"
+        "client/src/components/studio/StudioOneDAW.tsx:5464"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54447,13 +54488,13 @@
       "path": "/api/studio/projects/:param/mix-snapshots",
       "rawPath": "/api/studio/projects/${projectId}/mix-snapshots",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 5468,
+      "line": 5477,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:5468"
+        "client/src/components/studio/StudioOneDAW.tsx:5477"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54470,13 +54511,13 @@
       "path": "/api/studio/projects/:param/mix-snapshots/:param/recall",
       "rawPath": "/api/studio/projects/${projectId}/mix-snapshots/${snapshotId}/recall",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 5484,
+      "line": 5493,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:5484"
+        "client/src/components/studio/StudioOneDAW.tsx:5493"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54493,13 +54534,13 @@
       "path": "/api/studio/projects/:param/mix-snapshots/:param",
       "rawPath": "/api/studio/projects/${projectId}/mix-snapshots/${snapshotId}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 5498,
+      "line": 5507,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/StudioOneDAW.tsx:5498"
+        "client/src/components/studio/StudioOneDAW.tsx:5507"
       ],
       "status": "matched",
       "backendMatches": [
@@ -58035,21 +58076,21 @@
           "method": "POST",
           "path": "/api/admin/beat-money-loop/enable",
           "file": "server/routes/admin/beatMoneyLoop.ts",
-          "line": 31,
+          "line": 38,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/admin/beat-money-loop/disable",
           "file": "server/routes/admin/beatMoneyLoop.ts",
-          "line": 41,
+          "line": 48,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/admin/beat-money-loop/run-now",
           "file": "server/routes/admin/beatMoneyLoop.ts",
-          "line": 51,
+          "line": 58,
           "confidence": "high"
         }
       ]
@@ -69727,6 +69768,16 @@
       "methodConfidence": null
     },
     {
+      "path": "/api/studio/vst/repository",
+      "rawPath": "/api/studio/vst/repository",
+      "file": "client/src/components/studio/RepositoryVstPlugins.tsx",
+      "line": 6,
+      "source": "useQuery",
+      "kind": "query-key-custom-fn",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
       "path": "/api/projects",
       "rawPath": "/api/projects",
       "file": "client/src/components/studio/SaveAsDialog.tsx",
@@ -69790,7 +69841,7 @@
       "path": "/api/projects",
       "rawPath": "/api/projects",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1756,
+      "line": 1764,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -69800,7 +69851,7 @@
       "path": "/api/studio/projects",
       "rawPath": "/api/studio/projects",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1758,
+      "line": 1766,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -69810,7 +69861,7 @@
       "path": "/api/studio/start-hub/summary",
       "rawPath": "/api/studio/start-hub/summary",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1761,
+      "line": 1769,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -69820,7 +69871,7 @@
       "path": "/api/projects",
       "rawPath": "/api/projects",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 2716,
+      "line": 2724,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -69830,7 +69881,7 @@
       "path": "/api/studio/projects",
       "rawPath": "/api/studio/projects",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 2717,
+      "line": 2725,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -71570,7 +71621,7 @@
       "path": "/api/",
       "rawPath": "/api/",
       "file": "client/src/lib/daw/AudioWorkletEngine.ts",
-      "line": 760,
+      "line": 771,
       "source": null,
       "kind": "not-api-reference",
       "method": null,
@@ -71580,7 +71631,7 @@
       "path": "/api/marketplace/audio/:param",
       "rawPath": "/api/marketplace/audio/${cleanPath}",
       "file": "client/src/lib/daw/AudioWorkletEngine.ts",
-      "line": 763,
+      "line": 774,
       "source": null,
       "kind": "not-api-reference",
       "method": null,
@@ -76065,7 +76116,7 @@
     {
       "path": "/studio/${id}",
       "file": "client/src/components/studio/StudioOneDAW.tsx",
-      "line": 1741
+      "line": 1749
     },
     {
       "path": "/login",

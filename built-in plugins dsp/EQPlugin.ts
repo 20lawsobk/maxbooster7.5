@@ -150,13 +150,14 @@ export class EQPlugin extends BasePlugin {
    * Get frequency response data for visualization
    */
   getFrequencyResponse(frequencies: Float32Array): Float32Array {
+    const frequencyValues = new Float32Array(frequencies);
     const magResponse = new Float32Array(frequencies.length);
     const phaseResponse = new Float32Array(frequencies.length);
     const totalResponse = new Float32Array(frequencies.length);
     totalResponse.fill(1);
 
     for (const filter of this.filters) {
-      filter.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+      filter.getFrequencyResponse(frequencyValues, magResponse, phaseResponse);
       for (let i = 0; i < frequencies.length; i++) {
         totalResponse[i] *= magResponse[i];
       }
@@ -181,7 +182,7 @@ export class EQPlugin extends BasePlugin {
 
   getParameters(): Record<string, any> {
     return {
-      bands: this.filters.map((filter, index) => ({
+      bands: this.filters.map((filter) => ({
         type: filter.type,
         frequency: filter.frequency.value,
         gain: filter.gain.value,
@@ -193,10 +194,12 @@ export class EQPlugin extends BasePlugin {
   }
 
   setParameters(params: Record<string, any>): void {
-    if (params.bands) {
+    if (Array.isArray(params.bands)) {
       params.bands.forEach((band: unknown, index: number) => {
-        if (index < this.filters.length) {
-          this.setBand(index, band.frequency, band.gain, band.q);
+        if (index < this.filters.length && band && typeof band === "object") {
+          const values = band as Record<string, unknown>;
+          const number = (key: string) => typeof values[key] === "number" && Number.isFinite(values[key]) ? values[key] as number : undefined;
+          this.setBand(index, number("frequency"), number("gain"), number("q"));
         }
       });
     }

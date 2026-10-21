@@ -2,6 +2,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { RepositoryVstPlugins } from "./RepositoryVstPlugins";
+import { supportsBrowserEffect } from "@/lib/daw/TrackPluginChain";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import {
   Dialog,
@@ -71,6 +73,8 @@ interface PluginDefinition {
   color: string;
   tags: string[];
   isFavorite?: boolean;
+  backend: BackendPlugin;
+  available: boolean;
 }
 
 const TYPE_ICON_MAP: Record<string, React.ReactNode> = {
@@ -193,6 +197,7 @@ function transformBackendPlugin(plugin: BackendPlugin): PluginDefinition {
   const pluginType = plugin.type?.toLowerCase() || plugin.category;
   return {
     id: plugin.id,
+    backend: plugin, available: plugin.category === "effect" && supportsBrowserEffect(plugin.type),
     name: plugin.name,
     type: plugin.category === "instrument" ? "instrument" : "effect",
     subtype:
@@ -250,7 +255,7 @@ async function instantiatePlugin(
 interface FlowStatePluginBrowserProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddPlugin: (pluginId: string, type: "effect" | "instrument") => void;
+  onAddPlugin: (pluginId: string, type: "effect" | "instrument", definition?: BackendPlugin) => void;
   trackId?: string;
   projectId?: string;
 }
@@ -371,17 +376,17 @@ export function FlowStatePluginBrowser({
     });
   };
 
-  const handleAdd = (plugin: PluginDefinition) => {
-    if (projectId) {
-      instantiateMutation.mutate({ pluginId: plugin.id, trackId });
-    } else {
-      toast({
-        title: "Plugin added to session",
-        description:
-          "No project is open — this plugin is active for the current session but will not be saved.",
-      });
+  const handleAdd = async (plugin: PluginDefinition) => {
+    if (!plugin.available || !trackId) {
+      toast({ title: "Plugin unavailable", description: !trackId ? "Select a track first." : "This plugin has no browser playback processor.", variant: "destructive" });
+      return;
     }
-    onAddPlugin(plugin.id, plugin.type);
+    // Save the server instance first; a rejected write must not appear active.
+    if (projectId) {
+      try { await instantiateMutation.mutateAsync({ pluginId: plugin.id, trackId }); }
+      catch { return; }
+    }
+    onAddPlugin(plugin.id, plugin.type, plugin.backend);
     onOpenChange(false);
   };
 
@@ -401,7 +406,7 @@ export function FlowStatePluginBrowser({
             Plugin Browser
             {allPlugins.length > 0 && (
               <span className="ml-2 text-sm font-normal text-white/50">
-                ({allPlugins.length} plugins available)
+                ({allPlugins.filter(p => p.available).length} browser effects available)
               </span>
             )}
           </DialogTitle>
@@ -409,6 +414,8 @@ export function FlowStatePluginBrowser({
             Add professional effects and instruments to your track
           </p>
         </DialogHeader>
+
+        <RepositoryVstPlugins />
 
         <div className="px-6 flex gap-2">
           <div className="relative flex-1">
@@ -577,7 +584,7 @@ export function FlowStatePluginBrowser({
                         <Button
                           size="sm"
                           className="h-7 px-3 bg-white/10 hover:bg-white/20 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={instantiateMutation.isPending}
+                          disabled={instantiateMutation.isPending || !plugin.available || !trackId}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAdd(plugin);

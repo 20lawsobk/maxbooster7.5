@@ -11,6 +11,11 @@ from ai_model.training.storage import training_root
 
 
 class AutomaticSelectionTests(unittest.TestCase):
+    def setUp(self):
+        from ai_model.awareness import bind
+        from test_generation_route_bindings import snapshot
+        self.enterContext(bind(snapshot()))
+
     def test_best_reviewed_candidate_without_downgrade_or_protocol_swap(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(registry, "REGISTRY", Path(folder) / "registry"):
             def evidence(name, score):

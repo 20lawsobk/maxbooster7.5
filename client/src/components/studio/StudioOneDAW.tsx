@@ -983,6 +983,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           audioEngine.createTrack(track.id);
           loadedTracksRef.current.add(track.id);
         }
+        audioEngine.setTrackPlugins(track.id, track.plugins || []);
         audioEngine.setTrackVolume(track.id, track.volume ?? 0.8);
         audioEngine.setTrackPan(track.id, track.pan ?? 0);
         audioEngine.setTrackMute(track.id, track.muted ?? false);
@@ -1697,7 +1698,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }, [musicalKey, musicalScale, transport.tempo, addGeneratedStudioResult, toast]);
 
   const handleAddPlugin = useCallback(
-    (pluginId: string, type: "effect" | "instrument") => {
+    (pluginId: string, type: "effect" | "instrument", definition) => {
       if (!selectedTrackId) {
         toast({
           title: "Select a Track",
@@ -1705,11 +1706,18 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         });
         return;
       }
+      const parameters = { ...definition?.defaultPreset };
+      for (const parameter of definition?.parameters || []) {
+        if (parameters[parameter.id] === undefined) parameters[parameter.id] = parameter.defaultValue;
+        if (["mix", "size", "damping", "depth", "feedback", "drive", "tone"].includes(parameter.id) && parameter.maxValue <= 1 && typeof parameters[parameter.id] === "number") parameters[parameter.id] *= 100;
+      }
       store.addPlugin(selectedTrackId, {
-        name: pluginId,
-        type: type as string,
+        name: definition?.name || pluginId,
+        pluginId, pluginSlug: definition?.slug || pluginId,
+        type: definition?.type || type,
+        bypass: false, expanded: true,
         bypassed: false,
-        parameters: {},
+        parameters,
       });
       toast({
         title: "Plugin Added",
@@ -1983,7 +1991,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                       className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors"
                     >
                       <Library className="h-3 w-3 text-purple-400" /> All
-                      Plugins (413)
+                      Plugin Browser
                     </button>
                     <button
                       onClick={() => {
@@ -2810,10 +2818,11 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               </DialogHeader>
               <div className="overflow-auto max-h-[70vh]">
                 <PluginRack
+                  managedByPlaybackEngine
                   trackId={pluginTrack.id as string}
-                  plugins={(pluginTrack.plugins as PluginInstance[]) || []}
+                  plugins={(pluginTrack.plugins || []).map(p => ({ ...p, bypass: p.bypassed ?? p.bypass ?? false, expanded: p.expanded ?? true }))}
                   onPluginsChange={(plugins) =>
-                    store.updateTrack(pluginTrack.id as string, { plugins })
+                    store.updateTrack(pluginTrack.id as string, { plugins: plugins.map(p => ({ ...p, bypassed: p.bypass })) })
                   }
                 />
               </div>

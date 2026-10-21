@@ -117,6 +117,6 @@ test("Explicit media renderers show errors, retry and preview delivered artifact
     browser.kill("SIGTERM");
     await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

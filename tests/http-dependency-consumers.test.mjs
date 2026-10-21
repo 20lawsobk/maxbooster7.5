@@ -6,6 +6,42 @@ import { once } from "node:events";
 
 const require = createRequire(import.meta.url);
 
+for (const arrayHeaders of [true, false]) {
+  test(`redirect transport strips credentials across hosts (${arrayHeaders ? "array" : "object"} headers)`, async t => {
+    const redirecting = require("follow-redirects").http;
+    let firstHeaders;
+    const target = createServer((req, res) => {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify(req.headers));
+    });
+    target.listen(0, "127.0.0.1"); await once(target, "listening");
+    const origin = createServer((req, res) => {
+      firstHeaders = req.headers;
+      res.writeHead(302, { location: `http://localhost:${target.address().port}/` }).end();
+    });
+    origin.listen(0, "127.0.0.1"); await once(origin, "listening");
+    t.after(() => { origin.closeAllConnections(); origin.close(); target.closeAllConnections(); target.close(); });
+    const headers = { Authorization: "Bearer fixture-only", Cookie: "fixture=value",
+      "X-Secret+": "fixture-secret", "X-Public": "retained" };
+    const received = await new Promise((resolve, reject) => {
+      const req = redirecting.get(`http://127.0.0.1:${origin.address().port}/`, {
+        family: 4, headers: arrayHeaders ? Object.entries(headers).flat() : headers,
+        sensitiveHeaders: ["X-Secret+"],
+      }, res => {
+        let body = ""; res.on("data", chunk => { body += chunk; });
+        res.on("end", () => { try { resolve(JSON.parse(body)); } catch (error) { reject(error); } });
+      });
+      req.on("error", reject); req.setTimeout(3000, () => req.destroy(new Error("Redirect probe timed out")));
+    });
+    assert.equal(firstHeaders.authorization, "Bearer fixture-only");
+    assert.equal(firstHeaders["x-secret+"], "fixture-secret");
+    assert.equal(received.authorization, undefined);
+    assert.equal(received.cookie, undefined);
+    assert.equal(received["x-secret+"], undefined);
+    assert.equal(received["x-public"], "retained");
+  });
+}
+
 test("patched Axios preserves JSON, redirects, binary downloads and cancellation", async t => {
   const axios = require("axios");
   assert.equal(axios.VERSION, "1.20.0");

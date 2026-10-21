@@ -59,6 +59,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "client/src"),
       "@shared": path.resolve(__dirname, "shared"),
+      "@plugins": path.resolve(__dirname, "built-in plugins dsp"),
     },
   },
 });

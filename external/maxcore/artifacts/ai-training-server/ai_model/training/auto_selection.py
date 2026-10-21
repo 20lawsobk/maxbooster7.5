@@ -20,8 +20,9 @@ _MAX_OPERATIONAL_CACHE = 128
 _MAX_NEW_PROBES = 2
 
 
-def _operational_key(run, checkpoint):
-    from ai_model.generation.capability import CAPABILITY_POLICY, capability_budget_seconds
+def _operational_key(run, checkpoint, *, snapshot=None):
+    from ai_model.generation.capability import CAPABILITY_POLICY, capability_budget_seconds, capability_snapshot
+    snapshot = capability_snapshot(snapshot)
     run = Path(run)
     marker = run.parent.parent / "live_candidate_admissions" / run.name
     # Hash actual bytes on every lookup. A changed report, certificate, model
@@ -31,25 +32,31 @@ def _operational_key(run, checkpoint):
     report = json.loads((run / "report.json").read_text())
     return (str(run), checkpoint, registry.sha256(run / "report.json"),
             registry.sha256(marker / "certified.json"), CAPABILITY_POLICY, capability_budget_seconds(),
-            registry.canonical_hash(report.get("model_config")))
+            registry.canonical_hash(report.get("model_config")), snapshot.id, snapshot.expires_at)
 
 
 def _operational_candidate(run, checkpoint):
-    from ai_model.generation.capability import verify_text_capability
+    from ai_model.generation.capability import verify_text_capability, capability_snapshot
+    from ai_model.awareness import AwarenessUnavailable
     from ai_model.model.candidate_serving import create_candidate_adapter
     try:
-        key = _operational_key(run, checkpoint)
+        snapshot = capability_snapshot()
+        key = _operational_key(run, checkpoint, snapshot=snapshot)
         if key in _OPERATIONAL_CACHE:
             _OPERATIONAL_CACHE.move_to_end(key)
             return _OPERATIONAL_CACHE[key]
         try:
             adapter = create_candidate_adapter(run, runtime_only=True,
                 require_exclusive_backend=True, require_exclusive_training=True)
-            verify_text_capability(adapter)
+            verify_text_capability(adapter, snapshot=snapshot)
             passed = True
+        except AwarenessUnavailable:
+            # A warming/expired scan is retryable infrastructure, never a
+            # durable negative observation about a checkpoint's capability.
+            return False
         except (ValueError, RuntimeError, OSError, TypeError, KeyError):
             passed = False
-        if _operational_key(run, checkpoint) != key:
+        if _operational_key(run, checkpoint, snapshot=snapshot) != key:
             return False
         _OPERATIONAL_CACHE[key] = passed
         while len(_OPERATIONAL_CACHE) > _MAX_OPERATIONAL_CACHE:

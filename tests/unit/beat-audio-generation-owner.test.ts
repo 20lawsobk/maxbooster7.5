@@ -2,9 +2,11 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
+import { validateGeneratedArtifact } from "../../server/services/generatedArtifactValidation.js";
+import { isAllowedMaxcoreMediaPath } from "../../server/services/maxcoreConnector.js";
 import { beatAudioObservation } from "../../server/services/beatAudioContext.js";
 
-function fixture(owner: string | null = "actual-admin", cancelled = false, foreign = false) {
+function fixture(owner: string | null = "actual-admin", status = "done", foreign = false, corrupt = false) {
   // Execute the actual private generation/owner methods without importing the
   // unrelated scheduler, payment or promotion services.
   const source = readFileSync("server/services/beatMoneyLoopService.ts", "utf8");
@@ -13,7 +15,14 @@ function fixture(owner: string | null = "actual-admin", cancelled = false, forei
   const methods = service.members.filter(node => ts.isMethodDeclaration(node) &&
     ["_maxcoreAudio", "_requireAdminId"].includes(node.name.getText(tree))).map(node => node.getText(tree)).join("\n");
   const calls: Array<{ url: string; init: RequestInit }> = [];
-  const wav = Buffer.alloc(2048); wav.write("RIFF"); wav.write("WAVE", 8);
+  const wav = Buffer.alloc(corrupt ? 2048 : 160044);
+  wav.write("RIFF"); wav.writeUInt32LE(wav.length - 8, 4); wav.write("WAVEfmt ", 8);
+  if (!corrupt) {
+    wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
+    wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28);
+    wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34);
+    wav.write("data", 36); wav.writeUInt32LE(160000, 40);
+  }
   const downloadFile = vi.fn().mockResolvedValue(wav);
   const awareness = vi.fn(async (_endpoint, body) => ({ ...body, awareness: {
     snapshot_id: "actual-live", awareness: "Public live observations", expires_at: Date.now() / 1000 + 60,
@@ -23,12 +32,12 @@ function fixture(owner: string | null = "actual-admin", cancelled = false, forei
     setTimeout: (callback: () => void) => { queueMicrotask(callback); return 1; },
     getMaxcoreOriginOrDefault: () => "http://maxcore.fixture",
     getMaxcoreGenerationKey: () => "private-fixture-channel",
-    prepareGenerationAwareness: awareness, storageService: { downloadFile }, beatAudioObservation,
+    validateGeneratedArtifact, isAllowedMaxcoreMediaPath, prepareGenerationAwareness: awareness, storageService: { downloadFile }, beatAudioObservation,
     logger: { info: vi.fn(), warn: vi.fn() },
     fetch: async (url: string, init: RequestInit) => {
       calls.push({ url, init });
       if (url.endsWith("/api/generate/audio")) return Response.json({ job_id: "job-1", status: "processing" });
-      return Response.json(cancelled ? { status: "cancelled" } : { status: "done",
+      return Response.json({ status,
         url: `/api/storage/file/users%2F${foreign ? "victim" : "actual-admin"}%2Fgenerated-audio%2Fbeat.wav` });
     },
   };
@@ -52,6 +61,10 @@ describe("Beat Money Loop private audio identity", () => {
     expect(JSON.parse(String(f.calls[0].init.body))).toMatchObject({
       user_id: "actual-admin", owner_id: "actual-admin", awareness: { snapshot_id: "actual-live" },
     });
+    const request = JSON.parse(String(f.calls[0].init.body));
+    expect(request).toMatchObject({ instrument: "ensemble", format: "wav" });
+    expect(request.prompt).toContain("128 BPM");
+    expect(request).not.toHaveProperty("mode");
     expect(f.downloadFile).toHaveBeenCalledWith("users/actual-admin/generated-audio/beat.wav");
   });
   it("does not dispatch or invent an owner when the configured admin does not exist", async () => {
@@ -60,11 +73,21 @@ describe("Beat Money Loop private audio identity", () => {
     expect(f.calls).toHaveLength(0); expect(f.awareness).not.toHaveBeenCalled();
   });
   it("stops cancelled jobs and refuses another user's durable object", async () => {
-    const cancelled = fixture("actual-admin", true);
+    const cancelled = fixture("actual-admin", "cancelled");
     await expect(cancelled.probe._maxcoreAudio(scan, "C")).rejects.toThrow("audio job failed");
     expect(cancelled.calls).toHaveLength(2);
-    const foreign = fixture("actual-admin", false, true);
+    const foreign = fixture("actual-admin", "done", true);
     await expect(foreign.probe._maxcoreAudio(scan, "C")).rejects.toThrow("different user");
     expect(foreign.downloadFile).not.toHaveBeenCalled();
+  });
+  it("rejects a WAV-shaped corrupt payload before publication", async () => {
+    const f = fixture("actual-admin", "done", false, true);
+    await expect(f.probe._maxcoreAudio(scan, "C")).rejects.toThrow();
+  });
+  it.each(["timed_out", "timeout", "expired"])("stops terminal %s jobs immediately", async status => {
+    const f = fixture("actual-admin", status);
+    await expect(f.probe._maxcoreAudio(scan, "C")).rejects.toThrow("audio job failed");
+    expect(f.calls).toHaveLength(2);
+    expect(f.downloadFile).not.toHaveBeenCalled();
   });
 });

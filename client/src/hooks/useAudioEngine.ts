@@ -7,7 +7,10 @@ import {
 } from "@/lib/daw";
 import type { WaveformPeakCache } from "@/lib/daw/AudioWorkletEngine";
 
+import type { TrackInsert } from "@/lib/daw/TrackPluginChain";
+
 interface AudioEngineHook {
+  setTrackPlugins: (trackId: string, plugins: TrackInsert[]) => string[];
   isInitialized: boolean;
   isPlaying: boolean;
   isRecording: boolean;
@@ -160,6 +163,8 @@ export function useAudioEngine(): AudioEngineHook {
     [],
   );
 
+  const setTrackPlugins = useCallback((trackId: string, plugins: TrackInsert[]) => audioWorkletEngine.setTrackPlugins(trackId, plugins), []);
+
   const createTrack = useCallback((trackId: string) => {
     audioWorkletEngine?.createTrack(trackId);
   }, []);
@@ -227,6 +232,7 @@ export function useAudioEngine(): AudioEngineHook {
   }, [meteringData]);
 
   return {
+    setTrackPlugins,
     isInitialized,
     isPlaying: playbackState.isPlaying,
     isRecording: playbackState.isRecording,

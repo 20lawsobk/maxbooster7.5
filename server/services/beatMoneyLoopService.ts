@@ -5,7 +5,7 @@
  *   1. SCAN   — pull live music-industry context (trending genre / mood / tempo)
  *               from musicIndustryContextFilter (which is fed by industryMonitorService).
  *   2. GENERATE — request a beat WAV from the INTERNAL MaxCore subsystem ONLY
- *               (Mode C: AI from 8 TB dataset, then Mode B: HD DSP). There is
+ *               with fresh public awareness and explicit musical direction. There is
  *               NO local fallback — if MaxCore is unreachable the cycle fails
  *               explicitly. The scan context is forwarded so generation is
  *               biased toward what's trending.
@@ -58,6 +58,8 @@ import {
   getAwarenessContext,
 } from "./awarenessContext.js";
 import { prepareGenerationAwareness } from "./generationAwareness.js";
+import { validateGeneratedArtifact } from "./generatedArtifactValidation.js";
+import { generatedImageUrl, persistGeneratedImage } from "./generatedImageAsset.js";
 import {
   normalizeHashtags,
   cleanMaxCoreContent,
@@ -73,6 +75,7 @@ import { randomBytes } from "crypto";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOriginOrDefault,
+  isAllowedMaxcoreMediaPath,
 } from "./maxcoreConnector.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -232,7 +235,19 @@ class BeatMoneyLoopService {
    * right after restart is also protected.
    */
   async recoverOrphanedCycles(): Promise<void> {
+    let client: PoolClient | null = null;
+    let acquired = false;
+    let discardConnection = false;
     try {
+      if (this._runningCycle) return;
+      client = await pool.connect();
+      const result = await client.query<{ acquired: boolean }>(
+        "SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS acquired",
+        ["beat-money-loop:cycle"],
+      );
+      acquired = Boolean(result.rows[0]?.acquired);
+      // Another replica may own an older but still active generation cycle.
+      if (!acquired) return;
       // Cutoff: cycles started before (process start − 30 s) are orphans.
       // Cycles started at or after that are live in this process.
       const processStartMs = Date.now() - process.uptime() * 1_000;
@@ -264,14 +279,23 @@ class BeatMoneyLoopService {
         logger.warn(
           `[BeatMoneyLoop] Recovered ${orphans.length} orphaned cycle(s): ${orphans.map((r) => `${r.id}(${r.status})`).join(", ")}`,
         );
-        // Also reset the in-flight lock so the loop can schedule normally.
-        this._runningCycle = false;
       }
     } catch (err) {
+      discardConnection = true;
       logger.warn(
         { err },
         "[BeatMoneyLoop] Could not recover orphaned cycles",
       );
+    } finally {
+      if (client) {
+        if (acquired) await client.query(
+          "SELECT pg_advisory_unlock(hashtextextended($1, 0))", ["beat-money-loop:cycle"],
+        ).catch(err => {
+          discardConnection = true;
+          logger.warn({ err }, "[BeatMoneyLoop] Recovery lock release failed");
+        });
+        client.release(discardConnection);
+      }
     }
   }
 
@@ -290,8 +314,13 @@ class BeatMoneyLoopService {
         enabled: false,
         currentCadenceMs: DEFAULT_CADENCE_MS,
       })
+      .onConflictDoNothing({ target: beatMoneyLoopState.id })
       .returning();
-    return created;
+    if (created) return created;
+    const [winner] = await db.select().from(beatMoneyLoopState)
+      .where(eq(beatMoneyLoopState.id, STATE_ROW_ID)).limit(1);
+    if (!winner) throw new Error("Beat Money Loop state could not be initialized");
+    return winner;
   }
 
   /**
@@ -450,6 +479,7 @@ class BeatMoneyLoopService {
   }
 
   async disable(): Promise<BeatMoneyLoopStatus> {
+    this._pendingQueue.length = 0;
     await this._ensureStateRow();
     await db
       .update(beatMoneyLoopState)
@@ -523,6 +553,7 @@ class BeatMoneyLoopService {
    */
   private async _optimalBatchSize(): Promise<number> {
     const state = await this._ensureStateRow();
+    if (!state.enabled) return 1;
     if (state.consecutiveFailures > 0) return 1;
 
     const perf = await this._genrePerformance();
@@ -700,6 +731,7 @@ class BeatMoneyLoopService {
         previewAbsPath,
         title,
         musicalKey,
+        assertBeforePublish: assertCycleLock,
       });
       listedBeatId = beatId;
       await db
@@ -912,6 +944,7 @@ class BeatMoneyLoopService {
       if (lockHeartbeat) clearInterval(lockHeartbeat);
       if (heartbeatInFlight) await heartbeatInFlight;
       if (lockClient) {
+        let discardConnection = !databaseLockHealthy;
         if (databaseLockAcquired) {
           try {
             await lockClient.query(
@@ -919,13 +952,14 @@ class BeatMoneyLoopService {
               ["beat-money-loop:cycle"],
             );
           } catch (unlockErr) {
+            discardConnection = true;
             logger.warn(
               { err: unlockErr },
               "[BeatMoneyLoop] Database cycle-lock release failed; connection release will relinquish it",
             );
           }
         }
-        lockClient.release();
+        lockClient.release(discardConnection);
       }
       this._runningCycle = false;
       // Auto-chain: if someone enqueued more overrides while this cycle ran,
@@ -961,13 +995,10 @@ class BeatMoneyLoopService {
 
   /**
    * Call MaxCore /generate/audio directly.
-   * Mode C = MaxCore AI backend (8 TB music dataset, highest quality).
-   * Mode B = HD DSP fallback (plate reverb + stereo widening, release quality).
    * Returns decoded WAV bytes + optional musical metadata from MaxCore.
    */
   private async _maxcoreAudio(
     scan: BeatAudioContext,
-    mode: "C" | "B",
   ): Promise<{
     wavBytes: Buffer;
     observation: Partial<BeatAudioContext>;
@@ -1001,10 +1032,14 @@ class BeatMoneyLoopService {
       ...(scan.tempo !== undefined ? { bpm: scan.tempo } : {}),
       ...(scan.mood !== undefined ? { mood: scan.mood } : {}),
       duration: durationSec,
-      energy: 1.0,           // peak energy / presence
-      quality: "professional", // industry-grade output request
-      master: true,           // request mastered, release-ready output
-      mode,
+      instrument: "ensemble",
+      format: "wav",
+      prompt: ["Create an original instrumental beat without vocals.",
+        scan.genre && `Genre: ${scan.genre}.`, scan.mood && `Mood: ${scan.mood}.`,
+        scan.tempo && `Tempo: ${scan.tempo} BPM.`, scan.requestedKey && `Key: ${scan.requestedKey}.`,
+        scan.productionStyles.length && `Production: ${scan.productionStyles.slice(0, 5).join(", ")}.`,
+        scan.hooks.length && `Creative direction: ${scan.hooks.slice(0, 5).join("; ")}.`,
+      ].filter(Boolean).join(" "),
     };
     // Send the requested key so MaxCore generates in that tonality, giving
     // each cycle a different key rather than always defaulting to C Minor.
@@ -1024,10 +1059,10 @@ class BeatMoneyLoopService {
     // are present (see replit.md / maxcore-auth-header memory).
     const authHeaders: Record<string, string> = key
       ? { Authorization: `Bearer ${key}`, "X-MaxCore-User-Id": ownerId }
-      : {};
+      : { "X-MaxCore-User-Id": ownerId };
 
     logger.info(
-      `[BeatMoneyLoop] _maxcoreAudio mode=${mode} → POST ${base}/api/generate/audio (duration=${durationSec}s)`,
+      `[BeatMoneyLoop] _maxcoreAudio → POST ${base}/api/generate/audio (duration=${durationSec}s)`,
     );
     // Retry the initial POST up to 3 times on transient network errors (ECONNRESET,
     // ECONNREFUSED) — MaxCore can drop the connection while waking from sleep.
@@ -1051,13 +1086,13 @@ class BeatMoneyLoopService {
           (fetchErr as Error).name === "TimeoutError";
         if (isTimeout || attempt === 3) throw fetchErr;
         logger.warn(
-          `[BeatMoneyLoop] _maxcoreAudio mode=${mode} POST attempt ${attempt} failed (${(fetchErr as Error).message}) — retrying in 15 s`,
+          `[BeatMoneyLoop] _maxcoreAudio POST attempt ${attempt} failed (${(fetchErr as Error).message}) — retrying in 15 s`,
         );
         await new Promise((r) => setTimeout(r, 15_000));
       }
     }
     logger.info(
-      `[BeatMoneyLoop] _maxcoreAudio mode=${mode} POST → HTTP ${res!.status}`,
+      `[BeatMoneyLoop] _maxcoreAudio POST → HTTP ${res!.status}`,
     );
     if (!res!.ok) {
       const text = await res!.text().catch(() => "");
@@ -1092,20 +1127,24 @@ class BeatMoneyLoopService {
       backend?: string;
     };
 
-    const backend = data.backend ?? (mode === "C" ? "maxcore" : "dsp_b");
-    const validateWav = (bytes: Buffer): Buffer => {
+    const backend = data.backend ?? "maxcore";
+    const validateWav = async (bytes: Buffer): Promise<Buffer> => {
       // A successful HTTP response is not sufficient evidence that MaxCore
       // produced playable audio: upstream error pages and truncated payloads
       // have previously been persisted as ".wav" files. Require the minimum
       // RIFF/WAVE container signature before a listing can ever be created.
-      if (bytes.length < 1_024) {
-        throw new Error(`MaxCore audio payload too small (${bytes.length} bytes)`);
+      if (bytes.length < 1_024 || bytes.length > 256 * 1024 * 1024) {
+        throw new Error(`MaxCore audio payload size is invalid (${bytes.length} bytes)`);
       }
       if (
         bytes.subarray(0, 4).toString("ascii") !== "RIFF" ||
         bytes.subarray(8, 12).toString("ascii") !== "WAVE"
       ) {
         throw new Error("MaxCore audio payload is not a RIFF/WAVE file");
+      }
+      const artifact = await validateGeneratedArtifact(bytes, "audio");
+      if (!artifact.duration || artifact.duration < durationSec * 0.95) {
+        throw new Error(`MaxCore returned a shortened beat (${artifact.duration}s; requested ${durationSec}s)`);
       }
       return bytes;
     };
@@ -1139,32 +1178,48 @@ class BeatMoneyLoopService {
       };
       const b64 = d.wav_b64 ?? d.audio_b64;
       if (b64) {
-        return { wavBytes: validateWav(Buffer.from(b64, "base64")), ...extras };
+        return { wavBytes: await validateWav(Buffer.from(b64, "base64")), ...extras };
       }
       const rawUrl = d.url ?? d.audio_url;
       if (rawUrl) {
         if (rawUrl.startsWith("/api/storage/file/")) {
           const storageKey = decodeURIComponent(rawUrl.slice("/api/storage/file/".length));
-          if (!storageKey.startsWith(`users/${ownerId}/`)) {
+          if (!storageKey.startsWith(`users/${ownerId}/`) || /[\\\0%?#]/.test(storageKey) || storageKey.split("/").includes("..")) {
             throw new Error("MaxCore returned audio owned by a different user");
           }
-          return { wavBytes: validateWav(await storageService.downloadFile(storageKey)), ...extras };
+          return { wavBytes: await validateWav(await storageService.downloadFile(storageKey)), ...extras };
         }
         const abs = /^https?:\/\//i.test(rawUrl) ? rawUrl : `${base}${rawUrl}`;
         // SSRF / credential-leak guard: only download from the MaxCore origin.
         // Never forward the Bearer token to a host we don't control.
-        if (new URL(abs).origin !== new URL(base).origin) {
+        const assetUrl = new URL(abs);
+        if (assetUrl.origin !== new URL(base).origin || !isAllowedMaxcoreMediaPath(assetUrl.pathname) ||
+            assetUrl.username || assetUrl.password || assetUrl.search || assetUrl.hash) {
           throw new Error(
             `MaxCore returned audio URL on unexpected origin: ${new URL(abs).origin}`,
           );
         }
         const dl = await fetch(abs, {
-          headers: authHeaders,
+          headers: authHeaders, redirect: "manual",
           // Full-length files are ~10× larger than the old 30 s clips.
           signal: AbortSignal.timeout(120_000),
         });
         if (!dl.ok) throw new Error(`MaxCore audio download HTTP ${dl.status}`);
-        const bytes = validateWav(Buffer.from(await dl.arrayBuffer()));
+        if (Number(dl.headers.get("content-length")) > 256 * 1024 * 1024 || !dl.body) {
+          throw new Error("MaxCore audio download exceeds its limit or is empty");
+        }
+        const chunks: Buffer[] = []; let size = 0;
+        const reader = dl.body.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            size += value.length;
+            if (size > 256 * 1024 * 1024) throw new Error("MaxCore audio exceeds the 256 MB limit");
+            chunks.push(Buffer.from(value));
+          }
+        } finally { await reader.cancel(); }
+        const bytes = await validateWav(Buffer.concat(chunks));
         return { wavBytes: bytes, ...extras };
       }
       throw new Error("MaxCore returned no audio payload (no wav_b64/url)");
@@ -1179,13 +1234,14 @@ class BeatMoneyLoopService {
     // Poll /api/audio-job/:id until done. Budget scales with requested length:
     // rendering a full 3-min beat takes far longer than the old 30 s clip.
     if (data.job_id) {
+      if (!/^[A-Za-z0-9_-]{1,256}$/.test(data.job_id)) throw new Error("Invalid MaxCore audio job identifier");
       // Poll budget: at least 30 min — 30 s audio was historically completing in
       // ~18-20 min. The old 20-min cap caused us to bail 12 s before completion.
       // Use 40× duration with a 30 min floor so there's always plenty of headroom.
       const pollBudgetMs = Math.max(1_800_000, durationSec * 40_000);
       const deadline = Date.now() + pollBudgetMs;
       logger.info(
-        `[BeatMoneyLoop] mode=${mode} polling job ${data.job_id} (budget=${Math.round(pollBudgetMs / 1000)}s)`,
+        `[BeatMoneyLoop] polling job ${data.job_id} (budget=${Math.round(pollBudgetMs / 1000)}s)`,
       );
       let lastLogAt = Date.now();
       while (Date.now() < deadline) {
@@ -1195,13 +1251,13 @@ class BeatMoneyLoopService {
           const elapsedSec = Math.round((Date.now() - (deadline - pollBudgetMs)) / 1000);
           const remainSec = Math.round((deadline - Date.now()) / 1000);
           logger.info(
-            `[BeatMoneyLoop] mode=${mode} job ${data.job_id} still rendering… elapsed=${elapsedSec}s remain=${remainSec}s`,
+            `[BeatMoneyLoop] job ${data.job_id} still rendering… elapsed=${elapsedSec}s remain=${remainSec}s`,
           );
           lastLogAt = Date.now();
         }
         let jr: Response;
         try {
-          jr = await fetch(`${base}/api/audio-job/${data.job_id}`, {
+          jr = await fetch(`${base}/api/audio-job/${encodeURIComponent(data.job_id)}`, {
             headers: authHeaders,
             // MaxCore may hold the poll connection too — allow 60 s per poll.
             signal: AbortSignal.timeout(60_000),
@@ -1225,13 +1281,13 @@ class BeatMoneyLoopService {
           throw new Error(`MaxCore audio job ${data.job_id} expired (404) — job record no longer exists on server`);
         }
         if (!jr.ok) {
-          logger.warn(`[BeatMoneyLoop] mode=${mode} job poll HTTP ${jr.status} — continuing`);
+          logger.warn(`[BeatMoneyLoop] job poll HTTP ${jr.status} — continuing`);
           continue; // transient 5xx — keep polling within budget
         }
         const job = (await jr.json()) as typeof data & { error?: string };
         const st = (job.status ?? "").toLowerCase();
-        logger.info(`[BeatMoneyLoop] mode=${mode} job ${data.job_id} status=${st}`);
-        if (["error", "failed", "cancelled", "canceled"].includes(st)) {
+        logger.info(`[BeatMoneyLoop] job ${data.job_id} status=${st}`);
+        if (["error", "failed", "cancelled", "canceled", "timeout", "timed_out", "expired"].includes(st)) {
           throw new Error(
             `MaxCore audio job failed: ${(job.error ?? "unknown").slice(0, 200)}`,
           );
@@ -1244,7 +1300,7 @@ class BeatMoneyLoopService {
           job.url ||
           job.audio_url
         ) {
-          logger.info(`[BeatMoneyLoop] mode=${mode} job ${data.job_id} ✅ complete`);
+          logger.info(`[BeatMoneyLoop] job ${data.job_id} ✅ complete`);
           return finish({ ...data, ...job });
         }
       }
@@ -1258,11 +1314,8 @@ class BeatMoneyLoopService {
 
   /**
    * Generate a beat WAV — internal MaxCore subsystem ONLY (no other source).
-   * Tier 1: MaxCore Mode C  — AI audio from 8 TB music dataset.
-   * Tier 2: MaxCore Mode B  — HD DSP (plate reverb, stereo, release quality).
-   *
-   * If both MaxCore modes fail, the cycle fails explicitly — we never list a
-   * beat that wasn't produced by the internal MaxCore subsystem.
+   * Uses the native audio contract with live awareness. An unavailable renderer
+   * fails the cycle before publication; no duplicate legacy-mode retry is used.
    *
    * The industry scan (genre / mood / tempo / production styles / viral hooks)
    * is forwarded to MaxCore so generation is biased toward what's trending.
@@ -1283,23 +1336,14 @@ class BeatMoneyLoopService {
       path.join(os.tmpdir(), "beat-money-loop-"),
     );
 
-    // Use the key from the override/scan if present; otherwise pick at random.
-    // IMPORTANT: MaxCore's audio endpoint always returns C Minor regardless of
-    // what is requested — we must use OUR requestedKey as the canonical key and
-    // not let the mc.mcMusicalKey / mc.mcKey field override it.
-    const scanWithKey = scan;
-
     const titleAdj =
       scan.mood ? scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1) : "";
     const titleGenre =
       scan.genre ? scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1) : "";
     const stamp = new Date().toISOString().slice(5, 10).replace("-", "/");
 
-    // ── MaxCore ONLY (Mode C, then Mode B) — no local fallback ──────────────
-    const modeErrors: string[] = [];
-    for (const mode of ["C", "B"] as const) {
-      try {
-        const mc = await this._maxcoreAudio(scanWithKey, mode);
+    try {
+        const mc = await this._maxcoreAudio(scan);
         const filename = `beat_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
@@ -1330,6 +1374,13 @@ class BeatMoneyLoopService {
             `generated audio duration is invalid (${probe.stdout.trim() || "missing"})`,
           );
         }
+        const levels = await runFf("ffmpeg", ["-v", "info", "-i", audioAbsPath,
+          "-af", "volumedetect", "-f", "null", "-"], { timeout: 90_000, maxBuffer: 1024 * 1024 });
+        const meanDb = Number(levels.stderr.match(/mean_volume:\s*(-?[\d.]+) dB/)?.[1]);
+        const peakDb = Number(levels.stderr.match(/max_volume:\s*(-?[\d.]+) dB/)?.[1]);
+        if (!Number.isFinite(meanDb) || !Number.isFinite(peakDb) || (meanDb < -55 && peakDb < -35)) {
+          throw new Error("Generated beat is silent or too quiet to publish");
+        }
         // Keep the audition clip at or below 30 seconds and strictly shorter
         // than short source beats; a 30-second trim of a 16-second source would
         // otherwise copy the entire paid asset.
@@ -1354,8 +1405,7 @@ class BeatMoneyLoopService {
         previewAbsPath = previewAbs;
         logger.info(`[BeatMoneyLoop] 30 s preview trimmed → ${previewFilename}`);
 
-        // Use requestedKey as canonical — MaxCore always returns "C Minor" for
-        // mcMusicalKey/mcKey, so accepting its value would lock every beat.
+        // Listing metadata follows the rendered observations.
         const realBpm = mc.observation.tempo;
         const musicalKey = mc.observation.musicalKey;
         const keyStr = musicalKey ? ` (${musicalKey})` : "";
@@ -1416,7 +1466,7 @@ class BeatMoneyLoopService {
         }
 
         logger.info(
-          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
+          `[BeatMoneyLoop] Beat generated via MaxCore (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
         );
         return {
           observation: mc.observation,
@@ -1425,28 +1475,15 @@ class BeatMoneyLoopService {
           scratchDir: outputDir,
           title,
           audioGenBackend: mc.backend,
-          musicalKey: musicalKey || scan.requestedKey,
+          musicalKey,
         };
-      } catch (err) {
-        const msg = (err as Error).message;
-        modeErrors.push(`mode ${mode}: ${msg}`);
-        logger.warn(
-          `[BeatMoneyLoop] MaxCore mode ${mode} unavailable — ${msg}`,
-        );
-      }
+    } catch (err) {
+      await fsPromises.rm(outputDir, { recursive: true, force: true }).catch(
+        cleanupErr => logger.warn({ err: cleanupErr, outputDir },
+          "[BeatMoneyLoop] Failed to remove unsuccessful generation scratch directory"),
+      );
+      throw new Error(`MaxCore audio generation failed — ${(err as Error).message}`, { cause: err });
     }
-
-    // MaxCore is the ONLY audio source — fail the cycle explicitly.
-    await fsPromises.rm(outputDir, { recursive: true, force: true }).catch(
-      (cleanupErr) =>
-        logger.warn(
-          { err: cleanupErr, outputDir },
-          "[BeatMoneyLoop] Failed to remove unsuccessful generation scratch directory",
-        ),
-    );
-    throw new Error(
-      `MaxCore audio generation failed (MaxCore subsystem is the only allowed source) — ${modeErrors.join("; ")}`,
-    );
   }
 
   /**
@@ -1572,12 +1609,13 @@ class BeatMoneyLoopService {
     previewAbsPath?: string;
     title: string;
     musicalKey?: string;
+    assertBeforePublish?: () => void;
   }): Promise<{
     beatId: string;
     listingId: string;
   }> {
     const adminId = await this._requireAdminId();
-    const keyDisplay = args.musicalKey || "C Minor";
+    const keyDisplay = args.musicalKey || null;
 
     // Read the WAV bytes from the private scratch directory and persist them
     // before creating any buyer-facing rows.
@@ -1590,6 +1628,12 @@ class BeatMoneyLoopService {
       filename,
       "audio/wav",
     );
+    try {
+      if (!(await storageService.downloadFile(storageKey)).equals(buf)) throw new Error("Beat audio read-back mismatch");
+    } catch (err) {
+      await storageService.deleteFile(storageKey).catch(() => {});
+      throw err;
+    }
     const audioUrl = `/api/marketplace/audio/${storageKey}`;
 
     // Upload the 30 s preview clip. Never expose a full-length source file as
@@ -1606,8 +1650,10 @@ class BeatMoneyLoopService {
           previewFilename,
           "audio/wav",
         );
+        if (!(await storageService.downloadFile(previewKey)).equals(previewBuf)) throw new Error("Beat preview read-back mismatch");
         previewUrl = `/api/marketplace/audio/${previewKey}`;
       } catch (previewUploadErr) {
+        if (previewKey) await storageService.deleteFile(previewKey).catch(() => {});
         await storageService.deleteFile(storageKey).catch((cleanupErr) =>
           logger.warn(
             { err: cleanupErr },
@@ -1630,79 +1676,40 @@ class BeatMoneyLoopService {
       );
     }
 
-    // Generate cover artwork via MaxCore image endpoint — fire-and-forget if it
-    // fails, so a slow image render never aborts the upload step.
+    // Optional artwork uses the same fresh awareness and listing owner as audio.
     let artworkUrl: string | null = null;
     let createdArtworkKey: string | null = null;
     try {
       const base = getMaxcoreOriginOrDefault();
       const aiKey = getMaxcoreGenerationKey();
-      const artPrompt =
-        `${args.scan.mood} ${args.scan.genre} music producer — album cover art, cinematic, high contrast`;
-      // Deliberately NOT awareness-injected: /generate/image renders its
-      // input as a literal PIL typographic card (see maxcore-image-pil-card
-      // memory) - unverified extra fields risk bleeding into the rendered
-      // artwork as garbled overlaid text, so this endpoint is excluded from
-      // the awareness cascade rollout rather than risking corrupted cover art.
-      const artRes = await fetch(`${base}/api/generate/image`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(aiKey ? { Authorization: `Bearer ${aiKey}` } : {}),
-        },
-        body: JSON.stringify({
-          prompt: artPrompt,
-          platform: "instagram",
-          style: "cinematic",
-          aspect_ratio: "1:1",
-        }),
-        signal: AbortSignal.timeout(30_000),
+      const body = await prepareGenerationAwareness("/api/generate/image", {
+        prompt: `${args.scan.mood} ${args.scan.genre} music producer album cover art, high contrast`,
+        platform: "instagram", style: "cinematic", aspect_ratio: "1:1",
       });
-      if (artRes.ok) {
-        const artData = (await artRes.json()) as { url?: string; image_url?: string; outputs?: Array<{ url?: string }> };
-        const rawUrl =
-          artData.url ??
-          artData.image_url ??
-          artData.outputs?.[0]?.url;
-        if (rawUrl) {
-          const sourceUrl = /^https?:\/\//i.test(rawUrl)
-            ? rawUrl
-            : `${base}${rawUrl}`;
-          if (new URL(sourceUrl).origin !== new URL(base).origin) {
-            throw new Error("MaxCore returned artwork URL on an unexpected origin");
-          }
-          const download = await fetch(sourceUrl, {
-            headers: aiKey ? { Authorization: `Bearer ${aiKey}` } : {},
-            signal: AbortSignal.timeout(60_000),
-          });
-          if (!download.ok) {
-            throw new Error(`MaxCore artwork download HTTP ${download.status}`);
-          }
-          const contentType = download.headers.get("content-type") ?? "";
-          if (!contentType.startsWith("image/")) {
-            throw new Error(`MaxCore artwork returned unexpected content type: ${contentType || "missing"}`);
-          }
-          createdArtworkKey = await storageService.uploadFile(
-            Buffer.from(await download.arrayBuffer()),
-            "beat-artwork",
-            `beat-artwork-${randomBytes(8).toString("hex")}.${contentType.split("/")[1].split(";")[0]}`,
-            contentType,
-          );
-          artworkUrl = await storageService.getDownloadUrl(createdArtworkKey);
-        }
-      }
-    } catch (_artErr) {
-      // Non-fatal — beat still gets listed without artwork
-      if (createdArtworkKey) {
-        await storageService.deleteFile(createdArtworkKey).catch((cleanupErr) =>
-          logger.warn(
-            { err: cleanupErr },
-            "[BeatMoneyLoop] Could not remove artwork whose public URL could not be created",
-          ),
-        );
-        createdArtworkKey = null;
-      }
-      logger.warn("[BeatMoneyLoop] Artwork generation skipped (non-fatal)");
+      Object.assign(body, { user_id: adminId, userId: adminId, owner_id: adminId });
+      const artRes = await fetch(`${base}/api/generate/image`, {
+        method: "POST", redirect: "manual",
+        headers: { "Content-Type": "application/json", "X-MaxCore-User-Id": adminId,
+          ...(aiKey ? { Authorization: `Bearer ${aiKey}` } : {}) },
+        body: JSON.stringify(body), signal: AbortSignal.timeout(30_000),
+      });
+      if (!artRes.ok) throw new Error(`MaxCore artwork HTTP ${artRes.status}`);
+      const rawUrl = generatedImageUrl(await artRes.json());
+      if (!rawUrl) throw new Error("MaxCore returned no artwork artifact");
+      const saved = await persistGeneratedImage(rawUrl, adminId);
+      const savedKey = decodeURIComponent(saved.url.slice("/api/storage/file/".length));
+      const image = await storageService.downloadFile(savedKey);
+      // Publish only this validated cover through the image-only storefront
+      // route; the generated owner asset and paid audio retain their grants.
+      createdArtworkKey = await storageService.uploadFile(image, "storefronts/beat-artwork",
+        `cover-${randomBytes(8).toString("hex")}.${saved.format}`,
+        saved.format === "jpg" ? "image/jpeg" : `image/${saved.format}`);
+      if (!(await storageService.downloadFile(createdArtworkKey)).equals(image)) throw new Error("Beat artwork read-back mismatch");
+      artworkUrl = `/api/storage/public/${encodeURIComponent(createdArtworkKey)}`;
+    } catch (artErr) {
+      if (createdArtworkKey) await storageService.deleteFile(createdArtworkKey).catch(() => {});
+      createdArtworkKey = null;
+      logger.warn({ err: artErr }, "[BeatMoneyLoop] Artwork generation skipped (non-fatal)");
     }
 
     const tags = Array.from(
@@ -1721,6 +1728,7 @@ class BeatMoneyLoopService {
     // writes atomic; a failed split/listing must fail the cycle rather than
     // leave an invisible beat or a chargeable listing with no booked owner.
     try {
+      args.assertBeforePublish?.();
       const created = await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(beats)
@@ -2201,19 +2209,16 @@ class BeatMoneyLoopService {
     nextRunAt: Date;
     cadence: number;
   }): Promise<void> {
-    const state = await this._ensureStateRow();
-    const consecutiveFailures = args.success
-      ? 0
-      : state.consecutiveFailures + 1;
+    await this._ensureStateRow();
     await db
       .update(beatMoneyLoopState)
       .set({
-        nextRunAt: args.nextRunAt,
+        nextRunAt: sql<Date | null>`CASE WHEN ${beatMoneyLoopState.enabled} THEN ${args.nextRunAt.toISOString()}::timestamp ELSE NULL END`,
         lastCycleAt: new Date(),
-        totalCycles: state.totalCycles + 1,
-        successfulCycles: state.successfulCycles + (args.success ? 1 : 0),
-        failedCycles: state.failedCycles + (args.success ? 0 : 1),
-        consecutiveFailures,
+        totalCycles: sql<number>`${beatMoneyLoopState.totalCycles} + 1`,
+        successfulCycles: sql<number>`${beatMoneyLoopState.successfulCycles} + ${args.success ? 1 : 0}`,
+        failedCycles: sql<number>`${beatMoneyLoopState.failedCycles} + ${args.success ? 0 : 1}`,
+        consecutiveFailures: args.success ? 0 : sql<number>`${beatMoneyLoopState.consecutiveFailures} + 1`,
         currentCadenceMs: args.cadence,
         updatedAt: new Date(),
       })

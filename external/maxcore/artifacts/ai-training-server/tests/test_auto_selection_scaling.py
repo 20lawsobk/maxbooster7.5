@@ -16,6 +16,10 @@ PEAK = 'public-peak-shortform-v1'
 
 class SelectionScalingTests(unittest.TestCase):
     def setUp(self):
+        from ai_model.awareness import bind
+        from test_generation_route_bindings import snapshot
+        self.snapshot = snapshot()
+        self.enterContext(bind(self.snapshot))
         selection._OPERATIONAL_CACHE.clear()
 
     def candidate(self, root, name, observed, peak=True):
@@ -89,6 +93,33 @@ class SelectionScalingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch.object(registry,'REGISTRY',Path(folder)/'registry'), patch.object(selection,'_reviewed_selection') as legacy:
             self.assertEqual(selection.auto_select(learning_policy=PEAK)['state'],'waiting_for_candidate')
             legacy.assert_not_called()
+
+    def test_operational_cache_is_scoped_to_the_actual_live_scan(self):
+        from ai_model.awareness import bind
+        from test_generation_route_bindings import snapshot
+        with tempfile.TemporaryDirectory() as folder:
+            run = self.candidate(Path(folder), 'live-fresh-scan', 1)
+            checkpoint = registry.sha256(run / 'candidate.pt')
+            with patch('ai_model.model.candidate_serving.create_candidate_adapter', return_value=object()), \
+                 patch('ai_model.generation.capability.verify_text_capability', return_value={}) as probe:
+                self.assertTrue(selection._operational_candidate(str(run), checkpoint))
+                self.assertTrue(selection._operational_candidate(str(run), checkpoint))
+                self.assertEqual(probe.call_count, 1)
+                changed = snapshot('updated-public-observations')
+                with bind(changed):
+                    self.assertTrue(selection._operational_candidate(str(run), checkpoint))
+                self.assertEqual(probe.call_count, 2)
+                self.assertEqual(probe.call_args.kwargs['snapshot'].id, changed.id)
+
+    def test_missing_scan_is_not_cached_as_a_checkpoint_failure(self):
+        with tempfile.TemporaryDirectory() as folder:
+            run = self.candidate(Path(folder), 'live-retry-awareness', 1)
+            checkpoint = registry.sha256(run / 'candidate.pt')
+            with patch('ai_model.awareness.current_snapshot', return_value=None), \
+                 patch('ai_model.model.candidate_serving.create_candidate_adapter') as factory:
+                self.assertFalse(selection._operational_candidate(str(run), checkpoint))
+                factory.assert_not_called()
+                self.assertEqual(len(selection._OPERATIONAL_CACHE), 0)
 
     def test_deadline_interrupts_actual_kernel_generation(self):
         model = PublicContentTransformer(context=128,width=128,layers=1)

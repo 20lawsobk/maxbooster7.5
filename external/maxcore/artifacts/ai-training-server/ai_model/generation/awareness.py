@@ -59,7 +59,7 @@ def snapshot_hash():
 
 
 def sampling_snapshot():
-    """Use the plan's captured scan when present; never make its absence a gate."""
+    """Preserve optional legacy context; captured live scans must stay valid."""
     from .plan import active_plan
     from ai_model.awareness import Snapshot, current_snapshot
     plan = active_plan.get()
@@ -70,5 +70,6 @@ def sampling_snapshot():
         return None
     try:
         return Snapshot.parse(snapshot_data)
-    except Exception:
-        return None
+    except Exception as exc:
+        from ai_model.awareness import AwarenessUnavailable
+        raise AwarenessUnavailable("Generation plan awareness expired or is invalid") from exc

@@ -4402,8 +4402,8 @@ def _planned_generation(modality, *, specification=False, deterministic_planner=
                         scope.enter_context(bind(snapshot))
                     except AwarenessUnavailable:
                         snapshot = None
-                if model_independent and snapshot is None:
-                    raise AwarenessUnavailable("Live awareness unavailable for model-independent generation")
+                if (model_independent or globals().get("_live_serving_model") is not None) and snapshot is None:
+                    raise AwarenessUnavailable("Live awareness unavailable for generation: fresh public snapshot required")
                 pinned_release = None
                 if not model_independent and globals().get("_live_serving_model") is not None:
                     from ai_model.generation.live_serving import LiveModelUnavailable

@@ -39,7 +39,7 @@ test("deployment runs the capsule-aware build and production launcher", () => {
 
 test("Nix profile retains the lightweight required system dependencies", () => {
   const deps = new Set([...nix.matchAll(/pkgs\.([a-zA-Z0-9_]+)/g)].map(m => m[1]));
-  for (const name of ["postgresql_17", "xz", "zstd", "libarchive", "psmisc", "redis", "dejavu_fonts", "ffmpeg"]) {
+  for (const name of ["nodejs_22", "nix", "postgresql_17", "xz", "zstd", "libarchive", "psmisc", "redis", "dejavu_fonts", "ffmpeg"]) {
     assert.ok(deps.has(name), `replit.nix is missing ${name}`);
   }
   assert.ok(!deps.has("cudaPackages"), "avoid persistent heavy CUDA closure");

@@ -1,4 +1,5 @@
 import { logger } from "../logger";
+import { TrackPluginChain, type TrackInsert } from "./TrackPluginChain";
 
 export interface WaveformPeakLevel {
   samplesPerPeak: number;
@@ -72,6 +73,7 @@ export class AudioWorkletEngine {
     string,
     {
       gain: GainNode;
+      inserts: TrackPluginChain;
       panner: StereoPannerNode;
       analyzer: AnalyserNode;
       muted: boolean;
@@ -308,6 +310,7 @@ export class AudioWorkletEngine {
     analyzer?.connect(this.masterGain);
 
     this.trackNodes.set(trackId, {
+      inserts: new TrackPluginChain(this.audioContext, gain),
       gain,
       panner,
       analyzer,
@@ -323,12 +326,19 @@ export class AudioWorkletEngine {
 
     this.stopTrackSources(trackId);
 
+    nodes.inserts.destroy();
     nodes?.analyzer.disconnect();
     nodes?.panner.disconnect();
     nodes?.gain.disconnect();
 
     this.trackNodes.delete(trackId);
     this.meteringData.delete(trackId);
+  }
+
+  setTrackPlugins(trackId: string, plugins: TrackInsert[]): string[] {
+    const track = this.trackNodes.get(trackId);
+    if (!track) return plugins.map(plugin => plugin.id);
+    return track.inserts.sync(plugins);
   }
 
   setTrackVolume(trackId: string, volume: number): void {
@@ -379,6 +389,7 @@ export class AudioWorkletEngine {
     const hasSolo = Array.from(this.trackNodes.values()).some((n) => n?.solo);
 
     this.trackNodes.forEach((nodes, _trackId) => {
+      nodes.inserts.destroy();
       let shouldMute = nodes?.muted;
 
       if (hasSolo && !nodes?.solo) {
@@ -488,7 +499,7 @@ export class AudioWorkletEngine {
     }
 
     source?.connect(clipGain);
-    clipGain?.connect(nodes?.gain);
+    clipGain?.connect(nodes.inserts.input);
 
     source?.start(
       this.audioContext.currentTime + startTimeOffset,

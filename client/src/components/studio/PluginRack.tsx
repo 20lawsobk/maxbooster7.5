@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Power, Trash2, GripVertical, Plus, Waves, Activ
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { Knob } from "./Knob";
+import { supportsBrowserEffect } from "@/lib/daw/TrackPluginChain";
 import { audioEngine } from "@/lib/audioEngine";
 import {
   PluginControlDialog,
@@ -308,6 +309,7 @@ interface PluginRackProps {
   plugins: PluginInstance[];
   onPluginsChange: (plugins: PluginInstance[]) => void;
   maxPlugins?: number;
+  managedByPlaybackEngine?: boolean;
 }
 
 export function PluginRack({
@@ -315,6 +317,7 @@ export function PluginRack({
   plugins,
   onPluginsChange,
   maxPlugins = 8,
+  managedByPlaybackEngine = false,
 }: PluginRackProps) {
   const [_draggedPlugin, _setDraggedPlugin] = useState<string | null>(null);
   const [controlDialogOpen, setControlDialogOpen] = useState(false);
@@ -323,6 +326,7 @@ export function PluginRack({
 
   const applyPluginToAudioEngine = useCallback(
     (plugin: PluginInstance) => {
+      if (managedByPlaybackEngine) return;
       switch (plugin.type) {
         case "eq":
           audioEngine.updateTrackEQ(trackId, {
@@ -456,7 +460,7 @@ export function PluginRack({
           break;
       }
     },
-    [trackId],
+    [trackId, managedByPlaybackEngine],
   );
 
   const openControlDialog = useCallback((plugin: PluginInstance) => {
@@ -555,7 +559,7 @@ export function PluginRack({
 
   const addPlugin = useCallback(
     (type: PluginType) => {
-      if (plugins.length >= maxPlugins) return;
+      if (plugins.length >= maxPlugins || (managedByPlaybackEngine && !supportsBrowserEffect(type))) return;
 
       const definition = PLUGIN_DEFINITIONS.find((p) => p.type === type);
       if (!definition) return;
@@ -584,7 +588,7 @@ export function PluginRack({
 
       onPluginsChange([...plugins, newPlugin]);
     },
-    [plugins, maxPlugins, onPluginsChange],
+    [plugins, maxPlugins, onPluginsChange, managedByPlaybackEngine],
   );
 
   const removePlugin = useCallback(
@@ -696,6 +700,7 @@ export function PluginRack({
                     return (
                       <DropdownMenuItem
                         key={pluginType}
+                        disabled={managedByPlaybackEngine && !supportsBrowserEffect(pluginType)}
                         className="text-xs"
                         onClick={() => addPlugin(pluginType as PluginType)}
                       >

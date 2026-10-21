@@ -12,11 +12,18 @@ import { db } from "../../db.js";
 import { beatMoneyLoopCycles, beatMoneyLoopState } from "@shared/schema";
 import { desc, eq, gte } from "drizzle-orm";
 import { logger } from "../../logger.js";
+import { z } from "zod";
 
 const router = Router();
 
 router.use(requireAdmin);
 router.use(require2FA);
+
+const cycleOverrides = z.object({
+  genre: z.string().trim().min(1).max(100).optional(),
+  mood: z.string().trim().min(1).max(100).optional(),
+  key: z.string().trim().regex(/^[A-G](?:#|b)?(?:\s+(?:major|minor))?$/i).optional(),
+}).strict();
 
 router.get("/status", async (_req, res) => {
   try {
@@ -55,11 +62,9 @@ router.post("/run-now", async (req, res) => {
   // immediately; the client tracks progress via GET /status and /cycles.
   //
   // Optional body: { genre, mood, key } to override the random scan selection.
-  const { genre, mood, key } = (req.body ?? {}) as {
-    genre?: string;
-    mood?: string;
-    key?: string;
-  };
+  const parsed = cycleOverrides.safeParse(req.body ?? {});
+  if (!parsed.success) return res.status(400).json({ error: "Invalid beat generation preferences", issues: parsed.error.issues });
+  const { genre, mood, key } = parsed.data;
   const overrides = (genre || mood || key) ? { genre, mood, key } : undefined;
   try {
     if (beatMoneyLoopService.isCycleInFlight()) {

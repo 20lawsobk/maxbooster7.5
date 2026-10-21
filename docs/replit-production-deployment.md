@@ -34,7 +34,11 @@ capsules and removes build inputs in Replit's disposable Publishing copy.
 **Do not run `build.sh` in the editor checkout or a source workspace.** Normal
 source builds use `npm run build`.
 
-The Node 22 and Python 3.11 modules supply editor/build tools. Publishing carries
+The Node 22 and Python 3.11 modules supply editor/build tools. `replit.nix` also
+declares `nodejs_22` (including npm), a `nodejs` executable alias, and `nix`
+(including `nix-shell`). Run `npm run check:tools` to verify all five requested
+commands, matching Node aliases, Nix expression evaluation and shell execution.
+Publishing carries
 the policy-pinned portable Node runtime, whose official archive SHA256 is checked
 before installation. `start.sh` explicitly selects production mode; the editor's
 `NODE_ENV=development` default does not select production behavior.
@@ -94,3 +98,10 @@ Reviewed October 20, 2026:
 - [Secrets, Configurations and Production app secrets](https://docs.replit.com/core-concepts/project-editor/app-setup/secrets)
 - [Publishing deployment types](https://docs.replit.com/features/publishing/deployment-types)
 - [Publishing machine configuration](https://docs.replit.com/features/publishing/machine-configuration)
+
+For the native plugin Linux build, the Nix profile also supplies CMake, GCC,
+pkg-config, binutils, ALSA, FreeType, Fontconfig, OpenGL and X11 development
+libraries. `npm run vst3:build:linux -- --project /path/to/original.jucer --juce /path/to/JUCE`
+uses the original source project. See [native build status](../native/vst3/README.md);
+the current `VST3/` directory has no original C++ source and cannot produce a
+Linux plugin until that source is restored. The native host remains unavailable.

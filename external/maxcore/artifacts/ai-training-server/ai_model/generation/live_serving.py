@@ -4,7 +4,7 @@ Certified public observations are selected automatically without signatures.
 Traditional corpus selection retains its review policy. Requests pin one
 immutable adapter even during a switch.
 """
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from contextvars import ContextVar
 import fcntl
 import hashlib
@@ -156,7 +156,17 @@ class LiveLearningLoop:
 
     def _refresh_release(self):
         from .release import load_selected_release
+        from ai_model.awareness import bind, AwarenessUnavailable
+        scope = ExitStack()
         try:
+            # Selection and final release admission must see the same scan as
+            # this learning loop's actual awareness engine, including workers
+            # running outside an HTTP request context.
+            snapshot = self.engine_factory().current_snapshot()
+            if snapshot is not None:
+                scope.enter_context(bind(snapshot))
+            elif self.peak_content:
+                raise AwarenessUnavailable("Fresh public awareness required for live release admission")
             load_release = True
             selected_checkpoint = None
             if self.loader is None:
@@ -192,6 +202,8 @@ class LiveLearningLoop:
                             "release_error": type(exc).__name__,
                             "unavailable_reason": (None if self.model.available else
                                 "no_operationally_capable_certified_public_live_candidate")}
+        finally:
+            scope.close()
         if self.notify and not self._stop.is_set():
             self.notify(self.model.available, {**self.model.status(), "live_learning": self.status()})
 

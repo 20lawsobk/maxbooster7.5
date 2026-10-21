@@ -5,7 +5,12 @@ import { z } from "zod";
 import { logger } from "../logger.js";
 import { vstPluginBridge } from "../services/vstPluginBridge";
 
+import { repositoryVstInventory, NativeVstHostUnavailable } from "../services/repositoryVstInventory.js";
 const router = Router();
+router.get("/repository", requireAuth, async (_req, res) => {
+  try { res.json(await repositoryVstInventory()); }
+  catch { res.status(500).json({ error: "Repository plugin inventory unavailable" }); }
+});
 
 const scanPathsSchema = z.object({
   paths: z.array(z.string()).optional(),
@@ -38,6 +43,7 @@ router.get("/status", requireAuth, async (_req, res) => {
     res.json({
       success: true,
       bridgeReady: stats.bridgeReady,
+      nativeProcessing: false,
       desktopConnected: stats.desktopConnected,
       totalPlugins: stats.totalPlugins,
       totalInstances: stats.totalInstances,
@@ -46,7 +52,7 @@ router.get("/status", requireAuth, async (_req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error getting VST bridge status:");
-    res.status(500).json({ error: "Failed to get VST bridge status" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to get VST bridge status" });
   }
 });
 
@@ -59,7 +65,7 @@ router.post("/initialize", requireAuth, async (_req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error initializing VST bridge:");
-    res.status(500).json({ error: "Failed to initialize VST bridge" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to initialize VST bridge" });
   }
 });
 
@@ -95,7 +101,7 @@ router.post("/connect-desktop", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res.status(500).json({ error: "Failed to connect desktop app" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to connect desktop app" });
   }
 });
 
@@ -108,7 +114,7 @@ router.post("/disconnect-desktop", requireAuth, async (_req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error disconnecting desktop app:");
-    res.status(500).json({ error: "Failed to disconnect desktop app" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to disconnect desktop app" });
   }
 });
 
@@ -128,7 +134,7 @@ router.post("/scan", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res.status(500).json({ error: "Failed to scan VST plugins" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to scan VST plugins" });
   }
 });
 
@@ -155,7 +161,7 @@ router.get("/plugins", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching VST plugins:");
-    res.status(500).json({ error: "Failed to fetch VST plugins" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to fetch VST plugins" });
   }
 });
 
@@ -174,7 +180,7 @@ router.get("/plugins/:id", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching VST plugin details:");
-    res.status(500).json({ error: "Failed to fetch plugin details" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to fetch plugin details" });
   }
 });
 
@@ -202,7 +208,7 @@ router.post("/instances", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res.status(500).json({ error: "Failed to create VST instance" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to create VST instance" });
   }
 });
 
@@ -227,7 +233,7 @@ router.get("/instances", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching VST instances:");
-    res.status(500).json({ error: "Failed to fetch VST instances" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to fetch VST instances" });
   }
 });
 
@@ -246,7 +252,7 @@ router.get("/instances/:id", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching VST instance:");
-    res.status(500).json({ error: "Failed to fetch VST instance" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to fetch VST instance" });
   }
 });
 
@@ -268,7 +274,7 @@ router.put("/instances/:id/parameters", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res.status(500).json({ error: "Failed to update VST parameters" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to update VST parameters" });
   }
 });
 
@@ -289,7 +295,7 @@ router.put("/instances/:id/bypass", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error setting VST bypass:");
-    res.status(500).json({ error: "Failed to set VST bypass" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to set VST bypass" });
   }
 });
 
@@ -311,7 +317,7 @@ router.post("/instances/:id/program", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res.status(500).json({ error: "Failed to load VST program" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to load VST program" });
   }
 });
 
@@ -326,7 +332,7 @@ router.post("/instances/:id/editor/open", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error opening VST editor:");
-    res.status(500).json({ error: "Failed to open VST editor" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to open VST editor" });
   }
 });
 
@@ -341,7 +347,7 @@ router.post("/instances/:id/editor/close", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error closing VST editor:");
-    res.status(500).json({ error: "Failed to close VST editor" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to close VST editor" });
   }
 });
 
@@ -353,7 +359,7 @@ router.delete("/instances/:id", requireAuth, async (req, res) => {
     res.status(204).send();
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error deleting VST instance:");
-    res.status(500).json({ error: "Failed to delete VST instance" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to delete VST instance" });
   }
 });
 
@@ -394,7 +400,7 @@ router.get("/formats", requireAuth, async (_req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching plugin formats:");
-    res.status(500).json({ error: "Failed to fetch plugin formats" });
+    res.status(error instanceof NativeVstHostUnavailable ? 503 : 500).json({ error: "Failed to fetch plugin formats" });
   }
 });
 
