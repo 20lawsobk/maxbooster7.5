@@ -5,6 +5,7 @@ import { getNewPasswordError } from "../../shared/passwordPolicy";
 import ts from "typescript";
 import { ACCOUNT_AGE_REQUIREMENT, MINIMUM_ACCOUNT_AGE, calculateAgeUtc, getAccountEligibilityError, parseBirthdate } from "../../shared/agePolicy";
 import { createCheckoutSessionSchema, registerSchema } from "../../server/schemas/index";
+import { getNewPasswordError } from "../../shared/passwordPolicy";
 
 const birthday = new Date("2026-06-15T00:00:00.000Z");
 
@@ -89,6 +90,7 @@ function responseHarness() {
 
 function backendHarness(existingAccount = false) {
   const created: any[] = [];
+  const consents: any[][] = [];
   let storedUser: any = existingAccount
     ? { id: "existing-user", email: "age-unit@example.test", googleId: "google-unit", twoFactorEnabled: false }
     : undefined;
@@ -106,10 +108,33 @@ function backendHarness(existingAccount = false) {
     sessionSave: async () => {}, sessionRegenerate: async () => {},
     assertRegistrationEnabled: async () => {},
     sessionAuthority: async () => ({ issue: async () => "unit-generation" }),
+    bcrypt: { hash: async () => "fixture-bcrypt-hash" },
+    consentService: { recordRegistrationConsents: async (...args: any[]) => { consents.push(args); } },
+    require: () => ({ assertRegistrationEnabled: async () => {}, userPocketService: { initializeUserStorage: async () => {} } }),
+    users: {},
+    db: { transaction: async (operation: (tx: any) => Promise<any>) => {
+      const before = storedUser;
+      const count = created.length;
+      try {
+        return await operation({
+          execute: async () => {},
+          insert: () => ({ values: (user: any) => ({ returning: async () => {
+            created.push(user);
+            storedUser = { ...user, id: "created-unit", twoFactorEnabled: false };
+            return [storedUser];
+          } }) }),
+        });
+      } catch (error) {
+        storedUser = before;
+        created.splice(count);
+        throw error;
+      }
+    } },
     storage: {
       getUserByEmail: async () => storedUser,
       getUserByUsername: async () => undefined,
       getUser: async () => storedUser,
+      updateUser: async (_id: string, patch: any) => { storedUser = { ...storedUser, ...patch }; return storedUser; },
       createUser: async (user: any) => {
         created.push(user);
         storedUser = { ...user, id: "created-unit", twoFactorEnabled: false };
@@ -130,11 +155,64 @@ function backendHarness(existingAccount = false) {
     const context = vm.createContext({ ...scope });
     vm.runInContext(routeCallback(method, path), context);
     const response = responseHarness();
-    await (context.handler as Function)({ body, query, session }, response);
+    await (context.handler as Function)({ body, query, session, ip: "127.0.0.1", get: () => "fixture-agent" }, response);
     return response;
   }
-  return { invoke, session, created, checkoutSession };
+  return { invoke, session, created, checkoutSession, consents, scope };
 }
+
+describe("Registration password and paid consent boundaries (offline route fixtures)", () => {
+  it.each(["a".repeat(73), "é".repeat(37), {}, 42])("rejects unsafe password %j before account or provider writes", async password => {
+    const h = backendHarness();
+    const signup = await h.invoke("post", "/api/auth/register", {
+      birthdate: "1990-06-15", email: "age-unit@example.test", username: "age_unit", password,
+    });
+    expect(signup.statusCode).toBe(400);
+    const paid = await h.invoke("post", "/api/register-after-payment", {
+      sessionId: "cs_fixture", password, tosAccepted: true, privacyAccepted: true,
+    });
+    expect(paid.statusCode).toBe(400);
+    expect(h.created).toEqual([]);
+    expect(h.consents).toEqual([]);
+  });
+
+  it("records verified birthdate and explicit marketing choice before establishing the paid session", async () => {
+    const h = backendHarness();
+    h.checkoutSession.metadata.birthdate = "1990-06-15";
+    const result = await h.invoke("post", "/api/register-after-payment", {
+      sessionId: "cs_fixture", password: "Password1!", tosAccepted: true, privacyAccepted: true, marketingConsent: true,
+    });
+    expect(result.statusCode).toBe(200);
+    expect(result.body.consentRecorded).toBe(true);
+    expect(h.consents).toEqual([["created-unit", {
+      birthdate: "1990-06-15", tosAccepted: true, privacyAccepted: true, marketingConsent: true,
+    }, "127.0.0.1", "fixture-agent", expect.objectContaining({ execute: expect.any(Function) })]]);
+    expect(h.session.userId).toBe("created-unit");
+  });
+
+  it("rolls back a failed consent write and retries the paid checkout without a second account", async () => {
+    const h = backendHarness();
+    h.checkoutSession.metadata.birthdate = "1990-06-15";
+    let attempts = 0;
+    h.scope.consentService.recordRegistrationConsents = async (...args: any[]) => {
+      if (++attempts === 1) throw new Error("fixture persistence failure");
+      h.consents.push(args);
+    };
+    const body = {
+      sessionId: "cs_fixture", password: "Password1!", tosAccepted: true, privacyAccepted: true,
+    };
+    const result = await h.invoke("post", "/api/register-after-payment", body);
+    expect(result.statusCode).toBe(500);
+    expect(h.created).toHaveLength(0);
+    expect(h.session.userId).toBeUndefined();
+    const retried = await h.invoke("post", "/api/register-after-payment", body);
+    expect(retried.statusCode).toBe(200);
+    expect(retried.body.consentRecorded).toBe(true);
+    expect(h.created).toHaveLength(1);
+    expect(h.consents).toHaveLength(1);
+    expect(h.session.userId).toBe("created-unit");
+  });
+});
 
 describe("Actual account-creation route eligibility gates (offline stubs)", () => {
   it.each([undefined, "2010-02-30", "2999-01-01", "2020-01-01"])(

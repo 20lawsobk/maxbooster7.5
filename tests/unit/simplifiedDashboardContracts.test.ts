@@ -135,6 +135,7 @@ describe("simplified dashboard route contract", () => {
     expect(page).toContain("hasDashboardPaidAccess");
     expect(page).toContain("preferSimplifiedView: false");
     expect(page).toContain("handleUpgrade");
+    expect(page).not.toContain("buildFullModeUpgradePayload");
     expect(page).toContain('queryKey: ["/api/auth/me"]');
 
     expect(serverGuard).toContain('"/api/dashboard/comprehensive"');

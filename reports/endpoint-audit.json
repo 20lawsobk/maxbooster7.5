@@ -1,24 +1,36 @@
 {
   "meta": {
     "mode": "static",
-    "backendCount": 2389,
-    "uniqueBackendCount": 2369,
-    "frontendCallCount": 1199,
+    "backendCount": 2390,
+    "uniqueBackendCount": 2370,
+    "frontendCallCount": 1197,
     "uniqueFrontendCount": 931,
     "matchedCount": 931,
     "unmatchedConfirmedCount": 0,
     "methodUnconfirmedCount": 0,
-    "frontendReferenceCount": 941,
+    "frontendReferenceCount": 948,
     "externalReferenceCount": 42,
-    "spaReferenceCount": 257,
-    "unresolvedDynamicCount": 12,
+    "spaReferenceCount": 258,
+    "unresolvedDynamicCount": 13,
     "dynamicFrontendResolvedCount": 12,
-    "dynamicFrontendUnverifiedCount": 6,
+    "dynamicFrontendUnverifiedCount": 7,
     "mountedRouterCount": 157
   },
   "findings": [
     {
       "id": "dynamic-unresolved-1",
+      "class": "dynamic-unresolved",
+      "severity": "low",
+      "method": "POST",
+      "path": null,
+      "locations": [
+        "client/src/components/content/LocalMediaRenderer.tsx:180"
+      ],
+      "description": "The frontend calls apiRequest with computed URL variable request; this audit could not resolve it to a concrete API path.",
+      "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
+    },
+    {
+      "id": "dynamic-unresolved-2",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": null,
@@ -30,7 +42,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     },
     {
-      "id": "dynamic-unresolved-2",
+      "id": "dynamic-unresolved-3",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": "GET",
@@ -42,7 +54,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     },
     {
-      "id": "dynamic-unresolved-3",
+      "id": "dynamic-unresolved-4",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": null,
@@ -54,7 +66,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     },
     {
-      "id": "dynamic-unresolved-4",
+      "id": "dynamic-unresolved-5",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": null,
@@ -66,7 +78,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     },
     {
-      "id": "dynamic-unresolved-5",
+      "id": "dynamic-unresolved-6",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": null,
@@ -78,7 +90,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     },
     {
-      "id": "dynamic-unresolved-6",
+      "id": "dynamic-unresolved-7",
       "class": "dynamic-unresolved",
       "severity": "low",
       "method": "GET",
@@ -90,7 +102,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-10-20T23:50:27.405Z",
+  "generatedAt": "2026-10-21T10:55:30.362Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -2356,7 +2368,7 @@
       "method": "GET",
       "rawPath": "/campaigns",
       "file": "server/routes/advertising.ts",
-      "line": 341,
+      "line": 300,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2374,7 +2386,7 @@
       "method": "GET",
       "rawPath": "/ai-insights",
       "file": "server/routes/advertising.ts",
-      "line": 356,
+      "line": 315,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2392,7 +2404,7 @@
       "method": "GET",
       "rawPath": "/audience-segments",
       "file": "server/routes/advertising.ts",
-      "line": 384,
+      "line": 343,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2410,7 +2422,7 @@
       "method": "GET",
       "rawPath": "/creative-fatigue",
       "file": "server/routes/advertising.ts",
-      "line": 399,
+      "line": 358,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2428,7 +2440,7 @@
       "method": "PATCH",
       "rawPath": "/creatives/:creativeId",
       "file": "server/routes/advertising.ts",
-      "line": 414,
+      "line": 373,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2446,7 +2458,7 @@
       "method": "GET",
       "rawPath": "/bidding-strategies",
       "file": "server/routes/advertising.ts",
-      "line": 485,
+      "line": 444,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2464,7 +2476,7 @@
       "method": "GET",
       "rawPath": "/lookalike-audiences",
       "file": "server/routes/advertising.ts",
-      "line": 500,
+      "line": 459,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2482,7 +2494,7 @@
       "method": "POST",
       "rawPath": "/lookalike-audiences",
       "file": "server/routes/advertising.ts",
-      "line": 515,
+      "line": 474,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2500,7 +2512,7 @@
       "method": "PATCH",
       "rawPath": "/lookalike-audiences/:id",
       "file": "server/routes/advertising.ts",
-      "line": 555,
+      "line": 514,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2518,7 +2530,7 @@
       "method": "GET",
       "rawPath": "/forecasts",
       "file": "server/routes/advertising.ts",
-      "line": 598,
+      "line": 557,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2536,7 +2548,7 @@
       "method": "GET",
       "rawPath": "/competitor-insights",
       "file": "server/routes/advertising.ts",
-      "line": 613,
+      "line": 572,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2554,7 +2566,7 @@
       "method": "GET",
       "rawPath": "/ab-tests",
       "file": "server/routes/advertising.ts",
-      "line": 628,
+      "line": 587,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2572,7 +2584,7 @@
       "method": "POST",
       "rawPath": "/campaigns",
       "file": "server/routes/advertising.ts",
-      "line": 710,
+      "line": 669,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2590,7 +2602,7 @@
       "method": "POST",
       "rawPath": "/campaigns/:id/activate",
       "file": "server/routes/advertising.ts",
-      "line": 941,
+      "line": 900,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2608,7 +2620,7 @@
       "method": "PATCH",
       "rawPath": "/campaigns/:id",
       "file": "server/routes/advertising.ts",
-      "line": 956,
+      "line": 915,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2626,7 +2638,7 @@
       "method": "DELETE",
       "rawPath": "/campaigns/:id",
       "file": "server/routes/advertising.ts",
-      "line": 1094,
+      "line": 1053,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2644,7 +2656,7 @@
       "method": "POST",
       "rawPath": "/creatives",
       "file": "server/routes/advertising.ts",
-      "line": 1131,
+      "line": 1090,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2662,7 +2674,7 @@
       "method": "POST",
       "rawPath": "/upload-image",
       "file": "server/routes/advertising.ts",
-      "line": 1192,
+      "line": 1151,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2680,7 +2692,7 @@
       "method": "GET",
       "rawPath": "/status",
       "file": "server/routes/advertising.ts",
-      "line": 1219,
+      "line": 1178,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2700,7 +2712,7 @@
       "method": "POST",
       "rawPath": "/start",
       "file": "server/routes/advertising.ts",
-      "line": 1277,
+      "line": 1236,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2718,7 +2730,7 @@
       "method": "POST",
       "rawPath": "/stop",
       "file": "server/routes/advertising.ts",
-      "line": 1330,
+      "line": 1289,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2736,7 +2748,7 @@
       "method": "POST",
       "rawPath": "/configure",
       "file": "server/routes/advertising.ts",
-      "line": 1382,
+      "line": 1341,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2754,7 +2766,7 @@
       "method": "GET",
       "rawPath": "/variants",
       "file": "server/routes/advertising.ts",
-      "line": 1453,
+      "line": 1412,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2772,7 +2784,7 @@
       "method": "GET",
       "rawPath": "/attribution/channels",
       "file": "server/routes/advertising.ts",
-      "line": 1514,
+      "line": 1473,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2790,7 +2802,7 @@
       "method": "GET",
       "rawPath": "/attribution/paths",
       "file": "server/routes/advertising.ts",
-      "line": 1589,
+      "line": 1548,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2808,7 +2820,7 @@
       "method": "GET",
       "rawPath": "/dashboard/attribution",
       "file": "server/routes/advertising.ts",
-      "line": 1622,
+      "line": 1581,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2826,7 +2838,7 @@
       "method": "GET",
       "rawPath": "/dashboard/paths",
       "file": "server/routes/advertising.ts",
-      "line": 1669,
+      "line": 1628,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2844,7 +2856,7 @@
       "method": "GET",
       "rawPath": "/roas/audience-segments",
       "file": "server/routes/advertising.ts",
-      "line": 1695,
+      "line": 1654,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2862,7 +2874,7 @@
       "method": "GET",
       "rawPath": "/roas/campaigns",
       "file": "server/routes/advertising.ts",
-      "line": 1743,
+      "line": 1702,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2880,7 +2892,7 @@
       "method": "GET",
       "rawPath": "/roas/creative-fatigue-analysis",
       "file": "server/routes/advertising.ts",
-      "line": 1763,
+      "line": 1722,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2898,7 +2910,7 @@
       "method": "GET",
       "rawPath": "/roas/forecast",
       "file": "server/routes/advertising.ts",
-      "line": 1826,
+      "line": 1785,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2916,7 +2928,7 @@
       "method": "POST",
       "rawPath": "/optimize-campaign",
       "file": "server/routes/advertising.ts",
-      "line": 1860,
+      "line": 1819,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2934,7 +2946,7 @@
       "method": "POST",
       "rawPath": "/generate-content",
       "file": "server/routes/advertising.ts",
-      "line": 2035,
+      "line": 1994,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2952,7 +2964,7 @@
       "method": "POST",
       "rawPath": "/generate-campaign",
       "file": "server/routes/advertising.ts",
-      "line": 2159,
+      "line": 2118,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2970,7 +2982,7 @@
       "method": "POST",
       "rawPath": "/generate-video",
       "file": "server/routes/advertising.ts",
-      "line": 2442,
+      "line": 2401,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -2988,7 +3000,7 @@
       "method": "POST",
       "rawPath": "/generate-image",
       "file": "server/routes/advertising.ts",
-      "line": 2521,
+      "line": 2480,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3006,7 +3018,7 @@
       "method": "GET",
       "rawPath": "/video-templates",
       "file": "server/routes/advertising.ts",
-      "line": 2635,
+      "line": 2593,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3582,7 +3594,7 @@
       "method": "POST",
       "rawPath": "/content/generate",
       "file": "server/routes/ai.ts",
-      "line": 27,
+      "line": 28,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3600,7 +3612,7 @@
       "method": "POST",
       "rawPath": "/sentiment/analyze",
       "file": "server/routes/ai.ts",
-      "line": 111,
+      "line": 112,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3618,7 +3630,7 @@
       "method": "POST",
       "rawPath": "/recommendations/get",
       "file": "server/routes/ai.ts",
-      "line": 160,
+      "line": 161,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3636,7 +3648,7 @@
       "method": "POST",
       "rawPath": "/ads/optimize",
       "file": "server/routes/ai.ts",
-      "line": 206,
+      "line": 207,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3654,7 +3666,7 @@
       "method": "POST",
       "rawPath": "/social/predict",
       "file": "server/routes/ai.ts",
-      "line": 303,
+      "line": 304,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3672,7 +3684,7 @@
       "method": "POST",
       "rawPath": "/forecast",
       "file": "server/routes/ai.ts",
-      "line": 397,
+      "line": 398,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3690,7 +3702,7 @@
       "method": "GET",
       "rawPath": "/health",
       "file": "server/routes/ai.ts",
-      "line": 493,
+      "line": 494,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3708,7 +3720,7 @@
       "method": "POST",
       "rawPath": "/hashtags/generate",
       "file": "server/routes/ai.ts",
-      "line": 523,
+      "line": 524,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3726,7 +3738,7 @@
       "method": "POST",
       "rawPath": "/toxicity/analyze",
       "file": "server/routes/ai.ts",
-      "line": 558,
+      "line": 559,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3744,7 +3756,7 @@
       "method": "POST",
       "rawPath": "/emotions/detect",
       "file": "server/routes/ai.ts",
-      "line": 587,
+      "line": 588,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3762,7 +3774,7 @@
       "method": "GET",
       "rawPath": "/trends",
       "file": "server/routes/ai.ts",
-      "line": 616,
+      "line": 617,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3780,7 +3792,7 @@
       "method": "POST",
       "rawPath": "/content/adapt",
       "file": "server/routes/ai.ts",
-      "line": 639,
+      "line": 640,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3798,7 +3810,7 @@
       "method": "GET",
       "rawPath": "/models",
       "file": "server/routes/ai.ts",
-      "line": 674,
+      "line": 675,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3816,7 +3828,7 @@
       "method": "GET",
       "rawPath": "/models/:modelId/performance",
       "file": "server/routes/ai.ts",
-      "line": 707,
+      "line": 708,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3834,7 +3846,7 @@
       "method": "GET",
       "rawPath": "/stats",
       "file": "server/routes/ai.ts",
-      "line": 743,
+      "line": 744,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3852,7 +3864,7 @@
       "method": "POST",
       "rawPath": "/analytics/predict",
       "file": "server/routes/ai.ts",
-      "line": 760,
+      "line": 761,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3867,10 +3879,28 @@
       "processScope": "main-app"
     },
     {
+      "method": "GET",
+      "rawPath": "/analytics/insights/capability",
+      "file": "server/routes/ai.ts",
+      "line": 819,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/ai/analytics/insights/capability",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7751"
+      ],
+      "processScope": "main-app"
+    },
+    {
       "method": "POST",
       "rawPath": "/analytics/insights",
       "file": "server/routes/ai.ts",
-      "line": 815,
+      "line": 825,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3888,7 +3918,7 @@
       "method": "GET",
       "rawPath": "/insights",
       "file": "server/routes/ai.ts",
-      "line": 836,
+      "line": 832,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3906,7 +3936,7 @@
       "method": "GET",
       "rawPath": "/anomalies",
       "file": "server/routes/ai.ts",
-      "line": 853,
+      "line": 849,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3924,7 +3954,7 @@
       "method": "POST",
       "rawPath": "/churn/predict",
       "file": "server/routes/ai.ts",
-      "line": 870,
+      "line": 866,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3942,7 +3972,7 @@
       "method": "POST",
       "rawPath": "/revenue/forecast",
       "file": "server/routes/ai.ts",
-      "line": 891,
+      "line": 887,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3960,7 +3990,7 @@
       "method": "POST",
       "rawPath": "/organic/optimize",
       "file": "server/routes/ai.ts",
-      "line": 921,
+      "line": 917,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3978,7 +4008,7 @@
       "method": "POST",
       "rawPath": "/organic/roi",
       "file": "server/routes/ai.ts",
-      "line": 959,
+      "line": 955,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3996,7 +4026,7 @@
       "method": "POST",
       "rawPath": "/organic/schedule",
       "file": "server/routes/ai.ts",
-      "line": 1003,
+      "line": 999,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4014,7 +4044,7 @@
       "method": "GET",
       "rawPath": "/organic/network-analysis",
       "file": "server/routes/ai.ts",
-      "line": 1043,
+      "line": 1039,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4032,7 +4062,7 @@
       "method": "GET",
       "rawPath": "/diffusion/status",
       "file": "server/routes/ai.ts",
-      "line": 1072,
+      "line": 1068,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4050,7 +4080,7 @@
       "method": "GET",
       "rawPath": "/simulator/status",
       "file": "server/routes/ai.ts",
-      "line": 1099,
+      "line": 1095,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4068,7 +4098,7 @@
       "method": "GET",
       "rawPath": "/diffusion/ready",
       "file": "server/routes/ai.ts",
-      "line": 1126,
+      "line": 1122,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -10926,7 +10956,7 @@
       "method": "POST",
       "rawPath": "/keys/create",
       "file": "server/routes/developerApi.ts",
-      "line": 26,
+      "line": 24,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -10944,7 +10974,7 @@
       "method": "GET",
       "rawPath": "/keys",
       "file": "server/routes/developerApi.ts",
-      "line": 98,
+      "line": 103,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -10962,7 +10992,7 @@
       "method": "DELETE",
       "rawPath": "/keys/:keyId",
       "file": "server/routes/developerApi.ts",
-      "line": 146,
+      "line": 151,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -10980,7 +11010,7 @@
       "method": "GET",
       "rawPath": "/usage",
       "file": "server/routes/developerApi.ts",
-      "line": 194,
+      "line": 199,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -10998,7 +11028,7 @@
       "method": "GET",
       "rawPath": "/usage/:keyId",
       "file": "server/routes/developerApi.ts",
-      "line": 252,
+      "line": 257,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -11016,7 +11046,7 @@
       "method": "GET",
       "rawPath": "/docs",
       "file": "server/routes/developerApi.ts",
-      "line": 322,
+      "line": 327,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19534,7 +19564,7 @@
       "method": "GET",
       "rawPath": "/audio/*path",
       "file": "server/routes/marketplace.ts",
-      "line": 1927,
+      "line": 1929,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19552,7 +19582,7 @@
       "method": "GET",
       "rawPath": "/cover/*path",
       "file": "server/routes/marketplace.ts",
-      "line": 2102,
+      "line": 2104,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19570,7 +19600,7 @@
       "method": "PUT",
       "rawPath": "/listings/:id",
       "file": "server/routes/marketplace.ts",
-      "line": 2155,
+      "line": 2157,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19588,7 +19618,7 @@
       "method": "DELETE",
       "rawPath": "/listings/:id",
       "file": "server/routes/marketplace.ts",
-      "line": 2255,
+      "line": 2257,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19606,7 +19636,7 @@
       "method": "POST",
       "rawPath": "/connect-stripe",
       "file": "server/routes/marketplace.ts",
-      "line": 2276,
+      "line": 2278,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19624,7 +19654,7 @@
       "method": "POST",
       "rawPath": "/follow/:producerId",
       "file": "server/routes/marketplace.ts",
-      "line": 2300,
+      "line": 2302,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19642,7 +19672,7 @@
       "method": "POST",
       "rawPath": "/escrow/:transactionId/release",
       "file": "server/routes/marketplace.ts",
-      "line": 2322,
+      "line": 2324,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19660,7 +19690,7 @@
       "method": "POST",
       "rawPath": "/affiliates",
       "file": "server/routes/marketplace.ts",
-      "line": 2341,
+      "line": 2343,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19678,7 +19708,7 @@
       "method": "POST",
       "rawPath": "/contracts",
       "file": "server/routes/marketplace.ts",
-      "line": 2397,
+      "line": 2399,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19696,7 +19726,7 @@
       "method": "POST",
       "rawPath": "/collaborations",
       "file": "server/routes/marketplace.ts",
-      "line": 2426,
+      "line": 2428,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19714,7 +19744,7 @@
       "method": "GET",
       "rawPath": "/producers/:producerId",
       "file": "server/routes/marketplace.ts",
-      "line": 2503,
+      "line": 2505,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19732,7 +19762,7 @@
       "method": "GET",
       "rawPath": "/producers/:producerId/follow-status",
       "file": "server/routes/marketplace.ts",
-      "line": 2612,
+      "line": 2614,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19750,7 +19780,7 @@
       "method": "POST",
       "rawPath": "/unfollow/:producerId",
       "file": "server/routes/marketplace.ts",
-      "line": 2634,
+      "line": 2636,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19768,7 +19798,7 @@
       "method": "GET",
       "rawPath": "/beats/:beatId",
       "file": "server/routes/marketplace.ts",
-      "line": 2655,
+      "line": 2657,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19786,7 +19816,7 @@
       "method": "POST",
       "rawPath": "/beats/:beatId/like",
       "file": "server/routes/marketplace.ts",
-      "line": 2679,
+      "line": 2681,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19804,7 +19834,7 @@
       "method": "GET",
       "rawPath": "/beats/:beatId/like-status",
       "file": "server/routes/marketplace.ts",
-      "line": 2764,
+      "line": 2766,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19822,7 +19852,7 @@
       "method": "POST",
       "rawPath": "/beats/:beatId/rate",
       "file": "server/routes/marketplace.ts",
-      "line": 2795,
+      "line": 2797,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19840,7 +19870,7 @@
       "method": "GET",
       "rawPath": "/beats/:beatId/rating",
       "file": "server/routes/marketplace.ts",
-      "line": 2875,
+      "line": 2877,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19858,7 +19888,7 @@
       "method": "GET",
       "rawPath": "/stems/:stemId",
       "file": "server/routes/marketplace.ts",
-      "line": 2905,
+      "line": 2907,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -19876,7 +19906,7 @@
       "method": "POST",
       "rawPath": "/stems/:stemId/purchase",
       "file": "server/routes/marketplace.ts",
-      "line": 2930,
+      "line": 2932,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19894,7 +19924,7 @@
       "method": "GET",
       "rawPath": "/stems/:stemId/download/:trackId",
       "file": "server/routes/marketplace.ts",
-      "line": 2937,
+      "line": 2939,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19912,7 +19942,7 @@
       "method": "GET",
       "rawPath": "/my-stems",
       "file": "server/routes/marketplace.ts",
-      "line": 2978,
+      "line": 2980,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -19930,7 +19960,7 @@
       "method": "GET",
       "rawPath": "/listings/:listingId/stems",
       "file": "server/routes/marketplace.ts",
-      "line": 2997,
+      "line": 2999,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -19948,7 +19978,7 @@
       "method": "POST",
       "rawPath": "/listings/:listingId/stems",
       "file": "server/routes/marketplace.ts",
-      "line": 3021,
+      "line": 3023,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -19966,7 +19996,7 @@
       "method": "DELETE",
       "rawPath": "/stems/:stemId",
       "file": "server/routes/marketplace.ts",
-      "line": 3095,
+      "line": 3097,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -22300,7 +22330,7 @@
       "method": "POST",
       "rawPath": "/generate",
       "file": "server/routes/multimodal.ts",
-      "line": 38,
+      "line": 39,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -22318,7 +22348,7 @@
       "method": "GET",
       "rawPath": "/platform-rules",
       "file": "server/routes/multimodal.ts",
-      "line": 200,
+      "line": 202,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -22336,7 +22366,7 @@
       "method": "GET",
       "rawPath": "/platform-rules/:platform",
       "file": "server/routes/multimodal.ts",
-      "line": 209,
+      "line": 211,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -22354,7 +22384,7 @@
       "method": "GET",
       "rawPath": "/packs",
       "file": "server/routes/multimodal.ts",
-      "line": 223,
+      "line": 225,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -22777,7 +22807,7 @@
       "method": "PUT",
       "rawPath": "/:id/read",
       "file": "server/routes/notifications.ts",
-      "line": 163,
+      "line": 172,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22792,7 +22822,7 @@
       "method": "PUT",
       "rawPath": "/mark-all-read",
       "file": "server/routes/notifications.ts",
-      "line": 201,
+      "line": 210,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22807,7 +22837,7 @@
       "method": "DELETE",
       "rawPath": "/clear-all",
       "file": "server/routes/notifications.ts",
-      "line": 223,
+      "line": 232,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22822,7 +22852,7 @@
       "method": "DELETE",
       "rawPath": "/mobile-tokens",
       "file": "server/routes/notifications.ts",
-      "line": 245,
+      "line": 254,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22837,7 +22867,7 @@
       "method": "DELETE",
       "rawPath": "/push-subscriptions",
       "file": "server/routes/notifications.ts",
-      "line": 282,
+      "line": 291,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22852,7 +22882,7 @@
       "method": "DELETE",
       "rawPath": "/:id",
       "file": "server/routes/notifications.ts",
-      "line": 305,
+      "line": 314,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22867,7 +22897,7 @@
       "method": "GET",
       "rawPath": "/preferences",
       "file": "server/routes/notifications.ts",
-      "line": 341,
+      "line": 350,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22882,7 +22912,7 @@
       "method": "PUT",
       "rawPath": "/preferences",
       "file": "server/routes/notifications.ts",
-      "line": 391,
+      "line": 400,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22897,7 +22927,7 @@
       "method": "POST",
       "rawPath": "/push/subscribe",
       "file": "server/routes/notifications.ts",
-      "line": 443,
+      "line": 452,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22912,7 +22942,7 @@
       "method": "POST",
       "rawPath": "/push/unsubscribe",
       "file": "server/routes/notifications.ts",
-      "line": 489,
+      "line": 498,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22927,7 +22957,7 @@
       "method": "POST",
       "rawPath": "/sms/verify",
       "file": "server/routes/notifications.ts",
-      "line": 526,
+      "line": 535,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22942,7 +22972,7 @@
       "method": "POST",
       "rawPath": "/sms/confirm",
       "file": "server/routes/notifications.ts",
-      "line": 646,
+      "line": 655,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22957,7 +22987,7 @@
       "method": "POST",
       "rawPath": "/test",
       "file": "server/routes/notifications.ts",
-      "line": 758,
+      "line": 767,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22972,7 +23002,7 @@
       "method": "GET",
       "rawPath": "/push/status",
       "file": "server/routes/notifications.ts",
-      "line": 810,
+      "line": 819,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -22987,7 +23017,7 @@
       "method": "POST",
       "rawPath": "/mobile-tokens",
       "file": "server/routes/notifications.ts",
-      "line": 842,
+      "line": 851,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23002,7 +23032,7 @@
       "method": "GET",
       "rawPath": "/mobile-tokens",
       "file": "server/routes/notifications.ts",
-      "line": 880,
+      "line": 889,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23017,7 +23047,7 @@
       "method": "POST",
       "rawPath": "/push/silent",
       "file": "server/routes/notifications.ts",
-      "line": 1007,
+      "line": 1016,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23032,7 +23062,7 @@
       "method": "GET",
       "rawPath": "/push-key",
       "file": "server/routes/notifications.ts",
-      "line": 1034,
+      "line": 1043,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23047,7 +23077,7 @@
       "method": "POST",
       "rawPath": "/push-subscriptions",
       "file": "server/routes/notifications.ts",
-      "line": 1044,
+      "line": 1053,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23062,7 +23092,7 @@
       "method": "GET",
       "rawPath": "/push-subscriptions/status",
       "file": "server/routes/notifications.ts",
-      "line": 1089,
+      "line": 1098,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23077,7 +23107,7 @@
       "method": "POST",
       "rawPath": "/push-test",
       "file": "server/routes/notifications.ts",
-      "line": 1113,
+      "line": 1122,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -23092,7 +23122,7 @@
       "method": "GET",
       "rawPath": "/unread-count",
       "file": "server/routes/notifications.ts",
-      "line": 1147,
+      "line": 1156,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -23107,7 +23137,7 @@
       "method": "GET",
       "rawPath": "/:id",
       "file": "server/routes/notifications.ts",
-      "line": 1179,
+      "line": 1188,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -30051,7 +30081,7 @@
       "method": "GET",
       "rawPath": "/posts",
       "file": "server/routes/socialMedia.ts",
-      "line": 245,
+      "line": 247,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30069,7 +30099,7 @@
       "method": "DELETE",
       "rawPath": "/posts/:postId",
       "file": "server/routes/socialMedia.ts",
-      "line": 312,
+      "line": 314,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30087,7 +30117,7 @@
       "method": "POST",
       "rawPath": "/schedule-post",
       "file": "server/routes/socialMedia.ts",
-      "line": 397,
+      "line": 399,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30105,7 +30135,7 @@
       "method": "POST",
       "rawPath": "/calendar/batch/publish",
       "file": "server/routes/socialMedia.ts",
-      "line": 503,
+      "line": 505,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30123,7 +30153,7 @@
       "method": "POST",
       "rawPath": "/calendar/:postId/publish",
       "file": "server/routes/socialMedia.ts",
-      "line": 540,
+      "line": 542,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30141,7 +30171,7 @@
       "method": "GET",
       "rawPath": "/metrics",
       "file": "server/routes/socialMedia.ts",
-      "line": 573,
+      "line": 575,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30159,7 +30189,7 @@
       "method": "GET",
       "rawPath": "/calendar",
       "file": "server/routes/socialMedia.ts",
-      "line": 611,
+      "line": 613,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30177,7 +30207,7 @@
       "method": "GET",
       "rawPath": "/calendar/stats",
       "file": "server/routes/socialMedia.ts",
-      "line": 627,
+      "line": 629,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30195,7 +30225,7 @@
       "method": "POST",
       "rawPath": "/calendar",
       "file": "server/routes/socialMedia.ts",
-      "line": 643,
+      "line": 645,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30213,7 +30243,7 @@
       "method": "PUT",
       "rawPath": "/calendar/:postId",
       "file": "server/routes/socialMedia.ts",
-      "line": 781,
+      "line": 783,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30231,7 +30261,7 @@
       "method": "PATCH",
       "rawPath": "/calendar/batch",
       "file": "server/routes/socialMedia.ts",
-      "line": 906,
+      "line": 908,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30249,7 +30279,7 @@
       "method": "DELETE",
       "rawPath": "/calendar/batch",
       "file": "server/routes/socialMedia.ts",
-      "line": 987,
+      "line": 989,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30267,7 +30297,7 @@
       "method": "DELETE",
       "rawPath": "/calendar/:postId",
       "file": "server/routes/socialMedia.ts",
-      "line": 1048,
+      "line": 1050,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30285,7 +30315,7 @@
       "method": "GET",
       "rawPath": "/activity",
       "file": "server/routes/socialMedia.ts",
-      "line": 1096,
+      "line": 1098,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30303,7 +30333,7 @@
       "method": "GET",
       "rawPath": "/weekly-stats",
       "file": "server/routes/socialMedia.ts",
-      "line": 1112,
+      "line": 1114,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30321,7 +30351,7 @@
       "method": "GET",
       "rawPath": "/ai-insights",
       "file": "server/routes/socialMedia.ts",
-      "line": 1146,
+      "line": 1148,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30339,7 +30369,7 @@
       "method": "GET",
       "rawPath": "/platform-status",
       "file": "server/routes/socialMedia.ts",
-      "line": 1169,
+      "line": 1171,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30357,7 +30387,7 @@
       "method": "POST",
       "rawPath": "/sync-all",
       "file": "server/routes/socialMedia.ts",
-      "line": 1385,
+      "line": 1387,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30375,7 +30405,7 @@
       "method": "GET",
       "rawPath": "/listening/keywords",
       "file": "server/routes/socialMedia.ts",
-      "line": 1458,
+      "line": 1460,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30393,7 +30423,7 @@
       "method": "GET",
       "rawPath": "/hashtags/trending",
       "file": "server/routes/socialMedia.ts",
-      "line": 1476,
+      "line": 1478,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30411,7 +30441,7 @@
       "method": "GET",
       "rawPath": "/listening/trending",
       "file": "server/routes/socialMedia.ts",
-      "line": 1570,
+      "line": 1572,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30429,7 +30459,7 @@
       "method": "GET",
       "rawPath": "/listening/influencers",
       "file": "server/routes/socialMedia.ts",
-      "line": 1588,
+      "line": 1590,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30447,7 +30477,7 @@
       "method": "GET",
       "rawPath": "/listening/alerts",
       "file": "server/routes/socialMedia.ts",
-      "line": 1609,
+      "line": 1611,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30465,7 +30495,7 @@
       "method": "GET",
       "rawPath": "/competitors",
       "file": "server/routes/socialMedia.ts",
-      "line": 1629,
+      "line": 1631,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30483,7 +30513,7 @@
       "method": "POST",
       "rawPath": "/competitors",
       "file": "server/routes/socialMedia.ts",
-      "line": 1647,
+      "line": 1649,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30501,7 +30531,7 @@
       "method": "DELETE",
       "rawPath": "/competitors/:id",
       "file": "server/routes/socialMedia.ts",
-      "line": 1676,
+      "line": 1678,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30519,7 +30549,7 @@
       "method": "GET",
       "rawPath": "/your-stats",
       "file": "server/routes/socialMedia.ts",
-      "line": 1701,
+      "line": 1703,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30537,7 +30567,7 @@
       "method": "GET",
       "rawPath": "/benchmark/competitors",
       "file": "server/routes/socialMedia.ts",
-      "line": 1717,
+      "line": 1719,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30555,7 +30585,7 @@
       "method": "GET",
       "rawPath": "/benchmark/insights",
       "file": "server/routes/socialMedia.ts",
-      "line": 1741,
+      "line": 1743,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30573,7 +30603,7 @@
       "method": "GET",
       "rawPath": "/benchmark/share-of-voice",
       "file": "server/routes/socialMedia.ts",
-      "line": 1759,
+      "line": 1761,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30591,7 +30621,7 @@
       "method": "GET",
       "rawPath": "/inbox",
       "file": "server/routes/socialMedia.ts",
-      "line": 1802,
+      "line": 1804,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30609,7 +30639,7 @@
       "method": "POST",
       "rawPath": "/inbox/sync",
       "file": "server/routes/socialMedia.ts",
-      "line": 1881,
+      "line": 1883,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30627,7 +30657,7 @@
       "method": "GET",
       "rawPath": "/inbox/stats",
       "file": "server/routes/socialMedia.ts",
-      "line": 1913,
+      "line": 1915,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30645,7 +30675,7 @@
       "method": "POST",
       "rawPath": "/inbox/bulk/read",
       "file": "server/routes/socialMedia.ts",
-      "line": 1967,
+      "line": 1969,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30663,7 +30693,7 @@
       "method": "POST",
       "rawPath": "/inbox/bulk/unread",
       "file": "server/routes/socialMedia.ts",
-      "line": 1999,
+      "line": 2001,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30681,7 +30711,7 @@
       "method": "POST",
       "rawPath": "/inbox/bulk/archive",
       "file": "server/routes/socialMedia.ts",
-      "line": 2031,
+      "line": 2033,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30699,7 +30729,7 @@
       "method": "POST",
       "rawPath": "/inbox/bulk/delete",
       "file": "server/routes/socialMedia.ts",
-      "line": 2063,
+      "line": 2065,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30717,7 +30747,7 @@
       "method": "POST",
       "rawPath": "/inbox/:id/read",
       "file": "server/routes/socialMedia.ts",
-      "line": 2094,
+      "line": 2096,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30735,7 +30765,7 @@
       "method": "POST",
       "rawPath": "/inbox/:id/reply",
       "file": "server/routes/socialMedia.ts",
-      "line": 2124,
+      "line": 2126,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30753,7 +30783,7 @@
       "method": "POST",
       "rawPath": "/inbox/:id/assign",
       "file": "server/routes/socialMedia.ts",
-      "line": 2399,
+      "line": 2401,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30771,7 +30801,7 @@
       "method": "POST",
       "rawPath": "/inbox/:id/archive",
       "file": "server/routes/socialMedia.ts",
-      "line": 2477,
+      "line": 2479,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30789,7 +30819,7 @@
       "method": "GET",
       "rawPath": "/inbox/templates",
       "file": "server/routes/socialMedia.ts",
-      "line": 2531,
+      "line": 2533,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30807,7 +30837,7 @@
       "method": "POST",
       "rawPath": "/inbox/templates",
       "file": "server/routes/socialMedia.ts",
-      "line": 2595,
+      "line": 2597,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30825,7 +30855,7 @@
       "method": "DELETE",
       "rawPath": "/inbox/templates/:id",
       "file": "server/routes/socialMedia.ts",
-      "line": 2639,
+      "line": 2641,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30843,7 +30873,7 @@
       "method": "GET",
       "rawPath": "/inbox/team",
       "file": "server/routes/socialMedia.ts",
-      "line": 2664,
+      "line": 2666,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30861,7 +30891,7 @@
       "method": "GET",
       "rawPath": "/connections",
       "file": "server/routes/socialMedia.ts",
-      "line": 2724,
+      "line": 2726,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30879,7 +30909,7 @@
       "method": "GET",
       "rawPath": "/unified-calendar/posts",
       "file": "server/routes/socialMedia.ts",
-      "line": 2789,
+      "line": 2791,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30897,7 +30927,7 @@
       "method": "GET",
       "rawPath": "/unified-calendar/campaigns",
       "file": "server/routes/socialMedia.ts",
-      "line": 2900,
+      "line": 2902,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30915,7 +30945,7 @@
       "method": "GET",
       "rawPath": "/unified-calendar/holidays",
       "file": "server/routes/socialMedia.ts",
-      "line": 3003,
+      "line": 3005,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30933,7 +30963,7 @@
       "method": "GET",
       "rawPath": "/unified-calendar/queue",
       "file": "server/routes/socialMedia.ts",
-      "line": 3019,
+      "line": 3021,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30951,7 +30981,7 @@
       "method": "POST",
       "rawPath": "/generate-content-legacy",
       "file": "server/routes/socialMedia.ts",
-      "line": 3054,
+      "line": 3056,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30969,7 +30999,7 @@
       "method": "POST",
       "rawPath": "/generate-content",
       "file": "server/routes/socialMedia.ts",
-      "line": 3463,
+      "line": 3465,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -30987,7 +31017,7 @@
       "method": "POST",
       "rawPath": "/generate-from-url",
       "file": "server/routes/socialMedia.ts",
-      "line": 3607,
+      "line": 3609,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31005,7 +31035,7 @@
       "method": "GET",
       "rawPath": "/scheduled",
       "file": "server/routes/socialMedia.ts",
-      "line": 3874,
+      "line": 3876,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31023,7 +31053,7 @@
       "method": "GET",
       "rawPath": "/analytics",
       "file": "server/routes/socialMedia.ts",
-      "line": 3890,
+      "line": 3892,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31041,7 +31071,7 @@
       "method": "POST",
       "rawPath": "/generate-video",
       "file": "server/routes/socialMedia.ts",
-      "line": 4200,
+      "line": 4202,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31059,7 +31089,7 @@
       "method": "GET",
       "rawPath": "/video-job/:jobId",
       "file": "server/routes/socialMedia.ts",
-      "line": 4383,
+      "line": 4385,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31077,7 +31107,7 @@
       "method": "GET",
       "rawPath": "/video-proxy/:filename",
       "file": "server/routes/socialMedia.ts",
-      "line": 4473,
+      "line": 4475,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31095,7 +31125,7 @@
       "method": "GET",
       "rawPath": "/video-templates",
       "file": "server/routes/socialMedia.ts",
-      "line": 4742,
+      "line": 4744,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31113,7 +31143,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign",
       "file": "server/routes/socialMedia.ts",
-      "line": 4884,
+      "line": 4886,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31131,7 +31161,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign/single",
       "file": "server/routes/socialMedia.ts",
-      "line": 4959,
+      "line": 4961,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31149,7 +31179,7 @@
       "method": "GET",
       "rawPath": "/veo-campaign/platforms",
       "file": "server/routes/socialMedia.ts",
-      "line": 5006,
+      "line": 5008,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31167,7 +31197,7 @@
       "method": "GET",
       "rawPath": "/veo-campaign/goals",
       "file": "server/routes/socialMedia.ts",
-      "line": 5028,
+      "line": 5030,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31185,7 +31215,7 @@
       "method": "GET",
       "rawPath": "/veo-campaign/recommend/:platform",
       "file": "server/routes/socialMedia.ts",
-      "line": 5048,
+      "line": 5050,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31203,7 +31233,7 @@
       "method": "GET",
       "rawPath": "/veo-campaign/status",
       "file": "server/routes/socialMedia.ts",
-      "line": 5071,
+      "line": 5073,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31221,7 +31251,7 @@
       "method": "POST",
       "rawPath": "/veo-url/metadata",
       "file": "server/routes/socialMedia.ts",
-      "line": 5091,
+      "line": 5093,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31239,7 +31269,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign/from-url",
       "file": "server/routes/socialMedia.ts",
-      "line": 5124,
+      "line": 5126,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31257,7 +31287,7 @@
       "method": "GET",
       "rawPath": "/promotable-content",
       "file": "server/routes/socialMedia.ts",
-      "line": 5168,
+      "line": 5170,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31275,7 +31305,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign/promote",
       "file": "server/routes/socialMedia.ts",
-      "line": 5199,
+      "line": 5201,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31293,7 +31323,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign/promote-storefront",
       "file": "server/routes/socialMedia.ts",
-      "line": 5285,
+      "line": 5287,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31311,7 +31341,7 @@
       "method": "POST",
       "rawPath": "/veo-campaign/promote-listing",
       "file": "server/routes/socialMedia.ts",
-      "line": 5440,
+      "line": 5442,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31329,7 +31359,7 @@
       "method": "POST",
       "rawPath": "/generate-image",
       "file": "server/routes/socialMedia.ts",
-      "line": 5569,
+      "line": 5571,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31347,7 +31377,7 @@
       "method": "POST",
       "rawPath": "/analyze-url",
       "file": "server/routes/socialMedia.ts",
-      "line": 5715,
+      "line": 5677,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31365,7 +31395,7 @@
       "method": "POST",
       "rawPath": "/analyze-audio",
       "file": "server/routes/socialMedia.ts",
-      "line": 6016,
+      "line": 5978,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31383,7 +31413,7 @@
       "method": "POST",
       "rawPath": "/analyze-image",
       "file": "server/routes/socialMedia.ts",
-      "line": 6101,
+      "line": 6063,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31401,7 +31431,7 @@
       "method": "GET",
       "rawPath": "/voice-profiles",
       "file": "server/routes/socialMedia.ts",
-      "line": 6191,
+      "line": 6153,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31419,7 +31449,7 @@
       "method": "POST",
       "rawPath": "/synthesize-voice",
       "file": "server/routes/socialMedia.ts",
-      "line": 6214,
+      "line": 6176,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31437,7 +31467,7 @@
       "method": "POST",
       "rawPath": "/analyze-reference-voice",
       "file": "server/routes/socialMedia.ts",
-      "line": 6339,
+      "line": 6301,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31455,7 +31485,7 @@
       "method": "POST",
       "rawPath": "/analyze-audio-beats",
       "file": "server/routes/socialMedia.ts",
-      "line": 6377,
+      "line": 6339,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31473,7 +31503,7 @@
       "method": "POST",
       "rawPath": "/beat-analyze",
       "file": "server/routes/socialMedia.ts",
-      "line": 6445,
+      "line": 6407,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31491,7 +31521,7 @@
       "method": "POST",
       "rawPath": "/generate-music-video",
       "file": "server/routes/socialMedia.ts",
-      "line": 6514,
+      "line": 6476,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31509,7 +31539,7 @@
       "method": "GET",
       "rawPath": "/music-video-job/:jobId",
       "file": "server/routes/socialMedia.ts",
-      "line": 6798,
+      "line": 6760,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -31527,7 +31557,7 @@
       "method": "GET",
       "rawPath": "/music-video-capabilities",
       "file": "server/routes/socialMedia.ts",
-      "line": 6845,
+      "line": 6807,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -35991,7 +36021,7 @@
       "method": "POST",
       "rawPath": "/text",
       "file": "server/routes/studioGeneration.ts",
-      "line": 429,
+      "line": 437,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36009,7 +36039,7 @@
       "method": "POST",
       "rawPath": "/audio",
       "file": "server/routes/studioGeneration.ts",
-      "line": 519,
+      "line": 536,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36027,7 +36057,7 @@
       "method": "GET",
       "rawPath": "/presets",
       "file": "server/routes/studioGeneration.ts",
-      "line": 615,
+      "line": 632,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36045,7 +36075,7 @@
       "method": "GET",
       "rawPath": "/pattern/instruments",
       "file": "server/routes/studioGeneration.ts",
-      "line": 702,
+      "line": 719,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36063,7 +36093,7 @@
       "method": "GET",
       "rawPath": "/pattern/genres",
       "file": "server/routes/studioGeneration.ts",
-      "line": 711,
+      "line": 728,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36081,7 +36111,7 @@
       "method": "GET",
       "rawPath": "/pattern/styles",
       "file": "server/routes/studioGeneration.ts",
-      "line": 720,
+      "line": 737,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36099,7 +36129,7 @@
       "method": "GET",
       "rawPath": "/pattern/scales",
       "file": "server/routes/studioGeneration.ts",
-      "line": 729,
+      "line": 746,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36117,7 +36147,7 @@
       "method": "GET",
       "rawPath": "/pattern/stats",
       "file": "server/routes/studioGeneration.ts",
-      "line": 738,
+      "line": 755,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36135,7 +36165,7 @@
       "method": "POST",
       "rawPath": "/pattern/melody",
       "file": "server/routes/studioGeneration.ts",
-      "line": 776,
+      "line": 793,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36153,7 +36183,7 @@
       "method": "POST",
       "rawPath": "/pattern/drums",
       "file": "server/routes/studioGeneration.ts",
-      "line": 807,
+      "line": 825,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36171,7 +36201,7 @@
       "method": "POST",
       "rawPath": "/pattern/chords",
       "file": "server/routes/studioGeneration.ts",
-      "line": 833,
+      "line": 852,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36189,7 +36219,7 @@
       "method": "POST",
       "rawPath": "/pattern/arrangement",
       "file": "server/routes/studioGeneration.ts",
-      "line": 863,
+      "line": 883,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -36207,7 +36237,7 @@
       "method": "POST",
       "rawPath": "/audio-to-melody",
       "file": "server/routes/studioGeneration.ts",
-      "line": 900,
+      "line": 921,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37467,7 +37497,7 @@
       "method": "GET",
       "rawPath": "/my/tickets/:ticketId",
       "file": "server/routes/support.ts",
-      "line": 13,
+      "line": 14,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37485,7 +37515,7 @@
       "method": "POST",
       "rawPath": "/my/tickets/:ticketId/messages",
       "file": "server/routes/support.ts",
-      "line": 37,
+      "line": 38,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37503,7 +37533,7 @@
       "method": "GET",
       "rawPath": "/tickets",
       "file": "server/routes/support.ts",
-      "line": 60,
+      "line": 61,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37521,7 +37551,7 @@
       "method": "GET",
       "rawPath": "/tickets/all",
       "file": "server/routes/support.ts",
-      "line": 82,
+      "line": 83,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37539,7 +37569,7 @@
       "method": "GET",
       "rawPath": "/stats",
       "file": "server/routes/support.ts",
-      "line": 135,
+      "line": 136,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37557,7 +37587,7 @@
       "method": "GET",
       "rawPath": "/tickets/:ticketId",
       "file": "server/routes/support.ts",
-      "line": 172,
+      "line": 173,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37575,7 +37605,7 @@
       "method": "POST",
       "rawPath": "/tickets/:ticketId/messages",
       "file": "server/routes/support.ts",
-      "line": 204,
+      "line": 205,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37593,7 +37623,7 @@
       "method": "POST",
       "rawPath": "/tickets/:ticketId/tags",
       "file": "server/routes/support.ts",
-      "line": 248,
+      "line": 247,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37611,7 +37641,7 @@
       "method": "DELETE",
       "rawPath": "/tickets/:ticketId/tags/:tag",
       "file": "server/routes/support.ts",
-      "line": 293,
+      "line": 292,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37629,7 +37659,7 @@
       "method": "PATCH",
       "rawPath": "/tickets/:ticketId",
       "file": "server/routes/support.ts",
-      "line": 333,
+      "line": 332,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -37647,7 +37677,7 @@
       "method": "POST",
       "rawPath": "/tickets",
       "file": "server/routes/support.ts",
-      "line": 407,
+      "line": 382,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -42518,7 +42548,7 @@
       "file": "server/middleware/rateLimiter.ts",
       "prefix": "",
       "mountedFrom": [
-        "server/routes/ai.ts:25",
+        "server/routes/ai.ts:26",
         "server/routes/billing.ts:57",
         "server/routes/payouts.ts:91",
         "server/routes/socialAI.ts:69"
@@ -43746,7 +43776,7 @@
           "method": "POST",
           "path": "/api/marketplace/listings/:listingId/stems",
           "file": "server/routes/marketplace.ts",
-          "line": 3021,
+          "line": 3023,
           "confidence": "high"
         }
       ]
@@ -43769,7 +43799,7 @@
           "method": "GET",
           "path": "/api/marketplace/listings/:listingId/stems",
           "file": "server/routes/marketplace.ts",
-          "line": 2997,
+          "line": 2999,
           "confidence": "high"
         }
       ]
@@ -43792,7 +43822,7 @@
           "method": "DELETE",
           "path": "/api/marketplace/stems/:stemId",
           "file": "server/routes/marketplace.ts",
-          "line": 3095,
+          "line": 3097,
           "confidence": "high"
         }
       ]
@@ -43815,7 +43845,7 @@
           "method": "POST",
           "path": "/api/marketplace/stems/:stemId/purchase",
           "file": "server/routes/marketplace.ts",
-          "line": 2930,
+          "line": 2932,
           "confidence": "high"
         }
       ]
@@ -43953,7 +43983,7 @@
           "method": "GET",
           "path": "/api/advertising/dashboard/attribution",
           "file": "server/routes/advertising.ts",
-          "line": 1622,
+          "line": 1581,
           "confidence": "high"
         }
       ]
@@ -43976,7 +44006,7 @@
           "method": "GET",
           "path": "/api/advertising/dashboard/paths",
           "file": "server/routes/advertising.ts",
-          "line": 1669,
+          "line": 1628,
           "confidence": "high"
         }
       ]
@@ -44000,7 +44030,7 @@
           "method": "GET",
           "path": "/api/advertising/ab-tests",
           "file": "server/routes/advertising.ts",
-          "line": 628,
+          "line": 587,
           "confidence": "high"
         }
       ]
@@ -44023,7 +44053,7 @@
           "method": "GET",
           "path": "/api/advertising/variants",
           "file": "server/routes/advertising.ts",
-          "line": 1453,
+          "line": 1412,
           "confidence": "high"
         }
       ]
@@ -44047,7 +44077,7 @@
           "method": "POST",
           "path": "/api/advertising/generate-content",
           "file": "server/routes/advertising.ts",
-          "line": 2035,
+          "line": 1994,
           "confidence": "high"
         }
       ]
@@ -44070,7 +44100,7 @@
           "method": "GET",
           "path": "/api/advertising/attribution/channels",
           "file": "server/routes/advertising.ts",
-          "line": 1514,
+          "line": 1473,
           "confidence": "high"
         }
       ]
@@ -44093,7 +44123,7 @@
           "method": "GET",
           "path": "/api/advertising/attribution/paths",
           "file": "server/routes/advertising.ts",
-          "line": 1589,
+          "line": 1548,
           "confidence": "high"
         }
       ]
@@ -44141,7 +44171,7 @@
           "method": "GET",
           "path": "/api/ai/insights",
           "file": "server/routes/ai.ts",
-          "line": 836,
+          "line": 832,
           "confidence": "high"
         }
       ]
@@ -44205,7 +44235,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/auth/AuthProvider.tsx:148",
-        "client/src/pages/Register.tsx:274"
+        "client/src/pages/Register.tsx:273"
       ],
       "status": "matched",
       "backendMatches": [
@@ -44739,7 +44769,7 @@
           "method": "GET",
           "path": "/api/advertising/status",
           "file": "server/routes/advertising.ts",
-          "line": 1219,
+          "line": 1178,
           "confidence": "high"
         }
       ]
@@ -44762,7 +44792,7 @@
           "method": "POST",
           "path": "/api/advertising/configure",
           "file": "server/routes/advertising.ts",
-          "line": 1382,
+          "line": 1341,
           "confidence": "high"
         }
       ]
@@ -45545,9 +45575,9 @@
       "methodConfidence": "assumed",
       "occurrences": [
         "client/src/components/content/ContentAnalyzer.tsx:124",
-        "client/src/pages/Landing.tsx:144",
+        "client/src/pages/Landing.tsx:145",
         "client/src/pages/Login.tsx:105",
-        "client/src/pages/Register.tsx:345"
+        "client/src/pages/Register.tsx:344"
       ],
       "status": "matched",
       "backendMatches": [
@@ -45627,16 +45657,16 @@
     },
     {
       "path": "/api/social/video-job/:param",
-      "rawPath": "/api/social/video-job/${jobId}",
+      "rawPath": "/api/social/video-job/${encodeURIComponent(jobId)}",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 402,
+      "line": 411,
       "source": "fetch",
       "kind": "fetch",
       "method": "GET",
       "methodConfidence": "assumed",
       "occurrences": [
-        "client/src/components/content/ServerVideoGenerator.tsx:402",
-        "client/src/components/content/ServerVideoGenerator.tsx:478"
+        "client/src/components/content/ServerVideoGenerator.tsx:411",
+        "client/src/components/content/ServerVideoGenerator.tsx:499"
       ],
       "status": "matched",
       "backendMatches": [
@@ -45644,7 +45674,7 @@
           "method": "GET",
           "path": "/api/social/video-job/:jobId",
           "file": "server/routes/socialMedia.ts",
-          "line": 4383,
+          "line": 4385,
           "confidence": "high"
         }
       ]
@@ -45653,13 +45683,13 @@
       "path": "/api/social/analyze-image",
       "rawPath": "/api/social/analyze-image",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 801,
+      "line": 824,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/content/ServerVideoGenerator.tsx:801"
+        "client/src/components/content/ServerVideoGenerator.tsx:824"
       ],
       "status": "matched",
       "backendMatches": [
@@ -45667,7 +45697,7 @@
           "method": "POST",
           "path": "/api/social/analyze-image",
           "file": "server/routes/socialMedia.ts",
-          "line": 6101,
+          "line": 6063,
           "confidence": "high"
         }
       ]
@@ -45676,13 +45706,13 @@
       "path": "/api/social/beat-analyze",
       "rawPath": "/api/social/beat-analyze",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 876,
+      "line": 899,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/content/ServerVideoGenerator.tsx:876"
+        "client/src/components/content/ServerVideoGenerator.tsx:899"
       ],
       "status": "matched",
       "backendMatches": [
@@ -45690,7 +45720,7 @@
           "method": "POST",
           "path": "/api/social/beat-analyze",
           "file": "server/routes/socialMedia.ts",
-          "line": 6445,
+          "line": 6407,
           "confidence": "high"
         }
       ]
@@ -45699,13 +45729,13 @@
       "path": "/api/social/generate-music-video",
       "rawPath": "/api/social/generate-music-video",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 921,
+      "line": 949,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/content/ServerVideoGenerator.tsx:921"
+        "client/src/components/content/ServerVideoGenerator.tsx:949"
       ],
       "status": "matched",
       "backendMatches": [
@@ -45713,31 +45743,7 @@
           "method": "POST",
           "path": "/api/social/generate-music-video",
           "file": "server/routes/socialMedia.ts",
-          "line": 6514,
-          "confidence": "high"
-        }
-      ]
-    },
-    {
-      "path": "/api/social/music-video-job/:param",
-      "rawPath": "/api/social/music-video-job/${jobId}",
-      "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 937,
-      "source": "fetch",
-      "kind": "fetch",
-      "method": "GET",
-      "methodConfidence": "assumed",
-      "occurrences": [
-        "client/src/components/content/ServerVideoGenerator.tsx:937",
-        "client/src/pages/Distribution.tsx:6604"
-      ],
-      "status": "matched",
-      "backendMatches": [
-        {
-          "method": "GET",
-          "path": "/api/social/music-video-job/:jobId",
-          "file": "server/routes/socialMedia.ts",
-          "line": 6798,
+          "line": 6476,
           "confidence": "high"
         }
       ]
@@ -46912,7 +46918,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/distribution/DSPSelector.tsx:341",
-        "client/src/pages/Distribution.tsx:1638"
+        "client/src/pages/Distribution.tsx:1639"
       ],
       "status": "matched",
       "backendMatches": [
@@ -47212,7 +47218,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/distribution/EarningsReconciliation.tsx:98",
-        "client/src/pages/Distribution.tsx:1622"
+        "client/src/pages/Distribution.tsx:1623"
       ],
       "status": "matched",
       "backendMatches": [
@@ -47283,7 +47289,7 @@
       "occurrences": [
         "client/src/components/distribution/EmbedCodeGenerator.tsx:706",
         "client/src/components/distribution/ReleaseWizard.tsx:260",
-        "client/src/pages/Distribution.tsx:1542"
+        "client/src/pages/Distribution.tsx:1543"
       ],
       "status": "matched",
       "backendMatches": [
@@ -47528,7 +47534,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/distribution/ReleaseActionsPanel.tsx:164",
-        "client/src/pages/Distribution.tsx:1825"
+        "client/src/pages/Distribution.tsx:1826"
       ],
       "status": "matched",
       "backendMatches": [
@@ -48748,7 +48754,7 @@
           "method": "POST",
           "path": "/api/marketplace/beats/:beatId/like",
           "file": "server/routes/marketplace.ts",
-          "line": 2679,
+          "line": 2681,
           "confidence": "high"
         }
       ]
@@ -48911,7 +48917,7 @@
           "method": "GET",
           "path": "/api/marketplace/producers/:producerId",
           "file": "server/routes/marketplace.ts",
-          "line": 2503,
+          "line": 2505,
           "confidence": "high"
         }
       ]
@@ -48936,7 +48942,7 @@
           "method": "GET",
           "path": "/api/marketplace/producers/:producerId/follow-status",
           "file": "server/routes/marketplace.ts",
-          "line": 2612,
+          "line": 2614,
           "confidence": "high"
         }
       ]
@@ -49231,7 +49237,7 @@
           "method": "POST",
           "path": "/api/social/veo-campaign/promote-storefront",
           "file": "server/routes/socialMedia.ts",
-          "line": 5285,
+          "line": 5287,
           "confidence": "high"
         }
       ]
@@ -49485,7 +49491,6 @@
       "occurrences": [
         "client/src/components/notifications/NotificationCenter.tsx:150",
         "client/src/components/notifications/useNotifications.ts:51",
-        "client/src/pages/NotificationDetail.tsx:50",
         "client/src/pages/Notifications.tsx:76"
       ],
       "status": "matched",
@@ -49536,7 +49541,7 @@
       "occurrences": [
         "client/src/components/notifications/NotificationCenter.tsx:224",
         "client/src/components/notifications/useNotifications.ts:65",
-        "client/src/pages/NotificationDetail.tsx:56",
+        "client/src/pages/NotificationDetail.tsx:57",
         "client/src/pages/Notifications.tsx:127"
       ],
       "status": "matched",
@@ -49587,7 +49592,7 @@
       "occurrences": [
         "client/src/components/notifications/NotificationCenter.tsx:266",
         "client/src/components/notifications/useNotifications.ts:131",
-        "client/src/pages/NotificationDetail.tsx:69",
+        "client/src/pages/NotificationDetail.tsx:70",
         "client/src/pages/Notifications.tsx:169"
       ],
       "status": "matched",
@@ -49954,7 +49959,7 @@
         "client/src/components/onboarding/OnboardingFlow.tsx:122",
         "client/src/components/onboarding/OnboardingWizard.tsx:360",
         "client/src/components/onboarding/OnboardingWizard.tsx:411",
-        "client/src/pages/Dashboard.tsx:532",
+        "client/src/pages/Dashboard.tsx:533",
         "client/src/pages/SimplifiedDashboard.tsx:43"
       ],
       "status": "matched",
@@ -50393,7 +50398,7 @@
         "client/src/components/personalization/PersonalizedDashboard.tsx:133",
         "client/src/components/personalization/PersonalizedDashboard.tsx:163",
         "client/src/components/personalization/PersonalizedDashboard.tsx:193",
-        "client/src/pages/Distribution.tsx:1549"
+        "client/src/pages/Distribution.tsx:1550"
       ],
       "status": "matched",
       "backendMatches": [
@@ -50417,7 +50422,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/personalization/PersonalizedDashboard.tsx:267",
-        "client/src/pages/Dashboard.tsx:328"
+        "client/src/pages/Dashboard.tsx:329"
       ],
       "status": "matched",
       "backendMatches": [
@@ -50425,7 +50430,7 @@
           "method": "GET",
           "path": "/api/ai/insights",
           "file": "server/routes/ai.ts",
-          "line": 836,
+          "line": 832,
           "confidence": "high"
         }
       ]
@@ -51387,7 +51392,7 @@
           "method": "GET",
           "path": "/api/social/hashtags/trending",
           "file": "server/routes/socialMedia.ts",
-          "line": 1476,
+          "line": 1478,
           "confidence": "high"
         }
       ]
@@ -52425,7 +52430,7 @@
           "method": "GET",
           "path": "/api/social/benchmark/competitors",
           "file": "server/routes/socialMedia.ts",
-          "line": 1717,
+          "line": 1719,
           "confidence": "high"
         }
       ]
@@ -52448,7 +52453,7 @@
           "method": "GET",
           "path": "/api/social/benchmark/insights",
           "file": "server/routes/socialMedia.ts",
-          "line": 1741,
+          "line": 1743,
           "confidence": "high"
         }
       ]
@@ -52471,7 +52476,7 @@
           "method": "GET",
           "path": "/api/social/competitors",
           "file": "server/routes/socialMedia.ts",
-          "line": 1629,
+          "line": 1631,
           "confidence": "high"
         }
       ]
@@ -52494,7 +52499,7 @@
           "method": "GET",
           "path": "/api/social/your-stats",
           "file": "server/routes/socialMedia.ts",
-          "line": 1701,
+          "line": 1703,
           "confidence": "high"
         }
       ]
@@ -52701,7 +52706,7 @@
           "method": "POST",
           "path": "/api/social/generate-image",
           "file": "server/routes/socialMedia.ts",
-          "line": 5569,
+          "line": 5571,
           "confidence": "high"
         }
       ]
@@ -52717,8 +52722,8 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/social/ContentGenerator.tsx:608",
-        "client/src/pages/SocialMedia.tsx:938",
-        "client/src/pages/SocialMedia.tsx:1097"
+        "client/src/pages/SocialMedia.tsx:939",
+        "client/src/pages/SocialMedia.tsx:1098"
       ],
       "status": "matched",
       "backendMatches": [
@@ -52726,7 +52731,7 @@
           "method": "POST",
           "path": "/api/multimodal/generate",
           "file": "server/routes/multimodal.ts",
-          "line": 38,
+          "line": 39,
           "confidence": "high"
         }
       ]
@@ -52749,7 +52754,7 @@
           "method": "GET",
           "path": "/api/social/listening/keywords",
           "file": "server/routes/socialMedia.ts",
-          "line": 1458,
+          "line": 1460,
           "confidence": "high"
         }
       ]
@@ -52772,7 +52777,7 @@
           "method": "GET",
           "path": "/api/social/listening/trending",
           "file": "server/routes/socialMedia.ts",
-          "line": 1570,
+          "line": 1572,
           "confidence": "high"
         }
       ]
@@ -52795,7 +52800,7 @@
           "method": "GET",
           "path": "/api/social/listening/influencers",
           "file": "server/routes/socialMedia.ts",
-          "line": 1588,
+          "line": 1590,
           "confidence": "high"
         }
       ]
@@ -52818,7 +52823,7 @@
           "method": "GET",
           "path": "/api/social/listening/alerts",
           "file": "server/routes/socialMedia.ts",
-          "line": 1609,
+          "line": 1611,
           "confidence": "high"
         }
       ]
@@ -52841,7 +52846,7 @@
           "method": "GET",
           "path": "/api/social/unified-calendar/posts",
           "file": "server/routes/socialMedia.ts",
-          "line": 2789,
+          "line": 2791,
           "confidence": "high"
         }
       ]
@@ -52864,7 +52869,7 @@
           "method": "GET",
           "path": "/api/social/unified-calendar/campaigns",
           "file": "server/routes/socialMedia.ts",
-          "line": 2900,
+          "line": 2902,
           "confidence": "high"
         }
       ]
@@ -52887,7 +52892,7 @@
           "method": "GET",
           "path": "/api/social/unified-calendar/holidays",
           "file": "server/routes/socialMedia.ts",
-          "line": 3003,
+          "line": 3005,
           "confidence": "high"
         }
       ]
@@ -52910,7 +52915,7 @@
           "method": "GET",
           "path": "/api/social/unified-calendar/queue",
           "file": "server/routes/socialMedia.ts",
-          "line": 3019,
+          "line": 3021,
           "confidence": "high"
         }
       ]
@@ -52933,7 +52938,7 @@
           "method": "GET",
           "path": "/api/social/inbox",
           "file": "server/routes/socialMedia.ts",
-          "line": 1802,
+          "line": 1804,
           "confidence": "high"
         }
       ]
@@ -52956,7 +52961,7 @@
           "method": "GET",
           "path": "/api/social/inbox/templates",
           "file": "server/routes/socialMedia.ts",
-          "line": 2531,
+          "line": 2533,
           "confidence": "high"
         }
       ]
@@ -52979,7 +52984,7 @@
           "method": "GET",
           "path": "/api/social/inbox/team",
           "file": "server/routes/socialMedia.ts",
-          "line": 2664,
+          "line": 2666,
           "confidence": "high"
         }
       ]
@@ -53002,7 +53007,7 @@
           "method": "POST",
           "path": "/api/social/inbox/sync",
           "file": "server/routes/socialMedia.ts",
-          "line": 1881,
+          "line": 1883,
           "confidence": "high"
         }
       ]
@@ -53025,7 +53030,7 @@
           "method": "POST",
           "path": "/api/social/inbox/:id/reply",
           "file": "server/routes/socialMedia.ts",
-          "line": 2124,
+          "line": 2126,
           "confidence": "high"
         }
       ]
@@ -53048,7 +53053,7 @@
           "method": "POST",
           "path": "/api/social/inbox/:id/assign",
           "file": "server/routes/socialMedia.ts",
-          "line": 2399,
+          "line": 2401,
           "confidence": "high"
         }
       ]
@@ -53071,14 +53076,14 @@
           "method": "POST",
           "path": "/api/social/inbox/bulk/archive",
           "file": "server/routes/socialMedia.ts",
-          "line": 2031,
+          "line": 2033,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/social/inbox/:id/archive",
           "file": "server/routes/socialMedia.ts",
-          "line": 2477,
+          "line": 2479,
           "confidence": "high"
         }
       ]
@@ -53101,7 +53106,7 @@
           "method": "GET",
           "path": "/api/social/connections",
           "file": "server/routes/socialMedia.ts",
-          "line": 2724,
+          "line": 2726,
           "confidence": "high"
         }
       ]
@@ -53318,13 +53323,13 @@
       "path": "/api/studio/generation/text",
       "rawPath": "/api/studio/generation/text",
       "file": "client/src/components/studio/AIMusicGenerator.tsx",
-      "line": 269,
+      "line": 271,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/AIMusicGenerator.tsx:269",
+        "client/src/components/studio/AIMusicGenerator.tsx:271",
         "client/src/components/studio/StudioOneDAW.tsx:1459",
         "client/src/components/studio/UltimateDAW.tsx:392"
       ],
@@ -53334,7 +53339,7 @@
           "method": "POST",
           "path": "/api/studio/generation/text",
           "file": "server/routes/studioGeneration.ts",
-          "line": 429,
+          "line": 437,
           "confidence": "high"
         }
       ]
@@ -53343,13 +53348,13 @@
       "path": "/api/studio/generation/pattern/arrangement",
       "rawPath": "/api/studio/generation/pattern/arrangement",
       "file": "client/src/components/studio/AIMusicGenerator.tsx",
-      "line": 412,
+      "line": 415,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/AIMusicGenerator.tsx:412",
+        "client/src/components/studio/AIMusicGenerator.tsx:415",
         "client/src/components/studio/StudioOneDAW.tsx:1623"
       ],
       "status": "matched",
@@ -53358,7 +53363,7 @@
           "method": "POST",
           "path": "/api/studio/generation/pattern/arrangement",
           "file": "server/routes/studioGeneration.ts",
-          "line": 863,
+          "line": 883,
           "confidence": "high"
         }
       ]
@@ -53857,7 +53862,7 @@
           "method": "POST",
           "path": "/api/studio/generation/pattern/melody",
           "file": "server/routes/studioGeneration.ts",
-          "line": 776,
+          "line": 793,
           "confidence": "high"
         }
       ]
@@ -53866,13 +53871,13 @@
       "path": "/api/studio/generation/audio-to-melody",
       "rawPath": "/api/studio/generation/audio-to-melody",
       "file": "client/src/components/studio/FlowStateLyricsToMelody.tsx",
-      "line": 256,
+      "line": 268,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/components/studio/FlowStateLyricsToMelody.tsx:256"
+        "client/src/components/studio/FlowStateLyricsToMelody.tsx:268"
       ],
       "status": "matched",
       "backendMatches": [
@@ -53880,7 +53885,7 @@
           "method": "POST",
           "path": "/api/studio/generation/audio-to-melody",
           "file": "server/routes/studioGeneration.ts",
-          "line": 900,
+          "line": 921,
           "confidence": "high"
         }
       ]
@@ -53969,7 +53974,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/studio/FlowStateProjectSelector.tsx:129",
-        "client/src/pages/ProjectsPageImpl.tsx:291"
+        "client/src/pages/ProjectsPageImpl.tsx:293"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54115,7 +54120,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/components/studio/ProjectSettingsDialog.tsx:161",
-        "client/src/pages/ProjectsPageImpl.tsx:374"
+        "client/src/pages/ProjectsPageImpl.tsx:375"
       ],
       "status": "matched",
       "backendMatches": [
@@ -54410,7 +54415,7 @@
           "method": "POST",
           "path": "/api/studio/generation/pattern/chords",
           "file": "server/routes/studioGeneration.ts",
-          "line": 833,
+          "line": 852,
           "confidence": "high"
         }
       ]
@@ -54782,7 +54787,7 @@
           "method": "POST",
           "path": "/api/support/tickets",
           "file": "server/routes/support.ts",
-          "line": 407,
+          "line": 382,
           "confidence": "high"
         }
       ]
@@ -54964,7 +54969,7 @@
           "method": "GET",
           "path": "/api/advertising/campaigns",
           "file": "server/routes/advertising.ts",
-          "line": 341,
+          "line": 300,
           "confidence": "high"
         }
       ]
@@ -54988,7 +54993,7 @@
           "method": "GET",
           "path": "/api/advertising/ai-insights",
           "file": "server/routes/advertising.ts",
-          "line": 356,
+          "line": 315,
           "confidence": "high"
         }
       ]
@@ -55012,7 +55017,7 @@
           "method": "POST",
           "path": "/api/advertising/campaigns",
           "file": "server/routes/advertising.ts",
-          "line": 710,
+          "line": 669,
           "confidence": "high"
         }
       ]
@@ -55036,7 +55041,7 @@
           "method": "PATCH",
           "path": "/api/advertising/campaigns/:id",
           "file": "server/routes/advertising.ts",
-          "line": 956,
+          "line": 915,
           "confidence": "high"
         }
       ]
@@ -55060,7 +55065,7 @@
           "method": "DELETE",
           "path": "/api/advertising/campaigns/:id",
           "file": "server/routes/advertising.ts",
-          "line": 1094,
+          "line": 1053,
           "confidence": "high"
         }
       ]
@@ -55083,7 +55088,7 @@
           "method": "POST",
           "path": "/api/advertising/optimize-campaign",
           "file": "server/routes/advertising.ts",
-          "line": 1860,
+          "line": 1819,
           "confidence": "high"
         }
       ]
@@ -58067,7 +58072,7 @@
           "method": "GET",
           "path": "/api/social/promotable-content",
           "file": "server/routes/socialMedia.ts",
-          "line": 5168,
+          "line": 5170,
           "confidence": "high"
         }
       ]
@@ -58090,7 +58095,7 @@
           "method": "POST",
           "path": "/api/advertising/generate-campaign",
           "file": "server/routes/advertising.ts",
-          "line": 2159,
+          "line": 2118,
           "confidence": "high"
         }
       ]
@@ -58113,7 +58118,7 @@
           "method": "GET",
           "path": "/api/advertising/audience-segments",
           "file": "server/routes/advertising.ts",
-          "line": 384,
+          "line": 343,
           "confidence": "high"
         }
       ]
@@ -58136,7 +58141,7 @@
           "method": "GET",
           "path": "/api/advertising/creative-fatigue",
           "file": "server/routes/advertising.ts",
-          "line": 399,
+          "line": 358,
           "confidence": "high"
         }
       ]
@@ -58159,7 +58164,7 @@
           "method": "GET",
           "path": "/api/advertising/lookalike-audiences",
           "file": "server/routes/advertising.ts",
-          "line": 500,
+          "line": 459,
           "confidence": "high"
         }
       ]
@@ -58182,7 +58187,7 @@
           "method": "GET",
           "path": "/api/advertising/forecasts",
           "file": "server/routes/advertising.ts",
-          "line": 598,
+          "line": 557,
           "confidence": "high"
         }
       ]
@@ -58205,7 +58210,7 @@
           "method": "GET",
           "path": "/api/advertising/competitor-insights",
           "file": "server/routes/advertising.ts",
-          "line": 613,
+          "line": 572,
           "confidence": "high"
         }
       ]
@@ -58267,7 +58272,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/pages/Advertisement.tsx:662",
-        "client/src/pages/SocialMedia.tsx:643"
+        "client/src/pages/SocialMedia.tsx:644"
       ],
       "status": "matched",
       "backendMatches": [
@@ -58275,7 +58280,7 @@
           "method": "GET",
           "path": "/api/social/platform-status",
           "file": "server/routes/socialMedia.ts",
-          "line": 1169,
+          "line": 1171,
           "confidence": "high"
         }
       ]
@@ -58298,7 +58303,7 @@
           "method": "POST",
           "path": "/api/advertising/upload-image",
           "file": "server/routes/advertising.ts",
-          "line": 1192,
+          "line": 1151,
           "confidence": "high"
         }
       ]
@@ -58321,7 +58326,7 @@
           "method": "POST",
           "path": "/api/advertising/lookalike-audiences",
           "file": "server/routes/advertising.ts",
-          "line": 515,
+          "line": 474,
           "confidence": "high"
         }
       ]
@@ -58344,7 +58349,7 @@
           "method": "PATCH",
           "path": "/api/advertising/lookalike-audiences/:id",
           "file": "server/routes/advertising.ts",
-          "line": 555,
+          "line": 514,
           "confidence": "high"
         }
       ]
@@ -58367,7 +58372,7 @@
           "method": "PATCH",
           "path": "/api/advertising/creatives/:creativeId",
           "file": "server/routes/advertising.ts",
-          "line": 414,
+          "line": 373,
           "confidence": "high"
         }
       ]
@@ -58390,7 +58395,7 @@
           "method": "POST",
           "path": "/api/advertising/campaigns/:id/activate",
           "file": "server/routes/advertising.ts",
-          "line": 941,
+          "line": 900,
           "confidence": "high"
         }
       ]
@@ -58413,7 +58418,7 @@
           "method": "POST",
           "path": "/api/advertising/creatives",
           "file": "server/routes/advertising.ts",
-          "line": 1131,
+          "line": 1090,
           "confidence": "high"
         }
       ]
@@ -59142,14 +59147,14 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 337,
+      "line": 338,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Dashboard.tsx:337",
-        "client/src/pages/SocialMedia.tsx:672"
+        "client/src/pages/Dashboard.tsx:338",
+        "client/src/pages/SocialMedia.tsx:673"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59157,7 +59162,7 @@
           "method": "GET",
           "path": "/api/social/posts",
           "file": "server/routes/socialMedia.ts",
-          "line": 245,
+          "line": 247,
           "confidence": "high"
         }
       ]
@@ -59166,13 +59171,13 @@
       "path": "/api/ai/optimize-content",
       "rawPath": "/api/ai/optimize-content",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 359,
+      "line": 360,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Dashboard.tsx:359"
+        "client/src/pages/Dashboard.tsx:360"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59212,13 +59217,13 @@
       "path": "/api/developer/keys",
       "rawPath": "/api/developer/keys",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 82,
+      "line": 83,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/DeveloperApi.tsx:82"
+        "client/src/pages/DeveloperApi.tsx:83"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59226,7 +59231,7 @@
           "method": "GET",
           "path": "/api/developer/keys",
           "file": "server/routes/developerApi.ts",
-          "line": 98,
+          "line": 103,
           "confidence": "high"
         }
       ]
@@ -59235,13 +59240,13 @@
       "path": "/api/developer/usage",
       "rawPath": "/api/developer/usage",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 93,
+      "line": 94,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/DeveloperApi.tsx:93"
+        "client/src/pages/DeveloperApi.tsx:94"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59249,7 +59254,7 @@
           "method": "GET",
           "path": "/api/developer/usage",
           "file": "server/routes/developerApi.ts",
-          "line": 194,
+          "line": 199,
           "confidence": "high"
         }
       ]
@@ -59258,13 +59263,13 @@
       "path": "/api/developer/keys/create",
       "rawPath": "/api/developer/keys/create",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 105,
+      "line": 106,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/DeveloperApi.tsx:105"
+        "client/src/pages/DeveloperApi.tsx:106"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59272,22 +59277,22 @@
           "method": "POST",
           "path": "/api/developer/keys/create",
           "file": "server/routes/developerApi.ts",
-          "line": 26,
+          "line": 24,
           "confidence": "high"
         }
       ]
     },
     {
       "path": "/api/developer/keys/:param",
-      "rawPath": "/api/developer/keys/${keyId}",
+      "rawPath": "/api/developer/keys/${encodeURIComponent(keyId)}",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 132,
+      "line": 140,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/DeveloperApi.tsx:132"
+        "client/src/pages/DeveloperApi.tsx:140"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59295,7 +59300,7 @@
           "method": "DELETE",
           "path": "/api/developer/keys/:keyId",
           "file": "server/routes/developerApi.ts",
-          "line": 146,
+          "line": 151,
           "confidence": "high"
         }
       ]
@@ -59304,13 +59309,13 @@
       "path": "/api/playlist-pitching",
       "rawPath": "/api/playlist-pitching",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 612,
+      "line": 613,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:612",
+        "client/src/pages/Distribution.tsx:613",
         "client/src/pages/PlaylistPitching.tsx:83"
       ],
       "status": "matched",
@@ -59328,13 +59333,13 @@
       "path": "/api/playlist-pitching/stats",
       "rawPath": "/api/playlist-pitching/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 618,
+      "line": 619,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:618",
+        "client/src/pages/Distribution.tsx:619",
         "client/src/pages/PlaylistPitching.tsx:93"
       ],
       "status": "matched",
@@ -59359,13 +59364,13 @@
       "path": "/api/playlist-pitching",
       "rawPath": "/api/playlist-pitching",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 633,
+      "line": 634,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:633",
+        "client/src/pages/Distribution.tsx:634",
         "client/src/pages/PlaylistPitching.tsx:108"
       ],
       "status": "matched",
@@ -59383,13 +59388,13 @@
       "path": "/api/shows",
       "rawPath": "/api/shows",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 846,
+      "line": 847,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:846",
+        "client/src/pages/Distribution.tsx:847",
         "client/src/pages/Shows.tsx:119"
       ],
       "status": "matched",
@@ -59407,13 +59412,13 @@
       "path": "/api/shows/stats",
       "rawPath": "/api/shows/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 850,
+      "line": 851,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:850",
+        "client/src/pages/Distribution.tsx:851",
         "client/src/pages/Shows.tsx:127"
       ],
       "status": "matched",
@@ -59438,13 +59443,13 @@
       "path": "/api/shows",
       "rawPath": "/api/shows",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 855,
+      "line": 856,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:855",
+        "client/src/pages/Distribution.tsx:856",
         "client/src/pages/Shows.tsx:132"
       ],
       "status": "matched",
@@ -59462,13 +59467,13 @@
       "path": "/api/venues",
       "rawPath": "/api/venues",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1037,
+      "line": 1038,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1037"
+        "client/src/pages/Distribution.tsx:1038"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59485,13 +59490,13 @@
       "path": "/api/venues/stats",
       "rawPath": "/api/venues/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1040,
+      "line": 1041,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1040"
+        "client/src/pages/Distribution.tsx:1041"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59515,13 +59520,13 @@
       "path": "/api/venues",
       "rawPath": "/api/venues",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1045,
+      "line": 1046,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1045"
+        "client/src/pages/Distribution.tsx:1046"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59538,13 +59543,13 @@
       "path": "/api/sync-licensing",
       "rawPath": "/api/sync-licensing",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1268,
+      "line": 1269,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1268",
+        "client/src/pages/Distribution.tsx:1269",
         "client/src/pages/SyncLicensing.tsx:86"
       ],
       "status": "matched",
@@ -59562,13 +59567,13 @@
       "path": "/api/sync-licensing/stats",
       "rawPath": "/api/sync-licensing/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1272,
+      "line": 1273,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1272",
+        "client/src/pages/Distribution.tsx:1273",
         "client/src/pages/SyncLicensing.tsx:90"
       ],
       "status": "matched",
@@ -59593,13 +59598,13 @@
       "path": "/api/sync-licensing",
       "rawPath": "/api/sync-licensing",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1277,
+      "line": 1278,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1277",
+        "client/src/pages/Distribution.tsx:1278",
         "client/src/pages/SyncLicensing.tsx:95"
       ],
       "status": "matched",
@@ -59617,13 +59622,13 @@
       "path": "/api/distribution/hyperfollow",
       "rawPath": "/api/distribution/hyperfollow",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1579,
+      "line": 1580,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1579"
+        "client/src/pages/Distribution.tsx:1580"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59640,13 +59645,13 @@
       "path": "/api/distribution/analytics/growth",
       "rawPath": "/api/distribution/analytics/growth",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1583,
+      "line": 1584,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1583"
+        "client/src/pages/Distribution.tsx:1584"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59663,13 +59668,13 @@
       "path": "/api/distribution/streaming-trends",
       "rawPath": "/api/distribution/streaming-trends",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1588,
+      "line": 1589,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1588"
+        "client/src/pages/Distribution.tsx:1589"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59686,13 +59691,13 @@
       "path": "/api/distribution/geographic",
       "rawPath": "/api/distribution/geographic",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1593,
+      "line": 1594,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1593"
+        "client/src/pages/Distribution.tsx:1594"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59709,13 +59714,13 @@
       "path": "/api/distribution/earnings/breakdown",
       "rawPath": "/api/distribution/earnings/breakdown",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1598,
+      "line": 1599,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1598"
+        "client/src/pages/Distribution.tsx:1599"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59732,13 +59737,13 @@
       "path": "/api/distribution/platform-earnings",
       "rawPath": "/api/distribution/platform-earnings",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1603,
+      "line": 1604,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1603"
+        "client/src/pages/Distribution.tsx:1604"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59755,13 +59760,13 @@
       "path": "/api/distribution/payout-history",
       "rawPath": "/api/distribution/payout-history",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1608,
+      "line": 1609,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1608"
+        "client/src/pages/Distribution.tsx:1609"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59778,13 +59783,13 @@
       "path": "/api/distribution/hyperfollow/analytics",
       "rawPath": "/api/distribution/hyperfollow/analytics",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1627,
+      "line": 1628,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1627"
+        "client/src/pages/Distribution.tsx:1628"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59808,13 +59813,13 @@
       "path": "/api/distribution/toolost/status",
       "rawPath": "/api/distribution/toolost/status",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1651,
+      "line": 1652,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1651"
+        "client/src/pages/Distribution.tsx:1652"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59831,13 +59836,13 @@
       "path": "/api/distribution/upload",
       "rawPath": "/api/distribution/upload",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1734,
+      "line": 1735,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1734"
+        "client/src/pages/Distribution.tsx:1735"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59854,13 +59859,13 @@
       "path": "/api/distribution/releases/:param",
       "rawPath": "/api/distribution/releases/${id}",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1795,
+      "line": 1796,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PATCH",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1795"
+        "client/src/pages/Distribution.tsx:1796"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59877,13 +59882,13 @@
       "path": "/api/distribution/codes/isrc",
       "rawPath": "/api/distribution/codes/isrc",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1862,
+      "line": 1863,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1862"
+        "client/src/pages/Distribution.tsx:1863"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59900,13 +59905,13 @@
       "path": "/api/distribution/codes/upc",
       "rawPath": "/api/distribution/codes/upc",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1888,
+      "line": 1889,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1888"
+        "client/src/pages/Distribution.tsx:1889"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59923,13 +59928,13 @@
       "path": "/api/distribution/platform/spotify",
       "rawPath": "/api/distribution/platform/spotify",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1913,
+      "line": 1914,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1913"
+        "client/src/pages/Distribution.tsx:1914"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59946,13 +59951,13 @@
       "path": "/api/distribution/platform/apple",
       "rawPath": "/api/distribution/platform/apple",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1943,
+      "line": 1944,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1943"
+        "client/src/pages/Distribution.tsx:1944"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59969,13 +59974,13 @@
       "path": "/api/distribution/platform/youtube",
       "rawPath": "/api/distribution/platform/youtube",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1973,
+      "line": 1974,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:1973"
+        "client/src/pages/Distribution.tsx:1974"
       ],
       "status": "matched",
       "backendMatches": [
@@ -59992,13 +59997,13 @@
       "path": "/api/distribution/export-report",
       "rawPath": "/api/distribution/export-report",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 2080,
+      "line": 2081,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:2080"
+        "client/src/pages/Distribution.tsx:2081"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60015,13 +60020,13 @@
       "path": "/api/label-submissions",
       "rawPath": "/api/label-submissions",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5652,
+      "line": 5653,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:5652"
+        "client/src/pages/Distribution.tsx:5653"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60038,13 +60043,13 @@
       "path": "/api/label-submissions/stats",
       "rawPath": "/api/label-submissions/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5661,
+      "line": 5662,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:5661"
+        "client/src/pages/Distribution.tsx:5662"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60068,13 +60073,13 @@
       "path": "/api/label-submissions",
       "rawPath": "/api/label-submissions",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5666,
+      "line": 5667,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:5666"
+        "client/src/pages/Distribution.tsx:5667"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60091,13 +60096,13 @@
       "path": "/api/label-submissions/:param",
       "rawPath": "/api/label-submissions/${id}",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5692,
+      "line": 5693,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PUT",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:5692"
+        "client/src/pages/Distribution.tsx:5693"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60114,13 +60119,13 @@
       "path": "/api/sample-clearances",
       "rawPath": "/api/sample-clearances",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6100,
+      "line": 6101,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:6100"
+        "client/src/pages/Distribution.tsx:6101"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60137,13 +60142,13 @@
       "path": "/api/sample-clearances/stats",
       "rawPath": "/api/sample-clearances/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6109,
+      "line": 6110,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:6109"
+        "client/src/pages/Distribution.tsx:6110"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60167,13 +60172,13 @@
       "path": "/api/sample-clearances",
       "rawPath": "/api/sample-clearances",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6114,
+      "line": 6115,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:6114"
+        "client/src/pages/Distribution.tsx:6115"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60190,13 +60195,13 @@
       "path": "/api/sample-clearances/:param",
       "rawPath": "/api/sample-clearances/${id}",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6129,
+      "line": 6130,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PUT",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Distribution.tsx:6129"
+        "client/src/pages/Distribution.tsx:6130"
       ],
       "status": "matched",
       "backendMatches": [
@@ -60227,7 +60232,7 @@
           "method": "GET",
           "path": "/api/social/voice-profiles",
           "file": "server/routes/socialMedia.ts",
-          "line": 6191,
+          "line": 6153,
           "confidence": "high"
         }
       ]
@@ -60841,13 +60846,13 @@
       "path": "/api/auth/demo",
       "rawPath": "/api/auth/demo",
       "file": "client/src/pages/Landing.tsx",
-      "line": 279,
+      "line": 292,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Landing.tsx:279",
+        "client/src/pages/Landing.tsx:292",
         "client/src/pages/Login.tsx:417"
       ],
       "status": "matched",
@@ -60927,7 +60932,7 @@
           "method": "PUT",
           "path": "/api/marketplace/listings/:id",
           "file": "server/routes/marketplace.ts",
-          "line": 2155,
+          "line": 2157,
           "confidence": "high"
         }
       ]
@@ -60996,7 +61001,7 @@
           "method": "GET",
           "path": "/api/marketplace/beats/:beatId",
           "file": "server/routes/marketplace.ts",
-          "line": 2655,
+          "line": 2657,
           "confidence": "high"
         }
       ]
@@ -61269,6 +61274,50 @@
       ]
     },
     {
+      "path": "/api/notifications/:param",
+      "rawPath": "/api/notifications/${encodeURIComponent(id!)}",
+      "file": "client/src/pages/NotificationDetail.tsx",
+      "line": 50,
+      "source": "apiRequest",
+      "kind": "apiRequest",
+      "method": "GET",
+      "methodConfidence": "detected",
+      "occurrences": [
+        "client/src/pages/NotificationDetail.tsx:50"
+      ],
+      "status": "matched",
+      "backendMatches": [
+        {
+          "method": "GET",
+          "path": "/api/notifications/preferences",
+          "file": "server/routes.ts",
+          "line": 3362,
+          "confidence": "high"
+        },
+        {
+          "method": "GET",
+          "path": "/api/notifications/push-key",
+          "file": "server/routes.ts",
+          "line": 3548,
+          "confidence": "high"
+        },
+        {
+          "method": "GET",
+          "path": "/api/notifications/mobile-tokens",
+          "file": "server/routes.ts",
+          "line": 4128,
+          "confidence": "high"
+        },
+        {
+          "method": "GET",
+          "path": "/api/notifications/unread-count",
+          "file": "server/routes.ts",
+          "line": 4172,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
       "path": "/api/outreach/campaigns",
       "rawPath": "/api/outreach/campaigns",
       "file": "client/src/pages/OutreachCRM.tsx",
@@ -61516,7 +61565,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/pages/PressKit.tsx:111",
-        "client/src/pages/SocialMedia.tsx:5088"
+        "client/src/pages/SocialMedia.tsx:5089"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61540,7 +61589,7 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/pages/PressKit.tsx:116",
-        "client/src/pages/SocialMedia.tsx:5093"
+        "client/src/pages/SocialMedia.tsx:5094"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61564,8 +61613,8 @@
       "methodConfidence": "detected",
       "occurrences": [
         "client/src/pages/PressKit.tsx:172",
-        "client/src/pages/SocialMedia.tsx:1298",
-        "client/src/pages/SocialMedia.tsx:5148",
+        "client/src/pages/SocialMedia.tsx:1299",
+        "client/src/pages/SocialMedia.tsx:5149",
         "client/src/lib/imageUpload.ts:19"
       ],
       "status": "matched",
@@ -61620,7 +61669,7 @@
           "method": "POST",
           "path": "/api/marketplace/follow/:producerId",
           "file": "server/routes/marketplace.ts",
-          "line": 2300,
+          "line": 2302,
           "confidence": "high"
         }
       ]
@@ -61643,7 +61692,7 @@
           "method": "POST",
           "path": "/api/marketplace/unfollow/:producerId",
           "file": "server/routes/marketplace.ts",
-          "line": 2634,
+          "line": 2636,
           "confidence": "high"
         }
       ]
@@ -61698,13 +61747,13 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 892,
+      "line": 909,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ProjectsPageImpl.tsx:892"
+        "client/src/pages/ProjectsPageImpl.tsx:909"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61721,13 +61770,13 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 900,
+      "line": 917,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ProjectsPageImpl.tsx:900"
+        "client/src/pages/ProjectsPageImpl.tsx:917"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61744,13 +61793,13 @@
       "path": "/api/songwriting/:param",
       "rawPath": "/api/songwriting/${encodeURIComponent(id)}",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 935,
+      "line": 952,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PUT",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ProjectsPageImpl.tsx:935"
+        "client/src/pages/ProjectsPageImpl.tsx:952"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61767,13 +61816,13 @@
       "path": "/api/songwriting/:param",
       "rawPath": "/api/songwriting/${encodeURIComponent(id)}",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 957,
+      "line": 974,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ProjectsPageImpl.tsx:957"
+        "client/src/pages/ProjectsPageImpl.tsx:974"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61790,13 +61839,13 @@
       "path": "/api/songwriting/ai-assist",
       "rawPath": "/api/songwriting/ai-assist",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 981,
+      "line": 998,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ProjectsPageImpl.tsx:981"
+        "client/src/pages/ProjectsPageImpl.tsx:998"
       ],
       "status": "matched",
       "backendMatches": [
@@ -61962,13 +62011,13 @@
       "path": "/api/auth/google/signup",
       "rawPath": "/api/auth/google/signup",
       "file": "client/src/pages/Register.tsx",
-      "line": 354,
+      "line": 353,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/Register.tsx:354"
+        "client/src/pages/Register.tsx:353"
       ],
       "status": "matched",
       "backendMatches": [
@@ -62008,13 +62057,13 @@
       "path": "/api/auth/reset-password",
       "rawPath": "/api/auth/reset-password",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 124,
+      "line": 118,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/ResetPassword.tsx:124"
+        "client/src/pages/ResetPassword.tsx:118"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63144,13 +63193,13 @@
       "path": "/api/social/metrics",
       "rawPath": "/api/social/metrics",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 677,
+      "line": 678,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:677"
+        "client/src/pages/SocialMedia.tsx:678"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63158,7 +63207,7 @@
           "method": "GET",
           "path": "/api/social/metrics",
           "file": "server/routes/socialMedia.ts",
-          "line": 573,
+          "line": 575,
           "confidence": "high"
         }
       ]
@@ -63167,13 +63216,13 @@
       "path": "/api/social/ai-insights",
       "rawPath": "/api/social/ai-insights",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 683,
+      "line": 684,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:683"
+        "client/src/pages/SocialMedia.tsx:684"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63181,7 +63230,7 @@
           "method": "GET",
           "path": "/api/social/ai-insights",
           "file": "server/routes/socialMedia.ts",
-          "line": 1146,
+          "line": 1148,
           "confidence": "high"
         }
       ]
@@ -63190,13 +63239,13 @@
       "path": "/api/social/activity",
       "rawPath": "/api/social/activity",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 691,
+      "line": 692,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:691"
+        "client/src/pages/SocialMedia.tsx:692"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63204,7 +63253,7 @@
           "method": "GET",
           "path": "/api/social/activity",
           "file": "server/routes/socialMedia.ts",
-          "line": 1096,
+          "line": 1098,
           "confidence": "high"
         }
       ]
@@ -63213,13 +63262,13 @@
       "path": "/api/social/weekly-stats",
       "rawPath": "/api/social/weekly-stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 697,
+      "line": 698,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:697"
+        "client/src/pages/SocialMedia.tsx:698"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63227,7 +63276,7 @@
           "method": "GET",
           "path": "/api/social/weekly-stats",
           "file": "server/routes/socialMedia.ts",
-          "line": 1112,
+          "line": 1114,
           "confidence": "high"
         }
       ]
@@ -63236,13 +63285,13 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 708,
+      "line": 709,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:708"
+        "client/src/pages/SocialMedia.tsx:709"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63250,7 +63299,7 @@
           "method": "GET",
           "path": "/api/social/calendar",
           "file": "server/routes/socialMedia.ts",
-          "line": 611,
+          "line": 613,
           "confidence": "high"
         }
       ]
@@ -63259,13 +63308,13 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 717,
+      "line": 718,
       "source": "useQuery",
       "kind": "useQuery",
       "method": "GET",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:717"
+        "client/src/pages/SocialMedia.tsx:718"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63273,7 +63322,7 @@
           "method": "GET",
           "path": "/api/social/calendar/stats",
           "file": "server/routes/socialMedia.ts",
-          "line": 627,
+          "line": 629,
           "confidence": "high"
         }
       ]
@@ -63282,13 +63331,13 @@
       "path": "/api/social/generate-content",
       "rawPath": "/api/social/generate-content",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 921,
+      "line": 922,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:921"
+        "client/src/pages/SocialMedia.tsx:922"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63296,7 +63345,7 @@
           "method": "POST",
           "path": "/api/social/generate-content",
           "file": "server/routes/socialMedia.ts",
-          "line": 3463,
+          "line": 3465,
           "confidence": "high"
         }
       ]
@@ -63305,13 +63354,13 @@
       "path": "/api/social/schedule-post",
       "rawPath": "/api/social/schedule-post",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1017,
+      "line": 1018,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1017"
+        "client/src/pages/SocialMedia.tsx:1018"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63319,7 +63368,7 @@
           "method": "POST",
           "path": "/api/social/schedule-post",
           "file": "server/routes/socialMedia.ts",
-          "line": 397,
+          "line": 399,
           "confidence": "high"
         }
       ]
@@ -63328,13 +63377,13 @@
       "path": "/api/social/generate-from-url",
       "rawPath": "/api/social/generate-from-url",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1071,
+      "line": 1072,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1071"
+        "client/src/pages/SocialMedia.tsx:1072"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63342,7 +63391,7 @@
           "method": "POST",
           "path": "/api/social/generate-from-url",
           "file": "server/routes/socialMedia.ts",
-          "line": 3607,
+          "line": 3609,
           "confidence": "high"
         }
       ]
@@ -63351,13 +63400,13 @@
       "path": "/api/social/posts/:param",
       "rawPath": "/api/social/posts/${postId}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1273,
+      "line": 1274,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1273"
+        "client/src/pages/SocialMedia.tsx:1274"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63365,7 +63414,7 @@
           "method": "DELETE",
           "path": "/api/social/posts/:postId",
           "file": "server/routes/socialMedia.ts",
-          "line": 312,
+          "line": 314,
           "confidence": "high"
         }
       ]
@@ -63374,13 +63423,13 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1331,
+      "line": 1332,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1331"
+        "client/src/pages/SocialMedia.tsx:1332"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63388,7 +63437,7 @@
           "method": "POST",
           "path": "/api/social/calendar",
           "file": "server/routes/socialMedia.ts",
-          "line": 643,
+          "line": 645,
           "confidence": "high"
         }
       ]
@@ -63397,13 +63446,13 @@
       "path": "/api/social/calendar/:param",
       "rawPath": "/api/social/calendar/${postId}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1389,
+      "line": 1390,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PUT",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1389"
+        "client/src/pages/SocialMedia.tsx:1390"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63411,7 +63460,7 @@
           "method": "PUT",
           "path": "/api/social/calendar/:postId",
           "file": "server/routes/socialMedia.ts",
-          "line": 781,
+          "line": 783,
           "confidence": "high"
         }
       ]
@@ -63420,13 +63469,13 @@
       "path": "/api/social/calendar/:param",
       "rawPath": "/api/social/calendar/${postId}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1432,
+      "line": 1433,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1432"
+        "client/src/pages/SocialMedia.tsx:1433"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63434,14 +63483,14 @@
           "method": "DELETE",
           "path": "/api/social/calendar/batch",
           "file": "server/routes/socialMedia.ts",
-          "line": 987,
+          "line": 989,
           "confidence": "high"
         },
         {
           "method": "DELETE",
           "path": "/api/social/calendar/:postId",
           "file": "server/routes/socialMedia.ts",
-          "line": 1048,
+          "line": 1050,
           "confidence": "high"
         }
       ]
@@ -63450,13 +63499,13 @@
       "path": "/api/social/calendar/:param/publish",
       "rawPath": "/api/social/calendar/${postId}/publish",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1460,
+      "line": 1461,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1460"
+        "client/src/pages/SocialMedia.tsx:1461"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63464,14 +63513,14 @@
           "method": "POST",
           "path": "/api/social/calendar/batch/publish",
           "file": "server/routes/socialMedia.ts",
-          "line": 503,
+          "line": 505,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/social/calendar/:postId/publish",
           "file": "server/routes/socialMedia.ts",
-          "line": 540,
+          "line": 542,
           "confidence": "high"
         }
       ]
@@ -63480,13 +63529,13 @@
       "path": "/api/social/calendar/batch",
       "rawPath": "/api/social/calendar/batch",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1494,
+      "line": 1495,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "PATCH",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1494"
+        "client/src/pages/SocialMedia.tsx:1495"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63494,7 +63543,7 @@
           "method": "PATCH",
           "path": "/api/social/calendar/batch",
           "file": "server/routes/socialMedia.ts",
-          "line": 906,
+          "line": 908,
           "confidence": "high"
         }
       ]
@@ -63503,13 +63552,13 @@
       "path": "/api/social/calendar/batch",
       "rawPath": "/api/social/calendar/batch",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1525,
+      "line": 1526,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "DELETE",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1525"
+        "client/src/pages/SocialMedia.tsx:1526"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63517,14 +63566,14 @@
           "method": "DELETE",
           "path": "/api/social/calendar/batch",
           "file": "server/routes/socialMedia.ts",
-          "line": 987,
+          "line": 989,
           "confidence": "high"
         },
         {
           "method": "DELETE",
           "path": "/api/social/calendar/:postId",
           "file": "server/routes/socialMedia.ts",
-          "line": 1048,
+          "line": 1050,
           "confidence": "high"
         }
       ]
@@ -63533,13 +63582,13 @@
       "path": "/api/social/calendar/batch/publish",
       "rawPath": "/api/social/calendar/batch/publish",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1555,
+      "line": 1556,
       "source": "apiRequest",
       "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SocialMedia.tsx:1555"
+        "client/src/pages/SocialMedia.tsx:1556"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63547,14 +63596,14 @@
           "method": "POST",
           "path": "/api/social/calendar/batch/publish",
           "file": "server/routes/socialMedia.ts",
-          "line": 503,
+          "line": 505,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/social/calendar/:postId/publish",
           "file": "server/routes/socialMedia.ts",
-          "line": 540,
+          "line": 542,
           "confidence": "high"
         }
       ]
@@ -63875,13 +63924,13 @@
       "path": "/api/support/my/tickets/:param",
       "rawPath": "/api/support/my/tickets/${encodeURIComponent(ticketId || \"\")}",
       "file": "client/src/pages/SupportTicket.tsx",
-      "line": 20,
-      "source": "fetch",
-      "kind": "fetch",
+      "line": 32,
+      "source": "apiRequest",
+      "kind": "apiRequest",
       "method": "GET",
-      "methodConfidence": "assumed",
+      "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SupportTicket.tsx:20"
+        "client/src/pages/SupportTicket.tsx:32"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63889,7 +63938,7 @@
           "method": "GET",
           "path": "/api/support/my/tickets/:ticketId",
           "file": "server/routes/support.ts",
-          "line": 13,
+          "line": 14,
           "confidence": "high"
         }
       ]
@@ -63898,13 +63947,13 @@
       "path": "/api/support/my/tickets/:param/messages",
       "rawPath": "/api/support/my/tickets/${encodeURIComponent(ticketId || \"\")}/messages",
       "file": "client/src/pages/SupportTicket.tsx",
-      "line": 34,
-      "source": "fetch",
-      "kind": "fetch",
+      "line": 54,
+      "source": "apiRequest",
+      "kind": "apiRequest",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/SupportTicket.tsx:34"
+        "client/src/pages/SupportTicket.tsx:54"
       ],
       "status": "matched",
       "backendMatches": [
@@ -63912,7 +63961,7 @@
           "method": "POST",
           "path": "/api/support/my/tickets/:ticketId/messages",
           "file": "server/routes/support.ts",
-          "line": 37,
+          "line": 38,
           "confidence": "high"
         }
       ]
@@ -64694,14 +64743,14 @@
           "method": "GET",
           "path": "/api/support/tickets/all",
           "file": "server/routes/support.ts",
-          "line": 82,
+          "line": 83,
           "confidence": "high"
         },
         {
           "method": "GET",
           "path": "/api/support/tickets/:ticketId",
           "file": "server/routes/support.ts",
-          "line": 172,
+          "line": 173,
           "confidence": "high"
         }
       ]
@@ -64724,7 +64773,7 @@
           "method": "GET",
           "path": "/api/support/stats",
           "file": "server/routes/support.ts",
-          "line": 135,
+          "line": 136,
           "confidence": "high"
         }
       ]
@@ -64748,7 +64797,7 @@
           "method": "PATCH",
           "path": "/api/support/tickets/:ticketId",
           "file": "server/routes/support.ts",
-          "line": 333,
+          "line": 332,
           "confidence": "high"
         }
       ]
@@ -64771,14 +64820,14 @@
           "method": "GET",
           "path": "/api/support/tickets/all",
           "file": "server/routes/support.ts",
-          "line": 82,
+          "line": 83,
           "confidence": "high"
         },
         {
           "method": "GET",
           "path": "/api/support/tickets/:ticketId",
           "file": "server/routes/support.ts",
-          "line": 172,
+          "line": 173,
           "confidence": "high"
         }
       ]
@@ -64801,7 +64850,7 @@
           "method": "POST",
           "path": "/api/support/tickets/:ticketId/messages",
           "file": "server/routes/support.ts",
-          "line": 204,
+          "line": 205,
           "confidence": "high"
         }
       ]
@@ -64824,7 +64873,7 @@
           "method": "POST",
           "path": "/api/support/tickets/:ticketId/tags",
           "file": "server/routes/support.ts",
-          "line": 248,
+          "line": 247,
           "confidence": "high"
         }
       ]
@@ -64847,7 +64896,7 @@
           "method": "DELETE",
           "path": "/api/support/tickets/:ticketId/tags/:tag",
           "file": "server/routes/support.ts",
-          "line": 293,
+          "line": 292,
           "confidence": "high"
         }
       ]
@@ -64870,7 +64919,7 @@
           "method": "POST",
           "path": "/api/ai/analytics/insights",
           "file": "server/routes/ai.ts",
-          "line": 815,
+          "line": 825,
           "confidence": "high"
         }
       ]
@@ -65101,7 +65150,7 @@
           "method": "POST",
           "path": "/api/advertising/start",
           "file": "server/routes/advertising.ts",
-          "line": 1277,
+          "line": 1236,
           "confidence": "high"
         }
       ]
@@ -65124,7 +65173,7 @@
           "method": "POST",
           "path": "/api/advertising/stop",
           "file": "server/routes/advertising.ts",
-          "line": 1330,
+          "line": 1289,
           "confidence": "high"
         }
       ]
@@ -65285,14 +65334,14 @@
           "method": "POST",
           "path": "/api/social/inbox/bulk/archive",
           "file": "server/routes/socialMedia.ts",
-          "line": 2031,
+          "line": 2033,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/social/inbox/:id/archive",
           "file": "server/routes/socialMedia.ts",
-          "line": 2477,
+          "line": 2479,
           "confidence": "high"
         }
       ]
@@ -65315,14 +65364,14 @@
           "method": "POST",
           "path": "/api/social/inbox/bulk/read",
           "file": "server/routes/socialMedia.ts",
-          "line": 1967,
+          "line": 1969,
           "confidence": "high"
         },
         {
           "method": "POST",
           "path": "/api/social/inbox/:id/read",
           "file": "server/routes/socialMedia.ts",
-          "line": 2094,
+          "line": 2096,
           "confidence": "high"
         }
       ]
@@ -65345,7 +65394,7 @@
           "method": "POST",
           "path": "/api/social/inbox/bulk/unread",
           "file": "server/routes/socialMedia.ts",
-          "line": 1999,
+          "line": 2001,
           "confidence": "high"
         }
       ]
@@ -65368,7 +65417,7 @@
           "method": "POST",
           "path": "/api/social/inbox/bulk/delete",
           "file": "server/routes/socialMedia.ts",
-          "line": 2063,
+          "line": 2065,
           "confidence": "high"
         }
       ]
@@ -66561,7 +66610,7 @@
       "path": "/api/social/generate-image",
       "rawPath": "/api/social/generate-image",
       "file": "client/src/components/content/AIImageGenerator.tsx",
-      "line": 181,
+      "line": 201,
       "source": null,
       "kind": "not-api-reference",
       "method": null,
@@ -66588,10 +66637,40 @@
       "methodConfidence": null
     },
     {
+      "path": "/api/generate/image",
+      "rawPath": "/api/generate/image",
+      "file": "client/src/components/content/LocalMediaRenderer.tsx",
+      "line": 76,
+      "source": null,
+      "kind": "not-api-reference",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/generate/audio",
+      "rawPath": "/api/generate/audio",
+      "file": "client/src/components/content/LocalMediaRenderer.tsx",
+      "line": 89,
+      "source": null,
+      "kind": "not-api-reference",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/generate-video",
+      "rawPath": "/api/generate-video",
+      "file": "client/src/components/content/LocalMediaRenderer.tsx",
+      "line": 99,
+      "source": null,
+      "kind": "not-api-reference",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
       "path": "/api/social/generate-video",
       "rawPath": "/api/social/generate-video",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 63,
+      "line": 68,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -66601,7 +66680,7 @@
       "path": "/api/social/video-job/:id",
       "rawPath": "/api/social/video-job/:id",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 64,
+      "line": 69,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -66611,7 +66690,7 @@
       "path": "/api/social/generate-video",
       "rawPath": "/api/social/generate-video",
       "file": "client/src/components/content/ServerVideoGenerator.tsx",
-      "line": 299,
+      "line": 304,
       "source": null,
       "kind": "not-api-reference",
       "method": null,
@@ -71508,6 +71587,26 @@
       "methodConfidence": null
     },
     {
+      "path": "/api/storage/file/",
+      "rawPath": "/api/storage/file/",
+      "file": "client/src/lib/generatedAssetDelivery.ts",
+      "line": 10,
+      "source": null,
+      "kind": "not-api-reference",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/storage/file/",
+      "rawPath": "/api/storage/file/",
+      "file": "client/src/lib/generatedAssetDelivery.ts",
+      "line": 12,
+      "source": null,
+      "kind": "not-api-reference",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
       "path": "/api/auth/me",
       "rawPath": "/api/auth/me",
       "file": "client/src/lib/idbPersister.ts",
@@ -71534,6 +71633,16 @@
       "line": 8,
       "source": null,
       "kind": "comment",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/social/music-video-job/:param",
+      "rawPath": "/api/social/music-video-job/${encodeURIComponent(jobId)}",
+      "file": "client/src/lib/musicVideoJobs.ts",
+      "line": 19,
+      "source": null,
+      "kind": "not-api-reference",
       "method": null,
       "methodConfidence": null
     },
@@ -72511,7 +72620,7 @@
       "path": "/api/auth/onboarding-status",
       "rawPath": "/api/auth/onboarding-status",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 285,
+      "line": 286,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -72521,7 +72630,7 @@
       "path": "/api/dashboard/comprehensive",
       "rawPath": "/api/dashboard/comprehensive",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 306,
+      "line": 307,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -72531,7 +72640,7 @@
       "path": "/api/projects",
       "rawPath": "/api/projects",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 312,
+      "line": 313,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -72541,7 +72650,7 @@
       "path": "/api/ai/insights",
       "rawPath": "/api/ai/insights",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 323,
+      "line": 324,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -72551,7 +72660,7 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 334,
+      "line": 335,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -72561,7 +72670,7 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 370,
+      "line": 371,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72571,7 +72680,7 @@
       "path": "/api/auth/onboarding-status",
       "rawPath": "/api/auth/onboarding-status",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 518,
+      "line": 519,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72581,7 +72690,7 @@
       "path": "/api/auth/me",
       "rawPath": "/api/auth/me",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 520,
+      "line": 521,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72590,16 +72699,6 @@
     {
       "path": "/api/auth/onboarding-status",
       "rawPath": "/api/auth/onboarding-status",
-      "file": "client/src/pages/Dashboard.tsx",
-      "line": 526,
-      "source": null,
-      "kind": "cache-key",
-      "method": null,
-      "methodConfidence": null
-    },
-    {
-      "path": "/api/auth/me",
-      "rawPath": "/api/auth/me",
       "file": "client/src/pages/Dashboard.tsx",
       "line": 527,
       "source": null,
@@ -72611,7 +72710,17 @@
       "path": "/api/auth/me",
       "rawPath": "/api/auth/me",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 549,
+      "line": 528,
+      "source": null,
+      "kind": "cache-key",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/auth/me",
+      "rawPath": "/api/auth/me",
+      "file": "client/src/pages/Dashboard.tsx",
+      "line": 547,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72621,7 +72730,7 @@
       "path": "/api/auth/onboarding-status",
       "rawPath": "/api/auth/onboarding-status",
       "file": "client/src/pages/Dashboard.tsx",
-      "line": 550,
+      "line": 548,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72641,7 +72750,7 @@
       "path": "/api/developer/keys",
       "rawPath": "/api/developer/keys",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 112,
+      "line": 119,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72651,7 +72760,7 @@
       "path": "/api/developer/keys",
       "rawPath": "/api/developer/keys",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 137,
+      "line": 147,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72661,7 +72770,7 @@
       "path": "/api/developer/usage",
       "rawPath": "/api/developer/usage",
       "file": "client/src/pages/DeveloperApi.tsx",
-      "line": 138,
+      "line": 148,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72671,7 +72780,7 @@
       "path": "/api/playlist-pitching",
       "rawPath": "/api/playlist-pitching",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 648,
+      "line": 649,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72681,7 +72790,7 @@
       "path": "/api/playlist-pitching/stats",
       "rawPath": "/api/playlist-pitching/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 650,
+      "line": 651,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72691,7 +72800,7 @@
       "path": "/api/shows",
       "rawPath": "/api/shows",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 859,
+      "line": 860,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72701,7 +72810,7 @@
       "path": "/api/shows/stats",
       "rawPath": "/api/shows/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 860,
+      "line": 861,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72711,7 +72820,7 @@
       "path": "/api/venues",
       "rawPath": "/api/venues",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1052,
+      "line": 1053,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72721,7 +72830,7 @@
       "path": "/api/venues/stats",
       "rawPath": "/api/venues/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1053,
+      "line": 1054,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72731,7 +72840,7 @@
       "path": "/api/sync-licensing",
       "rawPath": "/api/sync-licensing",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1281,
+      "line": 1282,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72741,7 +72850,7 @@
       "path": "/api/sync-licensing/stats",
       "rawPath": "/api/sync-licensing/stats",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1283,
+      "line": 1284,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72751,7 +72860,7 @@
       "path": "/api/distribution/toolost/status",
       "rawPath": "/api/distribution/toolost/status",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1665,
+      "line": 1666,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -72761,7 +72870,7 @@
       "path": "/api/distribution/platforms",
       "rawPath": "/api/distribution/platforms",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1668,
+      "line": 1669,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -72771,7 +72880,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1772,
+      "line": 1773,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72781,7 +72890,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1808,
+      "line": 1809,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72791,7 +72900,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1837,
+      "line": 1838,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72801,7 +72910,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1927,
+      "line": 1928,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72811,7 +72920,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1957,
+      "line": 1958,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72821,7 +72930,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 1987,
+      "line": 1988,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72831,7 +72940,7 @@
       "path": "/api/distribution/releases",
       "rawPath": "/api/distribution/releases",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 2900,
+      "line": 2901,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72841,7 +72950,7 @@
       "path": "/api/distribution/hyperfollow",
       "rawPath": "/api/distribution/hyperfollow",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 3691,
+      "line": 3692,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72851,7 +72960,7 @@
       "path": "/api/distribution/hyperfollow/analytics",
       "rawPath": "/api/distribution/hyperfollow/analytics",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 3694,
+      "line": 3695,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -72861,7 +72970,7 @@
       "path": "/api/distribution/toolost/connect",
       "rawPath": "/api/distribution/toolost/connect",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 4081,
+      "line": 4082,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -72871,7 +72980,7 @@
       "path": "/api/distribution/toolost/connect",
       "rawPath": "/api/distribution/toolost/connect",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 4936,
+      "line": 4937,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -72881,7 +72990,7 @@
       "path": "/api/label-submissions",
       "rawPath": "/api/label-submissions",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5670,
+      "line": 5671,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72891,7 +73000,7 @@
       "path": "/api/label-submissions",
       "rawPath": "/api/label-submissions",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5698,
+      "line": 5699,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72901,7 +73010,7 @@
       "path": "/api/sample-clearances",
       "rawPath": "/api/sample-clearances",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6118,
+      "line": 6119,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -72911,7 +73020,7 @@
       "path": "/api/sample-clearances",
       "rawPath": "/api/sample-clearances",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 6135,
+      "line": 6136,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73381,7 +73490,17 @@
       "path": "/api/notifications",
       "rawPath": "/api/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 58,
+      "line": 48,
+      "source": "useQuery",
+      "kind": "query-key-custom-fn",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/notifications",
+      "rawPath": "/api/notifications",
+      "file": "client/src/pages/NotificationDetail.tsx",
+      "line": 59,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73391,7 +73510,7 @@
       "path": "/api/notifications",
       "rawPath": "/api/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 71,
+      "line": 72,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73651,7 +73770,7 @@
       "path": "/api/projects",
       "rawPath": "/api/projects",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 417,
+      "line": 412,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -73661,7 +73780,7 @@
       "path": "/api/studio/projects",
       "rawPath": "/api/studio/projects",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 418,
+      "line": 413,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -73671,7 +73790,7 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 890,
+      "line": 907,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -73681,7 +73800,7 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 904,
+      "line": 921,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73691,7 +73810,7 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 942,
+      "line": 959,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73701,7 +73820,7 @@
       "path": "/api/songwriting",
       "rawPath": "/api/songwriting",
       "file": "client/src/pages/ProjectsPageImpl.tsx",
-      "line": 963,
+      "line": 980,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -73781,7 +73900,7 @@
       "path": "/api/auth/google",
       "rawPath": "/api/auth/google",
       "file": "client/src/pages/Register.tsx",
-      "line": 365,
+      "line": 364,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -74301,7 +74420,7 @@
       "path": "/api/auth/onboarding-status",
       "rawPath": "/api/auth/onboarding-status",
       "file": "client/src/pages/SimplifiedDashboard.tsx",
-      "line": 60,
+      "line": 58,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74311,7 +74430,7 @@
       "path": "/api/auth/me",
       "rawPath": "/api/auth/me",
       "file": "client/src/pages/SimplifiedDashboard.tsx",
-      "line": 62,
+      "line": 60,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74321,7 +74440,7 @@
       "path": "/api/social/platform-status",
       "rawPath": "/api/social/platform-status",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 564,
+      "line": 565,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -74331,7 +74450,7 @@
       "path": "/api/social/connections",
       "rawPath": "/api/social/connections",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 566,
+      "line": 567,
       "source": null,
       "kind": "browser-navigation",
       "method": null,
@@ -74341,7 +74460,7 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1041,
+      "line": 1042,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -74351,7 +74470,7 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1282,
+      "line": 1283,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74361,7 +74480,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1357,
+      "line": 1358,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -74371,7 +74490,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1359,
+      "line": 1360,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -74381,7 +74500,7 @@
       "path": "/api/social/posts",
       "rawPath": "/api/social/posts",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1361,
+      "line": 1362,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -74390,16 +74509,6 @@
     {
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
-      "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1411,
-      "source": null,
-      "kind": "cache-key",
-      "method": null,
-      "methodConfidence": null
-    },
-    {
-      "path": "/api/social/posts",
-      "rawPath": "/api/social/posts",
       "file": "client/src/pages/SocialMedia.tsx",
       "line": 1412,
       "source": null,
@@ -74408,10 +74517,20 @@
       "methodConfidence": null
     },
     {
+      "path": "/api/social/posts",
+      "rawPath": "/api/social/posts",
+      "file": "client/src/pages/SocialMedia.tsx",
+      "line": 1413,
+      "source": null,
+      "kind": "cache-key",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1414,
+      "line": 1415,
       "source": null,
       "kind": "cache-key",
       "method": null,
@@ -74421,7 +74540,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1441,
+      "line": 1442,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74431,7 +74550,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1443,
+      "line": 1444,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74441,7 +74560,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1470,
+      "line": 1471,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74451,7 +74570,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1472,
+      "line": 1473,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74461,7 +74580,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1505,
+      "line": 1506,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74471,7 +74590,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1507,
+      "line": 1508,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74481,7 +74600,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1535,
+      "line": 1536,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74491,7 +74610,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1537,
+      "line": 1538,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74501,7 +74620,7 @@
       "path": "/api/social/calendar",
       "rawPath": "/api/social/calendar",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1565,
+      "line": 1566,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74511,7 +74630,7 @@
       "path": "/api/social/calendar/stats",
       "rawPath": "/api/social/calendar/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1567,
+      "line": 1568,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74521,7 +74640,7 @@
       "path": "/api/social/connect/:param",
       "rawPath": "/api/social/connect/${providerId}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1592,
+      "line": 1593,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74531,7 +74650,7 @@
       "path": "/api/social/disconnect/:param",
       "rawPath": "/api/social/disconnect/${providerId}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1627,
+      "line": 1628,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74541,7 +74660,7 @@
       "path": "/api/social/platform-status",
       "rawPath": "/api/social/platform-status",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1636,
+      "line": 1637,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74551,7 +74670,7 @@
       "path": "/api/social/connections",
       "rawPath": "/api/social/connections",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 1639,
+      "line": 1640,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74561,7 +74680,7 @@
       "path": "/api/social/generate-image",
       "rawPath": "/api/social/generate-image",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 2480,
+      "line": 2481,
       "source": null,
       "kind": "not-api-reference",
       "method": null,
@@ -74571,7 +74690,7 @@
       "path": "/api/press-kit",
       "rawPath": "/api/press-kit",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5097,
+      "line": 5098,
       "source": "apiRequest",
       "kind": "cache-key",
       "method": null,
@@ -74581,7 +74700,7 @@
       "path": "/api/radio-pitches",
       "rawPath": "/api/radio-pitches",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5496,
+      "line": 5497,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -74591,7 +74710,7 @@
       "path": "/api/radio-pitches/stats",
       "rawPath": "/api/radio-pitches/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5499,
+      "line": 5500,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -74601,7 +74720,7 @@
       "path": "/api/radio-pitches",
       "rawPath": "/api/radio-pitches",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5504,
+      "line": 5505,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74610,18 +74729,18 @@
     {
       "path": "/api/radio-pitches",
       "rawPath": "/api/radio-pitches",
-      "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5508,
-      "source": "apiRequest",
-      "kind": "comment",
-      "method": null,
-      "methodConfidence": null
-    },
-    {
-      "path": "/api/radio-pitches/stats",
-      "rawPath": "/api/radio-pitches/stats",
       "file": "client/src/pages/SocialMedia.tsx",
       "line": 5509,
+      "source": "apiRequest",
+      "kind": "comment",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/radio-pitches/stats",
+      "rawPath": "/api/radio-pitches/stats",
+      "file": "client/src/pages/SocialMedia.tsx",
+      "line": 5510,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74631,7 +74750,7 @@
       "path": "/api/radio-pitches/:param",
       "rawPath": "/api/radio-pitches/${id}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5535,
+      "line": 5536,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74641,7 +74760,7 @@
       "path": "/api/radio-pitches",
       "rawPath": "/api/radio-pitches",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5543,
+      "line": 5544,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74651,7 +74770,7 @@
       "path": "/api/radio-pitches/stats",
       "rawPath": "/api/radio-pitches/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5544,
+      "line": 5545,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74661,7 +74780,7 @@
       "path": "/api/fan-campaigns",
       "rawPath": "/api/fan-campaigns",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5904,
+      "line": 5905,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -74671,7 +74790,7 @@
       "path": "/api/fan-campaigns/stats",
       "rawPath": "/api/fan-campaigns/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5907,
+      "line": 5908,
       "source": null,
       "kind": "comment",
       "method": null,
@@ -74681,7 +74800,7 @@
       "path": "/api/fan-campaigns",
       "rawPath": "/api/fan-campaigns",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5912,
+      "line": 5913,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74690,18 +74809,18 @@
     {
       "path": "/api/fan-campaigns",
       "rawPath": "/api/fan-campaigns",
-      "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5916,
-      "source": "apiRequest",
-      "kind": "comment",
-      "method": null,
-      "methodConfidence": null
-    },
-    {
-      "path": "/api/fan-campaigns/stats",
-      "rawPath": "/api/fan-campaigns/stats",
       "file": "client/src/pages/SocialMedia.tsx",
       "line": 5917,
+      "source": "apiRequest",
+      "kind": "comment",
+      "method": null,
+      "methodConfidence": null
+    },
+    {
+      "path": "/api/fan-campaigns/stats",
+      "rawPath": "/api/fan-campaigns/stats",
+      "file": "client/src/pages/SocialMedia.tsx",
+      "line": 5918,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74711,7 +74830,7 @@
       "path": "/api/fan-campaigns/:param/send",
       "rawPath": "/api/fan-campaigns/${id}/send",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5939,
+      "line": 5940,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74721,7 +74840,7 @@
       "path": "/api/fan-campaigns",
       "rawPath": "/api/fan-campaigns",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5945,
+      "line": 5946,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74731,7 +74850,7 @@
       "path": "/api/fan-campaigns/stats",
       "rawPath": "/api/fan-campaigns/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5946,
+      "line": 5947,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74741,7 +74860,7 @@
       "path": "/api/fan-campaigns/:param",
       "rawPath": "/api/fan-campaigns/${id}",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5962,
+      "line": 5963,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74751,7 +74870,7 @@
       "path": "/api/fan-campaigns",
       "rawPath": "/api/fan-campaigns",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5967,
+      "line": 5968,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -74761,7 +74880,7 @@
       "path": "/api/fan-campaigns/stats",
       "rawPath": "/api/fan-campaigns/stats",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5968,
+      "line": 5969,
       "source": "apiRequest",
       "kind": "comment",
       "method": null,
@@ -75510,7 +75629,7 @@
     {
       "url": "https://maxbooster.ai/release/${release.id}",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 2815,
+      "line": 2816,
       "source": "external-reference"
     },
     {
@@ -75606,7 +75725,7 @@
     {
       "url": "https://...",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 5701,
+      "line": 5702,
       "source": "external-reference"
     },
     {
@@ -76261,12 +76380,12 @@
     {
       "path": "/settings?tab=payments",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 3299
+      "line": 3300
     },
     {
       "path": "/terms",
       "file": "client/src/pages/Distribution.tsx",
-      "line": 5242
+      "line": 5243
     },
     {
       "path": "/",
@@ -76336,117 +76455,122 @@
     {
       "path": "/dashboard",
       "file": "client/src/pages/Landing.tsx",
-      "line": 288
+      "line": 283
+    },
+    {
+      "path": "/dashboard",
+      "file": "client/src/pages/Landing.tsx",
+      "line": 308
     },
     {
       "path": "/features",
       "file": "client/src/pages/Landing.tsx",
-      "line": 336
+      "line": 353
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 341
+      "line": 358
     },
     {
       "path": "/login",
       "file": "client/src/pages/Landing.tsx",
-      "line": 346
+      "line": 363
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 351
+      "line": 368
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 360
+      "line": 377
     },
     {
       "path": "/features",
       "file": "client/src/pages/Landing.tsx",
-      "line": 383
+      "line": 400
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 392
+      "line": 409
     },
     {
       "path": "/login",
       "file": "client/src/pages/Landing.tsx",
-      "line": 401
+      "line": 418
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 410
+      "line": 427
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 469
+      "line": 486
     },
     {
       "path": "/register/payment/${plan.name.toLowerCase()}",
       "file": "client/src/pages/Landing.tsx",
-      "line": 629
+      "line": 646
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 642
+      "line": 659
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 730
+      "line": 747
     },
     {
       "path": "/features",
       "file": "client/src/pages/Landing.tsx",
-      "line": 762
+      "line": 779
     },
     {
       "path": "/pricing",
       "file": "client/src/pages/Landing.tsx",
-      "line": 763
+      "line": 780
     },
     {
       "path": "/documentation",
       "file": "client/src/pages/Landing.tsx",
-      "line": 764
+      "line": 781
     },
     {
       "path": "/about",
       "file": "client/src/pages/Landing.tsx",
-      "line": 782
+      "line": 799
     },
     {
       "path": "/blog",
       "file": "client/src/pages/Landing.tsx",
-      "line": 783
+      "line": 800
     },
     {
-      "path": "/api",
+      "path": "/api-docs",
       "file": "client/src/pages/Landing.tsx",
-      "line": 784
+      "line": 801
     },
     {
       "path": "/privacy",
       "file": "client/src/pages/Landing.tsx",
-      "line": 802
+      "line": 819
     },
     {
       "path": "/terms",
       "file": "client/src/pages/Landing.tsx",
-      "line": 803
+      "line": 820
     },
     {
       "path": "/dmca",
       "file": "client/src/pages/Landing.tsx",
-      "line": 804
+      "line": 821
     },
     {
       "path": "/forgot-password",
@@ -76471,62 +76595,62 @@
     {
       "path": "/marketplace/beat/",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 26
+      "line": 27
     },
     {
       "path": "/marketplace",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 26
+      "line": 27
     },
     {
       "path": "/marketplace/sell",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 27
+      "line": 28
     },
     {
       "path": "/marketplace",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 27
+      "line": 28
     },
     {
       "path": "/social",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 28
+      "line": 29
     },
     {
       "path": "/social-media",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 28
+      "line": 29
     },
     {
       "path": "/social/",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 29
+      "line": 30
     },
     {
       "path": "/social-media",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 29
+      "line": 30
     },
     {
       "path": "/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 73
+      "line": 74
     },
     {
       "path": "/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 111
+      "line": 115
     },
     {
       "path": "/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 139
+      "line": 143
     },
     {
       "path": "/notifications",
       "file": "client/src/pages/NotificationDetail.tsx",
-      "line": 162
+      "line": 166
     },
     {
       "path": "/dashboard",
@@ -76611,37 +76735,37 @@
     {
       "path": "/dashboard",
       "file": "client/src/pages/Register.tsx",
-      "line": 141
+      "line": 142
     },
     {
       "path": "/dashboard",
       "file": "client/src/pages/Register.tsx",
-      "line": 319
+      "line": 318
     },
     {
       "path": "/terms",
       "file": "client/src/pages/Register.tsx",
-      "line": 769
+      "line": 768
     },
     {
       "path": "/privacy",
       "file": "client/src/pages/Register.tsx",
-      "line": 776
+      "line": 775
     },
     {
       "path": "/login",
       "file": "client/src/pages/Register.tsx",
-      "line": 832
+      "line": 831
     },
     {
       "path": "/terms",
       "file": "client/src/pages/Register.tsx",
-      "line": 838
+      "line": 837
     },
     {
       "path": "/privacy",
       "file": "client/src/pages/Register.tsx",
-      "line": 842
+      "line": 841
     },
     {
       "path": "/terms",
@@ -76671,42 +76795,42 @@
     {
       "path": "/",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 190
+      "line": 184
     },
     {
       "path": "/forgot-password",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 210
+      "line": 204
     },
     {
       "path": "/login",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 218
+      "line": 212
     },
     {
       "path": "/",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 239
+      "line": 233
     },
     {
       "path": "/login",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 260
+      "line": 254
     },
     {
       "path": "/",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 275
+      "line": 269
     },
     {
       "path": "/forgot-password",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 304
+      "line": 298
     },
     {
       "path": "/login",
       "file": "client/src/pages/ResetPassword.tsx",
-      "line": 500
+      "line": 494
     },
     {
       "path": "/",
@@ -76761,12 +76885,12 @@
     {
       "path": "/studio",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 2443
+      "line": 2444
     },
     {
       "path": "/studio",
       "file": "client/src/pages/SocialMedia.tsx",
-      "line": 3463
+      "line": 3464
     },
     {
       "path": "/",
@@ -76948,6 +77072,17 @@
     },
     {
       "path": null,
+      "file": "client/src/components/content/LocalMediaRenderer.tsx",
+      "line": 180,
+      "source": "apiRequest",
+      "method": "POST",
+      "expression": "request",
+      "resolution": "unverified-generic",
+      "reason": "No finite in-repository value set could be established safely.",
+      "contracts": []
+    },
+    {
+      "path": null,
       "file": "client/src/components/distribution/ReleaseWizard.tsx",
       "line": 258,
       "source": "apiRequest",
@@ -77033,7 +77168,7 @@
               "method": "POST",
               "path": "/api/advertising/start",
               "file": "server/routes/advertising.ts",
-              "line": 1277,
+              "line": 1236,
               "confidence": "high"
             }
           ]
@@ -77048,7 +77183,7 @@
               "method": "POST",
               "path": "/api/advertising/stop",
               "file": "server/routes/advertising.ts",
-              "line": 1330,
+              "line": 1289,
               "confidence": "high"
             }
           ]
@@ -77095,6 +77230,17 @@
           ]
         }
       ]
+    },
+    {
+      "path": null,
+      "file": "client/src/components/content/LocalMediaRenderer.tsx",
+      "line": 180,
+      "source": "apiRequest",
+      "method": "POST",
+      "expression": "request",
+      "resolution": "unverified-generic",
+      "reason": "No finite in-repository value set could be established safely.",
+      "contracts": []
     },
     {
       "path": null,
@@ -77260,14 +77406,14 @@
               "method": "POST",
               "path": "/api/social/inbox/bulk/archive",
               "file": "server/routes/socialMedia.ts",
-              "line": 2031,
+              "line": 2033,
               "confidence": "high"
             },
             {
               "method": "POST",
               "path": "/api/social/inbox/:id/archive",
               "file": "server/routes/socialMedia.ts",
-              "line": 2477,
+              "line": 2479,
               "confidence": "high"
             }
           ]
@@ -77282,14 +77428,14 @@
               "method": "POST",
               "path": "/api/social/inbox/bulk/read",
               "file": "server/routes/socialMedia.ts",
-              "line": 1967,
+              "line": 1969,
               "confidence": "high"
             },
             {
               "method": "POST",
               "path": "/api/social/inbox/:id/read",
               "file": "server/routes/socialMedia.ts",
-              "line": 2094,
+              "line": 2096,
               "confidence": "high"
             }
           ]
@@ -77304,7 +77450,7 @@
               "method": "POST",
               "path": "/api/social/inbox/bulk/unread",
               "file": "server/routes/socialMedia.ts",
-              "line": 1999,
+              "line": 2001,
               "confidence": "high"
             }
           ]
@@ -77319,7 +77465,7 @@
               "method": "POST",
               "path": "/api/social/inbox/bulk/delete",
               "file": "server/routes/socialMedia.ts",
-              "line": 2063,
+              "line": 2065,
               "confidence": "high"
             }
           ]

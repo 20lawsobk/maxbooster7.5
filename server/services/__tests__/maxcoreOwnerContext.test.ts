@@ -59,7 +59,8 @@ describe("public Node session -> private MaxCore ownership", () => {
       }, "127.0.0.1", "private-channel")!;
       expect(pythonHeaders["X-MaxCore-User-Id"]).toBe("session-owner");
       expect(modelOwnedBody(JSON.parse(forwarded.body), pythonHeaders))
-        .toEqual({ text: "music", userId: "session-owner", user_id: "session-owner", owner_id: "session-owner" });
+        .toEqual({ text: "music", userId: "session-owner", user_id: "session-owner", owner_id: "session-owner",
+          awareness: { snapshot_id: "canonical-public", awareness: "Public live signals", expires_at: expect.any(Number) } });
     } finally {
       context.mockRestore();
       transport.mockRestore();

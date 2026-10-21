@@ -1,8 +1,8 @@
 # Frontend generation wiring across all 80 routes
 
-Fresh TypeScript import graph and generation endpoint references for all80 route declarations. Conservative dependency closure includes barrel exports and does not prove a component renders or that a generation request succeeds. Named direct consumers and manually reviewed workflows distinguish actual UI controls. No provider/backend actions.
+Fresh TypeScript import graph and generation endpoint references for all 80 route declarations. Conservative dependency closure includes barrel exports and does not prove a component renders or that a generation request succeeds. Named direct consumers and manually reviewed workflows distinguish actual UI controls. No provider/backend actions.
 
-Parsed 954 source files; mapped 80 route declarations and 24 direct generation-reference files.
+Parsed 955 source files; mapped 80 route declarations and 24 direct generation-reference files.
 
 | Route | Detected modalities | Direct generation consumers in import closure |
 |---|---|---|
@@ -26,8 +26,8 @@ Parsed 954 source files; mapped 80 route declarations and 24 direct generation-r
 | `/marketplace/beat/:beatId` | text | `hooks/useAnalyticsInvalidation.ts` |
 | `/marketplace/producer/:producerId` | none detected | No generation reference |
 | `/royalties` | text | `hooks/useAnalyticsInvalidation.ts` |
-| `/studio/:projectId` | audio, image, video | `components/content/LocalMediaRenderer.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/studio/StudioOneDAW.tsx` |
-| `/studio` | audio, image, video | `components/content/LocalMediaRenderer.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/studio/StudioOneDAW.tsx` |
+| `/studio/:projectId` | audio, image, video | `components/studio/StudioOneDAW.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/content/LocalMediaRenderer.tsx` |
+| `/studio` | audio, image, video | `components/studio/StudioOneDAW.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/content/LocalMediaRenderer.tsx` |
 | `/show` | none detected | No generation reference |
 | `/distribution` | text, video | `pages/Distribution.tsx`, `hooks/useAnalyticsInvalidation.ts` |
 | `/pricing` | none detected | No generation reference |
@@ -60,7 +60,7 @@ Parsed 954 source files; mapped 80 route declarations and 24 direct generation-r
 | `/storefront` | none detected | No generation reference |
 | `/storefront/:slug` | none detected | No generation reference |
 | `/store/:slug` | none detected | No generation reference |
-| `/s/:label` | audio, image, text, video | `pages/Distribution.tsx`, `pages/Dashboard.tsx`, `pages/CareerCoach.tsx`, `pages/Assistant.tsx`, `pages/Advertisement.tsx`, `pages/analytics/AIDashboard.tsx`, `pages/SocialMedia.tsx`, `pages/OutreachCRM.tsx`, `hooks/useAnalyticsInvalidation.ts`, `components/support/AIAssistantPublic.tsx`, `components/dashboard/AICareerCoach.tsx`, `components/content/LocalMediaRenderer.tsx`, `components/content/ServerVideoGenerator.tsx`, `components/content/AIImageGenerator.tsx`, `components/advertising/CreativeVariantGenerator.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/studio/StudioOneDAW.tsx` |
+| `/s/:label` | audio, image, text, video | `pages/analytics/AIDashboard.tsx`, `pages/SocialMedia.tsx`, `pages/OutreachCRM.tsx`, `pages/Distribution.tsx`, `pages/Dashboard.tsx`, `pages/CareerCoach.tsx`, `pages/Assistant.tsx`, `pages/Advertisement.tsx`, `hooks/useAnalyticsInvalidation.ts`, `components/support/AIAssistantPublic.tsx`, `components/studio/StudioOneDAW.tsx`, `components/studio/AIMusicGenerator.tsx`, `components/dashboard/AICareerCoach.tsx`, `components/content/LocalMediaRenderer.tsx`, `components/content/ServerVideoGenerator.tsx`, `components/content/AIImageGenerator.tsx`, `components/advertising/CreativeVariantGenerator.tsx` |
 | `/admin/autonomy` | none detected | No generation reference |
 | `/verification` | none detected | No generation reference |
 | `/contracts` | none detected | No generation reference |
@@ -89,42 +89,6 @@ Parsed 954 source files; mapped 80 route declarations and 24 direct generation-r
 
 ## Direct consumers
 
-### client/src/pages/Distribution.tsx
-
-Routes: `/distribution`, `/s/:label`
-
-- POST `/api/social/generate-music-video`, line6692; video; fetch.
-
-### client/src/pages/Dashboard.tsx
-
-Routes: `/dashboard`, `/s/:label`
-
-- Configured `/api/ai/insights`, line323; text; reference.
-- GET `/api/ai/insights`, line328; text; apiRequest.
-- POST `/api/ai/optimize-content`, line359; text; apiRequest.
-
-### client/src/pages/CareerCoach.tsx
-
-Routes: `/s/:label`, `/career-coach`
-
-- Configured `/api/career-coach/recommendations`, line142; text; reference.
-- POST `/api/assistant/chat`, line220; text; apiRequest.
-- Configured `/api/career-coach/recommendations`, line504; text; reference.
-
-### client/src/pages/Assistant.tsx
-
-Routes: `/s/:label`, `/assistant`
-
-- POST `/api/assistant/chat`, line236; text; apiFetch.
-
-### client/src/pages/Advertisement.tsx
-
-Routes: `/advertising`, `/s/:label`
-
-- POST `/api/advertising/generate-campaign`, line250; text; apiRequest.
-- Configured `/api/advertising/generate-video`, line2173; video; reference.
-- Configured `/api/advertising/generate-image`, line2229; image; reference.
-
 ### client/src/pages/analytics/AIDashboard.tsx
 
 Routes: `/analytics/ai`, `/s/:label`
@@ -149,6 +113,42 @@ Routes: `/s/:label`, `/outreach`
 
 - POST `/api/outreach/generate-pitch`, line289; text; apiRequest.
 
+### client/src/pages/Distribution.tsx
+
+Routes: `/distribution`, `/s/:label`
+
+- POST `/api/social/generate-music-video`, line6692; video; fetch.
+
+### client/src/pages/Dashboard.tsx
+
+Routes: `/dashboard`, `/s/:label`
+
+- Configured `/api/ai/insights`, line324; text; reference.
+- GET `/api/ai/insights`, line329; text; apiRequest.
+- POST `/api/ai/optimize-content`, line360; text; apiRequest.
+
+### client/src/pages/CareerCoach.tsx
+
+Routes: `/s/:label`, `/career-coach`
+
+- Configured `/api/career-coach/recommendations`, line142; text; reference.
+- POST `/api/assistant/chat`, line220; text; apiRequest.
+- Configured `/api/career-coach/recommendations`, line504; text; reference.
+
+### client/src/pages/Assistant.tsx
+
+Routes: `/s/:label`, `/assistant`
+
+- POST `/api/assistant/chat`, line236; text; apiFetch.
+
+### client/src/pages/Advertisement.tsx
+
+Routes: `/advertising`, `/s/:label`
+
+- POST `/api/advertising/generate-campaign`, line250; text; apiRequest.
+- Configured `/api/advertising/generate-video`, line2173; video; reference.
+- Configured `/api/advertising/generate-image`, line2229; image; reference.
+
 ### client/src/hooks/useAnalyticsInvalidation.ts
 
 Routes: `/dashboard`, `/projects`, `/social-media`, `/advertising`, `/marketplace`, `/marketplace/beat/:beatId`, `/royalties`, `/distribution`, `/s/:label`
@@ -172,6 +172,52 @@ Routes: `/s/:label`
 Routes: Not reachable from the80 registered route import closures
 
 - POST `/api/assistant/chat`, line192; text; apiFetch.
+
+### client/src/components/studio/UltimateDAW.tsx
+
+Routes: Not reachable from the80 registered route import closures
+
+- POST `/api/studio/generation/text`, line392; audio; apiRequest.
+
+### client/src/components/studio/StudioOneDAW.tsx
+
+Routes: `/studio/:projectId`, `/studio`, `/s/:label`
+
+- POST `/api/studio/generation/text`, line1459; audio; apiRequest.
+- POST `/api/studio/generation/pattern/arrangement`, line1623; audio; apiRequest.
+- POST `/api/studio/generation/pattern/chords`, line1665; audio; apiRequest.
+
+### client/src/components/studio/FlowStateLyricsToMelody.tsx
+
+Routes: Not reachable from the80 registered route import closures
+
+- POST `/api/studio/generation/pattern/melody`, line184; audio; apiRequest.
+
+### client/src/components/studio/AIMusicGenerator.tsx
+
+Routes: `/studio/:projectId`, `/studio`, `/s/:label`
+
+- POST `/api/studio/generation/text`, line271; audio; apiRequest.
+- POST `/api/studio/generation/pattern/arrangement`, line415; audio; apiRequest.
+
+### client/src/components/social/ContentGenerator.tsx
+
+Routes: Not reachable from the80 registered route import closures
+
+- Configured `/api/social/generate/context`, line425; text; reference.
+- GET `/api/social/generate/context`, line428; text; apiRequest.
+- POST `/api/social/ai-content/multilingual`, line469; text; apiRequest.
+- POST `/api/social/generate`, line500; text; apiRequest.
+- POST `/api/social/ai-content/optimize-hashtags`, line526; text; apiRequest.
+- POST `/api/social/ai-content/ab-variants`, line544; text; apiRequest.
+- POST `/api/social/generate-image`, line583; image; apiRequest.
+- POST `/api/multimodal/generate`, line608; text/image/audio/video; apiRequest.
+
+### client/src/components/personalization/PersonalizedDashboard.tsx
+
+Routes: Not reachable from the80 registered route import closures
+
+- Configured `/api/ai/insights`, line267; text; reference.
 
 ### client/src/components/dashboard/AICareerCoach.tsx
 
@@ -213,50 +259,3 @@ Routes: Not reachable from the80 registered route import closures
 Routes: `/advertising`, `/s/:label`
 
 - POST `/api/advertising/generate-content`, line149; text; apiRequest.
-
-### client/src/components/studio/AIMusicGenerator.tsx
-
-Routes: `/studio/:projectId`, `/studio`, `/s/:label`
-
-- POST `/api/studio/generation/text`, line271; audio; apiRequest.
-- POST `/api/studio/generation/pattern/arrangement`, line415; audio; apiRequest.
-
-### client/src/components/social/ContentGenerator.tsx
-
-Routes: Not reachable from the80 registered route import closures
-
-- Configured `/api/social/generate/context`, line425; text; reference.
-- GET `/api/social/generate/context`, line428; text; apiRequest.
-- POST `/api/social/ai-content/multilingual`, line469; text; apiRequest.
-- POST `/api/social/generate`, line500; text; apiRequest.
-- POST `/api/social/ai-content/optimize-hashtags`, line526; text; apiRequest.
-- POST `/api/social/ai-content/ab-variants`, line544; text; apiRequest.
-- POST `/api/social/generate-image`, line583; image; apiRequest.
-- POST `/api/multimodal/generate`, line608; text/image/audio/video; apiRequest.
-
-### client/src/components/personalization/PersonalizedDashboard.tsx
-
-Routes: Not reachable from the80 registered route import closures
-
-- Configured `/api/ai/insights`, line267; text; reference.
-
-### client/src/components/studio/UltimateDAW.tsx
-
-Routes: Not reachable from the80 registered route import closures
-
-- POST `/api/studio/generation/text`, line392; audio; apiRequest.
-
-### client/src/components/studio/StudioOneDAW.tsx
-
-Routes: `/studio/:projectId`, `/studio`, `/s/:label`
-
-- POST `/api/studio/generation/text`, line1459; audio; apiRequest.
-- POST `/api/studio/generation/pattern/arrangement`, line1623; audio; apiRequest.
-- POST `/api/studio/generation/pattern/chords`, line1665; audio; apiRequest.
-
-### client/src/components/studio/FlowStateLyricsToMelody.tsx
-
-Routes: Not reachable from the80 registered route import closures
-
-- POST `/api/studio/generation/pattern/melody`, line184; audio; apiRequest.
-

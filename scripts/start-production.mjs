@@ -38,17 +38,22 @@ function sourceInputs(root) {
 export function readBuildInputs(root) {
   return Object.fromEntries(sourceInputs(root).map(f => [f, digest(path.join(root, f))]));
 }
-export function writeBuildContract(root, expectedInputs) {
-  // Include every emitted asset, not only the entry HTML.
-  const files = [...required.filter(f => !f.startsWith("dist/public/"))];
+function publicBuildFiles(root) {
+  const files = [];
   function walk(dir) {
     for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
-      const name = `${dir}/${entry.name}`;
-      if (entry.isDirectory()) walk(name);
-      else if (entry.isFile()) files.push(name);
+      const file = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(file);
+      else if (entry.isFile()) files.push(file);
+      else throw new Error(`Unsupported public build asset: ${file}`);
     }
   }
   walk("dist/public");
+  return files.sort();
+}
+export function writeBuildContract(root, expectedInputs) {
+  // Include every emitted asset, not only the entry HTML.
+  const files = [...required.filter(f => !f.startsWith("dist/public/")), ...publicBuildFiles(root)];
   for (const file of required) if (!files.includes(file)) throw new Error(`Missing artifact: ${file}`);
   const inputs = readBuildInputs(root);
   if (expectedInputs && JSON.stringify(inputs) !== JSON.stringify(expectedInputs)) {
@@ -63,7 +68,22 @@ export function validateBuild(root) {
   try {
     const contract = JSON.parse(fs.readFileSync(path.join(root, "dist/build-complete.json"), "utf8"));
     if (contract.version !== 1) throw new Error("Unsupported build contract");
-    if (JSON.stringify(Object.keys(contract.inputs ?? {}).sort()) !== JSON.stringify(sourceInputs(root))) throw new Error("Source file list changed since build");
+    const previousInputs = Object.keys(contract.inputs ?? {}).sort();
+    const currentInputs = sourceInputs(root);
+    if (JSON.stringify(previousInputs) !== JSON.stringify(currentInputs)) {
+      // Report a bounded file-name diff without hashing files or displaying file contents.
+      // This distinguishes an ordinary stale build from a missing build artifact.
+      const previous = new Set(previousInputs);
+      const current = new Set(currentInputs);
+      const added = currentInputs.filter((file) => !previous.has(file));
+      const removed = previousInputs.filter((file) => !current.has(file));
+      const sample = (items) => items.slice(0, 5).join(", ") || "none";
+      throw new Error(`Source file list changed since build (added: ${sample(added)}; removed: ${sample(removed)})`);
+    }
+    const expectedPublicFiles = Object.keys(contract.files ?? {}).filter(file => file.startsWith("dist/public/")).sort();
+    if (JSON.stringify(publicBuildFiles(root)) !== JSON.stringify(expectedPublicFiles)) {
+      throw new Error("Public build asset list changed since build");
+    }
     for (const file of required) if (!contract.files?.[file]) throw new Error(`Missing artifact: ${file}`);
     for (const [file, hash] of Object.entries({ ...contract.files, ...contract.inputs })) {
       if (digest(path.join(root, file)) !== hash) throw new Error(`Changed since build: ${file}`);

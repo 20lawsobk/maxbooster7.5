@@ -17,6 +17,7 @@ import {
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
+import { unsupportedAICapabilityPayload } from "../lib/aiCapabilityContracts.js";
 import { notificationService } from "../services/notificationService.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
@@ -812,25 +813,20 @@ router.post(
  * unavailability rather than presenting mismatched caption text as AI
  * analysis (see .agents/memory/maxcore-only-fail-explicit.md).
  */
+// Advertise availability separately from generation so the UI does not
+// repeatedly invoke a feature whose provider cannot yet interpret analytics.
+// Both endpoints remain authenticated; neither fabricates AI insights.
+router.get(
+  "/analytics/insights/capability",
+  requireAuth,
+  (_req: Request, res: Response) => res.json(unsupportedAICapabilityPayload()),
+);
+
 router.post(
   "/analytics/insights",
   requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      throw new AIUnavailableError("analytics insights");
-    } catch (error) {
-      if (error instanceof AIUnavailableError) {
-        return res.status(error.statusCode).json({ error: error.message });
-      }
-      logger.warn({ err: error }, "Analytics insight route error:");
-      return res.status(500).json({ error: "Failed to generate analytics insight" });
-    }
-  },
+  (_req: Request, res: Response) =>
+    res.status(501).json(unsupportedAICapabilityPayload()),
 );
 
 router.get("/insights", requireAuth, async (_req: Request, res: Response) => {

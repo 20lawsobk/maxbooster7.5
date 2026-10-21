@@ -10,6 +10,7 @@ import { inspectElectronBuilderTransport } from "./patch-electron-builder-transp
 import { PORTABLE_NODE_VERSION } from "../script/lib/portableNodePolicy.mjs";
 
 export const floors = {
+  "follow-redirects": "1.16.1", vite: "7.3.7",
   "proxy-addr": "2.0.8", "source-map-js": "1.2.2", compression: "1.8.2",
   "fast-copy": "4.1.0", "postcss-selector-parser": "7.1.6",
   "@capacitor/android": "8.5.1", "@capacitor/ios": "8.5.1",

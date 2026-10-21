@@ -1186,6 +1186,8 @@ try {
   }
 } catch (error) {
   failures.push(String(error?.message ?? error).replace(/postgres(?:ql)?:\/\/[^\s"']+/gi, "postgresql://[redacted]").slice(0, 1800));
+  const logTail = sanitizedLogTail();
+  if (logTail) observations.push(`Application diagnostic tail (redacted):\n${logTail}`);
 } finally {
   if (app && app.exitCode === null) {
     app.kill("SIGTERM");

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -43,8 +43,6 @@ export default function SimplifiedDashboard() {
       const response = await apiRequest("POST", "/api/auth/update-onboarding", {
         hasCompletedOnboarding: true,
         onboardingData: {
-          experienceLevel: "intermediate",
-          userLevel: "intermediate",
           preferSimplifiedView: false,
         },
       });

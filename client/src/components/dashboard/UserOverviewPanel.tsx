@@ -101,7 +101,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
           >
             <AvatarImage
               src={user.avatarUrl || undefined}
-              alt={user.username || user.email}
+              alt={user.username || "Account avatar"}
             />
             <AvatarFallback className="bg-blue-600 text-white text-lg font-bold">
               {getInitials(user.username)}
@@ -115,7 +115,7 @@ export function UserOverviewPanel({ user }: UserOverviewPanelProps) {
                 className="text-xl font-bold text-gray-900 dark:text-white"
                 data-testid="user-name"
               >
-                {user.username || user.email}
+                {user.username || "Your account"}
               </h3>
               <Badge
                 variant={badge.variant}

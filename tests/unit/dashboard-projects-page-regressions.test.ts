@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 import * as projectContracts from "../../client/src/lib/projectsPageContracts";
 import { describe, expect, it, vi } from "vitest";
+import { resolveProjectAudioSource } from "../../client/src/lib/projectsPageContracts";
 
 const paths = {
   dashboard: "client/src/pages/Dashboard.tsx",
@@ -63,7 +64,7 @@ describe("dashboard and projects page regressions", () => {
   });
 
   it.each(["dashboard", "simplified"])("patches only changed full-mode preferences without resending stale onboarding metadata (%s)", async page => {
-    const preferences = { persona: "producer", experienceLevel: "beginner", goals: ["release"], preferSimplifiedView: true };
+    const preferences = { persona: "producer", experienceLevel: "advanced", userLevel: "advanced", goals: ["release"], preferSimplifiedView: true };
     const apiRequest = vi.fn(async (_method: string, _url: string, _body: { onboardingData: Record<string, unknown> }) => ({
       json: async () => ({ success: true }),
     }));
@@ -77,14 +78,14 @@ describe("dashboard and projects page regressions", () => {
     expect(apiRequest).toHaveBeenCalledWith("POST", "/api/auth/update-onboarding", {
       hasCompletedOnboarding: true,
       onboardingData: {
-        experienceLevel: "intermediate",
-        userLevel: "intermediate",
         preferSimplifiedView: false,
       },
     });
     const submittedPreferences = apiRequest.mock.calls[0][2].onboardingData;
     expect(submittedPreferences).not.toHaveProperty("persona");
     expect(submittedPreferences).not.toHaveProperty("goals");
+    expect(submittedPreferences).not.toHaveProperty("experienceLevel");
+    expect(submittedPreferences).not.toHaveProperty("userLevel");
   });
 
   it.each(["dashboard", "simplified"])("does not claim a preference was saved for an unsuccessful response (%s)", async page => {
@@ -114,10 +115,13 @@ describe("dashboard and projects page regressions", () => {
     };
     const setCurrentlyPlaying = vi.fn();
     const audioProjectRef = { current: "first" };
+    const audioRef = { current: audio };
+    const setAudioLoading = vi.fn();
+    const stopPlayback = callback("projects", "stopPlayback", { audioRef, audioProjectRef, setCurrentlyPlaying, setAudioLoading });
     const play = callback("projects", "handlePlayProject", {
-      currentlyPlaying: null, audioRef: { current: audio }, audioProjectRef,
-      setCurrentlyPlaying, setAudioLoading: vi.fn(), toast: vi.fn(),
-      window: { location: { origin: "https://app.example", href: "https://app.example/projects" } },
+      currentlyPlaying: null, audioRef, audioProjectRef, resolveProjectAudioSource,
+      setCurrentlyPlaying, setAudioLoading, toast: vi.fn(),
+      window: { location: { href: "https://app.example/projects", origin: "https://app.example" } },
     });
     play({ id: "second", audioUrl: "https://app.example/audio.mp3" });
     await Promise.resolve();
@@ -170,6 +174,7 @@ describe("dashboard and projects page regressions", () => {
   it("uses the countdown route's data envelope rather than silently hiding saved releases", () => {
     const route = readFileSync("server/routes/releaseCountdown.ts", "utf8");
     expect(route).toContain("data: countdownsWithProgress");
+    expect(sources.dashboard).toContain("select: normalizeDashboardCountdowns");
     expect(sources.dashboard).toContain("const countdowns = data ?? []");
     expect(sources.dashboard).not.toContain("data?.countdowns");
   });

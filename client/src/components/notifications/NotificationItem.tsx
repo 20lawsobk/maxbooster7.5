@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { memo } from "react";
-import { useLocation } from "wouter";
+import { getNotificationAction } from "@/lib/notificationAction";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, Users, DollarSign, Music2, Heart, Megaphone, Shield, AlertTriangle, Gift, TrendingUp, Check, Trash2, ExternalLink, MessageSquare, ShoppingBag, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -227,7 +227,6 @@ export const NotificationItem = memo(function NotificationItem({
   onNavigate,
   compact = false,
 }: NotificationItemProps) {
-  const [, navigate] = useLocation();
   const config =
     notificationConfig[notification.type as NotificationType] ||
     notificationConfig.default;
@@ -238,13 +237,13 @@ export const NotificationItem = memo(function NotificationItem({
     if (!notification.isRead) {
       onMarkAsRead(notification.id);
     }
-    if (notification.actionUrl?.startsWith("http")) {
-      window.open(notification.actionUrl, "_blank");
+    const action = getNotificationAction(notification.actionUrl);
+    if (action?.external) {
+      window.open(action.url, "_blank", "noopener,noreferrer");
       return;
     }
     const detailUrl = `/notifications/${notification.id}`;
     onNavigate(detailUrl);
-    navigate(detailUrl);
   };
 
   const handleMarkAsRead = (e: React.MouseEvent) => {
