@@ -63,6 +63,29 @@
     "serverAndClientTypes": {"command": "npm run check", "exitCode": 0},
     "lint": {"command": "npm run lint", "exitCode": 0},
     "productionBuild": {"command": "npm run build", "exitCode": 0},
+    "preparedRelease": {
+      "applicationRevision": "85f7ff0b",
+      "prepareExitCode": 0,
+      "verifyExitCode": 0,
+      "current": true
+    },
+    "payloadColdStartup": {
+      "applicationRevision": "85f7ff0b",
+      "startup": "pass",
+      "preparedArtifactIdentity": "pass",
+      "initialPayloadOnly": true,
+      "checkoutDependencyFallback": false,
+      "realLocalMaxCorePythonAndPdim": true,
+      "healthHttpStatus": 200,
+      "frontendHttpStatus": 200,
+      "protectedApiHttpStatus": 401,
+      "maxcoreReadinessHttpStatus": 503,
+      "modelReadinessHttpStatus": 503,
+      "ownedProcessesTracked": 37,
+      "ownedProcessesRemaining": 0,
+      "productionReady": false,
+      "scope": "Payload-only host rehearsal; Docker image and Replit Publishing remain unverified"
+    },
     "linuxSourcePreflight": {
       "command": "python3 scripts/build-linux-vst3.py",
       "exitCode": 1,
