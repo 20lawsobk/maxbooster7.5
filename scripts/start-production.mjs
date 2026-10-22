@@ -10,6 +10,9 @@ const required = ["dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs",
   "dist/compute-sizing.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
   "external/maxcore/artifacts/api-server/dist/index.mjs"];
 const digest = file => createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+function isGeneratedMaxCoreLibraryOutput(file) {
+  return file.startsWith("external/maxcore/lib/") && file.split("/").includes("dist");
+}
 function sourceInputs(root) {
   const files = [
     "package.json",
@@ -24,7 +27,10 @@ function sourceInputs(root) {
       const name = `${dir}/${entry.name}`;
       // Dependencies are represented by lockfiles, not generated loader caches.
       // Imported workspace packages can have nested node_modules directories.
-      if (entry.isDirectory() && entry.name !== "node_modules") walk(name, include);
+      const insideMaxCoreLibrary = dir === "external/maxcore/lib" ||
+        dir.startsWith("external/maxcore/lib/");
+      if (entry.isDirectory() && entry.name !== "node_modules" &&
+          !(insideMaxCoreLibrary && entry.name === "dist")) walk(name, include);
       else if (!entry.isDirectory() && include(name)) files.push(name);
     }
   }
@@ -152,7 +158,12 @@ export function validateBuild(root) {
   try {
     const contract = JSON.parse(fs.readFileSync(path.join(root, "dist/build-complete.json"), "utf8"));
     if (contract.version !== 1) throw new Error("Unsupported build contract");
-    const previousInputs = Object.keys(contract.inputs ?? {}).sort();
+    // Older v1 contracts included some generated MaxCore lib/dist files. Ignore
+    // those legacy entries during migration; generated declarations are not
+    // build sources, while the bundled production API remains hash-verified.
+    const previousInputs = Object.keys(contract.inputs ?? {})
+      .filter(file => !isGeneratedMaxCoreLibraryOutput(file))
+      .sort();
     const currentInputs = sourceInputs(root);
     if (JSON.stringify(previousInputs) !== JSON.stringify(currentInputs)) {
       // Report a bounded file-name diff without hashing files or displaying file contents.
@@ -169,7 +180,10 @@ export function validateBuild(root) {
       throw new Error("Public build asset list changed since build");
     }
     for (const file of required) if (!contract.files?.[file]) throw new Error(`Missing artifact: ${file}`);
-    for (const [file, hash] of Object.entries({ ...contract.files, ...contract.inputs })) {
+    const sourceHashes = Object.fromEntries(
+      Object.entries(contract.inputs ?? {}).filter(([file]) => !isGeneratedMaxCoreLibraryOutput(file)),
+    );
+    for (const [file, hash] of Object.entries({ ...contract.files, ...sourceHashes })) {
       if (digest(path.join(root, file)) !== hash) throw new Error(`Changed since build: ${file}`);
     }
   } catch (error) {

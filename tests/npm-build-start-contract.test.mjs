@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import vm from "node:vm";
 import http from "node:http";
 import { spawn } from "node:child_process";
@@ -61,7 +62,7 @@ test("development startup watches the application process during configured list
   const source = fs.readFileSync("scripts/start-dev.sh", "utf8");
   assert.match(source, /node scripts\/wait-configured-ports\.mjs --timeout-ms=300000 --watch-pid="\$_APP_PID"/);
   assert.match(source, /main application process \(PID \$\{_FAILED_APP_PID\}\) exited before configured listeners were ready/);
-  assert.match(source, /node --import tsx server\/index\.ts &/);
+  assert.match(source, /node --max-old-space-size="\$\{NODE_MAX_OLD_SPACE_SIZE:-4096\}" --import tsx server\/index\.ts &/);
   assert.match(source, /node --import tsx server\/diffusion-gateway\/index\.ts/);
   assert.match(source, /_wait_http "MaxCore diffusion gateway" "\$VIDEO_DIFFUSION_PORT" "\$_DIFFUSION_PID"/);
   assert.match(source, /_wait_http "MaxCore proxy sidecar" "\$PYTHON_AI_PORT" "\$_AI_SIDECAR_PID"/);
@@ -292,6 +293,65 @@ test("production startup rejects missing, altered and stale build output", () =>
     fs.writeFileSync(path.join(root, "server/services/ai_content_sidecar.py"), "print('updated sidecar')");
     assert.notDeepEqual(readBuildInputs(root), before);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("generated MaxCore library dist declarations do not invalidate source attestation", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "maxcore-library-dist-contract-"));
+  const generatedDeclarations = [
+    "external/maxcore/lib/api-client-react/dist/custom-fetch.d.ts",
+    "external/maxcore/lib/api-client-react/dist/generated/api.d.ts",
+    "external/maxcore/lib/api-client-react/dist/generated/api.schemas.d.ts",
+    "external/maxcore/lib/api-client-react/dist/index.d.ts",
+    "external/maxcore/lib/db/dist/index.d.ts",
+  ];
+  const required = [
+    "dist/index.mjs", "dist/cluster.mjs", "dist/gateway.mjs", "dist/compute-sizing.mjs",
+    "dist/dns-node.mjs", "dist/dns-api.mjs", "dist/retained-pdim-recovery-worker.mjs", "dist/public/index.html",
+    "external/maxcore/artifacts/api-server/dist/index.mjs",
+  ];
+  try {
+    for (const file of [
+      "package.json", "package-lock.json", "vite.config.ts", "start.sh",
+      "scripts/deployment/ports.replit",
+      "external/maxcore/lib/api-client-react/src/index.ts",
+      "external/maxcore/lib/api-client-react/src/contracts.d.ts",
+    ]) {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      fs.writeFileSync(path.join(root, file), "fixture source");
+    }
+    for (const file of required) {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      fs.writeFileSync(path.join(root, file), "fixture artifact");
+    }
+    for (const file of generatedDeclarations) {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      fs.writeFileSync(path.join(root, file), "generated declaration");
+    }
+
+    const inputs = readBuildInputs(root);
+    assert.ok(Object.hasOwn(inputs, "external/maxcore/lib/api-client-react/src/index.ts"));
+    assert.ok(Object.hasOwn(inputs, "external/maxcore/lib/api-client-react/src/contracts.d.ts"));
+    for (const file of generatedDeclarations) assert.equal(Object.hasOwn(inputs, file), false, file);
+
+    writeBuildContract(root);
+    const contractPath = path.join(root, "dist/build-complete.json");
+    const legacyContract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+    for (const file of generatedDeclarations) {
+      legacyContract.inputs[file] = createHash("sha256").update(fs.readFileSync(path.join(root, file))).digest("hex");
+    }
+    fs.writeFileSync(contractPath, JSON.stringify(legacyContract));
+    assert.doesNotThrow(() => validateBuild(root));
+
+    // A regenerated or changed ignored dist declaration is not a source change.
+    fs.writeFileSync(path.join(root, generatedDeclarations[0]), "regenerated declaration");
+    assert.doesNotThrow(() => validateBuild(root));
+
+    // Actual package source and production entrypoints remain attested.
+    fs.writeFileSync(path.join(root, "external/maxcore/lib/api-client-react/src/index.ts"), "changed source");
+    assert.throws(() => validateBuild(root), /Changed since build/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("startup sidecar reuse probes the configured health listener", async t => {
