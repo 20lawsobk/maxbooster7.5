@@ -46,6 +46,8 @@ def pip_install_environment(base=None):
     # The runtime is an isolated install prefix, not a user-site install.
     # Override builder-level pip configuration that may force --user.
     environment["PIP_USER"] = "0"
+    for destination in ("PIP_TARGET", "PIP_PREFIX", "PIP_ROOT"):
+        environment.pop(destination, None)
     return environment
 
 

@@ -188,6 +188,17 @@ test("configured production Python runtime enforces its service manifest securit
   assert.match(service, /urllib3>=2\.8\.0/);
 });
 
+test("packaged Python installs neutralize host pip destinations and fail closed", () => {
+  const installer = fs.readFileSync("script/lib/installPortablePythonDependencies.py", "utf8");
+  assert.match(installer, /environment\["PIP_USER"\]\s*=\s*"0"/);
+  assert.match(installer,
+    /for destination in \("PIP_TARGET", "PIP_PREFIX", "PIP_ROOT"\):\s*environment\.pop\(destination, None\)/);
+  assert.equal((installer.match(/env=environment/g) || []).length, 2,
+    "every Python package installation must use the sanitized environment");
+  assert.match(installer, /subprocess\.run\(\[\*pip, \*ordinary\], check=True, env=environment\)/,
+    "ordinary package installation failures must stop the provisioning step");
+});
+
 test("urllib3 security path regression uses the packaged production interpreter", () => {
   const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   const command = scripts["test:dependency-security-paths"];
