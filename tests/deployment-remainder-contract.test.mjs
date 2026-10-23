@@ -23,6 +23,8 @@ test("publishing graph builds the application remainder before finalizing", () =
   assert.match(shell, /node dist\/publish-capsules\.mjs remainder app_remainder\.pdim/);
   assert.match(shell, /\|source\|remainder\|assets\|finalize\)/);
   assert.match(shell, /Required startup capsule or manifest missing/);
+  assert.match(shell, /Required runtime social-awareness registry missing/);
+  assert.match(shell, /cp "\$_RUNTIME_REGISTRY_BACKUP" shared\/social-platform-optimization\.json/);
   const packer = fs.readFileSync("script/publish-capsules.ts", "utf8");
   assert.match(packer, /mode === "remainder"/);
   assert.match(packer, /preserveSource: false/);
@@ -39,6 +41,7 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
     "dist/public/index.html",
     "source.pdim",
     "source.manifest.json",
+    "shared/social-platform-optimization.json",
     "build.sh",
     ".node_bin/node",
     "node_modules.pdim",
@@ -62,7 +65,8 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
   const { computeRemainingAppMembers } = await import(pathToFileURL(scanner).href);
   const members = computeRemainingAppMembers(root);
   for (const required of ["dist/index.mjs", "dist/public/index.html",
-    "source.pdim", "source.manifest.json", "scripts/redis-supervisor.sh"]) {
+    "source.pdim", "source.manifest.json", "shared/social-platform-optimization.json",
+    "scripts/redis-supervisor.sh"]) {
     assert.ok(members.includes(required), `missing runtime member ${required}`);
   }
   for (const bootstrap of ["dist/deployment/executive.mjs",
