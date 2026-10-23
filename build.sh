@@ -468,6 +468,14 @@ _pdim_pack "external/pdim" "external_pdim.pdim" "PDIM server"
 
 # ── Source tree capsule ───────────────────────────────────────────────────────
 phase_source() {
+# This JSON registry is read from disk by the compiled server at runtime.
+# Keep the exact source bytes available for the app-remainder capsule after
+# the debugging source tree has been archived and removed.
+_RUNTIME_REGISTRY_BACKUP=""
+if [ -f shared/social-platform-optimization.json ]; then
+  _RUNTIME_REGISTRY_BACKUP="$DEPLOY_STATE_DIR/social-platform-optimization.json"
+  cp shared/social-platform-optimization.json "$_RUNTIME_REGISTRY_BACKUP"
+fi
 _PDIM_FORMAT=$(node dist/publish-capsules.mjs format)
 # Compress instead of delete — nothing is lost.  Restored manually when needed
 # (debugging, SLOW PATH rebuild).  Not auto-restored at startup since the server
@@ -507,6 +515,10 @@ if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
 MANIFEST_EOF
     # shellcheck disable=SC2086
     rm -rf ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null || true
+    if [ -n "$_RUNTIME_REGISTRY_BACKUP" ]; then
+      mkdir -p shared
+      cp "$_RUNTIME_REGISTRY_BACKUP" shared/social-platform-optimization.json
+    fi
     echo "   ✅ Source tree: packed → ${_SRC_PACKED} (${_PDIM_FORMAT}, sha256=${_SRC_CKSUM:0:16}...)"
   else
     echo "   WARNING: source.pdim not created — source tree left uncompressed"
@@ -520,6 +532,10 @@ echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev
 
 # ─── Application remainder capsule required by startup ────────────────────────
 phase_remainder() {
+  if [ ! -s shared/social-platform-optimization.json ]; then
+    echo "ERROR: Required runtime social-awareness registry missing before capsule pack" >&2
+    exit 1
+  fi
   echo "==> Packing application remainder for verified startup restoration..."
   node dist/publish-capsules.mjs remainder app_remainder.pdim
   # A successful publishing build must satisfy every mandatory startup restore.
