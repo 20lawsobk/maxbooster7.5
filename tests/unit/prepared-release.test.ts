@@ -2,6 +2,7 @@ import { afterEach, it, expect } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { inventory, sourceIncluded, buildEnvironmentDigest } from "../../script/lib/releaseInventory";
 import { DEPLOYMENT_BOOTSTRAP_FILES } from "../../script/lib/deploymentControlFiles";
 import { treeIdentity } from "../../script/lib/preparedCapsules";
@@ -34,6 +35,33 @@ async function fixture() {
   return { root, write, manifest };
 }
 
+function fixtureNixMeasurement(root: string, available: boolean): NodeJS.ProcessEnv {
+  const bin = path.join(root, ".fixture-bin");
+  fs.mkdirSync(bin, { recursive: true });
+  const du = path.join(bin, "du");
+  const validateArgs = [
+    '[ "$#" -eq 6 ]',
+    '[ "$1" = "-s" ]',
+    '[ "$2" = "--apparent-size" ]',
+    '[ "$3" = "--count-links" ]',
+    '[ "$4" = "--block-size=1" ]',
+    '[ "$5" = "--" ]',
+    '[ "$6" = "/nix/store" ]',
+  ].join(" && ");
+  const result = available
+    ? "printf '1\\t/nix/store\\n'"
+    : "printf 'fixture Nix-store measurement unavailable\\n' >&2\nexit 1";
+  fs.writeFileSync(
+    du,
+    `#!/bin/sh\nif ! ( ${validateArgs} ); then echo 'unexpected du arguments' >&2; exit 2; fi\n${result}\n`,
+    { mode: 0o755 },
+  );
+  return {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
+  };
+}
+
 it("accepts an unchanged prepared artifact set without invoking a build", async () => {
   const { root } = await fixture();
   await expect(verifyPreparedRelease(root)).resolves.toHaveProperty("payloadRoot");
@@ -61,6 +89,23 @@ it("installs only the verified payload into an explicitly disposable fixture", a
     relative !== ".cache" && !relative.startsWith(".cache/"))).toEqual(manifest.payload);
 }, 60000);
 
+it("publishes the verified payload into a disposable copy without building", async () => {
+  const { root, manifest, write } = await fixture();
+  const publisher = fs.readFileSync("script/publish-release.ts", "utf8")
+    .replace(/from "(\.\/[^"]+)"/g, (_match, relative) =>
+      `from ${JSON.stringify(path.resolve("script", relative.replace(/\.js$/, ".ts")))}`);
+  write("script/publish-release.ts", publisher);
+  fs.symlinkSync(path.resolve("node_modules"), path.join(root, "node_modules"), "dir");
+  const env = fixtureNixMeasurement(root, true);
+  manifest.source = await inventory(root, sourceIncluded);
+  write(".prepared-release/release.json", JSON.stringify(manifest));
+  const command = [process.execPath, "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", root];
+  for (const key of ["DEPLOY_PACK", "PUBLISH_BUILD_ROOT", "PUBLISH_PAYLOAD_CLEANUP"]) delete env[key];
+  const result = spawnSync(command[0], command.slice(1), { cwd: root, env, encoding: "utf8", timeout: 60000 });
+  expect(result.status, result.stderr + result.stdout).toBe(0);
+  expect(result.stdout).toContain("no application build or package installation ran");
+}, 60000);
+
 it("refuses oversized and incompletely measured Nix stores before fixture mutation", async () => {
   for (const nix of [
     { roots: ["/nix/store/unmeasured"], coveredRoots: [], totalBytes: 0 },
@@ -78,6 +123,26 @@ it("refuses oversized and incompletely measured Nix stores before fixture mutati
     expect(await inventory(root)).toEqual(before);
   }
 });
+
+it("fails closed before deleting the disposable source when Nix size is unknown", async () => {
+  const { root, manifest, write } = await fixture();
+  const publisher = fs.readFileSync("script/publish-release.ts", "utf8")
+    .replace(/from "(\.\/[^"]+)"/g, (_match, relative) =>
+      `from ${JSON.stringify(path.resolve("script", relative.replace(/\.js$/, ".ts")))}`);
+  write("script/publish-release.ts", publisher);
+  fs.symlinkSync(path.resolve("node_modules"), path.join(root, "node_modules"), "dir");
+  const env = fixtureNixMeasurement(root, false);
+  manifest.source = await inventory(root, sourceIncluded);
+  write(".prepared-release/release.json", JSON.stringify(manifest));
+  const command = [process.execPath, "--import", "tsx", "script/publish-release.ts", "--publish-disposable-copy", root];
+  for (const key of ["DEPLOY_PACK", "PUBLISH_BUILD_ROOT", "PUBLISH_PAYLOAD_CLEANUP"]) delete env[key];
+  const result = spawnSync(command[0], command.slice(1), { cwd: root, env, encoding: "utf8", timeout: 60000 });
+  expect(result.status).toBe(1);
+  expect(result.stderr + result.stdout).toContain("Cannot measure the publishing Nix store");
+  expect(fs.readFileSync(path.join(root, "server/input.ts"), "utf8")).toBe("fixture");
+  expect(fs.existsSync(path.join(root, ".prepared-release/payload"))).toBe(true);
+}, 60000);
+
 for (const change of ["edit", "add", "remove", "lock", "port mapping"]) {
   it(`rejects ${change} of release inputs`, async () => {
     const { root, write } = await fixture();

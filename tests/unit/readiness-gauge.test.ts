@@ -8,7 +8,7 @@
  */
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -535,6 +535,8 @@ describe("real checks against temp git repos", () => {
       const profile = loadProfile(resolveProfilesDir(), profileName);
       const envConfig = profile.checks["env-config"];
       if (!envConfig) throw new Error(`${profileName} profile lacks env-config`);
+      const example = readFileSync(join(repoRoot, ".env.example"), "utf8");
+      expect(example).toMatch(/^\s*#\s*SSL_CERT_FILE=/m);
       const res = await getCheck("env-config").run(
         { cwd: repoRoot },
         envConfig.config ?? {},
