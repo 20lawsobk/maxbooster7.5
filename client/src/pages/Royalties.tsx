@@ -148,14 +148,7 @@ export default function Royalties() {
   const [selectedPeriod, setSelectedPeriod] = useState("current");
   const [selectedPlatform, setSelectedPlatform] = useState("all");
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
-  const [newPaymentType, setNewPaymentType] = useState<
-    "paypal" | "bank_transfer"
-  >("paypal");
   const [newPaypalEmail, setNewPaypalEmail] = useState("");
-  const [newBankHolder, setNewBankHolder] = useState("");
-  const [newBankName, setNewBankName] = useState("");
-  const [newBankAccount, setNewBankAccount] = useState("");
-  const [newBankRouting, setNewBankRouting] = useState("");
   const [isTaxInfoDialogOpen, setIsTaxInfoDialogOpen] = useState(false);
   const [taxCountry, setTaxCountry] = useState("");
   const [taxId, setTaxId] = useState("");
@@ -386,9 +379,8 @@ export default function Royalties() {
 
   const addPaymentMethodMutation = useMutation({
     mutationFn: async (data: {
-      type: string;
-      paypalEmail?: string;
-      bankDetails?: Record<string, string>;
+      type: "paypal";
+      paypalEmail: string;
     }) => {
       const response = await apiRequest(
         "POST",
@@ -404,10 +396,6 @@ export default function Royalties() {
       });
       setIsAddPaymentDialogOpen(false);
       setNewPaypalEmail("");
-      setNewBankHolder("");
-      setNewBankName("");
-      setNewBankAccount("");
-      setNewBankRouting("");
       queryClient.invalidateQueries({
         queryKey: ["/api/royalties/payment-methods"],
       });
@@ -2007,10 +1995,6 @@ export default function Royalties() {
               setIsAddPaymentDialogOpen(open);
               if (!open) {
                 setNewPaypalEmail("");
-                setNewBankHolder("");
-                setNewBankName("");
-                setNewBankAccount("");
-                setNewBankRouting("");
               }
             }}
           >
@@ -2018,81 +2002,19 @@ export default function Royalties() {
               <DialogHeader>
                 <DialogTitle>Add Payment Method</DialogTitle>
                 <DialogDescription>
-                  Choose how you want to receive your royalty payouts.
+                  Add PayPal here. For bank payouts, use the existing Connect Bank Account (Stripe) onboarding flow; never enter bank account or routing numbers in this form.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Payment Type</Label>
-                  <Select
-                    value={newPaymentType}
-                    onValueChange={(v) =>
-                      setNewPaymentType(v as "paypal" | "bank_transfer")
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paypal">PayPal</SelectItem>
-                      <SelectItem value="bank_transfer">
-                        Bank Transfer (ACH)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {newPaymentType === "paypal" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="paypal-email">PayPal Email</Label>
-                    <Input
-                      id="paypal-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={newPaypalEmail}
-                      onChange={(e) => setNewPaypalEmail(e.target.value)}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="bank-holder">Account Holder Name</Label>
-                      <Input
-                        id="bank-holder"
-                        placeholder="Full legal name"
-                        value={newBankHolder}
-                        onChange={(e) => setNewBankHolder(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bank-name">Bank Name</Label>
-                      <Input
-                        id="bank-name"
-                        placeholder="e.g. Chase, Wells Fargo"
-                        value={newBankName}
-                        onChange={(e) => setNewBankName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bank-account">Account Number</Label>
-                      <Input
-                        id="bank-account"
-                        type="password"
-                        placeholder="Account number"
-                        value={newBankAccount}
-                        onChange={(e) => setNewBankAccount(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bank-routing">Routing Number</Label>
-                      <Input
-                        id="bank-routing"
-                        placeholder="9-digit routing number"
-                        value={newBankRouting}
-                        onChange={(e) => setNewBankRouting(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="paypal-email">PayPal Email</Label>
+                <Input
+                  id="paypal-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={newPaypalEmail}
+                  onChange={(e) => setNewPaypalEmail(e.target.value)}
+                />
               </div>
               <DialogFooter>
                 <Button
@@ -2103,43 +2025,18 @@ export default function Royalties() {
                 </Button>
                 <Button
                   onClick={() => {
-                    if (newPaymentType === "paypal") {
-                      if (!newPaypalEmail.includes("@")) {
-                        toast({
-                          title: "Invalid email",
-                          description: "Enter a valid PayPal email address",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      addPaymentMethodMutation.mutate({
-                        type: "paypal",
-                        paypalEmail: newPaypalEmail,
+                    if (!newPaypalEmail.includes("@")) {
+                      toast({
+                        title: "Invalid email",
+                        description: "Enter a valid PayPal email address",
+                        variant: "destructive",
                       });
-                    } else {
-                      if (
-                        !newBankHolder ||
-                        !newBankName ||
-                        !newBankAccount ||
-                        !newBankRouting
-                      ) {
-                        toast({
-                          title: "Missing fields",
-                          description: "Please fill in all bank details",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      addPaymentMethodMutation.mutate({
-                        type: "bank_transfer",
-                        bankDetails: {
-                          accountHolderName: newBankHolder,
-                          bankName: newBankName,
-                          accountNumber: newBankAccount,
-                          routingNumber: newBankRouting,
-                        },
-                      });
+                      return;
                     }
+                    addPaymentMethodMutation.mutate({
+                      type: "paypal",
+                      paypalEmail: newPaypalEmail,
+                    });
                   }}
                   disabled={addPaymentMethodMutation.isPending}
                 >
