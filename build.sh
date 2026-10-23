@@ -518,6 +518,19 @@ fi
 echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
 }
 
+# ─── Application remainder capsule required by startup ────────────────────────
+phase_remainder() {
+  echo "==> Packing application remainder for verified startup restoration..."
+  node dist/publish-capsules.mjs remainder app_remainder.pdim
+  # A successful publishing build must satisfy every mandatory startup restore.
+  for _capsule in app_remainder node_modules python_runtime external_maxcore external_pdim; do
+    if [ ! -s "${_capsule}.pdim" ] || [ ! -s "${_capsule}.manifest.json" ]; then
+      echo "ERROR: Required startup capsule or manifest missing: ${_capsule}" >&2
+      exit 1
+    fi
+  done
+}
+
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────
 phase_assets() {
 echo "==> Removing pre-compressed assets (.gz/.br) from dist/public/..."
@@ -580,7 +593,7 @@ echo "==> Build complete. PDIM capsules restore on first startup via dist/pdim-r
 
 if [ "${1:-}" = "--executive-task" ]; then
   case "${2:-}" in
-    cleanup|node|diffusion|dependencies|rust|strip|python|app_capsule|packer|prune|pack_node|pack_python|pack_maxcore|pack_pdim|source|assets|finalize)
+    cleanup|node|diffusion|dependencies|rust|strip|python|app_capsule|packer|prune|pack_node|pack_python|pack_maxcore|pack_pdim|source|remainder|assets|finalize)
       "phase_$2" ;;
     *) echo "Unknown build task" >&2; exit 1 ;;
   esac
