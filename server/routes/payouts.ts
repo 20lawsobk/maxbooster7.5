@@ -335,11 +335,6 @@ router.get("/verify", async (req, res) => {
     const methods: string[] = [];
 
     if (prefs?.paypalEmail) methods?.push("paypal");
-    if (
-      prefs?.bankDetails &&
-      Object.keys(prefs?.bankDetails as Record<string, unknown>).length > 0
-    )
-      methods?.push("bank_transfer");
 
     const stripeVerification = await instantPayoutService?.verifyStripeAccount(
       req.user.id,
@@ -382,13 +377,9 @@ router.get("/preferences", async (req, res) => {
         | undefined) ?? {};
     res.json({
       paypalEmail: prefs.paypalEmail ?? null,
-      bankDetails: prefs.bankDetails ?? null,
+      bankDetails: null,
       stripeConnected: !!user?.stripeConnectedAccountId,
-      preferredMethod: prefs.bankDetails
-        ? "bank_transfer"
-        : prefs?.paypalEmail
-          ? "paypal"
-          : "stripe",
+      preferredMethod: prefs?.paypalEmail ? "paypal" : "stripe",
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching preferences:");
@@ -437,68 +428,13 @@ router.post("/preferences/paypal", async (req, res) => {
 
 /**
  * POST /api/payouts/preferences/bank
- * Configure bank transfer for payouts
+ * Direct bank credentials must be collected by a verified payout provider,
+ * not persisted in user preferences. Retain the URL to fail closed.
  */
-router.post("/preferences/bank", async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const {
-      accountHolderName,
-      bankName,
-      accountNumber,
-      routingNumber,
-      accountType,
-      country,
-    } = req.body;
-
-    if (!accountHolderName || !bankName || !accountNumber || !routingNumber) {
-      return res.status(400).json({ error: "All bank details required" });
-    }
-
-    const bankDetailsData = {
-      accountHolderName,
-      bankName,
-      accountNumber: accountNumber
-        .slice(-4)
-        .padStart(accountNumber?.length, "*"),
-      accountNumberFull: accountNumber,
-      routingNumber,
-      accountType: accountType || "checking",
-      country: country || "US",
-      verified: true,
-      addedAt: new Date().toISOString(),
-    };
-
-    const user = req.user as Record<string, unknown>;
-    const currentPrefs =
-      (user?.preferences as Record<string, unknown> | undefined) ?? {};
-    const updatedPrefs = {
-      ...currentPrefs,
-      payout: {
-        ...((currentPrefs?.payout as Record<string, unknown> | undefined) ?? {}),
-        bankDetails: bankDetailsData,
-      },
-    };
-
-    await db
-      .update(users)
-      .set({ preferences: updatedPrefs })
-      .where(eq(users.id, req.user.id));
-
-    logger.info(`Bank account configured for user ${req.user.id}`);
-    res.json({
-      success: true,
-      method: "bank_transfer",
-      bankName,
-      accountNumber: bankDetailsData.accountNumber,
-    });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, "Error configuring bank:");
-    res.status(500).json({ error: "Failed to configure bank account" });
-  }
+router.post("/preferences/bank", async (_req, res) => {
+  return res.status(410).json({
+    error: "Direct bank account submission is disabled. Complete Stripe Connect onboarding instead.",
+  });
 });
 
 /**
