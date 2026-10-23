@@ -6020,7 +6020,7 @@ export async function registerRoutes(
             id: "stripe",
             type: "stripe",
             label: "Bank Account (Stripe)",
-            isDefault: !prefs.paypalEmail && !prefs.bankDetails,
+            isDefault: !prefs.paypalEmail,
           });
         }
         if (prefs.paypalEmail) {
@@ -6028,15 +6028,7 @@ export async function registerRoutes(
             id: "paypal",
             type: "paypal",
             label: `PayPal (${prefs.paypalEmail})`,
-            isDefault: !!prefs.paypalEmail && !prefs.bankDetails,
-          });
-        }
-        if (prefs.bankDetails) {
-          methods.push({
-            id: "bank",
-            type: "bank_transfer",
-            label: "Bank Transfer",
-            isDefault: true,
+            isDefault: !!prefs.paypalEmail,
           });
         }
         return res.json(methods);
@@ -6056,18 +6048,16 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { type, paypalEmail, bankDetails } = req.body ?? {};
-        if (type !== "paypal" && type !== "bank_transfer")
-          return res
-            .status(400)
-            .json({ message: "Payment method must be PayPal or bank transfer" });
+        const { type, paypalEmail } = req.body ?? {};
+        if (type === "bank_transfer") {
+          return res.status(410).json({
+            message: "Direct bank account submission is disabled. Complete Stripe Connect onboarding instead.",
+          });
+        }
+        if (type !== "paypal")
+          return res.status(400).json({ message: "Payment method must be PayPal" });
         if (type === "paypal" && (typeof paypalEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail.trim()))) {
           return res.status(400).json({ message: "A valid PayPal email is required" });
-        }
-        if (type === "bank_transfer" && (!bankDetails || ["accountHolderName", "bankName", "accountNumber", "routingNumber"].some(
-          (key) => typeof bankDetails[key] !== "string" || !bankDetails[key].trim(),
-        ))) {
-          return res.status(400).json({ message: "Complete bank details are required" });
         }
 
         const user = req.user!;
@@ -6078,8 +6068,6 @@ export async function registerRoutes(
         };
         if (type === "paypal" && paypalEmail)
           updated.payoutSettings.paypalEmail = paypalEmail.trim();
-        if (type === "bank_transfer" && bankDetails)
-          updated.payoutSettings.bankDetails = bankDetails;
 
         await db
           .update(users)
@@ -6131,7 +6119,7 @@ export async function registerRoutes(
         return res.json({
           minimumPayout: prefs.minimumPayout ?? 50,
           payoutSchedule: prefs.payoutSchedule ?? "monthly",
-          preferredMethod: prefs.preferredMethod ?? null,
+          preferredMethod: prefs.preferredMethod === "bank_transfer" ? null : (prefs.preferredMethod ?? null),
           stripeConnected: !!user.stripeConnectedAccountId,
           paypalEmail: prefs.paypalEmail ?? null,
           taxCountry,
@@ -6156,6 +6144,11 @@ export async function registerRoutes(
       }
       try {
         const { minimumPayout, payoutSchedule, preferredMethod } = req.body ?? {};
+        if (preferredMethod === "bank_transfer") {
+          return res.status(410).json({
+            message: "Direct bank transfer is disabled. Complete Stripe Connect onboarding instead.",
+          });
+        }
         if (
           minimumPayout != null &&
           (!Number.isFinite(Number(minimumPayout)) || Number(minimumPayout) < 0)
