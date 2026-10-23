@@ -16,6 +16,7 @@ const APP_REMAINDER_REQUIRED_MEMBERS = [
   "dist/cluster.mjs",
   "dist/gateway.mjs",
   "dist/dns-node.mjs",
+  "dist/dns-api.mjs",
   "dist/compute-sizing.mjs",
   "dist/retained-pdim-recovery-worker.mjs",
   "dist/public/index.html",

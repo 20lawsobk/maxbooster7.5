@@ -455,7 +455,7 @@ export function packCapsuleMembers({
             stat.size,
             sha256FileSync(absolute),
           ] as const;
-        }).sort(([left], [right]) => left.localeCompare(right));
+        }).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
         sourceAttestation = {
           sourceMemberCount: records.length,
           sourceInventorySha256: createHash("sha256").update(JSON.stringify(records)).digest("hex"),

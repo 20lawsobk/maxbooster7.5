@@ -32,7 +32,7 @@ export function getNixClosureSize() {
 
 async function main() {
   fs.rmSync(path.join(root, "dist/build-complete.json"), { force: true });
-  const { writeBuildContract, readBuildInputs } = await import("../scripts/start-production.mjs");
+  const { writeBuildContract, readBuildInputs } = await import("../scripts/build-contract.mjs");
   const inputs = readBuildInputs(root);
   execSync("bash script/sync-subsystem-dependencies.sh", {
     cwd: root,

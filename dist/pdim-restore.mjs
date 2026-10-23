@@ -96,7 +96,7 @@ export async function restoreAppRemainderCapsule(capsuleName, manifestName, sent
       }
     }
     await inventory(stage);
-    sourceRecords.sort(([left], [right]) => left.localeCompare(right));
+    sourceRecords.sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
     const sourceInventorySha256 = createHash("sha256")
       .update(JSON.stringify(sourceRecords)).digest("hex");
     if (sourceRecords.length !== manifest.sourceMemberCount ||
