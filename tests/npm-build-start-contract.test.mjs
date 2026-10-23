@@ -170,16 +170,30 @@ test("DNS production startup uses a compiled entry, not tsx", () => {
   assert.match(supervisor, /production \? path.resolve\(DNS_NODE_DIR, "\.\.\/dist\/dns-node.mjs"\) : "src\/index.ts"/);
 });
 
-test("portable production Python runtime enforces its service manifest security floor", () => {
+test("configured production Python runtime enforces its service manifest security floor", () => {
   const build = fs.readFileSync("script/build.ts", "utf8");
+  const shellBuild = fs.readFileSync("build.sh", "utf8");
+  const replit = fs.readFileSync(".replit", "utf8");
+  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
   const provisioner = fs.readFileSync("script/lib/provisionPortablePython.mjs", "utf8");
   const installer = fs.readFileSync("script/lib/installPortablePythonDependencies.py", "utf8");
   const service = fs.readFileSync("external/maxcore/artifacts/ai-training-server/pyproject.toml", "utf8");
+  assert.match(replit, /build = \["npm", "run", "deployment:build"\]/);
+  assert.equal(scripts["deployment:build"], "bash build.sh");
+  assert.match(shellBuild, /phase_python\(\)\s*\{\s*node script\/lib\/provisionPortablePython\.mjs "\$PWD"/);
   assert.match(build, /provisionPortablePython\(root\)/);
   assert.match(provisioner, /installPortablePythonDependencies\.py/);
   assert.match(installer, /external\/maxcore\/artifacts\/ai-training-server\/pyproject\.toml/);
   assert.match(installer, /requirements_satisfied/);
   assert.match(service, /urllib3>=2\.8\.0/);
+});
+
+test("urllib3 security path regression uses the packaged production interpreter", () => {
+  const { scripts } = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  const command = scripts["test:dependency-security-paths"];
+  assert.match(command, /python_runtime\/bin\/python3 -I tests\/urllib3-security-paths\.py/);
+  assert.doesNotMatch(command, /(?:^|&&\s*)python3\s+tests\/urllib3-security-paths\.py/,
+    "the production gate must not depend on host-global Python packages");
 });
 
 test("embedded production MaxCore has a compiled entry and excludes the dashboard", () => {

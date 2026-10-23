@@ -1,4 +1,4 @@
-"""Real loopback streaming regressions, runnable with both app interpreters."""
+"""Real loopback streaming regressions for the packaged production interpreter."""
 import threading
 import unittest
 import zlib

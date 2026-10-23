@@ -42,7 +42,7 @@
     "verify:dependency-upgrades": "node scripts/verify-dependency-upgrades.mjs",
     "test:sharp-security": "node --import tsx --test tests/sharp-security.test.mjs",
     "test:dependency-remediation": "npm run test:sharp-security && node --test tests/http-dependency-consumers.test.mjs tests/dns-dependency-consumers.test.mjs tests/runtime-artifact-gates.test.mjs tests/nested-reconciliation.test.mjs tests/legacy-security-update.test.mjs && vitest run --config vitest.config.ts tests/unit/acmeCrypto.test.ts tests/unit/acmeClientLifecycle.test.ts",
-    "test:dependency-security-paths": "node --test tests/dependency-security-paths.test.mjs && timeout 20 python3 tests/urllib3-security-paths.py && timeout 20 python_runtime/bin/python3 -I tests/urllib3-security-paths.py",
+    "test:dependency-security-paths": "node --test tests/dependency-security-paths.test.mjs && timeout 20 python_runtime/bin/python3 -I tests/urllib3-security-paths.py",
     "verify:dependency-security": "node scripts/verify-runtime-artifacts.mjs dependencies",
     "test:dependency-advisories": "node --test tests/dependency-advisories.test.mjs && timeout 45 python3 tests/fsspec-advisories.py && timeout 45 python_runtime/bin/python3 -I tests/fsspec-advisories.py",
     "verify": "npm run security:audit && npm run check && npm run lint && npm run test:ci",
