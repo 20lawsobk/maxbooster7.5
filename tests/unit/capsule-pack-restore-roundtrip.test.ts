@@ -309,6 +309,7 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       root: projectRoot,
       members,
       capsule: capsuleRelative,
+      attestSource: true,
     });
     expect(packResult).not.toBeNull();
     expect(packResult!.compression).toBe(CAPSULE_COMPRESSION_ID);
