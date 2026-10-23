@@ -94,7 +94,7 @@ test("Google's installed gaxios consumer resolves patched Undici and sends real 
 
 test("patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior", () => {
   const { Address4, Address6 } = require("ip-address");
-  assert.equal(require("ip-address/package.json").version, "10.7.3");
+  assert.equal(require("ip-address/package.json").version, "10.7.4");
   assert.equal(new Address4("127.0.0.1").isInSubnet(new Address4("127.0.0.0/8")), true);
   assert.equal(new Address6("::ffff:127.0.0.1").to4().correctForm(), "127.0.0.1");
   assert.equal(new Address6("2001:db8::1").isInSubnet(new Address6("2001:db8::/32")), true);

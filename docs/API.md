@@ -1,5 +1,10 @@
 # API Reference
 
+Route examples are a reference, not a complete executable contract. Verify current
+handlers in `server/routes.ts` and mounted routers; use the current continuation
+report for tested scope. No provider or production-readiness claim follows from
+an endpoint appearing in this document.
+
 All API routes are prefixed `/api/`. The server runs on port 5000.
 
 ## Authentication
@@ -18,7 +23,7 @@ Most endpoints require an authenticated session or JWT Bearer token. See [AUTH.m
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/auth/csrf` | None | Returns CSRF token and sets cookie |
+| GET | `/api/csrf-token` | None | Returns CSRF token and sets cookie |
 | POST | `/api/auth/login` | None | Email+password login; returns session |
 | POST | `/api/auth/register` | None | Create account; returns session |
 | POST | `/api/auth/logout` | Session | Destroys session |
@@ -37,8 +42,7 @@ Most endpoints require an authenticated session or JWT Bearer token. See [AUTH.m
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/api/user/preferences` | Session | Fetch UI/accessibility preferences |
-| PUT | `/api/user/preferences` | Session | Update preferences |
-| DELETE | `/api/user/preferences` | Session | Reset preferences to defaults |
+| POST | `/api/user/preferences` | Session | Update preferences |
 | GET | `/api/artist-profiles` | Session | List artist profiles |
 | GET | `/api/artist-profiles/:id` | Session | Single artist profile |
 | POST | `/api/artist-profiles` | Session | Create artist profile |

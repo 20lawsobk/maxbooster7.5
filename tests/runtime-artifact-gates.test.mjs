@@ -73,13 +73,13 @@ test("all security families reject stale nested copies and accept explicitly val
   write(root, "package.json", "{}");
   const pairs = [
     ["axios", "1.19.0", "1.20.0"], ["fastify", "5.12.1", "5.12.5"],
-    ["ip-address", "10.5.0", "10.7.3"], ["undici", "7.29.0", "7.30.0"],
+    ["ip-address", "10.7.3", "10.7.4"], ["undici", "7.29.0", "7.30.0"],
     ["undici", "6.28.0", "6.28.1"],
     ["electron", "43.4.0", "43.7.7"],
     ["orval", "8.5.3", "8.33.0"], ["linkify-it", "5.0.1", "5.0.2"],
     ["linkify-it", "5.0.0", "6.1.0"],
     ["sharp", "0.35.3", "0.35.5"], ["sharp", "0.35.4", "0.35.5"],
-    ["dompurify", "3.4.12", "3.4.16"],
+    ["dompurify", "3.4.16", "3.4.17"], ["body-parser", "2.3.0", "2.4.0"],
     ["postcss", "8.5.16", "8.5.26"], ["browserslist", "4.28.1", "4.28.8"],
     ["baseline-browser-mapping", "2.10.0", "2.11.15"], ["@babel/core", "7.29.0", "7.29.7"],
     ["brace-expansion", "2.1.1", "5.0.12"], ["nanoid", "3.3.16", "3.3.18"],

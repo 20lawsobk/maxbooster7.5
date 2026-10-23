@@ -1,3 +1,4 @@
+import { hasBankCredentials, publicPaymentPreferences } from "./lib/paymentPreferencePrivacy.js";
 import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
 import crypto from "crypto";
@@ -305,7 +306,7 @@ export async function registerRoutes(
       if (safeUser.email === "demo@maxbooster.ai") {
         (safeUser as any).isDemo = true;
       }
-      return res.json(safeUser);
+      return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
     }
     return res.json(null);
   });
@@ -468,7 +469,7 @@ export async function registerRoutes(
             });
         }
 
-        return res.json(safeUser);
+        return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) });
       } catch (error) {
         logger.warn({ err: error }, "Registration error");
         return res.status(500).json({ message: "Registration failed" });
@@ -608,7 +609,7 @@ export async function registerRoutes(
             );
           }
 
-          return res.json({ ...safeUser, sessionToken });
+          return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences), sessionToken });
         } catch (sessionErr) {
           logger.warn(
             { err: sessionErr },
@@ -898,13 +899,16 @@ export async function registerRoutes(
       betaFeatures: false,
     };
     const userPreferences = req.user.preferences as Record<string, any> | null;
-    return res.json({ ...defaultPreferences, ...userPreferences });
+    return res.json({ ...defaultPreferences, ...publicPaymentPreferences(userPreferences) });
   });
 
   // Auth: Update preferences (persisted to database)
   app.put("/api/auth/preferences", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
+    }
+    if (hasBankCredentials(req.body)) {
+      return res.status(400).json({ message: "Use provider onboarding for bank account details" });
     }
     try {
       const {
@@ -2000,7 +2004,7 @@ export async function registerRoutes(
           emailVerificationToken: _evt,
           ...safeUser
         } = demoUser as Record<string, unknown>;
-        return res.json({ ...safeUser, isDemo: true });
+        return res.json({ ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences), isDemo: true });
       } catch (sessionErr) {
         logger.warn(
           { err: sessionErr },
@@ -5245,7 +5249,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json(req.user.preferences || {});
+      return res.json(publicPaymentPreferences(req.user.preferences));
     } catch (error) {
       logger.warn({ err: error }, "Error fetching user preferences");
       return res.status(500).json({ message: "Failed to fetch preferences" });
@@ -5257,12 +5261,15 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      if (hasBankCredentials(req.body)) {
+        return res.status(400).json({ message: "Use provider onboarding for bank account details" });
+      }
       const preferences = { ...(req.user.preferences || {}), ...req.body };
       await db
         .update(users)
         .set({ preferences })
         .where(eq(users.id, req.user.id));
-      return res.json({ success: true, preferences });
+      return res.json({ success: true, preferences: publicPaymentPreferences(preferences) });
     } catch (error) {
       logger.warn({ err: error }, "Error updating user preferences");
       return res.status(500).json({ message: "Failed to update preferences" });
@@ -6020,7 +6027,7 @@ export async function registerRoutes(
             id: "stripe",
             type: "stripe",
             label: "Bank Account (Stripe)",
-            isDefault: !prefs.paypalEmail && !prefs.bankDetails,
+            isDefault: !prefs.paypalEmail,
           });
         }
         if (prefs.paypalEmail) {
@@ -6028,15 +6035,7 @@ export async function registerRoutes(
             id: "paypal",
             type: "paypal",
             label: `PayPal (${prefs.paypalEmail})`,
-            isDefault: !!prefs.paypalEmail && !prefs.bankDetails,
-          });
-        }
-        if (prefs.bankDetails) {
-          methods.push({
-            id: "bank",
-            type: "bank_transfer",
-            label: "Bank Transfer",
-            isDefault: true,
+            isDefault: !!prefs.paypalEmail,
           });
         }
         return res.json(methods);
@@ -6056,18 +6055,16 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { type, paypalEmail, bankDetails } = req.body ?? {};
-        if (type !== "paypal" && type !== "bank_transfer")
-          return res
-            .status(400)
-            .json({ message: "Payment method must be PayPal or bank transfer" });
+        const { type, paypalEmail } = req.body ?? {};
+        if (type === "bank_transfer") {
+          return res.status(410).json({
+            message: "Direct bank account submission is disabled. Complete Stripe Connect onboarding instead.",
+          });
+        }
+        if (type !== "paypal")
+          return res.status(400).json({ message: "Payment method must be PayPal" });
         if (type === "paypal" && (typeof paypalEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail.trim()))) {
           return res.status(400).json({ message: "A valid PayPal email is required" });
-        }
-        if (type === "bank_transfer" && (!bankDetails || ["accountHolderName", "bankName", "accountNumber", "routingNumber"].some(
-          (key) => typeof bankDetails[key] !== "string" || !bankDetails[key].trim(),
-        ))) {
-          return res.status(400).json({ message: "Complete bank details are required" });
         }
 
         const user = req.user!;
@@ -6078,8 +6075,6 @@ export async function registerRoutes(
         };
         if (type === "paypal" && paypalEmail)
           updated.payoutSettings.paypalEmail = paypalEmail.trim();
-        if (type === "bank_transfer" && bankDetails)
-          updated.payoutSettings.bankDetails = bankDetails;
 
         await db
           .update(users)
@@ -6131,7 +6126,7 @@ export async function registerRoutes(
         return res.json({
           minimumPayout: prefs.minimumPayout ?? 50,
           payoutSchedule: prefs.payoutSchedule ?? "monthly",
-          preferredMethod: prefs.preferredMethod ?? null,
+          preferredMethod: prefs.preferredMethod === "bank_transfer" ? null : (prefs.preferredMethod ?? null),
           stripeConnected: !!user.stripeConnectedAccountId,
           paypalEmail: prefs.paypalEmail ?? null,
           taxCountry,
@@ -6156,6 +6151,11 @@ export async function registerRoutes(
       }
       try {
         const { minimumPayout, payoutSchedule, preferredMethod } = req.body ?? {};
+        if (preferredMethod === "bank_transfer") {
+          return res.status(410).json({
+            message: "Direct bank transfer is disabled. Complete Stripe Connect onboarding instead.",
+          });
+        }
         if (
           minimumPayout != null &&
           (!Number.isFinite(Number(minimumPayout)) || Number(minimumPayout) < 0)
