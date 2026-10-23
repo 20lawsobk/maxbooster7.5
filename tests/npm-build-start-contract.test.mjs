@@ -170,6 +170,18 @@ test("DNS production startup uses a compiled entry, not tsx", () => {
   assert.match(supervisor, /production \? path.resolve\(DNS_NODE_DIR, "\.\.\/dist\/dns-node.mjs"\) : "src\/index.ts"/);
 });
 
+test("portable production Python runtime enforces its service manifest security floor", () => {
+  const build = fs.readFileSync("script/build.ts", "utf8");
+  const provisioner = fs.readFileSync("script/lib/provisionPortablePython.mjs", "utf8");
+  const installer = fs.readFileSync("script/lib/installPortablePythonDependencies.py", "utf8");
+  const service = fs.readFileSync("external/maxcore/artifacts/ai-training-server/pyproject.toml", "utf8");
+  assert.match(build, /provisionPortablePython\(root\)/);
+  assert.match(provisioner, /installPortablePythonDependencies\.py/);
+  assert.match(installer, /external\/maxcore\/artifacts\/ai-training-server\/pyproject\.toml/);
+  assert.match(installer, /requirements_satisfied/);
+  assert.match(service, /urllib3>=2\.8\.0/);
+});
+
 test("embedded production MaxCore has a compiled entry and excludes the dashboard", () => {
   const build = fs.readFileSync("script/build.ts", "utf8");
   const supervisor = fs.readFileSync("server/services/maxcoreLocalSupervisor.ts", "utf8");
