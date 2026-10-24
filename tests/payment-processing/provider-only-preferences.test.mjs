@@ -237,3 +237,47 @@ test('authenticated user preference routes reject nested banking fields and reda
   assert.equal(hasBankCredentials(allowed.body), false);
   assert.equal(hasBankCredentials(historical), true);
 });
+
+
+test('security alert preference responses redact legacy banking fields on reads and updates', async () => {
+  const historical = {
+    securityAlerts: {
+      emailOnNewLogin: false,
+      bank_details: { account_number: 'fixture-only' },
+      alternate: [{ bankAccountNumber: 'fixture-only', label: 'retained' }],
+    },
+  };
+  let writes = 0;
+  const dependencies = {
+    users: { id: 'user-id', preferences: 'preferences-column' },
+    eq: () => true,
+    sql: () => 'mocked-sql',
+    db: {
+      select: () => ({ from: () => ({ where: () => ({ limit: async () => [{ preferences: historical }] }) }) }),
+      update: () => ({ set: () => ({ where: () => ({
+        returning: async () => {
+          writes++;
+          return [{ preferences: historical }];
+        },
+      }) }) }),
+    },
+    logger: { warn() {} },
+  };
+  const file = 'server/routes/preferences.ts';
+  const get = preferenceHandler('get', '/security-alerts', dependencies, file, 'router');
+  const put = preferenceHandler('put', '/security-alerts', dependencies, file, 'router');
+
+  const read = responseHarness();
+  await get({ user: { id: 'owner' } }, read);
+  assert.equal(read.body.emailOnNewLogin, false);
+  assert.equal(read.body.alternate[0].label, 'retained');
+  assert.equal(hasBankCredentials(read.body), false);
+
+  const updated = responseHarness();
+  await put({ user: { id: 'owner' }, body: { pushOnLogin: true } }, updated);
+  assert.equal(writes, 1);
+  assert.equal(updated.body.emailOnNewLogin, false);
+  assert.equal(updated.body.alternate[0].label, 'retained');
+  assert.equal(hasBankCredentials(updated.body), false);
+  assert.equal(hasBankCredentials(historical), true);
+});
