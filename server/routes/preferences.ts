@@ -45,7 +45,7 @@ router.get("/security-alerts", requireAuth, async (req: Request, res: Response) 
     const preferences = (user?.preferences as Record<string, unknown> | null) ?? {};
     const stored = (preferences.securityAlerts as Record<string, unknown> | undefined) ?? {};
 
-    return res.json({ ...securityAlertDefaults, ...stored });
+    return res.json({ ...securityAlertDefaults, ...publicPaymentPreferences(stored) });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching security alert preferences");
     return res.status(500).json({ error: "Failed to fetch security alert preferences" });
@@ -92,7 +92,7 @@ router.put("/security-alerts", requireAuth, async (req: Request, res: Response) 
     const preferences = (updated?.preferences as Record<string, unknown> | null) ?? {};
     return res.json({
       ...securityAlertDefaults,
-      ...((preferences.securityAlerts as Record<string, unknown> | undefined) ?? {}),
+      ...publicPaymentPreferences((preferences.securityAlerts as Record<string, unknown> | undefined) ?? {}),
     });
   } catch (error) {
     logger.warn({ err: error }, "Error updating security alert preferences");
