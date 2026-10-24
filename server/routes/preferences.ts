@@ -10,6 +10,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db.js";
 import { users } from "../../shared/schema.js";
 import { eq, sql } from "drizzle-orm";
+import { hasBankCredentials, publicPaymentPreferences } from "../lib/paymentPreferencePrivacy.js";
 
 const router = Router();
 
@@ -106,11 +107,11 @@ router.get("/user", requireAuth, async (req: Request, res: Response) => {
 
     if (!preferences) {
       return res.json(
-        userPreferencesService?.getDefaultPreferences("solo", "emerging"),
+        publicPaymentPreferences(userPreferencesService?.getDefaultPreferences("solo", "emerging")),
       );
     }
 
-    return res.json(preferences);
+    return res.json(publicPaymentPreferences(preferences));
   } catch (error) {
     logger.warn({ err: error }, "Error fetching user preferences:");
     return res.status(500).json({ error: "Failed to fetch preferences" });
@@ -121,12 +122,15 @@ router.put("/user", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const updates = req.body;
+    if (hasBankCredentials(updates)) {
+      return res.status(400).json({ error: "Bank credentials cannot be stored in general preferences" });
+    }
 
     const updated = await userPreferencesService?.updateUserPreferences(
       userId,
       updates,
     );
-    return res.json(updated);
+    return res.json(publicPaymentPreferences(updated));
   } catch (error) {
     logger.warn({ err: error }, "Error updating user preferences:");
     return res.status(500).json({ error: "Failed to update preferences" });
