@@ -15,29 +15,29 @@ export const floors = {
   "fast-copy": "4.1.0", "postcss-selector-parser": "7.1.6",
   "@capacitor/android": "8.5.1", "@capacitor/ios": "8.5.1",
   "sprintf-js": null,
-  axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.4",
-  undici: "7.30.0", electron: "43.7.7",
+  axios: "1.20.0", fastify: "5.12.6", "ip-address": "10.7.4",
+  undici: "7.30.1", electron: "43.8.1",
   // No patched release exists; certificate issuance must not pull this back in.
   "node-forge": null,
   // Their unpatched consumers have been removed or upgraded.
   braces: null,
   "http-cache-semantics": null,
-  "fast-uri": "3.1.8", "js-yaml": "4.3.2", qs: "6.16.0",
-  multer: "2.4.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
+  "fast-uri": "3.1.9", "js-yaml": "4.3.2", qs: "6.16.0",
+  multer: "2.5.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
   orval: "8.33.0", "linkify-it": "5.0.2", sharp: "0.35.5",
   postcss: "8.5.23", browserslist: "4.28.7",
   "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
   "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
   yaml: "2.8.3", dompurify: "3.4.17", "body-parser": "2.4.0", "markdown-it": "14.3.1",
-  vitest: "4.1.11", "@vitest/mocker": "4.1.11", "csv-parse": "7.0.2",
+  vitest: "4.1.12", "@vitest/mocker": "4.1.12", "csv-parse": "7.0.2",
   // No patched release exists for the reported extract-zip advisories.
   // Keep it in the inventory so reintroduction fails rather than disappearing.
   "extract-zip": null,
 };
 const alternateFloors = {
-  undici: { 6: "6.28.1" },
-  "fast-uri": { 4: "4.1.5" },
+  undici: { 6: "6.29.1" },
+  "fast-uri": { 4: "4.2.3" },
   "linkify-it": { 6: "6.1.0" },
   "brace-expansion": { 2: "2.1.7" },
   nanoid: { 5: "5.1.16" },

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import fs from "fs";
+import { safeFetchBuffer } from "../services/safeUrlFetch.js";
 import {
   getMaxcoreGenerationKey,
   getMaxcoreOrigin,
@@ -4569,18 +4570,14 @@ router.get(
       );
     }
 
-    // Bearer ONLY — MaxCore validates X-API-Key/X-Admin-Key schemes first
-    // and 401s the whole request if they're present (see replit.md).
-    const authHeaders: Record<string, string> = {
-      Authorization: `Bearer ${MC_AI_KEY}`,
-    };
-
     // Limit proxy attempts: stored URL + first 8 candidates.
     // Each attempt uses an 8s timeout — MaxCore responds immediately (200 or
     // 404); only a connection stall would exhaust the timeout.  Without this
     // cap, a missing file walks all 20+ candidates × 30s = many minutes.
     const MAX_PROXY_ATTEMPTS = 9;
     for (const url of candidateUrls.slice(0, MAX_PROXY_ATTEMPTS)) {
+      // Artifact URLs can contain signed query credentials; log the origin only.
+      const logTarget = (() => { try { return new URL(url).origin; } catch { return "invalid artifact destination"; } })();
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       const upstreamController = new AbortController();
       const upstreamTimeout = setTimeout(
@@ -4604,13 +4601,39 @@ router.get(
       req.once("aborted", abortUpstream);
       res.once("close", abortUpstream);
       try {
-        const upstream = await fetch(url, {
-          headers: authHeaders,
-          signal: upstreamController.signal,
-        });
+        const target = new URL(url);
+        if (target.username || target.password || !["http:", "https:"].includes(target.protocol)) {
+          throw new Error("Video artifact URL is invalid");
+        }
+        const sameOrigin = !!MC_AI_URL && target.origin === new URL(MC_AI_URL).origin;
+        let upstream: globalThis.Response;
+        if (sameOrigin) {
+          upstream = await fetch(target.href, {
+            headers: { Authorization: `Bearer ${MC_AI_KEY}`,
+              "X-MaxCore-User-Id": req.user!.id },
+            // Never forward private channel or owner headers to a redirect.
+            redirect: "manual",
+            signal: upstreamController.signal,
+          });
+          if (upstream.status >= 300 && upstream.status < 400) {
+            await upstream.body?.cancel();
+            continue;
+          }
+        } else {
+          // External artifact/CDN URLs have no service credentials. Reuse the
+          // public-host/DNS-pinning/redirect validator rather than an open relay.
+          const external = await safeFetchBuffer(target.href, {
+            timeoutMs: 8_000, maxBytes: 100 * 1024 * 1024,
+          });
+          if (external.status !== 200) continue;
+          upstream = new globalThis.Response(external.body, { status: 200, headers: {
+            "content-type": external.contentType,
+            "content-length": String(external.body.length),
+          } });
+        }
         if (!upstream?.ok) {
           logger.info(
-            `[VideoProxy] Candidate ${url} → HTTP ${upstream.status} ct="${upstream.headers.get("content-type") ?? ""}"`,
+            `[VideoProxy] Candidate ${logTarget} → HTTP ${upstream.status} ct="${upstream.headers.get("content-type") ?? ""}"`,
           );
           continue;
         }
@@ -4659,7 +4682,7 @@ router.get(
         if (!isRealVideo) {
           reader?.cancel();
           logger.info(
-            `[VideoProxy] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", peek="${peekText.slice(0, 60).replace(/\n/g, "\\n")}")`,
+            `[VideoProxy] Candidate ${logTarget} → NOT video (HTTP 200, ct="${ct}", peek="${peekText.slice(0, 60).replace(/\n/g, "\\n")}")`,
           );
           continue;
         }
@@ -4701,7 +4724,7 @@ router.get(
           );
         }
 
-        logger.info(`[VideoProxy] Streamed ${filename} from ${url}`);
+        logger.info(`[VideoProxy] Streamed ${filename} from ${logTarget}`);
         return;
       } catch (err) {
         if (res.headersSent) {
@@ -4713,7 +4736,7 @@ router.get(
           return;
         }
         logger.info(
-          `[VideoProxy] Candidate ${url} fetch error: ${(err as any)?.message}`,
+          `[VideoProxy] Candidate ${logTarget} fetch error: ${(err as any)?.message}`,
         );
       } finally {
         clearTimeout(upstreamTimeout);

@@ -2,11 +2,12 @@
 import { db } from "../db";
 import {
   releases,
+  users,
   releaseWorkflowRequests,
   releaseVersionHistory,
   releaseScheduledActions,
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export type ReleaseStatus =
@@ -45,6 +46,7 @@ export interface WorkflowTransitionResult {
   newStatus: ReleaseStatus;
   requestId?: string;
   error?: string;
+  statusCode?: number;
 }
 
 export interface TakedownRequest {
@@ -84,6 +86,21 @@ const VALID_TRANSITIONS: Record<ReleaseStatus, ReleaseStatus[]> = {
 };
 
 class ReleaseWorkflowService {
+  private async accessibleRelease(releaseId: string, userId: string, connection = db, lock = false) {
+    if (!userId) return null;
+    const ownedQuery = connection.select().from(releases)
+      .where(and(eq(releases.id, releaseId), eq(releases.userId, userId))).limit(1);
+    const [owned] = await (lock ? ownedQuery.for("update") : ownedQuery);
+    if (owned && owned.userId === userId) return owned;
+    // Administrative authority comes from the stored actor, never request metadata.
+    const [actor] = await connection.select({ role: users.role }).from(users)
+      .where(eq(users.id, userId)).limit(1);
+    if (actor?.role !== "admin") return null;
+    const releaseQuery = connection.select().from(releases).where(eq(releases.id, releaseId)).limit(1);
+    const [release] = await (lock ? releaseQuery.for("update") : releaseQuery);
+    return release ?? null;
+  }
+
   canTransition(
     currentStatus: ReleaseStatus,
     targetStatus: ReleaseStatus,
@@ -107,93 +124,92 @@ class ReleaseWorkflowService {
     },
   ): Promise<WorkflowTransitionResult> {
     try {
-      const release = await db
-        .select()
-        .from(releases)
-        .where(eq(releases.id, releaseId))
-        .limit(1);
+      return await db.transaction(async connection => {
+        const accessible = await this.accessibleRelease(releaseId, userId, connection, true);
+        const release = accessible ? [accessible] : [];
 
-      if (release?.length === 0) {
-        return {
-          success: false,
-          previousStatus: "draft",
-          newStatus: "draft",
-          error: "Release not found",
-        };
-      }
+        if (release?.length === 0) {
+          return {
+            success: false,
+            previousStatus: "draft",
+            newStatus: "draft",
+            error: "Release not found or access denied",
+            statusCode: 404,
+          };
+        }
 
-      const currentStatus = (release[0].status || "draft") as ReleaseStatus;
+        const currentStatus = (release[0].status || "draft") as ReleaseStatus;
 
-      if (!this.canTransition(currentStatus, targetStatus)) {
-        return {
-          success: false,
-          previousStatus: currentStatus,
-          newStatus: currentStatus,
-          error: `Cannot transition from ${currentStatus} to ${targetStatus}`,
-        };
-      }
+        if (!this.canTransition(currentStatus, targetStatus)) {
+          return {
+            success: false,
+            previousStatus: currentStatus,
+            newStatus: currentStatus,
+            error: `Cannot transition from ${currentStatus} to ${targetStatus}`,
+            statusCode: 409,
+          };
+        }
 
-      // Apply the actual status change and verify it matched a real row
-      // BEFORE recording the request/version-history as completed. Only
-      // checking the earlier SELECT is not enough: the release could be
-      // deleted (or otherwise stop matching) in the gap between that read
-      // and this write, and an UPDATE whose WHERE clause matches zero rows
-      // still resolves without error — silently telling the caller a
-      // transition happened when the releases row was never touched.
-      const updatedRelease = await db
-        .update(releases)
-        .set({
-          status: targetStatus,
-          updatedAt: new Date(),
-        })
-        .where(eq(releases.id, releaseId))
-        .returning({ id: releases.id });
+        // The locked release serializes history versions. State, request and
+        // version history commit together, or all roll back on an audit failure.
+        // Apply the actual status change and verify it matched a real row
+        // BEFORE recording the request/version-history as completed. Only
+        // checking the earlier SELECT is not enough: the release could be
+        // deleted (or otherwise stop matching) in the gap between that read
+        // and this write, and an UPDATE whose WHERE clause matches zero rows
+        // still resolves without error — silently telling the caller a
+        // transition happened when the releases row was never touched.
+        const updatedRelease = await connection
+          .update(releases)
+          .set({ status: targetStatus })
+          .where(and(eq(releases.id, releaseId), eq(releases.userId, release[0].userId), release[0].status === null ? isNull(releases.status) : eq(releases.status, currentStatus)))
+          .returning({ id: releases.id });
 
-      if (updatedRelease?.length === 0) {
-        return {
-          success: false,
-          previousStatus: currentStatus,
-          newStatus: currentStatus,
-          error:
-            "Release not found or was removed before the update could be applied",
-        };
-      }
+        if (updatedRelease?.length === 0) {
+          return {
+            success: false,
+            previousStatus: currentStatus,
+            newStatus: currentStatus,
+            error:
+              "Release not found or was removed before the update could be applied",
+          };
+        }
 
-      const [request] = await db
-        .insert(releaseWorkflowRequests)
-        .values({
+        const [request] = await connection
+          .insert(releaseWorkflowRequests)
+          .values({
+            releaseId,
+            requestedBy: userId,
+            requestType,
+            metadata: { ...options?.metadata, previousStatus: currentStatus,
+              newStatus: targetStatus, reason: options?.reason },
+            status: "completed",
+            processedBy: userId,
+            processedAt: new Date(),
+          })
+          .returning();
+
+        await this.createVersionHistoryEntry(
           releaseId,
           userId,
-          requestType,
+          "status_change",
+          { status: currentStatus },
+          { status: targetStatus },
+          options?.reason,
+          connection,
+        );
+
+        logger.info(
+          `Release ${releaseId} transitioned from ${currentStatus} to ${targetStatus}`,
+        );
+
+        return {
+          success: true,
           previousStatus: currentStatus,
           newStatus: targetStatus,
-          reason: options!.reason,
-          metadata: options!.metadata,
-          status: "completed",
-          processedBy: userId,
-          processedAt: new Date(),
-        })
-        .returning();
-
-      await this.createVersionHistoryEntry(
-        releaseId,
-        userId,
-        "status_change",
-        { status: currentStatus },
-        { status: targetStatus },
-        options?.reason,
-      );
-
-      logger.info(
-        `Release ${releaseId} transitioned from ${currentStatus} to ${targetStatus}`,
-      );
-
-      return {
-        success: true,
-        previousStatus: currentStatus,
-        newStatus: targetStatus,
-        requestId: request.id,
-      };
+          requestId: request.id,
+        };
+      });
     } catch (error) {
       logger.warn({ err: error }, "Error transitioning release:");
       return {
@@ -385,7 +401,8 @@ class ReleaseWorkflowService {
     });
   }
 
-  async getWorkflowHistory(releaseId: string): Promise<any[]> {
+  async getWorkflowHistory(releaseId: string, userId: string): Promise<any[]> {
+    if (!await this.accessibleRelease(releaseId, userId)) return [];
     const requests = await db
       .select()
       .from(releaseWorkflowRequests)
@@ -396,7 +413,8 @@ class ReleaseWorkflowService {
     return requests;
   }
 
-  async getVersionHistory(releaseId: string): Promise<any[]> {
+  async getVersionHistory(releaseId: string, userId: string): Promise<any[]> {
+    if (!await this.accessibleRelease(releaseId, userId)) return [];
     const versions = await db
       .select()
       .from(releaseVersionHistory)
@@ -407,11 +425,13 @@ class ReleaseWorkflowService {
     return versions;
   }
 
-  async getPendingRequests(_userId?: string): Promise<any[]> {
+  async getPendingRequests(userId: string): Promise<any[]> {
+    if (!userId) return [];
+    const [actor] = await db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1);
     const baseQuery = db
       .select()
       .from(releaseWorkflowRequests)
-      .where(eq(releaseWorkflowRequests.status, "pending"))
+      .where(actor?.role === "admin" ? eq(releaseWorkflowRequests.status, "pending") : and(eq(releaseWorkflowRequests.status, "pending"), eq(releaseWorkflowRequests.requestedBy, userId)))
       .orderBy(desc(releaseWorkflowRequests.createdAt))
       .limit(100);
 
@@ -425,8 +445,9 @@ class ReleaseWorkflowService {
     previousData: Record<string, unknown>,
     newData: Record<string, unknown>,
     changeReason?: string,
+    connection = db,
   ): Promise<void> {
-    const latestVersion = await db
+    const latestVersion = await connection
       .select()
       .from(releaseVersionHistory)
       .where(eq(releaseVersionHistory.releaseId, releaseId))
@@ -435,14 +456,13 @@ class ReleaseWorkflowService {
 
     const nextVersion = (latestVersion[0]?.version || 0) + 1;
 
-    await db.insert(releaseVersionHistory).values({
+    await connection.insert(releaseVersionHistory).values({
       releaseId,
       version: nextVersion,
       changeType,
       changedBy,
       previousData,
-      newData,
-      changeReason,
+      changes: { newData, reason: changeReason },
     });
   }
 
@@ -453,60 +473,62 @@ class ReleaseWorkflowService {
     reason?: string,
   ): Promise<{ success: boolean; version: number; error?: string }> {
     try {
-      const release = await db
-        .select()
-        .from(releases)
-        .where(eq(releases.id, releaseId))
-        .limit(1);
-
-      if (release?.length === 0) {
-        return { success: false, version: 0, error: "Release not found" };
+      const allowed = new Set(["title", "releaseDate", "artworkUrl", "metadata"]);
+      if (!changes || typeof changes !== "object" || Array.isArray(changes) ||
+          Object.keys(changes).some(key => !allowed.has(key))) {
+        return { success: false, version: 0, error: "Unsupported or immutable release field" };
       }
+      return await db.transaction(async connection => {
+        const accessible = await this.accessibleRelease(releaseId, userId, connection, true);
+        const release = accessible ? [accessible] : [];
 
-      const previousData = {
-        title: release[0].title,
-        artist: (release[0] as any).artist,
-        metadata: release[0].metadata,
-      };
+        if (release?.length === 0) {
+          return { success: false, version: 0, error: "Release not found" };
+        }
 
-      const updatedRelease = await db
-        .update(releases)
-        .set({
-          ...changes,
-          updatedAt: new Date(),
-        })
-        .where(eq(releases.id, releaseId))
-        .returning({ id: releases.id });
-
-      if (updatedRelease?.length === 0) {
-        return {
-          success: false,
-          version: 0,
-          error:
-            "Release not found or was removed before the update could be applied",
+        const previousData = {
+          title: release[0].title,
+          artist: (release[0] as any).artist,
+          metadata: release[0].metadata,
         };
-      }
 
-      await this.createVersionHistoryEntry(
-        releaseId,
-        userId,
-        "metadata_update",
-        previousData,
-        changes,
-        reason,
-      );
+        const updatedRelease = await connection
+          .update(releases)
+          .set(changes)
+          .where(and(eq(releases.id, releaseId), eq(releases.userId, release[0].userId)))
+          .returning({ id: releases.id });
 
-      const latestVersion = await db
-        .select()
-        .from(releaseVersionHistory)
-        .where(eq(releaseVersionHistory.releaseId, releaseId))
-        .orderBy(desc(releaseVersionHistory.version))
-        .limit(1);
+        if (updatedRelease?.length === 0) {
+          return {
+            success: false,
+            version: 0,
+            error:
+              "Release not found or was removed before the update could be applied",
+          };
+        }
 
-      return {
-        success: true,
-        version: latestVersion[0]?.version || 1,
-      };
+        await this.createVersionHistoryEntry(
+          releaseId,
+          userId,
+          "metadata_update",
+          previousData,
+          changes,
+          reason,
+          connection,
+        );
+
+        const latestVersion = await connection
+          .select()
+          .from(releaseVersionHistory)
+          .where(eq(releaseVersionHistory.releaseId, releaseId))
+          .orderBy(desc(releaseVersionHistory.version))
+          .limit(1);
+
+        return {
+          success: true,
+          version: latestVersion[0]?.version || 1,
+        };
+      });
     } catch (error) {
       logger.warn({ err: error }, "Error updating release metadata:");
       return {

@@ -4805,6 +4805,9 @@ export async function registerRoutes(
             revenuePerListener: null,
             revenueByPlatform: platformData.map((p) => ({
               platform: p.platform || "Unknown",
+              streams: p.streams !== null && p.streams !== undefined &&
+                Number.isSafeInteger(Number(p.streams)) && Number(p.streams) >= 0
+                ? Number(p.streams) : null,
               revenue: parseFloat(String(p.revenue)) || 0,
               percentage:
                 Number(stats.totalRevenue) > 0

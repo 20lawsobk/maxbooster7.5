@@ -89,15 +89,21 @@ export async function handleGrowthMerchCheckout(eventId:string,session:Stripe.Ch
   const pi=typeof current.payment_intent==="string"?current.payment_intent:current.payment_intent?.id;
   if(!pi) throw new Error("Merchandise checkout has no payment intent");
   const verified=await verifiedPayment(pi,gross,current.currency!);
+  if(verified.disputed&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
   await commerceRepository.book({id:`merch:${orderId}`,kind:"merch",paymentIntent:pi,currency:current.currency!,
     grossCents:gross,feeCents:fee,taxCents:tax,processingFeeCents:verified.processingFeeCents,
     allocations:[{userId:order.user_id,cents:gross-tax-fee}],
-    metadata:{growthMerchOrderId:orderId,sessionId:current.id,buyerId:order.buyer_id,sellerId:order.user_id}});
+    metadata:{growthMerchOrderId:orderId,sessionId:current.id,buyerId:order.buyer_id,sellerId:order.user_id}},
+    verified.refundedCents||verified.pendingCents||verified.disputed?{
+      refunded:verified.refundedCents,disputed:verified.disputed?gross:undefined,pendingRefund:verified.pendingCents,
+    }:undefined);
   await pool.query("UPDATE merch_orders SET shipping_address=$2::jsonb WHERE id=$1",
     [orderId,JSON.stringify({...shipping.address,name:shipping.name})]);
   await applyVerifiedMerchPayment({eventId,orderId,checkoutId:current.id,currency:current.currency!,type:"paid",amountCents:gross});
-  if(verified.refundedCents||verified.pendingCents||verified.disputed) {
-    await commerceRepository.compensate(`merch:${orderId}`,verified.refundedCents,verified.disputed?gross:undefined,verified.pendingCents);
+  const existing=await commerceRepository.sourceByPayment?.(pi);
+  if(verified.refundedCents||verified.pendingCents||verified.disputed||Number(existing?.disputed_cents)>0) {
+    if((verified.disputed||Number(existing?.disputed_cents)>0)&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
+    await commerceRepository.compensate(`merch:${orderId}`,verified.refundedCents,verified.reversalState,verified.pendingCents);
     if(verified.refundedCents) await applyVerifiedMerchPayment({eventId:`refund:${pi}:${verified.refundedCents}`,orderId,checkoutId:current.id,currency:current.currency!,type:"refunded",amountCents:verified.refundedCents});
   }
 }

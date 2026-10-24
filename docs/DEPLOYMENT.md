@@ -29,6 +29,36 @@ hashes. Start validates that record before handing off to `start.sh`. Runtime
 resources and services must also be provisioned; `dist` alone is not a complete
 installation. Read [npm-build-start.md](npm-build-start.md) for exact boundaries.
 
+The default model mode is `live-awareness`. Its model registry, candidate bundles
+and training audit are private runtime state under `MAXCORE_MODEL_STATE_DIR`,
+which the supervisor defaults to `models` beneath `MAXCORE_PRIVATE_STATE_DIR`
+(or `~/.local/state/maxcore`). These files are separate from replaceable PDIM
+application capsules and require durable attachment/recovery. Missing qualified
+state remains a generation-readiness failure; rebuilding source cannot create it.
+
+Git LFS is required only by explicit `MAXCORE_SERVING_RELEASE=legacy` checkpoint
+preparation. The default release packager requires no legacy checkpoint and
+excludes `model.corrupt`. An LFS budget error therefore does not block default
+live-awareness packaging. See the imported [live-learning runtime contract](../external/maxcore/artifacts/ai-training-server/ai_model/training/LIVE_LEARNING.md).
+
+Chunk uploads use a private shared staging directory and PostgreSQL advisory
+locks so requests can alternate between workers on the Reserved VM. The default
+is `~/.local/state/maxbooster/chunk-uploads`; `STORAGE_CHUNK_STAGING_DIR` can select
+another absolute path. Every worker must use the same directory and database.
+Directories must belong to the service with mode 0700, files use 0600, and
+symlinked paths are refused. Keep this state outside public media and release
+capsules. Different hosts require an explicitly shared filesystem; the local
+implementation does not provide distributed storage by itself.
+
+Staging reserves at most 1 GiB globally and 500 MiB per user, with 128 active
+sessions globally and four per user. Normal staging expires after 24 hours;
+completed receipts retain at most the latest 128 responses for that interval.
+An interrupted completion with an unknown storage outcome remains reserved.
+A retry reconciles a matching committed owner/hash/session tracking record;
+otherwise inspect the recorded object and tracking outcome before releasing the
+claim. Cancellation cannot discard an in-flight completion or prove an unknown
+write failed. This favors explicit reconciliation over duplicate object writes.
+
 Root npm installation does not install the independent imported MaxCore/PDIM
 pnpm workspaces. Explicitly provision their locked packages using pinned pnpm
 10.26.1 and disabled lifecycle scripts. With packages already cached, synchronize

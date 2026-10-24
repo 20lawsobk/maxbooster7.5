@@ -80,7 +80,7 @@ the normal automatic flow needs no submission command.
 HTTP 201 / `candidate_trained_unreviewed` means measured isolated training and
 parent certification succeeded, **not** that generation quality is acceptable.
 This historical result label is not a signature requirement for public live models.
-Admission failures include `blocked_corpus`,
+Admission failures include `blocked_corpus`, `blocked_training_rights`,
 `blocked_awareness`, `blocked_busy`, `blocked_capacity`, and `blocked_bounds`.
 Worker outcomes include `failed_training`, `failed_execution_evidence`,
 `blocked_timeout` and `failed_interrupted`. Consult JSON `status`; failed runs
@@ -89,17 +89,75 @@ inherited worker, not that a checkpoint is eligible for review.
 
 ## Live source provenance and privacy
 
-There is no rights-grant file or license-permission gate for this endpoint.
-Each training record retains its awareness snapshot ID, observation ID, source,
-citation, and text hash. Candidate metadata explicitly marks the license
-`NOASSERTION`, public access with `private: false`, and attribution `unattributed live observation`.
-The endpoint does not claim that sources granted training rights. It does not
-turn feed visibility into a license, and does not retrieve any content outside
-the already-collected snapshot.
+Source-authored peak post text requires approved reuse provenance before corpus
+creation, admission, or worker execution. The same check applies when non-peak
+mode includes raw Mastodon or Bluesky post text; changing modes cannot bypass it.
+The check requires a supported explicit license, an identified author, public
+access, a source, and the training purpose. The current scanner records
+`NOASSERTION` and `unattributed live observation`, so these posts remain usable
+for awareness but receive HTTP 409 / `blocked_training_rights` for training.
+Their snapshot IDs, observation IDs, citations, and hashes establish provenance,
+not a reuse grant. The optional operator-installed rights manifest below can
+authorize exact matching observations; the separate corpus-manifest pathway
+continues to support explicitly licensed authored corpora.
+
+The automatic loop durably retains `blocked_training_rights` through cooldown
+and restart. It does not describe a refused admission as a running worker. No
+source text is fetched by the trainer, and blocked raw posts produce no corpus,
+candidate, or serving-weight update.
 
 Existing secret/personal-data screening and holdout-overlap checks still apply.
 They remain automatic data-quality safeguards and do not introduce a manual
 review or signature gate for the public-source awareness flow.
+
+### Optional pinned source-text rights manifest
+
+An operator who has actual training permission can install a private local JSON
+manifest and configure both `MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST` (its absolute
+path) and `MAXCORE_TEXT_TRAINING_RIGHTS_SHA256` (the lower-case SHA-256 of its exact
+bytes). The endpoint accepts neither a manifest path nor rights assertions from
+the request. No grants or permissions are supplied by the repository.
+
+The JSON object has exactly `schema: 1`,
+`policy: "text-source-training-rights-v1"`, and `grants`, an array of 1..256
+objects. Each grant has exactly these fields:
+
+| Field | Required value |
+| --- | --- |
+| `source_id` | Exact scanner source ID, such as `mastodon_peak_music`; 1..80 letters, digits, underscores or hyphens. |
+| `domain` | Exact `music`, `social`, `advertising` or `culture` domain. |
+| `citation` | Exact observation citation, 1..4096 characters. |
+| `text_sha256` | Lower-case SHA-256 of the complete UTF-8 post text, matching the existing observation hash. |
+| `author` | Identified nonempty author, not `unattributed live observation`. |
+| `license` | One of `CC0-1.0`, `CC-BY-4.0`, `MIT`, `Apache-2.0`. |
+| `purpose` | `training`. |
+| `rights` | The accountable permission/evidence object described below. |
+
+`rights` requires `training_allowed: true`, nonempty `rights_holder` and
+`attested_by`, `license` equal to the grant license, a timezone-aware
+`attested_at` timestamp no later than now, and `evidence_path` plus
+`evidence_sha256`. Optional `expires_at` must be later than now. Evidence paths
+are relative to the manifest directory; absolute paths, `..`, URL/drive-style
+paths and symlinks are rejected. Evidence bytes must match their SHA-256.
+
+Manifest and evidence files must be regular local files without group/world
+write permission; mode `0600` is recommended. Symlinks in any path component are
+rejected. The manifest is limited to 2,000,000 bytes; each evidence file to 1 MiB,
+and distinct evidence files to 4 MiB total. Every record in an admitted set must
+match a grant by source ID, domain, exact citation and complete text hash;
+duplicate JSON keys, duplicate grants, and invalid, expired, mismatched or missing evidence fail
+closed with `blocked_training_rights`. Updating a file also requires updating
+the pinned manifest fingerprint.
+
+Accepted grants attach a separate `training_rights` receipt to audited corpus
+inputs, binding admission time, the manifest fingerprint and exact grant. Original scanner
+metadata remains `NOASSERTION`; it is not rewritten as if the scanner obtained a
+license. The receipt records an operator attestation, not an independent legal
+verdict. Keep the original operator manifest and permission evidence durably
+alongside the model's audit records. Expiry is checked at training admission;
+this check makes no claim about continuing output rights or quality. It does
+not waive privacy, corpus, training, certification, operational generation or
+quality checks, nor does installing it create a trained candidate.
 
 ## Validation boundaries
 

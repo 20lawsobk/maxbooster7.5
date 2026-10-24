@@ -9,14 +9,14 @@ const workspace = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const virtualStore = path.join(workspace, "node_modules", ".pnpm");
 const minimums = [
   { name: "orval", major: 8, version: "8.33.0" },
-  { name: "fast-uri", major: 3, version: "3.1.8" },
+  { name: "fast-uri", major: 3, version: "3.1.9" },
   { name: "js-yaml", major: 4, version: "4.3.2" },
   { name: "postcss", major: 8, version: "8.5.26" },
   { name: "esbuild", major: 0, version: "0.28.1" },
   { name: "nanoid", major: 3, version: "3.3.18" },
   { name: "ip-address", major: 10, version: "10.7.1" },
   { name: "markdown-it", major: 14, version: "14.3.1" },
-  { name: "undici", major: 6, version: "6.28.1" },
+  { name: "undici", major: 6, version: "6.29.1" },
   { name: "@xmldom/xmldom", major: 0, version: "0.9.12", optional: true },
   { name: "dompurify", major: 3, version: "3.4.16", optional: true },
 ];

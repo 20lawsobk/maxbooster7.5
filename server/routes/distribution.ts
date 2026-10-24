@@ -4246,6 +4246,15 @@ router.post(
         })
         .parse(req.body);
 
+      const ownerTargets: Record<string, string> = {
+        submit_for_review: "pending_review",
+        request_update: "update_requested", request_takedown: "takedown_requested",
+        archive: "archived",
+      };
+      if (ownerTargets[requestType] !== targetStatus) {
+        return res.status(403).json({ error: "This transition requires the configured review or distributor workflow" });
+      }
+
       const result = await enhancedWorkflowService.transition(
         releaseId,
         userId,
@@ -4254,7 +4263,7 @@ router.post(
         { reason, metadata },
       );
 
-      res.json(result);
+      res.status(result.success ? 200 : (result.statusCode ?? 409)).json(result);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
@@ -4275,7 +4284,7 @@ router.get(
     try {
       const { releaseId } = req.params as Record<string, string>;
       const history =
-        await enhancedWorkflowService.getWorkflowHistory(releaseId);
+        await enhancedWorkflowService.getWorkflowHistory(releaseId, req.user!.id);
       res.json({ history });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching workflow history:");
@@ -4292,7 +4301,7 @@ router.get(
     try {
       const { releaseId } = req.params as Record<string, string>;
       const versions =
-        await enhancedWorkflowService.getVersionHistory(releaseId);
+        await enhancedWorkflowService.getVersionHistory(releaseId, req.user!.id);
       res.json({ versions });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching version history:");

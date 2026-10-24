@@ -75,7 +75,7 @@ test("patched Axios preserves JSON, redirects, binary downloads and cancellation
 test("Google's installed gaxios consumer resolves patched Undici and sends real HTTP", async t => {
   const consumer = createRequire(require.resolve("gaxios"));
   const undici = consumer("undici");
-  assert.equal(consumer("undici/package.json").version, "7.30.0");
+  assert.equal(consumer("undici/package.json").version, "7.30.1");
   const server = createServer((req, res) => {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ path: req.url }));

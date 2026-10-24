@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { workspaceService } from "../services/workspaceService";
+import { workspaceService, workspaceUpdateSchema } from "../services/workspaceService";
 import { rbacService, type Permission } from "../services/rbacService";
 import {
   approvalWorkflowService,
@@ -68,7 +68,12 @@ const requireWorkspaceAdmin = async (
     }
 
     const workspaceId = (req.params.id as string) || (req.params.workspaceId as string);
-    const isAdmin = await rbacService?.isAdmin(workspaceId, req.user.id);
+    const [workspace, member] = await Promise.all([
+      workspaceService.getWorkspace(workspaceId),
+      workspaceService.getMember(workspaceId, req.user.id),
+    ]);
+    const isAdmin = workspace && member?.status === "active" &&
+      (workspace.ownerId === req.user.id || member.role === "admin");
 
     if (!isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
@@ -175,9 +180,10 @@ router.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const updates = workspaceUpdateSchema.parse(req.body);
       const result = await workspaceService?.updateWorkspace(
         (req.params.id as string),
-        req.body,
+        updates,
         req.user!.id,
       );
 
@@ -187,6 +193,9 @@ router.put(
 
       res.json({ workspace: result.workspace });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid request data", details: error.issues });
+      }
       logger.warn({ err: error }, "Update workspace error:");
       res.status(500).json({ error: "Failed to update workspace" });
     }

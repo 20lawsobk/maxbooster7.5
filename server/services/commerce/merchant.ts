@@ -53,7 +53,7 @@ export type MerchantCheckoutSession = Pick<
 
 export type MerchantSettlementDependencies = {
   pool: Pick<typeof pool, "query">;
-  repository: Pick<CommerceRepository, "book" | "compensate">;
+  repository: Pick<CommerceRepository, "book" | "compensate"> & Partial<Pick<CommerceRepository,"sourceByPayment">>;
   verifyPayment: typeof verifiedPayment;
 };
 
@@ -84,6 +84,12 @@ export async function settleMerchantCheckout(
   }
   if(session.payment_status!=="paid") throw new Error("Merchant checkout not paid");
   if (!session.id) throw new Error("Merchant checkout has no session id");
+  const paymentIntent=typeof session.payment_intent==="string"?session.payment_intent:session.payment_intent?.id;
+  if(!paymentIntent) throw new Error("Merchant checkout has no payment intent");
+  const priorSource=await dependencies.repository.sourceByPayment?.(paymentIntent);
+  const expectedSource=storefrontCheckout?`merchant:checkout:${session.id}`:`merchant:${metadata!.merchantOrderId}`;
+  if(priorSource&&priorSource.id!==expectedSource) throw new Error("Payment already allocated to a different merchant order");
+  const allowedStatuses=priorSource?["pending","completed","disputed","refund_pending","refunded"]:["pending","completed"];
   const orderRows = storefrontCheckout
     ? (
         await dependencies.pool.query(
@@ -116,7 +122,7 @@ export async function settleMerchantCheckout(
         String(order.storefront_id) !== storefrontId ||
         String(order.currency || "usd").toLowerCase() !== currency ||
         (order.stripe_session_id && order.stripe_session_id !== session.id) ||
-        !["pending", "completed"].includes(String(order.status)) ||
+        !allowedStatuses.includes(String(order.status)) ||
         (order.stripe_payment_intent_id &&
           order.stripe_payment_intent_id !==
             (typeof session.payment_intent === "string"
@@ -152,8 +158,7 @@ export async function settleMerchantCheckout(
     throw new Error("Merchant payment does not match stored order total");
   }
 
-  const paymentIntent=typeof session.payment_intent==="string"?session.payment_intent:session.payment_intent?.id;
-  if(!paymentIntent) throw new Error("Merchant checkout has no payment intent");
+
   let fee: number;
   if (metadata?.platformFeeCents !== undefined) {
     fee = Number(metadata.platformFeeCents);
@@ -166,6 +171,7 @@ export async function settleMerchantCheckout(
   }
   if(!Number.isSafeInteger(fee)||fee<0||fee>=gross) throw new Error("Invalid merchant fee");
   const verified=await dependencies.verifyPayment(paymentIntent,gross,currency);
+  if(verified.disputed&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
   const promotionId =
     metadata?.promotionId ||
     orderRows.find((order: any) => order.applied_promotion_id)
@@ -193,12 +199,16 @@ export async function settleMerchantCheckout(
       ...(promotionId ? { promotionId } : {}),
     },
   };
-  await dependencies.repository.book(sale);
-  if(verified.refundedCents||verified.pendingCents||verified.disputed) {
+  await dependencies.repository.book(sale,verified.refundedCents||verified.pendingCents||verified.disputed?{
+    refunded:verified.refundedCents,disputed:verified.disputed?gross:undefined,pendingRefund:verified.pendingCents,
+  }:undefined);
+  const existing=await dependencies.repository.sourceByPayment?.(paymentIntent);
+  if(verified.refundedCents||verified.pendingCents||verified.disputed||Number(existing?.disputed_cents)>0) {
+    if((verified.disputed||Number(existing?.disputed_cents)>0)&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
     await dependencies.repository.compensate(
       sale.id,
       verified.refundedCents,
-      verified.disputed ? gross : undefined,
+      verified.reversalState,
       verified.pendingCents,
     );
   }

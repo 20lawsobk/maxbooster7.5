@@ -13,10 +13,10 @@ export class CommerceEngine {
       else if(op.kind==="refund") {
         const refund=await this.provider.refund(op);
         await this.repo.update(op,{providerId:refund.id,state:refund.status==="failed"||refund.status==="canceled"?"failed":"awaiting"});
-        if(refund.refundedCents!==undefined) {
+        if(refund.refundedCents!==undefined||refund.reversalState) {
           const source=await this.repo.sourceByPayment(op.payload.paymentIntent);
           if(!source) throw new Error("Refund payment source is missing");
-          await this.repo.compensate(source.id,refund.refundedCents,undefined,refund.pendingCents);
+          await this.repo.compensate(source.id,refund.refundedCents??0,refund.reversalState,refund.pendingCents);
           await this.repo.update(op,{state:refund.status==="succeeded"?"completed":refund.status==="failed"||refund.status==="canceled"?"failed":"awaiting"});
         }
       } else {

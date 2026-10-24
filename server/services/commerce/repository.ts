@@ -1,3 +1,4 @@
+import type { ReversalState } from "./reversalState";
 import { randomUUID, createHash } from "node:crypto";
 import type { Operation, Sale } from "./contract";
 import { majorUnits } from "./contract";
@@ -6,6 +7,7 @@ import { logger } from "../../logger.js";
 export interface SqlClient { query(sql: string, params?: unknown[]): Promise<{ rows: any[] }>; release(): void }
 export interface SqlPool { connect(): Promise<SqlClient>; query(sql:string, params?:unknown[]): Promise<{rows:any[]}> }
 type Entry = { account:string; userId?:string; cents:number };
+export type InitialCompensation = {refunded:number;disputed?:number;pendingRefund?:number};
 export class CommerceRepository {
   constructor(private pool:SqlPool) {}
   async tx<T>(fn:(c:SqlClient)=>Promise<T>):Promise<T> {
@@ -24,7 +26,7 @@ export class CommerceRepository {
     if(!inserted.rows.length) return;
     for(let i=0;i<entries.length;i++) await c.query("INSERT INTO commerce_entries(journal_id,line,account,user_id,amount_cents) VALUES($1,$2,$3,$4,$5)",[id,i,entries[i].account,entries[i].userId||null,entries[i].cents]);
   }
-  async book(sale:Sale) {
+  async book(sale:Sale,initial?:InitialCompensation) {
     const processingFee=sale.processingFeeCents||0;
     const tax=sale.taxCents||0;
     if(!Number.isSafeInteger(tax)||tax<0) throw new Error("Invalid collected tax");
@@ -38,6 +40,8 @@ export class CommerceRepository {
       const existing=(await c.query("SELECT metadata FROM commerce_sources WHERE id=$1",[sale.id])).rows[0];
       if(existing) {
         if(existing.metadata.fingerprint!==fingerprint) throw new Error("Settlement replay changed immutable terms");
+        // A replay must not restore a stale initial hold or enqueue recovery
+        // against allocations already paid after a won dispute.
         return;
       }
       if(sale.kind==="royalty") {
@@ -121,6 +125,10 @@ export class CommerceRepository {
           if(!fulfilled.rows.length) throw new Error("Merchant order no longer exists or its payment identity changed");
         }
       }
+      // Settlement and initial withholding commit atomically. A later provider
+      // refresh may release this conservative hold, but can never expose funds
+      // between booking and the first reconciliation attempt.
+      if(initial) await this.compensateInTransaction(c,sale.id,initial.refunded,initial.disputed,initial.pendingRefund);
     });
   }
   async balance(userId:string,currency="usd") {
@@ -291,62 +299,85 @@ export class CommerceRepository {
   async sourceByPayment(paymentIntent:string) {
     return (await this.pool.query("SELECT * FROM commerce_sources WHERE payment_intent=$1",[paymentIntent])).rows[0];
   }
-  async compensate(sourceId:string, refunded:number, disputed?:number,pendingRefund?:number) {
-    await this.tx(async c=>{
-      await this.lock(c,`source:${sourceId}`);
-      const source=(await c.query("SELECT * FROM commerce_sources WHERE id=$1 FOR UPDATE",[sourceId])).rows[0];
-      if(!source) throw new Error("Unreconciled legacy payment; no v2 source");
-      // Refund-only callers do not own dispute transitions. Read the current
-      // hold under the source lock instead of replaying their earlier snapshot.
-      disputed=disputed??Number(source.disputed_cents);
-      // Refunds never decrease. Explicit dispute updates can release won holds.
-      refunded=Math.max(refunded,Number(source.refunded_cents));
-      pendingRefund=pendingRefund??Number(source.pending_refund_cents);
-      const target=Math.min(Number(source.gross_cents),Math.max(refunded+pendingRefund,disputed));
-      if(!Number.isSafeInteger(target)||target<0) throw new Error("Invalid reversal amount");
-      const allocations=(await c.query("SELECT * FROM commerce_allocations WHERE source_id=$1 ORDER BY user_id FOR UPDATE",[sourceId])).rows;
-      const entries:Entry[]=[];
-      let beneficiaryDelta=0;
-      for(const a of allocations) {
-        await this.lock(c,`wallet:${a.user_id}:${a.currency}`);
-        const wanted=target===Number(source.gross_cents)?Number(a.amount_cents):Math.floor(Number(a.amount_cents)*target/Number(source.gross_cents));
-        const delta=wanted-Number(a.reversed_cents);
-        if(delta) entries.push({account:"payable",userId:a.user_id,cents:-delta});
-        beneficiaryDelta+=delta;
-        await c.query("UPDATE commerce_allocations SET reversed_cents=$2 WHERE id=$1",[a.id,wanted]);
-        if(wanted>0) {
-          // Recovery is durable; a seller who already banked funds remains in debt
-          // until an actual transfer reversal succeeds.
-          const draws=(await c.query(`SELECT d.*,o.transfer_id,o.state FROM commerce_draws d JOIN commerce_operations o ON o.id=d.operation_id
-            WHERE d.allocation_id=$1 AND d.compensated_cents_at_draw<$2 AND o.transfer_id IS NOT NULL AND o.state='completed' ORDER BY o.created_at`,[a.id,target])).rows;
-          const already=(await c.query("SELECT COALESCE(sum(amount_cents),0)::text AS cents FROM commerce_operations WHERE kind='reversal' AND payload->>'allocationId'=$1",[a.id])).rows[0];
-          let recovery=wanted-Number(already.cents);
-          for(const d of draws) {
-            const prior=(await c.query("SELECT COALESCE(sum(amount_cents),0)::text AS cents FROM commerce_operations WHERE kind='reversal' AND payload->>'drawId'=$1",[`${d.operation_id}:${a.id}`])).rows[0];
-            const changed=wanted-Math.floor(Number(a.amount_cents)*Number(d.compensated_cents_at_draw)/Number(source.gross_cents));
-            const amount=Math.min(recovery,Number(d.amount_cents)-Number(prior.cents),changed-Number(prior.cents));
-            if(amount<=0) continue;
-            const id=`rv_${createHash("sha256").update(`${sourceId}:${a.id}:${target}:${d.operation_id}`).digest("hex")}`;
-            await c.query("INSERT INTO commerce_operations(id,kind,user_id,currency,amount_cents,payload) VALUES($1,'reversal',$2,$3,$4,$5) ON CONFLICT DO NOTHING",[id,a.user_id,a.currency,amount,JSON.stringify({transferId:d.transfer_id,sourceId,allocationId:a.id,drawId:`${d.operation_id}:${a.id}`})]);
-            recovery-=amount;
-          }
+  async compensate(sourceId:string, refunded:number, disputed?:number|((paymentIntent:string)=>Promise<number|ReversalState>),pendingRefund?:number) {
+    await this.tx(c=>this.compensateInTransaction(c,sourceId,refunded,disputed,pendingRefund));
+  }
+  private async compensateInTransaction(c:SqlClient,sourceId:string,refunded:number,disputed?:number|((paymentIntent:string)=>Promise<number|ReversalState>),pendingRefund?:number) {
+    await this.lock(c,`source:${sourceId}`);
+    const source=(await c.query("SELECT * FROM commerce_sources WHERE id=$1 FOR UPDATE",[sourceId])).rows[0];
+    if(!source) throw new Error("Unreconciled legacy payment; no v2 source");
+    // Refund-only callers do not own dispute transitions. Read the current
+    // hold under the source lock instead of replaying their earlier snapshot.
+    let disputeAmount:number;
+    if(typeof disputed === "function") {
+      // Read authoritative dispute state only after serialization. A delayed
+      // webhook must never carry a stale provider observation across this lock.
+      const read=disputed;
+      let timer:ReturnType<typeof setTimeout>|undefined;
+      try {
+        const observation=await Promise.race([
+          Promise.resolve().then(()=>read(source.payment_intent)),
+          new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error("Dispute state read timed out")),10_000);}),
+        ]);
+        if(typeof observation==="number") disputeAmount=observation;
+        else {
+          if(!observation||!Number.isSafeInteger(observation.refunded)||observation.refunded<0||
+              !Number.isSafeInteger(observation.pendingRefund)||observation.pendingRefund<0) throw new Error("Invalid current refund accounting");
+          refunded=observation.refunded;
+          pendingRefund=observation.pendingRefund;
+          disputeAmount=observation.disputed??Number(source.disputed_cents);
+        }
+      } finally { if(timer) clearTimeout(timer); }
+    } else disputeAmount=disputed??Number(source.disputed_cents);
+    if(!Number.isSafeInteger(disputeAmount)||disputeAmount<0) throw new Error("Invalid dispute hold");
+    // Refunds never decrease. Explicit dispute updates can release won holds.
+    refunded=Math.max(refunded,Number(source.refunded_cents));
+    pendingRefund=pendingRefund??Number(source.pending_refund_cents);
+    if(!Number.isSafeInteger(refunded)||refunded<0||!Number.isSafeInteger(pendingRefund)||pendingRefund<0) throw new Error("Invalid refund accounting");
+    const target=Math.min(Number(source.gross_cents),Math.max(refunded+pendingRefund,disputeAmount));
+    if(!Number.isSafeInteger(target)||target<0) throw new Error("Invalid reversal amount");
+    const allocations=(await c.query("SELECT * FROM commerce_allocations WHERE source_id=$1 ORDER BY user_id FOR UPDATE",[sourceId])).rows;
+    const entries:Entry[]=[];
+    let beneficiaryDelta=0;
+    for(const a of allocations) {
+      await this.lock(c,`wallet:${a.user_id}:${a.currency}`);
+      const wanted=target===Number(source.gross_cents)?Number(a.amount_cents):Math.floor(Number(a.amount_cents)*target/Number(source.gross_cents));
+      const delta=wanted-Number(a.reversed_cents);
+      if(delta) entries.push({account:"payable",userId:a.user_id,cents:-delta});
+      beneficiaryDelta+=delta;
+      await c.query("UPDATE commerce_allocations SET reversed_cents=$2 WHERE id=$1",[a.id,wanted]);
+      if(wanted>0) {
+        // Recovery is durable; a seller who already banked funds remains in debt
+        // until an actual transfer reversal succeeds.
+        const draws=(await c.query(`SELECT d.*,o.transfer_id,o.state FROM commerce_draws d JOIN commerce_operations o ON o.id=d.operation_id
+          WHERE d.allocation_id=$1 AND d.compensated_cents_at_draw<$2 AND o.transfer_id IS NOT NULL AND o.state='completed' ORDER BY o.created_at`,[a.id,target])).rows;
+        const already=(await c.query("SELECT COALESCE(sum(amount_cents),0)::text AS cents FROM commerce_operations WHERE kind='reversal' AND payload->>'allocationId'=$1",[a.id])).rows[0];
+        let recovery=wanted-Number(already.cents);
+        for(const d of draws) {
+          const prior=(await c.query("SELECT COALESCE(sum(amount_cents),0)::text AS cents FROM commerce_operations WHERE kind='reversal' AND payload->>'drawId'=$1",[`${d.operation_id}:${a.id}`])).rows[0];
+          const changed=wanted-Math.floor(Number(a.amount_cents)*Number(d.compensated_cents_at_draw)/Number(source.gross_cents));
+          const amount=Math.min(recovery,Number(d.amount_cents)-Number(prior.cents),changed-Number(prior.cents));
+          if(amount<=0) continue;
+          const id=`rv_${createHash("sha256").update(`${sourceId}:${a.id}:${target}:${d.operation_id}`).digest("hex")}`;
+          await c.query("INSERT INTO commerce_operations(id,kind,user_id,currency,amount_cents,payload) VALUES($1,'reversal',$2,$3,$4,$5) ON CONFLICT DO NOTHING",[id,a.user_id,a.currency,amount,JSON.stringify({transferId:d.transfer_id,sourceId,allocationId:a.id,drawId:`${d.operation_id}:${a.id}`})]);
+          recovery-=amount;
         }
       }
-      const delta=target-Number(source.compensated_cents);
-      // Partial goodwill refunds do not invent a tax reversal. Full reversals
-      // release the actual collected tax; jurisdictional remittance is separate.
-      const taxTarget=target===Number(source.gross_cents)?Number(source.tax_cents):0;
-      const taxDelta=taxTarget-Number(source.compensated_tax_cents);
-      if(delta) {
-        entries.push({account:"platform_fee",cents:-(delta-beneficiaryDelta-taxDelta)},
-          {account:"tax_liability",cents:-taxDelta},{account:"platform_clearing",cents:delta});
-        await this.journal(c,`compensate:${sourceId}:${randomUUID()}`,source.currency,sourceId,entries);
-      }
-      await c.query("UPDATE commerce_sources SET refunded_cents=$2,disputed_cents=$3,compensated_cents=$4,pending_refund_cents=$5,compensated_tax_cents=$6 WHERE id=$1",[sourceId,refunded,disputed,target,pendingRefund,taxTarget]);
-      const status=refunded===Number(source.gross_cents)?"refunded":disputed>0?"disputed":pendingRefund>0?"refund_pending":"completed";
-      if(source.kind==="marketplace") await c.query("UPDATE orders SET status=$2 WHERE id=$1",[sourceId,status]);
-      if(source.kind==="merchant") await c.query("UPDATE storefront_orders SET status=$2,updated_at=now() WHERE id=$1",[source.metadata.merchantOrderId,status]);
-    });
+    }
+    const delta=target-Number(source.compensated_cents);
+    // Partial goodwill refunds do not invent a tax reversal. Full reversals
+    // release the actual collected tax; jurisdictional remittance is separate.
+    const taxTarget=target===Number(source.gross_cents)?Number(source.tax_cents):0;
+    const taxDelta=taxTarget-Number(source.compensated_tax_cents);
+    if(delta) {
+      entries.push({account:"platform_fee",cents:-(delta-beneficiaryDelta-taxDelta)},
+        {account:"tax_liability",cents:-taxDelta},{account:"platform_clearing",cents:delta});
+      await this.journal(c,`compensate:${sourceId}:${randomUUID()}`,source.currency,sourceId,entries);
+    }
+    await c.query("UPDATE commerce_sources SET refunded_cents=$2,disputed_cents=$3,compensated_cents=$4,pending_refund_cents=$5,compensated_tax_cents=$6 WHERE id=$1",[sourceId,refunded,disputeAmount,target,pendingRefund,taxTarget]);
+    const status=refunded===Number(source.gross_cents)?"refunded":disputeAmount>0?"disputed":pendingRefund>0?"refund_pending":"completed";
+    if(source.kind==="marketplace") await c.query("UPDATE orders SET status=$2 WHERE id=$1",[sourceId,status]);
+    if(source.kind==="merchant") await c.query("UPDATE storefront_orders SET status=$2,updated_at=now() WHERE id=$1",[source.metadata.merchantOrderId,status]);
   }
   async recovered(op:Operation) {
     await this.tx(async c=>{

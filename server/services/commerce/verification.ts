@@ -1,9 +1,15 @@
+import { deferredReversalState, type ReversalReader } from "./reversalState";
+import { deferredDisputeHold } from "./disputeHold";
 import { commerceStripe } from "./runtime";
 
 /** Provider accounting snapshot, including processing fees; never infer a fee
  * or successful payment from browser metadata.
  */
-export async function verifiedPayment(paymentIntent:string,gross:number,currency:string) {
+export interface VerifiedPaymentAccounting {
+  processingFeeCents:number;refundedCents:number;pendingCents:number;chargeId:string;disputed:boolean;
+  reversalState?:ReversalReader;
+}
+export async function verifiedPayment(paymentIntent:string,gross:number,currency:string):Promise<VerifiedPaymentAccounting> {
   const stripe=commerceStripe();
   const pi=await stripe.paymentIntents.retrieve(paymentIntent,{expand:["latest_charge.balance_transaction"]});
   if(pi.status!=="succeeded"||pi.amount_received!==gross||pi.currency!==currency) throw new Error("Provider payment amount/status/currency mismatch");
@@ -16,5 +22,6 @@ export async function verifiedPayment(paymentIntent:string,gross:number,currency
     if(refund.status==="succeeded") refundedCents+=refund.amount;
     if(refund.status==="pending"||refund.status==="requires_action") pendingCents+=refund.amount;
   }
-  return {processingFeeCents:balance.fee,refundedCents,pendingCents,chargeId:charge.id,disputed:charge.disputed};
+  return {processingFeeCents:balance.fee,refundedCents,pendingCents,chargeId:charge.id,disputed:charge.disputed,
+    reversalState:deferredReversalState(stripe,paymentIntent,{dispute:deferredDisputeHold(stripe,paymentIntent,charge.id)})};
 }

@@ -28,6 +28,11 @@ export async function bookMarketplace(order:any) {
   const existing=await commerceRepository.sourceByPayment(order.stripePaymentIntentId);
   if(existing) {
     if(existing.id!==order.id) throw new Error("Payment already allocated to a different order");
+    const verified=await verifiedPayment(order.stripePaymentIntentId,Number(existing.gross_cents),existing.currency);
+    if(verified.refundedCents||verified.pendingCents||verified.disputed||Number(existing.disputed_cents)>0) {
+      if((verified.disputed||Number(existing.disputed_cents)>0)&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
+      await commerceRepository.compensate(existing.id,verified.refundedCents,verified.reversalState,verified.pendingCents);
+    }
     return;
   }
   if(order.status==="completed") throw new Error("Historical completed order needs reconciliation, not automatic re-credit");
@@ -42,14 +47,17 @@ export async function bookMarketplace(order:any) {
     terms.allocations.some((a:any)=>!a.userId || !Number.isSafeInteger(a.cents) || a.cents<0) ||
     terms.allocations.reduce((sum:number,a:any)=>sum+a.cents,0)!==gross-fee) throw new Error("Invalid checkout settlement terms");
   const verified=await verifiedPayment(order.stripePaymentIntentId,gross,(order.currency||"usd").toLowerCase());
+  if(verified.disputed&&typeof verified.reversalState!=="function") throw new Error("Disputed settlement requires current provider accounting");
   await commerceRepository.book({
     id:order.id,kind:"marketplace",paymentIntent:order.stripePaymentIntentId,
     currency:(order.currency||"usd").toLowerCase(),grossCents:gross,feeCents:fee,
     processingFeeCents:verified.processingFeeCents,
     allocations:terms.allocations,
     metadata:{listingId:order.listingId,buyerId:order.userId,sellerId:order.sellerId},
-  });
+  },verified.refundedCents||verified.pendingCents||verified.disputed?{
+    refunded:verified.refundedCents,disputed:verified.disputed?gross:undefined,pendingRefund:verified.pendingCents,
+  }:undefined);
   if(verified.refundedCents||verified.pendingCents||verified.disputed) {
-    await commerceRepository.compensate(order.id,verified.refundedCents,verified.disputed?gross:undefined,verified.pendingCents);
+    await commerceRepository.compensate(order.id,verified.refundedCents,verified.reversalState,verified.pendingCents);
   }
 }

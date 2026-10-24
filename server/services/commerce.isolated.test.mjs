@@ -331,6 +331,8 @@ test("actual payment verification books provider fees and only succeeded refund 
   const {verifiedPayment}=await subject("server/services/commerce/verification.ts",{
     "./runtime":"export const commerceStripe=()=>globalThis.__commerceSdk;",
   });
-  assert.deepEqual(await verifiedPayment("pi",10000,"usd"),{processingFeeCents:320,refundedCents:2000,pendingCents:1000,chargeId:"ch",disputed:false});
+  const {reversalState,...accounting}=await verifiedPayment("pi",10000,"usd");
+  assert.equal(typeof reversalState,"function");
+  assert.deepEqual(accounting,{processingFeeCents:320,refundedCents:2000,pendingCents:1000,chargeId:"ch",disputed:false});
   await assert.rejects(verifiedPayment("pi",9999,"usd"),/mismatch/);
 });

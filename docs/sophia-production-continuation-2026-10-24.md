@@ -1,5 +1,9 @@
 # Production continuation — 2026-10-24
 
+Continued by the [platform hardening report](platform-hardening-2026-10-24.md) and
+[explicit per-file register](platform-review-register-2026-10-24.csv). This report
+retains its original revision-specific results.
+
 Continues draft PR #112 at remote commit `3a3401914300187355d398ce35856f9dd16f4dc7` (local equivalent tree `f430f026d4be0ffa32b845f812205114abddf1d3`). The [October 23 documentation register](documentation-review-2026-10-23.md) and [prior implementation report](sophia-production-continuation-2026-10-23.md) remain historical evidence for that exact tree.
 
 The owner requested parallel investigation. Disjoint generation, runtime and recovery/business reviews investigated actual source and executed focused regressions; integrated changes received an additional independent review. Heavy integrated checks run without competing build/compiler jobs. Multi-application workflows remain excluded. Predeployment acceptance uses isolated real consumers and clearly identified provider boundaries; real production charges, posts and public deployment are not prerequisites imposed by this continuation.
