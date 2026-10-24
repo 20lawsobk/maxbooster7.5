@@ -50,6 +50,6 @@ export async function bookMarketplace(order:any) {
     metadata:{listingId:order.listingId,buyerId:order.userId,sellerId:order.sellerId},
   });
   if(verified.refundedCents||verified.pendingCents||verified.disputed) {
-    await commerceRepository.compensate(order.id,verified.refundedCents,verified.disputed?gross:0,verified.pendingCents);
+    await commerceRepository.compensate(order.id,verified.refundedCents,verified.disputed?gross:undefined,verified.pendingCents);
   }
 }

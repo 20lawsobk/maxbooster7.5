@@ -6,7 +6,8 @@
 
 ## Current evidence and operational entrypoints
 
-Start with the [October 23 continuation](sophia-production-continuation-2026-10-23.md),
+Start with the [October 24 continuation](sophia-production-continuation-2026-10-24.md),
+[October 23 documentation review](documentation-review-2026-10-23.md),
 [deployment guide](DEPLOYMENT.md), [npm build/start contract](npm-build-start.md),
 and [October 21 generation limits](generation-verification-2026-10-21.md).
 Dated reports apply only to their recorded revision and fixture boundaries.

@@ -183,7 +183,7 @@ test("CommerceEngine blocks unpaid sources and applies successful refund compens
   await refundEngine.execute("op_outbound_1");
   assert.equal(refund.op.state, "completed");
   assert.deepEqual(refund.calls.find(([name]) => name === "compensate"), [
-    "compensate", "sale_1", 4000, 0, 0,
+    "compensate", "sale_1", 4000, undefined, 0,
   ]);
 
   const noConfirmedRefund = commerceEngineFixture("refund");

@@ -27,7 +27,7 @@ export async function reconcileCharge(chargeId:string,dispute?:Stripe.Dispute) {
     // Not a commerce payment; subscription lifecycle is owned by its handlers.
     return;
   }
-  let held=Number(source.disputed_cents);
+  let held:number|undefined;
   if(dispute) {
     const current=await stripe.disputes.retrieve(dispute.id);
     held=["won","warning_closed"].includes(current.status)?0:current.amount;
@@ -70,7 +70,7 @@ export function registerCommerceCompensationHandlers() {
     const current=await commerceStripe().topups.retrieve(topup.id);
     if(current.status!=="reversed") return {success:true,message:"Top-up reversal superseded"};
     const sources=(await pool.query("SELECT id,gross_cents FROM commerce_sources WHERE kind='royalty' AND metadata->>'topupId'=$1",[topup.id])).rows;
-    for(const source of sources) await commerceRepository.compensate(source.id,Number(source.gross_cents),0);
+    for(const source of sources) await commerceRepository.compensate(source.id,Number(source.gross_cents));
     return {success:true,message:"Reversed royalty funding compensated"};
   });
   for(const eventType of ["charge.refunded","refund.created","refund.updated","refund.failed","charge.dispute.created","charge.dispute.updated","charge.dispute.closed"]) {

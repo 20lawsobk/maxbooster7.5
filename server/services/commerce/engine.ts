@@ -16,7 +16,7 @@ export class CommerceEngine {
         if(refund.refundedCents!==undefined) {
           const source=await this.repo.sourceByPayment(op.payload.paymentIntent);
           if(!source) throw new Error("Refund payment source is missing");
-          await this.repo.compensate(source.id,refund.refundedCents,Number(source.disputed_cents),refund.pendingCents);
+          await this.repo.compensate(source.id,refund.refundedCents,undefined,refund.pendingCents);
           await this.repo.update(op,{state:refund.status==="succeeded"?"completed":refund.status==="failed"||refund.status==="canceled"?"failed":"awaiting"});
         }
       } else {
@@ -51,7 +51,7 @@ export class CommerceEngine {
       await this.repo.paid(op);
       // A refund may have arrived while the bank payout was pending.
       for(const source of await this.repo.withdrawalSources(op.id)) {
-        if(Number(source.compensated_cents)>0) await this.repo.compensate(source.id,Number(source.refunded_cents),Number(source.disputed_cents));
+        if(Number(source.compensated_cents)>0) await this.repo.compensate(source.id,Number(source.refunded_cents));
       }
     } else if(payout.status==="failed"||payout.status==="canceled") {
       await this.provider.reverse({...op,id:`cancel:${op.id}`,payload:{transferId}});

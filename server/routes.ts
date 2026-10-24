@@ -1,3 +1,4 @@
+import { recordRouteRegistrationFailure } from "./lib/bootState.js";
 import { hasBankCredentials, publicPaymentPreferences } from "./lib/paymentPreferencePrivacy.js";
 import type { Express, Request, Response, NextFunction } from "express";
 import { type Server } from "http";
@@ -112,9 +113,11 @@ async function safeLoadRoute(
     logger.warn(
       `[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`,
     );
+    recordRouteRegistrationFailure(name);
     log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: "skip", value: null };
   } catch (error: unknown) {
+    recordRouteRegistrationFailure(name);
     const message = error instanceof Error ? error?.message : String(error);
     const criticalRoutes = [
       "auth",
@@ -7892,12 +7895,14 @@ export async function registerRoutes(
         try {
           app.use(path, result.value as RouterLike);
         } catch (e) {
+          recordRouteRegistrationFailure(name);
           log(`Warning: Failed to mount ${name} - ${(e as Error).message}`);
         }
       } else if (result.type === "function" && result.value) {
         try {
-          (result.value as SetupFn)(app);
+          await (result.value as SetupFn)(app);
         } catch (e) {
+          recordRouteRegistrationFailure(name);
           log(`Warning: Failed to setup ${name} - ${(e as Error).message}`);
         }
       }

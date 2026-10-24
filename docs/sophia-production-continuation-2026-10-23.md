@@ -1,5 +1,8 @@
 # Production continuation — 2026-10-23
 
+Continued by the [October 24 report](sophia-production-continuation-2026-10-24.md),
+which corrects the startup-fixture diagnosis and records subsequent fixes.
+
 Source baseline: `20lawsobk/maxbooster7.5`, `main` at
 `f571666292938651db15f56ffa3d7d4ab75b4305`.
 Candidate branch: `sophia/2026-10-23-integrated-production-hardening`.
