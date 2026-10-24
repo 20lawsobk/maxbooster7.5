@@ -175,7 +175,7 @@ jobs:
           npm ci --prefix tls-proxy --ignore-scripts --no-audit --no-fund
 
       - name: Test isolated deployment contracts
-        run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs
+        run: env -i PATH="$PATH" node --test tests/deployment-contracts.cjs tests/deployment-remainder-contract.test.mjs
 
       - name: Build release capsules through the production npm launcher
         # Verify the public npm build entrypoint, not only its inner script.
