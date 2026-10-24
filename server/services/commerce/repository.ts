@@ -291,12 +291,15 @@ export class CommerceRepository {
   async sourceByPayment(paymentIntent:string) {
     return (await this.pool.query("SELECT * FROM commerce_sources WHERE payment_intent=$1",[paymentIntent])).rows[0];
   }
-  async compensate(sourceId:string, refunded:number, disputed:number,pendingRefund?:number) {
+  async compensate(sourceId:string, refunded:number, disputed?:number,pendingRefund?:number) {
     await this.tx(async c=>{
       await this.lock(c,`source:${sourceId}`);
       const source=(await c.query("SELECT * FROM commerce_sources WHERE id=$1 FOR UPDATE",[sourceId])).rows[0];
       if(!source) throw new Error("Unreconciled legacy payment; no v2 source");
-      // Refunds never decrease. Dispute holds are released on a won dispute.
+      // Refund-only callers do not own dispute transitions. Read the current
+      // hold under the source lock instead of replaying their earlier snapshot.
+      disputed=disputed??Number(source.disputed_cents);
+      // Refunds never decrease. Explicit dispute updates can release won holds.
       refunded=Math.max(refunded,Number(source.refunded_cents));
       pendingRefund=pendingRefund??Number(source.pending_refund_cents);
       const target=Math.min(Number(source.gross_cents),Math.max(refunded+pendingRefund,disputed));

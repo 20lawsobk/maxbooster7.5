@@ -21,6 +21,7 @@ class SelectionScalingTests(unittest.TestCase):
         self.snapshot = snapshot()
         self.enterContext(bind(self.snapshot))
         selection._OPERATIONAL_CACHE.clear()
+        selection._PROBE_HISTORY.clear()
 
     def candidate(self, root, name, observed, peak=True):
         run = root/'candidate_runs'/name
@@ -64,6 +65,36 @@ class SelectionScalingTests(unittest.TestCase):
                 self.assertEqual(probe.call_count,4)
                 selection.auto_select(learning_policy=PEAK)
                 self.assertEqual(probe.call_count,5)
+
+    def test_fresh_scans_do_not_starve_older_capable_candidate(self):
+        from ai_model.awareness import bind
+        from test_generation_route_bindings import snapshot
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for i in range(3):
+                self.candidate(root, f'live-{i}', i)
+            probes = []
+            def adapter(run, **kwargs):
+                return Path(run).name
+            def capability(value, **kwargs):
+                probes.append((value, kwargs['snapshot'].id))
+                if value != 'live-0':
+                    raise ValueError('not capable')
+            with patch.object(registry, 'REGISTRY', root/'registry'), \
+                 patch.object(registry, 'public_live_eligibility', side_effect=self.decision), \
+                 patch.object(registry, 'select_candidate') as selected, \
+                 patch('ai_model.model.candidate_serving.create_candidate_adapter', side_effect=adapter), \
+                 patch('ai_model.generation.capability.verify_text_capability', side_effect=capability):
+                first = selection.auto_select(learning_policy=PEAK)
+                self.assertEqual(first['state'], 'waiting_for_candidate')
+                self.assertEqual([name for name, _ in probes], ['live-2', 'live-1'])
+                changed = snapshot('next-scan')
+                with bind(changed):
+                    second = selection.auto_select(learning_policy=PEAK)
+                self.assertEqual(second['state'], 'selected')
+                self.assertEqual(Path(selected.call_args.kwargs['run']).name, 'live-0')
+                self.assertEqual(probes[-1], ('live-0', changed.id))
+                self.assertEqual(len(probes), 3)
 
     def test_cache_binds_checkpoint_report_certificate_configuration_budget(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -1,3 +1,10 @@
+> Reference/history, not current acceptance evidence. Some topology, package,
+> API, provider and fallback descriptions below predate the current implementation.
+> Use [DEPLOYMENT.md](DEPLOYMENT.md), [AUTH.md](AUTH.md), mounted source handlers
+> and [the current continuation](sophia-production-continuation-2026-10-23.md)
+> for executable guidance and verified limits. Older snippets do not authorize
+> permissive authentication, lock deletion, shared-data writes or fabricated success.
+
 # External Integrations
 
 ## MaxCore AI Server

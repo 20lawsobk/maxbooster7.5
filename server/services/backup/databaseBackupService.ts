@@ -1,14 +1,13 @@
 // @ts-nocheck
-import { spawn } from "child_process";
 import { logger } from "../../logger.js";
 import cron, { type ScheduledTask } from "../../lib/cronScheduler.js";
 import fsPromises from "fs/promises";
 import { storageService } from "../storageService.js";
 import { createHash, randomUUID } from "node:crypto";
 import { backupCatalog } from "./backupCatalog.js";
+import { runDatabaseRestore } from "./databaseRestore.js";
 import {
   dumpedServerMajor,
-  safePostgresDiagnostic,
   selectPsqlForRestore,
 } from "./postgresTools.js";
 import {
@@ -16,9 +15,7 @@ import {
   generateUncommittedDatabaseDump,
 } from "./databaseDump.js";
 import {
-  assertSafeSpawnArguments,
   isSamePostgresDatabase,
-  restrictedChildEnvironment,
   validatePostgresConnectionUrl,
 } from "../subprocessSafety.js";
 
@@ -214,30 +211,11 @@ export class DatabaseBackupService {
       await fsPromises?.writeFile(tmpPath, buf, { mode: 0o600, flag: "wx" });
       await fsPromises.writeFile(validationPath, validationSql, { mode: 0o600, flag: "wx" });
 
-      await new Promise<void>((resolve, reject) => {
-        const args = ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
-          "-c", "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S','f')) THEN RAISE EXCEPTION 'Restore target is not empty'; END IF; END $$;",
-          "-f", tmpPath, "-f", validationPath];
-        assertSafeSpawnArguments(args);
-        const psql = spawn(restoreSelection.tool.path, args, {
-          shell: false,
-          stdio: ["ignore", "ignore", "pipe"],
-          env: restrictedChildEnvironment({ PGDATABASE: safeTargetUrl }),
-        });
-        let errorOutput = "";
-        psql?.stderr.on("data", (d) => {
-          errorOutput += d?.toString();
-        });
-        psql?.on("close", (code) => {
-          if (code === 0) {
-            logger.info("✅ Database restored successfully");
-            resolve();
-          } else {
-            reject(new Error(`Restore failed (code ${code}): ${safePostgresDiagnostic(errorOutput)}`));
-          }
-        });
-        psql?.on("error", reject);
-      });
+      const args = ["-X", "-v", "ON_ERROR_STOP=1", "--single-transaction",
+        "-c", "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S','f')) THEN RAISE EXCEPTION 'Restore target is not empty'; END IF; END $$;",
+        "-f", tmpPath, "-f", validationPath];
+      await runDatabaseRestore(restoreSelection.tool.path, args, safeTargetUrl);
+      logger.info("✅ Database restored successfully");
     } finally {
       try {
         await fsPromises?.unlink(tmpPath);

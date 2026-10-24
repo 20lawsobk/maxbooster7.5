@@ -15,7 +15,7 @@ export const floors = {
   "fast-copy": "4.1.0", "postcss-selector-parser": "7.1.6",
   "@capacitor/android": "8.5.1", "@capacitor/ios": "8.5.1",
   "sprintf-js": null,
-  axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.3",
+  axios: "1.20.0", fastify: "5.12.5", "ip-address": "10.7.4",
   undici: "7.30.0", electron: "43.7.7",
   // No patched release exists; certificate issuance must not pull this back in.
   "node-forge": null,
@@ -29,7 +29,7 @@ export const floors = {
   postcss: "8.5.23", browserslist: "4.28.7",
   "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
   "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
-  yaml: "2.8.3", dompurify: "3.4.16", "markdown-it": "14.3.1",
+  yaml: "2.8.3", dompurify: "3.4.17", "body-parser": "2.4.0", "markdown-it": "14.3.1",
   vitest: "4.1.11", "@vitest/mocker": "4.1.11", "csv-parse": "7.0.2",
   // No patched release exists for the reported extract-zip advisories.
   // Keep it in the inventory so reintroduction fails rather than disappearing.

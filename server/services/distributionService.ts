@@ -1609,6 +1609,11 @@ Generated: ${new Date().toISOString()}
       bankDetails?: Record<string, any>;
     },
   ): Promise<RoyaltySplit> {
+    // Bank account credentials belong in verified payout-provider onboarding,
+    // never in royalty-split records or arbitrary JSON preferences.
+    if (payoutDetails.payoutMethod === "bank" || payoutDetails.bankDetails != null) {
+      throw new Error("Direct bank details are disabled; use Stripe Connect onboarding");
+    }
     try {
       return await storage.updateRoyaltySplit(splitId, {
         userId,
@@ -1617,7 +1622,6 @@ Generated: ${new Date().toISOString()}
         payoutMethod: payoutDetails.payoutMethod,
         stripeAccountId: payoutDetails.stripeAccountId,
         paypalEmail: payoutDetails.paypalEmail,
-        bankDetails: payoutDetails.bankDetails,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error accepting royalty split:");

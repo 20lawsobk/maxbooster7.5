@@ -19,6 +19,17 @@ _OPERATIONAL_CACHE = OrderedDict()
 _MAX_OPERATIONAL_CACHE = 128
 _MAX_NEW_PROBES = 2
 
+# Scheduling hints survive scan refreshes; capability evidence never does.
+# Otherwise two failing newest runs monopolize every fresh scan and prevent an
+# older operational run from ever reaching its unchanged admission checks.
+_PROBE_HISTORY = OrderedDict()
+_MAX_PROBE_HISTORY = 128
+
+
+def _probe_schedule_key(run, report):
+    return str(run), registry.canonical_hash(report)
+
+
 
 def _operational_key(run, checkpoint, *, snapshot=None):
     from ai_model.generation.capability import CAPABILITY_POLICY, capability_budget_seconds, capability_snapshot
@@ -211,7 +222,13 @@ def _public_selection(learning_policy=None):
         scheduled = [(run, _metadata(run)) for run in runs]
         scheduled = [(run, report) for run, report in scheduled if _matches_policy(report, learning_policy)]
         scheduled.sort(key=lambda item: _metadata_rank(*item), reverse=True)
-        for run, report in scheduled[:100]:
+        # Keep the bounded newest-first inventory, but rotate actual probes
+        # within it. These ranks are not cached passes or failures.
+        scan_limited = len(scheduled) > 100
+        scheduled = scheduled[:100]
+        history = {key: index for index, key in enumerate(_PROBE_HISTORY)}
+        scheduled.sort(key=lambda item: history.get(_probe_schedule_key(*item), -1))
+        for run, report in scheduled:
             scanned += 1
             hint = _metadata_rank(run, report)
             if (incumbent and hint[0] >= 0 and hint[:2] <=
@@ -248,6 +265,11 @@ def _public_selection(learning_policy=None):
                         probe_limited = True
                         break
                     new_probes += 1
+                    schedule_key = _probe_schedule_key(run, report)
+                    _PROBE_HISTORY[schedule_key] = None
+                    _PROBE_HISTORY.move_to_end(schedule_key)
+                    while len(_PROBE_HISTORY) > _MAX_PROBE_HISTORY:
+                        _PROBE_HISTORY.popitem(last=False)
                 if not _operational_candidate(str(run), checkpoint):
                     rejected += 1
                     continue
@@ -260,7 +282,7 @@ def _public_selection(learning_policy=None):
         if incumbent or runs:
             return {"state": "retained" if incumbent else "waiting_for_candidate",
                     "policy": registry.PUBLIC_LIVE_POLICY, "rejected": rejected,
-                    "scan_limited": len(scheduled) > 100, "probe_limited": probe_limited,
+                    "scan_limited": scan_limited, "probe_limited": probe_limited,
                     "new_probes": new_probes, "scanned": scanned,
                     **({"checkpoint_sha256": incumbent["checkpoint_sha256"],
                         "learning_policy": learning_policy, "validated_selected": True} if incumbent else {})}

@@ -1,3 +1,4 @@
+import { publicPaymentPreferences } from "../lib/paymentPreferencePrivacy.js";
 import { Router, Request, Response, NextFunction } from "express";
 
 const paidRouter = Router();
@@ -16,9 +17,9 @@ function requirePaid(req: Request, res: Response, next: NextFunction) {
 
 // Example: Paid user dashboard
 paidRouter?.get("/dashboard", requirePaid, (req, res) => {
-  const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
+  const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } =
     req.user as Record<string, unknown>;
-  res.json({ message: "Welcome to the paid user dashboard!", user: safeUser });
+  res.json({ message: "Welcome to the paid user dashboard!", user: { ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) } });
 });
 
 // Example: Paid-only feature

@@ -198,7 +198,7 @@ export async function settleMerchantCheckout(
     await dependencies.repository.compensate(
       sale.id,
       verified.refundedCents,
-      verified.disputed ? gross : 0,
+      verified.disputed ? gross : undefined,
       verified.pendingCents,
     );
   }

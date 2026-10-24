@@ -80,8 +80,9 @@
     "test:integration:ci": "vitest run --config vitest.integration.config.ts --reporter=verbose --reporter=junit --outputFile=test-results-integration.xml",
     "test:watch": "vitest watch --config vitest.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts",
-    "test:runtime-contracts": "node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/desktop-runtime-policy.test.mjs tests/audio-metadata-security.test.mjs tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs",
-    "test:ci": "npm run test:runtime-contracts && npm run test:sharp-security && vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml",
+    "test:runtime-contracts": "node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/desktop-runtime-policy.test.mjs tests/audio-metadata-security.test.mjs tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs tests/request-validation-security.test.mjs",
+    "test:payment-preferences": "node --import tsx --test tests/payment-processing/provider-only-preferences.test.mjs",
+    "test:ci": "npm run test:runtime-contracts && npm run test:sharp-security && npm run test:payment-preferences && vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml",
     "gateway": "npx tsx server/diffusion-gateway/index.ts",
     "check:fast": "tsgo -p tsconfig.json --noEmit",
     "readiness-gauge": "npx tsx scripts/readiness-gauge/cli.ts",
@@ -289,7 +290,7 @@
     "immer": "^11.1.4",
     "input-otp": "^1.4.2",
     "ioredis": "^5.9.3",
-    "ip-address": "^10.7.3",
+    "ip-address": "^10.7.4",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
@@ -351,7 +352,7 @@
     "xmlbuilder2": "^4.0.3",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.29",
-    "zod": "^4.3.6",
+    "zod": "^4.6.7",
     "zod-validation-error": "^5.0.0",
     "zustand": "^5.0.11"
   },
@@ -441,7 +442,7 @@
     "js-yaml": "4.3.2",
     "qs": "6.16.0",
     "yaml": "^2.9.1",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "swagger-jsdoc": {
       "yaml": "1.10.3"
     },
@@ -450,7 +451,7 @@
       "nanoid": "^3.3.18"
     },
     "axios": "$axios",
-    "ip-address": "^10.7.3",
+    "ip-address": "^10.7.4",
     "undici": "^7.30.0",
     "@google-cloud/storage": {
       "uuid": "^11.1.1"
@@ -463,7 +464,8 @@
     },
     "xcode": {
       "uuid": "11.1.1"
-    }
+    },
+    "body-parser": "^2.4.0"
   },
   "engines": {
     "node": ">=22.12.0"

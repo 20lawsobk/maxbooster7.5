@@ -9,6 +9,9 @@ its schedulers, or its shared database.
 # No credentials, network payment calls, or shared database:
 node tests/payment-processing/run.mjs
 
+# Focused deterministic refund/dispute overlap against a private PostgreSQL cluster:
+node --test tests/payment-processing/compensation-races-postgres.test.mjs
+
 # Explicit real Stripe TEST-mode objects and disposable local SQL:
 node tests/payment-processing/run.mjs --stripe
 ```
@@ -52,9 +55,12 @@ provider flows must remain blocked, not be marked as passed.
 
 ## Current findings
 
-The current verification is **not green**. Failing regressions remain for
-legacy billing checkout retries, storefront cart retries, and unverified
-legacy BeatService sale completion. The runner includes these failures.
+The October 24, 2026 offline runner passed 73 production contract tests and
+14 disposable-PostgreSQL/handler tests. The additional remote Stripe scenario
+was intentionally skipped because no provider credentials were supplied.
+This supersedes the earlier failing retry and legacy sale regression status;
+those scenarios remain in the runner. These bounded passes do not establish
+live checkout, signed webhook delivery, real settlement or payout acceptance.
 
 Real Stripe top-up creation/retrieval/cancellation is covered separately.
 Automatic tax, Express dashboard links, transfers and bank payouts remain
@@ -69,3 +75,15 @@ The human-readable evidence summary is
 `reports/payment-processing-verification.html`. It separates production
 contracts, real provider acceptance, disposable SQL, browser confirmation,
 account blockers, and cleanup uncertainty.
+## Refund/dispute overlap regression (2026-10-24)
+
+The default offline runner also executes `compensation-races-postgres.test.mjs`
+as a separate credential-free PostgreSQL group. PostgreSQL tools (`initdb`,
+`pg_ctl`) must be on PATH. The test pauses an actual refund reconciler after its
+source read, commits an explicit newer dispute transition, and resumes the older
+refund event. It checks both newly created and won holds, spendable balances and
+balanced SQL journals. Both scenarios failed before the fix and pass afterward.
+Refund-only calls now preserve dispute state under the source transaction lock;
+actual dispute handlers still explicitly apply provider-confirmed transitions.
+This does not establish ordering of every possible concurrent dispute event,
+live Stripe delivery, bank settlement or provider acceptance.

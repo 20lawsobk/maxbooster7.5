@@ -55,6 +55,7 @@ const groups = [
     env,
   },
   { name: "disposable-postgresql", args: ["--test", "tests/payment-processing/database-commerce.test.mjs"], env: remoteEnv },
+  { name: "refund-dispute-races-postgresql", args: ["--test", "tests/payment-processing/compensation-races-postgres.test.mjs"], env },
 ];
 if (remote) {
   groups.push({

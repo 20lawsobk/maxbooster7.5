@@ -64,7 +64,7 @@ provider effects; report unexercised boundaries separately.
 - **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
 - **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
 - **Jobs:** BullMQ + Redis
-- **AI:** MaxCore (local supervised subsystem — `external/maxcore`, loopback :8090; `MAXCORE_LOCAL=0` for remote)
+- **AI:** MaxCore (local supervised subsystem — `external/maxcore`, owned local supervisor on loopback :8090)
 
 ### AI authority
 
@@ -154,21 +154,24 @@ See `.env.example` for the full list of 300+ optional variables (Stripe, SendGri
 |---|---|
 | Preview blank / not loading | Restart "Start application" workflow; confirm port 5000 opened; check `server.allowedHosts: true` in `vite.config.ts` |
 | `node_modules/.bin` missing | Run the inline Node script that reads each package's `bin` field and recreates symlinks manually (see Startup Note below) |
-| `npm install` / `pnpm install` fails on `tar` | Platform-blocked package; local stub at `stubs/tar/` + `overrides.tar = "file:./stubs/tar"` handles it — delete `package-lock.json` before reinstall |
+| Dependency installation fails | Preserve locks. Use root npm 10.9.4 and the independent imported pnpm locks; verify registry/policy errors. The tar stub and lock-deletion workaround are obsolete. |
 | Typecheck OOMs (`tsc` killed) | Never run monolithic `tsc`; use `npm run check` (split server/client configs); also clear `.cache/tsbuildinfo.*` before re-measuring |
-| AI features return 503 | local MaxCore subsystem is starting/crashed — supervisor restarts it with backoff; fail-explicit behavior, not an app bug |
+| AI features return 503 | Inspect the actual reason: boot/crash, connectivity, awareness freshness or no qualified candidate. Restarting cannot establish missing model capability. |
 | Login / CSRF failures in curl | Pass the `csrf-token` cookie value as `X-CSRF-Token` header (double-submit pattern) |
-| Beat cycle stuck as "running" | `recoverOrphanedCycles()` runs 75s after boot; or manually `UPDATE beatMoneyLoopCycles SET status='failed'` in DB |
+| Beat cycle stuck as "running" | Inspect the owner/advisory lock and retained cycle evidence. Do not blanket-update cycles or interrupt another replica's active work. |
 | Storefront subdomain 404s | Row in `storefront_hosts` with `hostname=...` and `active=true` must exist |
 | Social posts not sending | Check `socialAccounts.status` — OAuth token likely needs reconnection |
-| Session not persisting | Verify `STORAGE_BEARER_TOKEN` + `STORAGE_HTTP_URL` env vars (not old `PDIM_*` names) |
-| Duplicate server boot kills live beat cycle | `recoverOrphanedCycles()` excludes cycles started by the current process via `startedAt` cutoff — do not run two server processes simultaneously |
+| Session not persisting | Verify local PDIM lifecycle, session-store errors and the actual configured database. Do not prescribe remote storage credentials for the canonical local topology. |
+| Replica startup and beat recovery | Current advisory-lock ownership protects active cycles across replicas; verify the owning connection before recovery. |
 
 ---
 
 ## Startup Note
 
-On a fresh environment, `node_modules/.bin/` symlinks may be missing even if `node_modules/` exists. Fix: run the inline Node script that reads each package's `bin` field and creates symlinks manually. (pnpm and npm are blocked on `tar` by Replit's security policy on this project — the stub handles installs, but symlinks may still need manual creation.)
+On a fresh environment, install root tooling with the pinned npm and preserved
+lockfile. Imported services use their own pinned pnpm locks. Verify installed
+binaries and dependency gates instead of manufacturing symlinks over an unknown
+installation. See `docs/npm-build-start.md`; the historical tar-stub advice is obsolete.
 
 ---
 
@@ -211,7 +214,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram and requ
 
 ## User Preferences
 
-- Use pnpm for package installation (npm install can OOM on this large project)
+- Root dependencies use pinned npm 10.9.4 and package-lock.json; imported MaxCore/PDIM use independent pinned pnpm locks.
 - Run heavy installs via a Replit workflow, not ShellExec (detached bash gets reaped)
-- `node_modules/.bin/` symlinks may need manual recreation if missing (see Startup Note above)
+- Diagnose missing tool binaries through the lock-consistent installation and dependency gates (see Startup Note above).
 - Never run monolithic `tsc` — always use `npm run check` (split server/client configs)

@@ -92,7 +92,7 @@ test("actual engine reconciles refund totals and retries failed recovery without
   f.provider.refund=async()=>({id:"re_1",status:"succeeded",refundedCents:10000});
   await f.engine.execute("op_1");
   assert.equal(f.op.state,"completed");
-  assert.deepEqual(f.calls.find(c=>c[0]==="compensate"),["compensate","sale",10000,0,undefined]);
+  assert.deepEqual(f.calls.find(c=>c[0]==="compensate"),["compensate","sale",10000,undefined,undefined]);
   const r=fixture("reversal");
   r.provider.reverse=async()=>{throw new Error("No recoverable balance");};
   await assert.rejects(r.engine.execute("op_1"),/recoverable/);

@@ -97,7 +97,7 @@ export async function handleGrowthMerchCheckout(eventId:string,session:Stripe.Ch
     [orderId,JSON.stringify({...shipping.address,name:shipping.name})]);
   await applyVerifiedMerchPayment({eventId,orderId,checkoutId:current.id,currency:current.currency!,type:"paid",amountCents:gross});
   if(verified.refundedCents||verified.pendingCents||verified.disputed) {
-    await commerceRepository.compensate(`merch:${orderId}`,verified.refundedCents,verified.disputed?gross:0,verified.pendingCents);
+    await commerceRepository.compensate(`merch:${orderId}`,verified.refundedCents,verified.disputed?gross:undefined,verified.pendingCents);
     if(verified.refundedCents) await applyVerifiedMerchPayment({eventId:`refund:${pi}:${verified.refundedCents}`,orderId,checkoutId:current.id,currency:current.currency!,type:"refunded",amountCents:verified.refundedCents});
   }
 }
