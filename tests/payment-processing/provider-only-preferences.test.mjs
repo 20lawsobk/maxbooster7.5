@@ -195,3 +195,45 @@ test('routine preference responses redact key variants without mutating stored J
   });
   assert.deepEqual(stored, original);
 });
+
+test('authenticated user preference routes reject nested banking fields and redact historical values', async () => {
+  const historical = {
+    artistType: 'solo',
+    theme: 'dark',
+    payout: { bank_details: { account_number: 'fixture-only' }, paypalEmail: 'owner@example.invalid' },
+    custom: [{ bankAccountNumber: 'fixture-only', label: 'retained' }],
+  };
+  let writes = 0;
+  const dependencies = {
+    userPreferencesService: {
+      getUserPreferences: async () => historical,
+      getDefaultPreferences: () => ({ artistType: 'solo' }),
+      updateUserPreferences: async (_userId, updates) => {
+        writes++;
+        return { ...historical, ...updates };
+      },
+    },
+    logger: { warn() {} },
+  };
+  const file = 'server/routes/preferences.ts';
+  const get = preferenceHandler('get', '/user', dependencies, file, 'router');
+  const put = preferenceHandler('put', '/user', dependencies, file, 'router');
+
+  const read = responseHarness();
+  await get({ user: { id: 'owner' } }, read);
+  assert.equal(hasBankCredentials(read.body), false);
+  assert.equal(read.body.payout.paypalEmail, 'owner@example.invalid');
+  assert.equal(read.body.custom[0].label, 'retained');
+
+  const rejected = responseHarness();
+  await put({ user: { id: 'owner' }, body: { custom: [{ 'routing-number': 'fixture-only' }] } }, rejected);
+  assert.equal(rejected.statusCode, 400);
+  assert.equal(writes, 0);
+
+  const allowed = responseHarness();
+  await put({ user: { id: 'owner' }, body: { studioPreferences: { defaultBPM: 128 } } }, allowed);
+  assert.equal(writes, 1);
+  assert.equal(allowed.body.studioPreferences.defaultBPM, 128);
+  assert.equal(hasBankCredentials(allowed.body), false);
+  assert.equal(hasBankCredentials(historical), true);
+});
