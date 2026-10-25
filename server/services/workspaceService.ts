@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { db } from "../db";
-import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspace, type InsertWorkspaceAuditLog } from "@shared/schema";
-import { eq, and, desc, count } from "drizzle-orm";
+import { workspaces, workspaceMembers, workspaceRoles, workspaceInvitations, workspaceCatalogs, workspaceAuditLog, users, type Workspace, type WorkspaceMember, type WorkspaceRole, type WorkspaceInvitation, type InsertWorkspaceAuditLog } from "@shared/schema";
+import { eq, ne, and, or, isNull, desc, count } from "drizzle-orm";
+import { z } from "zod";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 
@@ -50,6 +51,17 @@ interface InviteMemberParams {
   invitedBy: string;
   message?: string;
 }
+
+// Workspace identity and ownership are never editable through general settings.
+// Parse again at this service boundary so non-HTTP callers cannot mass-assign.
+export const workspaceUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(255).optional(),
+  description: z.string().max(10000).nullable().optional(),
+  logoUrl: z.string().max(2048).nullable().optional(),
+  isActive: z.boolean().optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+}).strict().refine(value => Object.keys(value).length > 0, "At least one setting is required");
 
 export class WorkspaceService {
   private generateSlug(name: string): string {
@@ -167,21 +179,26 @@ export class WorkspaceService {
 
   async updateWorkspace(
     workspaceId: string,
-    updates: Partial<InsertWorkspace>,
+    updates: unknown,
     userId: string,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
+      const parsed = workspaceUpdateSchema.safeParse(updates);
+      if (!parsed.success) return { success: false, error: "Invalid workspace update" };
       const existingWorkspace = await this.getWorkspace(workspaceId);
       if (!existingWorkspace) {
         return { success: false, error: "Workspace not found" };
       }
 
+      const actor = await this.getMember(workspaceId, userId);
+      if (!actor || actor.status !== "active" ||
+          (existingWorkspace.ownerId !== userId && actor.role !== "admin")) {
+        return { success: false, error: "Active workspace administrator access required" };
+      }
+
       const [workspace] = await db
         .update(workspaces)
-        .set({
-          ...updates,
-          updatedAt: new Date(),
-        })
+        .set(parsed.data)
         .where(eq(workspaces.id, workspaceId))
         .returning();
 
@@ -192,7 +209,7 @@ export class WorkspaceService {
         resourceType: "workspace",
         resourceId: workspaceId,
         previousValues: existingWorkspace,
-        newValues: updates,
+        newValues: parsed.data,
       });
 
       return { success: true, workspace };
@@ -458,6 +475,16 @@ export class WorkspaceService {
     updatedBy?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      if (!["admin", "manager", "member", "viewer"].includes(newRole)) {
+        return { success: false, error: "Invalid member role" };
+      }
+      const workspace = await this.getWorkspace(workspaceId);
+      if (!workspace) return { success: false, error: "Workspace not found" };
+      const actor = updatedBy ? await this.getMember(workspaceId, updatedBy) : null;
+      if (!actor || actor.status !== "active" ||
+          (workspace.ownerId !== updatedBy && actor.role !== "admin")) {
+        return { success: false, error: "Active workspace administrator access required" };
+      }
       const [member] = await db
         .select()
         .from(workspaceMembers)
@@ -473,16 +500,32 @@ export class WorkspaceService {
         return { success: false, error: "Member not found" };
       }
 
-      const previousRole = member?.role;
+      if (member.userId === workspace.ownerId || member.role === "owner") {
+        return { success: false, error: "Cannot change the workspace owner's role" };
+      }
+      if (newRoleId !== undefined) {
+        const [role] = await db.select().from(workspaceRoles).where(and(
+          eq(workspaceRoles.id, newRoleId), eq(workspaceRoles.workspaceId, workspaceId),
+        )).limit(1);
+        if (!role || role.name.toLowerCase() === "owner") {
+          return { success: false, error: "Invalid workspace role" };
+        }
+      }
+      const previousRole = member.role;
 
-      await db
+      const changed = await db
         .update(workspaceMembers)
         .set({
           role: newRole,
-          roleId: newRoleId,
-          updatedAt: new Date(),
+          roleId: newRoleId ?? null,
         })
-        .where(eq(workspaceMembers.id, memberId));
+        .where(and(
+          eq(workspaceMembers.id, memberId),
+          eq(workspaceMembers.workspaceId, workspaceId),
+          ne(workspaceMembers.userId, workspace.ownerId),
+          or(isNull(workspaceMembers.role), ne(workspaceMembers.role, "owner")),
+        )).returning({ id: workspaceMembers.id });
+      if (!changed.length) return { success: false, error: "Member role could not be changed" };
 
       if (updatedBy) {
         await this.logAuditEvent({

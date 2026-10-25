@@ -40,7 +40,10 @@ node --test tests/npm-build-start-contract.test.mjs \
 
 The isolated startup smoke test requires a disposable source/artifact copy,
 a disposable PostgreSQL database initialized from the schema, and a running
-Unix-socket-only PostgreSQL fixture. It must run inside an unprivileged network
+Unix-socket-only PostgreSQL fixture. The copy must include the executable
+`python_runtime/bin/python3` and native boosterstate artifact, together with
+their runtime dependencies. The harness checks these prerequisites before launch
+and uses the current private port contract, 5000. It must run inside an unprivileged network
 namespace; capture the host namespace ID before invoking `unshare`:
 
 ```sh
@@ -50,6 +53,8 @@ unshare -Urn python3 tests/npm-start-isolated-smoke.py \
 ```
 
 The test generates its own session key and never imports workspace credentials.
+Inside the isolated namespace it uses a synthetic Stripe credential to register
+billing routes; this does not authenticate to Stripe or verify provider behavior.
 HTTP 200 from the homepage or health route is not readiness: it separately
 requires `/api/ready` to pass and otherwise exits unsuccessfully.
 

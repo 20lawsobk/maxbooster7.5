@@ -145,12 +145,15 @@ test("charge refund/dispute reconciliation sums provider states, releases won ho
       currency: "usd", metadata: { buyerId: "buyer", sellerId: "seller" },
     }),
     providerFee: async (...args) => repoCalls.push(["fee", ...args]),
-    compensate: async (...args) => repoCalls.push(["compensate", ...args]),
+    compensate: async (id,refunded,disputed,pending) => {
+      const current=typeof disputed === "function"?await disputed("pi_1"):disputed;
+      repoCalls.push(["compensate",id,typeof current==="object"?current.refunded:refunded,typeof current==="object"?current.disputed:current,typeof current==="object"?current.pendingRefund:pending]);
+    },
   };
   globalThis.__outboundCompensationStripe = {
     charges: { retrieve: async () => ({ id: "ch_1", payment_intent: "pi_1", amount: 10000 }) },
     disputes: { retrieve: async () => ({
-      id: "dp_1", status: "won", amount: 5000,
+      id: "dp_1", charge: "ch_1", status: "won", amount: 5000,
       balance_transactions: [{ id: "bt_dispute", fee: 25, currency: "usd" }],
     }) },
     refunds: { list: () => ({ async *[Symbol.asyncIterator]() {
@@ -416,7 +419,10 @@ test("refund provider failure preserves the same operation key for retry", async
   const provider = new StripeCommerceProvider(sdk);
   const refundOp = operation({ id: "refund_durable", kind: "refund", amount_cents: 2500 });
   await assert.rejects(provider.refund(refundOp), /provider unavailable/);
-  assert.deepEqual(await provider.refund(refundOp), {
+  const {reversalState,...refundAccounting}=await provider.refund(refundOp);
+  assert.equal(typeof reversalState,"function");
+  assert.deepEqual(await reversalState(refundOp.payload.paymentIntent),{refunded:0,pendingRefund:0});
+  assert.deepEqual(refundAccounting, {
     id: "re_retry", status: "pending", refundedCents: undefined, pendingCents: 0,
   });
   assert.equal(calls.length, 2);

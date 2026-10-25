@@ -1,3 +1,9 @@
+> Historical catalog and design comparison, not measured audio-quality or
+> commercial-product parity certification. The Grade A and equivalence claims
+> below are not acceptance results. See `docs/generation-verification-2026-10-21.md`
+> for the tested browser processor scope. Native packaging is outside the current
+> web/API readiness gate.
+
 # Max Booster DAW Plugins — Professional Comparison to Best 3rd Party Equivalents
 
 All 434 built-in plugins rated **Grade A** — compared against the world's best professional equivalents.

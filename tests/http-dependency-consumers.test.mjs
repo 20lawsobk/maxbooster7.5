@@ -75,7 +75,7 @@ test("patched Axios preserves JSON, redirects, binary downloads and cancellation
 test("Google's installed gaxios consumer resolves patched Undici and sends real HTTP", async t => {
   const consumer = createRequire(require.resolve("gaxios"));
   const undici = consumer("undici");
-  assert.equal(consumer("undici/package.json").version, "7.30.0");
+  assert.equal(consumer("undici/package.json").version, "7.30.1");
   const server = createServer((req, res) => {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ path: req.url }));
@@ -94,7 +94,7 @@ test("Google's installed gaxios consumer resolves patched Undici and sends real 
 
 test("patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior", () => {
   const { Address4, Address6 } = require("ip-address");
-  assert.equal(require("ip-address/package.json").version, "10.7.3");
+  assert.equal(require("ip-address/package.json").version, "10.7.4");
   assert.equal(new Address4("127.0.0.1").isInSubnet(new Address4("127.0.0.0/8")), true);
   assert.equal(new Address6("::ffff:127.0.0.1").to4().correctForm(), "127.0.0.1");
   assert.equal(new Address6("2001:db8::1").isInSubnet(new Address6("2001:db8::/32")), true);

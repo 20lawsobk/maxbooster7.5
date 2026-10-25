@@ -8,9 +8,9 @@ const ajvRequire = createRequire(compilerRequire.resolve("ajv"));
 const serializerRequire = createRequire(fastifyRequire.resolve("fast-json-stringify"));
 
 test("DNS validator and serializer resolve compatible patched fast-uri majors", () => {
-  assert.equal(ajvRequire("fast-uri/package.json").version, "3.1.8");
-  assert.equal(compilerRequire("fast-uri/package.json").version, "4.2.1");
-  assert.equal(serializerRequire("fast-uri/package.json").version, "4.2.1");
+  assert.equal(ajvRequire("fast-uri/package.json").version, "3.1.9");
+  assert.equal(compilerRequire("fast-uri/package.json").version, "4.2.3");
+  assert.equal(serializerRequire("fast-uri/package.json").version, "4.2.3");
   for (const consumer of [ajvRequire, compilerRequire, serializerRequire]) {
     const uri = consumer("fast-uri");
     assert.equal(uri.resolve("https://example.invalid/a/b", "../c"), "https://example.invalid/c");

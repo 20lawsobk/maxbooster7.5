@@ -1,3 +1,8 @@
+> Historical implementation record. Its completion/deployment claims are limited
+> to the original work and are not current whole-product acceptance. See
+> [the October 23 continuation](docs/sophia-production-continuation-2026-10-23.md)
+> for current evidence, exclusions and unresolved requirements.
+
 # Max Booster — Hardening Integration Checklist
 
 **Status:** ✅ All 5 Recommendations Implemented & Committed  

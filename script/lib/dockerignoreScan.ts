@@ -40,6 +40,8 @@ export const BOOTSTRAP_AND_CAPSULE_OWN_PATHS = [
   "scripts/port-contract.sh",
   "scripts/check-port-contract.ts",
   "dist/pdim-restore.mjs",
+  // The startup executive imports additional modules before restore-app runs.
+  "dist/deployment/",
   "dist/.db-indexes-ok",
   ".replit",
   ".git",

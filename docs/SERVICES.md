@@ -1,3 +1,10 @@
+> Reference/history, not current acceptance evidence. Some topology, package,
+> API, provider and fallback descriptions below predate the current implementation.
+> Use [DEPLOYMENT.md](DEPLOYMENT.md), [AUTH.md](AUTH.md), mounted source handlers
+> and [the current continuation](sophia-production-continuation-2026-10-23.md)
+> for executable guidance and verified limits. Older snippets do not authorize
+> permissive authentication, lock deletion, shared-data writes or fabricated success.
+
 # Server Services Reference
 
 Services live in `server/services/` and encapsulate business logic above the data access layer. They are imported by route handlers and background workers.

@@ -9,6 +9,9 @@ its schedulers, or its shared database.
 # No credentials, network payment calls, or shared database:
 node tests/payment-processing/run.mjs
 
+# Focused deterministic refund/dispute overlap against a private PostgreSQL cluster:
+node --test tests/payment-processing/compensation-races-postgres.test.mjs
+
 # Explicit real Stripe TEST-mode objects and disposable local SQL:
 node tests/payment-processing/run.mjs --stripe
 
@@ -55,13 +58,11 @@ provider flows must remain blocked, not be marked as passed.
 
 ## Current findings
 
-The October 25, 2026 credential-free rerun passes all 16 payment Node entry
-files and the 14-case legacy beat-sale suite: 78 JUnit leaf cases passed,
-one explicit real-provider case skipped, zero failures. Previously failing
-billing/cart retry and legacy BeatService regressions remain active and pass.
-The provider report's offline aggregation/redaction self-check also passes.
-The legacy fixture supplies its own PostgreSQL and Redis services; its first
-attempt without a queue backend is retained as diagnostic evidence.
+The October 25, 2026 credential-free rerun covers the payment Node entry files,
+the legacy beat-sale suite and the provider report's offline self-check.
+The integrated rerun also includes the newer refund/dispute and settlement
+regressions. The legacy fixture supplies its own PostgreSQL and Redis services;
+its first attempt without a queue backend is retained as diagnostic evidence.
 
 See `docs/testing/commerce.md` for every file's purpose and exact invocation,
 and `reports/test-verification/commerce/results.json` for the current machine
@@ -82,3 +83,15 @@ The human-readable evidence summary is
 `reports/payment-processing-verification.html`. It separates production
 contracts, real provider acceptance, disposable SQL, browser confirmation,
 account blockers, and cleanup uncertainty.
+## Refund/dispute overlap regression (2026-10-24)
+
+The default offline runner also executes `compensation-races-postgres.test.mjs`
+as a separate credential-free PostgreSQL group. PostgreSQL tools (`initdb`,
+`pg_ctl`) must be on PATH. The test pauses an actual refund reconciler after its
+source read, commits an explicit newer dispute transition, and resumes the older
+refund event. It checks both newly created and won holds, spendable balances and
+balanced SQL journals. Both scenarios failed before the fix and pass afterward.
+Refund-only calls now preserve dispute state under the source transaction lock;
+actual dispute handlers still explicitly apply provider-confirmed transitions.
+This does not establish ordering of every possible concurrent dispute event,
+live Stripe delivery, bank settlement or provider acceptance.

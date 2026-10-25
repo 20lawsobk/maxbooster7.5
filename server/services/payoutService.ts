@@ -180,6 +180,11 @@ export class PayoutService {
   async setPaymentPreferences(
     preferences: PaymentPreferences,
   ): Promise<PaymentPreferences> {
+    // Never persist bank credentials in generic system-settings JSON.
+    // Provider-hosted onboarding must handle sensitive account details.
+    if (preferences?.bankDetails != null) {
+      throw new Error("Direct bank account details are not accepted; use verified provider onboarding");
+    }
     if (
       preferences?.minimumThreshold <
       this.getMinimumThreshold(preferences?.currency)

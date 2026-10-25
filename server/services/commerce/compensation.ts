@@ -1,8 +1,45 @@
+import { deferredReversalState, type ReversalState } from "./reversalState";
 import type Stripe from "stripe";
 import { pool } from "../../db";
 import { registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
 import { commerceRepository, commerceEngine, commerceStripe } from "./runtime";
 import { applyVerifiedMerchPayment } from "../merchCheckoutService";
+
+const providerReadOptions={timeout:8_000,maxNetworkRetries:0};
+
+async function reconcileLifetimeCharge(stripe:Stripe,chargeId:string,paymentIntent:string,customer:string,dispute?:Stripe.Dispute) {
+  const client=await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const users=await client.query("SELECT id FROM users WHERE stripe_customer_id=$1 FOR UPDATE",[customer]);
+    if(!users.rows.length) {await client.query("COMMIT");return;}
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const read=async()=>({
+      charge:await stripe.charges.retrieve(chargeId,providerReadOptions),
+      dispute:dispute?await stripe.disputes.retrieve(dispute.id,providerReadOptions):undefined,
+    });
+    let current:Awaited<ReturnType<typeof read>>;
+    try {
+      current=await Promise.race([read(),new Promise<never>((_,reject)=>{
+        timer=setTimeout(()=>reject(new Error("Lifetime reversal state read timed out")),10_000);
+      })]);
+    } finally {if(timer)clearTimeout(timer);}
+    const currentPayment=typeof current.charge.payment_intent==="string"?current.charge.payment_intent:current.charge.payment_intent?.id;
+    const currentCustomer=typeof current.charge.customer==="string"?current.charge.customer:current.charge.customer?.id;
+    const disputeCharge=typeof current.dispute?.charge==="string"?current.dispute.charge:current.dispute?.charge?.id;
+    if(currentPayment!==paymentIntent||currentCustomer!==customer||(current.dispute&&disputeCharge!==chargeId)) {
+      throw new Error("Lifetime reversal payment identity changed");
+    }
+    if(current.charge.amount_refunded===current.charge.amount ||
+        (current.dispute&&!["won","warning_closed"].includes(current.dispute.status))) {
+      await client.query("UPDATE users SET subscription_tier='free',subscription_status=CASE WHEN subscription_status IN ('suspended','banned') THEN subscription_status ELSE 'refunded' END WHERE stripe_customer_id=$1 AND subscription_tier='lifetime'",[customer]);
+    } else if(current.charge.paid&&current.charge.amount_refunded===0&&current.dispute?.status==="won") {
+      await client.query("UPDATE users SET subscription_tier='lifetime',subscription_status='active',subscription_ends_at=NULL WHERE stripe_customer_id=$1 AND subscription_status='refunded'",[customer]);
+    }
+    await client.query("COMMIT");
+  } catch(error) {await client.query("ROLLBACK");throw error;}
+  finally {client.release();}
+}
 
 export async function reconcileCharge(chargeId:string,dispute?:Stripe.Dispute) {
   const stripe=commerceStripe();
@@ -13,31 +50,35 @@ export async function reconcileCharge(chargeId:string,dispute?:Stripe.Dispute) {
   if(!source) {
     const pi=await stripe.paymentIntents.retrieve(paymentIntent);
     const plan=pi.metadata.planId||pi.metadata.planName||pi.metadata.tier;
-    if(plan==="lifetime" && (charge.amount_refunded===charge.amount || (dispute && !["won","warning_closed"].includes(dispute.status)))) {
+    if(plan==="lifetime") {
       const customer=typeof charge.customer==="string"?charge.customer:charge.customer?.id;
-      await pool.query("UPDATE users SET subscription_tier='free',subscription_status=CASE WHEN subscription_status IN ('suspended','banned') THEN subscription_status ELSE 'refunded' END WHERE stripe_customer_id=$1 AND subscription_tier='lifetime'",[customer]);
-      return;
-    }
-    if(plan==="lifetime" && charge.paid && charge.amount_refunded===0 && dispute?.status==="won") {
-      const customer=typeof charge.customer==="string"?charge.customer:charge.customer?.id;
-      await pool.query("UPDATE users SET subscription_tier='lifetime',subscription_status='active',subscription_ends_at=NULL WHERE stripe_customer_id=$1 AND subscription_status='refunded'",[customer]);
+      if(!customer) throw new Error("Lifetime reversal has no customer identity");
+      await reconcileLifetimeCharge(stripe,chargeId,paymentIntent,customer,dispute);
       return;
     }
     if(pi.metadata.beatId || pi.metadata.commerceVersion==="2") throw new Error("Payment has no reconciled commerce source; refund event requires recovery");
     // Not a commerce payment; subscription lifecycle is owned by its handlers.
     return;
   }
-  let held=Number(source.disputed_cents);
-  if(dispute) {
-    const current=await stripe.disputes.retrieve(dispute.id);
-    held=["won","warning_closed"].includes(current.status)?0:current.amount;
-    for(const balance of current.balance_transactions) await commerceRepository.providerFee(balance.id,balance.fee,balance.currency,source.id);
+  let currentDispute:Stripe.Dispute|undefined;
+  const held=dispute?async (lockedPaymentIntent:string)=>{
+    if(lockedPaymentIntent!==paymentIntent) throw new Error("Dispute payment source changed");
+    // The repository executes this bounded read under its transaction/source
+    // lock, on the same DB connection as compensation. Fees remain outside it.
+    currentDispute=await stripe.disputes.retrieve(dispute.id,providerReadOptions);
+    const currentCharge=typeof currentDispute.charge==="string"?currentDispute.charge:currentDispute.charge?.id;
+    if(currentCharge!==chargeId) throw new Error("Dispute charge identity changed");
+    return ["won","warning_closed"].includes(currentDispute.status)?0:currentDispute.amount;
+  }:undefined;
+  let refunds:Stripe.Refund[]=[],snapshot:ReversalState|undefined;
+  const read=deferredReversalState(stripe,paymentIntent,{dispute:held,refunds:rows=>{refunds=rows;}});
+  await commerceRepository.compensate(source.id,0,async lockedPayment=>{
+    snapshot=await read(lockedPayment);return snapshot;
+  });
+  const succeeded=snapshot?.refunded??0;
+  if(currentDispute) for(const balance of currentDispute.balance_transactions) {
+    await commerceRepository.providerFee(balance.id,balance.fee,balance.currency,source.id);
   }
-  const refunds:Stripe.Refund[]=[];
-  for await(const refund of stripe.refunds.list({payment_intent:paymentIntent,limit:100})) refunds.push(refund);
-  const succeeded=refunds.filter(r=>r.status==="succeeded").reduce((n,r)=>n+r.amount,0);
-  const pending=refunds.filter(r=>r.status==="pending"||r.status==="requires_action").reduce((n,r)=>n+r.amount,0);
-  await commerceRepository.compensate(source.id,succeeded,held,pending);
   if(source.kind==="merch" && succeeded) await applyVerifiedMerchPayment({
     eventId:`refund:${paymentIntent}:${succeeded}`,orderId:source.metadata.growthMerchOrderId,
     checkoutId:source.metadata.sessionId,currency:source.currency,type:"refunded",amountCents:succeeded,
@@ -70,7 +111,7 @@ export function registerCommerceCompensationHandlers() {
     const current=await commerceStripe().topups.retrieve(topup.id);
     if(current.status!=="reversed") return {success:true,message:"Top-up reversal superseded"};
     const sources=(await pool.query("SELECT id,gross_cents FROM commerce_sources WHERE kind='royalty' AND metadata->>'topupId'=$1",[topup.id])).rows;
-    for(const source of sources) await commerceRepository.compensate(source.id,Number(source.gross_cents),0);
+    for(const source of sources) await commerceRepository.compensate(source.id,Number(source.gross_cents));
     return {success:true,message:"Reversed royalty funding compensated"};
   });
   for(const eventType of ["charge.refunded","refund.created","refund.updated","refund.failed","charge.dispute.created","charge.dispute.updated","charge.dispute.closed"]) {

@@ -18,6 +18,7 @@ from ai_model.generation.capability import verify_text_capability
 from ai_model.training import candidate_registry as registry, candidate_lifecycle as lifecycle, live_learning
 from ai_model.training.public_curriculum import PEAK_METRIC, PEAK_POLICY, peak_stream, training_texts
 from ai_model.training.public_resume import load_public_parent
+from test_generation_route_bindings import snapshot
 
 CONFIG = {"width": 128, "layers": 2, "heads": 4, "expansion": 2}
 
@@ -49,11 +50,22 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                  patch.object(live_learning, "JOBS", root / "live_learning_runs"):
                 engine = peak_engine()
                 self.assertEqual(engine.peak_training_observations()["policy"], PEAK_POLICY)
-                first = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
-                self.assertEqual(first["status"], "candidate_trained_unreviewed",
-                                 (root / "live_learning_runs" / first["run_id"] / "worker.log").read_text())
-                second = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
-                self.assertEqual(second["status"], "candidate_trained_unreviewed")
+                # These strings are authored by this test, not fetched posts.
+                # Inject only the fixture ownership decision; production has no
+                # environment switch or source-level license grant bypass.
+                owned_hashes = {hashlib.sha256(row["text"].encode()).hexdigest()
+                                for row in engine.peak_training_observations()["records"]}
+                def owned_fixture_rights(records):
+                    self.assertTrue(records)
+                    self.assertTrue(all(hashlib.sha256(row["text"].encode()).hexdigest()
+                                        in owned_hashes for row in records))
+                with patch.object(live_learning, "require_peak_training_rights",
+                                  side_effect=owned_fixture_rights):
+                    first = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+                    self.assertEqual(first["status"], "candidate_trained_unreviewed",
+                                     (root / "live_learning_runs" / first["run_id"] / "worker.log").read_text())
+                    second = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+                    self.assertEqual(second["status"], "candidate_trained_unreviewed")
                 one, two = (candidates / item["run_id"] for item in (first, second))
                 reports = [json.loads((run / "report.json").read_text()) for run in (one, two)]
                 self.assertEqual(reports[0]["learning_stream"], peak_stream(CONFIG))
@@ -68,7 +80,7 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                 adapter = create_candidate_adapter(two, runtime_only=True,
                     require_exclusive_backend=True, require_exclusive_training=True)
                 with self.assertRaises(ValueError):
-                    verify_text_capability(adapter)
+                    verify_text_capability(adapter, snapshot=snapshot("trained-v2-capability"))
                 self.assertFalse((root / "candidate_registry/selected.json").exists())
                 with self.assertRaisesRegex(ValueError, "migration"):
                     load_public_parent(candidates, 128, learning_stream=peak_stream({**CONFIG, "layers": 3}))
@@ -79,6 +91,83 @@ class PublicPeakCurriculumTests(unittest.TestCase):
                 (two / "candidate.pt").write_bytes((two / "candidate.pt").read_bytes() + b"tampered")
                 with self.assertRaisesRegex(ValueError, "no longer public/valid"):
                     load_public_parent(candidates, 128, learning_stream=peak_stream(CONFIG))
+
+    def test_unknown_rights_peak_posts_block_before_worker_and_preserve_awareness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            engine = peak_engine()
+            snapshot_before = engine.require_snapshot().id
+            protected_before = lifecycle.protected_hashes()
+            with patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
+                 patch.object(live_learning, "candidate_path", lambda run: root / "candidate_runs" / run), \
+                 patch.object(live_learning, "admission_path", lambda run: root / "admissions" / run), \
+                 patch.object(live_learning.subprocess, "run") as worker:
+                with self.assertRaises(live_learning.Blocked) as raised:
+                    live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+            self.assertEqual(raised.exception.code, "blocked_training_rights")
+            self.assertEqual(raised.exception.status, 409)
+            worker.assert_not_called()
+            self.assertFalse((root / "candidate_runs").exists())
+            self.assertFalse((root / "admissions").exists())
+            self.assertEqual([p.name for p in (root / "live_learning_runs").iterdir()], [".lock"])
+            self.assertEqual(lifecycle.protected_hashes(), protected_before)
+            self.assertEqual(engine.require_snapshot().id, snapshot_before)
+            self.assertTrue(engine.peak_training_observations()["records"])
+
+    def test_legacy_mode_cannot_train_unknown_rights_raw_peak_posts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            engine = peak_engine()
+            snapshot_before = engine.require_snapshot().id
+            protected_before = lifecycle.protected_hashes()
+            with patch.object(live_learning, "JOBS", root / "live_learning_runs"), \
+                 patch.object(live_learning, "candidate_path", lambda run: root / "candidate_runs" / run), \
+                 patch.object(live_learning, "admission_path", lambda run: root / "admissions" / run), \
+                 patch.object(live_learning.subprocess, "run") as worker:
+                with self.assertRaises(live_learning.Blocked) as raised:
+                    live_learning.execute(engine, 1, context_tokens=128, peak_content=False)
+            self.assertEqual(raised.exception.code, "blocked_training_rights")
+            worker.assert_not_called()
+            self.assertFalse((root / "candidate_runs").exists())
+            self.assertFalse((root / "admissions").exists())
+            self.assertEqual([p.name for p in (root / "live_learning_runs").iterdir()], [".lock"])
+            self.assertEqual(lifecycle.protected_hashes(), protected_before)
+            self.assertEqual(engine.require_snapshot().id, snapshot_before)
+
+    def test_peak_training_rights_never_infer_license_from_public_metadata(self):
+        owned = {"text": "Test-authored corpus material", "license": "CC0-1.0",
+                 "author": "Test fixture author", "private": False,
+                 "source": "authored:test-fixture", "purpose": "training"}
+        live_learning.require_peak_training_rights([owned])
+        for change in ({"license": "NOASSERTION", "live_provenance": {"access": "public"}},
+                       {"author": "unattributed live observation"}, {"private": True},
+                       {"source": ""}):
+            with self.assertRaises(live_learning.Blocked):
+                live_learning.require_peak_training_rights([{**owned, **change}])
+
+    def test_explicit_owned_licensed_manifest_still_trains_real_weights(self):
+        from ai_model.training.candidate_manifest_train import train_from_manifest
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            corpus, holdout = root / "corpus.json", root / "holdout.json"
+            # Original fixture prose with an explicit test-author license; no
+            # real site's post, author, metrics or reuse permission is inferred.
+            corpus.write_text(json.dumps({"schema": 1, "records": [{
+                "text": "A cobalt lantern glowed beside the fictional rehearsal desk.",
+                "license": "CC0-1.0", "private": False, "author": "Test fixture author",
+                "source": "authored:owned-license-test", "purpose": "training"}]}))
+            holdout.write_text(json.dumps({"schema": 1, "frozen": True, "cases": [{
+                "id": "separate-owned-holdout", "prompt": "A copper kite"}]}))
+            digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+            with patch.object(lifecycle, "CANDIDATES", root / "candidate_runs"):
+                report = train_from_manifest(corpus, digest(corpus), holdout, digest(holdout),
+                                             "owned-license-test", steps=1, manual_backward=True)
+            self.assertFalse(report["smoke_only"])
+            self.assertGreater(report["gemm_backward_calls"], 0)
+            self.assertTrue(report["changed_parameters"])
+            self.assertFalse(report["promotion"]["eligible"])
+            self.assertFalse(report["promotion"]["promotion_performed"])
+            self.assertTrue((root / "candidate_runs/owned-license-test/candidate.pt").is_file())
 
     def test_stage_supervision_preserves_exact_words_and_requires_real_cta(self):
         text = "A new public music performance opens tonight! Our community welcomes all listeners. Join the discussion."

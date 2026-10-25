@@ -208,10 +208,8 @@ export function registerCoreProbes(): void {
   // in /api/ready instead of only via log access.
   healthRegistry?.register("routes", async () => {
     try {
-      const { isRoutesReady } = await import("./bootState.js");
-      return isRoutesReady()
-        ? { status: "ok", detail: "all route sections registered" }
-        : { status: "degraded", detail: "boot in progress — route registration incomplete" };
+      const { routeRegistrationReadiness } = await import("./bootState.js");
+      return routeRegistrationReadiness();
     } catch (e) {
       return { status: "unknown", detail: (e as Error).message };
     }

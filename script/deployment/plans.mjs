@@ -3,10 +3,10 @@ import fs from "node:fs";
 export function buildPlan() {
   const deadlines={cleanup:600,node:180,diffusion:180,dependencies:900,rust:600,python:360,
     strip:300,packer:120,assets:120,app_capsule:900,prune:300,pack_node:600,
-    pack_python:600,pack_maxcore:600,pack_pdim:600,source:600,finalize:180};
+    pack_python:600,pack_maxcore:600,pack_pdim:600,source:600,remainder:600,finalize:180};
   const task=(id,deps=[],memoryMB=256,cpu=1,io=1)=>({
     id,deps,memoryMB,cpu,io,timeoutMs:deadlines[id]*1000,command:"bash",args:["build.sh","--executive-task",id],
-    ...(["app_capsule","pack_node","pack_python","pack_maxcore","pack_pdim","source"].includes(id)
+    ...(["app_capsule","pack_node","pack_python","pack_maxcore","pack_pdim","source","remainder"].includes(id)
       ? {elasticCPU:true,maxCPU:id==="app_capsule"?8:2} : {}),
   });
   return [
@@ -30,7 +30,8 @@ export function buildPlan() {
     task("pack_maxcore",["app_capsule"],1536),
     task("pack_pdim",["app_capsule"],1536),
     task("source",["pack_node","pack_python","pack_maxcore","pack_pdim"],1536),
-    task("finalize",["source"],128),
+    task("remainder",["source"],1536),
+    task("finalize",["remainder"],128),
   ];
 }
 

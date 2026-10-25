@@ -1,10 +1,11 @@
+import { deferredReversalState, type ReversalReader } from "./reversalState";
 import Stripe from "stripe";
 import type { Operation } from "./contract";
 
 export interface CommerceProvider {
   transfer(op: Operation): Promise<string>;
   payout(op: Operation): Promise<{ id: string; status: string }>;
-  refund(op: Operation): Promise<{ id: string; status: string; refundedCents?:number;pendingCents?:number }>;
+  refund(op: Operation): Promise<{ id: string; status: string; refundedCents?:number;pendingCents?:number;reversalState?:ReversalReader }>;
   reverse(op: Operation): Promise<string>;
 }
 
@@ -50,7 +51,7 @@ export class StripeCommerceProvider implements CommerceProvider {
           if(refund.status==="pending"||refund.status==="requires_action") pendingCents+=refund.amount;
         }
       }
-      return {id:r.id,status:r.status||"pending",refundedCents,pendingCents};
+      return {id:r.id,status:r.status||"pending",refundedCents,pendingCents,reversalState:deferredReversalState(this.stripe,op.payload.paymentIntent)};
     };
     if(op.provider_id) {
       const r=await this.stripe.refunds.retrieve(op.provider_id);
