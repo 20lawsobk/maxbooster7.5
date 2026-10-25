@@ -1,0 +1,130 @@
+[
+  {
+    "file": "server/services/securityJwtChain.test.mjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/server__services__securityJwtChain.test.mjs.txt",
+    "logSha256": "2dbd6a6f8e47268e5dd3447a40f9d7b16f30489058954951bd1cf26a3838cd79",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/admin-governance-isolated.cjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__admin-governance-isolated.cjs.txt",
+    "logSha256": "9e7b1842bcd6b62077c12ba02d3cf621bd40d55c22277da800c86a6d4c2ac16c",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/labelgrid-retirement-boundaries.test.cjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__labelgrid-retirement-boundaries.test.cjs.txt",
+    "logSha256": "ec6879662ea5cc21e11df623514a3433f32f7b7f3d8252063ffc2b87c57b5942",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/resume-integration-contracts.cjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__resume-integration-contracts.cjs.txt",
+    "logSha256": "2da74761d8fe52a8e428645ee9aa82c1ca4d12e6410d9354be3e046f7fc954cd",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/publishing-compression.test.mjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__publishing-compression.test.mjs.txt",
+    "logSha256": "654b311ccd48425347da6b901042b5e235d0d3e7fd8f08df04448244fece3aae",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/deployment-bootstrap.test.mjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__deployment-bootstrap.test.mjs.txt",
+    "logSha256": "38228ed97d3b675e6538cdfabcf4390b6e1de70ae415a5039e66eabc2bcd751d",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/build-dependency-inputs.test.mjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__build-dependency-inputs.test.mjs.txt",
+    "logSha256": "10fd8634221db968e287e9f5510ba985681d06284d189c8d7cc67186d96ee7b3",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/integrations-readiness.cjs",
+    "exitCode": 0,
+    "counts": {},
+    "log": "reports/test-verification/node/repairs/tests__integrations-readiness.cjs.txt",
+    "logSha256": "81af353d256586d5e91da2d157ed9c141d2a958b8688648732155aef3bf688c5",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "scripts/test-data-runtime.mjs",
+    "exitCode": 0,
+    "counts": {},
+    "log": "reports/test-verification/node/repairs/scripts__test-data-runtime.mjs.txt",
+    "logSha256": "242711c28769d54367a6457805412ab84368c7803b4899a07f42fa8e7b7d9d55",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  },
+  {
+    "file": "tests/publishing-build-entry.test.mjs",
+    "exitCode": 0,
+    "counts": {
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "log": "reports/test-verification/node/repairs/tests__publishing-build-entry.test.mjs.txt",
+    "logSha256": "7bae0001be0fcac2f36682a23231437b960fe351df35f4210625a931b135b1ae",
+    "scope": "confirmed targeted final rerun after stale fixture repair"
+  }
+]

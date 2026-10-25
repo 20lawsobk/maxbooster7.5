@@ -1,0 +1,46 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+_________________ test_image_bytes_identical_across_processes __________________
+
+    def test_image_bytes_identical_across_processes() -> None:
+        """Same inputs → byte-identical image across processes with different hash seeds."""
+>       h0 = _render_hash_in_subprocess("0")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ai_model/rta/test_render_contracts.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+hash_seed = '0'
+
+    def _render_hash_in_subprocess(hash_seed: str) -> str:
+        """Render in a fresh interpreter with an explicit PYTHONHASHSEED."""
+        env = dict(os.environ)
+        env["PYTHONHASHSEED"] = hash_seed
+        # Run from the package root so ``ai_model`` imports resolve, regardless of
+        # the caller's CWD.
+        pkg_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", _RENDER_SNIPPET],
+            env=env,
+            cwd=pkg_root,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if proc.returncode != 0:
+>           raise RuntimeError(
+                f"render subprocess (PYTHONHASHSEED={hash_seed}) failed:\n{proc.stderr}"
+            )
+E           RuntimeError: render subprocess (PYTHONHASHSEED=0) failed:
+E           Traceback (most recent call last):
+E             File "<string>", line 1, in <module>
+E             File "<repo>/external/maxcore/artifacts/ai-training-server/ai_model/rta/api.py", line 62, in render_image
+E               raise ValueError("RTA image scene requires the original subject prompt; mood and seed cannot encode it")
+E           ValueError: RTA image scene requires the original subject prompt; mood and seed cannot encode it
+
+ai_model/rta/test_render_contracts.py:76: RuntimeError
+=========================== short test summary info ============================
+FAILED ai_model/rta/test_render_contracts.py::test_image_bytes_identical_across_processes
+1 failed, 2 passed in 1.77s

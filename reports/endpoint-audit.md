@@ -1,6 +1,6 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-10-21T15:44:03.717Z without live requests.
+Generated 2026-10-25T15:33:56.820Z without live requests.
 
 - Backend route registrations: **2391** (2371 unique method/path pairs).
 - Mounted router files: **157**.

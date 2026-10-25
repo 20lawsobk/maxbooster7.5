@@ -11,6 +11,9 @@ node tests/payment-processing/run.mjs
 
 # Explicit real Stripe TEST-mode objects and disposable local SQL:
 node tests/payment-processing/run.mjs --stripe
+
+# Exhaustive local payment files plus the isolated legacy beat-sale suite:
+python3 scripts/testing/run-commerce.py
 ```
 
 The remote command requires **only** `STRIPE_TEST_SECRET` (`sk_test_…`) and
@@ -52,9 +55,19 @@ provider flows must remain blocked, not be marked as passed.
 
 ## Current findings
 
-The current verification is **not green**. Failing regressions remain for
-legacy billing checkout retries, storefront cart retries, and unverified
-legacy BeatService sale completion. The runner includes these failures.
+The October 25, 2026 credential-free rerun passes all 16 payment Node entry
+files and the 14-case legacy beat-sale suite: 78 JUnit leaf cases passed,
+one explicit real-provider case skipped, zero failures. Previously failing
+billing/cart retry and legacy BeatService regressions remain active and pass.
+The provider report's offline aggregation/redaction self-check also passes.
+The legacy fixture supplies its own PostgreSQL and Redis services; its first
+attempt without a queue backend is retained as diagnostic evidence.
+
+See `docs/testing/commerce.md` for every file's purpose and exact invocation,
+and `reports/test-verification/commerce/results.json` for the current machine
+results. These local passes do not establish deployed provider delivery or
+full production readiness. The explicit remote Stripe and browser entry points
+were not rerun as part of this credential-free verification.
 
 Real Stripe top-up creation/retrieval/cancellation is covered separately.
 Automatic tax, Express dashboard links, transfers and bank payouts remain

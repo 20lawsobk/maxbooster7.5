@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "startedAt": "2026-10-25T15:26:51.812269+00:00",
+  "finishedAt": "2026-10-25T15:26:54.166840+00:00",
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "interpreter": "/workspace/.cloud-python/bin/python",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "timeout": 0,
+    "skipped": 0,
+    "blocked": 0,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "isolation": "Fresh interpreter and disposable HOME/state per file; no application credentials; only ephemeral loopback networking; child process group cleanup",
+  "limits": "Blocked/skip/timeout are not passes; fixture training does not establish generation quality or production readiness",
+  "duplicateSnapshots": [
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_quality.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_smoke_load.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_veo_parity.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py",
+    ".pdim-scratch-external_maxcore-989/external/maxcore/artifacts/ai-training-server/tests/test_w6_90m.py"
+  ],
+  "suites": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py",
+      "description": "Tests for the MaxCore / DigitalGPU stack.\n\nRunnable two ways:\n  * pytest:  uv run pytest ai_model/maxcore/tests/test_maxcore.py\n  * direct:  uv run python ai_model/maxcore/tests/test_maxcore.py\n\nEvery kernel and the end-to-end graph path are validated against independent\nnumpy ground truth. Numerical stability and PDIM dedup/single-flight behaviours\nare asserted explicitly.",
+      "cases": [
+        {
+          "name": "test_ir_build_validate_hash",
+          "description": "ir build validate hash"
+        },
+        {
+          "name": "test_ir_rejects_undefined_input",
+          "description": "ir rejects undefined input"
+        },
+        {
+          "name": "test_compiler_fuses_gemm_add_relu",
+          "description": "compiler fuses gemm add relu"
+        },
+        {
+          "name": "test_compiler_cache_hit",
+          "description": "compiler cache hit"
+        },
+        {
+          "name": "test_gemm_matches_numpy",
+          "description": "gemm matches numpy"
+        },
+        {
+          "name": "test_attention_matches_reference",
+          "description": "attention matches reference"
+        },
+        {
+          "name": "test_conv2d_matches_naive",
+          "description": "conv2d matches naive"
+        },
+        {
+          "name": "test_reduce_ops",
+          "description": "reduce ops"
+        },
+        {
+          "name": "test_softmax_is_numerically_stable",
+          "description": "softmax is numerically stable"
+        },
+        {
+          "name": "test_text_to_mlp_end_to_end",
+          "description": "text to mlp end to end"
+        },
+        {
+          "name": "test_deterministic_run_repeatable",
+          "description": "deterministic run repeatable"
+        },
+        {
+          "name": "test_registry_and_future_backends_are_honest",
+          "description": "registry and future backends are honest"
+        },
+        {
+          "name": "test_gpu_backend_is_real_but_honest_without_hardware",
+          "description": "The gpu backend is a genuine torch implementation, not a stub. Without a\nCUDA device it reports unavailable and raises a clear, hardware-honest error\n(naming the missing device) instead of faking GPU compute on the Digital GPU engine."
+        },
+        {
+          "name": "test_gpu_backend_reduce_parity_with_digital_gpu",
+          "description": "reduce() on the gpu backend must match DigitalGPUBackend for all ops and\nfor multi-axis reductions (numpy supports tuple axes; torch's dim does not,\nso the backend folds them \u2014 this guards that parity)."
+        },
+        {
+          "name": "test_pdim_dedup_cache_hit",
+          "description": "pdim dedup cache hit"
+        },
+        {
+          "name": "test_pdim_single_flight_collapses_concurrent",
+          "description": "pdim single flight collapses concurrent"
+        },
+        {
+          "name": "test_pdim_durable_queue_roundtrip",
+          "description": "pdim durable queue roundtrip"
+        },
+        {
+          "name": "test_pdim_preview_policy_pluggable",
+          "description": "pdim preview policy pluggable"
+        },
+        {
+          "name": "test_batched_gemm_is_engine_served",
+          "description": "batched gemm is engine served"
+        },
+        {
+          "name": "test_softmax_any_axis_is_engine_served",
+          "description": "softmax any axis is engine served"
+        },
+        {
+          "name": "test_masked_multihead_attention_is_engine_served",
+          "description": "masked multihead attention is engine served"
+        },
+        {
+          "name": "test_pocket_matmul_correct_and_deduped_inside_one_pocket",
+          "description": "pocket matmul correct and deduped inside one pocket"
+        },
+        {
+          "name": "test_pocket_nesting_pockets_inside_one_pocket_are_isolated",
+          "description": "pocket nesting pockets inside one pocket are isolated"
+        },
+        {
+          "name": "test_pocket_matmul_batched_and_shape_errors",
+          "description": "pocket matmul batched and shape errors"
+        },
+        {
+          "name": "test_pocket_accelerator_hit_serves_repeat_at_hash_cost",
+          "description": "pocket accelerator hit serves repeat at hash cost"
+        },
+        {
+          "name": "test_pocket_accelerator_miss_result_mutation_cannot_poison_cache",
+          "description": "pocket accelerator miss result mutation cannot poison cache"
+        },
+        {
+          "name": "test_pocket_accelerator_adaptive_gating",
+          "description": "pocket accelerator adaptive gating"
+        },
+        {
+          "name": "test_pocket_accelerator_exposes_measured_admission_costs",
+          "description": "Task-170 step 3: hashing/lookup/copy/storage costs must be measured\nand exposed, not just implied by hit rate."
+        },
+        {
+          "name": "test_pocket_bucket_admission_uses_measured_breakeven_not_just_hit_rate",
+          "description": "Task-170 step 3: 'admit reusable computations without charging\none-shot work more than the compute it protects' \u2014 a pocket whose\nmeasured hash/lookup/store overhead is comparable to its own measured\ncompute cost must be held to a stricter bar than the flat hit-rate\nfloor, derived from those measured seconds. A pocket whose overhead is\ncheap relative to its (expensive) compute must NOT be over-muted \u2014\nthe static floor still governs there, unchanged from before."
+        },
+        {
+          "name": "test_pocket_bucket_copy_cost_never_zerodivides_breakeven",
+          "description": "Degenerate edge case: if measured copy cost ever reached or exceeded\nmeasured compute+store (never expected for a real GEMM, where copying\na result is far cheaper than computing it), the breakeven denominator\nwould hit zero or go negative. `settle()` must skip the posterior\nadjustment for that call rather than raise ZeroDivisionError, and the\npocket must fall back to the static floor, not the crash."
+        },
+        {
+          "name": "test_digital_gpu_gemm_served_from_pocket_on_repeat",
+          "description": "digital gpu gemm served from pocket on repeat"
+        }
+      ],
+      "blockedReason": null,
+      "sourceSha256": "9239dbe23416dfe026800d310b77a3531c8709b844454c5c12d5b19202a0c9c4",
+      "command": "/workspace/.cloud-python/bin/python scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /workspace/maxbooster7.5/reports/test-verification/python/recheck-maxcore",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 2.353,
+      "counts": {
+        "tests": 31,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit": "external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_maxcore.xml",
+      "log": "external__maxcore__artifacts__ai-training-server__ai_model__maxcore__tests__test_maxcore.txt"
+    }
+  ]
+}

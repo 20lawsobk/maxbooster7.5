@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="10.052" timestamp="2026-10-25T15:38:13.950568+00:00" hostname="2fc971e77ddd"><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only" time="0.221" /><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_iterative_ancestry_exceeds_128_and_rejects_cycles" time="0.064" /><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_missing_peak_content_never_falls_back_to_context" time="0.002" /><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor" time="8.643"><failure message="ai_model.awareness.engine.AwarenessUnavailable: Fresh public awareness required for capability generation">self = &lt;tests.test_public_peak_curriculum.PublicPeakCurriculumTests testMethod=test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor&gt;
+
+    def test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidates = root / "candidate_runs"
+            with patch.dict(os.environ, {"MAXCORE_MODEL_STATE_DIR": str(root),
+                                        "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1"}), \
+                 patch.object(lifecycle, "CANDIDATES", candidates), \
+                 patch.object(registry, "REGISTRY", root / "candidate_registry"), \
+                 patch.object(live_learning, "JOBS", root / "live_learning_runs"):
+                engine = peak_engine()
+                self.assertEqual(engine.peak_training_observations()["policy"], PEAK_POLICY)
+                first = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+                self.assertEqual(first["status"], "candidate_trained_unreviewed",
+                                 (root / "live_learning_runs" / first["run_id"] / "worker.log").read_text())
+                second = live_learning.execute(engine, 1, context_tokens=128, model_config=CONFIG)
+                self.assertEqual(second["status"], "candidate_trained_unreviewed")
+                one, two = (candidates / item["run_id"] for item in (first, second))
+                reports = [json.loads((run / "report.json").read_text()) for run in (one, two)]
+                self.assertEqual(reports[0]["learning_stream"], peak_stream(CONFIG))
+                self.assertGreater(reports[0]["curriculum"]["derived_stage_records"], 0)
+                self.assertEqual(reports[1]["initial_weights_sha256"], reports[0]["final_weights_sha256"])
+                self.assertEqual(reports[1]["initial_optimizer_sha256"], reports[0]["optimizer_sha256"])
+                self.assertEqual(reports[1]["coverage"]["start_step"], reports[0]["coverage"]["end_step"])
+                data = torch.load(two / "candidate.pt", weights_only=True, map_location="cpu")
+                self.assertEqual(data["optimizer_state"]["step"], 2)
+                decision = registry.public_live_eligibility(two)
+                self.assertTrue(decision["eligible"], decision["reasons"])
+                adapter = create_candidate_adapter(two, runtime_only=True,
+                    require_exclusive_backend=True, require_exclusive_training=True)
+                with self.assertRaises(ValueError):
+&gt;                   verify_text_capability(adapter)
+
+tests/test_public_peak_curriculum.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+ai_model/generation/capability.py:35: in verify_text_capability
+    snapshot = capability_snapshot(snapshot)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def capability_snapshot(snapshot=None):
+        """Use the same validated public scan as generation, never supplied prose."""
+        from ai_model.awareness import AwarenessUnavailable, current_snapshot
+        from ai_model.awareness.engine import validate_snapshot
+        snapshot = current_snapshot() if snapshot is None else snapshot
+        if snapshot is None:
+&gt;           raise AwarenessUnavailable("Fresh public awareness required for capability generation")
+E           ai_model.awareness.engine.AwarenessUnavailable: Fresh public awareness required for capability generation
+
+ai_model/generation/capability.py:22: AwarenessUnavailable</failure></testcase><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_refresh_reuses_validated_peak_adapter_without_reloading_probes" time="0.130" /><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_stage_supervision_preserves_exact_words_and_requires_real_cta" time="0.001" /><testcase classname="tests.test_public_peak_curriculum.PublicPeakCurriculumTests" name="test_waiting_peak_selector_does_not_load_old_context_pointer" time="0.066" /></testsuite></testsuites>

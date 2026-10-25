@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (.cache/testing/subsystems/target/debug/deps/boosterstate-99f1eb151b291ccd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (.cache/testing/subsystems/target/debug/deps/boosterstate-fee0da916adf5c05)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/runtime_dependency.rs (.cache/testing/subsystems/target/debug/deps/runtime_dependency-b4c01d9e2aab999a)
+
+running 2 tests
+test wal_io_error_preserves_anyhow_source_and_context ... ok
+test wal_append_and_reopen_remain_compatible_with_updated_anyhow ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

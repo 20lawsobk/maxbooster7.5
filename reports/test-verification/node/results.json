@@ -1,0 +1,2464 @@
+{
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "evaluations/maxcore-fused/live-api.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:55.073315+00:00",
+      "durationSeconds": 0.219,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/evaluations__maxcore-fused__live-api.test.mjs.txt",
+      "logSha256": "1975edb0f09cdc5cb83d957c810b27d17391b1c71838e4299b2db70738a73617",
+      "file": "evaluations/maxcore-fused/live-api.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "evaluations/maxcore-fused/runner.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:55.294986+00:00",
+      "durationSeconds": 0.167,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/evaluations__maxcore-fused__runner.test.mjs.txt",
+      "logSha256": "12765cc4076d495ee349ed0dd68819f397dbc48276f1ce83ccb9a720d9cc8e27",
+      "file": "evaluations/maxcore-fused/runner.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "script/security-consumers.test.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:55.464326+00:00",
+      "durationSeconds": 0.974,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/script__security-consumers.test.cjs.txt",
+      "logSha256": "67a74cd8bcad03347ac9e9d487b6080814b7d3442adc5b2cf94551444020b308",
+      "file": "script/security-consumers.test.cjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "script/security-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:56.440413+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/script__security-readiness.test.mjs.txt",
+      "logSha256": "661f57d351361bd5ee508c6c93041a608c152bef92a526de9beb8f1e9e433783",
+      "file": "script/security-readiness.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-data-runtime.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:56.759047+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/scripts__test-data-runtime.mjs.txt",
+      "logSha256": "242711c28769d54367a6457805412ab84368c7803b4899a07f42fa8e7b7d9d55",
+      "file": "scripts/test-data-runtime.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-fabric-deletion.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:57.077331+00:00",
+      "durationSeconds": 0.114,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/node/scripts__test-fabric-deletion.mjs.txt",
+      "logSha256": "6c14ab8291951d9a2065e25680a32f3d84c7a7d00d21ebfbc9ac385e271e5ced",
+      "file": "scripts/test-fabric-deletion.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/logSanitizer.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:57.194323+00:00",
+      "durationSeconds": 0.369,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__logSanitizer.test.ts.txt",
+      "logSha256": "f9265daf00159cb041b33252069e64317ca01eee6cbd6a82a6fc9ef46162ce69",
+      "file": "server/logSanitizer.test.ts",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/accountErasureWorkflow.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:57.565243+00:00",
+      "durationSeconds": 0.268,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__services__accountErasureWorkflow.test.ts.txt",
+      "logSha256": "e3910a0a3e0fc8d6fe6b140fef85bf1503cf73241053829a6fe96b10c74d094b",
+      "file": "server/services/accountErasureWorkflow.test.ts",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/commerce.isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:57.838182+00:00",
+      "durationSeconds": 0.472,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__services__commerce.isolated.test.mjs.txt",
+      "logSha256": "bb0ab3f0c3c670482767a8b9e4db60fafafeb74292d863119ccc56f24168f5b0",
+      "file": "server/services/commerce.isolated.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/commerce/orchestrator.isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:58.312199+00:00",
+      "durationSeconds": 0.269,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__services__commerce__orchestrator.isolated.test.mjs.txt",
+      "logSha256": "22fb5a82922595dcc0312ac66a2698287d8d71859dc7a3a0753166fdc0b5f88b",
+      "file": "server/services/commerce/orchestrator.isolated.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/securityAuthority.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:58.585899+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__services__securityAuthority.test.ts.txt",
+      "logSha256": "cbc94dc61a1a8e61d47f3a0c5d0b4321453156c5238a1b3353f0bf9eb7eed45b",
+      "file": "server/services/securityAuthority.test.ts",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "server/services/securityJwtChain.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:58.903347+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/server__services__securityJwtChain.test.mjs.txt",
+      "logSha256": "f0736ad2eb19452b5ae1a87bb2088832518d8165be60dfa341168746627fa33c",
+      "file": "server/services/securityJwtChain.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/access-control-isolated.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:59.171646+00:00",
+      "durationSeconds": 0.676,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__access-control-isolated.cjs.txt",
+      "logSha256": "6a923b64dfc5b21fc95fe8aec2a7d19d17b8ffabb94ce5ebd2aae85fb9fb6f79",
+      "file": "tests/access-control-isolated.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/admin-governance-isolated.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:28:59.850844+00:00",
+      "durationSeconds": 1.124,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__admin-governance-isolated.cjs.txt",
+      "logSha256": "1de0dd2e0c6c0f3bb67ce47ef879714ad655c7a3cd22f837c931306ac7055943",
+      "file": "tests/admin-governance-isolated.cjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/audio-metadata-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:00.977300+00:00",
+      "durationSeconds": 0.267,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__audio-metadata-security.test.mjs.txt",
+      "logSha256": "97b7bb926aa13b26db60c17f9de8628fc7089048499b3318a0e1e4032b303c9e",
+      "file": "tests/audio-metadata-security.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/beat-loop-test-safety.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:01.246796+00:00",
+      "durationSeconds": 0.88,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__beat-loop-test-safety.test.mjs.txt",
+      "logSha256": "be9dabffcc19f2f87e59a293df9293d1c74ef5fa6e89429bcefd6d9f7e71aeb6",
+      "file": "tests/beat-loop-test-safety.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/build-dependency-inputs.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:02.128829+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__build-dependency-inputs.test.mjs.txt",
+      "logSha256": "c16af1cc493e1af699e832171776e4b0e56e853d49b8495d41d8b2b0af9dd3a3",
+      "file": "tests/build-dependency-inputs.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/build-native-cleanup.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:02.346158+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__build-native-cleanup.test.mjs.txt",
+      "logSha256": "3c76de43c32312c5057c65e371b49d436da191d4d724f760e1bcf06614a33394",
+      "file": "tests/build-native-cleanup.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/closure-integrations-shared.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:02.513665+00:00",
+      "durationSeconds": 0.616,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__closure-integrations-shared.cjs.txt",
+      "logSha256": "43b9a980bb975518fdb8154c5b6a929af810b2d4d71a930af5d65d9cb9a384ae",
+      "file": "tests/closure-integrations-shared.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/closure-integrations.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:03.132618+00:00",
+      "durationSeconds": 0.72,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__closure-integrations.cjs.txt",
+      "logSha256": "50f662c4121afcdb2bb4686b571cd0b83e6c580d517235bfbc6ec7a71fedbc38",
+      "file": "tests/closure-integrations.cjs",
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/cold-runtime-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:03.855262+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__cold-runtime-readiness.test.mjs.txt",
+      "logSha256": "597369b56f8c335543bc37601a9f529c4d54fa7e0dc6203620efc1957fe23171",
+      "file": "tests/cold-runtime-readiness.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/commerce-migration-gate.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:04.022436+00:00",
+      "durationSeconds": 0.367,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__commerce-migration-gate.test.mjs.txt",
+      "logSha256": "221839199e3744e07cd29cbeb9ab9927128b065aa252d3649faba08d550d7cd4",
+      "file": "tests/commerce-migration-gate.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/database-recovery-schema.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:04.391658+00:00",
+      "durationSeconds": 0.866,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__database-recovery-schema.test.mjs.txt",
+      "logSha256": "69a2d81b7b59fe0ff9f15213bdc71fdffe1ccf50ad89c115158548307adbab53",
+      "file": "tests/database-recovery-schema.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/database-recovery-tools.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:05.260462+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__database-recovery-tools.test.mjs.txt",
+      "logSha256": "1120f9fb41db0de8a568585e4646d5166612c7f61963c2748a772142f127db2d",
+      "file": "tests/database-recovery-tools.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-advisories.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:05.427418+00:00",
+      "durationSeconds": 2.076,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__dependency-advisories.test.mjs.txt",
+      "logSha256": "425f02440d1fc57e6b6525632dab020657284cea19e7392d03e9cad92a2ea583",
+      "file": "tests/dependency-advisories.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-security-paths.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:07.506244+00:00",
+      "durationSeconds": 2.279,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__dependency-security-paths.test.mjs.txt",
+      "logSha256": "5880da1ea09866a2291bb58691066ec9aecbab8635cf492b35b41425811be6f7",
+      "file": "tests/dependency-security-paths.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-bootstrap.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:09.787270+00:00",
+      "durationSeconds": 1.119,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-bootstrap.test.mjs.txt",
+      "logSha256": "e5494bad76472092b08c68516138c8fe82097450863f39a107f2b00023f9a3e0",
+      "file": "tests/deployment-bootstrap.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-compressor-exit.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:10.908718+00:00",
+      "durationSeconds": 0.825,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-compressor-exit.test.mjs.txt",
+      "logSha256": "9f384214f46a8a9d2986e74994a9198b0a1d990c576053c4c9277a7b01bc2e68",
+      "file": "tests/deployment-compressor-exit.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-contracts.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:11.735715+00:00",
+      "durationSeconds": 0.369,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-contracts.cjs.txt",
+      "logSha256": "e8bee81d0ec7be3beb3578882c25c9a589cd26df33228e5c68164ae3f4026e48",
+      "file": "tests/deployment-contracts.cjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-control-files.test.ts"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:12.107904+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-control-files.test.ts.txt",
+      "logSha256": "a560baaca02db87189aca4c7225d4392325c2f18f5fe4567f139390a0a469bb0",
+      "file": "tests/deployment-control-files.test.ts",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-current-source.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:12.526330+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-current-source.test.mjs.txt",
+      "logSha256": "461a0e78aea29aabdeea75b74a42631e53100a0f75ec78dfae7469e9342c3f21",
+      "file": "tests/deployment-current-source.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-executive.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:12.693720+00:00",
+      "durationSeconds": 2.129,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-executive.test.mjs.txt",
+      "logSha256": "2dd40978f6c1387fb1b8b8beaa11875b4dab1740ff64afef5ddd0eb4fa6f5dc5",
+      "file": "tests/deployment-executive.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-image-size-gate.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:14.825554+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-image-size-gate.test.mjs.txt",
+      "logSha256": "ffb4c2b0a582853ac491c2965bf82ed52e6de4653b2a8ccc88e52e73774720b0",
+      "file": "tests/deployment-image-size-gate.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-recovery-location.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:15.144472+00:00",
+      "durationSeconds": 0.668,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__deployment-recovery-location.test.mjs.txt",
+      "logSha256": "434ebf50e553fbf892c60d815df348559ebf5435e5336fcf4a97b841f2e044a9",
+      "file": "tests/deployment-recovery-location.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/deployment-rust-phase.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:15.814888+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed_with_skips",
+      "log": "reports/test-verification/node/tests__deployment-rust-phase.test.mjs.txt",
+      "logSha256": "494aba4fa36dd8d2b04d7c38bf1332f429707a5bb98c1c0f85dcf7447e08bf67",
+      "file": "tests/deployment-rust-phase.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/desktop-runtime-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:15.983316+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__desktop-runtime-policy.test.mjs.txt",
+      "logSha256": "38f6aff9ccce33b06dd77e9cdf8ed1f9efcabee07530abd6848bc8a6e7814c5c",
+      "file": "tests/desktop-runtime-policy.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dns-dependency-consumers.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:16.202145+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__dns-dependency-consumers.test.mjs.txt",
+      "logSha256": "4cb3259ccb0723179acc8add35ba9a58058453a856b5f63b67e00ac0940f4041",
+      "file": "tests/dns-dependency-consumers.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fixture-command-input.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:16.620857+00:00",
+      "durationSeconds": 0.273,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__fixture-command-input.test.mjs.txt",
+      "logSha256": "b6c4f7a8ae95b4f33abad52d1703750746c670e53dc54997770ccca1737f0876",
+      "file": "tests/fixture-command-input.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/http-dependency-consumers.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:16.897443+00:00",
+      "durationSeconds": 0.415,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__http-dependency-consumers.test.mjs.txt",
+      "logSha256": "f0a61bb81d8e4a37d660eb904339f08106c6fa760eb916194a7350262e4279d9",
+      "file": "tests/http-dependency-consumers.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/integration-webhooks.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:17.315206+00:00",
+      "durationSeconds": 0.515,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__integration-webhooks.cjs.txt",
+      "logSha256": "2bd12deb1492944cea24e104159dd82b6b021f0a87d7f837374c5ec8e1f4383b",
+      "file": "tests/integration-webhooks.cjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/integrations-readiness.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:17.833703+00:00",
+      "durationSeconds": 0.616,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__integrations-readiness.cjs.txt",
+      "logSha256": "81af353d256586d5e91da2d157ed9c141d2a958b8688648732155aef3bf688c5",
+      "file": "tests/integrations-readiness.cjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/isolated-acceptance-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:18.453271+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__isolated-acceptance-readiness.test.mjs.txt",
+      "logSha256": "584cf2d623f8cc56db1dee6dfd6afa36c695fc2bd2a5a8c5fa1e4a3b7b2e9c2f",
+      "file": "tests/isolated-acceptance-readiness.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/labelgrid-retirement-boundaries.test.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:18.672040+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__labelgrid-retirement-boundaries.test.cjs.txt",
+      "logSha256": "19c2aef9491a656f4dbb515cdc867130a22966e1bd72585200c28913b7c178cd",
+      "file": "tests/labelgrid-retirement-boundaries.test.cjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/legacy-security-update.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:18.889528+00:00",
+      "durationSeconds": 0.222,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__legacy-security-update.test.mjs.txt",
+      "logSha256": "e4976016305d138f5c358caa64c747e31ed0564a062d8fbc9c484989adf5e8ea",
+      "file": "tests/legacy-security-update.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/linux-vst3-build.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:19.115283+00:00",
+      "durationSeconds": 0.377,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__linux-vst3-build.test.mjs.txt",
+      "logSha256": "607007a39241bf8b2bdf3699d23023887ce515c83d888c5cee72e15a4a0a6084",
+      "file": "tests/linux-vst3-build.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/marketplace-storefront-access.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:19.494724+00:00",
+      "durationSeconds": 1.126,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__marketplace-storefront-access.cjs.txt",
+      "logSha256": "9d23cce9a9809e0375a7a15d7dc942104ee2369f9aa80fd4a45d044da3922cbe",
+      "file": "tests/marketplace-storefront-access.cjs",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/neon-schema-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:20.623678+00:00",
+      "durationSeconds": 0.217,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__neon-schema-contract.test.mjs.txt",
+      "logSha256": "ac5491fd9d669ee78c21bf58b440a02da20ae909898f9ec6f8c0d08dc8582fa5",
+      "file": "tests/neon-schema-contract.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/nested-reconciliation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:20.843282+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__nested-reconciliation.test.mjs.txt",
+      "logSha256": "420d4374d122b2b5b7bf604028b10cac0a63d2f477bf7fefcef986df18027090",
+      "file": "tests/nested-reconciliation.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/npm-build-start-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:21.160844+00:00",
+      "durationSeconds": 0.415,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__npm-build-start-contract.test.mjs.txt",
+      "logSha256": "33d6b3a283419b9e5e45c8a4b3463d0ba1078357e44fee1ab373fb33be8d2736",
+      "file": "tests/npm-build-start-contract.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/owned-deployment-processes.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:21.579123+00:00",
+      "durationSeconds": 2.834,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__owned-deployment-processes.test.mjs.txt",
+      "logSha256": "456727784270befe27caf2e9e5fcce234f7692f54ab6c045a951db71e6860a71",
+      "file": "tests/owned-deployment-processes.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/parallel-build-cleanup.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:24.416318+00:00",
+      "durationSeconds": 8.2,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__parallel-build-cleanup.test.mjs.txt",
+      "logSha256": "a37d4a9a6eff1b2273af348ef4a4c0fa6f8b39e75b14365087bbc191d9cf55f1",
+      "file": "tests/parallel-build-cleanup.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/patent-pdf-runtime.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:32.619930+00:00",
+      "durationSeconds": 0.871,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/node/tests__patent-pdf-runtime.test.mjs.txt",
+      "logSha256": "d8f6ad4e785965cb08980de1a2c108e29a9578661e18594117fbb58d879b351d",
+      "file": "tests/patent-pdf-runtime.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/pdim-staging-archive.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:33.493584+00:00",
+      "durationSeconds": 0.369,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__pdim-staging-archive.test.mjs.txt",
+      "logSha256": "b48b2521f97f9b17c2012e0b3cab0e4e7afd0f7ce812a502a09ab9eb3dcd4ed4",
+      "file": "tests/pdim-staging-archive.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/portable-python-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:33.865879+00:00",
+      "durationSeconds": 0.415,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__portable-python-isolation.test.mjs.txt",
+      "logSha256": "62286e46eefc1d579e8e1cb81e0eaab6c915b8c2ff32ffe8b0aab98b5988b0ae",
+      "file": "tests/portable-python-isolation.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/production-container-contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:34.284187+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__production-container-contract.test.mjs.txt",
+      "logSha256": "48687546ad4a5a50e25537b4cd535da66c44aaa5dd52f5415e9b8e1f0c96e470",
+      "file": "tests/production-container-contract.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/production-simulation-resume.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:34.451813+00:00",
+      "durationSeconds": 0.316,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__production-simulation-resume.test.mjs.txt",
+      "logSha256": "5099c4959b3734a5372c2dcf8a72b494d0f262b9e51f947e752f2e84d76fb72b",
+      "file": "tests/production-simulation-resume.test.mjs",
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-build-entry.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:34.771250+00:00",
+      "durationSeconds": 4.689,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__publishing-build-entry.test.mjs.txt",
+      "logSha256": "796707578d3202e0ede7ddaf798c0b5e1131096a47b17ba980f1c100ecc02565",
+      "file": "tests/publishing-build-entry.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-cache-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:39.463096+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__publishing-cache-isolation.test.mjs.txt",
+      "logSha256": "abecb592590bf015997e460fa45478f1e612fa549581a3b70ad36c35e2994688",
+      "file": "tests/publishing-cache-isolation.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-compression.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:39.680842+00:00",
+      "durationSeconds": 1.171,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__publishing-compression.test.mjs.txt",
+      "logSha256": "a96a0aca5deee17e1bfb59e87fc356622b617060272c19f6310a761168e9c8c8",
+      "file": "tests/publishing-compression.test.mjs",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-context.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:40.855447+00:00",
+      "durationSeconds": 1.074,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__publishing-context.test.mjs.txt",
+      "logSha256": "530545b446042d8fa7c5593deace4de8607569dfb682f4ce9bf0afc3eb119414",
+      "file": "tests/publishing-context.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-beta-history.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:41.933584+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__readiness-beta-history.test.mjs.txt",
+      "logSha256": "471986f8465c3d4232dfff704706af50e194f85c7d201fe430c2a177d8e16eff",
+      "file": "tests/readiness-beta-history.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-sast-scan.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:42.101679+00:00",
+      "durationSeconds": 0.319,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__readiness-sast-scan.test.mjs.txt",
+      "logSha256": "2b9cba9f862bd77dfc6fae7a963d06b980e226f199ee5ac09ddaf77fe651ae93",
+      "file": "tests/readiness-sast-scan.test.mjs",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/readiness-worker-composition.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:42.423923+00:00",
+      "durationSeconds": 0.269,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__readiness-worker-composition.cjs.txt",
+      "logSha256": "59ae50680e22f32ce2cb28c3b171f341f1086feb28fe231263d039d6201792c9",
+      "file": "tests/readiness-worker-composition.cjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/recovery-private-store.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:42.696367+00:00",
+      "durationSeconds": 0.422,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__recovery-private-store.test.mjs.txt",
+      "logSha256": "46918dfd5cfc3a2bfe420de2f8f2cf6d33b662b2554b284b342d9d3c2d162b01",
+      "file": "tests/recovery-private-store.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/release-threads.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:43.122011+00:00",
+      "durationSeconds": 0.168,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__release-threads.test.mjs.txt",
+      "logSha256": "34d6916f91439eee61d1a2feccf125ce66a99340941cade399c6a9b73e7b1c6c",
+      "file": "tests/release-threads.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-configuration.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:43.293290+00:00",
+      "durationSeconds": 0.367,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__replit-configuration.test.mjs.txt",
+      "logSha256": "5a2df0eb566d0199dbae4e1c1b01058f3295485c5503fe4f3b6387fbd3a3665f",
+      "file": "tests/replit-configuration.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/replit-profile.contract.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:43.663455+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__replit-profile.contract.test.mjs.txt",
+      "logSha256": "958c39635973d62291e6404e35fc970bbf1ca2c73407cdd6fd01f8f09770f391",
+      "file": "tests/replit-profile.contract.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/restore-lock-safety.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:43.831390+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__restore-lock-safety.test.mjs.txt",
+      "logSha256": "eaf726c9d22059ed5934bc6d5502d185feabdf0b8d8332285421a1e7aa37c162",
+      "file": "tests/restore-lock-safety.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/resume-integration-contracts.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:44.049489+00:00",
+      "durationSeconds": 0.819,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__resume-integration-contracts.cjs.txt",
+      "logSha256": "ab8128349114be8056b65bcbd6e86422fe1960f009016fd59ddbefc3f8f2aa0a",
+      "file": "tests/resume-integration-contracts.cjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/runtime-artifact-gates.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:44.872173+00:00",
+      "durationSeconds": 0.419,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__runtime-artifact-gates.test.mjs.txt",
+      "logSha256": "b493414a9c7116b4b41dd99c1c0ac64785bacb90c62c39bec9813fb54ddb17d9",
+      "file": "tests/runtime-artifact-gates.test.mjs",
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/runtime-bucket-restore.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:45.293971+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed_with_skips",
+      "log": "reports/test-verification/node/tests__runtime-bucket-restore.test.mjs.txt",
+      "logSha256": "6100405ccf71aedf79f76f91e264d025a7cf412e205065751d8416f843219347",
+      "file": "tests/runtime-bucket-restore.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/scheduled-post-receipt-compatibility.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:45.763698+00:00",
+      "durationSeconds": 1.372,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__scheduled-post-receipt-compatibility.cjs.txt",
+      "logSha256": "2d080e1320f6a3b9ad0fa369c819a020475c7b37766442feeb6714797333e874",
+      "file": "tests/scheduled-post-receipt-compatibility.cjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/selective-brand-icons.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:47.139375+00:00",
+      "durationSeconds": 0.166,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__selective-brand-icons.test.mjs.txt",
+      "logSha256": "005150206baa7d50b33842e9073c8bbeb16f855d8ace90a80ef64cbca6c009a5",
+      "file": "tests/selective-brand-icons.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/sharp-security.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:47.307958+00:00",
+      "durationSeconds": 0.416,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__sharp-security.test.mjs.txt",
+      "logSha256": "bc702a4f7fb710e341cb082d20ae53aee65d7600548177492ee9143df304d20f",
+      "file": "tests/sharp-security.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/social-oauth-state.cjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:47.727442+00:00",
+      "durationSeconds": 2.786,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__social-oauth-state.cjs.txt",
+      "logSha256": "a531cc9f544e1d81e0fba3533ad5d7edee70e1521a5335bbc91508a6c8387732",
+      "file": "tests/social-oauth-state.cjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/source-capsule-admission.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:50.516045+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__source-capsule-admission.test.mjs.txt",
+      "logSha256": "bdbc263fcd5e2071065d9a398658f53703533b2bc02bfec27e39aa56cc58b706",
+      "file": "tests/source-capsule-admission.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/startup-health.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:50.984824+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__startup-health.test.mjs.txt",
+      "logSha256": "b0bc5dd43a738ad096dce409dbdb5627ff2898638454d4b57b2d13c26187f56c",
+      "file": "tests/startup-health.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/storefront-canonical-links.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:51.454191+00:00",
+      "durationSeconds": 0.869,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__storefront-canonical-links.test.mjs.txt",
+      "logSha256": "29f1f4f73fab5987832931accef9f0eb9d8236770c71892053c4c86cbf6bfeef",
+      "file": "tests/storefront-canonical-links.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/subscription-checkout-isolated.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:52.326681+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__subscription-checkout-isolated.test.mjs.txt",
+      "logSha256": "17ed7aa3ec2c16eb1e6ab003facf9350eb27103dd8fd56ae9168f5e07d8d5fbb",
+      "file": "tests/subscription-checkout-isolated.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/tls-toolchain-consumer.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:52.544875+00:00",
+      "durationSeconds": 0.418,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__tls-toolchain-consumer.test.mjs.txt",
+      "logSha256": "26895fad4e1bb8279b6f937afe8c476a212cbd6396c6c2a6e9376cdda241fda1",
+      "file": "tests/tls-toolchain-consumer.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/aiMediaResourceContracts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:52.965970+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__aiMediaResourceContracts.test.mjs.txt",
+      "logSha256": "9f2208e31412b8c04af111f65a999c558be1fa40068743e7badcb8b516e6a954",
+      "file": "tests/unit/aiMediaResourceContracts.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-account-boundary.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:53.184384+00:00",
+      "durationSeconds": 0.168,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__client-account-boundary.test.mjs.txt",
+      "logSha256": "3518f938e86b8a1b7fa050337f77f72220ace910206c91ae18012d4d5ea12537",
+      "file": "tests/unit/client-account-boundary.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-auth-beta-contracts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:53.355277+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__client-auth-beta-contracts.test.mjs.txt",
+      "logSha256": "4943779a39a8e46cdd7aecb4744d5be268c94f54790288f5b83fcbf9aef00d8a",
+      "file": "tests/unit/client-auth-beta-contracts.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-offline-readiness.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:53.574073+00:00",
+      "durationSeconds": 0.265,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__client-offline-readiness.test.mjs.txt",
+      "logSha256": "eeb71de54976d09f1791468ec2d20440528cff40dec5f1e705ccbc9e1b9eb540",
+      "file": "tests/unit/client-offline-readiness.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-sync-receipts.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:53.842192+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__client-sync-receipts.test.mjs.txt",
+      "logSha256": "9a510c72d44e3cd368b2b4c37695a4a7eabed0ae5108e9aea293a435197fc4b9",
+      "file": "tests/unit/client-sync-receipts.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/client-worker-handoff.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:54.061097+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__client-worker-handoff.test.mjs.txt",
+      "logSha256": "0f6bbba72d23c56828b28dd8387f30455219213ca4c571068924f0f2f60ee6ca",
+      "file": "tests/unit/client-worker-handoff.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "tests/unit/generated-pdim-isolated.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:54.279631+00:00",
+      "durationSeconds": 0.921,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__generated-pdim-isolated.mjs.txt",
+      "logSha256": "eaf5182e3351b1421966e59bc42a160b2e7445cf09969df0f55a4570f8177c25",
+      "file": "tests/unit/generated-pdim-isolated.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/unit/production-simulation-policy.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:55.204213+00:00",
+      "durationSeconds": 0.165,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__unit__production-simulation-policy.test.mjs.txt",
+      "logSha256": "5ef91722463658affe453d393b616ff209a606eb895e9d0fc46f7ba18b40c927",
+      "file": "tests/unit/production-simulation-policy.test.mjs",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/vst3-binary-inspection.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:29:55.372186+00:00",
+      "durationSeconds": 0.517,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/tests__vst3-binary-inspection.test.mjs.txt",
+      "logSha256": "3a9988f476a8f8175b1370398678d1a3243d6fc58beb4b012bc11ab2dc6b36ca",
+      "file": "tests/vst3-binary-inspection.test.mjs",
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 89,
+    "failedFiles": 2,
+    "counts": {
+      "tests": 423,
+      "pass": 420,
+      "fail": 1,
+      "skipped": 2,
+      "cancelled": 0
+    }
+  }
+}

@@ -15,6 +15,7 @@ let authCookies = "";
 let csrfToken = "";
 
 const testUser = {
+  birthdate: "1990-01-01",
   email: `cache_test_${Date.now()}@maxbooster-test.invalid`,
   password: "CacheTest123!@#",
   firstName: "Cache",

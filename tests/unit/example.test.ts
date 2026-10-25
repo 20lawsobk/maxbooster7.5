@@ -4,7 +4,7 @@
  * Unit tests test individual functions in isolation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 describe("Unit Test Suite Example", () => {
   beforeEach(() => {

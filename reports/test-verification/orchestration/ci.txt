@@ -1,0 +1,2455 @@
+
+> max-booster@3.0.0 test:ci
+> npm run test:runtime-contracts && npm run test:sharp-security && vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml
+
+
+> max-booster@3.0.0 test:runtime-contracts
+> node --test tests/npm-build-start-contract.test.mjs tests/storefront-canonical-links.test.mjs tests/neon-schema-contract.test.mjs tests/deployment-contracts.cjs tests/runtime-artifact-gates.test.mjs tests/desktop-runtime-policy.test.mjs tests/audio-metadata-security.test.mjs tests/linux-vst3-build.test.mjs tests/vst3-binary-inspection.test.mjs
+
+TAP version 13
+# Subtest: audio parser lock resolves reproducibly from the public registry
+ok 1 - audio parser lock resolves reproducibly from the public registry
+  ---
+  duration_ms: 7.576546
+  type: 'test'
+  ...
+# Subtest: audio metadata retains valid WAV parsing
+ok 2 - audio metadata retains valid WAV parsing
+  ---
+  duration_ms: 8.526178
+  type: 'test'
+  ...
+# Subtest: truncated ID3 length cannot allocate its claimed 256 MiB payload
+ok 3 - truncated ID3 length cannot allocate its claimed 256 MiB payload
+  ---
+  duration_ms: 5.175555
+  type: 'test'
+  ...
+# Subtest: cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
+ok 4 - cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
+  ---
+  duration_ms: 68.669035
+  type: 'test'
+  ...
+# Subtest: disjoint pools fit under capacity; invalid overrides and impossible machines reject
+ok 5 - disjoint pools fit under capacity; invalid overrides and impossible machines reject
+  ---
+  duration_ms: 14.682862
+  type: 'test'
+  ...
+# Subtest: 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
+ok 6 - 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
+  ---
+  duration_ms: 5.434195
+  type: 'test'
+  ...
+# Subtest: role-specific minima are validated and small feasible CPU shares time-share
+ok 7 - role-specific minima are validated and small feasible CPU shares time-share
+  ---
+  duration_ms: 18.310834
+  type: 'test'
+  ...
+# Subtest: readiness publishes atomically, single-flights refreshes, expires and recovers
+ok 8 - readiness publishes atomically, single-flights refreshes, expires and recovers
+  ---
+  duration_ms: 6.29274
+  type: 'test'
+  ...
+# Subtest: Sentry repeated never-successful sends cross 24h; success resets silence age
+ok 9 - Sentry repeated never-successful sends cross 24h; success resets silence age
+  ---
+  duration_ms: 9.835402
+  type: 'test'
+  ...
+# Subtest: Python respects the interpreter selected at the critical restore barrier
+ok 10 - Python respects the interpreter selected at the critical restore barrier
+  ---
+  duration_ms: 10.835681
+  type: 'test'
+  ...
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-w9evczb8/deployment-contract-wD7sd8/.pdim-scratch-fixture-111452/ (staging for fixture/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-w9evczb8/deployment-contract-wD7sd8/.pdim-scratch-fixture-111452/ (staging for fixture/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Checksum mismatch for fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (xz-9e) → /tmp/maxbooster-test-w9evczb8/deployment-contract-wD7sd8/.pdim-scratch-fixture-111452/ (staging for fixture/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Extracting fixture.pdim (xz-6) → /tmp/maxbooster-test-w9evczb8/deployment-contract-wD7sd8/.pdim-scratch-fixture-111452/ (staging for fixture/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
+# [pdim-restore] ✅ fixture/ restored from fixture.pdim
+# [pdim-restore] Checksum mismatch for fixture.pdim
+# Subtest: capsule restoration reuses only the matching generation and rejects corruption
+ok 11 - capsule restoration reuses only the matching generation and rejects corruption
+  ---
+  duration_ms: 63.409834
+  type: 'test'
+  ...
+# Subtest: build verifies dependencies without fetching package managers; explicit synchronization is offline
+ok 12 - build verifies dependencies without fetching package managers; explicit synchronization is offline
+  ---
+  duration_ms: 0.535968
+  type: 'test'
+  ...
+# Subtest: desktop external links allow only credential-free HTTP(S)
+ok 13 - desktop external links allow only credential-free HTTP(S)
+  ---
+  duration_ms: 0.770933
+  type: 'test'
+  ...
+# Subtest: desktop readiness rejects liveness, redirects, errors and missing routes
+ok 14 - desktop readiness rejects liveness, redirects, errors and missing routes
+  ---
+  duration_ms: 18.698567
+  type: 'test'
+  ...
+# Subtest: verification commands do not mutate dependency or source trees
+ok 15 - verification commands do not mutate dependency or source trees
+  ---
+  duration_ms: 0.934449
+  type: 'test'
+  ...
+# Subtest: JUCE Linux translation preserves original identity, sources, modules and resources
+ok 16 - JUCE Linux translation preserves original identity, sources, modules and resources
+  ---
+  duration_ms: 82.164868
+  type: 'test'
+  ...
+# Subtest: repository inventory verifies actual bundle metadata and never reports a native execution host
+ok 17 - repository inventory verifies actual bundle metadata and never reports a native execution host
+  ---
+  duration_ms: 58.797648
+  type: 'test'
+  ...
+# Subtest: schema gate distinguishes a missing table from missing columns
+ok 18 - schema gate distinguishes a missing table from missing columns
+  ---
+  duration_ms: 1.467302
+  type: 'test'
+  ...
+# Subtest: same-named tables in another schema cannot satisfy the contract
+ok 19 - same-named tables in another schema cannot satisfy the contract
+  ---
+  duration_ms: 0.121663
+  type: 'test'
+  ...
+# Subtest: additional historical columns are preserved, not reported as removals
+ok 20 - additional historical columns are preserved, not reported as removals
+  ---
+  duration_ms: 0.109325
+  type: 'test'
+  ...
+# Subtest: missing Neon configuration fails instead of targeting the managed DB
+ok 21 - missing Neon configuration fails instead of targeting the managed DB
+  ---
+  duration_ms: 0.516519
+  type: 'test'
+  ...
+# Subtest: prelaunch checks the selected app database schema, not just SELECT 1
+ok 22 - prelaunch checks the selected app database schema, not just SELECT 1
+  ---
+  duration_ms: 0.288635
+  type: 'test'
+  ...
+# Subtest: production build aliases do not invoke missing fixers or prune the workspace
+ok 23 - production build aliases do not invoke missing fixers or prune the workspace
+  ---
+  duration_ms: 1.196524
+  type: 'test'
+  ...
+# Subtest: release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+ok 24 - release CI preserves PostgreSQL fixtures, builds through npm, and validates restored hashes
+  ---
+  duration_ms: 0.478902
+  type: 'test'
+  ...
+# Subtest: a late build failure invalidates its completion marker
+ok 25 - a late build failure invalidates its completion marker
+  ---
+  duration_ms: 2.259096
+  type: 'test'
+  ...
+# Subtest: Python provisioning fails closed without deleting the existing runtime
+ok 26 - Python provisioning fails closed without deleting the existing runtime
+  ---
+  duration_ms: 58.612609
+  type: 'test'
+  ...
+# Subtest: DNS shutdown immediately signals its owned process group and cancels restart
+ok 27 - DNS shutdown immediately signals its owned process group and cancels restart
+  ---
+  duration_ms: 6.941898
+  type: 'test'
+  ...
+# Subtest: DNS production startup uses a compiled entry, not tsx
+ok 28 - DNS production startup uses a compiled entry, not tsx
+  ---
+  duration_ms: 0.423399
+  type: 'test'
+  ...
+# Subtest: embedded production MaxCore has a compiled entry and excludes the dashboard
+ok 29 - embedded production MaxCore has a compiled entry and excludes the dashboard
+  ---
+  duration_ms: 0.31196
+  type: 'test'
+  ...
+# Subtest: production startup rejects missing, altered and stale build output
+ok 30 - production startup rejects missing, altered and stale build output
+  ---
+  duration_ms: 14.026589
+  type: 'test'
+  ...
+# Subtest: build input identity ignores nested dependency caches but tracks imported source
+ok 31 - build input identity ignores nested dependency caches but tracks imported source
+  ---
+  duration_ms: 1.629237
+  type: 'test'
+  ...
+# Subtest: startup sidecar reuse probes the configured health listener
+ok 32 - startup sidecar reuse probes the configured health listener
+  ---
+  duration_ms: 171.89588
+  type: 'test'
+  ...
+# Subtest: release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+ok 33 - release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
+  ---
+  duration_ms: 42.492511
+  type: 'test'
+  ...
+# Subtest: installed stale nested copy fails despite patched top-level package and lock
+ok 34 - installed stale nested copy fails despite patched top-level package and lock
+  ---
+  duration_ms: 2.251996
+  type: 'test'
+  ...
+# Subtest: unpatched node-forge is rejected even when only a nested consumer installs it
+ok 35 - unpatched node-forge is rejected even when only a nested consumer installs it
+  ---
+  duration_ms: 1.677169
+  type: 'test'
+  ...
+# Subtest: missing workspace, prerelease version and escaping installed symlink fail closed
+ok 36 - missing workspace, prerelease version and escaping installed symlink fail closed
+  ---
+  duration_ms: 2.616105
+  type: 'test'
+  ...
+# Subtest: fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+ok 37 - fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
+  ---
+  duration_ms: 2.282081
+  type: 'test'
+  ...
+# Subtest: all security families reject stale nested copies and accept explicitly validated branches
+ok 38 - all security families reject stale nested copies and accept explicitly validated branches
+  ---
+  duration_ms: 79.849015
+  type: 'test'
+  ...
+# Subtest: unpatched brace walkers and shared HTTP cache policies cannot be reintroduced
+ok 39 - unpatched brace walkers and shared HTTP cache policies cannot be reintroduced
+  ---
+  duration_ms: 3.781012
+  type: 'test'
+  ...
+# Subtest: capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+ok 40 - capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
+  ---
+  duration_ms: 11.692553
+  type: 'test'
+  ...
+# Subtest: restored output gate rejects absent artifacts and invalid JS without executing it
+ok 41 - restored output gate rejects absent artifacts and invalid JS without executing it
+  ---
+  duration_ms: 55.527348
+  type: 'test'
+  ...
+# Subtest: restored Node provenance admits the provisioned pin and rejects stale or malformed records
+ok 42 - restored Node provenance admits the provisioned pin and rejects stale or malformed records
+  ---
+  duration_ms: 0.808679
+  type: 'test'
+  ...
+# Subtest: builder canonical links ignore legacy/custom public URLs and encode the slug
+ok 43 - builder canonical links ignore legacy/custom public URLs and encode the slug
+  ---
+  duration_ms: 84.547921
+  type: 'test'
+  ...
+# Subtest: backend and DNS management links cannot resurrect legacy subdomains
+ok 44 - backend and DNS management links cannot resurrect legacy subdomains
+  ---
+  duration_ms: 0.740697
+  type: 'test'
+  ...
+# Subtest: VST3 static inspection follows PE names, ordinals and executable function addresses
+ok 45 - VST3 static inspection follows PE names, ordinals and executable function addresses
+  ---
+  duration_ms: 2.028739
+  type: 'test'
+  ...
+# Subtest: a named export cannot impersonate a local VST3 factory through forwarding, nulls or data
+ok 46 - a named export cannot impersonate a local VST3 factory through forwarding, nulls or data
+  ---
+  duration_ms: 0.494345
+  type: 'test'
+  ...
+# Subtest: malformed and truncated executables fail closed within bounded export tables
+    # Subtest: truncated DOS header
+    ok 1 - truncated DOS header
+      ---
+      duration_ms: 0.381675
+      type: 'test'
+      ...
+    # Subtest: PE offset outside file
+    ok 2 - PE offset outside file
+      ---
+      duration_ms: 0.141774
+      type: 'test'
+      ...
+    # Subtest: wrong architecture
+    ok 3 - wrong architecture
+      ---
+      duration_ms: 0.141383
+      type: 'test'
+      ...
+    # Subtest: not a DLL
+    ok 4 - not a DLL
+      ---
+      duration_ms: 0.164959
+      type: 'test'
+      ...
+    # Subtest: not PE32+
+    ok 5 - not PE32+
+      ---
+      duration_ms: 0.260513
+      type: 'test'
+      ...
+    # Subtest: truncated optional header
+    ok 6 - truncated optional header
+      ---
+      duration_ms: 0.257308
+      type: 'test'
+      ...
+    # Subtest: directory count outside optional header
+    ok 7 - directory count outside optional header
+      ---
+      duration_ms: 0.316718
+      type: 'test'
+      ...
+    # Subtest: export directory outside sections
+    ok 8 - export directory outside sections
+      ---
+      duration_ms: 0.793396
+      type: 'test'
+      ...
+    # Subtest: section raw bytes outside file
+    ok 9 - section raw bytes outside file
+      ---
+      duration_ms: 0.469378
+      type: 'test'
+      ...
+    # Subtest: overlapping RVA mappings
+    ok 10 - overlapping RVA mappings
+      ---
+      duration_ms: 0.469838
+      type: 'test'
+      ...
+    # Subtest: oversized name table
+    ok 11 - oversized name table
+      ---
+      duration_ms: 0.192891
+      type: 'test'
+      ...
+    # Subtest: invalid name address
+    ok 12 - invalid name address
+      ---
+      duration_ms: 0.190347
+      type: 'test'
+      ...
+    # Subtest: invalid ordinal
+    ok 13 - invalid ordinal
+      ---
+      duration_ms: 0.117618
+      type: 'test'
+      ...
+    # Subtest: invalid function table address
+    ok 14 - invalid function table address
+      ---
+      duration_ms: 0.097697
+      type: 'test'
+      ...
+    # Subtest: invalid factory address
+    ok 15 - invalid factory address
+      ---
+      duration_ms: 0.102034
+      type: 'test'
+      ...
+    # Subtest: unterminated name at section boundary
+    ok 16 - unterminated name at section boundary
+      ---
+      duration_ms: 0.107653
+      type: 'test'
+      ...
+    1..16
+ok 47 - malformed and truncated executables fail closed within bounded export tables
+  ---
+  duration_ms: 5.868149
+  type: 'test'
+  ...
+# Subtest: repository inventory exposes actual factory verification without claiming processing
+ok 48 - repository inventory exposes actual factory verification without claiming processing
+  ---
+  duration_ms: 36.533153
+  type: 'test'
+  ...
+# Subtest: inspection CLI reports static evidence and rejects invalid input
+ok 49 - inspection CLI reports static evidence and rejects invalid input
+  ---
+  duration_ms: 281.72693
+  type: 'test'
+  ...
+1..49
+# tests 65
+# suites 0
+# pass 65
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 970.499348
+
+> max-booster@3.0.0 test:sharp-security
+> node --import tsx --test tests/sharp-security.test.mjs
+
+TAP version 13
+# Subtest: GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+ok 1 - GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+  ---
+  duration_ms: 17.145716
+  type: 'test'
+  ...
+# Subtest: patched librsvg still decodes SVG, composites overlays and encodes image formats
+ok 2 - patched librsvg still decodes SVG, composites overlays and encodes image formats
+  ---
+  duration_ms: 44.937997
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 281.079896
+[15:33:42.681] INFO (111715): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:33:42.687] INFO (111715): [LocalPDIM] Local PDIM exec server started on port 15556 (local fsynced AOF and snapshots)
+[15:33:42.697] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.710] INFO (111715): [PDIM] First successful response after 30ms — entering 10s settling window
+[15:33:42.845] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.892] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.928] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.928] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.968] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:42.968] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:43.529] INFO (111715): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:33:43.530] INFO (111715): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[15:33:43.533] INFO (111715): [Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor
+[15:33:43.539] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:43.539] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:43.539] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:43.539] INFO (111715): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:33:43.541] INFO (111715): [PDIM] First successful response after 12ms — entering 10s settling window
+[15:34:16.040] WARN (112410): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/aborted.mp4: The operation was aborted due to timeout
+[15:34:16.077] WARN (112410): [MaxCoreProxy] media fetch failed for https://maxcore.test/uploads/videos/disconnect.mp4: Premature close
+[15:34:20.495] INFO (112763): 🔧 Action registered: Send Email
+[15:34:20.495] INFO (112763): 🔧 Action registered: Post to Social Media
+[15:34:20.496] INFO (112763): 🔧 Action registered: Distribute Music
+[15:34:20.496] INFO (112763): 🔧 Action registered: Generate Analytics Report
+[15:34:20.496] INFO (112763): 🔧 Action registered: AI Mix Track
+[15:34:20.496] INFO (112763): 🔧 Action registered: AI Master Track
+[15:34:20.496] INFO (112763): 🔧 Action registered: Upload Beat to Marketplace
+[15:34:20.496] INFO (112763): 🔧 Action registered: Process Payment
+[15:34:20.498] INFO (112763): 🔧 Action registered: Send Notification
+[15:34:20.498] INFO (112763): 🔧 Action registered: Backup Data
+[15:34:20.498] INFO (112763): 🔧 Action registered: Create Promotional Video
+[15:34:20.498] INFO (112763): 🔧 Action registered: Create Social Media Video
+[15:34:20.498] INFO (112763): 🔧 Action registered: Create Lyric Video
+[15:34:20.498] INFO (112763): 🔧 Action registered: Create Audio Visualizer Video
+[15:34:20.498] INFO (112763): 🔍 Condition registered: Time Based
+[15:34:20.498] INFO (112763): 🔍 Condition registered: User Activity
+[15:34:20.498] INFO (112763): 🔍 Condition registered: Performance Threshold
+[15:34:20.498] INFO (112763): 🔍 Condition registered: Revenue Threshold
+[15:34:20.498] INFO (112763): 🔍 Condition registered: Stream Threshold
+[15:34:20.498] INFO (112763): 🎯 Trigger registered: Schedule
+[15:34:20.498] INFO (112763): 🎯 Trigger registered: Event
+[15:34:20.498] INFO (112763): 🎯 Trigger registered: Webhook
+[15:34:20.498] INFO (112763): 📂 Loading workflows from storage...
+[15:34:20.500] INFO (112763): 🚀 Automation engine started
+[15:34:20.500] INFO (112763): 🤖 Automation system initialized
+[15:34:20.505] INFO (112763): 📊 Generating analytics report (full) for user undefined
+[15:34:20.511] WARN (112763): generate-analytics-report action failed
+    err: {
+      "type": "Error",
+      "message": "generate-analytics-report requires a userId",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:20.512] INFO (112763): 🎛️ Auto-mixing project undefined
+[15:34:20.513] WARN (112763): ai-mix-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-mix-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:20.514] INFO (112763): 🎚️ Mastering project undefined
+[15:34:20.514] WARN (112763): ai-master-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-master-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:20.514] WARN (112763): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[15:34:20.516] WARN (112763): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[15:34:20.516] INFO (112763): 💾 Running backup-data for user undefined (database)
+[15:34:21.318] INFO (112763): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:34:21.395] WARN (112763): backup-data action failed
+    err: {
+      "type": "Error",
+      "message": "Could not query PostgreSQL server major with installed psql clients: /workspace/.cloud-system/usr/lib/postgresql/17/bin/psql (17.11): server version query exited with code 2",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.398] INFO (112763): 🎬 Rendering promo video for tiktok
+[15:34:21.503] INFO (112763): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:34:21.542] INFO (112763): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:21.650] WARN (112763): create-promo-video action failed
+    err: {
+      "type": "Error",
+      "message": "A target platform is required for video generation",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.651] INFO (112763): 📹 Rendering social video for: 
+[15:34:21.651] WARN (112763): create-social-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-social-video requires at least one platform",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.652] INFO (112763): 🎤 Rendering lyric video (default)
+[15:34:21.652] WARN (112763): create-lyric-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-lyric-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.653] INFO (112763): 🌊 Rendering visualizer video (default)
+[15:34:21.653] WARN (112763): create-visualizer-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-visualizer-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.654] INFO (112763): 🔔 Sending notification: t
+[15:34:21.739] WARN (112763): VAPID keys not configured - Web Push disabled
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: stripe
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: sendgrid
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: socialApi
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: twitter
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: facebook
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: instagram
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: linkedin
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: tiktok
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: tiktok_sandbox
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: youtube
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: threads
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: googlebusiness
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: aiService
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: labelGrid
+[15:34:21.914] INFO (112763): 🔌 Circuit breaker initialized: dsp
+[15:34:21.914] INFO (112763): 🔌 External service circuit breakers initialized
+[15:34:21.918] WARN (112763): ⚠️  Resend API key not configured. Email features will be disabled.
+[15:34:21.918] INFO (112763): 📧 Sending email to undefined: s
+[15:34:21.918] WARN (112763): send-email action failed
+    err: {
+      "type": "Error",
+      "message": "no userId resolvable for email",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.919] INFO (112763): 📊 Generating analytics report (full) for user undefined
+[15:34:21.919] WARN (112763): generate-analytics-report action failed
+    err: {
+      "type": "Error",
+      "message": "generate-analytics-report requires a userId",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.919] INFO (112763): 🎛️ Auto-mixing project undefined
+[15:34:21.919] WARN (112763): ai-mix-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-mix-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.919] INFO (112763): 🎚️ Mastering project undefined
+[15:34:21.919] WARN (112763): ai-master-track action failed
+    err: {
+      "type": "Error",
+      "message": "ai-master-track requires trackId (studio project id)",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.919] WARN (112763): 🎶 upload-beat action invoked but is not implemented — no beat was uploaded or listed
+[15:34:21.920] WARN (112763): 💳 process-payment action invoked for undefined undefined but is not implemented — no payment was processed
+[15:34:21.920] INFO (112763): 💾 Running backup-data for user undefined (database)
+[15:34:21.948] WARN (112763): backup-data action failed
+    err: {
+      "type": "Error",
+      "message": "Could not query PostgreSQL server major with installed psql clients: /workspace/.cloud-system/usr/lib/postgresql/17/bin/psql (17.11): server version query exited with code 2",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.948] INFO (112763): 🎬 Rendering promo video for tiktok
+[15:34:21.948] WARN (112763): create-promo-video action failed
+    err: {
+      "type": "Error",
+      "message": "A target platform is required for video generation",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.948] INFO (112763): 📹 Rendering social video for: 
+[15:34:21.949] WARN (112763): create-social-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-social-video requires at least one platform",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.949] INFO (112763): 🎤 Rendering lyric video (default)
+[15:34:21.949] WARN (112763): create-lyric-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-lyric-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:21.949] INFO (112763): 🌊 Rendering visualizer video (default)
+[15:34:21.949] WARN (112763): create-visualizer-video action failed
+    err: {
+      "type": "Error",
+      "message": "create-visualizer-video requires audioUrl",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:26.964] INFO (113125): [ParallelBlockCompressor] 1 worker(s) ready for CPU-core-parallel block compression
+[15:34:32.884] INFO (113922): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:34:33.103] INFO (113922): [LocalPDIM] Local PDIM exec server started on port 44041 (local fsynced AOF and snapshots)
+[15:34:33.118] INFO (113922): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:33.140] INFO (113922): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:33.151] INFO (113922): [PDIM] First successful response after 33ms — entering 10s settling window
+[15:34:33.167] INFO (113922): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[15:34:33.277] INFO (113922): 📦 [Storage] Pocket Dimension provider ready (PDIM-only, level-9 gzip, dedup, 32 MB chunks)
+[15:34:33.281] WARN (113922): [Storage] PDIM write failed for key=missing-token.wav — suppressing repeats for 30 s
+    err: {
+      "type": "Error",
+      "message": "Canonical local PDIM endpoint requires the inherited private channel token",
+      "stack":
+          [ACCESSOR]
+    }
+[15:34:33.283] INFO (113922): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:36.211] INFO (113982): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:34:36.506] WARN (113974): Failed to record registration consents
+    userId: "71ca6baa-64b5-484b-85e1-e290064b5943"
+    err: {
+      "type": "Error",
+      "message": "Failed query: \n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    \nparams: 71ca6baa-64b5-484b-85e1-e290064b5943,privacy,accepted,1.0.0,[REDACTED],fixture-agent,{\"source\":\"registration\"}: new row for relation \"consent_logs\" violates check constraint \"fail_first_privacy_write\"",
+      "stack":
+          [ACCESSOR]
+          caused by: [ACCESSOR]
+      "query": "\n      INSERT INTO consent_logs (\n        user_id,\n        consent_type,\n        action,\n        version,\n        ip_address,\n        user_agent,\n        metadata,\n        created_at\n      )\n      VALUES (\n        $1,\n        $2,\n        $3,\n        $4,\n        $5,\n        $6,\n        $[REDACTED]jsonb,\n        NOW()\n      )\n    ",
+      "params": [
+        "71ca6baa-64b5-484b-85e1-e290064b5943",
+        "privacy",
+        "accepted",
+        "1.0.0",
+        "[REDACTED]",
+        "fixture-agent",
+        "{\"source\":\"registration\"}"
+      ]
+    }
+[15:34:36.527] INFO (113974): Registration consents recorded for user 552e589c-4c4a-4d86-940c-915d035d0b1d, age: 36
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-w9evczb8/nondestructive-release-5FYVlK/verify-Hp3YOH/.pdim-scratch-example-114098/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting members.pdim (zstd-19) → /tmp/maxbooster-test-w9evczb8/nondestructive-release-5FYVlK/verify-5MVdui/.pdim-scratch-example-114128/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for members.pdim
+[pdim-restore] ✅ example/ restored from members.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-w9evczb8/release-cache-source-change-Khl6ju/verify-xre4zs/.pdim-scratch-example-114161/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-w9evczb8/release-cache-fxMrjO/verify-SZEyoJ/.pdim-scratch-example-114185/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[pdim-restore] Extracting example.pdim (zstd-19) → /tmp/maxbooster-test-w9evczb8/release-cache-fxMrjO/verify-C54eeB/.pdim-scratch-example-114209/ (staging for example/) ...
+[pdim-restore] bsdtar not found — falling back to GNU tar for example.pdim
+[pdim-restore] ✅ example/ restored from example.pdim
+[15:34:39.020] INFO (114226): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:39.878] INFO (114238): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: stripe
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: sendgrid
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: socialApi
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: twitter
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: facebook
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: instagram
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: linkedin
+[15:34:39.879] INFO (114238): 🔌 Circuit breaker initialized: tiktok
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: tiktok_sandbox
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: youtube
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: threads
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: googlebusiness
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: aiService
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: labelGrid
+[15:34:39.880] INFO (114238): 🔌 Circuit breaker initialized: dsp
+[15:34:39.880] INFO (114238): 🔌 External service circuit breakers initialized
+[15:34:39.882] INFO (114238): ✅ Resend EmailService initialized
+[15:34:39.883] INFO (114238): ✅ Resend initialized for email notifications
+[15:34:39.884] WARN (114238): Resend rejected the email:
+    err: {
+      "type": "validation_error",
+      "message": "Invalid `from` field",
+      "stack":
+          
+      "name": "validation_error"
+    }
+[15:34:39.885] INFO (114238): ✅ Notification sent to user user-1: Test
+[15:34:39.888] INFO (114238): 📧 Email sent to [REDACTED]
+[15:34:39.888] INFO (114238): ✅ Notification sent to user user-2: Test
+[15:34:40.638] INFO (114362): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:34:46.831] ERROR (114842): [MaxCoreLocal] Failed to ensure maxcore schema: ECONNREFUSED
+[15:34:47.264] INFO (114834): 📱 Social media queues initialized (boosterstate-backed)
+[15:34:51.872] INFO (115231): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:54.485] INFO (115341): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:54.554] WARN (115341): VAPID keys not configured - Web Push disabled
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: stripe
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: sendgrid
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: socialApi
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: twitter
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: facebook
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: instagram
+[15:34:54.704] INFO (115341): 🔌 Circuit breaker initialized: linkedin
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: tiktok
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: tiktok_sandbox
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: youtube
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: threads
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: googlebusiness
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: aiService
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: labelGrid
+[15:34:54.705] INFO (115341): 🔌 Circuit breaker initialized: dsp
+[15:34:54.705] INFO (115341): 🔌 External service circuit breakers initialized
+[15:34:54.706] WARN (115341): ⚠️  Resend API key not configured. Email features will be disabled.
+[15:34:54.746] INFO (115341): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:34:54.755] INFO (115341): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:34:55.031] INFO (115341): Sharp module loaded for image processing
+Sun, 25 Oct 2026 15:34:55 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[15:34:58.128] INFO (115481): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:34:58.194] INFO (115481): [PDIM] First successful response after 67ms — entering 10s settling window
+[15:34:58.194] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.202] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.210] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.227] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.244] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.244] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.244] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.244] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.244] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:58.252] INFO (115481): ✅ [PDIM] Connected via HTTP exec endpoint
+[15:34:59.395] INFO (115497): Fetching career coach recommendations for user owner
+[15:34:59.396] WARN (115497): Error fetching career coach recommendations: private upstream configuration
+Sun, 25 Oct 2026 15:35:03 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+[15:35:05.298] WARN (115809): Mobile token remove error:
+    err: {
+      "type": "Error",
+      "message": "database unavailable",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:05.312] WARN (115809): Push unsubscribe error:
+    err: {
+      "type": "Error",
+      "message": "database unavailable",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:09.205] INFO (115997): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:10.134] INFO (116028): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:35:10.152] INFO (116028): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:10.195] INFO (116028): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:35:10.216] INFO (116028): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[15:35:10.217] INFO (116028): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[15:35:10.224] INFO (116028): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[15:35:10.225] INFO (116028): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 9ms — next in 60 min
+[15:35:10.228] INFO (116028): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={"genre":"afrobeats","mood":"uplifting"}
+[15:35:10.228] INFO (116028): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[15:35:10.229] INFO (116028): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[15:35:10.229] INFO (116028): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion posted in 1ms — next in 60 min
+[15:35:10.230] INFO (116028): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[15:35:10.230] INFO (116028): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[15:35:10.230] INFO (116028): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[15:35:10.230] INFO (116028): [BeatMoneyLoop] Cycle test-cycle-id awaiting_sale; social promotion not posted: No connected social accounts in 0ms — next in 60 min
+[15:35:10.231] INFO (116028): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[15:35:10.231] INFO (116028): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[15:35:10.238] WARN (116028): [BeatMoneyLoop] ❌ Cycle test-cycle-id failed after 0ms: Generation rejected
+    err: {
+      "type": "Error",
+      "message": "Generation rejected",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:10.242] INFO (116028): [BeatMoneyLoop] ▶ Cycle test-cycle-id started (trigger=manual) overrides={}
+[15:35:10.242] INFO (116028): [BeatMoneyLoop] test-cycle-id forwarding explicit audio preferences to MaxCore
+[15:35:10.242] INFO (116028): [BeatMoneyLoop] test-cycle-id beat beat-1 listed at $29.99
+[15:35:10.242] WARN (116028): [BeatMoneyLoop] test-cycle-id promotion step failed
+    err: {
+      "type": "Error",
+      "message": "Promotion rejected",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:10.243] INFO (116028): [BeatMoneyLoop] Cycle test-cycle-id sold; social promotion not posted: Promotion rejected in 1ms — next in 60 min
+[15:35:10.244] INFO (116028): [BeatMoneyLoop] campaign test-cycle-id posted to instagram, tiktok (2 posts)
+[15:35:10.245] WARN (116028): [BeatMoneyLoop] campaign test-cycle-id was not posted: No social posts were created: Campaign activated! Posted 0 times.
+[15:35:11.988] INFO (116112): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+# Change comparison: `HEAD` → `<working tree>`
+
+_Generated 2026-10-25T15:35:12.739Z by change-compare v1.0.0._
+
+## Summary
+
+| Metric | Value |
+| --- | --- |
+| Files changed | 44 |
+| Added / Modified / Deleted / Renamed | 0 / 44 / 0 / 0 |
+| Lines added / removed | +166 / -82 |
+| Declarations added / removed / modified | +1 / -0 / ~17 |
+
+### Files
+
+| File | Status | Lines | Code changes |
+| --- | --- | --- | --- |
+| `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py` | modified | +6/-2 | — |
+| `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/api.py` | modified | +5/-2 | — |
+| `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py` | modified | +5/-2 | — |
+| `external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py` | modified | +1/-1 | — |
+| `package.json` | modified | +10/-1 | — |
+| `reports/endpoint-audit.json` | modified | +1/-1 | — |
+| `reports/endpoint-audit.md` | modified | +1/-1 | — |
+| `scripts/boot-stub-server.mjs` | modified | +11/-7 | +0/-0/~1 decls |
+| `scripts/test-data-runtime.mjs` | modified | +12/-6 | +0/-0/~0 decls |
+| `server/services/securityJwtChain.test.mjs` | modified | +2/-2 | +0/-0/~0 decls |
+| `server/simulations/__tests__/verifyKPIs.test.ts` | modified | +1/-1 | +0/-0/~0 decls |
+| `tests/admin-governance-isolated.cjs` | modified | +3/-1 | +0/-0/~0 decls |
+| `tests/ai-analytics-integration.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/auth-2fa.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/auth-flows.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/auth-session-transient-browser.test.mjs` | modified | +4/-3 | +0/-0/~0 decls |
+| `tests/awareness-public-read-smoke.py` | modified | +5/-2 | — |
+| `tests/billing-lifecycle.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/build-dependency-inputs.test.mjs` | modified | +8/-5 | +0/-0/~0 decls |
+| `tests/cache-invalidation.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/critical-paths.test.ts` | modified | +2/-1 | +0/-0/~2 decls |
+| `tests/deployment-bootstrap.test.mjs` | modified | +12/-3 | +0/-0/~0 decls |
+| `tests/deployment-rust-phase.test.mjs` | modified | +1/-1 | +0/-0/~0 decls |
+| `tests/direct-upload.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/feature-catalog-production.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/feature-marketplace-distribution.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/feature-press-pitching-ar.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/feature-revenue-merch.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/feature-storefront-dns.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/file-management.test.ts` | modified | +1/-0 | +0/-0/~1 decls |
+| `tests/integration/maxcore-local-supervisor.integration.test.ts` | modified | +4/-0 | +0/-0/~0 decls |
+| `tests/integrations-readiness.cjs` | modified | +4/-2 | +0/-0/~0 decls |
+| `tests/labelgrid-retirement-boundaries.test.cjs` | modified | +1/-1 | +0/-0/~0 decls |
+| `tests/local-media-renderer-browser.test.mjs` | modified | +3/-2 | +0/-0/~0 decls |
+| `tests/paid-user-e2e.test.ts` | modified | +2/-1 | +0/-0/~2 decls |
+| `tests/payment-processing/README.md` | modified | +17/-4 | — |
+| `tests/publishing-build-entry.test.mjs` | modified | +16/-17 | +0/-0/~0 decls |
+| `tests/publishing-compression.test.mjs` | modified | +2/-2 | +0/-0/~0 decls |
+| `tests/resume-integration-contracts.cjs` | modified | +3/-2 | +1/-0/~0 decls |
+| `tests/storefront-hook-transition.test.mjs` | modified | +4/-3 | +0/-0/~0 decls |
+| `tests/studio-load-save-guard.test.mjs` | modified | +3/-2 | +0/-0/~0 decls |
+| `tests/studio-plugin-audio-browser.test.mjs` | modified | +3/-2 | +0/-0/~0 decls |
+| `tests/unit/example.test.ts` | modified | +1/-1 | +0/-0/~0 decls |
+| `vitest.config.ts` | modified | +1/-1 | +0/-0/~0 decls |
+
+## ⚠️ Breaking / attention notes
+
+- 🟡 `scripts/boot-stub-server.mjs`: Internal variable `server` changed:
+    before: `const server = http.createServer((_req, res) => { res.writeHead(200, { "content-type": "text/pl`
+    after:  `const server = http.createServer((req, res) => { let pathname; try { pathname = new URL(req.url`
+- 🟡 `tests/ai-analytics-integration.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `ai_analytics_test_${Date.now()}@maxbooster-test.com`, password: "Secur`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `ai_analytics_test_${Date.now()}@maxbooster-te`
+- 🟡 `tests/auth-2fa.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `twofa_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass123`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `twofa_${Date.now()}@maxbooster-test.invalid`,`
+- 🟡 `tests/auth-flows.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `authflow_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `authflow_${Date.now()}@maxbooster-test.invali`
+- 🟡 `tests/billing-lifecycle.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `billing_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass1`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `billing_${Date.now()}@maxbooster-test.invalid`
+- 🟡 `tests/cache-invalidation.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `cache_test_${Date.now()}@maxbooster-test.invalid`, password: "CacheTes`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `cache_test_${Date.now()}@maxbooster-test.inva`
+- 🟡 `tests/critical-paths.test.ts`: Internal variable `BASE` changed:
+    before: `const BASE = "http://localhost:5000"`
+    after:  `const BASE = process.env.TEST_BASE_URL || "http://localhost:5000"`
+- 🟡 `tests/critical-paths.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `test_${Date.now()}@maxbooster-test.com`, password: "SecurePass123!", u`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `test_${Date.now()}@maxbooster-test.com`, pass`
+- 🟡 `tests/direct-upload.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `directupload_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `directupload_${Date.now()}@maxbooster-test.in`
+- 🟡 `tests/feature-catalog-production.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `feat_catalog_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `feat_catalog_${Date.now()}@maxbooster-test.in`
+- 🟡 `tests/feature-marketplace-distribution.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `feat_mktplace_${Date.now()}@maxbooster-test.invalid`, password: "Secur`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `feat_mktplace_${Date.now()}@maxbooster-test.i`
+- 🟡 `tests/feature-press-pitching-ar.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `feat_pitch_${Date.now()}@maxbooster-test.invalid`, password: "SecurePa`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `feat_pitch_${Date.now()}@maxbooster-test.inva`
+- 🟡 `tests/feature-revenue-merch.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `feat_revenue_${Date.now()}@maxbooster-test.in`
+- 🟡 `tests/feature-storefront-dns.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `feat_sf_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass1`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `feat_sf_${Date.now()}@maxbooster-test.invalid`
+- 🟡 `tests/file-management.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `filemgmt_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `filemgmt_${Date.now()}@maxbooster-test.invali`
+- 🟡 `tests/paid-user-e2e.test.ts`: Internal variable `BASE` changed:
+    before: `const BASE = "http://localhost:5000"`
+    after:  `const BASE = process.env.TEST_BASE_URL || "http://localhost:5000"`
+- 🟡 `tests/paid-user-e2e.test.ts`: Internal variable `testUser` changed:
+    before: `const testUser = { email: `paidtest_${Date.now()}@maxbooster-test.com`, password: "SecurePass123!`
+    after:  `const testUser = { birthdate: "1990-01-01", email: `paidtest_${Date.now()}@maxbooster-test.com`, `
+
+## ✏️ MODIFIED `external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py`
+
+Lines: **+6 / -2**
+
+### Diff
+
+```diff
+@@ -47,6 +47,11 @@ class AtomicLeaseTests(unittest.TestCase):
+ 
+     def setUp(self):
+         self.cmd("FLUSHDB")  # Isolated test socket only.
++        # Resolve the engine's lazy source/native imports before patching the
++        # module table. patch.dict restores that table after every test; loading
++        # NumPy inside it would remove C-extension modules that cannot be loaded
++        # twice, making this file fail when run on its own.
++        self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+         storage = types.SimpleNamespace(_ns=lambda key: key)
+         module = types.SimpleNamespace(get_storage=lambda: storage)
+         self.patcher = patch.dict("sys.modules", {"storage_client": module})
+@@ -54,7 +59,6 @@ class AtomicLeaseTests(unittest.TestCase):
+         self.store = PDIM()
+         self.store._command = self.cmd
+         self.addCleanup(self.patcher.stop)
+-        self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
+ 
+     def test_contenders_and_owner_checked_heartbeat_release(self):
+         self.assertTrue(self.store.acquire("owner-a"))
+@@ -113,4 +117,4 @@ class AtomicLeaseTests(unittest.TestCase):
+ 
+ 
+ if __name__ == "__main__":
+-    unittest.main()
+\ No newline at end of file
++    unittest.main()
+```
+
+## ✏️ MODIFIED `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/api.py`
+
+Lines: **+5 / -2**
+
+### Diff
+
+```diff
+@@ -83,10 +83,13 @@ class DigitalGPU:
+         # Fast path: plain float32-ndarray GEMM dispatches through the replica
+         # pool (shared cross-replica dedup + lock-free fan-out). Anything else
+         # — bias/activation, non-float32 or non-ndarray operands — takes the
+-        # exact historical direct-backend path.
++        # exact historical direct-backend path. The replica pool supports a
++        # matrix RHS only; batched RHS tensors stay on the backend that
++        # implements their broadcasting semantics.
+         if (self._replica_pool_enabled and bias is None and activation is None
+                 and isinstance(a, np.ndarray) and isinstance(b, np.ndarray)
+-                and a.dtype == np.float32 and b.dtype == np.float32):
++                and a.dtype == np.float32 and b.dtype == np.float32
++                and a.ndim >= 2 and b.ndim == 2):
+             result = self._pool().matmul(a, b)
+             return self.backend.create_tensor(result, dtype="float32")
+         return self.backend.gemm(a, b, bias=bias, activation=activation)
+```
+
+## ✏️ MODIFIED `external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py`
+
+Lines: **+5 / -2**
+
+### Diff
+
+```diff
+@@ -713,12 +713,15 @@ def test_digital_gpu_gemm_served_from_pocket_on_repeat():
+     rng = np.random.default_rng(33)
+     A = rng.standard_normal((128, 96)).astype(np.float32)
+     B = rng.standard_normal((96, 128)).astype(np.float32)
+-    h0 = _counter("pocket_accel.hit")
++    # Plain float32 GEMMs use the replica pool; its counter records the cache
++    # that actually served this request rather than the older direct-backend
++    # pocket accelerator, which is still used for other operand types.
++    h0 = dg._pool().stats()["total_hits"]
+     o1 = dg.gemm(A, B).numpy()
+     o2 = dg.gemm(A, B).numpy()                   # identical repeat
+     assert np.allclose(o1, A @ B, atol=TOL)
+     assert np.allclose(o2, o1, atol=0.0)         # bit-identical: pocket-served
+-    assert _counter("pocket_accel.hit") >= h0 + 1
++    assert dg._pool().stats()["total_hits"] >= h0 + 1
+ 
+ 
+ # ── manual runner ─────────────────────────────────────────────────────────────
+```
+
+## ✏️ MODIFIED `external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py`
+
+Lines: **+1 / -1**
+
+### Diff
+
+```diff
+@@ -50,7 +50,7 @@ _RENDER_SNIPPET = (
+     "import hashlib;"
+     "from ai_model.rta.api import render_image;"
+     "img=render_image('dark_neon','cinematic',width=48,height=48,"
+-    "samples=1,max_bounces=1,seed=7);"
++    "samples=1,max_bounces=1,seed=7,prompt='abstract spheres on a plane');"
+     "print(hashlib.sha256(img.tobytes()).hexdigest())"
+ )
+ 
+```
+
+## ✏️ MODIFIED `package.json`
+
+Lines: **+10 / -1**
+
+### Diff
+
+```diff
+@@ -65,7 +65,16 @@
+     "test:smoke": "tsx tests/smoke/post-deployment-tests.ts",
+     "test:security": "tsx scripts/penetration-test.ts",
+     "security:audit": "npm audit --omit=dev --audit-level=high",
+-    "test:all": "npm run security:audit && npm run test:load && npm run test:security",
++    "test:all": "python3 scripts/testing/run-all.py",
++    "test:catalog": "python3 scripts/testing/generate-catalog.py",
++    "test:catalog:check": "python3 scripts/testing/generate-catalog.py --check",
++    "test:node:all": "python3 scripts/testing/run-node-suites.py",
++    "test:python:all": "python3 scripts/testing/run-python-suites.py",
++    "test:commerce:all": "python3 scripts/testing/run-commerce.py",
++    "test:subsystems": "python3 scripts/testing/run-subsystems.py --include-pdim-smoke --include-rust-concurrency",
++    "test:browser": "node --test --test-concurrency=1 tests/auth-session-transient-browser.test.mjs tests/local-media-renderer-browser.test.mjs tests/storefront-hook-transition.test.mjs tests/studio-load-save-guard.test.mjs tests/studio-plugin-audio-browser.test.mjs",
++    "test:integration:isolated": "node scripts/testing/integration-browser.mjs",
++    "test:pages:isolated": "node scripts/testing/page80-acceptance.mjs",
+     "prelaunch": "tsx scripts/pre-launch-check.ts",
+     "simulate:production": "node scripts/simulate-production.mjs",
+     "check:ports": "tsx scripts/check-port-contract.ts",
+```
+
+## ✏️ MODIFIED `reports/endpoint-audit.json`
+
+Lines: **+1 / -1**
+
+### Diff
+
+```diff
+@@ -102,7 +102,7 @@
+       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
+     }
+   ],
+-  "generatedAt": "2026-10-21T15:44:03.703Z",
++  "generatedAt": "2026-10-25T15:33:56.810Z",
+   "baseUrl": null,
+   "backendRoutes": [
+     {
+```
+
+## ✏️ MODIFIED `reports/endpoint-audit.md`
+
+Lines: **+1 / -1**
+
+### Diff
+
+```diff
+@@ -1,6 +1,6 @@
+ # Static Frontend/Backend API Inventory
+ 
+-Generated 2026-10-21T15:44:03.717Z without live requests.
++Generated 2026-10-25T15:33:56.820Z without live requests.
+ 
+ - Backend route registrations: **2391** (2371 unique method/path pairs).
+ - Mounted router files: **157**.
+```
+
+## ✏️ MODIFIED `scripts/boot-stub-server.mjs`
+
+Lines: **+11 / -7**
+
+### Code changes
+
+- 🔁 Modified variable `server`:
+    - before: `const server = http.createServer((_req, res) => { res.writeHead(200, { "content-type": "text/pl`
+    - after:  `const server = http.createServer((req, res) => { let pathname; try { pathname = new URL(req.url`
+
+### Diff
+
+```diff
+@@ -11,22 +11,26 @@
+ //
+ // This script uses ONLY Node's http core module (no node_modules needed) so
+ // it can start in milliseconds, before any dependency restore happens. It
+-// binds the real port and answers every request with 200 immediately,
++// binds the real port and answers root liveness with 200 immediately,
+ // satisfying the platform health check while the actual app finishes
+ // initializing in the background. start.sh kills this process — freeing the
+ // port — right before launching the real server on the same port.
+ //
+-// This does not paper over the real app being ready: nothing downstream
+-// treats this stub as if it were a working server. It is not reachable by
+-// users (the platform only proxies the health check path pre-launch in
+-// practice, and the real server takes the port over within seconds), and it
+-// never reports readiness for anything beyond "the process is alive".
++// Every other path returns an explicit unavailable response. API consumers
++// and readiness probes must wait for the real application to take the port.
+ 
+ import http from "node:http";
+ 
+ const port = Number(process.env.PORT || 5000);
+ 
+-const server = http.createServer((_req, res) => {
++const server = http.createServer((req, res) => {
++  let pathname;
++  try { pathname = new URL(req.url || "/", "http://boot.local").pathname; } catch { pathname = null; }
++  if (pathname !== "/") {
++    res.writeHead(503, { "content-type": "application/json", "cache-control": "no-store", "retry-after": "2" });
++    res.end(JSON.stringify({ status: "starting", ready: false, bootPhase: true }));
++    return;
++  }
+   res.writeHead(200, { "content-type": "text/plain", "cache-control": "no-store" });
+   res.end("starting up");
+ });
+```
+
+## ✏️ MODIFIED `scripts/test-data-runtime.mjs`
+
+Lines: **+12 / -6**
+
+### Code changes
+
+No declaration-level changes (4 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -143,7 +143,7 @@ try {
+     [/fabric\/index\.js$/, `export const fabricStorage=globalThis.fabricTest;`],
+     [/lua-pool/, `export const luaPool={};`],
+   ]);
+-  const redis = new RedisStore("fixture", "fixture");
++  const redis = new RedisStore("fixture", "fixture", globalThis.fabricTest);
+   const encoded = redis.encodeRecovery(Buffer.from('{"version":1,"records":[]}'));
+   assert.deepEqual(redis.decodeRecovery(encoded), { version: 1, records: [] });
+   const corrupt = JSON.parse(encoded); corrupt.sha256 = "invalid";
+@@ -162,12 +162,12 @@ try {
+   assert.equal(snapshot.entries.stream.value[0].id, id);
+   assert.equal(redis.aofSeq, 1); // Read-only stream commands do not append journal records.
+   fabricTest.getNamedObject = async (_id, _pocket, key) => objects.get(key) ?? null;
+-  const recovered = new RedisStore("fixture", "recovered");
++  const recovered = new RedisStore("fixture", "recovered", globalThis.fabricTest);
+   await recovered.load();
+   assert.equal(recovered.execSync("XRANGE", ["stream", "-", "+"])[0][0], id);
+   await recovered.close();
+   objects.clear();
+-  const missing = new RedisStore("missing", "missing");
++  const missing = new RedisStore("missing", "missing", globalThis.fabricTest);
+   await assert.rejects(missing.load(), /snapshot recovery failed/);
+   await missing.load(true);
+   await missing.close();
+@@ -199,7 +199,7 @@ try {
+   const ready = JSON.parse(await readFile(join(convertedDirectory, "READY.json")));
+   objects.clear();
+   for (const artifact of ready.uploadOrder) objects.set(artifact.name, await readFile(join(convertedDirectory, artifact.file)));
+-  const migratedStore = new RedisStore("fixture", "migrated");
++  const migratedStore = new RedisStore("fixture", "migrated", globalThis.fabricTest);
+   await migratedStore.load();
+   assert.equal(migratedStore.execSync("GET", ["key"]), "value");
+   assert.deepEqual(migratedStore.data.get("stream"), frozenStream);
+@@ -218,6 +218,10 @@ try {
+   console.log("PASS D4 legacy conversion: real loader accepts generation + stream pending metadata; originals retained; overwrite/tamper/unfolded-tail/unknown-type rejected");
+ 
+   globalThis.backupTest = { catalog: [], files: new Map(), spawnArgs: [] };
++  const postgresTools = await bundle("server/services/backup/postgresTools.ts", [
++    [/^pg$/, `export class Client { constructor(){ throw new Error("No live database connection permitted"); } }`],
++  ]);
++  globalThis.backupPostgresConnectionEnvironment = postgresTools.postgresConnectionEnvironment;
+   process.env.NEON_DATABASE_URL = "postgres://fixture/preferred";
+   process.env.DATABASE_URL = "postgres://fixture/other";
+   const { DatabaseBackupService } = await bundle("server/services/backup/databaseBackupService.ts", [
+@@ -242,6 +246,7 @@ try {
+       async deleteFile(key){if(globalThis.backupTest.failDelete)throw new Error("delete offline");globalThis.backupTest.files.delete(key);}
+     };`],
+     [/postgresTools/, `
++      export const postgresConnectionEnvironment=globalThis.backupPostgresConnectionEnvironment;
+       const dumpTool={path:"/fixture/postgresql-17/bin/pg_dump",major:17,version:"17.5"};
+       const restoreTool={path:"/fixture/postgresql-17/bin/psql",major:17,version:"17.5"};
+       export async function selectPgDumpForServer(url){
+@@ -284,7 +289,8 @@ try {
+   assert.equal(backupTest.catalog.every(r => r.state === "verified"), true);
+   assert.equal(backupTest.spawnArgs[0].cmd, "/fixture/postgresql-17/bin/pg_dump");
+   assert.deepEqual(backupTest.spawnArgs[0].args, ["--no-owner", "--no-acl"]);
+-  assert.equal(backupTest.spawnArgs[0].options.env.PGDATABASE, process.env.NEON_DATABASE_URL);
++  assert.equal(backupTest.spawnArgs[0].options.env.PGDATABASE, "preferred");
++  assert.equal(backupTest.spawnArgs[0].options.env.PGHOST, "fixture");
+   assert.equal(backupTest.toolSelections[0].serverMajor, 17);
+   for (const key of keys) assert.equal(backupTest.files.has(key), true);
+   backupTest.corrupt = true;
+@@ -399,4 +405,4 @@ try {
+   }
+ } finally {
+   await rm(dir, { recursive: true, force: true });
+-}
+\ No newline at end of file
++}
+```
+
+## ✏️ MODIFIED `server/services/securityJwtChain.test.mjs`
+
+Lines: **+2 / -2**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -157,7 +157,7 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
+   });
+   const module = { exports: {} };
+   runInNewContext(output.outputFiles[0].text, { module, exports: module.exports,
+-    require: createRequire(import.meta.url), Buffer, Date });
++    require: createRequire(import.meta.url), Buffer, Date, process: { env: { NODE_ENV: "production" } } });
+   const check = async (path, method = "GET", headers = {}, user) => {
+     let next = false; let status = 200;
+     const req = { path, method, headers, user, get: name => headers[name] };
+@@ -173,4 +173,4 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
+   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "fake" })).status, 401);
+   assert.equal((await check("/api/webhooks/stripe", "POST", { "stripe-signature": "verified-test-boundary" })).next, true);
+   assert.equal((await check("/api/webhooks/stripe/evil", "POST")).status, 503);
+-});
+\ No newline at end of file
++});
+```
+
+## ✏️ MODIFIED `server/simulations/__tests__/verifyKPIs.test.ts`
+
+Lines: **+1 / -1**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -4,7 +4,7 @@
+  * and produce deterministic, reproducible results.
+  */
+ 
+-import { describe, test, expect } from "@jest/globals";
++import { describe, test, expect } from "vitest";
+ import {
+   simulateAutonomousUpgrade,
+   simulateLongTermAdaptation,
+```
+
+## ✏️ MODIFIED `tests/admin-governance-isolated.cjs`
+
+Lines: **+3 / -1**
+
+### Code changes
+
+No declaration-level changes (6 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -24,6 +24,8 @@ function load(file, boundaries = {}) {
+       desc: a => a, sql: (parts, ...values) => ({ parts, values }),
+     };
+     if (name === "node:crypto") return crypto;
++    if (name === "zod") return require("zod");
++    if (name === "../../shared/supportTicketValidation.js") return load("shared/supportTicketValidation.ts");
+     if (name === "./kycReviewRevision.js") return load("server/services/kycReviewRevision.ts");
+     throw new Error(`Unmocked external boundary: ${name}`);
+   };
+@@ -353,4 +355,4 @@ test("support routes reject Express 5 array or empty ticket parameters before da
+       assert.equal(status, 400, route.path);
+     }
+   }
+-});
+\ No newline at end of file
++});
+```
+
+## ✏️ MODIFIED `tests/ai-analytics-integration.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `ai_analytics_test_${Date.now()}@maxbooster-test.com`, password: "Secur`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `ai_analytics_test_${Date.now()}@maxbooster-te`
+
+### Diff
+
+```diff
+@@ -9,6 +9,7 @@ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ let cookies = "";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `ai_analytics_test_${Date.now()}@maxbooster-test.com`,
+   password: "SecurePass123!@#",
+   username: `AIAnalyticsTest_${Date.now()}`,
+```
+
+## ✏️ MODIFIED `tests/auth-2fa.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `twofa_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass123`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `twofa_${Date.now()}@maxbooster-test.invalid`,`
+
+### Diff
+
+```diff
+@@ -11,6 +11,7 @@ import { generateSecret, generateSync, verifySync } from "otplib";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `twofa_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "2FA",
+```
+
+## ✏️ MODIFIED `tests/auth-flows.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `authflow_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `authflow_${Date.now()}@maxbooster-test.invali`
+
+### Diff
+
+```diff
+@@ -9,6 +9,7 @@ let authCookies = "";
+ let csrfToken = "";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `authflow_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Auth",
+```
+
+## ✏️ MODIFIED `tests/auth-session-transient-browser.test.mjs`
+
+Lines: **+4 / -3**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -1,6 +1,7 @@
+ // Real React DOM transitions in isolated Chromium. API/query fixtures provide
+ // pending/data states; this verifies component lifecycle, not payment delivery.
+ import { test } from "node:test";
++import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+ import assert from "node:assert/strict";
+ import { build } from "esbuild";
+ import fs from "node:fs";
+@@ -39,6 +40,7 @@ test("AuthProvider preserves verified identity and avoids false sign-out during
+   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+   const port = server.address().port;
+   const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
++  const stopBrowser = trackBrowserProcesses(browser);
+   let socket;
+   try {
+     const endpoint = await new Promise((resolve, reject) => {
+@@ -98,9 +100,8 @@ test("AuthProvider preserves verified identity and avoids false sign-out during
+     assert.deepEqual(errors, []);
+   } finally {
+     socket?.terminate();
+-    browser.kill("SIGTERM");
+-    await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
++    await stopBrowser();
+     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+-    fs.rmSync(temp, { recursive: true, force: true });
++    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+   }
+ });
+```
+
+## ✏️ MODIFIED `tests/awareness-public-read-smoke.py`
+
+Lines: **+5 / -2**
+
+### Diff
+
+```diff
+@@ -10,11 +10,14 @@ import os
+ from pathlib import Path
+ import sys
+ 
+-if set(os.environ) - {"PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE"}:
++allowed_environment = {"PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE",
++                       "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
++                       "SSL_CERT_FILE", "SSL_CERT_DIR", "MAXCORE_AWARENESS_USE_PROXY"}
++if set(os.environ) - allowed_environment:
+     raise SystemExit("Run with a clean environment; credentials must not reach this probe")
+ # The portable interpreter's compiled OpenSSL path is not the host trust
+ # store. Use the verified system bundle, never disable certificate checking.
+-trust_store = Path("/etc/ssl/certs/ca-certificates.crt")
++trust_store = Path(os.environ.get("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt"))
+ if not trust_store.is_file():
+     raise SystemExit("System TLS trust store unavailable; public ingestion remains untested")
+ os.environ["SSL_CERT_FILE"] = str(trust_store)
+```
+
+## ✏️ MODIFIED `tests/billing-lifecycle.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `billing_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass1`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `billing_${Date.now()}@maxbooster-test.invalid`
+
+### Diff
+
+```diff
+@@ -16,6 +16,7 @@ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ const WEBHOOK_PATH = "/api/webhooks/stripe";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `billing_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Billing",
+```
+
+## ✏️ MODIFIED `tests/build-dependency-inputs.test.mjs`
+
+Lines: **+8 / -5**
+
+### Code changes
+
+No declaration-level changes (1 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -18,8 +18,11 @@ function fixture(t, failingScope = "") {
+     }
+   }
+   fs.writeFileSync(path.join(root, "bin/pnpm"), `#!/bin/sh
++if [ "$1" = "--version" ]; then printf '%s\\n' '10.26.1'; exit 0; fi
+ printf '%s|%s|%s\\n' "$PWD" "$CI" "$*" >> "$FIXTURE_LOG"
+ case "$PWD" in *"${failingScope || "__no_failure__"}") exit 7;; esac
++mkdir -p node_modules/.pnpm
++cp pnpm-lock.yaml node_modules/.pnpm/lock.yaml
+ `, { mode: 0o755 });
+   fs.writeFileSync(path.join(root, "scripts/verify-runtime-artifacts.mjs"), `
+ export function inspectDependencies(root, scopes) {
+@@ -30,18 +33,18 @@ export function inspectDependencies(root, scopes) {
+     root,
+     run: () => spawnSync("bash", ["script/sync-subsystem-dependencies.sh"], {
+       cwd: root, encoding: "utf8",
+-      env: { ...process.env, PATH: `${path.join(root, "bin")}:${process.env.PATH}`, FIXTURE_LOG: path.join(root, "calls") },
++      env: { ...process.env, SUBSYSTEM_INSTALL: "1", PATH: `${path.join(root, "bin")}:${process.env.PATH}`, FIXTURE_LOG: path.join(root, "calls") },
+     }),
+   };
+ }
+ 
+-test("both independent subsystem locks drive frozen installs in their own directories", t => {
++test("explicit subsystem synchronization uses offline frozen installs in their own directories", t => {
+   const { root, run } = fixture(t);
+   const result = run();
+   assert.equal(result.status, 0, result.stderr);
+   assert.deepEqual(fs.readFileSync(path.join(root, "calls"), "utf8").trim().split("\n"), [
+-    `${root}/external/maxcore|true|install --frozen-lockfile`,
+-    `${root}/external/pdim|true|install --frozen-lockfile`,
++    `${root}/external/maxcore|true|install --offline --frozen-lockfile --ignore-scripts`,
++    `${root}/external/pdim|true|install --offline --frozen-lockfile --ignore-scripts`,
+   ]);
+   assert.match(result.stdout, /passed the runtime dependency gate/);
+ });
+@@ -70,5 +73,5 @@ test("historical fast build and compiling build refresh subsystem dependencies b
+     assert.ok(shell.includes(`_pdim_pack "external/${scope}" "external_${scope}.pdim"`));
+     assert.ok(compile.includes(`dir: "external/${scope}"`));
+   }
+-  assert.ok(compile.indexOf("bash script/sync-subsystem-dependencies.sh") < compile.indexOf("npx vite build"));
++  assert.ok(compile.indexOf("bash script/sync-subsystem-dependencies.sh") < compile.indexOf("node node_modules/vite/bin/vite.js build"));
+ });
+```
+
+## ✏️ MODIFIED `tests/cache-invalidation.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `cache_test_${Date.now()}@maxbooster-test.invalid`, password: "CacheTes`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `cache_test_${Date.now()}@maxbooster-test.inva`
+
+### Diff
+
+```diff
+@@ -15,6 +15,7 @@ let authCookies = "";
+ let csrfToken = "";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `cache_test_${Date.now()}@maxbooster-test.invalid`,
+   password: "CacheTest123!@#",
+   firstName: "Cache",
+```
+
+## ✏️ MODIFIED `tests/critical-paths.test.ts`
+
+Lines: **+2 / -1**
+
+### Code changes
+
+- 🔁 Modified variable `BASE`:
+    - before: `const BASE = "http://localhost:5000"`
+    - after:  `const BASE = process.env.TEST_BASE_URL || "http://localhost:5000"`
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `test_${Date.now()}@maxbooster-test.com`, password: "SecurePass123!", u`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `test_${Date.now()}@maxbooster-test.com`, pass`
+
+### Diff
+
+```diff
+@@ -1,10 +1,11 @@
+ import { describe, it, expect, beforeAll, afterAll } from "vitest";
+ 
+-const BASE = "http://localhost:5000";
++const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ let cookies = "";
+ let csrfToken = "";
+ let testUserId = "";
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `test_${Date.now()}@maxbooster-test.com`,
+   password: "SecurePass123!",
+   username: `TestUser_${Date.now()}`,
+```
+
+## ✏️ MODIFIED `tests/deployment-bootstrap.test.mjs`
+
+Lines: **+12 / -3**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -5,7 +5,7 @@ import fs from "node:fs";
+ import os from "node:os";
+ import path from "node:path";
+ 
+-test("real bootstrap verifies the toolchain without copying immutable package trees",()=>{
++test("real bootstrap verifies the selected toolchain and preserves each package outside cleanup",()=>{
+   let output;
+   try {
+     output=execFileSync("bash",["script/deployment/bootstrap.sh","--check"],{
+@@ -16,8 +16,15 @@ test("real bootstrap verifies the toolchain without copying immutable package tr
+     throw error;
+   }
+   assert.match(output,/\[bootstrap\] Preparing build toolchain/);
+-  assert.match(output,/Using immutable npm package store path/);
+-  assert.match(output,/Using immutable pnpm package store path/);
++  for (const manager of ["npm", "pnpm"]) {
++    const preferred = fs.realpathSync(execFileSync("bash", ["-c", 'command -v "$1"', "bootstrap-test", manager], { encoding: "utf8" }).trim());
++    if (preferred.startsWith("/nix/store/")) {
++      assert.match(output, new RegExp(`Using immutable ${manager} package store path`));
++      assert.doesNotMatch(output, new RegExp(`Preserving ${manager} outside workspace`));
++    } else {
++      assert.match(output, new RegExp(`Preserving ${manager} outside workspace`));
++    }
++  }
+   assert.match(output,/Verifying preserved npm/);
+   assert.match(output,/Verifying preserved pnpm/);
+   assert.match(output,/Toolchain ready; temporary footprint:/);
+@@ -29,6 +36,8 @@ test("bootstrap announces and cleans up a failure before admitting destructive t
+   const root=fs.mkdtempSync(path.join(os.tmpdir(),"bootstrap-failure-"));
+   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+   fs.writeFileSync(path.join(root,"package.json"),JSON.stringify({packageManager:"npm@0.0.0"}));
++  fs.mkdirSync(path.join(root, "script/lib"), { recursive: true });
++  fs.copyFileSync("script/lib/deploymentPackRecovery.mjs", path.join(root, "script/lib/deploymentPackRecovery.mjs"));
+   const before=new Set(fs.readdirSync("/tmp").filter(p=>p.startsWith("deployment-tools.")));
+   let failure;
+   try {
+```
+
+## ✏️ MODIFIED `tests/deployment-rust-phase.test.mjs`
+
+Lines: **+1 / -1**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -33,7 +33,7 @@ test("real Rust compilation survives concurrent workspace cleanup", {
+   for (const dir of ["scripts", "boosterstate", "scratch"]) {
+     fs.mkdirSync(path.join(root, dir), { recursive: true });
+   }
+-  for (const file of ["build.sh", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix",
++  for (const file of ["build.sh", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix", "scripts/prepare-rust-toolchain.py",
+     "boosterstate/Cargo.toml", "boosterstate/Cargo.lock"]) {
+     fs.copyFileSync(file, path.join(root, file));
+   }
+```
+
+## ✏️ MODIFIED `tests/direct-upload.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `directupload_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `directupload_${Date.now()}@maxbooster-test.in`
+
+### Diff
+
+```diff
+@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `directupload_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Direct",
+```
+
+## ✏️ MODIFIED `tests/feature-catalog-production.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `feat_catalog_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `feat_catalog_${Date.now()}@maxbooster-test.in`
+
+### Diff
+
+```diff
+@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `feat_catalog_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Feature",
+```
+
+## ✏️ MODIFIED `tests/feature-marketplace-distribution.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `feat_mktplace_${Date.now()}@maxbooster-test.invalid`, password: "Secur`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `feat_mktplace_${Date.now()}@maxbooster-test.i`
+
+### Diff
+
+```diff
+@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `feat_mktplace_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Feature",
+```
+
+## ✏️ MODIFIED `tests/feature-press-pitching-ar.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `feat_pitch_${Date.now()}@maxbooster-test.invalid`, password: "SecurePa`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `feat_pitch_${Date.now()}@maxbooster-test.inva`
+
+### Diff
+
+```diff
+@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `feat_pitch_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Feature",
+```
+
+## ✏️ MODIFIED `tests/feature-revenue-merch.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`, password: "Secure`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `feat_revenue_${Date.now()}@maxbooster-test.in`
+
+### Diff
+
+```diff
+@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `feat_revenue_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Feature",
+```
+
+## ✏️ MODIFIED `tests/feature-storefront-dns.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `feat_sf_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass1`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `feat_sf_${Date.now()}@maxbooster-test.invalid`
+
+### Diff
+
+```diff
+@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `feat_sf_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "Feature",
+```
+
+## ✏️ MODIFIED `tests/file-management.test.ts`
+
+Lines: **+1 / -0**
+
+### Code changes
+
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `filemgmt_${Date.now()}@maxbooster-test.invalid`, password: "SecurePass`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `filemgmt_${Date.now()}@maxbooster-test.invali`
+
+### Diff
+
+```diff
+@@ -14,6 +14,7 @@ import { describe, it, expect } from "vitest";
+ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ 
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `filemgmt_${Date.now()}@maxbooster-test.invalid`,
+   password: "SecurePass123!@#",
+   firstName: "File",
+```
+
+## ✏️ MODIFIED `tests/integration/maxcore-local-supervisor.integration.test.ts`
+
+Lines: **+4 / -0**
+
+### Code changes
+
+No declaration-level changes (4 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -19,12 +19,16 @@ process.env.SESSION_SECRET =
+ const supervisor = await import(
+   "../../server/services/maxcoreLocalSupervisor.js"
+ );
++const { getMaxcoreGenerationHeaders } = await import(
++  "../../server/services/maxcoreConnector.js"
++);
+ 
+ async function waitForHealthy(deadlineMs: number): Promise<boolean> {
+   const deadline = Date.now() + deadlineMs;
+   while (Date.now() < deadline) {
+     try {
+       const r = await fetch(`http://127.0.0.1:${PORT}/api/health`, {
++        headers: getMaxcoreGenerationHeaders(),
+         signal: AbortSignal.timeout(3_000),
+       });
+       if (r.ok) {
+```
+
+## ✏️ MODIFIED `tests/integrations-readiness.cjs`
+
+Lines: **+4 / -2**
+
+### Code changes
+
+No declaration-level changes (14 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -107,8 +107,10 @@ async function postingTests() {
+   const full = source("server/services/autoPostingServiceV2.ts");
+   const start = full.indexOf("  private async executePost(");
+   const method = full.slice(start, full.indexOf("  private async postToPlatform(", start));
++  const consentStart = full.indexOf("  private async hasCurrentPublishConsent(");
++  const consentMethod = full.slice(consentStart, full.indexOf("  private async processSinglePost(", consentStart));
+   const checkpoints = [];
+-  const worker = compile(`export class Worker { ${method}
++  const worker = compile(`export class Worker { ${consentMethod} ${method}
+     async postToPlatform(user, platform, content) {
+       if (platform === "bad") throw new Error("ambiguous timeout");
+       return { platform, success: true, postId: "receipt" };
+@@ -178,4 +180,4 @@ async function smsTests() {
+   assert.equal(status.parseDeliveryStatusOutlets({}).length, 0);
+   assert.equal(status.parseDeliveryStatusOutlets([{ outlet: "spotify", status: "NEW_STATE" }])[0].rawStatus, "new_state");
+ }
+-Promise.all([scannerTests(), transportTests(), postingTests(), smsTests()]).then(() => console.log("Integration readiness: isolated policy, scanner, email, encryption, submission, posting, SMS and LabelGrid status tests passed")).catch(error => { console.error(error); process.exitCode = 1; });
+\ No newline at end of file
++Promise.all([scannerTests(), transportTests(), postingTests(), smsTests()]).then(() => console.log("Integration readiness: isolated policy, scanner, email, encryption, submission, posting, SMS and LabelGrid status tests passed")).catch(error => { console.error(error); process.exitCode = 1; });
+```
+
+## ✏️ MODIFIED `tests/labelgrid-retirement-boundaries.test.cjs`
+
+Lines: **+1 / -1**
+
+### Code changes
+
+No declaration-level changes (5 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -22,7 +22,7 @@ async function isolatedModule(entry, modules) {
+     }],
+   });
+   const module = { exports: {} };
+-  vm.runInNewContext(result.outputFiles[0].text, { module, exports: module.exports });
++  vm.runInNewContext(result.outputFiles[0].text, { module, exports: module.exports, process: { env: {} } });
+   return module.exports;
+ }
+ 
+```
+
+## ✏️ MODIFIED `tests/local-media-renderer-browser.test.mjs`
+
+Lines: **+3 / -2**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -1,6 +1,7 @@
+ // Real React DOM transitions in isolated Chromium. API/query fixtures provide
+ // pending/data states; this verifies component lifecycle, not payment delivery.
+ import { test } from "node:test";
++import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+ import assert from "node:assert/strict";
+ import { build } from "esbuild";
+ import fs from "node:fs";
+@@ -47,6 +48,7 @@ test("Explicit media renderers show errors, retry and preview delivered artifact
+   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+   const port = server.address().port;
+   const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
++  const stopBrowser = trackBrowserProcesses(browser);
+   let socket;
+   try {
+     const endpoint = await new Promise((resolve, reject) => {
+@@ -114,8 +116,7 @@ test("Explicit media renderers show errors, retry and preview delivered artifact
+     assert.deepEqual(errors, []);
+   } finally {
+     socket?.terminate();
+-    browser.kill("SIGTERM");
+-    await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
++    await stopBrowser();
+     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+     fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+   }
+```
+
+## ✏️ MODIFIED `tests/paid-user-e2e.test.ts`
+
+Lines: **+2 / -1**
+
+### Code changes
+
+- 🔁 Modified variable `BASE`:
+    - before: `const BASE = "http://localhost:5000"`
+    - after:  `const BASE = process.env.TEST_BASE_URL || "http://localhost:5000"`
+- 🔁 Modified variable `testUser`:
+    - before: `const testUser = { email: `paidtest_${Date.now()}@maxbooster-test.com`, password: "SecurePass123!`
+    - after:  `const testUser = { birthdate: "1990-01-01", email: `paidtest_${Date.now()}@maxbooster-test.com`, `
+
+### Diff
+
+```diff
+@@ -1,10 +1,11 @@
+ import { describe, it, expect, beforeAll } from "vitest";
+ 
+-const BASE = "http://localhost:5000";
++const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+ let cookies = "";
+ let testUserId = "";
+ let csrfToken = "";
+ const testUser = {
++  birthdate: "1990-01-01",
+   email: `paidtest_${Date.now()}@maxbooster-test.com`,
+   password: "SecurePass123!@#",
+   username: `PaidUser_${Date.now()}`,
+```
+
+## ✏️ MODIFIED `tests/payment-processing/README.md`
+
+Lines: **+17 / -4**
+
+### Diff
+
+```diff
+@@ -11,6 +11,9 @@ node tests/payment-processing/run.mjs
+ 
+ # Explicit real Stripe TEST-mode objects and disposable local SQL:
+ node tests/payment-processing/run.mjs --stripe
++
++# Exhaustive local payment files plus the isolated legacy beat-sale suite:
++python3 scripts/testing/run-commerce.py
+ ```
+ 
+ The remote command requires **only** `STRIPE_TEST_SECRET` (`sk_test_…`) and
+@@ -52,9 +55,19 @@ provider flows must remain blocked, not be marked as passed.
+ 
+ ## Current findings
+ 
+-The current verification is **not green**. Failing regressions remain for
+-legacy billing checkout retries, storefront cart retries, and unverified
+-legacy BeatService sale completion. The runner includes these failures.
++The October 25, 2026 credential-free rerun passes all 16 payment Node entry
++files and the 14-case legacy beat-sale suite: 78 JUnit leaf cases passed,
++one explicit real-provider case skipped, zero failures. Previously failing
++billing/cart retry and legacy BeatService regressions remain active and pass.
++The provider report's offline aggregation/redaction self-check also passes.
++The legacy fixture supplies its own PostgreSQL and Redis services; its first
++attempt without a queue backend is retained as diagnostic evidence.
++
++See `docs/testing/commerce.md` for every file's purpose and exact invocation,
++and `reports/test-verification/commerce/results.json` for the current machine
++results. These local passes do not establish deployed provider delivery or
++full production readiness. The explicit remote Stripe and browser entry points
++were not rerun as part of this credential-free verification.
+ 
+ Real Stripe top-up creation/retrieval/cancellation is covered separately.
+ Automatic tax, Express dashboard links, transfers and bank payouts remain
+@@ -68,4 +81,4 @@ cover that case without making provider requests.
+ The human-readable evidence summary is
+ `reports/payment-processing-verification.html`. It separates production
+ contracts, real provider acceptance, disposable SQL, browser confirmation,
+-account blockers, and cleanup uncertainty.
+\ No newline at end of file
++account blockers, and cleanup uncertainty.
+```
+
+## ✏️ MODIFIED `tests/publishing-build-entry.test.mjs`
+
+Lines: **+16 / -17**
+
+### Code changes
+
+No declaration-level changes (4 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -93,33 +93,32 @@ function fixture(t) {
+   const run = (extra = {}, args = ["--publish-disposable-copy", "."]) =>
+     spawnSync(process.execPath, [path.join(root,RECOVERY_HELPER_PATH), ...args],
+       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
+-  const runConfigured = (extra = {}) => {
+-    const [executable, ...args] = configuredBuildCommand();
+-    // Exercise the isolated preparation entry, not a second packing recipe.
+-    return spawnSync(executable, args,
+-      {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
+-  };
+-  return {root,state,calls,authorization,write,run,runConfigured,outsideInterpreter};
++  // This retained compatibility helper is independently runnable, but is not
++  // the current Replit bootstrap/executive pipeline. Exercise the real helper
++  // directly instead of passing removed options to the current build shell.
++  const runLegacyPublishing = (extra = {}) => run(extra);
++  return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
+ }
+ 
+-test("publishing uses the guarded historical shell scaffold", () => {
++test("Replit publishing selects the current guarded bootstrap executive shell", () => {
+   const command = configuredBuildCommand();
+-  assert.deepEqual(command, ["bash", "build.sh", "--publish-disposable-copy", "."]);
++  assert.deepEqual(command, ["bash", "build.sh"]);
+   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
+     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
+   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
+   assert.deepEqual(publishing, command);
++  assert.match(fs.readFileSync("build.sh", "utf8"), /exec bash script\/deployment\/bootstrap\.sh/);
+   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
+ });
+ 
+ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
+   {REPLIT_DEPLOYMENT:"1",REPLIT_DEPLOYMENT_ID:"runtime-present"}]) {
+-  test(`configured publishing command packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
++  test(`legacy recovery publishing helper packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
+     const f = fixture(t);
+     const protectedFiles = ["package.json", "start.sh", RECOVERY_HELPER_PATH];
+     const before = protectedFiles.map(p => fs.readFileSync(path.join(f.root,p)));
+     for (let attempt=0; attempt<2; attempt++) {
+-      const result=f.runConfigured(indicators);
++      const result=f.runLegacyPublishing(indicators);
+       assert.equal(result.status,0,result.stderr+result.stdout);
+       assert.match(result.stdout,/REAL_FIXTURE_BUILD_COMPLETE/);
+       const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
+@@ -136,7 +135,7 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
+         assert.ok(event.elapsedSeconds >= (events[i - 1]?.elapsedSeconds ?? 0));
+       });
+       const calls = fs.readFileSync(f.calls,"utf8").trim().split("\n").map(line => JSON.parse(line));
+-      assert.equal(calls.length, attempt + 1, "exactly one npm build per configured invocation");
++      assert.equal(calls.length, attempt + 1, "exactly one npm build per legacy helper invocation");
+       assert.deepEqual(calls.at(-1), {
+         root:fs.realpathSync(f.root), declaredRoot:fs.realpathSync(f.root),
+         pack:"1", cleanup:"1",
+@@ -158,14 +157,14 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
+   });
+ }
+ 
+-test("configured command rejects inherited authorization without npm or filesystem mutation", t => {
++test("legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation", t => {
+   const f = fixture(t);
+   for (const inherited of [
+     {DEPLOY_PACK:"1"}, {DEPLOY_PACK:""},
+     {PUBLISH_PAYLOAD_CLEANUP:"1"}, {PUBLISH_PAYLOAD_CLEANUP:""},
+     {PUBLISH_BUILD_ROOT:f.root}, {PUBLISH_BUILD_ROOT:""}, f.authorization,
+   ]) {
+-    const result = f.runConfigured(inherited);
++    const result = f.runLegacyPublishing(inherited);
+     assert.notEqual(result.status,0);
+     assert.match(result.stderr,/Ambiguous inherited build authorization/);
+     assert.ok(!fs.existsSync(f.calls), "npm must not run");
+@@ -176,10 +175,10 @@ test("configured command rejects inherited authorization without npm or filesyst
+   }
+ });
+ 
+-test("outer publishing diagnostics retain npm failure and never claim successful completion", t => {
++test("legacy recovery publishing diagnostics retain npm failure and never claim successful completion", t => {
+   const f = fixture(t);
+   f.write("fixture-build.mjs", "process.exit(7);");
+-  const result = f.runConfigured();
++  const result = f.runLegacyPublishing();
+   assert.notEqual(result.status, 0);
+   const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
+     .map(line => JSON.parse(line.slice("[publishing-entry] ".length)));
+@@ -232,4 +231,4 @@ test("conflicting local and publishing journals reject before any restore", t =>
+   assert.deepEqual(fs.readFileSync(path.join(f.state,"journal.json")),before);
+   assert.equal(fs.readFileSync(path.join(f.root,".deployment-pack-state/transaction/journal.json"),"utf8"),"preserve conflicting evidence");
+   assert.ok(!fs.existsSync(path.join(f.root,"node_modules")));
+-});
+\ No newline at end of file
++});
+```
+
+## ✏️ MODIFIED `tests/publishing-compression.test.mjs`
+
+Lines: **+2 / -2**
+
+### Code changes
+
+No declaration-level changes (1 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -30,7 +30,7 @@ test("shared packer removes source only after a gate-valid zstd capsule and real
+   assert.equal(packed.status,0,packed.stderr);
+   assert.equal(fs.existsSync(path.join(root,"fixture")),false);
+   const manifest=JSON.parse(fs.readFileSync(path.join(root,"fixture.manifest.json")));
+-  assert.equal(manifest.compression,"zstd-6");
++  assert.equal(manifest.compression,"zstd-19");
+   assert.equal(manifest.sha256,createHash("sha256").update(fs.readFileSync(path.join(root,"fixture.pdim"))).digest("hex"));
+   assert.equal((await inspectArtifacts(root,["fixture"])).ready,true);
+   const {restoreCapsule}=await import(pathToFileURL(path.join(root,"dist/pdim-restore.mjs")));
+@@ -65,7 +65,7 @@ test("source-tree packing preserves files until the shell performs cleanup", t =
+   const result=run("paths","source.pdim","fixture");
+   assert.equal(result.status,0,result.stderr);
+   assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
+-  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-6");
++  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-19");
+ });
+ 
+ test("compressor failure retains source and the previous archive", t => {
+```
+
+## ✏️ MODIFIED `tests/resume-integration-contracts.cjs`
+
+Lines: **+3 / -2**
+
+### Code changes
+
+- ➕ Added variable `path` — `const path = require("node:path")` (line 7)
+
+### Diff
+
+```diff
+@@ -4,6 +4,7 @@ const fs = require("node:fs");
+ const vm = require("node:vm");
+ const ts = require("typescript");
+ const crypto = require("node:crypto");
++const path = require("node:path");
+ const twilio = require("twilio");
+ const read = path => fs.readFileSync(path, "utf8");
+ function load(path, mocks, env = {}) {
+@@ -14,7 +15,7 @@ function load(path, mocks, env = {}) {
+   });
+   assert.equal(output.diagnostics.length, 0);
+   vm.runInNewContext(output.outputText, { exports, Buffer, Date, process: { env },
+-    require: id => id in mocks ? mocks[id] : assert.fail(`Unexpected import ${id}`) });
++    require: id => id === "node:path" ? path : id in mocks ? mocks[id] : assert.fail(`Unexpected import ${id}`) });
+   return exports;
+ }
+ const paths = ["/api/webhooks/stripe", "/webhooks/sendgrid", "/api/webhooks/resend",
+@@ -124,4 +125,4 @@ test("both SMS consumers reject unsigned writes and accept authentic provider re
+     await handler({ body, get: () => signature }, res);
+     assert.equal(writes, before + 1);
+   }
+-});
+\ No newline at end of file
++});
+```
+
+## ✏️ MODIFIED `tests/storefront-hook-transition.test.mjs`
+
+Lines: **+4 / -3**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -1,6 +1,7 @@
+ // Real React DOM transitions in isolated Chromium. API/query fixtures provide
+ // pending/data states; this verifies component lifecycle, not payment delivery.
+ import { test } from "node:test";
++import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+ import assert from "node:assert/strict";
+ import { build } from "esbuild";
+ import fs from "node:fs";
+@@ -55,6 +56,7 @@ test("Storefront keeps hook order across pending, missing and loaded public/owne
+   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+   const port = server.address().port;
+   const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
++  const stopBrowser = trackBrowserProcesses(browser);
+   let socket;
+   try {
+     const endpoint = await new Promise((resolve, reject) => {
+@@ -105,9 +107,8 @@ test("Storefront keeps hook order across pending, missing and loaded public/owne
+     assert.deepEqual(errors, []);
+   } finally {
+     socket?.terminate();
+-    browser.kill("SIGTERM");
+-    await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
++    await stopBrowser();
+     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+-    fs.rmSync(temp, { recursive: true, force: true });
++    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+   }
+ });
+```
+
+## ✏️ MODIFIED `tests/studio-load-save-guard.test.mjs`
+
+Lines: **+3 / -2**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -1,6 +1,7 @@
+ // Real React DOM transitions in isolated Chromium. API/query fixtures provide
+ // pending/data states; this verifies component lifecycle, not payment delivery.
+ import { test } from "node:test";
++import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+ import assert from "node:assert/strict";
+ import { build } from "esbuild";
+ import fs from "node:fs";
+@@ -37,6 +38,7 @@ test("Studio never saves an unread project and permits an empty project only aft
+   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+   const port = server.address().port;
+   const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
++  const stopBrowser = trackBrowserProcesses(browser);
+   let socket;
+   try {
+     const endpoint = await new Promise((resolve, reject) => {
+@@ -108,8 +110,7 @@ test("Studio never saves an unread project and permits an empty project only aft
+     assert.deepEqual(errors, []);
+   } finally {
+     socket?.terminate();
+-    browser.kill("SIGTERM");
+-    await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
++    await stopBrowser();
+     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+     fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+   }
+```
+
+## ✏️ MODIFIED `tests/studio-plugin-audio-browser.test.mjs`
+
+Lines: **+3 / -2**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -1,6 +1,7 @@
+ // Real React DOM transitions in isolated Chromium. API/query fixtures provide
+ // pending/data states; this verifies component lifecycle, not payment delivery.
+ import { test } from "node:test";
++import { trackBrowserProcesses } from "./helpers-browser-processes.mjs";
+ import assert from "node:assert/strict";
+ import { build } from "esbuild";
+ import fs from "node:fs";
+@@ -42,6 +43,7 @@ test("Studio playback processes saved inserts, edits, bypass, ordering and remov
+   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+   const port = server.address().port;
+   const browser = spawn(chromium, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-first-run", "--remote-debugging-port=0", `--user-data-dir=${temp}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
++  const stopBrowser = trackBrowserProcesses(browser);
+   let socket;
+   try {
+     const endpoint = await new Promise((resolve, reject) => {
+@@ -116,8 +118,7 @@ test("Studio playback processes saved inserts, edits, bypass, ordering and remov
+ 
+   } finally {
+     socket?.terminate();
+-    browser.kill("SIGTERM");
+-    await new Promise(resolve => { if (browser.exitCode !== null) resolve(); else browser.once("exit", resolve); });
++    await stopBrowser();
+     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+     fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+   }
+```
+
+## ✏️ MODIFIED `tests/unit/example.test.ts`
+
+Lines: **+1 / -1**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -4,7 +4,7 @@
+  * Unit tests test individual functions in isolation
+  */
+ 
+-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
++import { describe, it, expect, beforeEach, afterEach } from "vitest";
+ 
+ describe("Unit Test Suite Example", () => {
+   beforeEach(() => {
+```
+
+## ✏️ MODIFIED `vitest.config.ts`
+
+Lines: **+1 / -1**
+
+### Code changes
+
+No declaration-level changes (0 declaration(s) unchanged; only bodies/comments/whitespace differ).
+
+### Diff
+
+```diff
+@@ -16,7 +16,7 @@ export default defineConfig({
+       "dist/**",
+       "tests/critical-paths.test.ts",
+       "tests/paid-user-e2e.test.ts",
+-      // Legacy Jest-based test files not converted to Vitest
++      // Example and simulation suites run with vitest.additional.config.ts.
+       "tests/unit/example.test.ts",
+       // Database-writing suite: run explicitly with vitest.beat-loop.config.ts.
+       "tests/unit/beat-sale-money-loop.test.ts",
+```
+[15:35:13.983] INFO (116978): 📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)
+[15:35:14.299] INFO (116978): 📱 Social media queues initialized (boosterstate-backed)
+[15:35:14.324] WARN (116978): Error checking backoff state:
+    err: {
+      "type": "Error",
+      "message": "storage offline",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:14.325] WARN (116978): Error checking backoff state:
+    err: {
+      "type": "Error",
+      "message": "storage offline",
+      "stack":
+          [ACCESSOR]
+    }
+[15:35:14.327] WARN (116978): Error checking rate limit:
+    err: {
+      "type": "Error",
+      "message": "Social publishing backoff state is unavailable: storage offline",
+      "stack":
+          [ACCESSOR]
+          caused by: [ACCESSOR]
+    }
+[15:35:14.286] INFO (116995): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:15.239] WARN (116995): [RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)
+[15:35:15.239] WARN (116995): [RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)
+[15:35:15.239] WARN (116995): [RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)
+[15:35:15.239] WARN (116995): [RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)
+[15:35:24.606] INFO (117427): [DataTransfer] Distribution data transfer service initialized
+[15:35:24.607] INFO (117427): 🔌 Circuit breaker initialized: streaming-spotify
+[15:35:24.607] INFO (117427): 🔌 Circuit breaker initialized: streaming-apple_music
+[15:35:24.607] INFO (117427): 🔌 Circuit breaker initialized: streaming-youtube_music
+[15:35:24.607] INFO (117427): 🔌 Circuit breaker initialized: streaming-deezer
+[15:35:24.607] INFO (117427): 🔌 Circuit breaker initialized: streaming-soundcloud
+[15:35:24.608] INFO (117427): 🔌 Circuit breaker initialized: streaming-tidal
+[15:35:24.608] INFO (117427): 🔌 Circuit breaker initialized: streaming-bandcamp
+[15:35:24.608] INFO (117427): 🔌 Circuit breaker initialized: streaming-audiomack
+[15:35:24.663] INFO (117427): [DataTransfer] Created import job transfer_1792942524662_5ba0810 for user user-1 from spotify_profile_scan
+[15:35:24.670] INFO (117427): [DataTransfer] Imported release from spotify profile: First Light
+[15:35:24.670] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524662_5ba0810: 1 imported, 0 failed
+[15:35:24.670] INFO (117427): [DataTransfer] Created import job transfer_1792942524670_86a6132 for user user-1 from deezer_profile_scan
+[15:35:24.670] INFO (117427): [DataTransfer] Merged existing release from deezer: First Light
+[15:35:24.671] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524670_86a6132: 1 imported, 0 failed
+[15:35:24.675] INFO (117427): [DataTransfer] Created import job transfer_1792942524673_568d522 for user user-1 from spotify_profile_scan
+[15:35:24.675] INFO (117427): [DataTransfer] Imported release from spotify profile: First Light
+[15:35:24.675] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524673_568d522: 1 imported, 0 failed
+[15:35:24.675] INFO (117427): [DataTransfer] Created import job transfer_1792942524675_1218534 for user user-1 from spotify_profile_scan
+[15:35:24.676] INFO (117427): [DataTransfer] Merged existing release from spotify: First Light
+[15:35:24.677] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524675_1218534: 1 imported, 0 failed
+[15:35:24.679] INFO (117427): [DataTransfer] Created import job transfer_1792942524679_136fe02 for user user-1 from spotify_profile_scan
+[15:35:24.679] INFO (117427): [DataTransfer] Imported release from spotify profile: First Light
+[15:35:24.679] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524679_136fe02: 1 imported, 0 failed
+[15:35:24.679] INFO (117427): [DataTransfer] Created import job transfer_1792942524679_136fe02 for user user-1 from apple_music_profile_scan
+[15:35:24.679] INFO (117427): [DataTransfer] Merged existing release from apple_music: First Light
+[15:35:24.680] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524679_136fe02: 1 imported, 0 failed
+[15:35:24.682] INFO (117427): [DataTransfer] Created import job transfer_1792942524681_60f509b for user user-1 from spotify_profile_scan
+[15:35:24.686] INFO (117427): [DataTransfer] Created import job transfer_1792942524681_60f509b for user user-1 from apple_music_profile_scan
+[15:35:24.687] INFO (117427): [DataTransfer] Imported release from spotify profile: First Light
+[15:35:24.687] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524681_60f509b: 1 imported, 0 failed
+[15:35:24.687] INFO (117427): [DataTransfer] Merged existing release from apple_music: First Light
+[15:35:24.687] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524681_60f509b: 1 imported, 0 failed
+[15:35:24.687] WARN (117427): [DataTransfer] Skipping release "First Light" from non-canonical artist "Different Artist"
+[15:35:24.687] INFO (117427): [DataTransfer] Created import job transfer_1792942524687_b5e18c4 for user user-1 from spotify_profile_scan
+[15:35:24.687] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524687_b5e18c4: 0 imported, 0 failed
+[15:35:24.688] INFO (117427): [DataTransfer] Created import job transfer_1792942524688_b6ac4cd for user user-1 from spotify_profile_scan
+[15:35:24.689] INFO (117427): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[15:35:24.689] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524688_b6ac4cd: 1 imported, 0 failed
+[15:35:24.689] INFO (117427): [DataTransfer] Created import job transfer_1792942524689_88bb9cc for user user-1 from spotify_profile_scan
+[15:35:24.690] INFO (117427): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[15:35:24.690] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524689_88bb9cc: 1 imported, 0 failed
+[15:35:24.691] INFO (117427): [DataTransfer] Created import job transfer_1792942524691_8266580 for user user-1 from spotify_profile_scan
+[15:35:24.691] INFO (117427): [DataTransfer] "First Light" from spotify already exists in catalog (release legacy-release-1) — backfilled any missing cover art/track/platform data
+[15:35:24.691] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524691_8266580: 1 imported, 0 failed
+[15:35:24.692] INFO (117427): [DataTransfer] Created import job transfer_1792942524691_8266580 for user user-1 from spotify_profile_scan
+[15:35:24.692] INFO (117427): [DataTransfer] Imported release from spotify profile: First Light
+[15:35:24.692] INFO (117427): [DataTransfer] Profile catalog import transfer_1792942524691_8266580: 1 imported, 0 failed
+[15:35:26.479] INFO (117468): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:35:29.130] INFO (117599): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:35:30.011] INFO (117599): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:35:30.050] INFO (117599): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:36.789] INFO (117971): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:36.976] INFO (117961): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:35:36.984] INFO (117961): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+[15:35:42.991] INFO (118207): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:46.128] INFO (118343): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+[15:35:46.143] INFO (118343): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend
+[15:35:46.174] INFO (118343): Sharp module loaded for image processing
+[15:35:46.567] INFO (118343): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source
+JUNIT report written to /workspace/maxbooster7.5/test-results.xml

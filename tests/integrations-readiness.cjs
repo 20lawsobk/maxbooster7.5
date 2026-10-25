@@ -107,8 +107,10 @@ async function postingTests() {
   const full = source("server/services/autoPostingServiceV2.ts");
   const start = full.indexOf("  private async executePost(");
   const method = full.slice(start, full.indexOf("  private async postToPlatform(", start));
+  const consentStart = full.indexOf("  private async hasCurrentPublishConsent(");
+  const consentMethod = full.slice(consentStart, full.indexOf("  private async processSinglePost(", consentStart));
   const checkpoints = [];
-  const worker = compile(`export class Worker { ${method}
+  const worker = compile(`export class Worker { ${consentMethod} ${method}
     async postToPlatform(user, platform, content) {
       if (platform === "bad") throw new Error("ambiguous timeout");
       return { platform, success: true, postId: "receipt" };

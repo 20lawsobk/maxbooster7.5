@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: Stripe commerce provider uses immutable transfer/refund/reversal keys and Connect-scoped payout calls
+ok 1 - Stripe commerce provider uses immutable transfer/refund/reversal keys and Connect-scoped payout calls
+  ---
+  duration_ms: 16.296126
+  type: 'test'
+  ...
+# Subtest: CommerceEngine retains reservations on provider ambiguity and reverses before releasing failed bank payouts
+ok 2 - CommerceEngine retains reservations on provider ambiguity and reverses before releasing failed bank payouts
+  ---
+  duration_ms: 8.298074
+  type: 'test'
+  ...
+# Subtest: CommerceEngine blocks unpaid sources and applies successful refund compensation only after provider confirmation
+ok 3 - CommerceEngine blocks unpaid sources and applies successful refund compensation only after provider confirmation
+  ---
+  duration_ms: 4.081054
+  type: 'test'
+  ...
+# Subtest: requestCommercePayout requires verified Connect capability and binds the durable request to the account
+ok 4 - requestCommercePayout requires verified Connect capability and binds the durable request to the account
+  ---
+  duration_ms: 6.895549
+  type: 'test'
+  ...
+# Subtest: verifiedPayment requires succeeded exact-currency provider settlement and separates pending from completed refunds
+ok 5 - verifiedPayment requires succeeded exact-currency provider settlement and separates pending from completed refunds
+  ---
+  duration_ms: 6.327452
+  type: 'test'
+  ...
+# Subtest: royalty funding accepts only finalized statements with exact settled top-up net and excludes marketplace cash
+ok 6 - royalty funding accepts only finalized statements with exact settled top-up net and excludes marketplace cash
+  ---
+  duration_ms: 8.711157
+  type: 'test'
+  ...
+# Subtest: payout webhook verifies Connect account ownership before resuming the operation
+ok 7 - payout webhook verifies Connect account ownership before resuming the operation
+  ---
+  duration_ms: 7.419409
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 126.86244

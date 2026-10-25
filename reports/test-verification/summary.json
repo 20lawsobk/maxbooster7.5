@@ -1,0 +1,306 @@
+{
+  "generatedAt": "2026-10-25T21:54:50.905471+00:00",
+  "sourceBaseline": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "scope": "Final canonical evidence only; initial failures retained separately; no invented aggregate case total",
+  "status": "failed",
+  "productionReady": false,
+  "inventory": {
+    "canonicalTestFiles": 566,
+    "supportSourceFiles": 55,
+    "retainedSnapshotFiles": 71,
+    "nonExecutableSupportFiles": 10,
+    "byGroup": {
+      "commerce": 17,
+      "integration-browser": 26,
+      "manual-destructive-provider": 37,
+      "python": 115,
+      "root-node": 89,
+      "root-unit": 277,
+      "runner-support": 55,
+      "subsystems": 5
+    }
+  },
+  "groups": [
+    {
+      "group": "root-unit",
+      "status": "passed",
+      "counts": {
+        "passed": 2332
+      },
+      "total": 2332,
+      "countScope": "JUnit cases"
+    },
+    {
+      "group": "root-additional",
+      "status": "passed",
+      "counts": {
+        "passed": 18
+      },
+      "total": 18,
+      "countScope": "JUnit cases"
+    },
+    {
+      "group": "node",
+      "status": "failed",
+      "fileCounts": {
+        "files": 89,
+        "failedFiles": 2,
+        "counts": {
+          "tests": 423,
+          "pass": 420,
+          "fail": 1,
+          "skipped": 2,
+          "cancelled": 0
+        }
+      },
+      "countScope": "TAP totals include parent tests; assertion scripts have process evidence only"
+    },
+    {
+      "group": "python",
+      "status": "failed",
+      "files": {
+        "passed": 93,
+        "failed": 9,
+        "timeout": 0,
+        "skipped": 1,
+        "blocked": 19,
+        "empty": 0
+      },
+      "counts": {
+        "tests": 1138,
+        "failures": 31,
+        "errors": 0,
+        "skipped": 12
+      },
+      "countScope": "JUnit suite counters, including unittest subtests; helper/operational inventory is separate"
+    },
+    {
+      "group": "commerce",
+      "status": "passed",
+      "counts": {
+        "passed": 33
+      },
+      "total": 33,
+      "commands": 18,
+      "remoteNotRun": [
+        {
+          "path": "tests/payment-processing/real-stripe-api.mjs",
+          "status": "not_run",
+          "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+        },
+        {
+          "path": "tests/payment-processing/inbound-real-stripe.mjs",
+          "status": "not_run",
+          "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+        },
+        {
+          "path": "tests/payment-processing/real-stripe-topup.mjs",
+          "status": "not_run",
+          "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+        },
+        {
+          "path": "tests/payment-processing/browser-fixture.mjs",
+          "status": "not_run",
+          "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+        }
+      ],
+      "countScope": "JUnit leaf cases; offline CLI assertions counted as a command only"
+    },
+    {
+      "group": "subsystems",
+      "status": "passed",
+      "commands": [
+        {
+          "id": "rust-boosterstate",
+          "status": "passed",
+          "exitCode": 0,
+          "passedTests": 2
+        },
+        {
+          "id": "go-dns",
+          "status": "passed",
+          "exitCode": 0,
+          "passedTests": 2
+        },
+        {
+          "id": "pdim-erasure",
+          "status": "passed",
+          "exitCode": 0,
+          "passedScenarios": 60
+        },
+        {
+          "id": "maxcore-js-security",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "id": "rust-cleanup-concurrency",
+          "status": "passed",
+          "exitCode": 0,
+          "passedTests": 2
+        },
+        {
+          "id": "pdim-http-load",
+          "status": "passed",
+          "exitCode": 0,
+          "passedTests": 54
+        }
+      ],
+      "countScope": "Per-command tests/scenarios; Rust cleanup overlaps one default Node case"
+    },
+    {
+      "group": "browser",
+      "status": "passed",
+      "passed": 5,
+      "failed": 0,
+      "scope": "Actual isolated Chromium component/audio regressions plus bounded 80-page application acceptance"
+    },
+    {
+      "group": "page80",
+      "status": "passed",
+      "passed": 80,
+      "failed": 0,
+      "scope": "Actual isolated Chromium component/audio regressions plus bounded 80-page application acceptance"
+    },
+    {
+      "group": "http",
+      "status": "failed",
+      "counts": {
+        "passed": 288,
+        "failed": 192,
+        "skipped": 2
+      },
+      "total": 482,
+      "exitCode": 1,
+      "countScope": "21 files; JUnit cases; dual-config cache tests also appear in root unit run"
+    },
+    {
+      "group": "public-feeds",
+      "status": "failed",
+      "exitCode": 1,
+      "sources": [
+        {
+          "source": "apple_charts",
+          "domain": "music",
+          "rows": 50,
+          "passed": true
+        },
+        {
+          "source": "mastodon_trending",
+          "domain": "social",
+          "rows": 20,
+          "passed": false
+        },
+        {
+          "source": "marketing_dive",
+          "domain": "advertising",
+          "rows": 10,
+          "passed": true
+        },
+        {
+          "source": "guardian_culture",
+          "domain": "culture",
+          "rows": 26,
+          "passed": true
+        }
+      ],
+      "scope": "Read-only public source adapters, inherited approved HTTP proxy and TLS trust only; no app credentials"
+    },
+    {
+      "group": "checks",
+      "status": "failed",
+      "commands": [
+        {
+          "command": [
+            "npm",
+            "run",
+            "check"
+          ],
+          "cwd": ".",
+          "startedAt": "2026-10-25T15:34:48.553620+00:00",
+          "durationSeconds": 31.803,
+          "exitCode": 0,
+          "timedOut": false,
+          "status": "passed",
+          "log": "reports/test-verification/final-checks/orchestration/types.txt",
+          "logSha256": "2ffa91ca4d46f5e0ba57779604229aa88b9399d80e7e811d7627a6db927afa94",
+          "group": "checks",
+          "id": "types"
+        },
+        {
+          "command": [
+            "npm",
+            "run",
+            "lint"
+          ],
+          "cwd": ".",
+          "startedAt": "2026-10-25T15:35:20.356929+00:00",
+          "durationSeconds": 49.945,
+          "exitCode": 0,
+          "timedOut": false,
+          "status": "passed",
+          "log": "reports/test-verification/final-checks/orchestration/lint.txt",
+          "logSha256": "06da543667ff102b992477b32f1825628ff2dfc482d6132e417c6e1e0c4501cb",
+          "group": "checks",
+          "id": "lint"
+        },
+        {
+          "command": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": ".",
+          "startedAt": "2026-10-25T15:36:10.302600+00:00",
+          "durationSeconds": 17.84,
+          "exitCode": 0,
+          "timedOut": false,
+          "status": "passed",
+          "log": "reports/test-verification/final-checks/orchestration/build.txt",
+          "logSha256": "1122a0fb8efaf10aa3b9bed8c8a6b543d5971a04ebf18666bf6bcb367b021ab4",
+          "group": "checks",
+          "id": "build"
+        },
+        {
+          "command": [
+            "npm",
+            "run",
+            "security:audit"
+          ],
+          "cwd": ".",
+          "startedAt": "2026-10-25T15:36:28.142886+00:00",
+          "durationSeconds": 1.029,
+          "exitCode": 1,
+          "timedOut": false,
+          "status": "failed",
+          "log": "reports/test-verification/final-checks/orchestration/audit.txt",
+          "logSha256": "091f8d8ecc06b56cc5886c3398169f806dc39ae7c675dfc582f640b22b8611b9",
+          "group": "checks",
+          "id": "audit"
+        }
+      ]
+    },
+    {
+      "group": "dependency-audit-recheck",
+      "status": "failed",
+      "exitCode": 1,
+      "metadata": null,
+      "error": {
+        "summary": "",
+        "detail": ""
+      }
+    }
+  ],
+  "fileStatusCounts": {
+    "executed": 489,
+    "not_run": 33,
+    "support": 55,
+    "blocked_or_skipped": 16,
+    "failed": 28
+  },
+  "limits": [
+    "Group counts overlap; Node parent tests differ from JUnit leaf cases",
+    "Operational/provider/hardware tests without disposable prerequisites were not run",
+    "Passing page renders and fixture journeys do not certify production quality or Replit deployment"
+  ]
+}

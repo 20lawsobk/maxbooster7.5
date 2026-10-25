@@ -1,0 +1,102 @@
+TAP version 13
+# Subtest: durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
+ok 1 - durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
+  ---
+  duration_ms: 609.93933
+  type: 'test'
+  ...
+# Subtest: PostgreSQL migrations and real CommerceRepository settlement/fulfillment
+    # Subtest: applies additive 0022/0023 migrations and books one balanced, allocated order atomically
+    ok 1 - applies additive 0022/0023 migrations and books one balanced, allocated order atomically
+      ---
+      duration_ms: 40.200053
+      type: 'test'
+      ...
+    # Subtest: rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
+    ok 2 - rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
+      ---
+      duration_ms: 9.59567
+      type: 'test'
+      ...
+    # Subtest: concurrent duplicate settlements serialize on the production advisory lock
+    ok 3 - concurrent duplicate settlements serialize on the production advisory lock
+      ---
+      duration_ms: 24.603693
+      type: 'test'
+      ...
+    # Subtest: rejects a reused PaymentIntent attached to another order
+    ok 4 - rejects a reused PaymentIntent attached to another order
+      ---
+      duration_ms: 12.005456
+      type: 'test'
+      ...
+    # Subtest: database deferred constraint also rejects unbalanced journals at COMMIT
+    ok 5 - database deferred constraint also rejects unbalanced journals at COMMIT
+      ---
+      duration_ms: 1.98252
+      type: 'test'
+      ...
+    1..5
+ok 2 - PostgreSQL migrations and real CommerceRepository settlement/fulfillment
+  ---
+  duration_ms: 89.643907
+  type: 'test'
+  ...
+# Subtest: CommerceEngine executes production payout/refund/reversal workflows against SQL
+    # Subtest: reserves against funded payable, idempotently, and rejects over-reservation
+    ok 1 - reserves against funded payable, idempotently, and rejects over-reservation
+      ---
+      duration_ms: 25.220384
+      type: 'test'
+      ...
+    # Subtest: concurrent same-key requests for conflicting payout accounts have one immutable winner
+    ok 2 - concurrent same-key requests for conflicting payout accounts have one immutable winner
+      ---
+      duration_ms: 21.20669
+      type: 'test'
+      ...
+    # Subtest: pays a claimed reservation through the engine's real SQL state transitions
+    ok 3 - pays a claimed reservation through the engine's real SQL state transitions
+      ---
+      duration_ms: 9.316319
+      type: 'test'
+      ...
+    # Subtest: refund authorization, duplicate intent, partial reversal, and over-refund guardrails
+    ok 4 - refund authorization, duplicate intent, partial reversal, and over-refund guardrails
+      ---
+      duration_ms: 24.438814
+      type: 'test'
+      ...
+    # Subtest: full refund creates balanced reversal, exposes the debt, then recovers it exactly once
+    ok 5 - full refund creates balanced reversal, exposes the debt, then recovers it exactly once
+      ---
+      duration_ms: 22.670178
+      type: 'test'
+      ...
+    1..5
+ok 3 - CommerceEngine executes production payout/refund/reversal workflows against SQL
+  ---
+  duration_ms: 114.509376
+  type: 'test'
+  ...
+# Subtest: production commerce webhook inbox deduplicates concurrent duplicate events
+ok 4 - production commerce webhook inbox deduplicates concurrent duplicate events
+  ---
+  duration_ms: 9.656722
+  type: 'test'
+  ...
+# Subtest: real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL
+ok 5 - real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL # SKIP STRIPE_TEST_SECRET and STRIPE_TEST_CLIENT were not supplied.
+  ---
+  duration_ms: 0.144698
+  type: 'test'
+  ...
+1..5
+# tests 15
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 1105.729438

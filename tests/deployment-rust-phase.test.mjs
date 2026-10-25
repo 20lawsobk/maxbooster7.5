@@ -33,7 +33,7 @@ test("real Rust compilation survives concurrent workspace cleanup", {
   for (const dir of ["scripts", "boosterstate", "scratch"]) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
-  for (const file of ["build.sh", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix",
+  for (const file of ["build.sh", "scripts/build-boosterstate.sh", "scripts/boosterstate-toolchain.nix", "scripts/prepare-rust-toolchain.py",
     "boosterstate/Cargo.toml", "boosterstate/Cargo.lock"]) {
     fs.copyFileSync(file, path.join(root, file));
   }

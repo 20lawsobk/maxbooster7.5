@@ -47,6 +47,11 @@ class AtomicLeaseTests(unittest.TestCase):
 
     def setUp(self):
         self.cmd("FLUSHDB")  # Isolated test socket only.
+        # Resolve the engine's lazy source/native imports before patching the
+        # module table. patch.dict restores that table after every test; loading
+        # NumPy inside it would remove C-extension modules that cannot be loaded
+        # twice, making this file fail when run on its own.
+        self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
         storage = types.SimpleNamespace(_ns=lambda key: key)
         module = types.SimpleNamespace(get_storage=lambda: storage)
         self.patcher = patch.dict("sys.modules", {"storage_client": module})
@@ -54,7 +59,6 @@ class AtomicLeaseTests(unittest.TestCase):
         self.store = PDIM()
         self.store._command = self.cmd
         self.addCleanup(self.patcher.stop)
-        self.snapshot = Engine(sources=sources(), store=MemoryStore()).refresh()
 
     def test_contenders_and_owner_checked_heartbeat_release(self):
         self.assertTrue(self.store.acquire("owner-a"))

@@ -157,7 +157,7 @@ test("maintenance permits exact recovery and verified webhooks, not header spoof
   });
   const module = { exports: {} };
   runInNewContext(output.outputFiles[0].text, { module, exports: module.exports,
-    require: createRequire(import.meta.url), Buffer, Date });
+    require: createRequire(import.meta.url), Buffer, Date, process: { env: { NODE_ENV: "production" } } });
   const check = async (path, method = "GET", headers = {}, user) => {
     let next = false; let status = 200;
     const req = { path, method, headers, user, get: name => headers[name] };

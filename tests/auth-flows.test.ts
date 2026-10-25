@@ -9,6 +9,7 @@ let authCookies = "";
 let csrfToken = "";
 
 const testUser = {
+  birthdate: "1990-01-01",
   email: `authflow_${Date.now()}@maxbooster-test.invalid`,
   password: "SecurePass123!@#",
   firstName: "Auth",

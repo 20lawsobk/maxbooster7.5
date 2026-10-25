@@ -16,7 +16,7 @@ export default defineConfig({
       "dist/**",
       "tests/critical-paths.test.ts",
       "tests/paid-user-e2e.test.ts",
-      // Legacy Jest-based test files not converted to Vitest
+      // Example and simulation suites run with vitest.additional.config.ts.
       "tests/unit/example.test.ts",
       // Database-writing suite: run explicitly with vitest.beat-loop.config.ts.
       "tests/unit/beat-sale-money-loop.test.ts",

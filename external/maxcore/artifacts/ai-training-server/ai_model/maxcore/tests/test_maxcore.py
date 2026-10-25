@@ -713,12 +713,15 @@ def test_digital_gpu_gemm_served_from_pocket_on_repeat():
     rng = np.random.default_rng(33)
     A = rng.standard_normal((128, 96)).astype(np.float32)
     B = rng.standard_normal((96, 128)).astype(np.float32)
-    h0 = _counter("pocket_accel.hit")
+    # Plain float32 GEMMs use the replica pool; its counter records the cache
+    # that actually served this request rather than the older direct-backend
+    # pocket accelerator, which is still used for other operand types.
+    h0 = dg._pool().stats()["total_hits"]
     o1 = dg.gemm(A, B).numpy()
     o2 = dg.gemm(A, B).numpy()                   # identical repeat
     assert np.allclose(o1, A @ B, atol=TOL)
     assert np.allclose(o2, o1, atol=0.0)         # bit-identical: pocket-served
-    assert _counter("pocket_accel.hit") >= h0 + 1
+    assert dg._pool().stats()["total_hits"] >= h0 + 1
 
 
 # ── manual runner ─────────────────────────────────────────────────────────────

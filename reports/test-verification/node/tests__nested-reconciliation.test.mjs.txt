@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: successful clean install replaces stale generated tree without modifying source/locks
+ok 1 - successful clean install replaces stale generated tree without modifying source/locks
+  ---
+  duration_ms: 32.137059
+  type: 'test'
+  ...
+# Subtest: failed frozen install preserves existing runtime
+ok 2 - failed frozen install preserves existing runtime
+  ---
+  duration_ms: 25.688919
+  type: 'test'
+  ...
+# Subtest: unexpected lock mutation is rejected before promotion
+ok 3 - unexpected lock mutation is rejected before promotion
+  ---
+  duration_ms: 24.242658
+  type: 'test'
+  ...
+# Subtest: offline diagnostic never replaces installed files
+ok 4 - offline diagnostic never replaces installed files
+  ---
+  duration_ms: 27.827684
+  type: 'test'
+  ...
+# Subtest: stale newly installed dependency is rejected before promotion
+ok 5 - stale newly installed dependency is rejected before promotion
+  ---
+  duration_ms: 26.736764
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 257.595965

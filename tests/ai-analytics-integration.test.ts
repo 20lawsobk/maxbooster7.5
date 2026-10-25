@@ -9,6 +9,7 @@ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 let cookies = "";
 
 const testUser = {
+  birthdate: "1990-01-01",
   email: `ai_analytics_test_${Date.now()}@maxbooster-test.com`,
   password: "SecurePass123!@#",
   username: `AIAnalyticsTest_${Date.now()}`,

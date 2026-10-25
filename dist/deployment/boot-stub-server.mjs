@@ -11,22 +11,26 @@
 //
 // This script uses ONLY Node's http core module (no node_modules needed) so
 // it can start in milliseconds, before any dependency restore happens. It
-// binds the real port and answers every request with 200 immediately,
+// binds the real port and answers root liveness with 200 immediately,
 // satisfying the platform health check while the actual app finishes
 // initializing in the background. start.sh kills this process — freeing the
 // port — right before launching the real server on the same port.
 //
-// This does not paper over the real app being ready: nothing downstream
-// treats this stub as if it were a working server. It is not reachable by
-// users (the platform only proxies the health check path pre-launch in
-// practice, and the real server takes the port over within seconds), and it
-// never reports readiness for anything beyond "the process is alive".
+// Every other path returns an explicit unavailable response. API consumers
+// and readiness probes must wait for the real application to take the port.
 
 import http from "node:http";
 
 const port = Number(process.env.PORT || 5000);
 
-const server = http.createServer((_req, res) => {
+const server = http.createServer((req, res) => {
+  let pathname;
+  try { pathname = new URL(req.url || "/", "http://boot.local").pathname; } catch { pathname = null; }
+  if (pathname !== "/") {
+    res.writeHead(503, { "content-type": "application/json", "cache-control": "no-store", "retry-after": "2" });
+    res.end(JSON.stringify({ status: "starting", ready: false, bootPhase: true }));
+    return;
+  }
   res.writeHead(200, { "content-type": "text/plain", "cache-control": "no-store" });
   res.end("starting up");
 });

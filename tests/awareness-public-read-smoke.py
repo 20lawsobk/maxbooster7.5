@@ -10,11 +10,14 @@ import os
 from pathlib import Path
 import sys
 
-if set(os.environ) - {"PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE"}:
+allowed_environment = {"PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE",
+                       "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+                       "SSL_CERT_FILE", "SSL_CERT_DIR", "MAXCORE_AWARENESS_USE_PROXY"}
+if set(os.environ) - allowed_environment:
     raise SystemExit("Run with a clean environment; credentials must not reach this probe")
 # The portable interpreter's compiled OpenSSL path is not the host trust
 # store. Use the verified system bundle, never disable certificate checking.
-trust_store = Path("/etc/ssl/certs/ca-certificates.crt")
+trust_store = Path(os.environ.get("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt"))
 if not trust_store.is_file():
     raise SystemExit("System TLS trust store unavailable; public ingestion remains untested")
 os.environ["SSL_CERT_FILE"] = str(trust_store)

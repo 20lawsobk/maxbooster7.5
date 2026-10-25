@@ -1,0 +1,122 @@
+TAP version 13
+# Subtest: real bootstrap verifies the toolchain without copying immutable package trees
+not ok 1 - real bootstrap verifies the toolchain without copying immutable package trees
+  ---
+  duration_ms: 1288.900555
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/deployment-bootstrap.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Using immutable npm package store path/. Input:
+    
+    '[bootstrap] Preparing build toolchain before workspace cleanup\n' +
+      '[bootstrap] Probing Node: /workspace/.cloud-tools/node_modules/.bin/node\n' +
+      '[bootstrap] Preserving Node outside workspace (copy limit: 120s)\n' +
+      '[bootstrap] Resolving compatible npm\n' +
+      '[bootstrap] Preserving npm outside workspace (copy limit: 120s)\n' +
+      '[bootstrap] Verifying preserved npm\n' +
+      '10.9.4\n' +
+      '[bootstrap] Resolving compatible pnpm\n' +
+      '[bootstrap] Preserving pnpm outside workspace (copy limit: 120s)\n' +
+      '[bootstrap] Verifying preserved pnpm\n' +
+      '10.26.1\n' +
+      '[bootstrap] Toolchain ready; temporary footprint: 157M\n' +
+      'Build toolchain verified outside workspace caches\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    [bootstrap] Preparing build toolchain before workspace cleanup
+    [bootstrap] Probing Node: /workspace/.cloud-tools/node_modules/.bin/node
+    [bootstrap] Preserving Node outside workspace (copy limit: 120s)
+    [bootstrap] Resolving compatible npm
+    [bootstrap] Preserving npm outside workspace (copy limit: 120s)
+    [bootstrap] Verifying preserved npm
+    10.9.4
+    [bootstrap] Resolving compatible pnpm
+    [bootstrap] Preserving pnpm outside workspace (copy limit: 120s)
+    [bootstrap] Verifying preserved pnpm
+    10.26.1
+    [bootstrap] Toolchain ready; temporary footprint: 157M
+    Build toolchain verified outside workspace caches
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/deployment-bootstrap.test.mjs:19:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: bootstrap announces and cleans up a failure before admitting destructive tasks
+not ok 2 - bootstrap announces and cleans up a failure before admitting destructive tasks
+  ---
+  duration_ms: 129.914341
+  type: 'test'
+  location: '/workspace/maxbooster7.5/tests/deployment-bootstrap.test.mjs:28:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /No durable npm installation found; refusing cleanup/. Input:
+    
+    'node:internal/modules/cjs/loader:1433\n' +
+      '  throw err;\n' +
+      '  ^\n' +
+      '\n' +
+      "Error: Cannot find module '/tmp/maxbooster-test-0jtft_lj/bootstrap-failure-UhHoIN/script/lib/deploymentPackRecovery.mjs'\n" +
+      '    at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)\n' +
+      '    at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)\n' +
+      '    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)\n' +
+      '    at Function._load (node:internal/modules/cjs/loader:1216:25)\n' +
+      '    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)\n' +
+      '    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\n' +
+      '    at node:internal/main/run_main_module:36:49 {\n' +
+      "  code: 'MODULE_NOT_FOUND',\n" +
+      '  requireStack: []\n' +
+      '}\n' +
+      '\n' +
+      'Node.js v22.23.3\n' +
+      '[bootstrap] FAILED at line 42 (exit 1)\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    node:internal/modules/cjs/loader:1433
+      throw err;
+      ^
+    
+    Error: Cannot find module '/tmp/maxbooster-test-0jtft_lj/bootstrap-failure-UhHoIN/script/lib/deploymentPackRecovery.mjs'
+        at Function._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+        at defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+        at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+        at Function._load (node:internal/modules/cjs/loader:1216:25)
+        at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+        at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+        at node:internal/main/run_main_module:36:49 {
+      code: 'MODULE_NOT_FOUND',
+      requireStack: []
+    }
+    
+    Node.js v22.23.3
+    [bootstrap] FAILED at line 42 (exit 1)
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/maxbooster7.5/tests/deployment-bootstrap.test.mjs:40:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1550.766036

@@ -1,0 +1,13 @@
+{
+  "scope": "Original PDIM HTTP assertions, real disposable PostgreSQL/fabric; loopback only",
+  "source": "external/pdim/scripts/src/smoke-load-test.ts",
+  "status": "passed",
+  "startedAt": "2026-10-25T15:25:57.787Z",
+  "productionDatabaseUsed": false,
+  "startup": "Dedicated real-app fixture; dataset schedulers and logical corpus auto-push not started",
+  "exitCode": 0,
+  "passedTests": 54,
+  "totalTests": 54,
+  "cleanup": "Owned test/server processes stopped; disposable PostgreSQL and temporary fabric removed",
+  "finishedAt": "2026-10-25T15:26:01.783Z"
+}

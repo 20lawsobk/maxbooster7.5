@@ -93,33 +93,32 @@ function fixture(t) {
   const run = (extra = {}, args = ["--publish-disposable-copy", "."]) =>
     spawnSync(process.execPath, [path.join(root,RECOVERY_HELPER_PATH), ...args],
       {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
-  const runConfigured = (extra = {}) => {
-    const [executable, ...args] = configuredBuildCommand();
-    // Exercise the isolated preparation entry, not a second packing recipe.
-    return spawnSync(executable, args,
-      {cwd:root, env:{...env,...extra},encoding:"utf8",timeout:60000});
-  };
-  return {root,state,calls,authorization,write,run,runConfigured,outsideInterpreter};
+  // This retained compatibility helper is independently runnable, but is not
+  // the current Replit bootstrap/executive pipeline. Exercise the real helper
+  // directly instead of passing removed options to the current build shell.
+  const runLegacyPublishing = (extra = {}) => run(extra);
+  return {root,state,calls,authorization,write,run,runLegacyPublishing,outsideInterpreter};
 }
 
-test("publishing uses the guarded historical shell scaffold", () => {
+test("Replit publishing selects the current guarded bootstrap executive shell", () => {
   const command = configuredBuildCommand();
-  assert.deepEqual(command, ["bash", "build.sh", "--publish-disposable-copy", "."]);
+  assert.deepEqual(command, ["bash", "build.sh"]);
   const section = fs.readFileSync(path.join(repo, ".replit"), "utf8")
     .match(/^\[deployment\]\s*\n([\s\S]*?)(?=^\[|(?![\s\S]))/m)?.[1];
   const publishing = JSON.parse(section.match(/^build\s*=\s*(\[[^\n]*\])\s*$/m)[1]);
   assert.deepEqual(publishing, command);
+  assert.match(fs.readFileSync("build.sh", "utf8"), /exec bash script\/deployment\/bootstrap\.sh/);
   assert.ok(fs.readFileSync("docs/publishing-build-authorization.md","utf8").includes(publishing.join(" ")));
 });
 
 for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
   {REPLIT_DEPLOYMENT:"1",REPLIT_DEPLOYMENT_ID:"runtime-present"}]) {
-  test(`configured publishing command packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
+  test(`legacy recovery publishing helper packs and reenters with indicators ${JSON.stringify(indicators)}`, t => {
     const f = fixture(t);
     const protectedFiles = ["package.json", "start.sh", RECOVERY_HELPER_PATH];
     const before = protectedFiles.map(p => fs.readFileSync(path.join(f.root,p)));
     for (let attempt=0; attempt<2; attempt++) {
-      const result=f.runConfigured(indicators);
+      const result=f.runLegacyPublishing(indicators);
       assert.equal(result.status,0,result.stderr+result.stdout);
       assert.match(result.stdout,/REAL_FIXTURE_BUILD_COMPLETE/);
       const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
@@ -136,7 +135,7 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
         assert.ok(event.elapsedSeconds >= (events[i - 1]?.elapsedSeconds ?? 0));
       });
       const calls = fs.readFileSync(f.calls,"utf8").trim().split("\n").map(line => JSON.parse(line));
-      assert.equal(calls.length, attempt + 1, "exactly one npm build per configured invocation");
+      assert.equal(calls.length, attempt + 1, "exactly one npm build per legacy helper invocation");
       assert.deepEqual(calls.at(-1), {
         root:fs.realpathSync(f.root), declaredRoot:fs.realpathSync(f.root),
         pack:"1", cleanup:"1",
@@ -158,14 +157,14 @@ for (const indicators of [{}, {REPLIT_DEPLOYMENT:"",REPLIT_DEPLOYMENT_ID:""},
   });
 }
 
-test("configured command rejects inherited authorization without npm or filesystem mutation", t => {
+test("legacy recovery publishing helper rejects inherited authorization without npm or filesystem mutation", t => {
   const f = fixture(t);
   for (const inherited of [
     {DEPLOY_PACK:"1"}, {DEPLOY_PACK:""},
     {PUBLISH_PAYLOAD_CLEANUP:"1"}, {PUBLISH_PAYLOAD_CLEANUP:""},
     {PUBLISH_BUILD_ROOT:f.root}, {PUBLISH_BUILD_ROOT:""}, f.authorization,
   ]) {
-    const result = f.runConfigured(inherited);
+    const result = f.runLegacyPublishing(inherited);
     assert.notEqual(result.status,0);
     assert.match(result.stderr,/Ambiguous inherited build authorization/);
     assert.ok(!fs.existsSync(f.calls), "npm must not run");
@@ -176,10 +175,10 @@ test("configured command rejects inherited authorization without npm or filesyst
   }
 });
 
-test("outer publishing diagnostics retain npm failure and never claim successful completion", t => {
+test("legacy recovery publishing diagnostics retain npm failure and never claim successful completion", t => {
   const f = fixture(t);
   f.write("fixture-build.mjs", "process.exit(7);");
-  const result = f.runConfigured();
+  const result = f.runLegacyPublishing();
   assert.notEqual(result.status, 0);
   const events = result.stderr.split("\n").filter(line => line.startsWith("[publishing-entry] "))
     .map(line => JSON.parse(line.slice("[publishing-entry] ".length)));

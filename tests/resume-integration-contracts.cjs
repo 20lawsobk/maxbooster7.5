@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
 const crypto = require("node:crypto");
+const path = require("node:path");
 const twilio = require("twilio");
 const read = path => fs.readFileSync(path, "utf8");
 function load(path, mocks, env = {}) {
@@ -14,7 +15,7 @@ function load(path, mocks, env = {}) {
   });
   assert.equal(output.diagnostics.length, 0);
   vm.runInNewContext(output.outputText, { exports, Buffer, Date, process: { env },
-    require: id => id in mocks ? mocks[id] : assert.fail(`Unexpected import ${id}`) });
+    require: id => id === "node:path" ? path : id in mocks ? mocks[id] : assert.fail(`Unexpected import ${id}`) });
   return exports;
 }
 const paths = ["/api/webhooks/stripe", "/webhooks/sendgrid", "/api/webhooks/resend",

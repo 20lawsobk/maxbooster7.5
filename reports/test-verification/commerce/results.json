@@ -1,0 +1,458 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "startedAt": "2026-10-25T15:27:26.250076+00:00",
+  "nodeVersion": "v22.23.3",
+  "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
+  "commands": [
+    {
+      "id": "beat-loop-lifecycle-postgres.test",
+      "path": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/beat-loop-lifecycle-postgres.test.xml",
+        "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 5.62,
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "beat-loop-lifecycle-postgres.test.txt",
+      "junit": "beat-loop-lifecycle-postgres.test.xml"
+    },
+    {
+      "id": "business-integrity-postgres.test",
+      "path": "tests/payment-processing/business-integrity-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity-postgres.test.xml",
+        "tests/payment-processing/business-integrity-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.264,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "business-integrity-postgres.test.txt",
+      "junit": "business-integrity-postgres.test.xml"
+    },
+    {
+      "id": "business-integrity.test",
+      "path": "tests/payment-processing/business-integrity.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/business-integrity.test.xml",
+        "tests/payment-processing/business-integrity.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.151,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "business-integrity.test.txt",
+      "junit": "business-integrity.test.xml"
+    },
+    {
+      "id": "database-commerce.test",
+      "path": "tests/payment-processing/database-commerce.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/database-commerce.test.xml",
+        "tests/payment-processing/database-commerce.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.152,
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "log": "database-commerce.test.txt",
+      "junit": "database-commerce.test.xml"
+    },
+    {
+      "id": "inbound-billing.test",
+      "path": "tests/payment-processing/inbound-billing.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-billing.test.xml",
+        "tests/payment-processing/inbound-billing.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.199,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-billing.test.txt",
+      "junit": "inbound-billing.test.xml"
+    },
+    {
+      "id": "inbound-commerce.test",
+      "path": "tests/payment-processing/inbound-commerce.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-commerce.test.xml",
+        "tests/payment-processing/inbound-commerce.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.204,
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-commerce.test.txt",
+      "junit": "inbound-commerce.test.xml"
+    },
+    {
+      "id": "inbound-known-failures",
+      "path": "tests/payment-processing/inbound-known-failures.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-known-failures.xml",
+        "tests/payment-processing/inbound-known-failures.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.244,
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-known-failures.txt",
+      "junit": "inbound-known-failures.xml"
+    },
+    {
+      "id": "inbound-legacy-services.test",
+      "path": "tests/payment-processing/inbound-legacy-services.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-legacy-services.test.xml",
+        "tests/payment-processing/inbound-legacy-services.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.182,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-legacy-services.test.txt",
+      "junit": "inbound-legacy-services.test.xml"
+    },
+    {
+      "id": "inbound-registration.test",
+      "path": "tests/payment-processing/inbound-registration.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-registration.test.xml",
+        "tests/payment-processing/inbound-registration.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.629,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-registration.test.txt",
+      "junit": "inbound-registration.test.xml"
+    },
+    {
+      "id": "inbound-storefront.test",
+      "path": "tests/payment-processing/inbound-storefront.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/inbound-storefront.test.xml",
+        "tests/payment-processing/inbound-storefront.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.16,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "inbound-storefront.test.txt",
+      "junit": "inbound-storefront.test.xml"
+    },
+    {
+      "id": "outbound-commerce",
+      "path": "tests/payment-processing/outbound-commerce.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-commerce.xml",
+        "tests/payment-processing/outbound-commerce.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.162,
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-commerce.txt",
+      "junit": "outbound-commerce.xml"
+    },
+    {
+      "id": "outbound-membership-auth",
+      "path": "tests/payment-processing/outbound-membership-auth.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-membership-auth.xml",
+        "tests/payment-processing/outbound-membership-auth.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.176,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-membership-auth.txt",
+      "junit": "outbound-membership-auth.xml"
+    },
+    {
+      "id": "outbound-services-webhooks",
+      "path": "tests/payment-processing/outbound-services-webhooks.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-services-webhooks.xml",
+        "tests/payment-processing/outbound-services-webhooks.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.264,
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-services-webhooks.txt",
+      "junit": "outbound-services-webhooks.xml"
+    },
+    {
+      "id": "outbound-stripe-resource-ownership.test",
+      "path": "tests/payment-processing/outbound-stripe-resource-ownership.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-resource-ownership.test.xml",
+        "tests/payment-processing/outbound-stripe-resource-ownership.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.082,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-stripe-resource-ownership.test.txt",
+      "junit": "outbound-stripe-resource-ownership.test.xml"
+    },
+    {
+      "id": "outbound-stripe-test-transport.test",
+      "path": "tests/payment-processing/outbound-stripe-test-transport.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-stripe-test-transport.test.xml",
+        "tests/payment-processing/outbound-stripe-test-transport.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.161,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-stripe-test-transport.test.txt",
+      "junit": "outbound-stripe-test-transport.test.xml"
+    },
+    {
+      "id": "outbound-topup-journal",
+      "path": "tests/payment-processing/outbound-topup-journal.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/outbound-topup-journal.xml",
+        "tests/payment-processing/outbound-topup-journal.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.096,
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "outbound-topup-journal.txt",
+      "junit": "outbound-topup-journal.xml"
+    },
+    {
+      "id": "legacy-beat",
+      "path": "tests/unit/beat-sale-money-loop.test.ts",
+      "command": [
+        "scripts/testing/commerce-legacy-fixture.mjs",
+        "/workspace/maxbooster7.5/reports/test-verification/commerce/legacy-beat.xml"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 4.226,
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "legacy-beat.txt",
+      "junit": "legacy-beat.xml"
+    },
+    {
+      "id": "provider-report-summary",
+      "path": "tests/payment-processing/real-stripe-api.mjs",
+      "command": [
+        "tests/payment-processing/real-stripe-api.mjs",
+        "--self-test-summary"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.104,
+      "counts": null,
+      "log": "provider-report-summary.txt",
+      "junit": null,
+      "assertionFormat": "Bundled CLI self-check; its exit code verifies result aggregation and redaction; no JUnit cases fabricated"
+    }
+  ],
+  "blocked": [
+    {
+      "path": "tests/payment-processing/real-stripe-api.mjs",
+      "status": "not_run",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/inbound-real-stripe.mjs",
+      "status": "not_run",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/real-stripe-topup.mjs",
+      "status": "not_run",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/browser-fixture.mjs",
+      "status": "not_run",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    }
+  ],
+  "selection": null,
+  "finishedAt": "2026-10-25T15:27:41.339109+00:00",
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "timeout": 0,
+    "remoteNotRun": 4
+  },
+  "productionReady": false
+}

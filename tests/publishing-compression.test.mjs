@@ -30,7 +30,7 @@ test("shared packer removes source only after a gate-valid zstd capsule and real
   assert.equal(packed.status,0,packed.stderr);
   assert.equal(fs.existsSync(path.join(root,"fixture")),false);
   const manifest=JSON.parse(fs.readFileSync(path.join(root,"fixture.manifest.json")));
-  assert.equal(manifest.compression,"zstd-6");
+  assert.equal(manifest.compression,"zstd-19");
   assert.equal(manifest.sha256,createHash("sha256").update(fs.readFileSync(path.join(root,"fixture.pdim"))).digest("hex"));
   assert.equal((await inspectArtifacts(root,["fixture"])).ready,true);
   const {restoreCapsule}=await import(pathToFileURL(path.join(root,"dist/pdim-restore.mjs")));
@@ -65,7 +65,7 @@ test("source-tree packing preserves files until the shell performs cleanup", t =
   const result=run("paths","source.pdim","fixture");
   assert.equal(result.status,0,result.stderr);
   assert.equal(fs.existsSync(path.join(root,"fixture/data.txt")),true);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-6");
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root,"source.manifest.json"))).compression,"zstd-19");
 });
 
 test("compressor failure retains source and the previous archive", t => {

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: provider CSRF exceptions are exact POST-only paths, not prefixes or aliases
+ok 1 - provider CSRF exceptions are exact POST-only paths, not prefixes or aliases
+  ---
+  duration_ms: 76.543856
+  type: 'test'
+  ...
+# Subtest: Twilio verifier uses real HMAC, canonical HTTPS URL and flat form values
+ok 2 - Twilio verifier uses real HMAC, canonical HTTPS URL and flat form values
+  ---
+  duration_ms: 8.008106
+  type: 'test'
+  ...
+# Subtest: governance requires verified Resend raw bytes and Twilio signatures before bypass
+ok 3 - governance requires verified Resend raw bytes and Twilio signatures before bypass
+  ---
+  duration_ms: 40.817224
+  type: 'test'
+  ...
+# Subtest: mount order and raw-body capture preserve the actual callback topology
+ok 4 - mount order and raw-body capture preserve the actual callback topology
+  ---
+  duration_ms: 3.029138
+  type: 'test'
+  ...
+# Subtest: both SMS consumers reject unsigned writes and accept authentic provider receipts
+ok 5 - both SMS consumers reject unsigned writes and accept authentic provider receipts
+  ---
+  duration_ms: 19.983626
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 747.451823

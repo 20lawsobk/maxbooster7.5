@@ -16,6 +16,7 @@ const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 const WEBHOOK_PATH = "/api/webhooks/stripe";
 
 const testUser = {
+  birthdate: "1990-01-01",
   email: `billing_${Date.now()}@maxbooster-test.invalid`,
   password: "SecurePass123!@#",
   firstName: "Billing",

@@ -1,0 +1,81 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/workspace/maxbooster7.5[39m
+
+[15:19:57.399] [33mWARN[39m (87839): [36mVAPID keys not configured - Web Push disabled[39m
+[15:19:57.787] [32mINFO[39m (87839): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: stripe[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: sendgrid[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: socialApi[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: twitter[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: facebook[39m
+[15:19:57.788] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: instagram[39m
+[15:19:57.790] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: linkedin[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: tiktok[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: tiktok_sandbox[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: youtube[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: threads[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: googlebusiness[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: aiService[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: labelGrid[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 Circuit breaker initialized: dsp[39m
+[15:19:57.791] [32mINFO[39m (87839): [36m🔌 External service circuit breakers initialized[39m
+[15:19:57.801] [33mWARN[39m (87839): [36m⚠️  Resend API key not configured. Email features will be disabled.[39m
+(node:87839) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[15:19:57.838] [32mINFO[39m (87839): [36m[Marketplace] ✅ distributeSplits: 1 split(s) recorded for order test-order-1792941594892 — total $29.99[39m
+[15:19:57.843] [32mINFO[39m (87839): [36m[Marketplace] distributeSplits: order test-order-1792941594892 already has royalty records — skipping (idempotent replay)[39m
+[15:19:57.856] [32mINFO[39m (87839): [36m[Marketplace] processPayment: order test-order2-1792941594892 already completed — reconciling notifications (idempotent replay)[39m
+[15:19:57.871] [33mWARN[39m (87839): [36mResend not initialized, skipping email[39m
+[15:19:57.871] [32mINFO[39m (87839): [36m✅ Notification sent to user test-seller-1792941594892: 💰 Beat Sold![39m
+[15:19:57.877] [33mWARN[39m (87839): [36mResend not initialized, skipping email[39m
+[15:19:57.877] [32mINFO[39m (87839): [36m✅ Notification sent to user test-buyer-1792941594892: ✅ Beat Purchase Confirmed[39m
+[15:19:57.877] [32mINFO[39m (87839): [36m[Marketplace] Sale notifications delivered for order test-order2-1792941594892 (seller=test-seller-1792941594892)[39m
+[15:19:57.886] [32mINFO[39m (87839): [36m[Marketplace] processPayment: order test-order2-1792941594892 already completed — reconciling notifications (idempotent replay)[39m
+[15:19:57.893] [32mINFO[39m (87839): [36m[Marketplace] processPayment: order test-order3-1792941594892 already completed — reconciling notifications (idempotent replay)[39m
+[15:19:57.899] [33mWARN[39m (87839): [36mResend not initialized, skipping email[39m
+[15:19:57.899] [32mINFO[39m (87839): [36m✅ Notification sent to user test-seller-1792941594892: 💰 Beat Sold![39m
+[15:19:57.907] [32mINFO[39m (87839): [36m[Marketplace] processPayment: order test-order3-1792941594892 already completed — reconciling notifications (idempotent replay)[39m
+[15:19:57.908] [33mWARN[39m (87839): [36mResend not initialized, skipping email[39m
+[15:19:57.908] [32mINFO[39m (87839): [36m✅ Notification sent to user test-buyer-1792941594892: ✅ Beat Purchase Confirmed[39m
+[15:19:57.908] [32mINFO[39m (87839): [36m[Marketplace] Sale notifications delivered for order test-order3-1792941594892 (seller=test-seller-1792941594892)[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mwrites a royalty_transactions row with the correct amount[32m 14[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mincrements royalty_splits.total_earned and pending_payout[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mdoes NOT double-credit on a second call (idempotency)[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mB. Revenue events[2m > [22mrecords a revenue_events row with source='marketplace'[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mB. Revenue events[2m > [22mON CONFLICT: a second revenue_events insert is a no-op[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mprocessPayment on completed order delivers beat_sold + beat_purchased notifications[32m 34[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mreplay — second processPayment call produces no additional notifications[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mconcurrent calls — only one delivery wins; exactly one notification per recipient[32m 22[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mfailure resets notifStatus so the next retry can re-attempt delivery[32m 2[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mno beat_sold notification from initiation-time route send[32m 1[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mbeat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt[32m 6[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mrunContentDispatch query selects the overdue beat-loop post[32m 2[2mms[22m[39m
+ [31m×[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpublishToPlatform enqueues a job without throwing[32m 210[2mms[22m[39m
+[31m   → [Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback; queues need the internal PDIM subsystem[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpost transitions to published after successful dispatch[32m 14[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpublishToPlatform enqueues a job without throwing
+[31m[1mError[22m: [Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN required) — refusing localhost fallback; queues need the internal PDIM subsystem[39m
+[36m [2m❯[22m newBullMQRedisConnection server/lib/redisClient.ts:[2m102:11[22m[39m
+    [90m100|[39m     // A localhost fallback here would retry-loop forever and retain j…
+    [90m101|[39m     [90m// in an offline queue that can never flush.[39m
+    [90m102|[39m     [35mthrow[39m [35mnew[39m [33mError[39m(
+    [90m   |[39m           [31m^[39m
+    [90m103|[39m       "[Redis/BullMQ] PDIM is not configured (PDIM_HTTP_EXEC_URL / PDI…
+    [90m104|[39m     )[33m;[39m
+[90m [2m❯[22m makeQueueOptions server/services/queueService.ts:[2m59:17[22m[39m
+[90m [2m❯[22m new QueueService server/services/queueService.ts:[2m111:18[22m[39m
+[90m [2m❯[22m server/services/queueService.ts:[2m228:29[22m[39m
+[90m [2m❯[22m server/services/socialQueueService.ts:[2m8:1[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m13 passed[39m[22m[90m (14)[39m
+[2m   Start at [22m 15:19:54
+[2m   Duration [22m 4.01s[2m (transform 1.59s, setup 48ms, import 415ms, tests 3.26s, environment 0ms)[22m
+
+JUNIT report written to /workspace/maxbooster7.5/reports/test-verification/commerce/legacy-beat.xml

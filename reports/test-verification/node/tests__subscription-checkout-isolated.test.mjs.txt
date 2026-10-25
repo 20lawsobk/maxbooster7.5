@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: lifetime checkout uses the authoritative active one-time Price amount and stable provider keys
+ok 1 - lifetime checkout uses the authoritative active one-time Price amount and stable provider keys
+  ---
+  duration_ms: 2.438778
+  type: 'test'
+  ...
+# Subtest: rejects inactive, wrong-currency, wrong-type, and missing-amount Prices before creating money objects
+ok 2 - rejects inactive, wrong-currency, wrong-type, and missing-amount Prices before creating money objects
+  ---
+  duration_ms: 0.880728
+  type: 'test'
+  ...
+# Subtest: durable store rejects reuse of one user request key with a different payload
+ok 3 - durable store rejects reuse of one user request key with a different payload
+  ---
+  duration_ms: 0.420885
+  type: 'test'
+  ...
+# Subtest: monthly checkout sends a stable subscription key and returns its invoice secret
+ok 4 - monthly checkout sends a stable subscription key and returns its invoice secret
+  ---
+  duration_ms: 0.261103
+  type: 'test'
+  ...
+# Subtest: a genuinely new purchase key creates a separate checkout operation
+ok 5 - a genuinely new purchase key creates a separate checkout operation
+  ---
+  duration_ms: 0.476008
+  type: 'test'
+  ...
+# Subtest: rejects a recurring Price with the wrong canonical cadence or amount
+ok 6 - rejects a recurring Price with the wrong canonical cadence or amount
+  ---
+  duration_ms: 0.24549
+  type: 'test'
+  ...
+# Subtest: an aged ambiguous operation is blocked before any provider create
+ok 7 - an aged ambiguous operation is blocked before any provider create
+  ---
+  duration_ms: 0.46467
+  type: 'test'
+  ...
+# Subtest: missing commerce schema fails explicitly before provider access or writes
+ok 8 - missing commerce schema fails explicitly before provider access or writes
+  ---
+  duration_ms: 0.282396
+  type: 'test'
+  ...
+# Subtest: completed receipt replays without Price or provider calls
+ok 9 - completed receipt replays without Price or provider calls
+  ---
+  duration_ms: 0.501085
+  type: 'test'
+  ...
+# Subtest: concurrent same-key requests rely on one provider idempotency result and do not double create
+ok 10 - concurrent same-key requests rely on one provider idempotency result and do not double create
+  ---
+  duration_ms: 6.251117
+  type: 'test'
+  ...
+# Subtest: fresh retry after an unknown provider response reuses the accepted create
+ok 11 - fresh retry after an unknown provider response reuses the accepted create
+  ---
+  duration_ms: 0.422267
+  type: 'test'
+  ...
+# Subtest: installed Stripe invoice contract exposes confirmation_secret on expanded latest_invoice
+ok 12 - installed Stripe invoice contract exposes confirmation_secret on expanded latest_invoice
+  ---
+  duration_ms: 2.306348
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138.990758

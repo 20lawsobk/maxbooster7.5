@@ -1,0 +1,1 @@
+fsspec 2026.9.0: all three template attacks rejected; torch round-trip passed

@@ -1,0 +1,554 @@
+
+=== production-contracts ===
+TAP version 13
+# Subtest: simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals
+ok 1 - simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals
+  ---
+  duration_ms: 43.972686
+  type: 'test'
+  ...
+# Subtest: simulated beta: frozen checkout allocations survive later split changes; missing terms require review
+ok 2 - simulated beta: frozen checkout allocations survive later split changes; missing terms require review
+  ---
+  duration_ms: 14.929128
+  type: 'test'
+  ...
+# Subtest: simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing
+ok 3 - simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing
+  ---
+  duration_ms: 5.030194
+  type: 'test'
+  ...
+# Subtest: simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order
+ok 4 - simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order
+  ---
+  duration_ms: 122.056137
+  type: 'test'
+  ...
+# Subtest: simulated beta: payout command survives lost response/reload and fences account switches
+ok 5 - simulated beta: payout command survives lost response/reload and fences account switches
+  ---
+  duration_ms: 14.986825
+  type: 'test'
+  ...
+# Subtest: actual StripeService rejects another buyer and invalid refund values before money or writes
+ok 6 - actual StripeService rejects another buyer and invalid refund values before money or writes
+  ---
+  duration_ms: 46.791831
+  type: 'test'
+  ...
+# Subtest: actual receipt repository commits only successful handlers and releases on failure
+ok 7 - actual receipt repository commits only successful handlers and releases on failure
+  ---
+  duration_ms: 6.798463
+  type: 'test'
+  ...
+# Subtest: plan policy accepts real legacy producers, rejects invented/default tiers
+ok 8 - plan policy accepts real legacy producers, rejects invented/default tiers
+  ---
+  duration_ms: 7.711492
+  type: 'test'
+  ...
+# Subtest: actual marketplace service rejects a succeeded payment belonging to a different order
+ok 9 - actual marketplace service rejects a succeeded payment belonging to a different order
+  ---
+  duration_ms: 34.964626
+  type: 'test'
+  ...
+# Subtest: actual payment verification books provider fees and only succeeded refund totals
+ok 10 - actual payment verification books provider fees and only succeeded refund totals
+  ---
+  duration_ms: 7.831293
+  type: 'test'
+  ...
+# Subtest: cancellation reason is written in the same release transaction without replacing other metadata
+ok 11 - cancellation reason is written in the same release transaction without replacing other metadata
+  ---
+  duration_ms: 2.459653
+  type: 'test'
+  ...
+# Subtest: actual engine preserves reservations through pending bank payout, completes only on paid
+ok 12 - actual engine preserves reservations through pending bank payout, completes only on paid
+  ---
+  duration_ms: 0.815251
+  type: 'test'
+  ...
+# Subtest: actual engine keeps ambiguous provider failures reserved under the same operation ID
+ok 13 - actual engine keeps ambiguous provider failures reserved under the same operation ID
+  ---
+  duration_ms: 0.502839
+  type: 'test'
+  ...
+# Subtest: actual engine reverses a failed bank transfer before releasing reservations
+ok 14 - actual engine reverses a failed bank transfer before releasing reservations
+  ---
+  duration_ms: 0.417039
+  type: 'test'
+  ...
+# Subtest: actual engine does not fund a new withdrawal after source refund hold
+ok 15 - actual engine does not fund a new withdrawal after source refund hold
+  ---
+  duration_ms: 0.150067
+  type: 'test'
+  ...
+# Subtest: actual engine reconciles refund totals and retries failed recovery without imaginary cash
+ok 16 - actual engine reconciles refund totals and retries failed recovery without imaginary cash
+  ---
+  duration_ms: 0.518012
+  type: 'test'
+  ...
+# Subtest: actual allocation contract conserves all cents and rejects invalid contracts
+ok 17 - actual allocation contract conserves all cents and rejects invalid contracts
+  ---
+  duration_ms: 8.27982
+  type: 'test'
+  ...
+# Subtest: actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys
+ok 18 - actual Stripe adapter recovers transfers beyond key TTL, uses account-scoped bank keys
+  ---
+  duration_ms: 0.512504
+  type: 'test'
+  ...
+# Subtest: actual repository books conserved fee/net journals and order fulfillment in one transaction
+ok 19 - actual repository books conserved fee/net journals and order fulfillment in one transaction
+  ---
+  duration_ms: 8.437108
+  type: 'test'
+  ...
+# Subtest: actual repository rolls back ledger booking when fulfillment persistence fails
+ok 20 - actual repository rolls back ledger booking when fulfillment persistence fails
+  ---
+  duration_ms: 0.913799
+  type: 'test'
+  ...
+# Subtest: actual engine resolves an ambiguous bank request before acting on a later refund
+ok 21 - actual engine resolves an ambiguous bank request before acting on a later refund
+  ---
+  duration_ms: 0.388817
+  type: 'test'
+  ...
+# Subtest: actual repository reopens returned bank funds, but holds overlapping refund recoveries
+ok 22 - actual repository reopens returned bank funds, but holds overlapping refund recoveries
+  ---
+  duration_ms: 0.549179
+  type: 'test'
+  ...
+# Subtest: billing transaction routes execute cancellation, payment setup, portal, invoice, retry, refund, 3DS, and dispute contracts
+ok 23 - billing transaction routes execute cancellation, payment setup, portal, invoice, retry, refund, 3DS, and dispute contracts
+  ---
+  duration_ms: 71.445581
+  type: 'test'
+  ...
+# Subtest: marketplace checkout freezes database pricing, metadata identity, and provider idempotency
+ok 24 - marketplace checkout freezes database pricing, metadata identity, and provider idempotency
+  ---
+  duration_ms: 34.801099
+  type: 'test'
+  ...
+# Subtest: merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions
+ok 25 - merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions
+  ---
+  duration_ms: 12.29375
+  type: 'test'
+  ...
+# Subtest: growth merchandise checkout validates shipping and immutable subtotal before provider create
+ok 26 - growth merchandise checkout validates shipping and immutable subtotal before provider create
+  ---
+  duration_ms: 12.156273
+  type: 'test'
+  ...
+# Subtest: growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once
+ok 27 - growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once
+  ---
+  duration_ms: 28.02576
+  type: 'test'
+  ...
+# Subtest: billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
+ok 28 - billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
+  ---
+  duration_ms: 64.057597
+  type: 'test'
+  ...
+# Subtest: billing checkout retries reuse the durable session for the same command
+ok 29 - billing checkout retries reuse the durable session for the same command
+  ---
+  duration_ms: 74.8961
+  type: 'test'
+  ...
+# Subtest: storefront cart retries reuse one session and one set of pending orders
+ok 30 - storefront cart retries reuse one session and one set of pending orders
+  ---
+  duration_ms: 63.282712
+  type: 'test'
+  ...
+# Subtest: beat purchase completion verifies the payment before recording a sale
+ok 31 - beat purchase completion verifies the payment before recording a sale
+  ---
+  duration_ms: 22.07775
+  type: 'test'
+  ...
+# Subtest: beat purchase completion grants a sale only with the verified charge amount
+ok 32 - beat purchase completion grants a sale only with the verified charge amount
+  ---
+  duration_ms: 18.233767
+  type: 'test'
+  ...
+# Subtest: Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
+ok 33 - Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
+  ---
+  duration_ms: 27.851376
+  type: 'test'
+  ...
+# Subtest: actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
+ok 34 - actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
+  ---
+  duration_ms: 54.846511
+  type: 'test'
+  ...
+# Subtest: legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
+ok 35 - legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
+  ---
+  duration_ms: 29.574748
+  type: 'test'
+  ...
+# Subtest: legacy StripeService and BeatService execute subscription/payment-intent purchase functions
+ok 36 - legacy StripeService and BeatService execute subscription/payment-intent purchase functions
+  ---
+  duration_ms: 41.620503
+  type: 'test'
+  ...
+# Subtest: registration checkout, verification, and account creation execute payment/plan gates before any account write
+ok 37 - registration checkout, verification, and account creation execute payment/plan gates before any account write
+  ---
+  duration_ms: 1082.614315
+  type: 'test'
+  ...
+# Subtest: storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts
+ok 38 - storefront cart executes auth, ownership, catalog pricing, amount, metadata, and order creation contracts
+  ---
+  duration_ms: 71.222354
+  type: 'test'
+  ...
+# Subtest: Stripe commerce provider uses immutable transfer/refund/reversal keys and Connect-scoped payout calls
+ok 39 - Stripe commerce provider uses immutable transfer/refund/reversal keys and Connect-scoped payout calls
+  ---
+  duration_ms: 22.701222
+  type: 'test'
+  ...
+# Subtest: CommerceEngine retains reservations on provider ambiguity and reverses before releasing failed bank payouts
+ok 40 - CommerceEngine retains reservations on provider ambiguity and reverses before releasing failed bank payouts
+  ---
+  duration_ms: 10.954358
+  type: 'test'
+  ...
+# Subtest: CommerceEngine blocks unpaid sources and applies successful refund compensation only after provider confirmation
+ok 41 - CommerceEngine blocks unpaid sources and applies successful refund compensation only after provider confirmation
+  ---
+  duration_ms: 19.642133
+  type: 'test'
+  ...
+# Subtest: requestCommercePayout requires verified Connect capability and binds the durable request to the account
+ok 42 - requestCommercePayout requires verified Connect capability and binds the durable request to the account
+  ---
+  duration_ms: 13.885273
+  type: 'test'
+  ...
+# Subtest: verifiedPayment requires succeeded exact-currency provider settlement and separates pending from completed refunds
+ok 43 - verifiedPayment requires succeeded exact-currency provider settlement and separates pending from completed refunds
+  ---
+  duration_ms: 19.991842
+  type: 'test'
+  ...
+# Subtest: royalty funding accepts only finalized statements with exact settled top-up net and excludes marketplace cash
+ok 44 - royalty funding accepts only finalized statements with exact settled top-up net and excludes marketplace cash
+  ---
+  duration_ms: 17.145424
+  type: 'test'
+  ...
+# Subtest: payout webhook verifies Connect account ownership before resuming the operation
+ok 45 - payout webhook verifies Connect account ownership before resuming the operation
+  ---
+  duration_ms: 9.577429
+  type: 'test'
+  ...
+# Subtest: storefront membership tier mutations require ownership of the tier's parent storefront
+ok 46 - storefront membership tier mutations require ownership of the tier's parent storefront
+  ---
+  duration_ms: 113.50066
+  type: 'test'
+  ...
+# Subtest: StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce
+ok 47 - StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce
+  ---
+  duration_ms: 70.097165
+  type: 'test'
+  ...
+# Subtest: refund request orchestration persists one idempotent operation and leaves failed execution retryable
+ok 48 - refund request orchestration persists one idempotent operation and leaves failed execution retryable
+  ---
+  duration_ms: 9.505165
+  type: 'test'
+  ...
+# Subtest: Connect onboarding creates an Express account with requested capabilities and exact return URLs
+ok 49 - Connect onboarding creates an Express account with requested capabilities and exact return URLs
+  ---
+  duration_ms: 87.440087
+  type: 'test'
+  ...
+# Subtest: charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities
+ok 50 - charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities
+  ---
+  duration_ms: 12.817536
+  type: 'test'
+  ...
+# Subtest: actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures
+ok 51 - actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures
+  ---
+  duration_ms: 34.556319
+  type: 'test'
+  ...
+# Subtest: webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate
+ok 52 - webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate
+  ---
+  duration_ms: 38.375947
+  type: 'test'
+  ...
+# Subtest: repository payout idempotency cannot silently move a reserved withdrawal to a different Connect account
+ok 53 - repository payout idempotency cannot silently move a reserved withdrawal to a different Connect account
+  ---
+  duration_ms: 23.246405
+  type: 'test'
+  ...
+# Subtest: refund provider failure preserves the same operation key for retry
+ok 54 - refund provider failure preserves the same operation key for retry
+  ---
+  duration_ms: 6.13386
+  type: 'test'
+  ...
+# Subtest: referenced shared or another run's products are never cleanup-owned
+ok 55 - referenced shared or another run's products are never cleanup-owned
+  ---
+  duration_ms: 0.582219
+  type: 'test'
+  ...
+# Subtest: dedicated test transport rejects live and unsupported opaque bindings
+ok 56 - dedicated test transport rejects live and unsupported opaque bindings
+  ---
+  duration_ms: 1.195064
+  type: 'test'
+  ...
+# Subtest: a test-looking key cannot mutate before actual test-mode balance verification
+ok 57 - a test-looking key cannot mutate before actual test-mode balance verification
+  ---
+  duration_ms: 17.035198
+  type: 'test'
+  ...
+# Subtest: test transport rejects foreign destinations and non-dedicated credentials
+ok 58 - test transport rejects foreign destinations and non-dedicated credentials
+  ---
+  duration_ms: 1.428917
+  type: 'test'
+  ...
+# Subtest: lost top-up create response remains unresolved through a later successful run
+ok 59 - lost top-up create response remains unresolved through a later successful run
+  ---
+  duration_ms: 1.041703
+  type: 'test'
+  ...
+# Subtest: legacy creation-in-flight journal cannot masquerade as no cleanup needed
+ok 60 - legacy creation-in-flight journal cannot masquerade as no cleanup needed
+  ---
+  duration_ms: 0.15256
+  type: 'test'
+  ...
+# Subtest: preflight-only blocker and verified owned cleanup retain distinct verdicts
+ok 61 - preflight-only blocker and verified owned cleanup retain distinct verdicts
+  ---
+  duration_ms: 0.135654
+  type: 'test'
+  ...
+# Subtest: lifetime checkout uses the authoritative active one-time Price amount and stable provider keys
+ok 62 - lifetime checkout uses the authoritative active one-time Price amount and stable provider keys
+  ---
+  duration_ms: 2.219911
+  type: 'test'
+  ...
+# Subtest: rejects inactive, wrong-currency, wrong-type, and missing-amount Prices before creating money objects
+ok 63 - rejects inactive, wrong-currency, wrong-type, and missing-amount Prices before creating money objects
+  ---
+  duration_ms: 0.614648
+  type: 'test'
+  ...
+# Subtest: durable store rejects reuse of one user request key with a different payload
+ok 64 - durable store rejects reuse of one user request key with a different payload
+  ---
+  duration_ms: 0.46989
+  type: 'test'
+  ...
+# Subtest: monthly checkout sends a stable subscription key and returns its invoice secret
+ok 65 - monthly checkout sends a stable subscription key and returns its invoice secret
+  ---
+  duration_ms: 0.334665
+  type: 'test'
+  ...
+# Subtest: a genuinely new purchase key creates a separate checkout operation
+ok 66 - a genuinely new purchase key creates a separate checkout operation
+  ---
+  duration_ms: 0.501096
+  type: 'test'
+  ...
+# Subtest: rejects a recurring Price with the wrong canonical cadence or amount
+ok 67 - rejects a recurring Price with the wrong canonical cadence or amount
+  ---
+  duration_ms: 0.247144
+  type: 'test'
+  ...
+# Subtest: an aged ambiguous operation is blocked before any provider create
+ok 68 - an aged ambiguous operation is blocked before any provider create
+  ---
+  duration_ms: 0.398181
+  type: 'test'
+  ...
+# Subtest: missing commerce schema fails explicitly before provider access or writes
+ok 69 - missing commerce schema fails explicitly before provider access or writes
+  ---
+  duration_ms: 0.28518
+  type: 'test'
+  ...
+# Subtest: completed receipt replays without Price or provider calls
+ok 70 - completed receipt replays without Price or provider calls
+  ---
+  duration_ms: 1.143066
+  type: 'test'
+  ...
+# Subtest: concurrent same-key requests rely on one provider idempotency result and do not double create
+ok 71 - concurrent same-key requests rely on one provider idempotency result and do not double create
+  ---
+  duration_ms: 6.776331
+  type: 'test'
+  ...
+# Subtest: fresh retry after an unknown provider response reuses the accepted create
+ok 72 - fresh retry after an unknown provider response reuses the accepted create
+  ---
+  duration_ms: 0.402308
+  type: 'test'
+  ...
+# Subtest: installed Stripe invoice contract exposes confirmation_secret on expanded latest_invoice
+ok 73 - installed Stripe invoice contract exposes confirmation_secret on expanded latest_invoice
+  ---
+  duration_ms: 3.25882
+  type: 'test'
+  ...
+1..73
+# tests 73
+# suites 0
+# pass 73
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1588.521983
+
+=== disposable-postgresql ===
+TAP version 13
+# Subtest: durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
+ok 1 - durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
+  ---
+  duration_ms: 593.250263
+  type: 'test'
+  ...
+# Subtest: PostgreSQL migrations and real CommerceRepository settlement/fulfillment
+    # Subtest: applies additive 0022/0023 migrations and books one balanced, allocated order atomically
+    ok 1 - applies additive 0022/0023 migrations and books one balanced, allocated order atomically
+      ---
+      duration_ms: 29.682711
+      type: 'test'
+      ...
+    # Subtest: rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
+    ok 2 - rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
+      ---
+      duration_ms: 5.499373
+      type: 'test'
+      ...
+    # Subtest: concurrent duplicate settlements serialize on the production advisory lock
+    ok 3 - concurrent duplicate settlements serialize on the production advisory lock
+      ---
+      duration_ms: 12.894997
+      type: 'test'
+      ...
+    # Subtest: rejects a reused PaymentIntent attached to another order
+    ok 4 - rejects a reused PaymentIntent attached to another order
+      ---
+      duration_ms: 9.609497
+      type: 'test'
+      ...
+    # Subtest: database deferred constraint also rejects unbalanced journals at COMMIT
+    ok 5 - database deferred constraint also rejects unbalanced journals at COMMIT
+      ---
+      duration_ms: 1.916253
+      type: 'test'
+      ...
+    1..5
+ok 2 - PostgreSQL migrations and real CommerceRepository settlement/fulfillment
+  ---
+  duration_ms: 60.614388
+  type: 'test'
+  ...
+# Subtest: CommerceEngine executes production payout/refund/reversal workflows against SQL
+    # Subtest: reserves against funded payable, idempotently, and rejects over-reservation
+    ok 1 - reserves against funded payable, idempotently, and rejects over-reservation
+      ---
+      duration_ms: 19.919092
+      type: 'test'
+      ...
+    # Subtest: concurrent same-key requests for conflicting payout accounts have one immutable winner
+    ok 2 - concurrent same-key requests for conflicting payout accounts have one immutable winner
+      ---
+      duration_ms: 12.454103
+      type: 'test'
+      ...
+    # Subtest: pays a claimed reservation through the engine's real SQL state transitions
+    ok 3 - pays a claimed reservation through the engine's real SQL state transitions
+      ---
+      duration_ms: 9.89698
+      type: 'test'
+      ...
+    # Subtest: refund authorization, duplicate intent, partial reversal, and over-refund guardrails
+    ok 4 - refund authorization, duplicate intent, partial reversal, and over-refund guardrails
+      ---
+      duration_ms: 14.9367
+      type: 'test'
+      ...
+    # Subtest: full refund creates balanced reversal, exposes the debt, then recovers it exactly once
+    ok 5 - full refund creates balanced reversal, exposes the debt, then recovers it exactly once
+      ---
+      duration_ms: 17.098684
+      type: 'test'
+      ...
+    1..5
+ok 3 - CommerceEngine executes production payout/refund/reversal workflows against SQL
+  ---
+  duration_ms: 81.232287
+  type: 'test'
+  ...
+# Subtest: production commerce webhook inbox deduplicates concurrent duplicate events
+ok 4 - production commerce webhook inbox deduplicates concurrent duplicate events
+  ---
+  duration_ms: 11.607793
+  type: 'test'
+  ...
+# Subtest: real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL
+ok 5 - real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL # SKIP STRIPE_TEST_SECRET and STRIPE_TEST_CLIENT were not supplied.
+  ---
+  duration_ms: 0.146732
+  type: 'test'
+  ...
+1..5
+# tests 15
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 993.143181

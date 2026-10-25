@@ -1,0 +1,51 @@
+{
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "selectedGroups": [
+    "root"
+  ],
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:ci"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:33:39.830842+00:00",
+      "durationSeconds": 127.377,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/ci.txt",
+      "logSha256": "024077a8ce1d2328cbe919d389a246af4c2f0a9006e5e872d20d084962a55ab5",
+      "group": "root",
+      "id": "ci"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "vitest.additional.config.ts",
+        "--reporter=verbose",
+        "--reporter=junit",
+        "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:35:47.208941+00:00",
+      "durationSeconds": 0.935,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/additional.txt",
+      "logSha256": "b8a9bc9cf861dc84935644a83b3f7342623b1a1e85936bc4f04707958d5cda8a",
+      "group": "root",
+      "id": "additional"
+    }
+  ],
+  "productionReady": false,
+  "status": "executed_groups_passed",
+  "allTestsPassed": false
+}

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: cleanup overlaps two deletions, removes every cache, and preserves application data
+ok 1 - cleanup overlaps two deletions, removes every cache, and preserves application data
+  ---
+  duration_ms: 6018.593964
+  type: 'test'
+  ...
+# Subtest: failure stops queued deletions, drains active work, and exits unsuccessfully
+ok 2 - failure stops queued deletions, drains active work, and exits unsuccessfully
+  ---
+  duration_ms: 2011.223645
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8148.470273

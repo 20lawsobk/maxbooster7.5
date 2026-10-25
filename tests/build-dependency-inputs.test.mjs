@@ -18,8 +18,11 @@ function fixture(t, failingScope = "") {
     }
   }
   fs.writeFileSync(path.join(root, "bin/pnpm"), `#!/bin/sh
+if [ "$1" = "--version" ]; then printf '%s\\n' '10.26.1'; exit 0; fi
 printf '%s|%s|%s\\n' "$PWD" "$CI" "$*" >> "$FIXTURE_LOG"
 case "$PWD" in *"${failingScope || "__no_failure__"}") exit 7;; esac
+mkdir -p node_modules/.pnpm
+cp pnpm-lock.yaml node_modules/.pnpm/lock.yaml
 `, { mode: 0o755 });
   fs.writeFileSync(path.join(root, "scripts/verify-runtime-artifacts.mjs"), `
 export function inspectDependencies(root, scopes) {
@@ -30,18 +33,18 @@ export function inspectDependencies(root, scopes) {
     root,
     run: () => spawnSync("bash", ["script/sync-subsystem-dependencies.sh"], {
       cwd: root, encoding: "utf8",
-      env: { ...process.env, PATH: `${path.join(root, "bin")}:${process.env.PATH}`, FIXTURE_LOG: path.join(root, "calls") },
+      env: { ...process.env, SUBSYSTEM_INSTALL: "1", PATH: `${path.join(root, "bin")}:${process.env.PATH}`, FIXTURE_LOG: path.join(root, "calls") },
     }),
   };
 }
 
-test("both independent subsystem locks drive frozen installs in their own directories", t => {
+test("explicit subsystem synchronization uses offline frozen installs in their own directories", t => {
   const { root, run } = fixture(t);
   const result = run();
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(fs.readFileSync(path.join(root, "calls"), "utf8").trim().split("\n"), [
-    `${root}/external/maxcore|true|install --frozen-lockfile`,
-    `${root}/external/pdim|true|install --frozen-lockfile`,
+    `${root}/external/maxcore|true|install --offline --frozen-lockfile --ignore-scripts`,
+    `${root}/external/pdim|true|install --offline --frozen-lockfile --ignore-scripts`,
   ]);
   assert.match(result.stdout, /passed the runtime dependency gate/);
 });
@@ -70,5 +73,5 @@ test("historical fast build and compiling build refresh subsystem dependencies b
     assert.ok(shell.includes(`_pdim_pack "external/${scope}" "external_${scope}.pdim"`));
     assert.ok(compile.includes(`dir: "external/${scope}"`));
   }
-  assert.ok(compile.indexOf("bash script/sync-subsystem-dependencies.sh") < compile.indexOf("npx vite build"));
+  assert.ok(compile.indexOf("bash script/sync-subsystem-dependencies.sh") < compile.indexOf("node node_modules/vite/bin/vite.js build"));
 });

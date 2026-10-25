@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: all frozen cases have concrete ordinary public endpoints
+ok 1 - all frozen cases have concrete ordinary public endpoints
+  ---
+  duration_ms: 7.008349
+  type: 'test'
+  ...
+# Subtest: held-out social text targets match the eight client cards and reach the API unchanged
+ok 2 - held-out social text targets match the eight client cards and reach the API unchanged
+  ---
+  duration_ms: 3.390302
+  type: 'test'
+  ...
+# Subtest: actual telemetry observation rejects stale snapshot and wrong checkpoint
+ok 3 - actual telemetry observation rejects stale snapshot and wrong checkpoint
+  ---
+  duration_ms: 0.783101
+  type: 'test'
+  ...
+# Subtest: cache replay never establishes uncached execution
+ok 4 - cache replay never establishes uncached execution
+  ---
+  duration_ms: 0.233012
+  type: 'test'
+  ...
+# Subtest: actual API runner refuses to touch network before approval
+ok 5 - actual API runner refuses to touch network before approval
+  ---
+  duration_ms: 0.849241
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 154.316646

@@ -143,7 +143,7 @@ try {
     [/fabric\/index\.js$/, `export const fabricStorage=globalThis.fabricTest;`],
     [/lua-pool/, `export const luaPool={};`],
   ]);
-  const redis = new RedisStore("fixture", "fixture");
+  const redis = new RedisStore("fixture", "fixture", globalThis.fabricTest);
   const encoded = redis.encodeRecovery(Buffer.from('{"version":1,"records":[]}'));
   assert.deepEqual(redis.decodeRecovery(encoded), { version: 1, records: [] });
   const corrupt = JSON.parse(encoded); corrupt.sha256 = "invalid";
@@ -162,12 +162,12 @@ try {
   assert.equal(snapshot.entries.stream.value[0].id, id);
   assert.equal(redis.aofSeq, 1); // Read-only stream commands do not append journal records.
   fabricTest.getNamedObject = async (_id, _pocket, key) => objects.get(key) ?? null;
-  const recovered = new RedisStore("fixture", "recovered");
+  const recovered = new RedisStore("fixture", "recovered", globalThis.fabricTest);
   await recovered.load();
   assert.equal(recovered.execSync("XRANGE", ["stream", "-", "+"])[0][0], id);
   await recovered.close();
   objects.clear();
-  const missing = new RedisStore("missing", "missing");
+  const missing = new RedisStore("missing", "missing", globalThis.fabricTest);
   await assert.rejects(missing.load(), /snapshot recovery failed/);
   await missing.load(true);
   await missing.close();
@@ -199,7 +199,7 @@ try {
   const ready = JSON.parse(await readFile(join(convertedDirectory, "READY.json")));
   objects.clear();
   for (const artifact of ready.uploadOrder) objects.set(artifact.name, await readFile(join(convertedDirectory, artifact.file)));
-  const migratedStore = new RedisStore("fixture", "migrated");
+  const migratedStore = new RedisStore("fixture", "migrated", globalThis.fabricTest);
   await migratedStore.load();
   assert.equal(migratedStore.execSync("GET", ["key"]), "value");
   assert.deepEqual(migratedStore.data.get("stream"), frozenStream);
@@ -218,6 +218,10 @@ try {
   console.log("PASS D4 legacy conversion: real loader accepts generation + stream pending metadata; originals retained; overwrite/tamper/unfolded-tail/unknown-type rejected");
 
   globalThis.backupTest = { catalog: [], files: new Map(), spawnArgs: [] };
+  const postgresTools = await bundle("server/services/backup/postgresTools.ts", [
+    [/^pg$/, `export class Client { constructor(){ throw new Error("No live database connection permitted"); } }`],
+  ]);
+  globalThis.backupPostgresConnectionEnvironment = postgresTools.postgresConnectionEnvironment;
   process.env.NEON_DATABASE_URL = "postgres://fixture/preferred";
   process.env.DATABASE_URL = "postgres://fixture/other";
   const { DatabaseBackupService } = await bundle("server/services/backup/databaseBackupService.ts", [
@@ -242,6 +246,7 @@ try {
       async deleteFile(key){if(globalThis.backupTest.failDelete)throw new Error("delete offline");globalThis.backupTest.files.delete(key);}
     };`],
     [/postgresTools/, `
+      export const postgresConnectionEnvironment=globalThis.backupPostgresConnectionEnvironment;
       const dumpTool={path:"/fixture/postgresql-17/bin/pg_dump",major:17,version:"17.5"};
       const restoreTool={path:"/fixture/postgresql-17/bin/psql",major:17,version:"17.5"};
       export async function selectPgDumpForServer(url){
@@ -284,7 +289,8 @@ try {
   assert.equal(backupTest.catalog.every(r => r.state === "verified"), true);
   assert.equal(backupTest.spawnArgs[0].cmd, "/fixture/postgresql-17/bin/pg_dump");
   assert.deepEqual(backupTest.spawnArgs[0].args, ["--no-owner", "--no-acl"]);
-  assert.equal(backupTest.spawnArgs[0].options.env.PGDATABASE, process.env.NEON_DATABASE_URL);
+  assert.equal(backupTest.spawnArgs[0].options.env.PGDATABASE, "preferred");
+  assert.equal(backupTest.spawnArgs[0].options.env.PGHOST, "fixture");
   assert.equal(backupTest.toolSelections[0].serverMajor, 17);
   for (const key of keys) assert.equal(backupTest.files.has(key), true);
   backupTest.corrupt = true;

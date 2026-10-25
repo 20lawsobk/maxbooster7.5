@@ -1,0 +1,15 @@
+Reading config file '/tmp/pdim-smoke-isolated-AIfRpK/drizzle.json'
+11 tables
+dataset_downloads 10 columns 0 indexes 0 fks
+user_storage 12 columns 0 indexes 0 fks
+discovered_datasets 18 columns 0 indexes 0 fks
+fabric_chunks 7 columns 2 indexes 0 fks
+fabric_objects 9 columns 2 indexes 0 fks
+fabric_pockets 6 columns 0 indexes 0 fks
+fabric_segments 9 columns 1 indexes 0 fks
+fabric_storage_nodes 11 columns 0 indexes 0 fks
+fabric_volumes 5 columns 0 indexes 0 fks
+redis_instances 9 columns 0 indexes 0 fks
+user_storage_files 14 columns 0 indexes 0 fks
+
+[✓] Your SQL migration file ➜ /tmp/pdim-smoke-isolated-AIfRpK/schema/0000_deep_silhouette.sql 🚀

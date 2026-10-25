@@ -22,7 +22,7 @@ async function isolatedModule(entry, modules) {
     }],
   });
   const module = { exports: {} };
-  vm.runInNewContext(result.outputFiles[0].text, { module, exports: module.exports });
+  vm.runInNewContext(result.outputFiles[0].text, { module, exports: module.exports, process: { env: {} } });
   return module.exports;
 }
 

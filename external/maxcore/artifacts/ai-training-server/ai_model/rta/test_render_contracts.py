@@ -50,7 +50,7 @@ _RENDER_SNIPPET = (
     "import hashlib;"
     "from ai_model.rta.api import render_image;"
     "img=render_image('dark_neon','cinematic',width=48,height=48,"
-    "samples=1,max_bounces=1,seed=7);"
+    "samples=1,max_bounces=1,seed=7,prompt='abstract spheres on a plane');"
     "print(hashlib.sha256(img.tobytes()).hexdigest())"
 )
 

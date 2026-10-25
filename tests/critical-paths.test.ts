@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
-const BASE = "http://localhost:5000";
+const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 let cookies = "";
 let csrfToken = "";
 let testUserId = "";
 const testUser = {
+  birthdate: "1990-01-01",
   email: `test_${Date.now()}@maxbooster-test.com`,
   password: "SecurePass123!",
   username: `TestUser_${Date.now()}`,

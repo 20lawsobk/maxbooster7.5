@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+ok 1 - GHSA-wq5f-xc86-pv6w: manifest, lock, gate and every Sharp consumer require patched binaries
+  ---
+  duration_ms: 18.623765
+  type: 'test'
+  ...
+# Subtest: patched librsvg still decodes SVG, composites overlays and encodes image formats
+ok 2 - patched librsvg still decodes SVG, composites overlays and encodes image formats
+  ---
+  duration_ms: 46.50323
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 368.857241

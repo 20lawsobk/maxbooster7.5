@@ -1,0 +1,2783 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="484" failures="201" errors="0" time="210.986355093">
+    <testsuite name="tests/ai-analytics-integration.test.ts" timestamp="2026-10-25T15:31:06.321Z" hostname="2fc971e77ddd" tests="13" failures="0" errors="0" skipped="0" time="0.341295039">
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 401 when unauthenticated" time="0.025306657">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 200 with correct shape" time="0.020808444">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → returns array-safe topPlatforms when available" time="0.022245256">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict → 200 with predictions array" time="0.00327564">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict → 400 or 401 for invalid metric" time="0.003485566">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard → 200 with expected overview fields" time="0.023153671">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?period=7d → 200 or 401" time="0.021699392">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?period=90d → 200 or 401" time="0.026840761">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/advertising → 200 or 401 depending on auth state" time="0.02157888">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/anomalies → 200 with anomalies array" time="0.025442907">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/release-strategy → 200 with strategy shape" time="0.023305035">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/milestones → 200 with milestones array" time="0.028840987">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?limit=1000 → does not crash (pagination cap)" time="0.029580653">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/api-guards.test.ts" timestamp="2026-10-25T15:31:06.324Z" hostname="2fc971e77ddd" tests="33" failures="1" errors="0" skipped="0" time="0.82266804">
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/me → 200 (public, returns null)" time="0.044921475">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/notifications → 401" time="0.0245206">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/sessions → 401" time="0.020433946">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/login-history → 401" time="0.020380115">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/admin/users → 401 or 403" time="0.026297789">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/marketplace/my-beats → 401" time="0.025527718">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/marketplace/listings → 401 or 403" time="0.005718294">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/distribution/releases → 401" time="0.020420034">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/royalties → 401" time="0.02196137">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/workspace → 401" time="0.026105229">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/analytics/overview → 401" time="0.022361523">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/create-checkout-session → 401" time="0.004866569">
+            <failure message="expected [ 401, 403 ] to include 400" type="AssertionError">
+AssertionError: expected [ 401, 403 ] to include 400
+ ❯ tests/api-guards.test.ts:79:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/files/list → 401" time="0.02039017">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/artist-profiles → 401" time="0.021386503">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/achievements → 401" time="0.020955247">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/shows → 401" time="0.025651365">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/merch → 401" time="0.020181976">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/label-submissions → 401" time="0.020405262">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/venues → 401" time="0.019700199">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/music-videos → 401" time="0.034748344">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/fan-campaigns → 401" time="0.026036575">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/collaboration → 401" time="0.077098296">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/not-a-uuid/download → 400 or 401" time="0.019997938">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/artist-profiles/bad-id → 400 or 401" time="0.019995585">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; PATCH /api/artist-profiles/bad-id → 400 or 401 or 403" time="0.003178964">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/sql-injection-attempt/download → 400 or 401" time="0.021459813">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/health is public" time="0.002198887">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /health is public" time="0.001188001">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /ready is public" time="0.001195663">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/ping is public" time="0.000726626">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/marketplace/beats is public" time="0.026753076">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors accepts client error reports without auth" time="0.024615141">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors rate-limits excessive reports" time="0.147876189">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/audit-persistence.test.ts" timestamp="2026-10-25T15:31:06.331Z" hostname="2fc971e77ddd" tests="3" failures="0" errors="0" skipped="0" time="0.032059235">
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; persists a critical audit event to audit_logs and maps fields" time="0.025247804">
+        </testcase>
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; auditConfirmed() persists the row synchronously — no poll needed — before it resolves" time="0.002471627">
+        </testcase>
+        <testcase classname="tests/audit-persistence.test.ts" name="Audit log persistence (canonical contract) &gt; auditConfirmed() rejects instead of resolving when the insert fails" time="0.003059243">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-2fa.test.ts" timestamp="2026-10-25T15:31:06.332Z" hostname="2fc971e77ddd" tests="16" failures="15" errors="0" skipped="0" time="0.541645135">
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 1. registers a new user" time="0.055323903">
+            <failure message="expected 400 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 400
+
+ ❯ tests/auth-2fa.test.ts:93:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 2. logs in with password only (no 2FA yet)" time="0.247608463">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-2fa.test.ts:101:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 3. GET /api/auth/2fa/status shows 2FA is disabled" time="0.024462421">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-2fa.test.ts:109:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 4. POST /api/auth/2fa/setup returns secret and QR code" time="0.045140435">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-2fa.test.ts:116:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 5. POST /api/auth/2fa/verify with a valid TOTP code enables 2FA" time="0.000735139">
+            <failure message="No TOTP secret from setup step" type="Error">
+Error: No TOTP secret from setup step
+ ❯ tests/auth-2fa.test.ts:131:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 6. POST /api/auth/2fa/verify rejects missing code (400)" time="0.046173373">
+            <failure message="expected 401 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 401
+
+ ❯ tests/auth-2fa.test.ts:142:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 7. GET /api/auth/2fa/status shows 2FA is now enabled" time="0.021176326">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-2fa.test.ts:147:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 8. logout succeeds" time="0.022852463">
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 9. login with password alone returns requiresTwoFactor:true when 2FA is enabled" time="0.004699917">
+            <failure message="expected 403 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/auth-2fa.test.ts:164:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 10. login with password + valid TOTP code fully authenticates" time="0.000711242">
+            <failure message="No TOTP secret from setup step" type="Error">
+Error: No TOTP secret from setup step
+ ❯ tests/auth-2fa.test.ts:172:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 11. GET /api/auth/me confirms full session is active after 2FA login" time="0.021398461">
+            <failure message="expected null not to be null" type="AssertionError">
+AssertionError: expected null not to be null
+ ❯ tests/auth-2fa.test.ts:191:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }" time="0.000320823">
+            <failure message="No TOTP secret from setup step" type="Error">
+Error: No TOTP secret from setup step
+ ❯ tests/auth-2fa.test.ts:199:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 12. POST /api/auth/2fa/disable with wrong password returns 400" time="0.000846097">
+            <failure message="Secret must be at least 16 bytes (128 bits), got 5 bytes" type="SecretTooShortError">
+SecretTooShortError: Secret must be at least 16 bytes (128 bits), got 5 bytes
+ ❯ Or node_modules/@otplib/core/src/utils.ts:305:35
+ ❯ crypto node_modules/@otplib/totp/src/index.ts:65:4
+ ❯ Z node_modules/@otplib/totp/src/index.ts:128:0
+ ❯ Object.totp node_modules/otplib/src/functional.ts:263:50
+ ❯ l node_modules/otplib/src/defaults.ts:46:4
+ ❯ opts node_modules/otplib/src/functional.ts:262:56
+ ❯ genCode tests/auth-2fa.test.ts:79:10
+ ❯ tests/auth-2fa.test.ts:210:13
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 13. POST /api/auth/2fa/disable with correct password + valid TOTP disables 2FA" time="0.000206692">
+            <failure message="No TOTP secret from setup step" type="Error">
+Error: No TOTP secret from setup step
+ ❯ tests/auth-2fa.test.ts:218:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 14. GET /api/auth/2fa/status confirms 2FA is disabled" time="0.021249026">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-2fa.test.ts:231:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-2fa.test.ts" name="2FA Flow (TOTP) &gt; 15. logout and re-login works without 2FA code after disable" time="0.026791002">
+            <failure message="expected 403 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ tests/auth-2fa.test.ts:245:22
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/auth-flows.test.ts" timestamp="2026-10-25T15:31:06.342Z" hostname="2fc971e77ddd" tests="27" failures="9" errors="0" skipped="0" time="1.0922137">
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 1. registers a new user" time="0.057677281">
+            <failure message="expected 400 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 400
+
+ ❯ tests/auth-flows.test.ts:72:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 2. rejects duplicate registration" time="0.027413111">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 3. logs in with correct credentials" time="0.242303944">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-flows.test.ts:89:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 4. GET /api/auth/me returns user when authenticated" time="0.02109297">
+            <failure message="Cannot read properties of null (reading &apos;email&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;email&apos;)
+ ❯ tests/auth-flows.test.ts:98:19
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 5. onboarding status is accessible" time="0.02556933">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-flows.test.ts:104:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 6. profile is accessible when authenticated" time="0.025411021">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-flows.test.ts:109:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 7. sessions list is accessible" time="0.022334492">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-flows.test.ts:114:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 8. login history is accessible" time="0.021841057">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/auth-flows.test.ts:120:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 9. logout succeeds" time="0.021850141">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 10. /api/auth/me returns null or 401 after logout" time="0.02607985">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="Full Auth Flow &gt; 11. rejects login with wrong password" time="0.253368465">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 12. GET /api/social/callback/:platform with no state redirects with error" time="0.020564143">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 13. GET /api/social/callback/:platform with tampered/invalid state redirects with invalid_state" time="0.022304316">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 14. GET /api/social/callback/:platform with base64-but-bad-HMAC state redirects with invalid_state" time="0.021141513">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 15. GET /api/social/callback/:platform with OAuth provider error redirects with oauth_denied" time="0.024622933">
+            <failure message="expected &apos;/social-media?error=invalid_state&apos; to match /oauth_denied/i" type="AssertionError">
+AssertionError: expected &apos;/social-media?error=invalid_state&apos; to match /oauth_denied/i
+
+- Expected:
+/oauth_denied/i
+
++ Received:
+&quot;/social-media?error=invalid_state&quot;
+
+ ❯ tests/auth-flows.test.ts:227:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 16. POST /api/social/connect/:platform without auth returns 401 or 403" time="0.00232102">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 17. POST /api/social/connect/:platform with valid auth returns an authUrl" time="0.019487523">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 18. GET /api/social/platforms returns a platform list" time="0.021722729">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 19. GET /api/social/connections requires authentication" time="0.024958374">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 20. GET /api/auth/google initiates Google OAuth — redirects to Google or error page" time="0.020303234">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 21. GET /api/auth/google/callback?error=access_denied redirects with google_denied" time="0.022356445">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 22. GET /api/auth/google/callback with no state redirects with invalid_state" time="0.022433817">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24. GET /api/auth/oauth/initiate without auth returns 401" time="0.022995664">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page" time="0.025409764">
+            <failure message="expected [ 301, 302, 303, 307, 308 ] to include 401" type="AssertionError">
+AssertionError: expected [ 301, 302, 303, 307, 308 ] to include 401
+ ❯ tests/auth-flows.test.ts:378:39
+            </failure>
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 25. GET /api/auth/oauth/callback?platform=spotify&amp;error=access_denied redirects with oauth_denied" time="0.021669929">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 26. GET /api/auth/oauth/callback without state redirects with invalid_state" time="0.028900173">
+        </testcase>
+        <testcase classname="tests/auth-flows.test.ts" name="OAuth Callback Structure &gt; 23. GET /api/auth/google/callback with valid state reaches a different redirect than invalid_state" time="0.023286748">
+            <system-err>
+[AuthTest] GOOGLE_CLIENT_ID not configured — skipping valid-state callback test
+
+            </system-err>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/billing-lifecycle.test.ts" timestamp="2026-10-25T15:31:06.348Z" hostname="2fc971e77ddd" tests="12" failures="5" errors="0" skipped="0" time="0.503334539">
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 1. registers and logs in test user; captures user ID and stripeCustomerId" time="0.321856295">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/billing-lifecycle.test.ts:194:27
+            </failure>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 2. webhook endpoint exists (not 404)" time="0.024429792">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 3. rejects webhook with no stripe-signature header" time="0.028861375">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 4. rejects webhook with an invalid stripe-signature header" time="0.024285534">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 5. valid customer.subscription.created is accepted and returns received:true" time="0.000667417">
+            <system-err>
+[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping valid-signature test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 6. checkout.session.completed (subscription mode) updates subscription_tier" time="0.00033832">
+            <system-err>
+[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping checkout.session tier-update test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 7. idempotency: same event ID fired twice — second response is idempotent, tier unchanged" time="0.000552523">
+            <system-err>
+[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping idempotency test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 8. subscription.created linked to real user updates subscription_tier" time="0.000366483">
+            <system-err>
+[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping tier-update test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 9. GET /api/billing/subscription returns complete tier shape when authenticated" time="0.032372781">
+            <failure message="expected [ 200, 500, 503 ] to include 404" type="AssertionError">
+AssertionError: expected [ 200, 500, 503 ] to include 404
+ ❯ tests/billing-lifecycle.test.ts:415:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 10. GET /api/billing/subscription returns 401 when unauthenticated" time="0.021217858">
+            <failure message="expected [ 401, 403 ] to include 404" type="AssertionError">
+AssertionError: expected [ 401, 403 ] to include 404
+ ❯ tests/billing-lifecycle.test.ts:432:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 11. GET /api/billing/plans returns a non-empty plan list without auth" time="0.024120576">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/billing-lifecycle.test.ts:438:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 12. POST /api/billing/create-checkout-session rejects invalid plan" time="0.02213381">
+            <failure message="expected [ 400, 401, 403, 503 ] to include 404" type="AssertionError">
+AssertionError: expected [ 400, 401, 403, 503 ] to include 404
+ ❯ tests/billing-lifecycle.test.ts:452:34
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/cache-invalidation.test.ts" timestamp="2026-10-25T15:31:06.351Z" hostname="2fc971e77ddd" tests="6" failures="1" errors="0" skipped="5" time="0.329451419">
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 1. health endpoint reports cache backend and pollerActive status" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 2. authenticated endpoint is cached (second request returns HIT)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 3. mutation invalidates the user cache (next GET returns fresh data)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 4. unauthenticated requests do not leak cached authenticated data" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache &gt; 5. ETag round-trip (304 Not Modified on repeated request)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/cache-invalidation.test.ts" name="Distributed API Cache" time="0.328180823">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/cache-invalidation.test.ts:94:24
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/critical-paths.test.ts" timestamp="2026-10-25T15:31:06.352Z" hostname="2fc971e77ddd" tests="47" failures="34" errors="0" skipped="0" time="1.730768876">
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should register a new user" time="0.061920039">
+            <failure message="expected 400 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 400
+
+ ❯ tests/critical-paths.test.ts:76:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject duplicate email registration" time="0.033331195">
+            <failure message="expected &apos;Date of birth is required to create a…&apos; to contain &apos;already&apos;" type="AssertionError">
+AssertionError: expected &apos;Date of birth is required to create a…&apos; to contain &apos;already&apos;
+
+Expected: &quot;already&quot;
+Received: &quot;Date of birth is required to create an account&quot;
+
+ ❯ tests/critical-paths.test.ts:86:32
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject invalid email format" time="0.027065256">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject short password" time="0.029527209">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should login with correct credentials" time="0.27041356">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:111:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should reject login with wrong password" time="0.266687631">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return user from /api/auth/me when authenticated" time="0.023384365">
+            <failure message="Cannot read properties of null (reading &apos;id&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;id&apos;)
+ ❯ tests/critical-paths.test.ts:126:23
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 1. User Registration &amp; Authentication &gt; should return null from /api/auth/me when unauthenticated" time="0.023034938">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should get user profile" time="0.027952825">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:141:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should update profile" time="0.032265744">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:151:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 2. Profile Management &gt; should strip XSS from profile fields" time="0.05714294">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list distribution platforms" time="0.030572465">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:173:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should create a release" time="0.042146299">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:189:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should reject release with missing required fields" time="0.034545937">
+            <failure message="expected 401 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 401
+
+ ❯ tests/critical-paths.test.ts:199:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should list user releases" time="0.030695601">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:204:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get earnings summary" time="0.024586268">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:212:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 3. Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.024205063">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:217:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should schedule a post" time="0.020800218">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:230:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject post without required fields" time="0.023724939">
+            <failure message="expected 401 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 401
+
+ ❯ tests/critical-paths.test.ts:240:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should list user posts" time="0.026151277">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:245:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should publish a scheduled post" time="0.02314899">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:251:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should reject publishing non-existent post" time="0.021573925">
+            <failure message="expected 401 to be 404 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 404 // Object.is equality
+
+- Expected
++ Received
+
+- 404
++ 401
+
+ ❯ tests/critical-paths.test.ts:260:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get social metrics" time="0.023838099">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:265:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get trending hashtags" time="0.028042961">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:271:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should get inbox messages" time="0.025068485">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:282:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 4. Social Media Management &gt; should generate AI content" time="0.035184631">
+            <failure message="expected [ 200, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 503 ] to include 401
+ ❯ tests/critical-paths.test.ts:292:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get subscription status" time="0.022467352">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/critical-paths.test.ts:306:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should list billing plans" time="0.02336768">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/critical-paths.test.ts:311:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get billing history" time="0.022495835">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/critical-paths.test.ts:316:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 5. Billing &amp; Payments &gt; should get invoices" time="0.021084547">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/critical-paths.test.ts:321:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should list projects" time="0.020447947">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:328:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get sample library" time="0.022997777">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:334:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 6. Studio - DAW Features &gt; should get project templates" time="0.022565811">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:341:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should perform unified search" time="0.028792866">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 7. Search &amp; Discovery &gt; should handle empty search gracefully" time="0.023105324">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should get recommendations" time="0.02073511">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:363:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 8. Career Coach &gt; should get goals" time="0.023795695">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:370:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list contract templates" time="0.02102698">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:378:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 9. Contracts &amp; Collaborations &gt; should list collaboration connections" time="0.021398811">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:385:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 10. Analytics &gt; should get analytics dashboard" time="0.026140502">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/critical-paths.test.ts:393:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should provide CSRF token" time="0.020532874">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should reject malformed JSON" time="0.002670597">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should handle SQL injection attempt safely" time="0.023233889">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 11. Security &gt; should return 404 for non-existent API routes" time="0.019848352">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 12. OAuth Connection Graceful Failures &gt; should return error for unsupported platform" time="0.022869829">
+            <failure message="expected 401 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 401
+
+ ❯ tests/critical-paths.test.ts:433:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should logout successfully" time="0.023415683">
+        </testcase>
+        <testcase classname="tests/critical-paths.test.ts" name="Critical Path Tests - Production Readiness &gt; 13. Logout &gt; should not access protected routes after logout" time="0.026077797">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/direct-upload.test.ts" timestamp="2026-10-25T15:31:06.373Z" hostname="2fc971e77ddd" tests="4" failures="3" errors="0" skipped="0" time="0.368489301">
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 1. registers and logs in a test user" time="0.315166566">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/direct-upload.test.ts:104:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 2. issues a reserved direct upload URL" time="0.027508545">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/direct-upload.test.ts:121:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 3. uploads the reserved bytes and persists the file" time="0.000750812">
+            <system-err>
+[DirectUploadTest] No reserved key — skipping upload test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/direct-upload.test.ts" name="Direct upload URL flow &gt; 4. rejects reusing the same upload URL" time="0.023103281">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/direct-upload.test.ts:168:32
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-catalog-production.test.ts" timestamp="2026-10-25T15:31:06.376Z" hostname="2fc971e77ddd" tests="33" failures="16" errors="0" skipped="0" time="0.792589638">
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; setup: register and login test user" time="0.338962823">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:70:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing returns list" time="0.021675186">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:82:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/stats returns statistics" time="0.021051606">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:89:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; POST /api/sync-licensing creates a license opportunity" time="0.024364862">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:108:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing/:id retrieves the license" time="0.00045768">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PUT /api/sync-licensing/:id updates the license" time="0.000098789">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; PATCH /api/sync-licensing/:id/status updates status" time="0.000105629">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; DELETE /api/sync-licensing/:id removes the license" time="0.000077116">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sync Licensing &gt; GET /api/sync-licensing without auth → 401" time="0.028422932">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances returns list" time="0.023230791">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:169:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/stats returns statistics" time="0.019172382">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:175:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; POST /api/sample-clearances creates a clearance request" time="0.023542852">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:198:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances/:id retrieves clearance" time="0.000226351">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; PUT /api/sample-clearances/:id updates clearance" time="0.000088754">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; DELETE /api/sample-clearances/:id removes clearance" time="0.000070496">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Sample Clearances &gt; GET /api/sample-clearances without auth → 401" time="0.020030416">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos returns list" time="0.022577296">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:245:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/stats returns statistics" time="0.022013156">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:251:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; POST /api/music-videos creates a video project" time="0.020243317">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:273:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/:id retrieves video project" time="0.000233482">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; PUT /api/music-videos/:id updates video project" time="0.000089345">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos/diffusion/status returns diffusion status" time="0.025208004">
+            <failure message="expected [ 200, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 503 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:303:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; DELETE /api/music-videos/:id removes video project" time="0.000155605">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Music Video Production Tracking &gt; GET /api/music-videos without auth → 401" time="0.022746371">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting returns list" time="0.020002474">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:326:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/stats returns statistics" time="0.020301375">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:332:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting creates a song project" time="0.029692275">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:354:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/:id retrieves song project" time="0.001004515">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; PUT /api/songwriting/:id updates song project" time="0.000105669">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting/rhyme/:word returns rhyme suggestions" time="0.022111955">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-catalog-production.test.ts:384:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; POST /api/songwriting/ai-assist returns AI suggestions" time="0.031933846">
+            <failure message="expected [ 200, 202, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 202, 503 ] to include 401
+ ❯ tests/feature-catalog-production.test.ts:396:33
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; DELETE /api/songwriting/:id removes song project" time="0.000177007">
+        </testcase>
+        <testcase classname="tests/feature-catalog-production.test.ts" name="Feature: Sync Licensing, Sample Clearances, Music Videos, Songwriting &gt; Songwriting AI &gt; GET /api/songwriting without auth → 401" time="0.029333816">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-marketplace-distribution.test.ts" timestamp="2026-10-25T15:31:06.387Z" hostname="2fc971e77ddd" tests="42" failures="14" errors="0" skipped="0" time="1.14609282">
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; setup: register and login test user" time="0.299013817">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:69:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats returns beat listings (public)" time="0.033542631">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports genre filter" time="0.028962616">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports BPM range filter" time="0.027870889">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/beats supports pagination" time="0.033072363">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/producers returns producer list (public)" time="0.021744771">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Public Browsing &gt; GET /api/marketplace/license-templates returns license templates" time="0.02167789">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-beats returns authenticated user beats" time="0.021897061">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/purchases returns user purchases" time="0.021374713">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/for-you returns personalised recommendations" time="0.023726619">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/ai-recommendations returns AI beat recs" time="0.023070385">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/taste-profile returns listener taste profile" time="0.021931953">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/my-stems returns stems for authenticated user" time="0.020254479">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/collaborations returns collab requests" time="0.019743077">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/contracts returns contract list" time="0.020005007">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/affiliates returns affiliate program info" time="0.020104112">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/escrow returns escrow transactions" time="0.020430384">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Beat Marketplace — Authenticated &gt; GET /api/marketplace/sales-analytics returns sales data" time="0.022165851">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/my-beats without auth → 401/403" time="0.01998658">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Marketplace auth guards &gt; GET /api/marketplace/purchases without auth → 401/403" time="0.019586872">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms returns available DSPs" time="0.021147149">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:200:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/platforms/status returns platform connectivity status" time="0.023084081">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:207:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases returns user releases" time="0.020148244">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:212:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/policies returns DSP submission policies" time="0.024869633">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/releases creates a release" time="0.023554871">
+            <failure message="expected [ 200, 201, 400 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 400 ] to include 401
+ ❯ tests/feature-marketplace-distribution.test.ts:236:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id retrieves release" time="0.000176566">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; PATCH /api/distribution/releases/:id updates release metadata" time="0.000124568">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases/:id/status gets release status" time="0.000111929">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/hyperfollow returns HyperFollow pages" time="0.025142245">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:268:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; POST /api/distribution/validate validates release data" time="0.023325215">
+            <failure message="expected [ 200, 400 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 400 ] to include 401
+ ❯ tests/feature-marketplace-distribution.test.ts:277:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; DELETE /api/distribution/releases/:id removes release" time="0.000220313">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Music Distribution &gt; GET /api/distribution/releases without auth → 401" time="0.01961531">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/summary returns royalty summary" time="0.022446859">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:298:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties returns royalty records" time="0.025170777">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:303:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/platform-breakdown returns per-platform breakdown" time="0.023500454">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:308:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/top-tracks returns top earning tracks" time="0.019321557">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:313:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/splits returns split configurations" time="0.023286826">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:318:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties/forecast returns earnings forecast" time="0.020103251">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-marketplace-distribution.test.ts:323:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Royalties &gt; GET /api/royalties without auth → 401" time="0.021433332">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; POST /api/marketplace/checkout/initiate → 200 or 402 (Stripe gated)" time="0.020983943">
+            <failure message="expected [ 200, 400, 402, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 400, 402, 404 ] to include 401
+ ❯ tests/feature-marketplace-distribution.test.ts:345:36
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/statements returns statements list" time="0.020947919">
+        </testcase>
+        <testcase classname="tests/feature-marketplace-distribution.test.ts" name="Feature: Beat Marketplace &amp; Music Distribution &gt; Money loop: sale triggers royalty records &gt; GET /api/royalties/transactions returns transactions list" time="0.02349508">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-press-pitching-ar.test.ts" timestamp="2026-10-25T15:31:06.396Z" hostname="2fc971e77ddd" tests="34" failures="18" errors="0" skipped="0" time="0.806010383">
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; setup: register and login test user" time="0.305916301">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:76:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns press kit (empty on new account)" time="0.023575543">
+            <failure message="expected [ 200, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 404 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:86:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; PUT /api/press-kit creates or updates press kit" time="0.022284547">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:97:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit returns updated press kit" time="0.02787649">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:104:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; POST /api/press-kit/publish publishes the press kit" time="0.024931819">
+            <failure message="expected [ 200, 201, 400 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 400 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:111:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Press Kit &gt; GET /api/press-kit without auth returns 401" time="0.021205118">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues returns empty list for new user" time="0.022611149">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:128:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/stats returns venue statistics" time="0.024656744">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:136:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; POST /api/venues creates a venue" time="0.022763038">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:161:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; GET /api/venues/:id retrieves the created venue" time="0.000421495">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; PUT /api/venues/:id updates the venue" time="0.000103937">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Venues / Booking CRM &gt; DELETE /api/venues/:id removes the venue" time="0.000065188">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/curators returns curators without auth" time="0.019755883">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:212:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching returns list" time="0.028010702">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:219:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/stats returns statistics" time="0.029062017">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:227:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; POST /api/playlist-pitching creates a pitch" time="0.0320739">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:248:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; GET /api/playlist-pitching/:id retrieves pitch" time="0.000180011">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; PATCH /api/playlist-pitching/:id/status updates status" time="0.000096596">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Playlist Pitching &gt; DELETE /api/playlist-pitching/:id removes pitch" time="0.000061102">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches returns list" time="0.025090198">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:288:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/stats returns statistics" time="0.021392361">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:294:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; POST /api/radio-pitches creates a pitch" time="0.022535445">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:315:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; GET /api/radio-pitches/:id retrieves pitch" time="0.000154043">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Radio Pitches &gt; DELETE /api/radio-pitches/:id removes pitch" time="0.00009261">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions returns list" time="0.020877014">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-press-pitching-ar.test.ts:347:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/stats returns statistics" time="0.02348713">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:353:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions creates a submission" time="0.020451562">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-press-pitching-ar.test.ts:375:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; GET /api/label-submissions/:id retrieves submission" time="0.000201073">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; PATCH /api/label-submissions/:id/status updates status" time="0.000083316">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; POST /api/label-submissions/:id/followup logs a followup" time="0.00006608">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Label Submissions (A&amp;R) &gt; DELETE /api/label-submissions/:id removes submission" time="0.000069936">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/venues without auth → 401" time="0.021930323">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/radio-pitches without auth → 401" time="0.021627455">
+        </testcase>
+        <testcase classname="tests/feature-press-pitching-ar.test.ts" name="Feature: Press Kit, Venues, Pitching, Radio, Label Submissions &gt; Auth guards (unauthenticated) &gt; GET /api/label-submissions without auth → 401" time="0.019515651">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-revenue-merch.test.ts" timestamp="2026-10-25T15:31:06.406Z" hostname="2fc971e77ddd" tests="37" failures="19" errors="0" skipped="0" time="0.869141418">
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; setup: register and login test user" time="0.331064643">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:70:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns returns list" time="0.02341547">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:82:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/stats returns statistics" time="0.023426637">
+            <failure message="expected [ 200, 500 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 500 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:88:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; POST /api/fan-campaigns creates a campaign" time="0.028133405">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:109:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/:id retrieves campaign" time="0.00038408">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; PUT /api/fan-campaigns/:id updates campaign" time="0.000117367">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; DELETE /api/fan-campaigns/:id removes campaign" time="0.000305651">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns without auth → 401" time="0.021734155">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast returns current forecast" time="0.024511453">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:154:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/projections returns projections" time="0.022166808">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:161:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/accuracy returns forecast accuracy metrics" time="0.023140355">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:166:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/rate returns growth rate" time="0.020673806">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:171:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; POST /api/revenue-forecast/generate triggers AI forecast generation" time="0.022306097">
+            <failure message="expected [ 200, 201, 202, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 202, 503 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:181:36
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast without auth → 401" time="0.022002069">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets returns list" time="0.021638255">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:199:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets creates a budget" time="0.021499922">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:211:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id retrieves budget" time="0.000165259">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id/items returns budget items" time="0.000062945">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets/:id/items adds a budget item" time="0.000082594">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; PUT /api/project-budgets/:id updates budget" time="0.000062073">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/items/:id removes budget item" time="0.000063646">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/:id removes budget" time="0.00005934">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets without auth → 401" time="0.018474209">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch returns merch list" time="0.025602788">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:283:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/stats returns merch statistics" time="0.021305228">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:288:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/orders returns order list" time="0.019524863">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:293:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; POST /api/merch creates a merch item" time="0.023000164">
+            <failure message="expected [ 200, 201 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:308:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/:id retrieves merch item" time="0.000533675">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; PUT /api/merch/:id updates merch item" time="0.00007992">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; DELETE /api/merch/:id removes merch item" time="0.000057186">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch without auth → 401" time="0.019765466">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/templates returns contract templates" time="0.025296066">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:346:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/my-contracts returns user contracts" time="0.024124774">
+            <failure message="expected [ 200, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 404 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:354:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/tax-rates is accessible with country param" time="0.0196754">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/stats/summary returns contract statistics" time="0.020372862">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-revenue-merch.test.ts:367:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations returns recommendations" time="0.021243335">
+            <failure message="expected [ 200, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 503 ] to include 401
+ ❯ tests/feature-revenue-merch.test.ts:376:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations without auth → 401" time="0.020323478">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-storefront-dns.test.ts" timestamp="2026-10-25T15:31:06.418Z" hostname="2fc971e77ddd" tests="36" failures="9" errors="0" skipped="0" time="5.115665883">
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; setup: register and login test user" time="0.312262855">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-storefront-dns.test.ts:72:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/templates returns available templates (public)" time="0.048828904">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my returns current user storefront" time="0.029162497">
+            <failure message="expected [ 200, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 404 ] to include 401
+ ❯ tests/feature-storefront-dns.test.ts:91:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/suggest-url returns URL suggestions" time="0.02577529">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-storefront-dns.test.ts:96:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/generate-slug generates a URL slug" time="0.029175707">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-storefront-dns.test.ts:105:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-domain checks domain availability (public)" time="0.047583086">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/create creates a storefront" time="0.032809818">
+            <failure message="expected [ 200, 201, 409 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 409 ] to include 401
+ ❯ tests/feature-storefront-dns.test.ts:128:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:slug retrieves storefront by slug (public)" time="0.000143968">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/public/:slug retrieves public storefront" time="0.000252291">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PUT /api/storefront/:id/customize customizes the storefront" time="0.000171368">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; PATCH /api/storefront/:id/publish publishes the storefront" time="0.000087942">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/:storefrontId/listings returns storefront listings" time="0.000081022">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/check-subdomain/:sub checks subdomain availability" time="0.026222303">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-storefront-dns.test.ts:185:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; POST /api/storefront/generate-subdomain generates a subdomain" time="0.024258903">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/feature-storefront-dns.test.ts:193:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; DELETE /api/storefront/:id removes the storefront" time="0.000149996">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Per-Artist Storefront &gt; GET /api/storefront/my without auth → 401" time="0.024887711">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/search searches available domains (public)" time="2.556477939">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/managed/check checks managed domain availability (public)" time="0.027209141">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; POST /api/storefront-domains/platform/check checks platform domain (public)" time="0.021678501">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/dns/status returns DNS infrastructure status" time="0.028661953">
+            <failure message="expected [ 200, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 503 ] to include 401
+ ❯ tests/feature-storefront-dns.test.ts:239:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Storefront Domains &gt; GET /api/storefront-domains/propagation returns propagation info" time="0.025925616">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/info returns DNS system info (public)" time="0.026918994">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/usage returns DNS usage stats" time="0.020330339">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones returns user DNS zones" time="0.019135126">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones creates a DNS zone" time="0.023248089">
+            <failure message="expected [ 200, 201, 400, 403, 409 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 400, 403, 409 ] to include 401
+ ❯ tests/feature-storefront-dns.test.ts:282:41
+            </failure>
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones/:zoneId/records lists zone records" time="0.000124068">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; POST /api/dns-manager/zones/:zoneId/records adds a DNS record" time="0.000071117">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; DELETE /api/dns-manager/zones/:zoneId removes zone" time="0.000054242">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; DNS Manager &gt; GET /api/dns-manager/zones without auth → 401" time="0.022748505">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/config returns registrar configuration (public)" time="0.024644004">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/search searches domain availability (public)" time="1.602050925">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/whois/:domain returns WHOIS data (public)" time="0.021782769">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains returns user registered domains" time="0.02014536">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts returns user contact profiles" time="0.025927428">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/my-domains without auth → 401" time="0.019786749">
+        </testcase>
+        <testcase classname="tests/feature-storefront-dns.test.ts" name="Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar &gt; Domain Registrar &gt; GET /api/domain-registrar/contacts without auth → 401" time="0.02362772">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/file-management.test.ts" timestamp="2026-10-25T15:31:06.426Z" hostname="2fc971e77ddd" tests="14" failures="6" errors="0" skipped="0" time="0.499067979">
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 1. registers and logs in a test user" time="0.299337645">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/file-management.test.ts:105:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 2. rejects unauthenticated upload with 401 or 403" time="0.005740598">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 3. uploads a small audio file and receives a storage key" time="0.031031373">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/file-management.test.ts:157:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 4. downloads the uploaded file and verifies content-type and byte payload" time="0.000855551">
+            <system-err>
+[FileTest] Upload step did not produce a key — skipping download test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 5. cross-user access to a file is rejected (403) or not found (404)" time="0.030415639">
+            <failure message="expected [ 403, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 403, 404 ] to include 401
+ ❯ tests/file-management.test.ts:202:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 6. deletes the uploaded file and returns success" time="0.000368937">
+            <system-err>
+[FileTest] No uploaded key — skipping delete test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 7. GET of a deleted file returns 404" time="0.000248644">
+            <system-err>
+[FileTest] No uploaded key — skipping post-delete 404 test
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 8. delete of a completely unknown file key returns 401, 403, or 404" time="0.021809531">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 9. GET /api/storage/quota returns quota info when authenticated" time="0.023244404">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10a. double-encoded traversal in file key is rejected (never 200)" time="0.021170357">
+            <failure message="expected [ 400, 403, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 400, 403, 404 ] to include 401
+ ❯ tests/file-management.test.ts:260:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10b. literal &apos;..&apos; segments in file key are rejected (never 200)" time="0.019222649">
+            <failure message="expected [ 400, 403, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 400, 403, 404 ] to include 401
+ ❯ tests/file-management.test.ts:265:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10c. backslash and encoded-NUL keys are rejected (never 200)" time="0.018901064">
+            <failure message="expected [ 400, 403, 404 ] to include 401" type="AssertionError">
+AssertionError: expected [ 400, 403, 404 ] to include 401
+ ❯ tests/file-management.test.ts:270:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10d. restore of the deleted file makes it downloadable again" time="0.000188334">
+        </testcase>
+        <testcase classname="tests/file-management.test.ts" name="File Management (Storage Round-Trip) &gt; 10. GET /api/storage/quota returns 401 or 403 without authentication" time="0.024613619">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/health.test.ts" timestamp="2026-10-25T15:31:06.430Z" hostname="2fc971e77ddd" tests="12" failures="3" errors="0" skipped="0" time="0.119523957">
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /health returns 200" time="0.032180806">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/health returns 200" time="0.003899952">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /ready returns 200 (probes passed)" time="0.007180999">
+            <failure message="expected 503 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ tests/health.test.ts:39:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ready returns 200" time="0.047087541">
+            <failure message="expected 503 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ tests/health.test.ts:45:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /healthz returns 200" time="0.00604061">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /readyz returns 200" time="0.002801475">
+            <failure message="expected 503 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ tests/health.test.ts:55:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ping returns ok:true" time="0.002076671">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; /startup returns startup phase details" time="0.005760968">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Content-Type-Options is nosniff" time="0.005071308">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Frame-Options is present" time="0.001870501">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-XSS-Protection header is set" time="0.001120209">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; Server header is absent or masked" time="0.001532631">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/paid-user-e2e.test.ts" timestamp="2026-10-25T15:31:06.434Z" hostname="2fc971e77ddd" tests="77" failures="43" errors="0" skipped="9" time="4.877675299">
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should register successfully with strong password" time="0.079703791">
+            <failure message="expected 400 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 400 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 400
+
+ ❯ tests/paid-user-e2e.test.ts:81:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject weak passwords" time="0.028343562">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should prevent duplicate registration" time="0.025234393">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should login with correct credentials" time="0.255754282">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:109:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject login with wrong password" time="0.004998858">
+            <failure message="expected [ 401, 400 ] to include 403" type="AssertionError">
+AssertionError: expected [ 401, 400 ] to include 403
+ ❯ tests/paid-user-e2e.test.ts:121:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should provide CSRF token for session protection" time="0.02138576">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should return authenticated user profile" time="0.024691093">
+            <failure message="Cannot read properties of null (reading &apos;id&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;id&apos;)
+ ❯ tests/paid-user-e2e.test.ts:136:23
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should have security headers in response" time="0.024054073">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should update profile with clean data" time="0.028413277">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:158:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should strip HTML tags from profile fields (XSS protection)" time="0.024987631">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:166:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should reject excessively long profile data" time="0.026899684">
+            <failure message="expected [ 200, 400, 413, 422 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 400, 413, 422 ] to include 401
+ ❯ tests/paid-user-e2e.test.ts:176:36
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should list available subscription plans with pricing" time="0.030067461">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/paid-user-e2e.test.ts:183:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should show current subscription status with full plan details" time="0.028708712">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/paid-user-e2e.test.ts:196:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create real Stripe checkout session with checkout URL" time="0.021646553">
+            <failure message="expected [ 200, 500, 503 ] to include 404" type="AssertionError">
+AssertionError: expected [ 200, 500, 503 ] to include 404
+ ❯ tests/paid-user-e2e.test.ts:214:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create checkout sessions for all plan types" time="0.023486597">
+            <failure message="expected [ 200, 500, 503 ] to include 404" type="AssertionError">
+AssertionError: expected [ 200, 500, 503 ] to include 404
+ ❯ tests/paid-user-e2e.test.ts:228:33
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should reject invalid plan IDs" time="0.0262273">
+            <failure message="expected 404 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 404
+
+ ❯ tests/paid-user-e2e.test.ts:239:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return billing history as array" time="0.025087061">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/paid-user-e2e.test.ts:244:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return payment method info" time="0.031279569">
+            <failure message="expected 404 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ tests/paid-user-e2e.test.ts:250:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should handle cancel-subscription gracefully when no subscription" time="0.026483717">
+            <failure message="expected undefined to be &apos;SUBSCRIPTION_NOT_FOUND&apos; // Object.is equality" type="AssertionError">
+AssertionError: expected undefined to be &apos;SUBSCRIPTION_NOT_FOUND&apos; // Object.is equality
+
+- Expected:
+&quot;SUBSCRIPTION_NOT_FOUND&quot;
+
++ Received:
+undefined
+
+ ❯ tests/paid-user-e2e.test.ts:260:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should map Stripe error codes to user-friendly messages" time="0.001185568">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks without signature" time="0.024252953">
+            <failure message="expected [ 400, 401, 403 ] to include 500" type="AssertionError">
+AssertionError: expected [ 400, 401, 403 ] to include 500
+ ❯ tests/paid-user-e2e.test.ts:281:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks with invalid signature" time="0.02669113">
+            <failure message="expected [ 400, 401, 403 ] to include 500" type="AssertionError">
+AssertionError: expected [ 400, 401, 403 ] to include 500
+ ❯ tests/paid-user-e2e.test.ts:293:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject forged payment events (no valid Stripe signature)" time="0.024591533">
+            <failure message="expected [ 400, 401, 403 ] to include 500" type="AssertionError">
+AssertionError: expected [ 400, 401, 403 ] to include 500
+ ❯ tests/paid-user-e2e.test.ts:313:31
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should handle all critical webhook event types" time="0.000408997">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list all distribution platforms" time="0.030376668">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:338:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list user releases" time="0.023649824">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:348:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get earnings breakdown" time="0.02477442">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.025868218">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:358:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should create a distribution release with valid data" time="0.033657045">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:372:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should reject release creation with missing required fields" time="0.026553002">
+            <failure message="expected 401 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:385:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list social connections" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should schedule a post" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list calendar posts" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get trending hashtags (dynamic, time-based)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get social metrics" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should generate AI content" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get inbox messages" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for unsupported platform" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for Meta platform (covers Facebook+Instagram)" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should list projects" time="0.020689229">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:483:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get sample library" time="0.020760096">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:488:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get project templates" time="0.023994303">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:493:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should get analytics dashboard data" time="0.025521105">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:500:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should handle analytics date range filtering" time="0.028648902">
+            <failure message="expected [ 200, 400 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 400 ] to include 401
+ ❯ tests/paid-user-e2e.test.ts:505:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should get AI recommendations" time="0.023546607">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:512:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should get career goals" time="0.025355216">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:517:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list contract templates" time="0.030207392">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:524:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list collaboration connections" time="0.027349723">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:529:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should perform unified search with results" time="0.06137391">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should handle empty search gracefully" time="0.027596565">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should search with type filter" time="0.024951387">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should get search suggestions" time="0.023168858">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in login" time="0.003134362">
+            <failure message="expected [ 400, 401 ] to include 403" type="AssertionError">
+AssertionError: expected [ 400, 401 ] to include 403
+ ❯ tests/paid-user-e2e.test.ts:567:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in search" time="0.027263002">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject malformed JSON body" time="0.004021574">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should return 404 for non-existent API routes" time="0.020997268">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should prevent path traversal attempts" time="0.012164148">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not leak stack traces in production errors" time="0.022100783">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not expose sensitive headers" time="0.027899127">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; should rate limit failed login attempts" time="1.908285468">
+            <failure message="expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/paid-user-e2e.test.ts:641:25
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; should have billing rate limiter active" time="0.745210323">
+            <failure message="expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/paid-user-e2e.test.ts:651:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 14: Email Service Verification &gt; should have email service properly structured" time="0.024905958">
+            <failure message="Cannot read properties of null (reading &apos;email&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;email&apos;)
+ ❯ tests/paid-user-e2e.test.ts:659:23
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should return proper OAuth URLs for supported platforms" time="0.022746782">
+            <failure message="expected [ 200, 400, 503 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 400, 503 ] to include 401
+ ❯ tests/paid-user-e2e.test.ts:676:33
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with missing code" time="0.03968825">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with invalid state" time="0.03136919">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should return structured error responses with helpful messages" time="0.030535112">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle concurrent requests without crashes" time="0.07697498">
+            <failure message="expected [ 200, 429 ] to include 404" type="AssertionError">
+AssertionError: expected [ 200, 429 ] to include 404
+ ❯ tests/paid-user-e2e.test.ts:725:28
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle very large request bodies gracefully" time="0.042523967">
+            <failure message="expected [ 200, 201, 400, 413, 422 ] to include 401" type="AssertionError">
+AssertionError: expected [ 200, 201, 400, 413, 422 ] to include 401
+ ❯ tests/paid-user-e2e.test.ts:735:41
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should get notifications when authenticated" time="0.041308113">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:742:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should reject notifications without auth" time="0.029960041">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should not expose other users data in profile" time="0.023717366">
+            <failure message="Cannot read properties of null (reading &apos;id&apos;)" type="TypeError">
+TypeError: Cannot read properties of null (reading &apos;id&apos;)
+ ❯ tests/paid-user-e2e.test.ts:760:23
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should scope social posts to authenticated user" time="0.023507219">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:765:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should logout successfully" time="0.02457538">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access after logout (no cookies)" time="0.021184066">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to billing after logout" time="0.021647204">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to distribution after logout" time="0.022762897">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="Phase 6: Social Media Management" time="0.25939427">
+            <failure message="expected 401 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 401 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 401
+
+ ❯ tests/paid-user-e2e.test.ts:395:26
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/security-hardening.test.ts" timestamp="2026-10-25T15:31:06.454Z" hostname="2fc971e77ddd" tests="24" failures="4" errors="0" skipped="2" time="1.477502647">
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/notifications requires authentication (401)" time="0.05253941">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/preferences requires authentication (401)" time="0.024572797">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/sessions requires authentication (401)" time="0.022270133">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/auth/login-history requires authentication (401)" time="0.020796242">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/marketplace/my-beats requires authentication (401)" time="0.021063584">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/distribution/releases requires authentication (401)" time="0.021942891">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/analytics/overview requires authentication (401)" time="0.022820573">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Authentication Guards &gt; GET /api/admin/users requires authentication (401)" time="0.024036979">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects missing email" time="0.02770547">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects missing password" time="0.02363376">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; register rejects malformed email" time="0.022448472">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; login rejects empty credentials" time="0.006815017">
+            <failure message="expected 403 to be 400 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ ❯ tests/security-hardening.test.ts:80:22
+            </failure>
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; login returns 401 for wrong password" time="0.002880103">
+            <failure message="expected [ 401, 400 ] to include 403" type="AssertionError">
+AssertionError: expected [ 401, 400 ] to include 403
+ ❯ tests/security-hardening.test.ts:88:24
+            </failure>
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Input Validation — Auth Endpoints &gt; does not expose password in user object after register" time="0.020063206">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="CSRF Protection &gt; state-changing POST without CSRF cookie is accepted for auth endpoints (cookie SameSite handles it)" time="0.002775596">
+            <failure message="expected 403 not to be 403 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 not to be 403 // Object.is equality
+ ❯ tests/security-hardening.test.ts:117:26
+            </failure>
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="CSRF Protection &gt; health endpoints are not blocked by CSRF" time="0.001175563">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Rate Limiting &gt; login endpoint has rate limit headers on response" time="0.002276523">
+            <failure message="expected [ 400, 401, 429 ] to include 403" type="AssertionError">
+AssertionError: expected [ 400, 401, 429 ] to include 403
+ ❯ tests/security-hardening.test.ts:142:29
+            </failure>
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; allows exactly `limit` requests and blocks the (limit+1)th immediately" time="0.899766547">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; boundary-burst: filling the window then firing immediately blocks ALL extra requests" time="0.000766065">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; allows requests again after the sliding window has fully elapsed" time="0.251118968">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; boundary-burst at exact window boundary: limit at end of window A, limit at start of window B → all blocked" time="0.002063963">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path) &gt; remaining count decrements accurately as requests consume the budget" time="0.000359181">
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Real PDIM Integration &gt; allows limit requests, blocks limit+1th, recovers after window expires" time="0.000454465">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/security-hardening.test.ts" name="Sliding-Window — Real PDIM Integration &gt; boundary-burst: burst fired before window expiry is blocked; request after expiry passes" time="0.000207042">
+            <skipped/>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/webhook-security.test.ts" timestamp="2026-10-25T15:31:06.458Z" hostname="2fc971e77ddd" tests="5" failures="0" errors="0" skipped="0" time="0.100163778">
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; rejects request without Stripe-Signature header (400)" time="0.042655515">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; rejects request with invalid Stripe-Signature (400)" time="0.007867965">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Stripe Webhook Security &gt; webhook endpoint exists (not 404)" time="0.006199219">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Audit Log Endpoint Security &gt; GET /api/audit-logs requires admin auth" time="0.039469561">
+        </testcase>
+        <testcase classname="tests/webhook-security.test.ts" name="Metrics Endpoint Security &gt; GET /metrics requires auth" time="0.002396875">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/maxcore-local-supervisor.integration.test.ts" timestamp="2026-10-25T15:31:06.459Z" hostname="2fc971e77ddd" tests="2" failures="1" errors="0" skipped="0" time="189.404435995">
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; launches, becomes healthy (Python-backed), and reports ready" time="189.397418733">
+            <failure message="expected false to be true // Object.is equality" type="AssertionError">
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/integration/maxcore-local-supervisor.integration.test.ts:65:57
+            </failure>
+        </testcase>
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; stops cleanly and the port is released" time="0.004113533">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/cache-cross-pod.test.ts" timestamp="2026-10-25T15:31:06.459Z" hostname="2fc971e77ddd" tests="7" failures="0" errors="0" skipped="0" time="0.016560012">
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; PDIM pub/sub is unavailable — pollTick() is the cross-pod coordination mechanism" time="0.001922208">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; pod A invalidateForUser → pod B bust-key check rejects stale L1 entry before poll" time="0.003296481">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; pod A invalidatePattern → pod B pollTick() evicts matching pod B L1 entries" time="0.001973316">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; seq counter increments on invalidation, waking pollers on other pods" time="0.001390357">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; invalidatePattern writes &quot;{pattern}:{timestamp}&quot; event to PDIM list" time="0.001624129">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; invalidateForUser writes userId→bustAt to PDIM hash consumed by other pod pollers" time="0.001599853">
+        </testcase>
+        <testcase classname="tests/unit/cache-cross-pod.test.ts" name="Cross-pod cache invalidation (PDIM polling simulation) &gt; keeps the bust key monotonic when an older invalidation write completes later" time="0.003051852">
+        </testcase>
+    </testsuite>
+</testsuites>

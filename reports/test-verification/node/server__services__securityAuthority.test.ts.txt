@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: authority rejects legacy epochs without I/O and propagates unavailable authority
+ok 1 - authority rejects legacy epochs without I/O and propagates unavailable authority
+  ---
+  duration_ms: 1.205638
+  type: 'test'
+  ...
+# Subtest: generation revoke is durable, monotonic, parameterized, and distinguishes new login
+ok 2 - generation revoke is durable, monotonic, parameterized, and distinguishes new login
+  ---
+  duration_ms: 0.248385
+  type: 'test'
+  ...
+# Subtest: webhook policy excludes internal, reserved, mapped and transition addresses
+ok 3 - webhook policy excludes internal, reserved, mapped and transition addresses
+  ---
+  duration_ms: 5.381565
+  type: 'test'
+  ...
+# Subtest: MFA cannot borrow assurance from other identity or bearer request
+ok 4 - MFA cannot borrow assurance from other identity or bearer request
+  ---
+  duration_ms: 0.208834
+  type: 'test'
+  ...
+# Subtest: real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch
+ok 5 - real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch
+  ---
+  duration_ms: 3.734833
+  type: 'test'
+  ...
+# Subtest: erasure request atomically queues with revocation and reports pending, not erased
+ok 6 - erasure request atomically queues with revocation and reports pending, not erased
+  ---
+  duration_ms: 0.971045
+  type: 'test'
+  ...
+# Subtest: factor promotion compares the proved active factor and bumps epoch in one statement
+ok 7 - factor promotion compares the proved active factor and bumps epoch in one statement
+  ---
+  duration_ms: 0.690922
+  type: 'test'
+  ...
+# Subtest: real TOTP proof is consumed once across concurrent consumers and entrypoints
+ok 8 - real TOTP proof is consumed once across concurrent consumers and entrypoints
+  ---
+  duration_ms: 1.52517
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 255.249388

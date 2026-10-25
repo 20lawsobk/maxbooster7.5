@@ -1,0 +1,28 @@
+......                                                                   [100%]
+=============================== warnings summary ===============================
+ai_model/audio/test_audio_analysis.py: 13 warnings
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/pitch.py:103: UserWarning: Trying to estimate tuning from empty frequency set.
+    return pitch_tuning(
+
+ai_model/audio/test_audio_analysis.py::test_totality
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=2048 is too large for input signal of length=3
+    warnings.warn(
+
+ai_model/audio/test_audio_analysis.py::test_totality
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=3
+    warnings.warn(
+
+ai_model/audio/test_audio_analysis.py::test_totality
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=2
+    warnings.warn(
+
+ai_model/audio/test_audio_analysis.py::test_totality
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1
+    warnings.warn(
+
+ai_model/audio/test_audio_analysis.py::test_totality
+  /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=690
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+6 passed, 18 warnings in 7.81s

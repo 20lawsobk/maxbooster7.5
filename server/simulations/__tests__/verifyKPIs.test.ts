@@ -4,7 +4,7 @@
  * and produce deterministic, reproducible results.
  */
 
-import { describe, test, expect } from "@jest/globals";
+import { describe, test, expect } from "vitest";
 import {
   simulateAutonomousUpgrade,
   simulateLongTermAdaptation,

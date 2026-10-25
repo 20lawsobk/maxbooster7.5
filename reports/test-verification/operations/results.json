@@ -1,0 +1,65 @@
+{
+  "scope": "Bounded disposable or read-only evidence verifiers; no production/provider mutations",
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "evaluations/maxcore-quality/verify_types.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T21:56:34.082801+00:00",
+      "durationSeconds": 0.065,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/operations/verify_types.py.txt",
+      "logSha256": "61d775c3f0ecc7c02bd57ad5c78691eb29c48fd3944423317180a1fa31e70cdd",
+      "file": "evaluations/maxcore-quality/verify_types.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "evaluations/maxcore-quality/verify_evidence.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T21:56:34.148417+00:00",
+      "durationSeconds": 0.065,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/operations/verify_evidence.py.txt",
+      "logSha256": "1843ba3b3a0b3677180302904c41c0ce820cad83eb006ba40f23ee86035e054e",
+      "file": "evaluations/maxcore-quality/verify_evidence.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/maxcore-isolated-recovery-acceptance.py"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T21:56:34.213644+00:00",
+      "durationSeconds": 6.306,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/maxcore-isolated-recovery-acceptance.py.txt",
+      "logSha256": "c6a98b5ca785667938d61dfa9e88b672af1adba34da5d98b60210300922a2294",
+      "file": "scripts/maxcore-isolated-recovery-acceptance.py"
+    },
+    {
+      "command": [
+        "node",
+        "tests/payment-processing/run.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T21:56:40.519619+00:00",
+      "durationSeconds": 2.784,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/run.mjs.txt",
+      "logSha256": "ab3d8cfea375c0da76ba9f922d4e9b34c87cd9db6da4a8f646d265670dfb2d32",
+      "file": "tests/payment-processing/run.mjs"
+    }
+  ]
+}

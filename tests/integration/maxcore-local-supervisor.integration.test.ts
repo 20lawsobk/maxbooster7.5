@@ -19,12 +19,16 @@ process.env.SESSION_SECRET =
 const supervisor = await import(
   "../../server/services/maxcoreLocalSupervisor.js"
 );
+const { getMaxcoreGenerationHeaders } = await import(
+  "../../server/services/maxcoreConnector.js"
+);
 
 async function waitForHealthy(deadlineMs: number): Promise<boolean> {
   const deadline = Date.now() + deadlineMs;
   while (Date.now() < deadline) {
     try {
       const r = await fetch(`http://127.0.0.1:${PORT}/api/health`, {
+        headers: getMaxcoreGenerationHeaders(),
         signal: AbortSignal.timeout(3_000),
       });
       if (r.ok) {

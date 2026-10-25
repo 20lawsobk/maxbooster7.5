@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-test("real bootstrap verifies the toolchain without copying immutable package trees",()=>{
+test("real bootstrap verifies the selected toolchain and preserves each package outside cleanup",()=>{
   let output;
   try {
     output=execFileSync("bash",["script/deployment/bootstrap.sh","--check"],{
@@ -16,8 +16,15 @@ test("real bootstrap verifies the toolchain without copying immutable package tr
     throw error;
   }
   assert.match(output,/\[bootstrap\] Preparing build toolchain/);
-  assert.match(output,/Using immutable npm package store path/);
-  assert.match(output,/Using immutable pnpm package store path/);
+  for (const manager of ["npm", "pnpm"]) {
+    const preferred = fs.realpathSync(execFileSync("bash", ["-c", 'command -v "$1"', "bootstrap-test", manager], { encoding: "utf8" }).trim());
+    if (preferred.startsWith("/nix/store/")) {
+      assert.match(output, new RegExp(`Using immutable ${manager} package store path`));
+      assert.doesNotMatch(output, new RegExp(`Preserving ${manager} outside workspace`));
+    } else {
+      assert.match(output, new RegExp(`Preserving ${manager} outside workspace`));
+    }
+  }
   assert.match(output,/Verifying preserved npm/);
   assert.match(output,/Verifying preserved pnpm/);
   assert.match(output,/Toolchain ready; temporary footprint:/);
@@ -29,6 +36,8 @@ test("bootstrap announces and cleans up a failure before admitting destructive t
   const root=fs.mkdtempSync(path.join(os.tmpdir(),"bootstrap-failure-"));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   fs.writeFileSync(path.join(root,"package.json"),JSON.stringify({packageManager:"npm@0.0.0"}));
+  fs.mkdirSync(path.join(root, "script/lib"), { recursive: true });
+  fs.copyFileSync("script/lib/deploymentPackRecovery.mjs", path.join(root, "script/lib/deploymentPackRecovery.mjs"));
   const before=new Set(fs.readdirSync("/tmp").filter(p=>p.startsWith("deployment-tools.")));
   let failure;
   try {

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: worker never intercepts private GETs; legacy replay and uncoordinated upgrade stay blocked
+ok 1 - worker never intercepts private GETs; legacy replay and uncoordinated upgrade stay blocked
+  ---
+  duration_ms: 7.362513
+  type: 'test'
+  ...
+# Subtest: theme boot agrees with provider default and handles unavailable localStorage
+ok 2 - theme boot agrees with provider default and handles unavailable localStorage
+  ---
+  duration_ms: 5.571352
+  type: 'test'
+  ...
+# Subtest: real draft and queue algorithms with an isolated in-memory IDB boundary
+ok 3 - real draft and queue algorithms with an isolated in-memory IDB boundary
+  ---
+  duration_ms: 18.478125
+  type: 'test'
+  ...
+# Subtest: preference writes serialize failures and reject a queued write after account change
+ok 4 - preference writes serialize failures and reject a queued write after account change
+  ---
+  duration_ms: 5.876823
+  type: 'test'
+  ...
+# Subtest: changed domain TS/TSX sources parse in isolation
+ok 5 - changed domain TS/TSX sources parse in isolation
+  ---
+  duration_ms: 56.614154
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 209.808366

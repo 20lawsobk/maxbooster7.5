@@ -1,0 +1,101 @@
+{
+  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/patent-pdf-runtime.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:26:04.097553+00:00",
+      "durationSeconds": 0.923,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/test-verification/root/node-prerequisites/tests__patent-pdf-runtime.test.mjs.txt",
+      "logSha256": "8e2bbea47b8ad707eef3156e39915e5f3ded6880252b9316d48c8583f045ebd1",
+      "file": "tests/patent-pdf-runtime.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/portable-python-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:26:05.023542+00:00",
+      "durationSeconds": 0.467,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/root/node-prerequisites/tests__portable-python-isolation.test.mjs.txt",
+      "logSha256": "62ea58372fefbcd53c578b1b61d64e25ece75871b8783e42c2512d9fd2efdef1",
+      "file": "tests/portable-python-isolation.test.mjs",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/startup-health.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T15:26:05.496183+00:00",
+      "durationSeconds": 0.466,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/root/node-prerequisites/tests__startup-health.test.mjs.txt",
+      "logSha256": "c783a2b630530f1248d2c795c6b5b80f4051a663203294d8fc82004a9a46af54",
+      "file": "tests/startup-health.test.mjs",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 3,
+    "failedFiles": 1,
+    "counts": {
+      "tests": 9,
+      "pass": 8,
+      "fail": 1,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

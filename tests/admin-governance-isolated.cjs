@@ -24,6 +24,8 @@ function load(file, boundaries = {}) {
       desc: a => a, sql: (parts, ...values) => ({ parts, values }),
     };
     if (name === "node:crypto") return crypto;
+    if (name === "zod") return require("zod");
+    if (name === "../../shared/supportTicketValidation.js") return load("shared/supportTicketValidation.ts");
     if (name === "./kycReviewRevision.js") return load("server/services/kycReviewRevision.ts");
     throw new Error(`Unmocked external boundary: ${name}`);
   };

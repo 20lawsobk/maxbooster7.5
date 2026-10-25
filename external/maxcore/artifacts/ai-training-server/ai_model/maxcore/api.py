@@ -83,10 +83,13 @@ class DigitalGPU:
         # Fast path: plain float32-ndarray GEMM dispatches through the replica
         # pool (shared cross-replica dedup + lock-free fan-out). Anything else
         # — bias/activation, non-float32 or non-ndarray operands — takes the
-        # exact historical direct-backend path.
+        # exact historical direct-backend path. The replica pool supports a
+        # matrix RHS only; batched RHS tensors stay on the backend that
+        # implements their broadcasting semantics.
         if (self._replica_pool_enabled and bias is None and activation is None
                 and isinstance(a, np.ndarray) and isinstance(b, np.ndarray)
-                and a.dtype == np.float32 and b.dtype == np.float32):
+                and a.dtype == np.float32 and b.dtype == np.float32
+                and a.ndim >= 2 and b.ndim == 2):
             result = self._pool().matmul(a, b)
             return self.backend.create_tensor(result, dtype="float32")
         return self.backend.gemm(a, b, bias=bias, activation=activation)

@@ -1,0 +1,74 @@
+TAP version 13
+# Subtest: real subprocesses overlap and prerequisites finish before successors
+ok 1 - real subprocesses overlap and prerequisites finish before successors
+  ---
+  duration_ms: 119.760559
+  type: 'test'
+  ...
+# Subtest: deadline kills hung task instead of admitting its dependent
+ok 2 - deadline kills hung task instead of admitting its dependent
+  ---
+  duration_ms: 223.706019
+  type: 'test'
+  ...
+# Subtest: failed prerequisite blocks dependent; invalid graphs rejected before execution
+ok 3 - failed prerequisite blocks dependent; invalid graphs rejected before execution
+  ---
+  duration_ms: 38.583505
+  type: 'test'
+  ...
+# Subtest: admission adapts when available memory recovers
+ok 4 - admission adapts when available memory recovers
+  ---
+  duration_ms: 60.445695
+  type: 'test'
+  ...
+# Subtest: startup plan requires all restores before launching app; source deletion is last
+ok 5 - startup plan requires all restores before launching app; source deletion is last
+  ---
+  duration_ms: 0.944604
+  type: 'test'
+  ...
+# Subtest: a ready application is supervised beyond the startup deadline
+ok 6 - a ready application is supervised beyond the startup deadline
+  ---
+  duration_ms: 293.879047
+  type: 'test'
+  ...
+#    Packing Portable Python 3.12 runtime...
+# Subtest: failed process descendants cannot continue writing after rejection
+ok 7 - failed process descendants cannot continue writing after rejection
+  ---
+  duration_ms: 950.96695
+  type: 'test'
+  ...
+# [capsule-cache] python_runtime.pdim: miss 357986994b3e465e8c11c09e9866f64a9bd62d68dc40bb0f1d97caa4efdfe65f
+# ==> Packing python_runtime/ → python_runtime.pdim (zstd-19, -T2, Extract & Boot)...
+# [capsule] python_runtime.pdim: compression finished; committing checksum and manifest
+# [capsule] python_runtime.pdim: manifest committed; source retained
+#    ✅ python_runtime/ packed (0MB); source preserved
+# [capsule-cache] Verified python_runtime.pdim; zstd-19; source removed
+# [pdim-restore] Extracting python_runtime.pdim (zstd-19) → /tmp/maxbooster-test-lhb9irng/executive-real-pack-SiBjup/.pdim-scratch-python_runtime-106378/ (staging for python_runtime/) ...
+# [pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim
+# [pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim
+# Subtest: actual build.sh pack task removes only its fixture source and restores it
+ok 8 - actual build.sh pack task removes only its fixture source and restores it
+  ---
+  duration_ms: 219.447962
+  type: 'test'
+  ...
+# Subtest: compression allocation grows with measured capacity, not runtime VM settings
+ok 9 - compression allocation grows with measured capacity, not runtime VM settings
+  ---
+  duration_ms: 44.469242
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2058.543712

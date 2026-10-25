@@ -1,0 +1,36 @@
+........                                                              [100%]
+=============================== warnings summary ===============================
+tests/test_generation_restart_reconciliation.py::RestartTests::test_dedicated_interrupt_and_completed_cleanup_are_ownership_scoped
+tests/test_generation_restart_reconciliation.py::RestartTests::test_delivery_outage_keeps_journal_bytes_and_allows_later_delivery_only_retry
+tests/test_generation_restart_reconciliation.py::RestartTests::test_gc_retains_retryable_manager_delivery_but_expires_terminal_jobs
+tests/test_generation_restart_reconciliation.py::RestartTests::test_invalid_journal_names_rejected_before_reconciliation_or_delivery
+tests/test_generation_restart_reconciliation.py::RestartTests::test_readiness_requires_both_model_and_fresh_awareness
+tests/test_generation_restart_reconciliation.py::RestartTests::test_registered_startup_reconciles_legacy_without_touching_delivery_or_owners
+tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_never_deletes_unowned_or_symlink_scratch
+tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_generation_restart_reconciliation.py::RestartTests::test_dedicated_interrupt_and_completed_cleanup_are_ownership_scoped
+tests/test_generation_restart_reconciliation.py::RestartTests::test_delivery_outage_keeps_journal_bytes_and_allows_later_delivery_only_retry
+tests/test_generation_restart_reconciliation.py::RestartTests::test_gc_retains_retryable_manager_delivery_but_expires_terminal_jobs
+tests/test_generation_restart_reconciliation.py::RestartTests::test_invalid_journal_names_rejected_before_reconciliation_or_delivery
+tests/test_generation_restart_reconciliation.py::RestartTests::test_readiness_requires_both_model_and_fresh_awareness
+tests/test_generation_restart_reconciliation.py::RestartTests::test_registered_startup_reconciles_legacy_without_touching_delivery_or_owners
+tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_never_deletes_unowned_or_symlink_scratch
+tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal
+  /workspace/.cloud-python/lib/python3.12/site-packages/fastapi/applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 16 warnings, 3 subtests passed in 1.28s

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: builder canonical links ignore legacy/custom public URLs and encode the slug
+ok 1 - builder canonical links ignore legacy/custom public URLs and encode the slug
+  ---
+  duration_ms: 80.507135
+  type: 'test'
+  ...
+# Subtest: backend and DNS management links cannot resurrect legacy subdomains
+ok 2 - backend and DNS management links cannot resurrect legacy subdomains
+  ---
+  duration_ms: 0.722419
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 832.148056
