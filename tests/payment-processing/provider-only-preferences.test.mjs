@@ -169,3 +169,115 @@ test('royalty split acceptance rejects bank credentials without storage writes a
     assert.equal(writes.length, 2);
   } finally { delete globalThis.__providerOnlySplits; }
 });
+
+test('generic preference guard rejects common bank credential key spellings', () => {
+  for (const key of [
+    'bank_details', 'bank-account', 'bankAccountNumber', 'bank_routing_number',
+    'account_number', 'routing-number', 'Bank Account Number', 'SWIFT_CODE',
+    'sort_code', 'BIC',
+  ]) {
+    assert.equal(hasBankCredentials({ profile: [{ [key]: 'fixture-only' }] }), true, key);
+  }
+  assert.equal(hasBankCredentials({ payout: { stripeAccountId: 'acct_fixture', paypalEmail: 'test@example.invalid', bankTransferEnabled: true } }), false);
+});
+
+test('routine preference responses redact key variants without mutating stored JSON', () => {
+  const stored = {
+    theme: 'dark',
+    payout: { bank_details: { account_number: 'fixture-only' }, paypalEmail: 'test@example.invalid' },
+    alternate: [{ bankAccountNumber: 'fixture-only', label: 'retained' }, { 'routing-number': 'fixture-only', safe: true }],
+  };
+  const original = structuredClone(stored);
+  assert.deepEqual(publicPaymentPreferences(stored), {
+    theme: 'dark',
+    payout: { paypalEmail: 'test@example.invalid' },
+    alternate: [{ label: 'retained' }, { safe: true }],
+  });
+  assert.deepEqual(stored, original);
+});
+
+test('authenticated user preference routes reject nested banking fields and redact historical values', async () => {
+  const historical = {
+    artistType: 'solo',
+    theme: 'dark',
+    payout: { bank_details: { account_number: 'fixture-only' }, paypalEmail: 'owner@example.invalid' },
+    custom: [{ bankAccountNumber: 'fixture-only', label: 'retained' }],
+  };
+  let writes = 0;
+  const dependencies = {
+    userPreferencesService: {
+      getUserPreferences: async () => historical,
+      getDefaultPreferences: () => ({ artistType: 'solo' }),
+      updateUserPreferences: async (_userId, updates) => {
+        writes++;
+        return { ...historical, ...updates };
+      },
+    },
+    logger: { warn() {} },
+  };
+  const file = 'server/routes/preferences.ts';
+  const get = preferenceHandler('get', '/user', dependencies, file, 'router');
+  const put = preferenceHandler('put', '/user', dependencies, file, 'router');
+
+  const read = responseHarness();
+  await get({ user: { id: 'owner' } }, read);
+  assert.equal(hasBankCredentials(read.body), false);
+  assert.equal(read.body.payout.paypalEmail, 'owner@example.invalid');
+  assert.equal(read.body.custom[0].label, 'retained');
+
+  const rejected = responseHarness();
+  await put({ user: { id: 'owner' }, body: { custom: [{ 'routing-number': 'fixture-only' }] } }, rejected);
+  assert.equal(rejected.statusCode, 400);
+  assert.equal(writes, 0);
+
+  const allowed = responseHarness();
+  await put({ user: { id: 'owner' }, body: { studioPreferences: { defaultBPM: 128 } } }, allowed);
+  assert.equal(writes, 1);
+  assert.equal(allowed.body.studioPreferences.defaultBPM, 128);
+  assert.equal(hasBankCredentials(allowed.body), false);
+  assert.equal(hasBankCredentials(historical), true);
+});
+
+
+test('security alert preference responses redact legacy banking fields on reads and updates', async () => {
+  const historical = {
+    securityAlerts: {
+      emailOnNewLogin: false,
+      bank_details: { account_number: 'fixture-only' },
+      alternate: [{ bankAccountNumber: 'fixture-only', label: 'retained' }],
+    },
+  };
+  let writes = 0;
+  const dependencies = {
+    users: { id: 'user-id', preferences: 'preferences-column' },
+    eq: () => true,
+    sql: () => 'mocked-sql',
+    db: {
+      select: () => ({ from: () => ({ where: () => ({ limit: async () => [{ preferences: historical }] }) }) }),
+      update: () => ({ set: () => ({ where: () => ({
+        returning: async () => {
+          writes++;
+          return [{ preferences: historical }];
+        },
+      }) }) }),
+    },
+    logger: { warn() {} },
+  };
+  const file = 'server/routes/preferences.ts';
+  const get = preferenceHandler('get', '/security-alerts', dependencies, file, 'router');
+  const put = preferenceHandler('put', '/security-alerts', dependencies, file, 'router');
+
+  const read = responseHarness();
+  await get({ user: { id: 'owner' } }, read);
+  assert.equal(read.body.emailOnNewLogin, false);
+  assert.equal(read.body.alternate[0].label, 'retained');
+  assert.equal(hasBankCredentials(read.body), false);
+
+  const updated = responseHarness();
+  await put({ user: { id: 'owner' }, body: { pushOnLogin: true } }, updated);
+  assert.equal(writes, 1);
+  assert.equal(updated.body.emailOnNewLogin, false);
+  assert.equal(updated.body.alternate[0].label, 'retained');
+  assert.equal(hasBankCredentials(updated.body), false);
+  assert.equal(hasBankCredentials(historical), true);
+});
