@@ -10,9 +10,11 @@ import subprocess
 import sys
 import time
 import uuid
+import stat
+from datetime import datetime, timezone
 
 from ai_model.awareness.engine import canonical
-from ai_model.training.candidate_corpus import build_manifest
+from ai_model.training.candidate_corpus import build_manifest, LICENSES
 from ai_model.training.public_curriculum import PEAK_POLICY, peak_stream, validate_peak_record
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -84,6 +86,154 @@ def eligible_records(observation_set):
     if not records:
         raise Blocked("blocked_observations", "No recent validated source observations are available")
     return records, excluded
+
+
+
+def _read_rights_file(path, maximum):
+    """Read one bounded local file without following any symlink component."""
+    path = Path(path)
+    if not path.is_absolute() or ".." in path.parts:
+        raise ValueError("Rights files require absolute local paths")
+    directory = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for component in path.parts[1:-1]:
+            child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                            dir_fd=directory)
+            os.close(directory)
+            directory = child
+        descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                             dir_fd=directory)
+        with os.fdopen(descriptor, "rb") as stream:
+            metadata = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(metadata.st_mode) or metadata.st_mode & 0o022
+                    or not 0 < metadata.st_size <= maximum):
+                raise ValueError("Rights evidence must be a bounded non-writable regular file")
+            raw = stream.read(maximum + 1)
+            if not 0 < len(raw) <= maximum:
+                raise ValueError("Rights evidence exceeds bounds")
+            return raw
+    finally:
+        os.close(directory)
+
+
+def _approved_text_training_rights(records):
+    """Validate operator-installed grants, never request-supplied assertions.
+
+    Unknown awareness licensing stays explicit. The separate receipt becomes
+    part of the hash-bound corpus and parent certification, alongside the
+    original source provenance. It records an attestation, not a legal verdict.
+    """
+    location = os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_MANIFEST", "")
+    expected = os.environ.get("MAXCORE_TEXT_TRAINING_RIGHTS_SHA256", "")
+    if not location or re.fullmatch(r"[0-9a-f]{64}", expected) is None:
+        raise ValueError("Pinned operator rights manifest required")
+    path = Path(location)
+    raw = _read_rights_file(path, 2_000_000)
+    if hashlib.sha256(raw).hexdigest() != expected:
+        raise ValueError("Rights manifest fingerprint mismatch")
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate rights manifest field")
+            result[key] = value
+        return result
+    document = json.loads(raw, object_pairs_hook=unique_object)
+    if (not isinstance(document, dict) or set(document) != {"schema", "policy", "grants"}
+            or type(document["schema"]) is not int or document["schema"] != 1
+            or document["policy"] != "text-source-training-rights-v1"
+            or not isinstance(document["grants"], list) or not 1 <= len(document["grants"]) <= 256):
+        raise ValueError("Bounded text rights manifest required")
+    from ai_model.training.media_learning import _timestamp
+    now = datetime.now(timezone.utc)
+    grants, evidence_cache, evidence_bytes = {}, {}, 0
+    fields = {"source_id", "domain", "citation", "text_sha256", "author", "license", "purpose", "rights"}
+    required_rights = {"training_allowed", "rights_holder", "attested_by", "license", "attested_at",
+                       "evidence_path", "evidence_sha256"}
+    for grant in document["grants"]:
+        if (not isinstance(grant, dict) or set(grant) != fields
+                or grant["domain"] not in {"music", "social", "advertising", "culture"}
+                or not isinstance(grant["source_id"], str)
+                or re.fullmatch(r"[A-Za-z0-9_-]{1,80}", grant["source_id"]) is None
+                or not isinstance(grant["citation"], str) or not 1 <= len(grant["citation"]) <= 4096
+                or not isinstance(grant["text_sha256"], str)
+                or re.fullmatch(r"[0-9a-f]{64}", grant["text_sha256"]) is None
+                or not isinstance(grant["author"], str) or not grant["author"].strip()
+                or grant["author"] == "unattributed live observation"
+                or grant["license"] not in LICENSES or grant["purpose"] != "training"):
+            raise ValueError("Explicit source-specific training grant required")
+        rights = grant["rights"]
+        if (not isinstance(rights, dict) or not required_rights <= set(rights)
+                or set(rights) - required_rights - {"expires_at"}
+                or rights["training_allowed"] is not True or rights["license"] != grant["license"]
+                or any(not isinstance(rights[key], str) or not rights[key].strip()
+                       for key in ("rights_holder", "attested_by"))):
+            raise ValueError("Explicit accountable training-rights attestation required")
+        if (_timestamp(rights["attested_at"]) > now
+                or ("expires_at" in rights and _timestamp(rights["expires_at"]) <= now)):
+            raise ValueError("Training-rights attestation must be current")
+        relative = rights["evidence_path"]
+        if (not isinstance(relative, str) or not relative or Path(relative).is_absolute()
+                or ".." in Path(relative).parts or ":" in relative or "\\" in relative):
+            raise ValueError("Rights evidence must remain inside the manifest directory")
+        evidence_path = path.parent / relative
+        if evidence_path not in evidence_cache:
+            evidence_cache[evidence_path] = _read_rights_file(evidence_path, 1_048_576)
+            evidence_bytes += len(evidence_cache[evidence_path])
+            if evidence_bytes > 4_194_304:
+                raise ValueError("Rights evidence batch exceeds bounds")
+        if hashlib.sha256(evidence_cache[evidence_path]).hexdigest() != rights["evidence_sha256"]:
+            raise ValueError("Training-rights evidence fingerprint mismatch")
+        key = tuple(grant[field] for field in ("source_id", "domain", "citation", "text_sha256"))
+        if key in grants:
+            raise ValueError("Duplicate source training grant")
+        grants[key] = grant
+    receipts = []
+    for record in records:
+        if (not isinstance(record, dict) or record.get("private") is not False
+                or record.get("purpose") != "training" or not isinstance(record.get("text"), str)):
+            raise ValueError("Rights cannot authorize private or invalid records")
+        provenance = record.get("live_provenance")
+        if (not isinstance(provenance, dict) or provenance.get("access") != "public"
+                or provenance.get("text_sha256") != hashlib.sha256(record["text"].encode()).hexdigest()):
+            raise ValueError("Training grant requires exact public observation provenance")
+        key = (provenance.get("source"), provenance.get("domain"), record.get("source"),
+               provenance["text_sha256"])
+        if key not in grants:
+            raise ValueError("No training grant matches the complete source observation")
+        receipts.append({"schema": 1, "status": "operator_attested",
+                         "admitted_at": now.isoformat(),
+                         "manifest_sha256": expected, "grant": grants[key]})
+    return receipts
+
+
+def require_peak_training_rights(records):
+    """Keep unknown-rights posts in awareness until exact operator grants exist.
+
+    Public visibility, counters and request metadata cannot authorize training.
+    Explicitly licensed authored corpora retain the separate manifest pathway.
+    """
+    if records and all(
+        isinstance(record, dict)
+        and record.get("license") in LICENSES
+        and record.get("private") is False
+        and isinstance(record.get("author"), str) and record["author"].strip()
+        and record["author"] != "unattributed live observation"
+        and record.get("source") and record.get("purpose") == "training"
+        for record in records
+    ):
+        return
+    try:
+        if not records:
+            raise ValueError("No source observations")
+        receipts = _approved_text_training_rights(records)
+    except (ValueError, OSError, TypeError, KeyError, OverflowError, RecursionError) as exc:
+        raise Blocked("blocked_training_rights",
+                      "Source-authored peak text requires approved reuse provenance; public access alone is insufficient",
+                      409) from exc
+    # Validate the complete set before attaching anything to audited inputs.
+    for record, receipt in zip(records, receipts):
+        record["training_rights"] = receipt
 
 
 def write_new(path, raw):
@@ -269,6 +419,15 @@ def execute(engine, steps=4, *, context_tokens=1024, peak_content=True,
         else:
             observation_set = engine.training_observations()
         records, excluded = eligible_records(observation_set)
+        # Non-peak collection includes the same raw social posts. A caller
+        # cannot turn their source-authored text into bare facts by changing mode.
+        raw_post_text = any(
+            source == "mastodon_trending" or (isinstance(source, str) and
+                                              source.startswith(("mastodon_peak_", "bluesky_peak_")))
+            for source in (record["live_provenance"]["source"] for record in records)
+        )
+        if peak_content or raw_post_text:
+            require_peak_training_rights(records)
         try:
             manifest = build_manifest(
                 records, [], smoke_only=False, allow_live_without_holdout=True,

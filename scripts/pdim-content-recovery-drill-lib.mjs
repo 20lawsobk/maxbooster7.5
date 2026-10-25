@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
-import { constants } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export function sha256(bytes) {
@@ -40,8 +39,8 @@ export async function restoreVerifiedSnapshot(snapshotPath, manifestPath, destin
   }
 
   await mkdir(dirname(destinationPath), { recursive: true });
-  // COPYFILE_EXCL is intentional: recovery must never replace a destination
-  // selected by mistake, even after a valid checksum.
-  await copyFile(snapshotPath, destinationPath, constants.COPYFILE_EXCL);
+  // Publish the exact bytes verified above, not a second read of a mutable
+  // source path. Exclusive creation still refuses an existing destination.
+  await writeFile(destinationPath, bytes, { flag: "wx", mode: 0o600 });
   return manifest;
 }

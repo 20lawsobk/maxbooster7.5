@@ -830,12 +830,9 @@ export class AutonomousService extends EventEmitter {
       }
 
       if (enqueued > 0) {
-        // Only transition to published once at least one platform was actually queued.
-        // Posts with zero successful enqueues stay scheduled so they can be retried.
-        await storage.updateSocialPost(postId, {
-          status: "published",
-          publishedAt: new Date(),
-        });
+        // Scheduling persists the canonical pending state. Queue acceptance is
+        // not provider delivery; only the posting worker owns receipt/status
+        // transitions. Overwriting pending here also prevents its atomic claim.
         logger.info(
           `[AUTONOMOUS] Content ${postId} enqueued on ${enqueued}/${platforms.length} platform(s)` +
           (failed.length ? ` (no account for: ${failed.join(", ")})` : ""),

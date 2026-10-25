@@ -41,12 +41,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
-        "server/services/**",
-        "server/middleware/**",
-        "server/safety/**",
-        "server/lib/**",
+        // V8 instruments JavaScript/TypeScript. These directories also contain
+        // Python services and operator Markdown, which Rollup cannot parse.
+        "server/services/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/middleware/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/safety/**/*.{ts,tsx,js,mjs,cjs}",
+        "server/lib/**/*.{ts,tsx,js,mjs,cjs}",
       ],
-      exclude: ["server/services/diffusion/**", "**/__tests__/**", "**/*.d.ts"],
+      exclude: ["server/services/diffusion/**", "**/__tests__/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.*"],
       reporter: ["text", "lcov"],
       thresholds: {
         statements: 20,

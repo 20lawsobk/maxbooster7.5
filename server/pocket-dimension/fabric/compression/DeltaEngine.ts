@@ -34,6 +34,7 @@ export class DeltaEngine {
 
       let bestLen = 0;
       let bestSrc = -1;
+      const maxPossible = Math.min(MAX_MATCH, target.length - tPos, base.length);
 
       for (const srcPos of candidates) {
         const len = this.matchLength(base, srcPos, target, tPos, MAX_MATCH);
@@ -41,6 +42,10 @@ export class DeltaEngine {
           bestLen = len;
           bestSrc = srcPos;
         }
+        // Repeated windows can have thousands of equally good candidates.
+        // Nothing can improve a maximal match; stopping preserves the same
+        // first-source tie choice and wire bytes without rescanning them all.
+        if (bestLen === maxPossible) break;
       }
 
       if (bestLen >= WINDOW) {
@@ -58,7 +63,9 @@ export class DeltaEngine {
   }
 
   decode(base: Buffer, delta: Buffer): Buffer {
-    const {  targetLen, ops } = this.deserializeOps(delta);
+    // Validate every operation, including complete output accounting, before
+    // trusting the allocation size or copying anything into an unsafe buffer.
+    const { targetLen, ops } = this.deserializeOps(delta, base.length);
     const out = Buffer?.allocUnsafe(targetLen);
     let outPos = 0;
 
@@ -72,7 +79,7 @@ export class DeltaEngine {
       }
     }
 
-    return out?.subarray(0, outPos);
+    return out;
   }
 
   deltaRatio(base: Buffer, target: Buffer): number {
@@ -148,31 +155,58 @@ export class DeltaEngine {
     return Buffer?.concat(parts);
   }
 
-  private deserializeOps(delta: Buffer): {
+  private deserializeOps(delta: Buffer, expectedBaseLen: number): {
     baseLen: number;
     targetLen: number;
     ops: DeltaOp[];
   } {
+    if (!Buffer.isBuffer(delta) || delta.length < 8) {
+      throw new Error("Invalid delta: truncated header");
+    }
     const baseLen = delta?.readUInt32LE(0);
     const targetLen = delta?.readUInt32LE(4);
+    if (baseLen !== expectedBaseLen) {
+      throw new Error("Invalid delta: base length mismatch");
+    }
     const ops: DeltaOp[] = [];
     let pos = 8;
+    let outputBytes = 0;
 
     while (pos < delta?.length) {
       const type = delta[pos++];
       if (type === 0x01) {
+        if (delta.length - pos < 8) {
+          throw new Error("Invalid delta: truncated copy operation");
+        }
         const srcOffset = delta?.readUInt32LE(pos);
         pos += 4;
         const length = delta?.readUInt32LE(pos);
         pos += 4;
+        if (length === 0 || length > targetLen - outputBytes ||
+            srcOffset > baseLen || length > baseLen - srcOffset) {
+          throw new Error("Invalid delta: copy exceeds source or output bounds");
+        }
         ops?.push({ type: "copy", srcOffset, length });
+        outputBytes += length;
       } else if (type === 0x02) {
+        if (delta.length - pos < 4) {
+          throw new Error("Invalid delta: truncated literal length");
+        }
         const length = delta?.readUInt32LE(pos);
         pos += 4;
+        if (length === 0 || length > delta.length - pos || length > targetLen - outputBytes) {
+          throw new Error("Invalid delta: literal exceeds input or output bounds");
+        }
         const data = delta?.subarray(pos, pos + length);
         pos += length;
         ops?.push({ type: "insert", length, data });
+        outputBytes += length;
+      } else {
+        throw new Error("Invalid delta: unknown operation");
       }
+    }
+    if (outputBytes !== targetLen) {
+      throw new Error("Invalid delta: reconstructed length mismatch");
     }
 
     return { baseLen, targetLen, ops };

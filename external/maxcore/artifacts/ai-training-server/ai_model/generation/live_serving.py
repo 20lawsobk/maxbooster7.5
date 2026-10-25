@@ -279,8 +279,15 @@ class LiveLearningLoop:
                 options = {"context_tokens": self.context_tokens, "peak_content": self.peak_content}
                 if self.peak_content:
                     options.update(model_config=self.model_config, worker_timeout=self.worker_timeout)
-                result = (self.trainer or execute)(
-                    _PinnedObservations(observations), self.bootstrap_steps if bootstrap else self.steps, **options)
+                try:
+                    result = (self.trainer or execute)(
+                        _PinnedObservations(observations), self.bootstrap_steps if bootstrap else self.steps, **options)
+                except Blocked as exc:
+                    # Admission refusal is not an interrupted/running worker.
+                    # Preserve its safe code through cooldown and process restart.
+                    state.update(last_result=exc.code, last_run_id=None)
+                    self._save_state(state)
+                    raise
                 state.update(last_run_id=result.get("run_id"), last_result=result["status"])
                 if result["status"] == "candidate_trained_unreviewed":
                     state["trained_content_sha256"] = identity

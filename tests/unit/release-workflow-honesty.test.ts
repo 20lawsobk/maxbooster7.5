@@ -16,13 +16,17 @@ const { limitMock, returningMock, valuesMock, chain, dbMock } = vi.hoisted(
       orderBy: vi.fn(() => chain),
       set: vi.fn(() => chain),
       values: valuesMock,
-      limit: limitMock,
+      limit: vi.fn((...args: unknown[]) => ({
+        then: (resolve: (value: unknown) => unknown) => Promise.resolve(limitMock(...args)).then(resolve),
+        for: () => limitMock(...args),
+      })),
       returning: returningMock,
     };
     const dbMock = {
       select: vi.fn(() => chain),
       insert: vi.fn(() => chain),
       update: vi.fn(() => chain),
+      transaction: vi.fn((callback: (connection: any) => unknown) => callback(dbMock)),
     };
     return { limitMock, returningMock, valuesMock, chain, dbMock };
   },
@@ -38,6 +42,7 @@ import { releaseWorkflowService } from "../../server/services/releaseWorkflowSer
 
 const release = {
   id: "release-1",
+  userId: "user-1",
   status: "processing",
   title: "Test release",
   artist: "Test artist",

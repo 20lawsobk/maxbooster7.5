@@ -10,7 +10,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { availableParallelism } from "node:os";
 import { luaPool } from "../workers/lua-pool.js";
-import type { PocketStorageService } from "../pocket-dimension/fabric/PocketStorageService.js";
+import type { FabricObject, PocketPolicy } from "../pocket-dimension/fabric/types.js";
 import type {
   RedisEntry,
   RedisCommandResult,
@@ -22,6 +22,17 @@ import type {
   RedisStreamEntry,
   StreamItem,
 } from "./types.js";
+
+// The embedded command engine depends only on this persistence contract.
+// Importing the concrete fabric class pulls a second workspace's SQL schema
+// into the host application's type graph and mixes nominal Drizzle types.
+export interface RedisPersistence {
+  getNamedObject(ownerId: string, pocketName: string, name: string): Promise<Buffer | null>;
+  putNamedObject(ownerId: string, pocketName: string, name: string, contentType: string,
+    data: Buffer, opts?: { policy?: PocketPolicy }): Promise<FabricObject>;
+  deleteNamedObject(ownerId: string, pocketName: string, name: string): Promise<void>;
+  recommendedPolicy(): Promise<PocketPolicy>;
+}
 
 const luaFactory = new LuaFactory();
 // The embedded ESM bundle lives at the app root, while the retained PDIM
@@ -313,7 +324,7 @@ export class RedisStore extends EventEmitter {
   private readonly MAX_KEYS_BEFORE_EVICT: number;
   private readonly EVICT_BATCH_RATIO = 0.1; // evict 10% of keys per cycle
 
-  constructor(instanceId: string, instanceName: string, private persistence?: PocketStorageService) {
+  constructor(instanceId: string, instanceName: string, private persistence?: RedisPersistence) {
     super();
     this.instanceId = instanceId;
     this.instanceName = instanceName;
@@ -323,7 +334,7 @@ export class RedisStore extends EventEmitter {
     );
   }
 
-  private getPersistence(): PocketStorageService {
+  private getPersistence(): RedisPersistence {
     if (!this.persistence) throw new Error("PDIM fabric persistence was not supplied by the owner");
     return this.persistence;
   }

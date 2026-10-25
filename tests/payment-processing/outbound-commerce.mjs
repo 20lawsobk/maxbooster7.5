@@ -108,7 +108,9 @@ test("Stripe commerce provider uses immutable transfer/refund/reversal keys and 
   });
 
   const refund = await provider.refund(operation({ kind: "refund", amount_cents: 3000 }));
-  assert.deepEqual(refund, {
+  const {reversalState:refundState,...refundAccounting}=refund;
+  assert.equal(typeof refundState,"function");
+  assert.deepEqual(refundAccounting, {
     id: "re_created", status: "pending", refundedCents: 2500, pendingCents: 500,
   });
   assert.deepEqual(requests.find((request) => request.method === "refund.create"), {
@@ -183,7 +185,7 @@ test("CommerceEngine blocks unpaid sources and applies successful refund compens
   await refundEngine.execute("op_outbound_1");
   assert.equal(refund.op.state, "completed");
   assert.deepEqual(refund.calls.find(([name]) => name === "compensate"), [
-    "compensate", "sale_1", 4000, 0, 0,
+    "compensate", "sale_1", 4000, undefined, 0,
   ]);
 
   const noConfirmedRefund = commerceEngineFixture("refund");
@@ -241,7 +243,9 @@ test("verifiedPayment requires succeeded exact-currency provider settlement and 
   const { verifiedPayment } = await loadOutboundSubject("server/services/commerce/verification.ts", {
     "./runtime": "export const commerceStripe=()=>globalThis.__outboundVerifyStripe;",
   });
-  assert.deepEqual(await verifiedPayment("pi_1", 10000, "usd"), {
+  const {reversalState,...accounting}=await verifiedPayment("pi_1",10000,"usd");
+  assert.equal(typeof reversalState,"function");
+  assert.deepEqual(accounting, {
     processingFeeCents: 320, refundedCents: 2000, pendingCents: 1000, chargeId: "ch_1", disputed: false,
   });
   for (const invalid of [

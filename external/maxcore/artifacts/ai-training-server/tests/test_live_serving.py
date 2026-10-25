@@ -82,6 +82,19 @@ class LiveServingTests(unittest.TestCase):
         self.assertEqual(status["training"], "cooldown_after_interruption")
         self.trainer.assert_not_called()
 
+    def test_blocked_training_rights_remains_honest_across_restart_and_cooldown(self):
+        from ai_model.training.live_learning import Blocked
+        self.trainer.side_effect = Blocked("blocked_training_rights", "Fixture rights not approved")
+        self.assertEqual(self.loop().tick()["training"], "blocked_training_rights")
+        state = json.loads((Path(self.temp.name) / "live-learning.json").read_text())
+        self.assertEqual(state["last_result"], "blocked_training_rights")
+        self.assertIsNone(state["last_run_id"])
+        self.assertNotIn("trained_content_sha256", state)
+        self.now += 10
+        self.assertEqual(self.loop().tick()["training"], "blocked_training_rights")
+        self.assertEqual(self.trainer.call_count, 1)
+        self.assertFalse(self.model.available)
+
     def test_failed_worker_keeps_durable_cooldown_and_retries_later(self):
         self.trainer.return_value = {"status": "failed_training", "run_id": "live-failed"}
         self.loop().tick()

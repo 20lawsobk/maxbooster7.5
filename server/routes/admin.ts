@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { publicPaymentPreferences } from "../lib/paymentPreferencePrivacy.js";
 import { Router, Request, Response, NextFunction } from "express";
 import fs from "fs";
 import { db, pool } from "../db.js";
@@ -84,9 +85,9 @@ adminRouter.post("/tokens/revoke", async (req, res) => {
 });
 
 adminRouter?.get("/dashboard", (req, res) => {
-  const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
+  const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } =
     req.user as Record<string, unknown>;
-  res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
+  res.json({ message: "Welcome to the admin dashboard!", user: { ...safeUser, preferences: publicPaymentPreferences(safeUser.preferences) } });
 });
 
 adminRouter?.get("/users", async (req, res) => {

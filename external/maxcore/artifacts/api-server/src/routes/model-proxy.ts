@@ -1,4 +1,6 @@
 import os from "os";
+import { once } from "node:events";
+import { proxyLifetime, waitForProxyRecovery } from "../config/proxy-lifecycle.js";
 import fs from "fs";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Agent, request as undiciRequest } from "undici";
@@ -121,35 +123,10 @@ const _readLimiter = rateLimit({
   message: { error: "Status rate limit exceeded. Max 120 requests/minute." },
 });
 
-// ─── Request hold queue ──────────────────────────────────────────────────────
-// When Python is restarting (crash or hang) the proxy holds incoming requests
-// for up to REQUEST_HOLD_MS instead of returning 503.  Once the warm-up pass
-// completes (setPythonRestarting(false)) and the circuit breaker closes, the
-// await resolves and the request is forwarded normally.
-//
-// Polling at 300 ms means held requests drain within 300 ms of Python becoming
-// ready — imperceptible latency cost vs. an outright failure.
-
-// Guaranteed-completion policy: requests are held indefinitely while Python
-// restarts — never 503'd on a timer. The watchdog supervises Python recovery,
-// so readiness always arrives; held requests drain within HOLD_POLL_MS of it.
-// REQUEST_HOLD_MS is retained only as the slow-log interval.
+// Recovery holds have a deadline and belong to the connected client.
 const REQUEST_HOLD_MS = 90_000;
-
-// Poll every 50 ms so held requests drain within one tick of Python becoming
-// ready — invisible latency vs the old 300 ms poll.
-const HOLD_POLL_MS = 50;
-
-async function waitForRecovery(): Promise<boolean> {
-  const start = Date.now();
-  for (;;) {
-    if (!_cbIsOpen() && !isPythonRestarting()) return true;
-    const waited = Date.now() - start;
-    if (waited > 0 && waited % REQUEST_HOLD_MS < HOLD_POLL_MS) {
-      console.log(`[Proxy] still holding request for Python recovery (${Math.round(waited / 1000)}s)`);
-    }
-    await new Promise<void>((r) => setTimeout(r, HOLD_POLL_MS));
-  }
+async function waitForRecovery(signal: AbortSignal): Promise<void> {
+  await waitForProxyRecovery(() => !_cbIsOpen() && !isPythonRestarting(), signal, REQUEST_HOLD_MS);
 }
 
 // ─── TTL Cache for hot read-only endpoints ─────────────────────────────────
@@ -249,6 +226,8 @@ function handleProxyNetworkError(
   res: Response,
   path: string,
 ): void {
+  if (res.destroyed) return;
+  if (res.headersSent) { res.destroy(); return; }
   const elapsed = Date.now();
   console.error(`[Proxy] Network error proxying to ${path}:`, err);
   const e = err as any;
@@ -279,7 +258,7 @@ function handleProxyNetworkError(
     res.status(503).json({
       error: "AI model server closed connection",
       detail:
-        "The request was dropped — the AI server may be busy. Please retry.",
+        "The connection closed before a result was confirmed. Check the operation or job status before submitting again.",
     });
   } else {
     res.status(500).json({ error: "Proxy error", detail: String(err) });
@@ -287,15 +266,8 @@ function handleProxyNetworkError(
   void elapsed;
 }
 
-// ─── Transient-connection retry wrapper ─────────────────────────────────────
-// Wraps undiciRequest with an indefinite retry loop through the hold queue.
-// When a request that passed the CB/restart check still gets a connection error
-// mid-flight (Python crashed between the check and the call), we record the
-// failure, wait for recovery, then retry.  We loop — not retry-once — because
-// Python may still be recovering after the first waitForRecovery() resolves
-// (e.g. healthz not yet green, CB opened again by a concurrent probe).
-// This loop is the last line of defence against any 503 escaping to callers.
-
+// Only safe reads may retry a dropped connection. A mutation may already have
+// committed before its response was lost; automatic replay would duplicate it.
 function _isTransientConnErr(e: unknown): boolean {
   const err = e as any;
   return (
@@ -316,13 +288,14 @@ async function _upstreamRequest(
     try {
       return await undiciRequest(url, options);
     } catch (err) {
-      if (_isTransientConnErr(err)) {
+      if (_isTransientConnErr(err) && attempt < 1 &&
+          ["GET", "HEAD"].includes(String(options?.method ?? "GET").toUpperCase())) {
         attempt++;
         _cbRecordFailure(); // open CB if threshold reached
         console.log(
           `[Proxy] Connection error (attempt ${attempt}) — waiting for recovery then retrying ${url}`,
         );
-        await waitForRecovery(); // holds indefinitely; resolves once Python is ready
+        await waitForRecovery(options?.signal as AbortSignal);
         // loop: try again — Python may still be settling even after the flag clears
       } else {
         throw err; // non-transient — propagate to handleProxyNetworkError
@@ -349,41 +322,32 @@ async function proxyRequest(
   const awarenessOnly = path === "/api/awareness/unified/status" ||
     path === "/api/awareness/unified/context";
   const plannerOnly = path === "/api/generate/text" && req.body?.mode === "planner";
-  const receipt = req.body?.awareness;
   const mediaGeneration = ["/api/generate/image", "/api/generate/audio",
     "/api/generate-video", "/api/video/generate-ai", "/platform/video/generate",
     "/api/video/extend", "/platform/daw/generate"].includes(path);
-  const liveGeneration = (mediaGeneration || ["/api/generate/content", "/api/generate/text",
-    "/api/platform/social/generate", "/api/platform/ads/generate", "/api/generate/campaign"].includes(path)) &&
-    receipt && typeof receipt === "object" &&
-    typeof receipt.snapshot_id === "string" && receipt.snapshot_id.length > 0 &&
-    typeof receipt.expires_at === "number" && Number.isFinite(receipt.expires_at) &&
-    receipt.expires_at * 1000 > Date.now();
-  const directDeadline = awarenessOnly ? 4_000 : plannerOnly ? 30_000 :
-    liveGeneration ? (mediaGeneration ? 600_000 : 60_000) : undefined;
+  const generationRequest = mediaGeneration || ["/api/generate/content", "/api/generate/text",
+    "/api/platform/social/generate", "/api/platform/ads/generate", "/api/generate/campaign"].includes(path);
+  const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
+  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : plannerOnly ? 30_000 :
+    generationRequest ? (mediaGeneration ? 600_000 : 60_000) : undefined;
   const startTime = Date.now();
   // Track per-route and total request counts
   recordRequest(req.path ?? path);
 
 
-  // Hold the request while Python is restarting rather than immediately 503-ing.
-  // waitForRecovery polls every 300 ms until both the circuit breaker is closed
-  // and the pythonRestarting flag is clear (set by python-server.ts after the
-  // warm-up pass completes).  Guaranteed-completion: the hold is indefinite.
-  if (!directDeadline && (_cbIsOpen() || isPythonRestarting())) {
-    console.log(`[Proxy] Python unavailable — holding ${req.method} ${path} (up to ${REQUEST_HOLD_MS / 1000}s)`);
-    await waitForRecovery(); // holds indefinitely — resolves once Python recovers
-  }
-
+  const lifetime = proxyLifetime(req, res, directDeadline ?? REQUEST_HOLD_MS);
   try {
+    if (!directDeadline && (_cbIsOpen() || isPythonRestarting())) {
+      await waitForRecovery(lifetime.signal);
+    }
     const url = `${MODEL_API_BASE}${path}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...authHeaders,
     };
-    // Awareness/planning do not require weights. A live-conditioned generation
-    // request must also reach Python's authoritative capability check rather
+    // Awareness/planning do not require weights. Every generation request,
+    // including missing/stale receipts, reaches Python's authoritative checks rather
     // than hang behind a model-recovery flag. This never bypasses Python auth,
     // snapshot validation or generation quality gates.
     const send = directDeadline ? undiciRequest : _upstreamRequest;
@@ -394,7 +358,7 @@ async function proxyRequest(
       body: !isGet && req.body ? JSON.stringify(modelOwnedBody(req.body, authHeaders)) : undefined,
       headersTimeout: directDeadline ?? 0,
       bodyTimeout: directDeadline ?? 0,
-      ...(directDeadline ? { signal: AbortSignal.timeout(directDeadline) } : {}),
+      signal: lifetime.signal,
     });
 
     const data = await parseBodyText(upstreamRes.body);
@@ -413,7 +377,9 @@ async function proxyRequest(
       `[Proxy] Error proxying to ${path} (${Date.now() - startTime}ms):`,
       err,
     );
-    handleProxyNetworkError(err, res, path);
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
   }
 }
 
@@ -443,6 +409,7 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
     return;
   }
   Object.assign(headers, auth);
+  const lifetime = proxyLifetime(req, res, 120_000);
   try {
     // Raw request streams are not replayable; never run this upload through the
     // transient retry loop (which could otherwise create a truncated duplicate).
@@ -451,13 +418,16 @@ async function proxyAudioUpload(req: Request, res: Response): Promise<void> {
       dispatcher: _keepAlivePool,
       headers,
       body: req,
-      headersTimeout: 0,
-      bodyTimeout: 0,
+      headersTimeout: 30_000,
+      bodyTimeout: 120_000,
+      signal: lifetime.signal,
     });
     const data = await parseBodyText(upstream.body);
     res.status(upstream.statusCode).json(data);
   } catch (error) {
     handleProxyNetworkError(error, res, "/api/audio/upload");
+  } finally {
+    lifetime.dispose();
   }
 }
 
@@ -491,6 +461,7 @@ async function proxyAnalysisJson(
     res.status(401).json({ error: "Generation auth and authenticated MaxCore user identity are required" });
     return;
   }
+  const lifetime = proxyLifetime(req, res, 120_000);
   try {
     const upstream = await undiciRequest(`${MODEL_API_BASE}/api/analysis/${endpoint}`, {
       method: "POST",
@@ -499,11 +470,14 @@ async function proxyAnalysisJson(
       body: JSON.stringify(modelOwnedBody(req.body ?? {}, headers)),
       headersTimeout: 30_000,
       bodyTimeout: 120_000,
+      signal: lifetime.signal,
     });
     const data = await parseBodyText(upstream.body);
     res.status(upstream.statusCode).json(data);
   } catch (error) {
     handleProxyNetworkError(error, res, `/api/analysis/${endpoint}`);
+  } finally {
+    lifetime.dispose();
   }
 }
 
@@ -538,6 +512,7 @@ async function proxyAnalysisUpload(req: Request, res: Response): Promise<void> {
       return;
     }
   }
+  const lifetime = proxyLifetime(req, res, 120_000);
   try {
     // The incoming stream cannot be replayed: bypass _upstreamRequest retries.
     const upstream = await undiciRequest(
@@ -549,12 +524,15 @@ async function proxyAnalysisUpload(req: Request, res: Response): Promise<void> {
         body: req,
         headersTimeout: 30_000,
         bodyTimeout: 120_000,
+        signal: lifetime.signal,
       },
     );
     const data = await parseBodyText(upstream.body);
     res.status(upstream.statusCode).json(data);
   } catch (error) {
     handleProxyNetworkError(error, res, "/api/analysis/upload");
+  } finally {
+    lifetime.dispose();
   }
 }
 
@@ -568,26 +546,22 @@ async function proxyBinary(
   res: Response,
   path: string,
 ): Promise<void> {
-  if (_cbIsOpen() || isPythonRestarting()) {
-    console.log(`[Proxy] Python unavailable — holding ${req.method} ${path} (up to ${REQUEST_HOLD_MS / 1000}s)`);
-    await waitForRecovery(); // holds indefinitely — resolves once Python recovers
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
   }
-
+  const lifetime = proxyLifetime(req, res, 90_000);
   try {
+    if (_cbIsOpen() || isPythonRestarting()) await waitForRecovery(lifetime.signal);
     const url = `${MODEL_API_BASE}${path}`;
-
-    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
-    if (!headers) {
-      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
-      return;
-    }
-
     const upstreamRes = await _upstreamRequest(url, {
       method: req.method as any,
       dispatcher: _keepAlivePool,
       headers,
       headersTimeout: 0,
       bodyTimeout: 0,
+      signal: lifetime.signal,
     });
 
     if (upstreamRes.statusCode >= 500) {
@@ -615,14 +589,16 @@ async function proxyBinary(
     const buf = Buffer.from(await upstreamRes.body.arrayBuffer());
     res.send(buf);
   } catch (err) {
-    handleProxyNetworkError(err, res, path);
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
   }
 }
 
 // ─── Streamed binary proxy (large files) ────────────────────────────────────
 // Used for rendered video downloads, which can be tens of MB and must not be
-// fully buffered into memory or subjected to the short 45s abort window that
-// `proxyBinary` uses for small previews. Pipes the upstream body straight
+// fully buffered into memory. It has a ten-minute client-bound deadline rather
+// than the preview path's ninety seconds. Pipes the upstream body straight
 // through to the response and preserves Content-Type/Content-Length/
 // Content-Disposition so download filename semantics survive the proxy hop.
 
@@ -631,26 +607,22 @@ async function proxyBinaryStream(
   res: Response,
   path: string,
 ): Promise<void> {
-  if (_cbIsOpen() || isPythonRestarting()) {
-    console.log(`[Proxy] Python unavailable — holding ${req.method} ${path} (up to ${REQUEST_HOLD_MS / 1000}s)`);
-    await waitForRecovery(); // holds indefinitely — resolves once Python recovers
+  const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
+  if (!headers) {
+    res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
+    return;
   }
-
+  const lifetime = proxyLifetime(req, res, 600_000);
   try {
+    if (_cbIsOpen() || isPythonRestarting()) await waitForRecovery(lifetime.signal);
     const url = `${MODEL_API_BASE}${path}`;
-
-    const headers = modelAuthHeaders(req.headers, req.socket.remoteAddress);
-    if (!headers) {
-      res.status(401).json({ error: "Explicit MaxCore service authorization is required" });
-      return;
-    }
-
     const upstreamRes = await _upstreamRequest(url, {
       method: req.method as any,
       dispatcher: _keepAlivePool,
       headers,
       headersTimeout: 0,
       bodyTimeout: 0,
+      signal: lifetime.signal,
     });
 
     if (upstreamRes.statusCode >= 500) {
@@ -682,12 +654,14 @@ async function proxyBinaryStream(
 
     for await (const chunk of upstreamRes.body) {
       if (!res.write(chunk)) {
-        await new Promise((resolve) => res.once("drain", resolve));
+        await once(res, "drain", { signal: lifetime.signal });
       }
     }
     res.end();
   } catch (err) {
-    handleProxyNetworkError(err, res, path);
+    if (!res.destroyed) handleProxyNetworkError(err, res, path);
+  } finally {
+    lifetime.dispose();
   }
 }
 
@@ -1563,8 +1537,8 @@ router.get("/video-job/:jobId/preview/:sceneIdx", async (req, res) => {
 // Rendered MP4 download — the Python server registers this same handler under
 // three aliased paths (download/file/video); we mirror all three so callers
 // can use whichever they already reference. Uses the streamed binary proxy
-// (not proxyBinary) since these files can be tens of MB — no full buffering,
-// no short abort timer.
+// (not proxyBinary) since these files can be tens of MB; stream within the
+// client-bound download budget instead of fully buffering.
 router.get("/video-job/:jobId/download", async (req, res) => {
   await proxyBinaryStream(
     req,

@@ -28,29 +28,31 @@ import {
   StatCardRowSkeleton,
 } from "@/components/analytics/AnalyticsLoadingSkeletons";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { metricValueOrUnavailable } from "@/components/dashboard/dashboardDataContracts";
 
 interface RevenueBreakdown {
   platform: string;
   earnings: number;
-  streams: number;
-  ratePerStream: number;
-  change: number;
+  streams: number | null;
+  ratePerStream: number | null;
+  change: number | null;
   color: string;
 }
 
 interface EarningsStatus {
-  pending: number;
-  paid: number;
-  processing: number;
+  pending: number | null;
+  paid: number | null;
+  processing: number | null;
   nextPayoutDate: string;
-  nextPayoutAmount: number;
+  nextPayoutAmount: number | null;
 }
 
 interface TaxInfo {
-  grossEarnings: number;
-  taxWithheld: number;
-  netEarnings: number;
-  taxRate: number;
+  grossEarnings: number | null;
+  taxWithheld: number | null;
+  netEarnings: number | null;
+  taxRate: number | null;
 }
 
 interface RoyaltyBreakdown {
@@ -93,6 +95,17 @@ const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   return null;
 };
 
+function optionalMetric(value: unknown): number | null {
+  const metric = metricValueOrUnavailable(value);
+  return typeof metric === "number" ? metric : null;
+}
+
+function currencyMetric(value: number | null): string {
+  return value === null ? "Unavailable" : value.toLocaleString(undefined, {
+    style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+
 const EarningsCard = memo(
   ({
     title,
@@ -102,7 +115,7 @@ const EarningsCard = memo(
     variant = "default",
   }: {
     title: string;
-    amount: number;
+    amount: number | null;
     subtitle?: string;
     icon: React.ElementType;
     variant?: "default" | "pending" | "success" | "warning";
@@ -137,11 +150,7 @@ const EarningsCard = memo(
               <div>
                 <p className="text-sm text-muted-foreground mb-1">{title}</p>
                 <p className="text-2xl font-bold">
-                  $
-                  {amount.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {currencyMetric(amount)}
                 </p>
                 {subtitle && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -180,7 +189,7 @@ export function RevenueAnalytics({
   const [selectedPlatforms, _setSelectedPlatforms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["/api/analytics/revenue", timeRange, selectedPlatforms],
     queryFn: async () => {
       const params = new URLSearchParams({ range: timeRange });
@@ -201,9 +210,10 @@ export function RevenueAnalytics({
     return data.revenue.revenueByPlatform.map((p: Record<string, unknown>) => ({
       platform: p.platform,
       earnings: p.revenue || 0,
-      streams: p.streams || 0,
-      ratePerStream: p.streams > 0 ? p.revenue / p.streams : 0,
-      change: p.change || 0,
+      streams: optionalMetric(p.streams),
+      ratePerStream: optionalMetric(p.streams) !== null && Number(p.streams) > 0
+        ? Number(p.revenue) / Number(p.streams) : null,
+      change: optionalMetric(p.change),
       color:
         PLATFORM_COLORS[p.platform.toLowerCase().replace(" ", "_")] ||
         PLATFORM_COLORS.other,
@@ -212,21 +222,21 @@ export function RevenueAnalytics({
 
   const earningsStatus = useMemo<EarningsStatus>(
     () => ({
-      pending: data.revenue?.pendingEarnings ?? 0,
-      paid: data.revenue?.paidEarnings ?? 0,
-      processing: data.revenue?.processingEarnings ?? 0,
-      nextPayoutDate: data.revenue?.nextPayoutDate ?? "—",
-      nextPayoutAmount: data.revenue?.nextPayoutAmount ?? 0,
+      pending: optionalMetric(data?.revenue?.pendingEarnings),
+      paid: optionalMetric(data?.revenue?.paidEarnings),
+      processing: optionalMetric(data?.revenue?.processingEarnings),
+      nextPayoutDate: data?.revenue?.nextPayoutDate ?? "Unavailable",
+      nextPayoutAmount: optionalMetric(data?.revenue?.nextPayoutAmount),
     }),
     [data],
   );
 
   const taxInfo = useMemo<TaxInfo>(
     () => ({
-      grossEarnings: data.revenue?.grossEarnings ?? 0,
-      taxWithheld: data.revenue?.taxWithheld ?? 0,
-      netEarnings: data.revenue?.netEarnings ?? 0,
-      taxRate: data.revenue?.taxRate ?? 0,
+      grossEarnings: optionalMetric(data?.revenue?.grossEarnings),
+      taxWithheld: optionalMetric(data?.revenue?.taxWithheld),
+      netEarnings: optionalMetric(data?.revenue?.netEarnings),
+      taxRate: optionalMetric(data?.revenue?.taxRate),
     }),
     [data],
   );
@@ -247,6 +257,20 @@ export function RevenueAnalytics({
       <div className="space-y-6">
         <StatCardRowSkeleton count={4} />
         <RevenueBreakdownSkeleton />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 p-4">
+        <p className="font-medium">Could not load revenue analytics</p>
+        <p className="text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "The analytics service is unavailable. Please try again."}
+        </p>
+        <Button type="button" variant="outline" onClick={() => void refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -389,11 +413,11 @@ export function RevenueAnalytics({
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>
-                            {platform.streams.toLocaleString()} streams
+                            {platform.streams === null ? "Unavailable" : `${platform.streams.toLocaleString()} streams`}
                           </span>
                           <span className="flex items-center gap-1">
-                            ${platform.ratePerStream.toFixed(4)}/stream
-                            <Badge
+                            {platform.ratePerStream === null ? "Unavailable" : `$${platform.ratePerStream.toFixed(4)}/stream`}
+                            {platform.change !== null && <Badge
                               variant={
                                 platform.change > 0 ? "default" : "secondary"
                               }
@@ -401,7 +425,7 @@ export function RevenueAnalytics({
                             >
                               {platform.change > 0 ? "+" : ""}
                               {platform.change}%
-                            </Badge>
+                            </Badge>}
                           </span>
                         </div>
                       </div>
@@ -493,7 +517,7 @@ export function RevenueAnalytics({
                       Gross Earnings
                     </p>
                     <p className="text-3xl font-bold text-green-600">
-                      ${taxInfo.grossEarnings.toLocaleString()}
+                      {currencyMetric(taxInfo.grossEarnings)}
                     </p>
                   </div>
 
@@ -501,10 +525,10 @@ export function RevenueAnalytics({
                     <AlertCircle className="h-6 w-6 text-red-500" />
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Tax Withheld ({taxInfo.taxRate}%)
+                        {taxInfo.taxRate === null ? "Tax Withheld" : `Tax Withheld (${taxInfo.taxRate}%)`}
                       </p>
                       <p className="text-xl font-bold text-red-600">
-                        -${taxInfo.taxWithheld.toLocaleString()}
+                        {taxInfo.taxWithheld === null ? "Unavailable" : `-${currencyMetric(taxInfo.taxWithheld)}`}
                       </p>
                     </div>
                   </div>
@@ -514,7 +538,7 @@ export function RevenueAnalytics({
                       Net Earnings
                     </p>
                     <p className="text-3xl font-bold text-blue-600">
-                      ${taxInfo.netEarnings.toLocaleString()}
+                      {currencyMetric(taxInfo.netEarnings)}
                     </p>
                   </div>
                 </div>

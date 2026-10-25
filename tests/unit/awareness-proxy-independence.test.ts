@@ -108,3 +108,84 @@ it.each(["/generate/image", "/generate/audio", "/generate-video", "/generate/vid
       await new Promise<void>(resolve => server.close(() => resolve()));
     }
   });
+
+it("serves authenticated health diagnostics while the model is unready", async () => {
+  vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "private-test-token");
+  upstream.mockResolvedValue({ statusCode: 200, body: { text: async () => JSON.stringify({ model_loaded: false }) } });
+  const app = express(); app.use(router);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>(resolve => server.once("listening", resolve));
+  try {
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/health`;
+    expect((await fetch(url)).status).toBe(401);
+    expect(upstream).not.toHaveBeenCalled();
+    const response = await fetch(url, { headers: { Authorization: "Bearer private-test-token" } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ model_loaded: false });
+    expect(upstream.mock.calls[0][1]).toMatchObject({ headersTimeout: 4000, bodyTimeout: 4000 });
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+it.each(["/video-job/fixture/preview/0", "/video-job/fixture/download"])(
+  "rejects unauthenticated binary %s before entering recovery", async path => {
+    const app = express(); app.use(router);
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise<void>(resolve => server.once("listening", resolve));
+    try {
+      const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${path}`,
+        { signal: AbortSignal.timeout(2000) });
+      expect(response.status).toBe(401);
+      expect(upstream).not.toHaveBeenCalled();
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+  });
+
+it("forwards missing awareness receipts to authoritative validation without a warmup hold", async () => {
+  vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "private-test-token");
+  upstream.mockResolvedValue({ statusCode: 503, body: { text: async () => JSON.stringify({ detail: "awareness_unavailable" }) } });
+  const app = express(); app.use(express.json(), router);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>(resolve => server.once("listening", resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/generate/content`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer private-test-token" },
+      body: JSON.stringify({ topic: "music" }), signal: AbortSignal.timeout(2000),
+    });
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ detail: "awareness_unavailable" });
+    expect(upstream).toHaveBeenCalledTimes(1);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
+
+it.each([
+  ["/audio/upload", "audio/wav", "fixture audio"],
+  ["/analysis/upload?kind=image", "image/png", "fixture image"],
+  ["/analysis/text", "application/json", JSON.stringify({ text: "fixture" })],
+])("bounds %s by the connected client's upload/analysis lifetime", async (path, type, body) => {
+  vi.stubEnv("PDIM_LOCAL_CHANNEL_TOKEN", "private-test-token");
+  upstream.mockResolvedValue({ statusCode: 200, body: { text: async () => JSON.stringify({ accepted: true }) } });
+  const app = express(); app.use(express.json(), router);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>(resolve => server.once("listening", resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${path}`, {
+      method: "POST", headers: { "Content-Type": type, Authorization: "Bearer private-test-token",
+        "X-MaxCore-User-Id": "fixture-owner" }, body,
+    });
+    expect(response.status).toBe(200);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(upstream.mock.calls[0][1]).toMatchObject({ headersTimeout: 30000, bodyTimeout: 120000 });
+    expect(upstream.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

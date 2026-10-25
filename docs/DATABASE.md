@@ -1,33 +1,31 @@
 # Database Reference
 
+> Selected schema reference. Current declarations and migrations are authoritative.
+> The runtime prefers NEON_DATABASE_URL and supports its documented DATABASE_URL
+> fallback. Verify the actual selected target before any writes.
+
 ## Connection
 
-The app uses **Neon PostgreSQL** accessed via `NEON_DATABASE_URL`. This is a self-managed connection — **not** the Replit-managed `DATABASE_URL`. All schema work, migrations, and data queries must target `NEON_DATABASE_URL`.
+The runtime prefers `NEON_DATABASE_URL` and supports the configured `DATABASE_URL` fallback. Determine the actual selected target before any operation; variable names alone do not establish database ownership or isolation.
 
 - Primary connection: used for all writes and auth reads (to avoid replica lag).
 - Read replica (`READ_REPLICA_URL`): used for analytics, dashboard, and high-volume reads.
-- ORM: **Drizzle ORM** (`drizzle-orm/postgres-js`)
+- ORM: **Drizzle ORM**; use the actual adapters in `server/db.ts` (including the Neon/isolated PostgreSQL paths), not historical driver examples.
 - Config: `drizzle.config.ts`
 - Migrations: `migrations/` (Drizzle-managed), `server/migrations/` (manual)
 
-```bash
-# Push schema changes (development)
-npm run db:push
-
-# Generate a migration file
-npx drizzle-kit generate
-
-# Apply to production — connect to NEON_DATABASE_URL directly via psql
-psql $NEON_DATABASE_URL -f migrations/<file>.sql
-```
-
-> ⚠️ **Do not use `npm run db:push` against production** without a backup. The Replit "Publish" diff tool targets the managed `DATABASE_URL`, which is a different database. Always verify the connection string before running migrations.
+Schema push and migration commands can modify shared data. Use explicitly
+disposable fixtures for rehearsal, and establish retained backup/restore,
+migration provenance, authorization and postconditions before a shared-data
+change. Do not infer safety from a development label or a host Publish diff.
+Consult the current migration files and `server/db.ts`; no migration is applied
+merely because its source file exists.
 
 ---
 
 ## Schema Overview
 
-Defined in `shared/schema.ts` using Drizzle's `pgTable`. All tables use `varchar` UUIDs as primary keys with `defaultRandom()` unless otherwise noted. Most flexible metadata fields use `jsonb`.
+Defined in `shared/schema.ts` using Drizzle's `pgTable`. Primary-key types vary; consult the actual table declarations. Most flexible metadata fields use `jsonb`.
 
 ---
 
@@ -43,13 +41,12 @@ Core user accounts.
 | id | varchar PK | UUID |
 | email | varchar | Unique |
 | username | varchar | Unique |
-| passwordHash | varchar | bcrypt |
+| password | text | bcrypt hash; never returned in account responses |
 | role | varchar | `user` \| `admin` |
 | twoFactorEnabled | boolean | Default false |
 | twoFactorPhone | varchar | E.164 format |
-| tokenVersion | integer | Incremented to invalidate JWTs |
 | subscriptionStatus | varchar | `trial` \| `active` \| `expired` |
-| subscriptionPlan | varchar | Plan identifier |
+| subscriptionTier | text | Subscription tier identifier |
 | subscriptionExpiresAt | timestamp | |
 | stripeCustomerId | varchar | |
 | stripeSubscriptionId | varchar | |

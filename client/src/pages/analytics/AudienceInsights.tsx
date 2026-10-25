@@ -22,6 +22,8 @@ import {
   StatCardRowSkeleton,
 } from "@/components/analytics/AnalyticsLoadingSkeletons";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { metricValueOrUnavailable } from "@/components/dashboard/dashboardDataContracts";
 
 interface DemographicData {
   age: Array<{ range: string; percentage: number; count: number }>;
@@ -124,7 +126,7 @@ const MetricCard = memo(
             <div>
               <p className="text-xs text-muted-foreground mb-1">{title}</p>
               <p className="text-2xl font-bold">{value}</p>
-              {change !== undefined && (
+              {typeof change === "number" && Number.isFinite(change) && (
                 <div className="flex items-center gap-1 mt-1">
                   {change > 0 ? (
                     <TrendingUp className="w-3 h-3 text-green-500" />
@@ -163,7 +165,7 @@ export function AudienceInsights({
   timeRange = "30d",
   onTimeRangeChange,
 }: AudienceInsightsProps) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["/api/analytics/audience", timeRange],
     queryFn: async () => {
       const response = await fetch(
@@ -180,8 +182,8 @@ export function AudienceInsights({
 
   const demographics = useMemo<DemographicData>(
     () => ({
-      age: data.audience?.demographics?.age || [],
-      gender: data.audience?.demographics?.gender || [],
+      age: data?.audience?.demographics?.age || [],
+      gender: data?.audience?.demographics?.gender || [],
     }),
     [data],
   );
@@ -218,9 +220,9 @@ export function AudienceInsights({
     return [
       {
         label: "Total Followers",
-        current: data.overview?.totalFollowers || 0,
+        current: data?.overview?.totalFollowers || 0,
           previous: 0,
-        change: data.overview?.growthRate || 0,
+        change: data?.overview?.growthRate || 0,
         target: 0,
       },
       {
@@ -253,6 +255,20 @@ export function AudienceInsights({
           <GeographicSkeleton />
           <DemographicsSkeleton />
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 p-4">
+        <p className="font-medium">Could not load audience analytics</p>
+        <p className="text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "The analytics service is unavailable. Please try again."}
+        </p>
+        <Button type="button" variant="outline" onClick={() => void refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -297,21 +313,21 @@ export function AudienceInsights({
         />
         <MetricCard
           title="New Listeners"
-          value={data?.audience?.newListeners || 0}
+          value={metricValueOrUnavailable(data?.audience?.newListeners)}
           change={undefined}
           icon={UserPlus}
           color="green"
         />
         <MetricCard
           title="Returning Listeners"
-          value={data?.audience?.returningListeners || 0}
+          value={metricValueOrUnavailable(data?.audience?.returningListeners)}
           change={undefined}
           icon={Heart}
           color="purple"
         />
         <MetricCard
           title="Countries"
-          value={geoData.length}
+          value={Array.isArray(data?.audience?.geographic) ? geoData.length : "Unavailable"}
           icon={Globe}
           color="orange"
         />

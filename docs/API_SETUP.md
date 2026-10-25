@@ -1,3 +1,10 @@
+> Reference/history, not current acceptance evidence. Some topology, package,
+> API, provider and fallback descriptions below predate the current implementation.
+> Use [DEPLOYMENT.md](DEPLOYMENT.md), [AUTH.md](AUTH.md), mounted source handlers
+> and [the current continuation](sophia-production-continuation-2026-10-23.md)
+> for executable guidance and verified limits. Older snippets do not authorize
+> permissive authentication, lock deletion, shared-data writes or fabricated success.
+
 # API Setup — How It Was Built & How to Rebuild It
 
 This document is a complete technical record of how the entire API layer was designed and wired together. It covers the actual implementation in full detail, explains every decision and constraint, and then provides a clean step-by-step guide for doing it again from scratch.

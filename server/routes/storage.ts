@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { ChunkUploadSessions, ChunkUploadError } from "../lib/chunkUploadSessions.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomUUID } from "crypto";
 import { storageService } from "../services/storageService.js";
@@ -6,7 +7,8 @@ import { hybridStorageService } from "../services/hybridStorageService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import path from "path";
-import { db } from "../db.js";
+import { homedir } from "node:os";
+import { db, pool } from "../db.js";
 import { userStorageFiles, userStorage, users } from "../../shared/schema.js";
 import { eq, and, isNull, lt, isNotNull, sql, sum } from "drizzle-orm";
 import { notificationService } from "../services/notificationService.js";
@@ -112,7 +114,6 @@ const ALLOWED_VIDEO_TYPES = [
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024;
 const MAX_CHUNK_SIZE = 10 * 1024 * 1024;
-const CHUNK_TTL = 24 * 60 * 60 * 1000;
 
 const ALLOWED_CATEGORIES = new Set([
   "audio",
@@ -143,40 +144,16 @@ function sanitizeFileName(raw: unknown): string {
   );
 }
 
-interface ChunkInfo {
-  fileId: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  totalChunks: number;
-  uploadedChunks: Set<number>;
-  chunkBuffers: Map<number, Buffer>;
-  category: string;
-  userId: string;
-  createdAt: number;
-}
-
-const chunkUploads = new Map<string, ChunkInfo>();
-
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [fileId, info] of chunkUploads?.entries() ?? []) {
-      if (now - info?.createdAt > CHUNK_TTL) {
-        cleanupChunks(fileId);
-      }
-    }
+// This directory is shared by workers on this VM, never served as user media.
+// Multi-host deployments must mount the same private filesystem at this path.
+const chunkUploads = new ChunkUploadSessions({
+  directory: process.env.STORAGE_CHUNK_STAGING_DIR || path.join(homedir(), ".local/state/maxbooster/chunk-uploads"),
+  connect: async () => {
+    const client = await pool.connect();
+    return { query: async (text, values) => { await client.query(text, values); }, release: () => client.release() };
   },
-  60 * 60 * 1000,
-);
-
-function cleanupChunks(fileId: string): void {
-  const info = chunkUploads?.get(fileId);
-  if (info) {
-    info?.chunkBuffers?.clear();
-  }
-  chunkUploads?.delete(fileId);
-}
+});
+setInterval(() => { void chunkUploads.prune().catch(err => logger.warn({ err }, "Chunk staging cleanup failed")); }, 60 * 60 * 1000);
 
 const upload = createHardenedUpload({
   maxFileSize: MAX_FILE_SIZE,
@@ -344,206 +321,180 @@ router.post(
         return res.status(400).json({ error: "No chunk provided" });
       }
 
-      const {
-        chunkIndex,
-        totalChunks,
-        fileId,
-        fileName: rawFileName,
-        fileSize,
-        mimeType,
-      } = req.body;
-      const category = sanitizeCategory(req.body.category);
-      const fileName = sanitizeFileName(rawFileName);
-      const userId = req.user!.id;
+      const accepted = await chunkUploads.accept({
+        ...req.body,
+        userId: req.user!.id,
+        fileName: sanitizeFileName(req.body.fileName),
+        category: sanitizeCategory(req.body.category),
+      }, req.file.buffer);
+      const { fileId, fileName, fileSize: fileSizeNum, mimeType, category, userId } = accepted.metadata;
+      const totalChunksNum = accepted.total;
 
-      if (!fileId || !/^[a-zA-Z0-9_-]+$/.test(fileId)) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Invalid fileId: must contain only alphanumeric characters, hyphens, and underscores",
-          });
-      }
+      logger.info(`Chunk ${Number(req.body.chunkIndex) + 1}/${totalChunksNum} uploaded for file ${fileId}`);
 
-      const chunkIdx = parseInt(chunkIndex, 10);
-      const totalChunksNum = parseInt(totalChunks, 10);
-      const fileSizeNum = parseInt(fileSize, 10);
-
-      if (isNaN(chunkIdx) || isNaN(totalChunksNum) || isNaN(fileSizeNum)) {
-        return res.status(400).json({ error: "Invalid chunk parameters" });
-      }
-
-      if (fileSizeNum > MAX_FILE_SIZE) {
-        return res
-          .status(400)
-          .json({
-            error: `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`,
-          });
-      }
-
-      let chunkInfo = chunkUploads?.get(fileId);
-      if (!chunkInfo) {
-        chunkInfo = {
-          fileId,
-          fileName,
-          fileSize: fileSizeNum,
-          mimeType,
-          totalChunks: totalChunksNum,
-          uploadedChunks: new Set(),
-          chunkBuffers: new Map(),
-          category,
-          userId,
-          createdAt: Date.now(),
-        };
-        chunkUploads?.set(fileId, chunkInfo);
-      } else if (chunkInfo?.userId !== userId) {
-        return res
-          .status(403)
-          .json({ error: "Upload session belongs to a different user" });
-      }
-
-      chunkInfo?.chunkBuffers?.set(chunkIdx, req.file.buffer);
-      chunkInfo?.uploadedChunks?.add(chunkIdx);
-
-      logger.info(
-        `Chunk ${chunkIdx + 1}/${totalChunksNum} uploaded for file ${fileId}`,
-      );
-
-      if (chunkInfo?.uploadedChunks?.size === totalChunksNum) {
-        const chunks: Buffer[] = [];
-        for (let i = 0; i < totalChunksNum; i++) {
-          const chunk = chunkInfo?.chunkBuffers?.get(i);
-          if (!chunk) throw new Error(`Missing chunk ${i} for file ${fileId}`);
-          chunks?.push(chunk);
+      if (accepted.completed || accepted.pending) {
+        // A worker may die after SQL committed but before sealing its receipt.
+        // Only a matching live owner-tracked object can resolve that uncertainty.
+        const [tracked] = await db.select().from(userStorageFiles).where(and(
+          eq(userStorageFiles.fileKey, accepted.key), eq(userStorageFiles.userId, userId),
+          isNull(userStorageFiles.deletedAt),
+        )).limit(1);
+        if (!tracked || tracked.sizeBytes !== fileSizeNum || tracked.mimeType !== mimeType ||
+            (tracked.metadata as Record<string, unknown> | null)?.sha256 !== accepted.digest ||
+            (tracked.metadata as Record<string, unknown> | null)?.uploadSessionId !== fileId) {
+          throw new ChunkUploadError(409, "Upload completion is pending or the stored file is unavailable; check your files before retrying");
         }
-        const completeFile = Buffer?.concat(chunks);
-
-        const key = await storageService?.uploadFile(
-          completeFile,
-          `users/${userId}/${category}`,
-          fileName,
-          mimeType,
-        );
-
-        cleanupChunks(fileId);
-
-        logger.info(`Chunked upload complete: ${key} by user ${userId}`);
-
-        // Track the assembled file — same mandatory tracking as single-shot
-        // uploads: an untracked object can never be deleted or quota-counted.
+        if (accepted.pending) await chunkUploads.finishCompletion(fileId, userId, accepted.token!);
+        return res.json({ success: true, complete: true, file: { id: fileId, key: accepted.key,
+          name: fileName, size: fileSizeNum, type: mimeType,
+          url: await storageService.getDownloadUrl(accepted.key) } });
+      }
+      if (accepted.complete) {
+        const completion = await chunkUploads.beginCompletion(fileId, userId);
+        const key = completion.key;
         try {
-          let [storageRow] = await db
-            .select({ id: userStorage.id })
-            .from(userStorage)
-            .where(eq(userStorage.userId, userId))
-            .limit(1);
-          if (!storageRow) {
-            [storageRow] = await db
-              .insert(userStorage)
-              .values({ userId, storagePrefix: `users/${userId}` })
-              .onConflictDoNothing()
-              .returning({ id: userStorage.id });
+          await storageService.uploadFileAtKey(completion.bytes, key, mimeType);
+
+          logger.info(`Chunked upload complete: ${key} by user ${userId}`);
+
+          // Track the assembled file — same mandatory tracking as single-shot
+          // uploads: an untracked object can never be deleted or quota-counted.
+          let trackingAttempted = false;
+          try {
+            let [storageRow] = await db
+              .select({ id: userStorage.id })
+              .from(userStorage)
+              .where(eq(userStorage.userId, userId))
+              .limit(1);
             if (!storageRow) {
               [storageRow] = await db
-                .select({ id: userStorage.id })
-                .from(userStorage)
-                .where(eq(userStorage.userId, userId))
-                .limit(1);
+                .insert(userStorage)
+                .values({ userId, storagePrefix: `users/${userId}` })
+                .onConflictDoNothing()
+                .returning({ id: userStorage.id });
+              if (!storageRow) {
+                [storageRow] = await db
+                  .select({ id: userStorage.id })
+                  .from(userStorage)
+                  .where(eq(userStorage.userId, userId))
+                  .limit(1);
+              }
             }
+            if (!storageRow) throw new Error("Upload storage record is unavailable");
+            if (storageRow) {
+              trackingAttempted = true;
+              await db
+                .insert(userStorageFiles)
+                .values({
+                  userId,
+                  storageId: storageRow.id,
+                  fileName,
+                  fileKey: key,
+                  mimeType,
+                  sizeBytes: fileSizeNum,
+                  folder: category,
+                  metadata: { category, uploadedVia: "storage/upload/chunk", uploadSessionId: fileId, sha256: completion.digest },
+                })
+                .onConflictDoNothing();
+              const [tracked] = await db.select().from(userStorageFiles)
+                .where(eq(userStorageFiles.fileKey, key)).limit(1);
+              if (!tracked || tracked.userId !== userId || tracked.deletedAt || tracked.sizeBytes !== fileSizeNum ||
+                  tracked.mimeType !== mimeType || (tracked.metadata as Record<string, unknown> | null)?.sha256 !== completion.digest ||
+                  (tracked.metadata as Record<string, unknown> | null)?.uploadSessionId !== fileId) {
+                throw new Error("Upload tracking verification failed");
+              }
+            }
+          } catch (trackErr) {
+            logger.error({ err: trackErr }, "[Storage] Failed to track chunked upload — rolling back:");
+            try {
+              // A failed INSERT response can still mean a committed row.
+              // Read its outcome before deleting a possibly tracked object.
+              const rows = trackingAttempted ? await db.select().from(userStorageFiles)
+                .where(eq(userStorageFiles.fileKey, key)).limit(1) : [];
+              if (rows.length) throw new Error("Tracking outcome requires receipt reconciliation");
+              await storageService.deleteFile(key);
+              await chunkUploads.release(fileId, userId, completion.token);
+            } catch (cleanupErr) {
+              logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked chunked upload:");
+            }
+            return res.status(500).json({ error: "Upload could not be recorded" });
           }
-          if (storageRow) {
-            await db
-              .insert(userStorageFiles)
-              .values({
+
+          await chunkUploads.finishCompletion(fileId, userId, completion.token);
+          const chunkResponseFile = {
+            id: fileId,
+            key,
+            name: fileName,
+            size: fileSizeNum,
+            type: mimeType,
+            url: await storageService?.getDownloadUrl(key),
+          };
+
+          res.json({ success: true, complete: true, file: chunkResponseFile });
+
+          setImmediate(async () => {
+            try {
+              const fileCategory = (mimeType as string).startsWith("audio/")
+                ? "track"
+                : "file";
+              await notificationService?.sendUploadCompleteNotification(
                 userId,
-                storageId: storageRow.id,
                 fileName,
-                fileKey: key,
-                mimeType,
-                sizeBytes: fileSizeNum,
-                folder: category,
-                metadata: { category, uploadedVia: "storage/upload/chunk" },
-              })
-              .onConflictDoNothing();
-          }
-        } catch (trackErr) {
-          logger.error({ err: trackErr }, "[Storage] Failed to track chunked upload — rolling back:");
-          try {
-            await storageService?.deleteFile(key);
-          } catch (cleanupErr) {
-            logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked chunked upload:");
-          }
-          return res.status(500).json({ error: "Upload could not be recorded" });
+                fileCategory,
+              );
+
+              const PLATFORM_QUOTA_GB = 1000;
+              const chunkUsageResult = await db
+                .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
+                .from(userStorageFiles)
+                .where(
+                  and(
+                    eq(userStorageFiles.userId, userId),
+                    isNull(userStorageFiles.deletedAt),
+                  ),
+                );
+              const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
+              const usedGB = chunkUsedBytes / 1024 ** 3;
+              const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
+              if (usedPercent >= 75) {
+                await notificationService?.sendStorageQuotaNotification(
+                  userId,
+                  usedPercent,
+                );
+              }
+              if (usedPercent >= 85) {
+                await notificationService?.sendAdminStorageCriticalNotification(
+                  usedPercent,
+                  usedGB,
+                  PLATFORM_QUOTA_GB,
+                );
+              }
+            } catch (err) {
+              logger.warn(
+                { err: err },
+                "Post-chunked-upload notification error:",
+              );
+            }
+          });
+
+          return;
+        } catch (error) {
+          // The deterministic object may have committed despite a lost response.
+          // Preserve the claim for reconciliation; never replay a random write.
+          logger.warn({ err: error, fileId }, "Chunk completion outcome requires reconciliation");
+          throw error;
         }
-
-        const chunkResponseFile = {
-          id: fileId,
-          key,
-          name: fileName,
-          size: fileSizeNum,
-          type: mimeType,
-          url: await storageService?.getDownloadUrl(key),
-        };
-
-        res.json({ success: true, complete: true, file: chunkResponseFile });
-
-        setImmediate(async () => {
-          try {
-            const fileCategory = (mimeType as string).startsWith("audio/")
-              ? "track"
-              : "file";
-            await notificationService?.sendUploadCompleteNotification(
-              userId,
-              fileName,
-              fileCategory,
-            );
-
-            const PLATFORM_QUOTA_GB = 1000;
-            const chunkUsageResult = await db
-              .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
-              .from(userStorageFiles)
-              .where(
-                and(
-                  eq(userStorageFiles.userId, userId),
-                  isNull(userStorageFiles.deletedAt),
-                ),
-              );
-            const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
-            const usedGB = chunkUsedBytes / 1024 ** 3;
-            const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
-            if (usedPercent >= 75) {
-              await notificationService?.sendStorageQuotaNotification(
-                userId,
-                usedPercent,
-              );
-            }
-            if (usedPercent >= 85) {
-              await notificationService?.sendAdminStorageCriticalNotification(
-                usedPercent,
-                usedGB,
-                PLATFORM_QUOTA_GB,
-              );
-            }
-          } catch (err) {
-            logger.warn(
-              { err: err },
-              "Post-chunked-upload notification error:",
-            );
-          }
-        });
-
-        return;
       }
 
       res.json({
         success: true,
         complete: false,
-        uploaded: chunkInfo.uploadedChunks.size,
+        uploaded: accepted.uploaded,
         total: totalChunksNum,
       });
     } catch (error) {
       logger.warn({ err: error }, "Chunk upload failed:");
-      res.status(500).json({
+      res.status(error instanceof ChunkUploadError ? error.statusCode : 500).json({
         error: error instanceof Error ? error?.message : "Chunk upload failed",
       });
     }
@@ -558,19 +509,14 @@ router.delete(
       const { fileId } = req.params as Record<string, string>;
       const userId = req.user!.id;
 
-      const chunkInfo = chunkUploads?.get(fileId);
-      if (chunkInfo && chunkInfo?.userId !== userId) {
-        return res.status(403).json({ error: "Not authorized" });
-      }
-
-      cleanupChunks(fileId);
+      await chunkUploads.cancel(fileId, userId);
 
       logger.info(`Chunked upload cancelled: ${fileId} by user ${userId}`);
 
       res.json({ success: true });
     } catch (error) {
       logger.warn({ err: error }, "Chunk cleanup failed:");
-      res.status(500).json({
+      res.status(error instanceof ChunkUploadError ? error.statusCode : 500).json({
         error: error instanceof Error ? error?.message : "Cleanup failed",
       });
     }

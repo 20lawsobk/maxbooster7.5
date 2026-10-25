@@ -14,8 +14,8 @@ Optional for full feature set: Stripe, SendGrid, Twilio, social OAuth credential
 ## Getting Started
 
 ```bash
-# Install dependencies (use pnpm — npm install can OOM on this large project)
-pnpm install
+# Install root dependencies with the pinned npm and committed lockfile
+npm ci
 
 # Start the app (Replit: just start the "Start application" workflow)
 npm run dev
@@ -23,19 +23,17 @@ npm run dev
 ```
 
 Important install rules:
-- Do not mix `npm install` and `pnpm install` in the same checkout.
-- Use `pnpm install` for developer workflows (`lint`, `check`, `test`) so devDependencies and workspace overrides are present.
-- If `pnpm` reports an override mismatch or `lint`/`check` start failing with missing tooling such as `eslint` or `vite/client`, wipe `node_modules` and reinstall with `pnpm install --no-frozen-lockfile`.
-- Keep production-only `npm install --omit=dev` usage isolated to deployment packaging flows; it is not a valid setup for local validation.
+- Root tooling uses npm 10.9.4 on Node 22; preserve `package-lock.json`.
+- Imported MaxCore and PDIM are independent pnpm 10.26.1 workspaces. Provision their frozen locks with lifecycle scripts disabled; see `docs/npm-build-start.md`.
+- Do not replace real packages with tar stubs, delete locks, or mix package managers in the same dependency tree.
+- Production-only dependency installation is not a complete local validation environment.
 
 ### First-time setup
-```bash
-# Create the initial admin user
-npm run bootstrap:admin
 
-# Push schema to your Neon database
-npm run db:push
-```
+Configure a disposable development database and session secret securely. Verify
+the target before schema initialization or administrative bootstrapping. Do not
+run `db:push` or bootstrap against shared/production data as an automatic setup
+step. Follow `DATABASE.md` and the isolated acceptance fixtures.
 
 ---
 
@@ -51,8 +49,8 @@ npm run lint           # ESLint (errors only, --quiet)
 npm run lint:fix       # ESLint auto-fix
 npm run fix            # ESLint --fix + Prettier --write
 npm run db:push        # Sync Drizzle schema to NEON_DATABASE_URL
-npm run deploy         # Build + deploy to Replit
-npm run audit          # npm audit fix
+npm run start          # Validate ordinary build and start production handoff
+npm run audit          # Report dependency advisories (does not apply fixes)
 ```
 
 ---

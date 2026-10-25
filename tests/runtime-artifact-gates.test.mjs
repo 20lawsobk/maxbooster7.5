@@ -64,30 +64,31 @@ test("fast-uri accepts independently compatible patched 3.x and 4.x, rejects vul
   write(root, "package.json", "{}");
   write(root, "node_modules/fast-uri/package.json", '{"name":"fast-uri","version":"4.1.2"}');
   assert.equal(inspectDependencies(root, ["."]).ready, false);
-  write(root, "node_modules/fast-uri/package.json", '{"name":"fast-uri","version":"4.1.5"}');
-  write(root, "node_modules/ajv/node_modules/fast-uri/package.json", '{"name":"fast-uri","version":"3.1.8"}');
+  write(root, "node_modules/fast-uri/package.json", '{"name":"fast-uri","version":"4.2.3"}');
+  write(root, "node_modules/ajv/node_modules/fast-uri/package.json", '{"name":"fast-uri","version":"3.1.9"}');
   assert.equal(inspectDependencies(root, ["."]).ready, true);
 });
 test("all security families reject stale nested copies and accept explicitly validated branches", t => {
   const root = fixture(t);
   write(root, "package.json", "{}");
   const pairs = [
-    ["axios", "1.19.0", "1.20.0"], ["fastify", "5.12.1", "5.12.5"],
-    ["ip-address", "10.5.0", "10.7.3"], ["undici", "7.29.0", "7.30.0"],
-    ["undici", "6.28.0", "6.28.1"],
-    ["electron", "43.4.0", "43.7.7"],
+    ["axios", "1.19.0", "1.20.0"], ["fastify", "5.12.5", "5.12.6"],
+    ["ip-address", "10.7.3", "10.7.4"], ["undici", "7.30.0", "7.30.1"],
+    ["undici", "6.28.1", "6.29.1"],
+    ["electron", "43.7.7", "43.8.1"],
     ["orval", "8.5.3", "8.33.0"], ["linkify-it", "5.0.1", "5.0.2"],
     ["linkify-it", "5.0.0", "6.1.0"],
     ["sharp", "0.35.3", "0.35.5"], ["sharp", "0.35.4", "0.35.5"],
-    ["dompurify", "3.4.12", "3.4.16"],
+    ["dompurify", "3.4.16", "3.4.17"], ["body-parser", "2.3.0", "2.4.0"],
     ["postcss", "8.5.16", "8.5.26"], ["browserslist", "4.28.1", "4.28.8"],
     ["baseline-browser-mapping", "2.10.0", "2.11.15"], ["@babel/core", "7.29.0", "7.29.7"],
     ["brace-expansion", "2.1.1", "5.0.12"], ["nanoid", "3.3.16", "3.3.18"],
     ["brace-expansion", "2.1.4", "2.1.7"],
     ["uuid", "7.0.3", "11.1.1"], ["yaml", "2.8.2", "2.9.1"],
-    ["markdown-it", "14.1.1", "14.3.2"], ["vitest", "4.1.10", "4.1.11"],
-    ["@vitest/mocker", "4.1.10", "4.1.11"], ["csv-parse", "6.2.1", "7.0.2"],
-    ["fast-uri", "3.1.6", "3.1.8"], ["fast-uri", "4.1.3", "4.1.5"],
+    ["markdown-it", "14.1.1", "14.3.2"], ["vitest", "4.1.11", "4.1.12"],
+    ["@vitest/mocker", "4.1.11", "4.1.12"], ["csv-parse", "6.2.1", "7.0.2"],
+    ["fast-uri", "3.1.8", "3.1.9"], ["fast-uri", "4.2.1", "4.2.3"],
+    ["multer", "2.4.0", "2.5.0"],
   ];
   for (const [name, stale, safe] of pairs) {
     const file = `node_modules/consumer/node_modules/${name}/package.json`;

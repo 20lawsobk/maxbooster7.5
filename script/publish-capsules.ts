@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { packCapsuleMembers, CAPSULE_COMPRESSION_ID, MAXCORE_CAPSULE_EXCLUDE_PATHS, PDIM_CAPSULE_EXCLUDE_PATHS } from "./lib/capsulePack.js";
 import { effectiveCapacity } from "../server/computeSizing.js";
 import { packCachedDeploymentCapsule } from "./lib/deploymentCapsuleCache.js";
+import { computeRemainingAppMembers } from "./lib/dockerignoreScan.js";
 
 // Bundle into dist before node_modules is packed. The resulting CLI uses only
 // Node built-ins and the installed zstd executable, not the removed source tree.
@@ -17,6 +18,16 @@ export async function publishCapsule(root: string, mode: string, capsule: string
   const assigned = Number(process.env.DEPLOY_TASK_CPU ?? 2);
   if (!Number.isFinite(assigned) || assigned < 1) throw new Error("Invalid task CPU allocation");
   const threads = Math.max(1, Math.min(Math.floor(effectiveCapacity().cpus), Math.floor(assigned)));
+  if (mode === "remainder") {
+    if (capsule !== "app_remainder.pdim" || inputs.length) {
+      throw new Error("Remainder operation requires only app_remainder.pdim");
+    }
+    const members = computeRemainingAppMembers(root);
+    if (!members.length) throw new Error("Application remainder is empty");
+    // Remove only files included in the verified capsule; leave bootstrap and
+    // deployment-executive modules on disk for pre-restoration startup.
+    return packCapsuleMembers({ root, members, capsule, threads, preserveSource: false });
+  }
   if (mode === "directory" || mode === "prepare") {
     if (inputs.length !== 1 || !fs.statSync(path.join(root, inputs[0])).isDirectory()) {
       throw new Error("Required capsule directory is missing");
