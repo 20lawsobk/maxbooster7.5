@@ -258,7 +258,20 @@ jobs:
           node -e "
             const fs = require('fs');
             const report = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
-            const vulns = report.metadata?.vulnerabilities ?? {};
+            // npm audit can emit an error-only JSON object on registry/network failures.
+            // Missing vulnerability metadata must never be treated as a clean audit.
+            const vulns = report.metadata?.vulnerabilities;
+            if (
+              report.error ||
+              !vulns ||
+              !Number.isSafeInteger(vulns.high) ||
+              !Number.isSafeInteger(vulns.critical) ||
+              vulns.high < 0 ||
+              vulns.critical < 0
+            ) {
+              console.error('❌ npm audit did not produce valid vulnerability counts');
+              process.exit(1);
+            }
             const total = Object.values(vulns).reduce((a, b) => a + b, 0);
             console.log('== npm audit summary ==');
             Object.entries(vulns).forEach(([sev, count]) => {
