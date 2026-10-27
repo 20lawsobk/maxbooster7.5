@@ -44,7 +44,7 @@ test("secondary hybrid download denies tracked tombstones before fetching bytes"
 test("legacy hybrid download denies tracked tombstones before fetching bytes", () => {
   requireDenyBeforeRead(legacyRead, "fileKey");
   assert.doesNotMatch(legacyRead, /decodeURIComponent/, "Express params must not be decoded twice");
-  assert.match(legacyRead, /fileKey\\.includes\\("\\\\.\\\\.?"\\)/);
+  assert.ok(legacyRead.includes('fileKey.includes("..")'), "Legacy route must reject traversal");
 });
 
 test("contract rejects a route that fetches bytes before checking tombstones", () => {
