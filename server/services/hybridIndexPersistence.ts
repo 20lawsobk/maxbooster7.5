@@ -24,5 +24,7 @@ export async function persistHybridIndex(
   ) {
     throw new HybridIndexCapacityError();
   }
-  await writeIndex();
+  if ((await writeIndex()) !== "OK") {
+    throw new Error("Hybrid storage index write was not acknowledged by PDIM");
+  }
 }
