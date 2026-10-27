@@ -28,6 +28,14 @@ export function authorizedHybridReadPrincipal(
  * be attempted when an independent ownership/visibility record authorizes it.
  * Missing hybrid metadata and a missing tracking row are NOT public access.
  */
+/** Fail closed when SQL and hybrid metadata disagree about the same key. */
+export function hasConflictingStorageOwnership(
+  trackedOwnerId: string | null,
+  metadata: { userId: string } | null,
+): boolean {
+  return trackedOwnerId !== null && metadata !== null && trackedOwnerId !== metadata.userId;
+}
+
 export function authorizedDirectFallback(
   requesterId: string,
   trackedOwnerId: string | null,
@@ -35,9 +43,10 @@ export function authorizedDirectFallback(
   verifiedStemAccess: boolean | null,
 ): boolean {
   if (!requesterId) return false;
+  // Entitlements and public flags never override contradictory ownership data.
+  if (hasConflictingStorageOwnership(trackedOwnerId, metadata)) return false;
   if (verifiedStemAccess === true) return true;
-  // Conflicting private records are denied, not resolved by choosing the more
-  // permissive record. A public hybrid object is the explicit exception.
+  // Private records are denied rather than choosing a more permissive owner.
   if (metadata && metadata.userId !== requesterId && metadata.isPublic !== true) {
     return false;
   }
