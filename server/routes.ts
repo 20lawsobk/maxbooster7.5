@@ -1628,14 +1628,14 @@ export async function registerRoutes(
 
       const hybridMeta = hybridStorageService.getMetadata(key);
       if (hybridMeta) {
-        // If two private ownership records disagree, neither can authorize
-        // a read. Do not let stale hybrid metadata override the SQL owner.
-        if (trackedOwnerId && trackedOwnerId !== req.user.id && stemAccess !== true && hybridMeta.isPublic !== true) {
-          return res.status(403).json({ message: "Access denied" });
-        }
-        const { authorizedHybridReadPrincipal } = await import(
+        // A paid entitlement or public flag must not override contradictory
+        // ownership records. Reject before reading any hybrid or direct bytes.
+        const { authorizedHybridReadPrincipal, hasConflictingStorageOwnership } = await import(
           "./services/hybridFileAuthorization.js"
         );
+        if (hasConflictingStorageOwnership(trackedOwnerId, hybridMeta)) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         const readPrincipal = authorizedHybridReadPrincipal(
           req.user.id,
           hybridMeta,
