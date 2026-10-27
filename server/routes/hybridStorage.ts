@@ -12,6 +12,7 @@ import {
   StorageLocation,
 } from "../services/hybridStorageService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { isValidHybridFolder } from "../services/hybridFileKey.js";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -38,6 +39,9 @@ router.post(
 
       const userId = req.user!.id;
       const { folder, forceLocation, forceTier } = req.body;
+      if (!isValidHybridFolder(folder)) {
+        return res.status(400).json({ error: "Invalid storage folder" });
+      }
 
       const result = await hybridStorageService?.upload(
         userId,
