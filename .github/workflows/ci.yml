@@ -251,20 +251,30 @@ jobs:
       - name: Run npm audit (high severity and above)
         # `npm audit` returns non-zero when vulns exist; capture JSON either way
         # and let the next step decide whether to fail.
-        run: npm audit --audit-level=high --json > audit-report.json || true
+        shell: bash
+        run: |
+          # npm audit uses nonzero for both advisories and CLI/registry failure.
+          # Preserve the real status; only the verifier may decide whether to pass.
+          set +e
+          npm audit --audit-level=high --json > audit-report.json
+          audit_status=$?
+          set -e
+          printf '%s\n' "$audit_status" > audit-exit-status.txt
 
       - name: Verify npm audit parser fail-closed cases
         run: node --test tests/npm-audit-gate.test.mjs
 
       - name: Parse and enforce npm audit results
-        run: node scripts/verify-npm-audit.mjs audit-report.json
+        run: node scripts/verify-npm-audit.mjs audit-report.json audit-exit-status.txt
 
       - name: Upload audit report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: npm-audit-report
-          path: audit-report.json
+          path: |
+            audit-report.json
+            audit-exit-status.txt
           retention-days: 7
 
   test-integration:
