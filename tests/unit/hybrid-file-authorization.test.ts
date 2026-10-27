@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedDirectFallback, authorizedHybridReadPrincipal, hasConflictingStorageOwnership, trackedHybridReadDenial } from "../../server/services/hybridFileAuthorization.js";
+import { authorizedDirectFallback, authorizedHybridReadPrincipal, hasConflictingStorageOwnership, trackedHybridReadDenial, hasConflictingStorageVisibility } from "../../server/services/hybridFileAuthorization.js";
 
 describe("authenticated hybrid-file read principal", () => {
   const privateFile = { userId: "owner", isPublic: false };
@@ -96,5 +96,36 @@ describe("alternate hybrid-file route SQL tombstone guard", () => {
 
   it("leaves untracked metadata to the hybrid service's caller-based authorization", () => {
     expect(trackedHybridReadDenial(null, metadata)).toBeNull();
+  });
+});
+
+
+describe("SQL-tracked private visibility takes precedence over hybrid metadata", () => {
+  it("denies a public hybrid flag when SQL tracks the same key as private", () => {
+    const tracked = { userId: "owner", deletedAt: null, isPublic: false };
+    const hybrid = { userId: "owner", isPublic: true };
+    expect(hasConflictingStorageVisibility(tracked, hybrid)).toBe(true);
+    expect(trackedHybridReadDenial(tracked, hybrid)).toBe(403);
+  });
+
+  it("denies missing SQL public permission rather than treating it as public", () => {
+    expect(hasConflictingStorageVisibility({ isPublic: null }, { isPublic: true })).toBe(true);
+  });
+
+  it("allows consistent SQL and hybrid public flags", () => {
+    const tracked = { userId: "owner", deletedAt: null, isPublic: true };
+    const hybrid = { userId: "owner", isPublic: true };
+    expect(hasConflictingStorageVisibility(tracked, hybrid)).toBe(false);
+    expect(trackedHybridReadDenial(tracked, hybrid)).toBeNull();
+  });
+
+  it("preserves hybrid-only public uploads without a SQL tracking row", () => {
+    expect(hasConflictingStorageVisibility(null, { isPublic: true })).toBe(false);
+    expect(trackedHybridReadDenial(null, { userId: "owner", isPublic: true })).toBeNull();
+  });
+
+  it("does not weaken existing ownership and soft-delete denials", () => {
+    expect(trackedHybridReadDenial({ userId: "sql", deletedAt: null, isPublic: true }, { userId: "hybrid", isPublic: true })).toBe(403);
+    expect(trackedHybridReadDenial({ userId: "owner", deletedAt: new Date("2026-10-27"), isPublic: true }, { userId: "owner", isPublic: true })).toBe(404);
   });
 });
