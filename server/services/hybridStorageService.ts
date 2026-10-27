@@ -27,6 +27,7 @@ import { assertSafeHybridDeletion, requireConfirmedHybridPhysicalDeletion } from
 import { persistHybridIndex } from "./hybridIndexPersistence.js";
 import { assertHybridIndexReferenceIntegrity } from "./hybridIndexReferenceIntegrity.js";
 import { generateHybridFileKey } from "./hybridFileKey.js";
+import { selectHybridTieringKeys } from "./hybridOptimizationSafety.js";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -681,13 +682,14 @@ export class HybridStorageService {
     // All files remain in Pocket Dimension.
   }
 
-  async runAutoTiering(): Promise<{ tieredDown: number; tieredUp: number }> {
+  async runAutoTiering(userId?: string): Promise<{ tieredDown: number; tieredUp: number }> {
     await this.initialize();
 
     let tieredDown = 0;
 
-    for (const [key, entry] of this.fileIndex) {
-      if (entry?.isDeduplicated) continue;
+    // A user-triggered optimization must not mutate another tenant\'s files.
+    for (const key of selectHybridTieringKeys(this.fileIndex.values(), userId)) {
+      const entry = this.fileIndex.get(key)!;
       const decision = this.determineTier(entry);
       // PDIM-only: tier-up is disabled (no Replit hot tier). Only tier-down runs,
       // which for existing entries just confirms they are already in pocket-dimension.
@@ -1033,35 +1035,12 @@ export class HybridStorageService {
   ): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
     await this.initialize();
 
-    const result = await this.runAutoTiering();
-    let deduplicated = 0;
-
-    const userFiles = this.listFiles(userId);
-    const hashGroups = new Map<string, HybridFileMetadata[]>();
-
-    for (const file of userFiles) {
-      if (file?.isDeduplicated) continue;
-      const group = hashGroups?.get(file?.contentHash) || [];
-      group?.push(file);
-      hashGroups?.set(file?.contentHash, group);
-    }
-
-    for (const [, group] of hashGroups) {
-      if (group?.length <= 1) continue;
-      const primary = group[0];
-      for (let i = 1; i < group?.length; i++) {
-        const dup = group[i];
-        dup.isDeduplicated = true;
-        dup.deduplicationRef = primary?.key;
-        deduplicated++;
-      }
-    }
-
-    if (deduplicated > 0) {
-      await this.saveIndex();
-    }
-
-    return { ...result, deduplicated };
+    // Scope all maintenance to the authenticated owner. Retroactively marking
+    // physical files as deduplicated without retiring their immutable bytes
+    // and journaling the reference migration creates orphaned bytes and false
+    // savings. Preserve existing files until the durable SQL migration exists.
+    const result = await this.runAutoTiering(userId);
+    return { ...result, deduplicated: 0 };
   }
 
   async cleanup(
