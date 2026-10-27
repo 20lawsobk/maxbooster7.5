@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { storageService } from "../services/storageService.js";
 import { hybridStorageService } from "../services/hybridStorageService.js";
 import { HybridStorageReferenceConflictError } from "../services/hybridDeletionSafety.js";
+import { assertTrackedUpload } from "../services/storageUploadTracking.js";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import path from "path";
@@ -223,7 +224,8 @@ router.post(
               .limit(1);
           }
         }
-        if (storageRow) {
+        if (!storageRow) throw new Error("Upload owner storage record is unavailable");
+        {
           await db
             .insert(userStorageFiles)
             .values({
@@ -237,16 +239,43 @@ router.post(
               metadata: { category, uploadedVia: "storage/upload" },
             })
             .onConflictDoNothing();
+          // onConflictDoNothing and lost DB acknowledgements must not turn an
+          // untracked or foreign-owned PDIM object into a successful upload.
+          const [tracked] = await db
+            .select({
+              userId: userStorageFiles.userId,
+              fileKey: userStorageFiles.fileKey,
+              deletedAt: userStorageFiles.deletedAt,
+              sizeBytes: userStorageFiles.sizeBytes,
+              mimeType: userStorageFiles.mimeType,
+              fileName: userStorageFiles.fileName,
+            })
+            .from(userStorageFiles)
+            .where(eq(userStorageFiles.fileKey, key))
+            .limit(1);
+          assertTrackedUpload(tracked, {
+            userId, fileKey: key, sizeBytes: req.file.size,
+            mimeType: req.file.mimetype, fileName: safeFileName,
+          });
         }
       } catch (trackErr) {
-        // Tracking is mandatory: an untracked object is invisible to quota
-        // accounting and can never be deleted. Compensate by removing the
-        // just-uploaded object and failing the request.
-        logger.error({ err: trackErr }, "[Storage] Failed to track uploaded file — rolling back upload:");
+        logger.error({ err: trackErr }, "[Storage] Upload tracking could not be verified:");
         try {
-          await storageService?.deleteFile(key);
+          // The INSERT may have committed despite a lost acknowledgement.
+          // Never delete bytes when an owner record exists or the SQL outcome
+          // cannot be read. A later reconciliation must resolve that state.
+          const [existing] = await db
+            .select({ id: userStorageFiles.id })
+            .from(userStorageFiles)
+            .where(eq(userStorageFiles.fileKey, key))
+            .limit(1);
+          if (existing) {
+            logger.warn({ key }, "[Storage] Upload tracking outcome requires reconciliation; preserving bytes");
+          } else {
+            await storageService.deleteFile(key);
+          }
         } catch (cleanupErr) {
-          logger.error({ err: cleanupErr }, "[Storage] Rollback delete failed for untracked upload:");
+          logger.error({ err: cleanupErr }, "[Storage] Upload rollback outcome is uncertain; preserving bytes for reconciliation:");
         }
         return res.status(500).json({ error: "Upload could not be recorded" });
       }
