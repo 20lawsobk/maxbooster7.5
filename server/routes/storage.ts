@@ -4,6 +4,7 @@ import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomUUID } from "crypto";
 import { storageService } from "../services/storageService.js";
 import { hybridStorageService } from "../services/hybridStorageService.js";
+import { HybridStorageReferenceConflictError } from "../services/hybridDeletionSafety.js";
 import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import path from "path";
@@ -1161,6 +1162,9 @@ router.delete(
         res.status(404).json({ error: "File not found" });
       }
     } catch (error) {
+      if (error instanceof HybridStorageReferenceConflictError) {
+        return res.status(409).json({ error: "File has dependent storage references" });
+      }
       logger.warn({ err: error }, "[HybridStorage] Delete failed:");
       res.status(500).json({
         error: error instanceof Error ? error?.message : "Delete failed",
