@@ -269,7 +269,10 @@ jobs:
         if: always()
         with:
           name: npm-audit-report
-          path: audit-report.json
+          path: |
+            audit-report.json
+            audit-exit-code.txt
+          if-no-files-found: error
           retention-days: 7
 
   test-integration:
