@@ -79,7 +79,7 @@ router.get(
       // encoded traversal into a different key after request normalization.
       const fileKey = req.params.fileKey as string;
       if (!fileKey || fileKey.startsWith("/") || fileKey.includes("..") ||
-          fileKey.includes("\\") || fileKey.includes("\\0")) {
+          fileKey.includes("\\") || fileKey.includes("\0")) {
         return res.status(400).json({ error: "Invalid file key" });
       }
 
