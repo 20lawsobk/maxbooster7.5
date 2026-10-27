@@ -259,7 +259,7 @@ jobs:
           npm audit --audit-level=high --json > audit-report.json
           audit_status=$?
           set -e
-          printf '%s\\n' "$audit_status" > audit-exit-status.txt
+          printf '%s\n' "$audit_status" > audit-exit-status.txt
 
       - name: Verify npm audit parser fail-closed cases
         run: node --test tests/npm-audit-gate.test.mjs
