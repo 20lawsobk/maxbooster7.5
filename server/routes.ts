@@ -1626,9 +1626,22 @@ export async function registerRoutes(
 
       const hybridMeta = hybridStorageService.getMetadata(key);
       if (hybridMeta) {
+        const { authorizedHybridReadPrincipal } = await import(
+          "./services/hybridFileAuthorization.js"
+        );
+        const readPrincipal = authorizedHybridReadPrincipal(
+          req.user.id,
+          hybridMeta,
+          stemAccess,
+        );
+        // A private hybrid file cannot fall back to an unrestricted direct
+        // object read just because its metadata contains the owner's ID.
+        if (readPrincipal === null) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
         try {
-          fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
+          fileBuffer = await hybridStorageService.read(readPrincipal, key);
         } catch (err) {
           hybridReadError = err;
           fileBuffer = null;
