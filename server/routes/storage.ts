@@ -571,10 +571,22 @@ router.get("/public/*key", async (req: Request, res: Response) => {
         .json({ error: "Only image files are publicly accessible" });
     }
 
+    // A public storefront link must not bypass the durable soft-delete marker.
+    // Fail closed on a database error rather than serving stale physical bytes.
+    const [deletedTracking] = await db
+      .select({ id: userStorageFiles.id })
+      .from(userStorageFiles)
+      .where(and(eq(userStorageFiles.fileKey, key), isNotNull(userStorageFiles.deletedAt)))
+      .limit(1);
+    if (deletedTracking) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
     const buffer = await storageService?.downloadFile(key);
     const contentType = allowedImageExts[ext];
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "public, max-age=86400");
+    // Public assets may be deleted/revoked; do not issue long-lived browser caches.
+    res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Length", buffer?.length);
     res.send(buffer);
   } catch (error) {
