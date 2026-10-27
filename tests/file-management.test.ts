@@ -203,6 +203,60 @@ describe("File Management (Storage Round-Trip)", () => {
     expect(res.status).not.toBe(200);
   });
 
+  it("5b. never serves the owner's uploaded bytes to a second authenticated account", async () => {
+    // This is an integration test, not proof of the worker-backed byte layer.
+    // A successful upload is a required prerequisite to exercise the real route.
+    expect(
+      uploadedFileKey,
+      "Cross-account isolation requires a successful real upload; an unavailable storage backend cannot pass this test",
+    ).toBeTruthy();
+
+    const ownerCookies = authCookies;
+    const ownerCsrf = csrfToken;
+    const outsider = {
+      email: `fileoutsider_${Date.now()}@maxbooster-test.invalid`,
+      password: "SecurePass123!@#",
+      firstName: "Other",
+      lastName: "Account",
+    };
+
+    try {
+      authCookies = "";
+      csrfToken = "";
+      await apiJson("POST", "/api/auth/register", outsider);
+      const signIn = await apiJson("POST", "/api/auth/login", {
+        email: outsider.email,
+        password: outsider.password,
+      });
+      expect(signIn.status).toBe(200);
+      expect(authCookies).toBeTruthy();
+
+      const encodedKey = encodeURIComponent(uploadedFileKey);
+      const download = await api(
+        "GET", `/api/storage/file/${encodedKey}`,
+      );
+      expect(download.status).toBe(403);
+
+      // The secondary hybrid-storage route may conceal a denied file as 404,
+      // but must never return the owner's bytes to this account.
+      const hybridDownload = await api(
+        "GET", `/api/storage/hybrid/file/${encodedKey}`,
+      );
+      expect([403, 404]).toContain(hybridDownload.status);
+      expect(hybridDownload.status).not.toBe(200);
+    } finally {
+      authCookies = ownerCookies;
+      csrfToken = ownerCsrf;
+    }
+
+    const ownerDownload = await api(
+      "GET",
+      `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
+    );
+    expect(ownerDownload.status).toBe(200);
+    expect(Buffer.from(await ownerDownload.arrayBuffer())).toEqual(uploadPayload);
+  });
+
   it("6. deletes the uploaded file and returns success", async () => {
     if (!uploadedFileKey) {
       console.warn("[FileTest] No uploaded key — skipping delete test");
