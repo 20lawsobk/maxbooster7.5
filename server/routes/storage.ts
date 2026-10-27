@@ -1065,7 +1065,7 @@ router.get(
       // The direct file route honors SQL soft deletes; this alternate hybrid
       // route must not expose retained restore-window bytes or mismatched owners.
       const [tracked] = await db
-        .select({ userId: userStorageFiles.userId, deletedAt: userStorageFiles.deletedAt })
+        .select({ userId: userStorageFiles.userId, deletedAt: userStorageFiles.deletedAt, isPublic: userStorageFiles.isPublic })
         .from(userStorageFiles)
         .where(eq(userStorageFiles.fileKey, key))
         .limit(1);

@@ -1600,16 +1600,18 @@ export async function registerRoutes(
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
       let trackedOwnerId: string | null = null;
+      let trackedIsPublic: boolean | null = null;
       {
         const { userStorageFiles } = await import("../shared/schema.js");
         const { eq, sql: dsql } = await import("drizzle-orm");
         const [row] = await db
-          .select({ deletedAt: userStorageFiles.deletedAt, userId: userStorageFiles.userId })
+          .select({ deletedAt: userStorageFiles.deletedAt, userId: userStorageFiles.userId, isPublic: userStorageFiles.isPublic })
           .from(userStorageFiles)
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
         trackedOwnerId = row?.userId ?? null;
+        trackedIsPublic = row?.isPublic ?? null;
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
@@ -1630,10 +1632,11 @@ export async function registerRoutes(
       if (hybridMeta) {
         // A paid entitlement or public flag must not override contradictory
         // ownership records. Reject before reading any hybrid or direct bytes.
-        const { authorizedHybridReadPrincipal, hasConflictingStorageOwnership } = await import(
+        const { authorizedHybridReadPrincipal, hasConflictingStorageOwnership, hasConflictingStorageVisibility } = await import(
           "./services/hybridFileAuthorization.js"
         );
-        if (hasConflictingStorageOwnership(trackedOwnerId, hybridMeta)) {
+        if (hasConflictingStorageOwnership(trackedOwnerId, hybridMeta) ||
+          hasConflictingStorageVisibility(trackedOwnerId === null ? null : { isPublic: trackedIsPublic }, hybridMeta)) {
           return res.status(403).json({ message: "Access denied" });
         }
         const readPrincipal = authorizedHybridReadPrincipal(
