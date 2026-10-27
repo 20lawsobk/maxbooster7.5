@@ -32,3 +32,15 @@ export function assertSafeHybridDeletion(
     throw new HybridStorageReferenceConflictError();
   }
 }
+
+/**
+ * A missing/failed PDIM deletion is not a successful hybrid delete.
+ * Invoke before mutating the in-memory metadata indexes.
+ */
+export async function requireConfirmedHybridPhysicalDeletion(
+  deletePhysicalBytes: () => Promise<boolean>,
+): Promise<void> {
+  if ((await deletePhysicalBytes()) !== true) {
+    throw new Error("Hybrid storage physical deletion was not confirmed");
+  }
+}
