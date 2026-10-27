@@ -45,4 +45,16 @@ describe("hybrid optimization tenant and byte integrity", () => {
     expect(tiering).toBeTruthy();
     expect(tiering).toContain("selectHybridTieringKeys(this.fileIndex.values(), userId)");
   });
+  it("scopes the legacy authenticated auto-tier HTTP handler to the caller", () => {
+    // This is a route-wiring contract; full two-account HTTP integration is
+    // still required in a disposable configured environment.
+    const source = readFileSync(new URL("../../server/routes/storage.ts", import.meta.url), "utf8");
+    const route = source.split('  "/hybrid/auto-tier",')[1]?.split('  "/hybrid/metadata/*key",')[0];
+    expect(route).toBeTruthy();
+    expect(route).toContain("requireAuth");
+    expect(route).toContain("const userId = req.user!.id");
+    expect(route).toContain("hybridStorageService?.runAutoTiering(userId)");
+    expect(route).not.toMatch(/hybridStorageService\\?\\.runAutoTiering\\(\\s*\\)/);
+  });
+
 });
