@@ -14,6 +14,9 @@ import {
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
+import { db } from "../db.js";
+import { userStorageFiles } from "../../shared/schema.js";
+import { and, eq, isNotNull } from "drizzle-orm";
 
 const router = Router();
 const upload = createHardenedUpload({
@@ -72,7 +75,24 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      // Express 5 already decodes path params. A second decode can turn
+      // encoded traversal into a different key after request normalization.
+      const fileKey = req.params.fileKey as string;
+      if (!fileKey || fileKey.startsWith("/") || fileKey.includes("..") ||
+          fileKey.includes("\\") || fileKey.includes("\0")) {
+        return res.status(400).json({ error: "Invalid file key" });
+      }
+
+      // A durable soft-delete tombstone overrides stale hybrid metadata.
+      // A failed database lookup must never fall through to a byte read.
+      const [deletedTracking] = await db
+        .select({ id: userStorageFiles.id })
+        .from(userStorageFiles)
+        .where(and(eq(userStorageFiles.fileKey, fileKey), isNotNull(userStorageFiles.deletedAt)))
+        .limit(1);
+      if (deletedTracking) {
+        return res.status(404).json({ error: "File not found" });
+      }
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -83,6 +103,7 @@ router.get(
         return res.status(403).json({ error: "Access denied" });
       }
 
+      res.setHeader("Cache-Control", "private, no-store");
       const data = await hybridStorageService?.read(userId, fileKey);
 
       res.setHeader("Content-Type", metadata?.mimeType);

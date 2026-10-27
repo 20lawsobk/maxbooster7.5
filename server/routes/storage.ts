@@ -1064,6 +1064,18 @@ router.get(
       // Private hybrid bytes must never survive an entitlement or ownership change in caches.
       res.setHeader("Cache-Control", "private, no-store");
 
+      // The primary download route denies soft-deleted tracked files. This
+      // alternate route must check the same durable tombstone before reading
+      // bytes, even if an old hybrid index still contains the object.
+      const [deletedTracking] = await db
+        .select({ id: userStorageFiles.id })
+        .from(userStorageFiles)
+        .where(and(eq(userStorageFiles.fileKey, key), isNotNull(userStorageFiles.deletedAt)))
+        .limit(1);
+      if (deletedTracking) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
       const buffer = await hybridStorageService?.read(userId, key);
       const metadata = hybridStorageService?.getMetadata(key);
 
