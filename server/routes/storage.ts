@@ -1308,9 +1308,12 @@ router.post(
 router.post(
   "/hybrid/auto-tier",
   requireAuth,
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const result = await hybridStorageService?.runAutoTiering();
+      // The authenticated legacy endpoint is tenant-scoped. Only the
+      // internal scheduler may call runAutoTiering() without a user ID.
+      const userId = req.user!.id;
+      const result = await hybridStorageService?.runAutoTiering(userId);
 
       logger.info(
         `[HybridStorage] Auto-tiering: ${result?.tieredDown} down, ${result?.tieredUp} up`,
