@@ -1,5 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { assessAuditReport, verifyAuditReport } from "../scripts/verify-npm-audit.mjs";
 
 const report = (counts) => JSON.stringify({ metadata: { vulnerabilities: counts } });
@@ -36,6 +40,24 @@ describe("npm audit release gate", () => {
       assert.throws(() => assessAuditReport({ metadata: { vulnerabilities: bad } }));
     }
   });
+  it("CLI exits zero only for a real clean audit report", () => {
+    const temp = mkdtempSync(join(tmpdir(), "npm-audit-verifier-"));
+    const file = join(temp, "audit.json");
+    const executable = resolve("scripts/verify-npm-audit.mjs");
+    try {
+      writeFileSync(file, report({ high: 0, critical: 0 }), "utf8");
+      const clean = spawnSync(process.execPath, [executable, file], { encoding: "utf8" });
+      assert.equal(clean.status, 0, clean.stderr);
+
+      writeFileSync(file, JSON.stringify({ error: { code: "ENOAUDIT" } }), "utf8");
+      const failure = spawnSync(process.execPath, [executable, file], { encoding: "utf8" });
+      assert.equal(failure.status, 1, failure.stdout);
+      assert.doesNotMatch(failure.stdout + failure.stderr, /ENOAUDIT/);
+    } finally {
+      rmSync(temp, { recursive: true, force: true });
+    }
+  });
+
   it("rejects malformed optional severity counts and overflow", () => {
     assert.throws(() => assessAuditReport(report({ high: 0, critical: 0, low: "fake" })));
     assert.throws(() => assessAuditReport(report({ high: Number.MAX_SAFE_INTEGER, critical: 1 })));
