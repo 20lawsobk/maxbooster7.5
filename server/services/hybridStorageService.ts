@@ -23,6 +23,7 @@ import { createHash } from "crypto";
 import { logger } from "../logger.js";
 import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as _ReplitObjectStorageClient } from "@replit/object-storage";
+import { assertSafeHybridDeletion } from "./hybridDeletionSafety.js";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -623,6 +624,8 @@ export class HybridStorageService {
     }
 
     const hashKeys = this.contentHashIndex.get(entry?.contentHash);
+    // This must precede every in-memory index mutation and PDIM byte delete.
+    assertSafeHybridDeletion(key, entry.isDeduplicated, hashKeys);
     if (hashKeys) {
       const idx = hashKeys?.indexOf(key);
       if (idx > -1) hashKeys?.splice(idx, 1);
