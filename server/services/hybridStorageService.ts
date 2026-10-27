@@ -20,6 +20,7 @@
 
 import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
 import { createHash } from "crypto";
+import { generateHybridFileKey } from "./hybridFileKey.js";
 import { logger } from "../logger.js";
 import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as _ReplitObjectStorageClient } from "@replit/object-storage";
@@ -1112,18 +1113,7 @@ export class HybridStorageService {
     fileName: string,
     folder?: string,
   ): string {
-    const timestamp = Date?.now();
-    const hash = createHash("sha256")
-      .update(`${userId}:${fileName}:${timestamp}`)
-      .digest("hex")
-      .substring(0, 8);
-
-    const sanitizedName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
-    const base = folder
-      ? `${userId}/${folder}/${hash}-${sanitizedName}`
-      : `${userId}/${hash}-${sanitizedName}`;
-
-    return base;
+    return generateHybridFileKey(userId, fileName, folder);
   }
 }
 
