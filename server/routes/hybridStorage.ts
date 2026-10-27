@@ -112,7 +112,19 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      // Express 5 already decodes route parameters once. Do not decode again:
+      // literal percent signs must remain valid, and encoded-looking key bytes
+      // must never be reinterpreted as a different storage object.
+      const fileKey = req.params.fileKey as string;
+      if (
+        !fileKey ||
+        fileKey.startsWith("/") ||
+        fileKey.includes("..") ||
+        fileKey.includes("\\") ||
+        fileKey.includes("\0")
+      ) {
+        return res.status(400).json({ error: "Invalid file key" });
+      }
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
