@@ -54,7 +54,7 @@ describe("hybrid optimization tenant and byte integrity", () => {
     expect(route).toContain("requireAuth");
     expect(route).toContain("const userId = req.user!.id");
     expect(route).toContain("hybridStorageService?.runAutoTiering(userId)");
-    expect(route).not.toMatch(/hybridStorageService\\?\\.runAutoTiering\\(\\s*\\)/);
+    expect(route).not.toContain("hybridStorageService?.runAutoTiering()");
   });
 
 });
