@@ -257,6 +257,82 @@ describe("File Management (Storage Round-Trip)", () => {
     expect(Buffer.from(await ownerDownload.arrayBuffer())).toEqual(uploadPayload);
   });
 
+
+  it("5c. denies a second account the real private hybrid key outside users/ on both routes", async () => {
+    // Unlike /api/storage/upload, this endpoint creates a hybrid-index key
+    // outside users/<owner>/, the original vulnerable authorization path.
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([uploadPayload], { type: "audio/wav" }),
+      "private-hybrid.wav",
+    );
+    form.append("folder", "cross-account-regression");
+    form.append("isPublic", "false");
+
+    const upload = await apiJson("POST", "/api/storage/hybrid/upload", form);
+    // A missing PDIM backend or denied upload is a BLOCKER, not a privacy PASS.
+    expect(upload.status).toBe(200);
+    const uploaded = upload.json as { file?: { key?: unknown } };
+    const key = uploaded.file?.key;
+    expect(typeof key).toBe("string");
+    if (typeof key !== "string") throw new Error("Hybrid upload returned no key");
+    expect(key.startsWith("users/")).toBe(false);
+
+    const encoded = encodeURIComponent(key);
+    const ownerCookies = authCookies;
+    const ownerCsrf = csrfToken;
+    try {
+      for (const route of ["/api/storage/file/", "/api/storage/hybrid/file/"]) {
+        const owned = await api("GET", route + encoded);
+        expect(owned.status).toBe(200);
+        expect(Buffer.from(await owned.arrayBuffer())).toEqual(uploadPayload);
+        expect(owned.headers.get("cache-control")).toMatch(/no-store/);
+      }
+
+      const outsider = {
+        email: "hybrid_outsider_" + Date.now() + "@maxbooster-test.invalid",
+        password: "SecurePass123!@#",
+        firstName: "Other",
+        lastName: "Account",
+      };
+      authCookies = "";
+      csrfToken = "";
+      await apiJson("POST", "/api/auth/register", outsider);
+      const login = await apiJson("POST", "/api/auth/login", {
+        email: outsider.email,
+        password: outsider.password,
+      });
+      expect(login.status).toBe(200);
+      expect(authCookies).toBeTruthy();
+
+      const primary = await api("GET", "/api/storage/file/" + encoded);
+      expect(primary.status).toBe(403);
+      const secondary = await api("GET", "/api/storage/hybrid/file/" + encoded);
+      expect([403, 404]).toContain(secondary.status);
+
+      authCookies = "";
+      csrfToken = "";
+      for (const route of ["/api/storage/file/", "/api/storage/hybrid/file/"]) {
+        const anonymous = await api("GET", route + encoded);
+        expect(anonymous.status).toBe(401);
+      }
+    } finally {
+      authCookies = ownerCookies;
+      csrfToken = ownerCsrf;
+      // The disposable integration fixture should retire its test object.
+      // A cleanup failure must not hide an authorization failure above.
+      try {
+        const cleanup = await api("DELETE", "/api/storage/hybrid/file/" + encoded);
+        if (cleanup.status !== 200) {
+          console.warn("[FileTest] Hybrid fixture cleanup requires operator review:", cleanup.status);
+        }
+      } catch (error) {
+        console.warn("[FileTest] Hybrid fixture cleanup unavailable:", error);
+      }
+    }
+  });
+
   it("6. deletes the uploaded file and returns success", async () => {
     if (!uploadedFileKey) {
       console.warn("[FileTest] No uploaded key — skipping delete test");
