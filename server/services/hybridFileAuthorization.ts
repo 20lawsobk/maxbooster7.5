@@ -23,11 +23,6 @@ export function authorizedHybridReadPrincipal(
 }
 
 
-/**
- * A direct-storage read has no built-in per-user authorization. It must only
- * be attempted when an independent ownership/visibility record authorizes it.
- * Missing hybrid metadata and a missing tracking row are NOT public access.
- */
 /** Fail closed when SQL and hybrid metadata disagree about the same key. */
 export function hasConflictingStorageOwnership(
   trackedOwnerId: string | null,
@@ -36,6 +31,11 @@ export function hasConflictingStorageOwnership(
   return trackedOwnerId !== null && metadata !== null && trackedOwnerId !== metadata.userId;
 }
 
+/**
+ * A direct-storage read has no built-in per-user authorization. It must only
+ * be attempted when an independent ownership/visibility record authorizes it.
+ * Missing hybrid metadata and a missing tracking row are NOT public access.
+ */
 export function authorizedDirectFallback(
   requesterId: string,
   trackedOwnerId: string | null,
