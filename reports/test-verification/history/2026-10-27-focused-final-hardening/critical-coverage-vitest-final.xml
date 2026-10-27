@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="24" failures="0" errors="0" time="3.567334446">
+    <testsuite name="tests/coverage/hybrid-storage-live-repository.test.ts" timestamp="2026-10-27T05:04:25.029Z" hostname="2fc971e77ddd" tests="8" failures="0" errors="0" skipped="0" time="2.648249719">
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; concurrent writes, fresh reads, unique same-name keys and ownership" time="0.550827822">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; public bytes have independent ownership records" time="0.080935227">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; concurrent final deletion and dedup admission preserve every successful upload" time="1.006485831">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; independent immutable handles reject missing/corrupt bytes and replacement" time="0.063194991">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; metadata publication failures retain invisible recoverable intents and never ACK" time="0.077444172">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; physical delete failure remains durable and retryable from another worker" time="0.068447822">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; legacy aliases retain the original blob after primary deletion and cannot resurrect" time="0.014132449">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; unknown legacy references abort the entire import and retain the source" time="0.004467238">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/coverage/social-media-jobs-live-repository.test.ts" timestamp="2026-10-27T05:04:25.031Z" hostname="2fc971e77ddd" tests="16" failures="0" errors="0" skipped="0" time="0.919084727">
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; a second worker polls a real committed video result with the same public response contract" time="0.00873202">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; music-video status survives a new repository instance and handlers isolate owner/family/auth" time="0.004186464">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; foreign polls cannot expire another owner&apos;s row; owned polls persist an explicit interruption" time="0.00420412">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; lease expiry fences a stalled writer even before another worker polls" time="0.002148831">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; forged tokens and duplicate terminal writes cannot overwrite acknowledged results" time="0.004507468">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; concurrent terminal writers acknowledge exactly one immutable outcome" time="0.009678587">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; completed jobs require actual asset references and cannot persist an oversized result" time="0.008122941">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; polling never reports corrupt persisted URL values as completed media" time="0.001907657">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; real heartbeat extends ownership and the timer stops after shutdown" time="0.038140333">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; new admissions bound stale metadata cleanup without pruning healthy rendering jobs" time="0.010604804">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; database outage returns an explicit retryable polling error" time="0.000382347">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; missing direction" time="0.006741572">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; URL direction" time="0.00122613">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; unsupported platform" time="0.001093499">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; missing audio" time="0.000797713">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; valid and non-scene requests retain their staged files for the real renderer" time="0.00165811">
+        </testcase>
+    </testsuite>
+</testsuites>

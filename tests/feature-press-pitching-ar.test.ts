@@ -4,6 +4,8 @@
  */
 import { describe, it, expect } from "vitest";
 
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
 const testUser = {
@@ -69,13 +71,18 @@ async function api(
 
 describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () => {
   it("setup: register and login test user", async () => {
-    await api("POST", "/api/auth/register", testUser);
+    const registered = await api("POST", "/api/auth/register", testUser);
+    expect(registered.status).toBe(200);
+    await provisionFixtureEntitlement(testUser.email);
     const r = await api("POST", "/api/auth/login", {
       email: testUser.email,
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await api("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
     // Ensure CSRF token is populated for subsequent POST/PUT/DELETE calls
     await api("GET", "/api/csrf-token");
   });
@@ -132,49 +139,30 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("GET /api/venues/stats returns venue statistics", async () => {
-      try {
-        const r = await api("GET", "/api/venues/stats");
-        expect([200, 500]).toContain(r.status);
-      } catch (e) {
-        // AbortError from timeout — Neon cold-start or PDIM congestion; skip gracefully
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("GET", "/api/venues/stats");
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/venues creates a venue", async () => {
       // Schema requires `venueName` (not `name`) as the primary identifier field
-      try {
-        const r = await api("POST", "/api/venues", {
-          venueName: "The Test Venue",
-          city: "Chicago",
-          state: "IL",
-          country: "US",
-          capacity: 500,
-          venueType: "club",
-          contactName: "John Booker",
-          contactEmail: "booker@venue-test.invalid",
-        });
-        expect([200, 201]).toContain(r.status);
-        const body = r.json as Record<string, unknown>;
-        venueId = (body.id ?? body.venue?.id) as string;
-        expect(typeof venueId).toBe("string");
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("POST", "/api/venues", {
+        venueName: "The Test Venue",
+        city: "Chicago",
+        state: "IL",
+        country: "US",
+        capacity: 500,
+        venueType: "club",
+        contactName: "John Booker",
+        contactEmail: "booker@venue-test.invalid",
+      });
+      expect([200, 201]).toContain(r.status);
+      const body = r.json as Record<string, unknown>;
+      venueId = (body.id ?? body.venue?.id) as string;
+      expect(typeof venueId).toBe("string");
     });
 
     it("GET /api/venues/:id retrieves the created venue", async () => {
-      if (!venueId) return;
+      expect(venueId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/venues/${venueId}`);
       expect(r.status).toBe(200);
       const body = r.json as Record<string, unknown>;
@@ -187,18 +175,22 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("PUT /api/venues/:id updates the venue", async () => {
-      if (!venueId) return;
+      expect(venueId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PUT", `/api/venues/${venueId}`, {
         venueName: "The Updated Venue",
         capacity: 750,
       });
-      expect([200, 204]).toContain(r.status);
+      expect(r.status).toBe(200);
+      const saved = await api("GET", `/api/venues/${venueId}`);
+      expect(saved.status).toBe(200);
+      expect(saved.json).toMatchObject({ venueName: "The Updated Venue", capacity: 750 });
     });
 
     it("DELETE /api/venues/:id removes the venue", async () => {
-      if (!venueId) return;
+      expect(venueId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/venues/${venueId}`);
       expect([200, 204]).toContain(r.status);
+      expect((await api("GET", `/api/venues/${venueId}`)).status).toBe(404);
     });
   });
 
@@ -206,13 +198,20 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
   describe("Playlist Pitching", () => {
     let pitchId = "";
 
-    it("GET /api/playlist-pitching/curators returns curators without auth", async () => {
+    it("GET /api/playlist-pitching/curators requires authentication", async () => {
       const r = await fetch(`${BASE}/api/playlist-pitching/curators`, {
         signal: AbortSignal.timeout(8000),
       });
-      expect(r.status).toBe(200);
+      expect(r.status).toBe(401);
       const json = (await r.json()) as unknown;
       expect(json).toBeTruthy();
+    });
+
+    it("GET /api/playlist-pitching/curators returns curators for a paid account", async () => {
+      const response = await api("GET", "/api/playlist-pitching/curators");
+      expect(response.status).toBe(200);
+      const body = response.json as Record<string, unknown>;
+      expect(Array.isArray(body.curators ?? body)).toBe(true);
     });
 
     it("GET /api/playlist-pitching returns list", async () => {
@@ -223,50 +222,32 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("GET /api/playlist-pitching/stats returns statistics", async () => {
-      try {
-        const r = await api("GET", "/api/playlist-pitching/stats");
-        expect([200, 500]).toContain(r.status);
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("GET", "/api/playlist-pitching/stats");
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/playlist-pitching creates a pitch", async () => {
-      try {
-        const r = await api("POST", "/api/playlist-pitching", {
-          trackTitle: "Test Track",
-          artistName: "Test Artist",
-          genre: "hip-hop",
-          curatorName: "Top Curator",
-          playlistName: "Hot Tracks 2025",
-          pitchNote: "This track fits your vibe perfectly.",
-        });
-        expect([200, 201]).toContain(r.status);
-        const body = r.json as Record<string, unknown>;
-        pitchId = (body.id ?? body.pitch?.id) as string;
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("POST", "/api/playlist-pitching", {
+        trackTitle: "Test Track",
+        artistName: "Test Artist",
+        genre: "hip-hop",
+        curatorName: "Top Curator",
+        playlistName: "Hot Tracks 2025",
+        pitchNote: "This track fits your vibe perfectly.",
+      });
+      expect([200, 201]).toContain(r.status);
+      const body = r.json as Record<string, unknown>;
+      pitchId = (body.id ?? body.pitch?.id) as string;
     });
 
     it("GET /api/playlist-pitching/:id retrieves pitch", async () => {
-      if (!pitchId) return;
+      expect(pitchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/playlist-pitching/${pitchId}`);
       expect(r.status).toBe(200);
     });
 
     it("PATCH /api/playlist-pitching/:id/status updates status", async () => {
-      if (!pitchId) return;
+      expect(pitchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PATCH", `/api/playlist-pitching/${pitchId}/status`, {
         status: "submitted",
       });
@@ -274,7 +255,7 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("DELETE /api/playlist-pitching/:id removes pitch", async () => {
-      if (!pitchId) return;
+      expect(pitchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/playlist-pitching/${pitchId}`);
       expect([200, 204]).toContain(r.status);
     });
@@ -290,50 +271,32 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("GET /api/radio-pitches/stats returns statistics", async () => {
-      try {
-        const r = await api("GET", "/api/radio-pitches/stats");
-        expect([200, 500]).toContain(r.status);
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("GET", "/api/radio-pitches/stats");
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/radio-pitches creates a pitch", async () => {
       // Schema requires `targetName` (the station/DJ name) instead of separate stationName/djName
-      try {
-        const r = await api("POST", "/api/radio-pitches", {
-          trackTitle: "Radio Ready Hit",
-          targetName: "WKTU FM — DJ Tester",
-          targetType: "radio",
-          genre: "pop",
-          pitchNote: "Perfect for morning drive.",
-        });
-        expect([200, 201]).toContain(r.status);
-        const body = r.json as Record<string, unknown>;
-        radioId = (body.id ?? body.pitch?.id) as string;
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("POST", "/api/radio-pitches", {
+        trackTitle: "Radio Ready Hit",
+        targetName: "WKTU FM — DJ Tester",
+        targetType: "radio",
+        genre: "pop",
+        pitchNote: "Perfect for morning drive.",
+      });
+      expect([200, 201]).toContain(r.status);
+      const body = r.json as Record<string, unknown>;
+      radioId = (body.id ?? body.pitch?.id) as string;
     });
 
     it("GET /api/radio-pitches/:id retrieves pitch", async () => {
-      if (!radioId) return;
+      expect(radioId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/radio-pitches/${radioId}`);
       expect(r.status).toBe(200);
     });
 
     it("DELETE /api/radio-pitches/:id removes pitch", async () => {
-      if (!radioId) return;
+      expect(radioId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/radio-pitches/${radioId}`);
       expect([200, 204]).toContain(r.status);
     });
@@ -349,51 +312,33 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("GET /api/label-submissions/stats returns statistics", async () => {
-      try {
-        const r = await api("GET", "/api/label-submissions/stats");
-        expect([200, 500]).toContain(r.status);
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("GET", "/api/label-submissions/stats");
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/label-submissions creates a submission", async () => {
-      try {
-        // Schema requires `trackTitle` and `labelName` as primary fields
-        const r = await api("POST", "/api/label-submissions", {
-          trackTitle: "Breakthrough Single",
-          labelName: "Interscope Test",
-          artistName: "Test Artist",
-          contactName: "A&R Rep",
-          contactEmail: "anr@label-test.invalid",
-          notes: "Chart-ready single with 500k streams.",
-        });
-        expect([200, 201]).toContain(r.status);
-        const body = r.json as Record<string, unknown>;
-        submissionId = (body.id ?? body.submission?.id) as string;
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      // Schema requires `trackTitle` and `labelName` as primary fields
+      const r = await api("POST", "/api/label-submissions", {
+        trackTitle: "Breakthrough Single",
+        labelName: "Interscope Test",
+        artistName: "Test Artist",
+        contactName: "A&R Rep",
+        contactEmail: "anr@label-test.invalid",
+        notes: "Chart-ready single with 500k streams.",
+      });
+      expect([200, 201]).toContain(r.status);
+      const body = r.json as Record<string, unknown>;
+      submissionId = (body.id ?? body.submission?.id) as string;
     });
 
     it("GET /api/label-submissions/:id retrieves submission", async () => {
-      if (!submissionId) return;
+      expect(submissionId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/label-submissions/${submissionId}`);
       expect(r.status).toBe(200);
     });
 
     it("PATCH /api/label-submissions/:id/status updates status", async () => {
-      if (!submissionId) return;
+      expect(submissionId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api(
         "PATCH",
         `/api/label-submissions/${submissionId}/status`,
@@ -403,7 +348,7 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("POST /api/label-submissions/:id/followup logs a followup", async () => {
-      if (!submissionId) return;
+      expect(submissionId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api(
         "POST",
         `/api/label-submissions/${submissionId}/followup`,
@@ -413,7 +358,7 @@ describe("Feature: Press Kit, Venues, Pitching, Radio, Label Submissions", () =>
     });
 
     it("DELETE /api/label-submissions/:id removes submission", async () => {
-      if (!submissionId) return;
+      expect(submissionId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/label-submissions/${submissionId}`);
       expect([200, 204]).toContain(r.status);
     });

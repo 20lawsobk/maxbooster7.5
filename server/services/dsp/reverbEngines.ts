@@ -840,6 +840,8 @@ export class CathedralReverbProcessor implements DSPProcessor {
   private lpFilters: OnePoleFilter[] = [];
   private hpFilter: BiquadFilter;
   private sampleRate: number = 44100;
+  private reflectionSampleRate: number = 0;
+  private readonly reflectionTimesMs = [23, 37, 53, 71, 97, 127, 163, 199, 239, 283, 331, 383, 439, 499, 563, 631];
 
   constructor() {
     this.preDelay = new DelayLine(176400);
@@ -877,6 +879,17 @@ export class CathedralReverbProcessor implements DSPProcessor {
     const damping = (params?.damping as number) ?? 0.25;
     const crossfeed = (params?.crossfeed as number) ?? 0.3;
     const erLevel = (params?.earlyLevel as number) ?? 0.4;
+    if (!Number.isFinite(size) || size < 0 || size > 1) {
+      throw new RangeError("Cathedral reverb size must be in [0, 1]");
+    }
+    if (this.reflectionSampleRate !== this.sampleRate) {
+      // Each reflection must fit its actual time at the current sample rate.
+      // The former fixed-size lines were shorter than later reflections and
+      // indexed negative buffer offsets even with default controls.
+      this.earlyReflections = this.reflectionTimesMs.map(milliseconds =>
+        new DelayLine(Math.ceil(milliseconds * this.sampleRate / 1000) + 1));
+      this.reflectionSampleRate = this.sampleRate;
+    }
 
     const preDelaySamples = msToSamples(preDelayMs, this.sampleRate);
     const decayFactor = Math.pow(0.001, 1 / ((decay * this.sampleRate) / 4000));
@@ -892,9 +905,7 @@ export class CathedralReverbProcessor implements DSPProcessor {
       );
     }
 
-    const erDelays = [
-      23, 37, 53, 71, 97, 127, 163, 199, 239, 283, 331, 383, 439, 499, 563, 631,
-    ];
+    const erDelays = this.reflectionTimesMs;
     const erGains = erDelays?.map((_, i) => 0.9 * Math.pow(0.85, i / 4));
 
     for (let i = 0; i < input?.samples[0].length; i++) {

@@ -279,6 +279,8 @@ export class UprightPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.damperEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.bodyFilter.clear();
     this.warmthFilter.clear();
@@ -399,6 +401,8 @@ export class ElectricPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.tineEnvelope.reset();
     this.tineOsc.reset();
     this.toneBarOsc.reset();
     this.tremoloLFO.reset();
@@ -507,6 +511,9 @@ export class ClavinetSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.pickupEnvelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -596,6 +603,7 @@ export class HonkyTonkSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((s) => s?.forEach((o) => o?.reset()));
     this.bodyFilter.clear();
     this.lpFilter.clear();
@@ -684,6 +692,8 @@ export class ToyPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.strikeEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.metalFilter.clear();
     this.highBoost.clear();
@@ -777,6 +787,8 @@ export class TackPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.tackEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.tackOsc.reset();
     this.bodyFilter.clear();
@@ -887,6 +899,8 @@ export class PreparedPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.muteEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.noiseOsc.reset();
     this.lpFilter.clear();
@@ -974,6 +988,8 @@ export class FeltPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.softEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.warmthFilter.clear();
@@ -1076,6 +1092,8 @@ export class GlassPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.bellEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.bellFilter.clear();
@@ -1084,15 +1102,15 @@ export class GlassPianoSynth implements SynthesizerEngine {
   }
 }
 
-export const PIANO_SYNTHESIZERS: Record<string, () => SynthesizerEngine> = {
-  "grand-piano": () => new GrandPianoSynth(),
-  "upright-piano": () => new UprightPianoSynth(),
-  "electric-piano": () => new ElectricPianoSynth(),
-  clavinet: () => new ClavinetSynth(),
-  "honky-tonk": () => new HonkyTonkSynth(),
-  "toy-piano": () => new ToyPianoSynth(),
-  "tack-piano": () => new TackPianoSynth(),
-  "prepared-piano": () => new PreparedPianoSynth(),
-  "felt-piano": () => new FeltPianoSynth(),
-  "glass-piano": () => new GlassPianoSynth(),
+export const PIANO_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
+  "grand-piano": GrandPianoSynth,
+  "upright-piano": UprightPianoSynth,
+  "electric-piano": ElectricPianoSynth,
+  clavinet: ClavinetSynth,
+  "honky-tonk": HonkyTonkSynth,
+  "toy-piano": ToyPianoSynth,
+  "tack-piano": TackPianoSynth,
+  "prepared-piano": PreparedPianoSynth,
+  "felt-piano": FeltPianoSynth,
+  "glass-piano": GlassPianoSynth,
 };

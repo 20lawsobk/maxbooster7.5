@@ -156,6 +156,9 @@ router.get(
       if (!pocket) return res.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req.user!.id)
         return res.status(403).json({ error: "Forbidden" });
+      const volume = await fabricStorage.getVolume(req.params.volumeId as string);
+      if (!volume || volume.pocketId !== pocket.id)
+        return res.status(404).json({ error: "Volume not found" });
       const objects = await fabricStorage?.listObjects((req.params.volumeId as string));
       res.json(objects);
     } catch (err) {
@@ -174,6 +177,11 @@ router.get(
       if (!pocket) return res.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req.user!.id)
         return res.status(403).json({ error: "Forbidden" });
+
+      const volume = await fabricStorage.getVolume(req.params.volumeId as string);
+      const metadata = await fabricStorage.getObjectMetadata(req.params.objectId as string);
+      if (!volume || volume.pocketId !== pocket.id || !metadata || metadata.volumeId !== volume.id)
+        return res.status(404).json({ error: "Object not found" });
 
       const result = await fabricStorage?.getObject((req.params.objectId as string));
       if (!result) return res.status(404).json({ error: "Object not found" });
@@ -198,10 +206,16 @@ router.delete(
       if (!pocket) return res.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req.user!.id)
         return res.status(403).json({ error: "Forbidden" });
+      const volume = await fabricStorage.getVolume(req.params.volumeId as string);
+      const metadata = await fabricStorage.getObjectMetadata(req.params.objectId as string);
+      if (!volume || volume.pocketId !== pocket.id || !metadata || metadata.volumeId !== volume.id)
+        return res.status(404).json({ error: "Object not found" });
       await fabricStorage?.deleteObject((req.params.objectId as string));
       res.status(204).end();
     } catch (err) {
       logger.warn({ err: err }, "[FabricRoute] deleteObject:");
+      if (err instanceof Error && "statusCode" in err && err.statusCode === 409)
+        return res.status(409).json({ error: err.message, code: "FABRIC_DEPENDENCY_IN_USE" });
       res.status(500).json({ error: sanitizeError(err) });
     }
   },

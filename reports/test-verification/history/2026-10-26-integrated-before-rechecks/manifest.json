@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "preservedAt": "2026-10-27T04:48:16.302798+00:00",
+  "scope": "Completed frozen-source Oct26 integrated master before subsequent rechecks; exact report bytes retained, no app raw log or full coverage duplication",
+  "sourceBaseline": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "artifacts": [
+    {
+      "source": "reports/test-verification/orchestration/results.json",
+      "path": "orchestration/results.json",
+      "bytes": 13792,
+      "sha256": "e3cf4a93554b8a2b3876a1aedebe6c24cee450b0ad63d118aa2ef7d9e3862c97"
+    },
+    {
+      "source": "reports/test-verification/orchestration/source-inputs.json",
+      "path": "orchestration/source-inputs.json",
+      "bytes": 512927,
+      "sha256": "2fe01eb2950ff087c13dd57fa2bde30ef6cd45d7c4b545e359b265dfb8cc90c3"
+    },
+    {
+      "source": "reports/test-verification/summary.json",
+      "path": "summary.json",
+      "bytes": 267732,
+      "sha256": "ab57151be4c6b9c1847ebd34aa038c417825ce95510fcf54fa2efb00754a86b9"
+    },
+    {
+      "source": "reports/test-verification/file-status.json",
+      "path": "file-status.json",
+      "bytes": 595027,
+      "sha256": "0dea45052ed37b190348c1835e3cf49a0ada726a73bfb126242a98dbd5db8a3e"
+    },
+    {
+      "source": "reports/test-verification/case-results.json",
+      "path": "case-results.json",
+      "bytes": 1480190,
+      "sha256": "87606818e51f0756ddd0287a7ac3af8fe6fe5e1f139a921ab40e6a1a54f4b894"
+    },
+    {
+      "source": "reports/test-verification/root/unit.junit.xml",
+      "path": "root/unit.junit.xml",
+      "bytes": 723248,
+      "sha256": "869747dbe79350e46d2662e93b44ce93bd232d74f0a9312865f7119ede48e35e"
+    },
+    {
+      "source": "reports/test-verification/root/coverage-unit.junit.xml",
+      "path": "root/coverage-unit.junit.xml",
+      "bytes": 723243,
+      "sha256": "34d522e610272480119d7f4b3399eec9b310ff581bf8eb9aa38428b940eee2ef"
+    },
+    {
+      "source": "reports/test-verification/coverage/coverage-summary.json",
+      "path": "coverage/coverage-summary.json",
+      "bytes": 801257,
+      "sha256": "3e23250ca57eeb2b8ce23576d4bedc34ff46cfabbd0c2aeb0292c98bcebd8fa1"
+    },
+    {
+      "source": "reports/test-verification/integration-browser/http/integration.junit.xml",
+      "path": "integration-browser/http/integration.junit.xml",
+      "bytes": 120403,
+      "sha256": "31282212e0243533b1020ebe4e50b607c535cbfd5a6e6b49863ee46901a123e1"
+    },
+    {
+      "source": "reports/test-verification/integration-browser/http/summary.json",
+      "path": "integration-browser/http/summary.json",
+      "bytes": 3427,
+      "sha256": "5c5ebfa519a318ffe2206403cfe724806348292e32b7beab4d99b738a70a73cc"
+    },
+    {
+      "source": "reports/test-verification/orchestration/ci.txt",
+      "path": "orchestration/ci.txt",
+      "bytes": 637223,
+      "sha256": "cdaf112c136f14368c5d78c83d5eeb4ad4cdc42c9143e0d4b97474721010633d"
+    },
+    {
+      "source": "reports/test-verification/orchestration/coverage.txt",
+      "path": "orchestration/coverage.txt",
+      "bytes": 1071950,
+      "sha256": "3f692cffa7c373bfea80f945b5e84da9b95c90ca3be455f1fb10c5453d3c14d3"
+    },
+    {
+      "source": "reports/test-verification/orchestration/http.txt",
+      "path": "orchestration/http.txt",
+      "bytes": 3427,
+      "sha256": "5c5ebfa519a318ffe2206403cfe724806348292e32b7beab4d99b738a70a73cc"
+    },
+    {
+      "source": "reports/test-verification/orchestration/platform.txt",
+      "path": "orchestration/platform.txt",
+      "bytes": 321,
+      "sha256": "60fbf8d28dd9e8219fc85030635d94a63d37640b08efef19edfd12204ea0f469"
+    },
+    {
+      "source": "reports/test-verification/orchestration/remediation.txt",
+      "path": "orchestration/remediation.txt",
+      "bytes": 252,
+      "sha256": "f21cb10bb592d0c3f05a63932d1a6939b337bf3adf9d5f7341dde54727fa461c"
+    }
+  ],
+  "notPresent": [],
+  "verification": {
+    "artifactDigests": "pass",
+    "junitXml": "pass",
+    "configuredCredentialExactMatches": 0
+  }
+}

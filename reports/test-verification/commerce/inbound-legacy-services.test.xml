@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="actual storefront membership service prices tiers, subscribes, and cancels with customer ownership" time="0.029672" classname="test"/>
-	<testcase name="legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts" time="0.022534" classname="test"/>
-	<testcase name="legacy StripeService and BeatService execute subscription/payment-intent purchase functions" time="0.028929" classname="test"/>
+	<testcase name="actual storefront membership service prices tiers, subscribes, and cancels with customer ownership" time="0.037011" classname="test"/>
+	<testcase name="legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts" time="0.028439" classname="test"/>
+	<testcase name="legacy StripeService and BeatService execute subscription/payment-intent purchase functions" time="0.040685" classname="test"/>
 	<!-- tests 3 -->
 	<!-- suites 0 -->
 	<!-- pass 3 -->
@@ -10,5 +10,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 146.764767 -->
+	<!-- duration_ms 183.880384 -->
 </testsuites>

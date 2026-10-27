@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
@@ -28,3 +29,16 @@ pool.on("error", (err) => {
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
+
+import { createFabricChunkFence } from "./fabricChunkFence.js";
+export const withFabricChunkLock = createFabricChunkFence(pool);
+
+const catalogFence = createFabricChunkFence(pool);
+const inCatalog = new AsyncLocalStorage<{ active: boolean }>();
+export async function withFabricCatalogLock<T>(work: () => Promise<T>): Promise<T> {
+  if (inCatalog.getStore()?.active) return work();
+  const context = { active: true };
+  return catalogFence("imported-catalog", () => inCatalog.run(context, async () => {
+    try { return await work(); } finally { context.active = false; }
+  }));
+}

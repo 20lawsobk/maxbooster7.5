@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: DEPLOY_PACK alone cannot relocate local recovery
 ok 1 - DEPLOY_PACK alone cannot relocate local recovery
   ---
-  duration_ms: 0.801459
+  duration_ms: 0.730922
   type: 'test'
   ...
 # Subtest: publishing CLI refuses recovery mutations without root authorization
 ok 2 - publishing CLI refuses recovery mutations without root authorization
   ---
-  duration_ms: 88.399195
+  duration_ms: 83.3975
   type: 'test'
   ...
 # Subtest: publishing snapshots survive removal of ignored build-copy state and recover in fresh Node
 ok 3 - publishing snapshots survive removal of ignored build-copy state and recover in fresh Node
   ---
-  duration_ms: 99.682531
+  duration_ms: 86.426409
   type: 'test'
   ...
 # Subtest: real pack, publishing cleanup and fresh-process recovery preserve build inputs
 ok 4 - real pack, publishing cleanup and fresh-process recovery preserve build inputs
   ---
-  duration_ms: 296.244414
+  duration_ms: 307.962258
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - real pack, publishing cleanup and fresh-process recovery preserve build i
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 619.801424
+# duration_ms 611.985448

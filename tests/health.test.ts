@@ -5,6 +5,22 @@
 import { describe, it, expect, beforeAll } from "vitest";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+const sealedWithoutMaxcore = process.env.TEST_EXPECT_MAXCORE_UNAVAILABLE === "1";
+
+function assertStartupReadiness(r: Awaited<ReturnType<typeof get>>) {
+  if (!sealedWithoutMaxcore) {
+    expect(r.status).toBe(200);
+    expect(r.json.phase).toBe("ready");
+    return;
+  }
+  // This fixture explicitly excludes MaxCore. It must still prove its real
+  // database and PDIM dependencies, and must not advertise generation-ready.
+  expect(r.status).toBe(503);
+  expect(r.json).toMatchObject({ status: "not_ready", phase: "degraded" });
+  expect(r.json.probes.database.status).toBe("ready");
+  expect(r.json.probes.redis.status).toBe("ready");
+  expect(r.json.probes.maxcore.status).toBe("degraded");
+}
 
 async function get(path: string) {
   const res = await fetch(`${BASE}${path}`, {
@@ -34,15 +50,26 @@ describe("Liveness and Readiness Endpoints", () => {
     expect(r.json.timestamp).toBeDefined();
   });
 
-  it("GET /ready returns 200 (probes passed)", async () => {
+  it("GET /ready reflects the actual admitted dependency set", async () => {
     const r = await get("/ready");
-    expect(r.status).toBe(200);
-    expect(["ready", "degraded"]).toContain(r.json.phase);
+    assertStartupReadiness(r);
   });
 
-  it("GET /api/ready returns 200", async () => {
+  it("GET /api/ready does not confuse a sealed fixture with full readiness", async () => {
     const r = await get("/api/ready");
-    expect(r.status).toBe(200);
+    if (!sealedWithoutMaxcore) {
+      expect(r.status).toBe(200);
+      expect(r.json.unifiedAwareness.ready).toBe(true);
+      return;
+    }
+    expect(r.status).toBe(503);
+    expect(r.json.status).toBe("degraded");
+    expect(r.json.unifiedAwareness.ready).toBe(false);
+    const statuses = new Map<string, string>(r.json.subsystems.map((item: { name: string; status: string }) => [item.name, item.status]));
+    for (const name of ["database", "redis", "routes"]) expect(statuses.get(name)).toBe("ok");
+    for (const item of r.json.subsystems) {
+      if (item.name !== "maxcore") expect(["ok", "unknown"]).toContain(item.status);
+    }
   });
 
   it("GET /healthz returns 200", async () => {
@@ -50,9 +77,9 @@ describe("Liveness and Readiness Endpoints", () => {
     expect(r.status).toBe(200);
   });
 
-  it("GET /readyz returns 200", async () => {
+  it("GET /readyz uses the same truthful readiness contract", async () => {
     const r = await get("/readyz");
-    expect(r.status).toBe(200);
+    assertStartupReadiness(r);
   });
 
   it("GET /api/ping returns ok:true", async () => {

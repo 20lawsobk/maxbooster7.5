@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: production container context admits only prepared portable payload
 ok 1 - production container context admits only prepared portable payload
   ---
-  duration_ms: 2.718149
+  duration_ms: 2.631059
   type: 'test'
   ...
 # Subtest: production image executes verified payload as a non-root user
 ok 2 - production image executes verified payload as a non-root user
   ---
-  duration_ms: 0.299041
+  duration_ms: 0.386824
   type: 'test'
   ...
 # Subtest: container rehearsal removes its private database volume without global cleanup
 ok 3 - container rehearsal removes its private database volume without global cleanup
   ---
-  duration_ms: 0.255265
+  duration_ms: 0.265771
   type: 'test'
   ...
 # Subtest: container artifact verifier uses the declared public model mode without ambient secrets
 ok 4 - container artifact verifier uses the declared public model mode without ambient secrets
   ---
-  duration_ms: 0.219111
+  duration_ms: 0.260743
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - container artifact verifier uses the declared public model mode without a
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 113.194162
+# duration_ms 144.491187

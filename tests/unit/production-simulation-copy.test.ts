@@ -11,6 +11,7 @@ import {
   assertNoSelectedMaxCoreCandidate,
   MAXCORE_SELECTED_CANDIDATE_POINTER,
 } from "../../script/lib/deploymentPreflight.js";
+import { inventory, sourceIncluded } from "../../script/lib/releaseInventory.js";
 
 describe("production simulation filtered copy", () => {
   let temporaryRoot = "";
@@ -38,6 +39,8 @@ describe("production simulation filtered copy", () => {
       [".agents/memory/MEMORY.md", "workspace memory fixture"],
       [".cloudflared/config.yml", "tunnel config fixture"],
       [".capsule-temp/partial.pdim", "temporary capsule fixture"],
+      [".pdim-scratch-external_maxcore-123/external/maxcore/.agents/memory/MEMORY.md", "private restore scratch fixture"],
+      [".pdim-cluster-test-123/cluster-fixture.mjs", "cluster test bundle fixture"],
       [".github/workflows/deploy.yml", "workspace workflow fixture"],
       [".pythonlibs/lib/python3.12/site-packages/large-cache", "local Python cache"],
       ["venv/bin/python", "workspace interpreter fixture"],
@@ -143,6 +146,8 @@ describe("production simulation filtered copy", () => {
       ".config/local/credentials.json",
       ".agents/memory/MEMORY.md",
       ".capsule-temp/partial.pdim",
+      ".pdim-scratch-external_maxcore-123",
+      ".pdim-cluster-test-123",
       ".github/workflows/deploy.yml",
       ".pythonlibs/lib/python3.12/site-packages/large-cache",
       "ai_model/weights/model.pt",
@@ -198,6 +203,22 @@ describe("production simulation filtered copy", () => {
     expect(shouldCopyProductionSimulationPath(".cloudflared/config.yml")).toBe(
       false,
     );
+  });
+
+  it("ignores changing restore/test scratch in release identity while binding runtime changes", async () => {
+    temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "release-scratch-identity-"));
+    await fs.mkdir(path.join(temporaryRoot, "server"));
+    await fs.writeFile(path.join(temporaryRoot, "server/index.ts"), "runtime before");
+    const initial = await inventory(temporaryRoot, sourceIncluded);
+    for (const directory of [".pdim-scratch-external_maxcore-123", ".pdim-cluster-test-123"]) {
+      await fs.mkdir(path.join(temporaryRoot, directory));
+      await fs.writeFile(path.join(temporaryRoot, directory, "fixture.mjs"), "private scratch");
+    }
+    expect(await inventory(temporaryRoot, sourceIncluded)).toEqual(initial);
+    await fs.writeFile(path.join(temporaryRoot, "server/index.ts"), "runtime after");
+    expect(await inventory(temporaryRoot, sourceIncluded)).not.toEqual(initial);
+    await expect(fs.readFile(path.join(temporaryRoot, ".pdim-cluster-test-123/fixture.mjs"), "utf8"))
+      .resolves.toBe("private scratch");
   });
 });
 

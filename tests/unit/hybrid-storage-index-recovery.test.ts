@@ -43,6 +43,16 @@ vi.mock("../../server/logger.js", () => ({
 
 vi.mock("@replit/object-storage", () => ({ Client: class {} }));
 
+// These tests isolate legacy snapshot parsing/retry semantics. The separate
+// hybrid-storage-postgres suite executes the actual SQL repository and races.
+vi.mock("../../server/services/hybridStorageRepository.js", () => ({
+  HybridStorageRepository: class {
+    async importLegacy(load: () => Promise<unknown>) { await load(); }
+    async list() { return []; }
+  },
+}));
+vi.mock("../../server/db.js", () => ({ pool: {} }));
+
 async function freshService() {
   vi.resetModules();
   const module = await import("../../server/services/hybridStorageService.ts");
@@ -60,7 +70,7 @@ describe("HybridStorageService ownership-index recovery", () => {
   it("accepts an authoritative absent index as a new empty store", async () => {
     const service = await freshService();
     await expect(service.initialize()).resolves.toBeUndefined();
-    expect(service.listFiles("new-owner")).toEqual([]);
+    expect(await service.listFiles("new-owner")).toEqual([]);
     expect(state.writes).toEqual([]);
   });
 
@@ -101,7 +111,7 @@ describe("HybridStorageService ownership-index recovery", () => {
     state.readFailure = null;
     state.raw = null;
     await expect(service.initialize()).resolves.toBeUndefined();
-    expect(service.listFiles("new-owner")).toEqual([]);
+    expect(await service.listFiles("new-owner")).toEqual([]);
     expect(state.writes).toEqual([]);
   });
 

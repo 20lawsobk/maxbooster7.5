@@ -3,7 +3,7 @@
 ai_model/training/test_live_learning.py::LiveLearningTests::test_actual_router_auth_and_validation
 ai_model/training/test_live_learning.py::LiveLearningTests::test_interrupted_worker_never_passes_registry_and_list_reconciles
 ai_model/training/test_live_learning.py::LiveLearningTests::test_status_endpoint_is_authorized_and_does_not_expose_text
-  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:372: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:531: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -12,4 +12,4 @@ ai_model/training/test_live_learning.py::LiveLearningTests::test_status_endpoint
     @router.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-13 passed, 3 warnings, 8 subtests passed in 5.67s
+13 passed, 3 warnings, 8 subtests passed in 8.37s

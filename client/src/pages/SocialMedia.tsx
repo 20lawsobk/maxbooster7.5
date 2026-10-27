@@ -1465,8 +1465,8 @@ export default function SocialMedia() {
     },
     onSuccess: () => {
       toast({
-        title: "Post Published!",
-        description: "Your post has been published to selected platforms.",
+        title: "Post Queued",
+        description: "Your post is queued for delivery. The calendar will show the confirmed outcome.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/social/calendar"] });
       queryClient.invalidateQueries({
@@ -1560,8 +1560,8 @@ export default function SocialMedia() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Posts Published",
-        description: `${data.published ?? 0} post${data.published !== 1 ? "s" : ""} published successfully.`,
+        title: "Publishing Queue Updated",
+        description: `${data.queuedCount ?? 0} post${data.queuedCount !== 1 ? "s" : ""} queued for delivery.${data.outcomes?.some((outcome: { queued: boolean }) => !outcome.queued) ? " Some posts could not be queued; review their connection or delivery state." : ""}`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/social/calendar"] });
       queryClient.invalidateQueries({

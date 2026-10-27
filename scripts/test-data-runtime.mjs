@@ -305,7 +305,9 @@ try {
   await assert.rejects(backups.restoreBackup(keys[0], "postgres://isolated/recovery", "SELECT 1;"), /Restore failed/);
   assert.equal(backupTest.spawnArgs.at(-1).cmd, "/fixture/postgresql-17/bin/psql");
   assert.equal(backupTest.spawnArgs.at(-1).args.includes("ON_ERROR_STOP=1"), true);
-  assert.equal(backupTest.spawnArgs.at(-1).options.env.PGDATABASE, "postgres://isolated/recovery");
+  assert.equal(backupTest.spawnArgs.at(-1).options.env.PGDATABASE, "recovery");
+  assert.equal(backupTest.spawnArgs.at(-1).options.env.PGHOST, "isolated");
+  assert.equal(backupTest.spawnArgs.at(-1).args.includes("postgres://isolated/recovery"), false);
   assert.deepEqual(backupTest.toolSelections.at(-1), {
     operation: "restore",
     url: "postgres://isolated/recovery",

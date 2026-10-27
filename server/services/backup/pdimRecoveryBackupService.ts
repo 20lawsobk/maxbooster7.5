@@ -47,6 +47,8 @@ export type PublicPdimRecoveryJob = {
     isolatedRestoreVerified: true;
     retention: "retained-until-explicit-delete";
     fixedDurationLocked: false;
+    metadataScope?: "legacy-pdim-index-only";
+    currentSqlMetadataRecovered?: false;
   };
   blocker?: string;
   retainedUnverified?: {
@@ -109,7 +111,11 @@ async function runActualClassVerifier(root: string): Promise<VerificationEvidenc
   const line = stdout.split("\n").find(value =>
     value.startsWith("RETAINED_PDIM_RESULT "));
   if (!line) throw new Error("Isolated PDIM verifier returned no receipt");
-  return JSON.parse(line.slice("RETAINED_PDIM_RESULT ".length));
+  const evidence = JSON.parse(line.slice("RETAINED_PDIM_RESULT ".length));
+  if (evidence.metadataScope !== "legacy-pdim-index-only" || evidence.currentSqlMetadataRecovered !== false) {
+    throw new Error("Legacy PDIM verifier did not declare its PostgreSQL recovery boundary");
+  }
+  return evidence;
 }
 
 export function assertMatchingPdimRecoveryEvidence(
@@ -246,6 +252,8 @@ async function execute(job: PublicPdimRecoveryJob): Promise<void> {
       isolatedRestoreVerified: true,
       retention: storageContract.retention,
       fixedDurationLocked: storageContract.fixedDurationLocked,
+      metadataScope: "legacy-pdim-index-only",
+      currentSqlMetadataRecovered: false,
     };
     job.state = "complete";
   } catch (error) {

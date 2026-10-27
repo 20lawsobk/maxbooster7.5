@@ -26,6 +26,7 @@ vi.mock("../../server/logger.js", () => ({
 }));
 
 import { SelfHealingSecurityEngine } from "../../server/services/selfHealingSecurityEngine.js";
+import { logger } from "../../server/logger.js";
 import { SecurityContainment } from "../../server/services/securityContainment.js";
 import { createSelfHealingSecurityMiddleware } from "../../server/middleware/selfHealingMiddleware.js";
 
@@ -39,6 +40,7 @@ type FakeDbOptions = {
   selectError?: Error;
   insertError?: Error;
   deleteError?: Error;
+  admins?: Array<{ id: string }>;
 };
 
 function fakeDb(options: FakeDbOptions = {}) {
@@ -51,10 +53,18 @@ function fakeDb(options: FakeDbOptions = {}) {
     return options.loaded ?? [];
   });
   const database = {
-    select: vi.fn(() => selectChain),
+    select: vi.fn((selection?: { id?: unknown }) => {
+      if (selection?.id) {
+        return { from: vi.fn(() => ({ where: vi.fn(async () => {
+          if (options.selectError) throw options.selectError;
+          return options.admins ?? [{ id: "fixture-admin" }];
+        }) })) };
+      }
+      return selectChain;
+    }),
     insert: vi.fn(() => ({
       values: vi.fn(async (value: Record<string, any>) => {
-        writes.push(value);
+        writes.push(...(Array.isArray(value) ? value : [value]));
         if (options.insertError) throw options.insertError;
       }),
     })),
@@ -183,6 +193,154 @@ describe("real self-healing engine detect/respond/recover", () => {
     engine.stop();
   });
 
+  it("handles partial events and exempts only browser session-maintenance paths", async () => {
+    const { engine, writes } = await newEngine();
+    engine.processSecurityEvent({});
+    expect(engine.getStatus().queueSize).toBe(1);
+    await vi.advanceTimersByTimeAsync(10);
+    expect(engine.getStatus().queueSize).toBe(0);
+    expect(engine.getMetrics().threatsDetected).toBe(0);
+    for (const path of ["/api/auth/me", "/api/auth/refresh-token", "/api/auth/heartbeat"]) {
+      engine.processSecurityEvent({ source: { ip: SQL_IP, userAgent: "Mozilla/5.0" },
+        payload: { path, body: { q: "' UNION SELECT password FROM users --" } } });
+    }
+    await settle();
+    expect(writes).toEqual([]);
+    engine.processSecurityEvent({ source: { ip: SQL_IP, userAgent: "Mozilla/5.0" },
+      payload: { path: "/api/search", body: { q: "' UNION SELECT password FROM users --" } } });
+    await settle();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
+  it("retains all indicators and SQL precedence for a mixed injection", async () => {
+    const { engine, writes } = await newEngine();
+    send(engine, SQL_IP, "' UNION SELECT x FROM users; <script>run()</script> ../../etc/passwd; rm -rf / *)(uid=*) <!DOCTYPE x [<!ENTITY y SYSTEM 'file:///x'>]> {\"$gt\":\"\"}");
+    await settle();
+    const recovery = writes.find(row => row.threatType === "sql_injection");
+    expect(recovery?.indicators).toEqual(expect.arrayContaining([
+      "SQL injection pattern detected", "XSS pattern detected", "Path traversal attempt",
+      "Command injection pattern", "LDAP injection pattern detected",
+      "XXE/XML injection pattern detected", "NoSQL injection pattern detected",
+    ]));
+    expect(engine.getMetrics().threatsDetected).toBe(1);
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
+  it("bounds metrics history while retaining lifetime threat counters", async () => {
+    const { engine } = await newEngine();
+    for (let index = 0; index < 1005; index++) {
+      send(engine, `198.18.${Math.floor(index / 250)}.${index % 250 + 1}`, "' OR 1=1 --");
+    }
+    await settle();
+    expect(engine.getMetrics().totalHealingTime).toHaveLength(1005);
+    expect(engine.getMetrics().threatsHealed).toBe(1005);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const metrics = engine.getMetrics();
+    for (const samples of [metrics.detectionLatency, metrics.responseLatency,
+      metrics.recoveryLatency, metrics.totalHealingTime]) {
+      expect(samples).toHaveLength(1000);
+    }
+    expect(metrics.threatsDetected).toBe(1005);
+    expect(metrics.threatsHealed).toBe(1005);
+    expect(metrics.sloCompliance.overallCompliant).toBe(true);
+    engine.stop();
+  });
+
+  it("expires a completed request-rate window before admitting a new observation", async () => {
+    const { engine } = await newEngine();
+    send(engine, SQL_IP, "first benign request");
+    await vi.advanceTimersByTimeAsync(20);
+    await vi.advanceTimersByTimeAsync(10_001);
+    send(engine, SQL_IP, "new request window");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(engine.isIpRateLimited(SQL_IP)).toBe(false);
+    expect(engine.getMetrics().threatsDetected).toBe(0);
+    await vi.advanceTimersByTimeAsync(3_605_001);
+    send(engine, SQL_IP, "new request after stale history cleanup");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(engine.getMetrics().threatsDetected).toBe(0);
+    engine.stop();
+  });
+
+  it("accumulates suspicious repeat history without losing the original XSS classification", async () => {
+    const { engine, writes } = await newEngine();
+    for (let repeat = 0; repeat < 4; repeat++) send(engine, XSS_IP, "<script>run()</script>");
+    await settle();
+    const recoveries = writes.filter(row => row.threatType === "xss");
+    expect(recoveries).toHaveLength(4);
+    expect(recoveries.some(row => row.indicators.some((indicator: string) =>
+      indicator.startsWith("Suspicious IP history")))).toBe(true);
+    expect(engine.getMetrics().threatsDetected).toBe(4);
+    engine.stop();
+  });
+
+  it("immediately inspects subsequent requests from an IP with established high threat history", async () => {
+    const { engine } = await newEngine();
+    try {
+      send(engine, XSS_IP, "ordinary request before any threat history");
+      expect(engine.getStatus().queueSize).toBe(1);
+      await vi.advanceTimersByTimeAsync(10);
+      for (let repeat = 0; repeat < 3; repeat++) {
+        send(engine, XSS_IP, "<img src=x onerror=alert(1)>");
+        await settle();
+      }
+      expect(engine.getMetrics().threatsDetected).toBe(3);
+      const detected = vi.fn();
+      engine.on("threat_detected", detected);
+      send(engine, XSS_IP, "subsequent request without an explicit injection pattern");
+      expect(engine.getStatus().queueSize).toBe(0);
+      expect(detected).toHaveBeenCalledWith(expect.objectContaining({
+        indicators: expect.arrayContaining([expect.stringMatching(/^Suspicious IP history/)]),
+      }));
+      await settle();
+      expect(engine.getMetrics().threatsDetected).toBe(4);
+      expect(engine.isIpRateLimited(XSS_IP)).toBe(true);
+    } finally {
+      engine.stop();
+    }
+  });
+
+  it("reports slow acknowledged containment as an SLO breach", async () => {
+    let clock = BASE_TIME.getTime();
+    const { database, writes } = fakeDb();
+    const engine = new SelfHealingSecurityEngine({ database, autoStart: false, now: () => clock,
+      containment: {
+        revokeSessions: async () => { clock += 1000; return { confirmed: true, target: "user:artist-1" }; },
+        isolateDependency: vi.fn(), isolateFeature: vi.fn(),
+      },
+    });
+    await engine.start();
+    engine.processSecurityEvent({ source: { ip: SQL_IP, userId: "artist-1" },
+      payload: { path: "/api/search", body: { q: "' OR 1=1 --" } } });
+    await settle();
+    const metrics = engine.getMetrics();
+    expect(metrics.totalHealingTime).toEqual([1000]);
+    expect(metrics.healingSpeedRatio).toBe(7.5);
+    expect(metrics.sloCompliance).toEqual(expect.objectContaining({
+      mttrMet: false, healingRatioMet: false, overallCompliant: false,
+    }));
+    expect(writes.find(row => row.threatType === "sql_injection")?.metadata.healed).toBe(true);
+    engine.stop();
+  });
+
+  it("records failed session containment when the attacker has no authenticated user", async () => {
+    const { engine, writes } = await newEngine();
+    const revokeSessions = vi.fn();
+    engine.configureContainment({ revokeSessions, isolateDependency: vi.fn(), isolateFeature: vi.fn() });
+    send(engine, SQL_IP, "' OR 1=1 --");
+    await settle();
+    const recovery = writes.find(row => row.threatType === "sql_injection");
+    expect(recovery?.metadata.actionOutcomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "session_kill", status: "failed",
+        error: "Error: Session containment requires an authenticated user ID" }),
+    ]));
+    expect(revokeSessions).not.toHaveBeenCalled();
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
   it("blocks SQLi once and deduplicates persistence and recovery", async () => {
     const { engine, writes } = await newEngine();
     send(engine, SQL_IP, "' UNION SELECT password FROM users --");
@@ -214,7 +372,9 @@ describe("real self-healing engine detect/respond/recover", () => {
         }),
       }),
     );
-    expect(writes.filter((row) => row.type === "security_alert")).toHaveLength(1);
+    expect(writes.filter((row) => row.type === "security_alert")).toEqual([
+      expect.objectContaining({ userId: "fixture-admin" }),
+    ]);
     expect(engine.getMetrics().threatsDetected).toBe(1);
     expect(engine.getMetrics().threatsHealed).toBe(1);
     engine.stop();
@@ -412,6 +572,144 @@ describe("real self-healing engine detect/respond/recover", () => {
 });
 
 describe("persistence, recovery, and database failure policy", () => {
+  it("contains an unexpectedly rejected scheduled refresh and keeps the engine running", async () => {
+    const { engine } = await newEngine();
+    const failure = new Error("unexpected refresh rejection");
+    vi.spyOn(engine, "refreshBlocklist").mockRejectedValueOnce(failure);
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(logger.error).toHaveBeenCalledWith({ err: failure }, "Blocked-IP re-sync loop failed unexpectedly:");
+    expect(engine.getStatus().isRunning).toBe(true);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("allowed");
+    engine.stop();
+  });
+
+  it("contains a throwing queued-threat observer and continues draining requests", async () => {
+    const { engine } = await newEngine();
+    const failure = new Error("security observer failed");
+    const observer = () => { throw failure; };
+    engine.on("threat_detected", observer);
+    for (let attempt = 0; attempt < 21; attempt++) send(engine, BRUTE_IP, "wrong password", "authentication");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(logger.warn).toHaveBeenCalledWith({ err: failure }, "Detection error:");
+    expect(engine.getStatus().queueSize).toBe(0);
+    engine.off("threat_detected", observer);
+    send(engine, SQL_IP, "ordinary request");
+    await vi.advanceTimersByTimeAsync(20);
+    expect(engine.getStatus().queueSize).toBe(0);
+    expect(engine.getStatus().isRunning).toBe(true);
+    engine.stop();
+  });
+
+  it("initializes once through concurrent start calls and exposes ready/stop state", async () => {
+    const { database } = fakeDb();
+    const engine = new SelfHealingSecurityEngine({ database, autoStart: false });
+    await engine.ready();
+    expect(engine.getStatus().isRunning).toBe(false);
+    await Promise.all([engine.start(), engine.start(), engine.ready()]);
+    expect(database.select).toHaveBeenCalledTimes(1);
+    expect(engine.getStatus().isRunning).toBe(true);
+    engine.stop();
+    engine.stop();
+    expect(engine.getStatus().isRunning).toBe(false);
+    expect(SelfHealingSecurityEngine.getInstance()).toBe(SelfHealingSecurityEngine.getInstance());
+  });
+
+  it("retries a transient initial policy query with bounded backoff", async () => {
+    const { database } = fakeDb({
+      loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 60_000) }],
+    });
+    const query = database.select().from().where().limit;
+    query.mockRejectedValueOnce(new Error("transient read outage"));
+    const engine = new SelfHealingSecurityEngine({
+      database, autoStart: false, initialLoadAttempts: 3, retryDelayMs: 10,
+    });
+    const started = engine.start();
+    await settle();
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("unknown");
+    await vi.advanceTimersByTimeAsync(10);
+    await started;
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("blocked");
+    engine.stop();
+  });
+
+  it("recovers unknown initial policy through the scheduled resynchronization", async () => {
+    const options: FakeDbOptions = { selectError: new Error("offline during startup") };
+    const { engine } = await newEngine(options);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("unknown");
+    options.selectError = undefined;
+    options.loaded = [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 600_000) }];
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("blocked");
+    expect(engine.getIpBlockStatus(XSS_IP)).toBe("allowed");
+    engine.stop();
+  });
+
+  it("filters expired, malformed and incomplete persisted block records", async () => {
+    const { engine } = await newEngine({ loaded: [
+      { ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 60_000) },
+      { ip: XSS_IP, expiresAt: new Date(BASE_TIME.getTime() - 1) },
+      { ip: BRUTE_IP, expiresAt: new Date("invalid") },
+      { ip: "", expiresAt: new Date(BASE_TIME.getTime() + 60_000) },
+      { ip: "192.0.2.99" } as any,
+    ] });
+    expect(engine.getBlockedIps()).toEqual([SQL_IP]);
+    engine.stop();
+  });
+
+  it("keeps the last finite policy when a refresh fails", async () => {
+    const options: FakeDbOptions = {
+      loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 1_000) }],
+    };
+    const { engine } = await newEngine(options);
+    options.selectError = new Error("refresh read failed");
+    await engine.refreshBlocklist();
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("blocked");
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(engine.getIpBlockStatus(SQL_IP)).toBe("allowed");
+    engine.stop();
+  });
+
+  it("does not discard active blocks when bulk durable deletion fails", async () => {
+    const { engine } = await newEngine({ deleteError: new Error("bulk delete failed") });
+    send(engine, SQL_IP, "' OR 1=1 --");
+    await settle();
+    await expect(engine.clearAllBlocks()).rejects.toThrow("bulk delete failed");
+    expect(engine.getBlockedIps()).toEqual([SQL_IP]);
+    engine.stop();
+  });
+
+  it("records an undelivered inbox alert when no administrator exists", async () => {
+    const { engine, writes } = await newEngine({ admins: [] });
+    send(engine, SQL_IP, "' UNION SELECT password FROM users --");
+    await settle();
+    expect(writes.filter(row => row.type === "security_alert")).toEqual([]);
+    const recovery = writes.find(row => row.threatType === "sql_injection");
+    expect(recovery?.metadata.actionOutcomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "alert", status: "completed", alertSent: false,
+        recipientCount: 0, alertDelivery: "structured_log" }),
+    ]));
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
+  it("redacts non-Error administrator lookup failures without undoing containment", async () => {
+    const { engine, database, writes } = await newEngine();
+    const ordinarySelect = database.select.getMockImplementation();
+    database.select.mockImplementation((selection: unknown) => selection
+      ? { from: () => ({ where: async () => { throw "private provider detail"; } }) }
+      : ordinarySelect!());
+    send(engine, SQL_IP, "' UNION SELECT password FROM users --");
+    await settle();
+    const recovery = writes.find(row => row.threatType === "sql_injection");
+    expect(recovery?.metadata.actionOutcomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "alert", status: "failed", error: "Error: Security alert persistence failed" }),
+    ]));
+    expect(JSON.stringify(recovery)).not.toContain("private provider detail");
+    expect(engine.isIpBlocked(SQL_IP)).toBe(true);
+    engine.stop();
+  });
+
   it("loads a persisted block, expires it, and supports durable unblock", async () => {
     const { engine, database } = await newEngine({
       loaded: [{ ip: SQL_IP, expiresAt: new Date(BASE_TIME.getTime() + 1_000) }],

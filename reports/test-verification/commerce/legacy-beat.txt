@@ -1,71 +1,71 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/workspace/maxbooster7.5[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/workspace/maxbooster7.5[39m
 
-[15:27:40.437] [33mWARN[39m (104799): [36mVAPID keys not configured - Web Push disabled[39m
-[15:27:40.667] [32mINFO[39m (104799): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: stripe[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: sendgrid[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: socialApi[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: twitter[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: facebook[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: instagram[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: linkedin[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: tiktok[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: tiktok_sandbox[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: youtube[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: threads[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: googlebusiness[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: aiService[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: labelGrid[39m
-[15:27:40.668] [32mINFO[39m (104799): [36m🔌 Circuit breaker initialized: dsp[39m
-[15:27:40.669] [32mINFO[39m (104799): [36m🔌 External service circuit breakers initialized[39m
-[15:27:40.683] [33mWARN[39m (104799): [36m⚠️  Resend API key not configured. Email features will be disabled.[39m
-(node:104799) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+[23:41:31.655] [33mWARN[39m (403186): [36mVAPID keys not configured - Web Push disabled[39m
+[23:41:31.948] [32mINFO[39m (403186): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: stripe[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: sendgrid[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: socialApi[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: twitter[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: facebook[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: instagram[39m
+[23:41:31.949] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: linkedin[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: tiktok[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: tiktok_sandbox[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: youtube[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: threads[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: googlebusiness[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: aiService[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: labelGrid[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 Circuit breaker initialized: dsp[39m
+[23:41:31.950] [32mINFO[39m (403186): [36m🔌 External service circuit breakers initialized[39m
+[23:41:31.960] [33mWARN[39m (403186): [36m⚠️  Resend API key not configured. Email features will be disabled.[39m
+(node:403186) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-[15:27:40.714] [32mINFO[39m (104799): [36m[Marketplace] ✅ distributeSplits: 1 split(s) recorded for order test-order-1792942059338 — total $29.99[39m
-[15:27:40.718] [32mINFO[39m (104799): [36m[Marketplace] distributeSplits: order test-order-1792942059338 already has royalty records — skipping (idempotent replay)[39m
-[15:27:40.727] [32mINFO[39m (104799): [36m[Marketplace] processPayment: order test-order2-1792942059338 already completed — reconciling notifications (idempotent replay)[39m
-[15:27:40.735] [33mWARN[39m (104799): [36mResend not initialized, skipping email[39m
-[15:27:40.736] [32mINFO[39m (104799): [36m✅ Notification sent to user test-seller-1792942059338: 💰 Beat Sold![39m
-[15:27:40.737] [33mWARN[39m (104799): [36mResend not initialized, skipping email[39m
-[15:27:40.738] [32mINFO[39m (104799): [36m✅ Notification sent to user test-buyer-1792942059338: ✅ Beat Purchase Confirmed[39m
-[15:27:40.738] [32mINFO[39m (104799): [36m[Marketplace] Sale notifications delivered for order test-order2-1792942059338 (seller=test-seller-1792942059338)[39m
-[15:27:40.741] [32mINFO[39m (104799): [36m[Marketplace] processPayment: order test-order2-1792942059338 already completed — reconciling notifications (idempotent replay)[39m
-[15:27:40.745] [32mINFO[39m (104799): [36m[Marketplace] processPayment: order test-order3-1792942059338 already completed — reconciling notifications (idempotent replay)[39m
-[15:27:40.749] [32mINFO[39m (104799): [36m[Marketplace] processPayment: order test-order3-1792942059338 already completed — reconciling notifications (idempotent replay)[39m
-[15:27:40.751] [33mWARN[39m (104799): [36mResend not initialized, skipping email[39m
-[15:27:40.751] [32mINFO[39m (104799): [36m✅ Notification sent to user test-seller-1792942059338: 💰 Beat Sold![39m
-[15:27:40.753] [33mWARN[39m (104799): [36mResend not initialized, skipping email[39m
-[15:27:40.753] [32mINFO[39m (104799): [36m✅ Notification sent to user test-buyer-1792942059338: ✅ Beat Purchase Confirmed[39m
-[15:27:40.753] [32mINFO[39m (104799): [36m[Marketplace] Sale notifications delivered for order test-order3-1792942059338 (seller=test-seller-1792942059338)[39m
+[23:41:31.993] [32mINFO[39m (403186): [36m[Marketplace] ✅ distributeSplits: 1 split(s) recorded for order test-order-1793058090401 — total $29.99[39m
+[23:41:31.998] [32mINFO[39m (403186): [36m[Marketplace] distributeSplits: order test-order-1793058090401 already has royalty records — skipping (idempotent replay)[39m
+[23:41:32.005] [32mINFO[39m (403186): [36m[Marketplace] processPayment: order test-order2-1793058090401 already completed — reconciling notifications (idempotent replay)[39m
+[23:41:32.014] [33mWARN[39m (403186): [36mResend not initialized, skipping email[39m
+[23:41:32.014] [32mINFO[39m (403186): [36m✅ Notification sent to user test-seller-1793058090401: 💰 Beat Sold![39m
+[23:41:32.018] [33mWARN[39m (403186): [36mResend not initialized, skipping email[39m
+[23:41:32.018] [32mINFO[39m (403186): [36m✅ Notification sent to user test-buyer-1793058090401: ✅ Beat Purchase Confirmed[39m
+[23:41:32.018] [32mINFO[39m (403186): [36m[Marketplace] Sale notifications delivered for order test-order2-1793058090401 (seller=test-seller-1793058090401)[39m
+[23:41:32.022] [32mINFO[39m (403186): [36m[Marketplace] processPayment: order test-order2-1793058090401 already completed — reconciling notifications (idempotent replay)[39m
+[23:41:32.027] [32mINFO[39m (403186): [36m[Marketplace] processPayment: order test-order3-1793058090401 already completed — reconciling notifications (idempotent replay)[39m
+[23:41:32.035] [33mWARN[39m (403186): [36mResend not initialized, skipping email[39m
+[23:41:32.035] [32mINFO[39m (403186): [36m✅ Notification sent to user test-seller-1793058090401: 💰 Beat Sold![39m
+[23:41:32.036] [32mINFO[39m (403186): [36m[Marketplace] processPayment: order test-order3-1793058090401 already completed — reconciling notifications (idempotent replay)[39m
+[23:41:32.040] [33mWARN[39m (403186): [36mResend not initialized, skipping email[39m
+[23:41:32.040] [32mINFO[39m (403186): [36m✅ Notification sent to user test-buyer-1793058090401: ✅ Beat Purchase Confirmed[39m
+[23:41:32.040] [32mINFO[39m (403186): [36m[Marketplace] Sale notifications delivered for order test-order3-1793058090401 (seller=test-seller-1793058090401)[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mwrites a royalty_transactions row with the correct amount[32m 13[2mms[22m[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mincrements royalty_splits.total_earned and pending_payout[32m 1[2mms[22m[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mdoes NOT double-credit on a second call (idempotency)[32m 3[2mms[22m[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mB. Revenue events[2m > [22mrecords a revenue_events row with source='marketplace'[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mincrements royalty_splits.total_earned and pending_payout[32m 2[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mA. Royalty split ledger[2m > [22mdoes NOT double-credit on a second call (idempotency)[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mB. Revenue events[2m > [22mrecords a revenue_events row with source='marketplace'[32m 2[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mB. Revenue events[2m > [22mON CONFLICT: a second revenue_events insert is a no-op[32m 1[2mms[22m[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mprocessPayment on completed order delivers beat_sold + beat_purchased notifications[32m 14[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mprocessPayment on completed order delivers beat_sold + beat_purchased notifications[32m 17[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mreplay — second processPayment call produces no additional notifications[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mconcurrent calls — only one delivery wins; exactly one notification per recipient[32m 11[2mms[22m[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mconcurrent calls — only one delivery wins; exactly one notification per recipient[32m 18[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mfailure resets notifStatus so the next retry can re-attempt delivery[32m 2[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mC. Sale notifications — confirmed payment idempotency[2m > [22mno beat_sold notification from initiation-time route send[32m 1[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mbeat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt[32m 1[2mms[22m[39m
  [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mrunContentDispatch query selects the overdue beat-loop post[32m 1[2mms[22m[39m
-[15:27:40.876] [32mINFO[39m (104799): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
-[15:27:40.879] [32mINFO[39m (104799): [36m📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)[39m
-[15:27:40.992] [32mINFO[39m (104799): [36m🔐 Token refresh monitor started (checking every minute)[39m
-[15:27:40.993] [32mINFO[39m (104799): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
-[15:27:40.993] [32mINFO[39m (104799): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
-[15:27:40.993] [32mINFO[39m (104799): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
-[15:27:40.994] [32mINFO[39m (104799): [36m📱 Social media queues initialized (boosterstate-backed)[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpublishToPlatform enqueues a job without throwing[32m 238[2mms[22m[39m
-[15:27:40.996] [33mWARN[39m (104799): [36m[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.[39m
-[15:27:40.997] [33mWARN[39m (104799): [36m[SocialQueue] publishToPlatform: no connected account for platform=twitter, user=test-seller-1792942059338 — skipping enqueue[39m
- [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpost transitions to published after successful dispatch[32m 5[2mms[22m[39m
+[23:41:32.166] [32mINFO[39m (403186): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
+[23:41:32.168] [32mINFO[39m (403186): [36m📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)[39m
+[23:41:32.302] [32mINFO[39m (403186): [36m🔐 Token refresh monitor started (checking every minute)[39m
+[23:41:32.304] [33mWARN[39m (403186): [36m[SocialOAuth] No legacy encryption key available; legacy encrypted connections require migration or reconnect.[39m
+[23:41:32.306] [32mINFO[39m (403186): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
+[23:41:32.307] [32mINFO[39m (403186): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
+[23:41:32.307] [32mINFO[39m (403186): [36m[Redis/BullMQ] Using native ioredis for BullMQ[39m
+[23:41:32.307] [32mINFO[39m (403186): [36m📱 Social media queues initialized (boosterstate-backed)[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpublishToPlatform enqueues a job without throwing[32m 265[2mms[22m[39m
+[23:41:32.313] [33mWARN[39m (403186): [36m[SocialQueue] publishToPlatform: no connected account for platform=twitter, user=test-seller-1793058090401 — skipping enqueue[39m
+ [32m✓[39m tests/unit/beat-sale-money-loop.test.ts[2m > [22mD. Content-dispatch — beat-loop posts[2m > [22mpost transitions to published after successful dispatch[32m 3[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m14 passed[39m[22m[90m (14)[39m
-[2m   Start at [22m 15:27:38
-[2m   Duration [22m 2.11s[2m (transform 865ms, setup 31ms, import 271ms, tests 1.67s, environment 0ms)[22m
+[2m   Start at [22m 23:41:30
+[2m   Duration [22m 2.32s[2m (transform 1.02s, setup 29ms, import 241ms, tests 1.92s, environment 0ms)[22m
 
 JUNIT report written to /workspace/maxbooster7.5/reports/test-verification/commerce/legacy-beat.xml
 Fixture cleanup complete: owned PostgreSQL and Redis stopped; temporary files removed.

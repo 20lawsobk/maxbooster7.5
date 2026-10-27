@@ -78,6 +78,8 @@ let app;
 let client;
 let appLogPath;
 let appLogTail = "";
+const loadClientIps = new WeakMap();
+let loadClientSequence = 0;
 
 function sanitizedLogTail() {
   if (!appLogPath && !appLogTail) return "";
@@ -126,6 +128,7 @@ function request(path, timeout = 10_000, options = {}) {
     const headers = {
       Accept: "application/json,text/html",
       "X-Forwarded-Proto": "https",
+      ...(options.clientIp ? { "X-Forwarded-For": options.clientIp } : {}),
       ...(body ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } : {}),
       ...(options.cookie ? { Cookie: options.cookie } : {}),
       ...(options.csrf ? { "x-csrf-token": options.csrf } : {}),
@@ -185,6 +188,7 @@ async function authRequest(jar, path, options = {}) {
   const response = await request(path, 15_000, {
     ...options,
     cookie: cookieHeader(jar),
+    clientIp: loadClientIps.get(jar),
   });
   updateCookieJar(jar, response.setCookie);
   return response;
@@ -738,6 +742,24 @@ async function waitFor(path, predicate, timeout) {
     }
     try {
       last = await request(path);
+      if (path === "/api/ready") {
+        try {
+          const body = JSON.parse(last.body);
+          evidence.lastReadinessObservation = {
+            status: last.status,
+            aggregate: body.status,
+            unifiedAwarenessReady: body.unifiedAwareness?.ready,
+            subsystems: Array.isArray(body.subsystems)
+              ? body.subsystems.map(({ name, status }) => ({ name, status }))
+              : null,
+            routeRegistrationDetail: Array.isArray(body.subsystems)
+              ? body.subsystems.find(({ name }) => name === "routes")?.detail
+              : null,
+          };
+        } catch {
+          evidence.lastReadinessObservation = { status: last.status, malformedJson: true };
+        }
+      }
       if (predicate(last)) return last;
     } catch (error) {
       last = { error: error.message };
@@ -806,6 +828,9 @@ function nearestRank(values, percentile) {
 
 async function createLoadSession(email, username, password, register) {
   const jar = new Map();
+  // Each simulated browser keeps one stable TEST-NET address through the
+  // fixture's trusted local proxy. Actual production rate limits stay enabled.
+  loadClientIps.set(jar, `198.51.100.${++loadClientSequence}`);
   let response = await authRequest(jar, "/api/csrf-token");
   if (response.status !== 200) throw new Error(`load CSRF bootstrap returned HTTP ${response.status}`);
   const csrf = jsonBody(response).csrfToken;
@@ -960,6 +985,7 @@ async function runAuthenticatedHttpLoad() {
     settings: {
       phases: phaseSettings.map(({ name, workers, durationMs }) => ({ name, workers, durationSeconds: durationMs / 1000 })),
       accounts: accountCount,
+      clientAddressModel: "One stable TEST-NET address per simulated browser session through the local trusted proxy",
       sessions: sessions.length,
       pacingMs: 3000,
       requestTimeoutMs: 15000,
@@ -1019,6 +1045,7 @@ try {
   symlinkSync(join(root, "dist"), join(temp, "cwd", "dist"), "dir");
   symlinkSync(join(root, "package.json"), join(temp, "cwd", "package.json"), "file");
   symlinkSync(join(root, "shared"), join(temp, "cwd", "shared"), "dir");
+  symlinkSync(join(root, "external"), join(temp, "cwd", "external"), "dir");
   symlinkSync(join(root, "tsconfig.json"), join(temp, "cwd", "tsconfig.json"), "file");
   symlinkSync(join(root, "tsconfig.server.json"), join(temp, "cwd", "tsconfig.server.json"), "file");
   const baseEnv = { PATH: process.env.PATH, HOME: join(temp, "home"), LANG: "C", TZ: "UTC", ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
@@ -1035,6 +1062,8 @@ try {
     out: join(temp, "generated"),
   }));
   run(process.execPath, ["node_modules/drizzle-kit/bin.cjs", "generate", `--config=${drizzleConfig}`], baseEnv);
+  const baselineMigrations = readdirSync(join(temp, "generated")).filter(name => name.endsWith(".sql")).sort();
+  if (!baselineMigrations.length) throw new Error("Drizzle produced no baseline SQL despite exiting zero");
   evidence.schemaGeneration = "pass";
 
   run("initdb", ["-D", join(temp, "pg"), "-U", "acceptance", "--auth=trust", "--no-locale", "--encoding=UTF8"], baseEnv);
@@ -1047,7 +1076,7 @@ try {
   postgresStarted = true;
   client = new pg.Client({ host: "127.0.0.1", port: pgPort, user: "acceptance", database: "postgres" });
   await client.connect();
-  for (const file of readdirSync(join(temp, "generated")).filter((name) => name.endsWith(".sql")).sort()) {
+  for (const file of baselineMigrations) {
     await client.query(readFileSync(join(temp, "generated", file), "utf8"));
   }
   for (const file of readdirSync(join(root, "migrations")).filter((name) => /^\d+.*\.sql$/.test(name) && Number(name.split("_")[0]) >= 20).sort()) {

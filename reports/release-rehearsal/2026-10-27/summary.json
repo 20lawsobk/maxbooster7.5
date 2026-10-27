@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-10-27T05:00:58.454025+00:00",
+  "scope": "Fresh credential-free publicbuildprofile; prepared portable payload and disposable local cold startup; no Replit deployment or global capacity claim",
+  "productionReady": false,
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:prepare"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-27T05:00:58.705204+00:00",
+      "durationSeconds": 254.756,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/release-rehearsal/2026-10-27/prepare.txt",
+      "logSha256": "0b202075dd7728c4edc570256770b386ab80133a9ac8febc87bf631981026e29",
+      "id": "prepare"
+    }
+  ],
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "previousAttempt": "reports/release-rehearsal/2026-10-26/summary.json",
+  "inputScope": "Credential-free live-awareness public build; application/provider/database secrets are not forwarded",
+  "executionDriverSha256": "e4c3f9c3271938881ea1f40bbec613ad1f08c39997b4dc66cce69ebd7e72ed60",
+  "sourceInputsSha256": "086e1497e33618b47a332ee0dc2eaaf7fd41f43be5560c20ee1df20db249f45b",
+  "status": "failed",
+  "finishedAt": "2026-10-27T05:05:13.461950+00:00"
+}

@@ -246,6 +246,7 @@ export class BasicSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.player.stop();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -363,6 +364,7 @@ export class MultisampleSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.samples.forEach((s) => s?.player.stop());
     this.activePlayer = null;
     this.lpFilter.clear();
@@ -529,6 +531,7 @@ export class GranularSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.grains.forEach((g) => {
       g.position = 0;
       g.phase = 0;
@@ -643,6 +646,7 @@ export class StretchSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.readPosition = 0;
     for (const grain of this.grains) {
       grain.position = 0;
@@ -741,6 +745,7 @@ export class SlicerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.player.stop();
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -898,6 +903,7 @@ export class ROMplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.samples.forEach((s) => s?.player.stop());
     this.activePlayer = null;
     this.chorusDelay.clear();
@@ -993,6 +999,7 @@ export class LooperSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.player.stop();
     this.feedbackDelay.clear();
     this.lpFilter.clear();
@@ -1117,6 +1124,7 @@ export class TextureSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.players.forEach((p) => p?.stop());
     this.reverbDelay1.clear();
     this.reverbDelay2.clear();
@@ -1230,6 +1238,8 @@ export class ResynthesisSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     for (let i = 0; i < this.numHarmonics; i++) {
       this.harmonicPhases[i] = 0;
     }
@@ -1341,6 +1351,7 @@ export class VoiceSamplerSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.player.stop();
     this.formantFilters.forEach((f) => f?.clear());
     this.vibratoLFO.reset();

@@ -74,7 +74,7 @@ router.get(
       const userId = req.user!.id;
       const fileKey = decodeURIComponent((req.params.fileKey as string));
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
@@ -114,25 +114,16 @@ router.delete(
       const userId = req.user!.id;
       const fileKey = decodeURIComponent((req.params.fileKey as string));
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
-      if (!metadata) {
-        return res.status(404).json({ error: "File not found" });
-      }
-
-      if (metadata?.userId !== userId) {
-        return res.status(403).json({ error: "Access denied" });
-      }
-
       const success = await hybridStorageService?.delete(userId, fileKey);
 
       if (success) {
         res.json({ success: true, message: "File deleted" });
       } else {
-        res.status(500).json({ error: "Delete failed" });
+        res.status(404).json({ error: "File not found" });
       }
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Delete error:");
-      res.status(500).json({ error: "Delete failed" });
+      res.status(error instanceof Error && error.message.startsWith("Access denied:") ? 403 : 500).json({ error: "Delete failed" });
     }
   },
 );
@@ -146,7 +137,7 @@ router.get("/files", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { tier, location, folder } = req.query;
 
-    const files = hybridStorageService?.listFiles(userId, {
+    const files = await hybridStorageService?.listFiles(userId, {
       tier: tier as StorageTier | undefined,
       location: location as StorageLocation | undefined,
       folder: folder as string | undefined,
@@ -171,7 +162,7 @@ router.get(
       const userId = req.user!.id;
       const fileKey = decodeURIComponent((req.params.fileKey as string));
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }
@@ -201,7 +192,7 @@ router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const metadata = hybridStorageService?.getMetadata(fileKey);
+    const metadata = await hybridStorageService?.getMetadata(fileKey);
     if (!metadata) {
       return res.status(404).json({ error: "File not found" });
     }
@@ -218,7 +209,7 @@ router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
     );
 
     if (success) {
-      const newMetadata = hybridStorageService?.getMetadata(fileKey);
+      const newMetadata = await hybridStorageService?.getMetadata(fileKey);
       res.json({ success: true, metadata: newMetadata });
     } else {
       res.status(500).json({ error: "Migration failed" });
@@ -293,7 +284,7 @@ router.get(
       const userId = req.user!.id;
       const fileKey = decodeURIComponent((req.params.fileKey as string));
 
-      const metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = await hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }

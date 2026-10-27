@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: compression threads default to serial and honor explicit quota-bounded allocation
 ok 1 - compression threads default to serial and honor explicit quota-bounded allocation
   ---
-  duration_ms: 0.977374
+  duration_ms: 0.992127
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - compression threads default to serial and honor explicit quota-bounded al
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 109.251225
+# duration_ms 112.441677

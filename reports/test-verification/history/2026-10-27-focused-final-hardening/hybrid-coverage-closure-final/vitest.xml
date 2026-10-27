@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="29" failures="0" errors="0" time="3.603157664">
+    <testsuite name="tests/coverage/hybrid-storage-live-repository.test.ts" timestamp="2026-10-27T09:56:09.083Z" hostname="2fc971e77ddd" tests="22" failures="0" errors="0" skipped="0" time="3.362080101">
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; concurrent writes, fresh reads, unique same-name keys and ownership" time="0.550093799">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; public bytes have independent ownership records" time="0.070268226">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; concurrent final deletion and dedup admission preserve every successful upload" time="0.896153372">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; independent immutable handles reject missing/corrupt bytes and replacement" time="0.059200725">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; metadata publication failures retain invisible recoverable intents and never ACK" time="0.074748412">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; physical delete failure remains durable and retryable from another worker" time="0.055995172">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; empty analytics, missing objects and download authority have explicit outcomes" time="0.003698187">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; invalid uploads never create an intent and zero-byte files remain readable" time="0.011368373">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; folder and tier filters preserve owner boundaries and stable download URLs" time="0.120527583">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; physical analytics count shared bytes once and scope logical ownership" time="0.080037989">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; cleanup recommendations and deletion honor age, access and owner" time="0.286983034">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; legacy hot-tier decisions only migrate old, infrequently used physical entries" time="0.094036193">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; SQL publication and duplicate-key failures reject without partial committed rows" time="0.065587528">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; invalid byte receipts and corrupted pending data never become visible" time="0.006211597">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; deduplicated and active reads verify full content before acknowledgement" time="0.062375783">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; immutable publication needs a confirmed manifest and rejects corrupt metadata" time="0.108144218">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; legacy parser rejects public-map corruption and cyclic or unresolved ownership" time="0.001192218">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; verified containers reject inconsistent headers and decoded lengths" time="0.000829681">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; rollback transport failures preserve the original error and release SQL clients" time="0.065679015">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; a deletion waiting on the content lock observes a completed concurrent deletion" time="0.06077212">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; legacy aliases retain the original blob after primary deletion and cannot resurrect" time="0.007733693">
+        </testcase>
+        <testcase classname="tests/coverage/hybrid-storage-live-repository.test.ts" name="hybrid metadata is shared across independent services without lost updates &gt; unknown legacy references abort the entire import and retain the source" time="0.002160408">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/hybrid-storage-index-recovery.test.ts" timestamp="2026-10-27T09:56:09.089Z" hostname="2fc971e77ddd" tests="7" failures="0" errors="0" skipped="0" time="0.241077563">
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; accepts an authoritative absent index as a new empty store" time="0.205786955">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; rejects malformed JSON without overwriting stored bytes" time="0.005665103">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; rejects missing maps without overwriting stored bytes" time="0.005691122">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; rejects invalid ownership entry without overwriting stored bytes" time="0.003558366">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; rejects dangling content hash without overwriting stored bytes" time="0.00390584">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; does not latch a failed initialization and succeeds after an authoritative retry" time="0.01034446">
+        </testcase>
+        <testcase classname="tests/unit/hybrid-storage-index-recovery.test.ts" name="HybridStorageService ownership-index recovery &gt; does not suppress PocketDimension open failures or latch the failed attempt" time="0.003719679">
+        </testcase>
+    </testsuite>
+</testsuites>

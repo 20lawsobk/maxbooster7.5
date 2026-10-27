@@ -8,6 +8,33 @@ export function hasStripeCredential(value: unknown): value is string {
     && !/[\r\n]/.test(value);
 }
 
+export class StripeUnavailableError extends Error {
+  readonly code = "STRIPE_NOT_CONFIGURED";
+  readonly status = 503;
+  readonly statusCode = 503;
+  constructor() {
+    super("Billing service is not configured");
+    this.name = "StripeUnavailableError";
+  }
+}
+
+/** Importing local billing/history services must not require a remote provider.
+ * Resolve the SDK only when an operation actually needs Stripe. */
+export function lazyStripeClient(
+  credential: () => string | undefined,
+  options: Stripe.StripeConfig = {},
+): () => Stripe {
+  let configured: { secret: string; client: Stripe } | undefined;
+  return () => {
+    const secret = credential();
+    if (!hasStripeCredential(secret)) throw new StripeUnavailableError();
+    if (!configured || configured.secret !== secret) {
+      configured = { secret, client: createStripeClient(secret, options) };
+    }
+    return configured.client;
+  };
+}
+
 export function createStripeClient(secret: string, options: Stripe.StripeConfig = {}): Stripe {
   if (!hasStripeCredential(secret)) throw new Error("Stripe credential is not configured");
   const proxy = process.env.HTTPS_PROXY;

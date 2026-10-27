@@ -86,24 +86,28 @@
   {
     "file": "evaluations/maxcore-quality/verify_evidence.py",
     "group": "python",
-    "status": "not_run",
-    "sourceSha256": "89b98042d03bac3a2c1b2772497a28dbe45c63248947348f827a0c6673f3fe43",
-    "evidence": [],
-    "prerequisites": [
-      "Python environment with the repository's locked runtime and pytest",
-      "See python.md for isolated PYTHONPATH/state and optional native dependencies"
-    ]
+    "status": "executed",
+    "sourceSha256": "985ea1eb6beda7e90c0bfdbeeb2bb2278e220d2a7f47c27ddaeee256a779e1ab",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/verify_evidence.py.txt"
+      }
+    ],
+    "prerequisites": []
   },
   {
     "file": "evaluations/maxcore-quality/verify_types.py",
     "group": "python",
-    "status": "not_run",
-    "sourceSha256": "14d9dc1eed554b2f442fd52f3529fe066fa45a55f59521cd6db306590b60d8c5",
-    "evidence": [],
-    "prerequisites": [
-      "Python environment with the repository's locked runtime and pytest",
-      "See python.md for isolated PYTHONPATH/state and optional native dependencies"
-    ]
+    "status": "executed",
+    "sourceSha256": "aed0de984ae358890b77047279f15031d3da7315d69107f415a1fa3fc4ece66b",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/verify_types.py.txt"
+      }
+    ],
+    "prerequisites": []
   },
   {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
@@ -413,12 +417,16 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
     "group": "manual-destructive-provider",
-    "status": "blocked_or_skipped",
-    "sourceSha256": "72f273a23f0693ac56af937332e74e83916edd3096392ede586d43097140dfec",
+    "status": "executed",
+    "sourceSha256": "6e034b3786126a90bcd6b044febeda50b86a97d2ed57a58c40a953298cdc1c84",
     "evidence": [
       {
         "status": "blocked",
         "evidence": "reports/test-verification/python/results.json"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/load_test.py.txt"
       }
     ],
     "prerequisites": []
@@ -856,7 +864,7 @@
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py",
     "group": "python",
     "status": "executed",
-    "sourceSha256": "e3473d13d8ca35189ce5e418778d248bdcb5cdffccafd32204adb562e1287c5f",
+    "sourceSha256": "c8b6feca07041c36a42128b6d32c530eb7d3f78531d7a8ff9b8fd11478825841",
     "evidence": [
       {
         "status": "passed",
@@ -907,11 +915,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "2fad58e758e412fd5a68ed3be5435d513375b18c1c60bea05dbaae7729712b46",
+    "status": "executed",
+    "sourceSha256": "70bceb94f74672cd7729a88f776facf9c4a5cd51ee5f194cb01a94aee535aa12",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_campaign_rollout.txt"
       }
     ],
@@ -946,11 +954,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "4a87c2f8bdc86d8396558140194ca3dd18eb4bec8c4c5d6e47efb5ed8541221b",
+    "status": "executed",
+    "sourceSha256": "e196f7b10a11953f0f99c12d0794922279bf02623a96bf05cc1587966c69a214",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_dedicated_handler_routing.txt"
       }
     ],
@@ -985,11 +993,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "1a149de19a6cf5f932986f398a23819a93d14957b09d018df1afc617809839fd",
+    "status": "executed",
+    "sourceSha256": "3a0deae7a638d65266274be3b688c8e684dbb5263ba9cc2d5d5f6977f419f30d",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_documented_stack_restore.txt"
       }
     ],
@@ -1142,7 +1150,7 @@
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py",
     "group": "python",
     "status": "executed",
-    "sourceSha256": "0741fe2b8158af10147666eacaaae3ad5f718590e412be64c1b3d2a748cec9dc",
+    "sourceSha256": "45a314b316b3df18297baf693ad68a7353a2102367390cf32b0d82babf70e0af",
     "evidence": [
       {
         "status": "passed",
@@ -1232,11 +1240,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "778490b8ef3017b5c8c50c1d419472b68022cc88cf767ab6236044ac6935ef4c",
+    "status": "executed",
+    "sourceSha256": "67cd3539806a6edf0fa073b987950577a0536b20e8f09a2644409afbb73bd57a",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_native_awareness_cascade.txt"
       }
     ],
@@ -1258,11 +1266,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "894b4f73a5cb70e09b12a44a5f790237d175a2116a323be533098324bbff2f50",
+    "status": "executed",
+    "sourceSha256": "cc6669dbb76321381f4cea42871a3f0ea7423cffd5fb891ba420f0883cd1e869",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_original_quality_runner.txt"
       }
     ],
@@ -1297,11 +1305,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "ecc8f61d10368d306806bf62d8102f9d9f2edcdfe297b32e02c13732546f7a06",
+    "status": "executed",
+    "sourceSha256": "a87806e6b388cba99cb17656adfbfcb183f7400292e8487ad60f481e6d249d42",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_public_peak_curriculum.txt"
       }
     ],
@@ -1399,6 +1407,19 @@
     "prerequisites": []
   },
   {
+    "file": "external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py",
+    "group": "python",
+    "status": "executed",
+    "sourceSha256": "ecba857f1c0c29cf3ccf6458f15136aec844097678a8748c8c5fff2417675028",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_text_training_rights.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
     "group": "python",
     "status": "executed",
@@ -1414,11 +1435,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "a097f4bc2afe550ea0cf61fc795dece536335cac32370c6612a8821640069d24",
+    "status": "executed",
+    "sourceSha256": "a7d194de95b1a87bbce973e343c6c6749fa33769d1b3f8e150a9004061863ee4",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_unavailable_inference_contracts.txt"
       }
     ],
@@ -1427,11 +1448,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "0d11ef86b79517eb9b982f406c296a4616911118488544c471c36631284858d5",
+    "status": "executed",
+    "sourceSha256": "fb4558259131335d28dd154f55595240b3f9e7d16f64ac131a11b386f8d65f0a",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_url_label_garble_guard.txt"
       }
     ],
@@ -1453,11 +1474,11 @@
   {
     "file": "external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
     "group": "python",
-    "status": "failed",
-    "sourceSha256": "ea87da98f3e016d101d9de2ee5e541e7ea4bc0e19fb9adc44c43e54498310da1",
+    "status": "executed",
+    "sourceSha256": "a4415c20a660f0d6e09b1573112f3bea23f206c056b25025df469916f4532e87",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__tests__test_voiceover.txt"
       }
     ],
@@ -1493,7 +1514,7 @@
     "file": "external/maxcore/scripts/check-js-security-versions.js",
     "group": "subsystems",
     "status": "executed",
-    "sourceSha256": "2f0ae0d8d157515af2ce591bd85dbe6b3467915a6227e2706a44d7c4ddb5c49b",
+    "sourceSha256": "fdd83b9bccf793a6a25c48128af3aecbedb9d1299fafce7d5108eef362edd473",
     "evidence": [
       {
         "status": "passed",
@@ -1557,14 +1578,15 @@
   {
     "file": "scripts/maxcore-isolated-recovery-acceptance.py",
     "group": "python",
-    "status": "not_run",
+    "status": "executed",
     "sourceSha256": "a705919b8a7d33180ede41c0fa5c0806b37f59ade378c1488238d30591ed3996",
-    "evidence": [],
-    "prerequisites": [
-      "Python environment with the repository's locked runtime and pytest",
-      "See python.md for isolated PYTHONPATH/state and optional native dependencies",
-      "Review live-endpoint fixtures and ports; a live HTTP dependency may be required"
-    ]
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/maxcore-isolated-recovery-acceptance.py.txt"
+      }
+    ],
+    "prerequisites": []
   },
   {
     "file": "scripts/penetration-test.ts",
@@ -1592,7 +1614,7 @@
     "file": "scripts/readiness-container-acceptance.mjs",
     "group": "manual-destructive-provider",
     "status": "not_run",
-    "sourceSha256": "ef2ef06b37a87c5cb56cef91e0f332724318cd45b39800a4fc79c7f8d628d34d",
+    "sourceSha256": "92d6ac58864200a56e8210d060e6594b18ec4a3cb37a65462b6e355d2b9e7d06",
     "evidence": [],
     "prerequisites": [
       "Inspect script-specific target/environment options and required fixtures",
@@ -1605,7 +1627,7 @@
     "file": "scripts/readiness-packed-acceptance.mjs",
     "group": "manual-destructive-provider",
     "status": "not_run",
-    "sourceSha256": "6204946e8ed31b3f6f34c2b533a9ed00d17de0e1a09a626b1762057b8a4fccd8",
+    "sourceSha256": "8395cc09e4cf5b2cae046731ae7da6988e4b257bc8364b40033f11cbb9bc73fa",
     "evidence": [],
     "prerequisites": [
       "Inspect script-specific target/environment options and required fixtures",
@@ -1628,7 +1650,7 @@
     "file": "scripts/test-data-runtime.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "6ab17a3fe022f0f2416d278d175b3cec61ca2bdcb559bfd5af535d4b43a134f1",
+    "sourceSha256": "92cf5a501e895e370e51e112d137fb78f52755dc95f1f684c32a8df2628bd3b0",
     "evidence": [
       {
         "status": "passed",
@@ -1640,11 +1662,11 @@
   {
     "file": "scripts/test-fabric-deletion.mjs",
     "group": "root-node",
-    "status": "failed",
-    "sourceSha256": "51ec5d217183faf9c6a821349f20df87f22410e21360b153fd059e07c64d376b",
+    "status": "executed",
+    "sourceSha256": "36240e545c403a469331b3618a5286d9e58884d3d79695231329b97a838f2a41",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/node/scripts__test-fabric-deletion.mjs.txt"
       }
     ],
@@ -1676,7 +1698,7 @@
     "file": "scripts/testing/commerce-legacy-fixture.mjs",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "c2431cb06fe7ce06b506254a0d467c354a12805819be0fc22d9a04dbfeebd56f",
+    "sourceSha256": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
     "evidence": [],
     "prerequisites": []
   },
@@ -1684,7 +1706,7 @@
     "file": "scripts/testing/common.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "0cf0eeb1229023f501bcfd65147a1da488b3865beb1ddb8f0d866a876d860fc8",
+    "sourceSha256": "8cb2ccbbedff2a4102df1f85e9ea76af46141ca29839795792b36eb807c3d814",
     "evidence": [],
     "prerequisites": []
   },
@@ -1700,7 +1722,7 @@
     "file": "scripts/testing/integration-browser.mjs",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "429bd86fce76e9870a2a5e49bda6dbf125435681669697d22c5010902c725d71",
+    "sourceSha256": "9fa027334d8682fec28ba9a950b240fb0a7d660b523fb8c953c107a4deb8f84f",
     "evidence": [],
     "prerequisites": []
   },
@@ -1708,20 +1730,45 @@
     "file": "scripts/testing/page80-acceptance.mjs",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "5c58134fc083f20f28ba88d32103a5e17a39afad1197719541f2573553124060",
+    "sourceSha256": "900864610ffeaab8ba6f1cd67a9a29dfb5d8c42e22266830ec4dfefcd0deb97a",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/page80/page80.json"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http-load/page80.json"
       }
     ],
+    "prerequisites": []
+  },
+  {
+    "file": "scripts/testing/platform-register.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "bfda1529d437095ae114c57efb45bdee47fd2b84ced730aa2becd539fe184f8d",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/platform-register.py.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "scripts/testing/remediation.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "6f802791534beb6853a9dc89decac055d7e47a68e20804112f4d4d2dc41b440a",
+    "evidence": [],
     "prerequisites": []
   },
   {
     "file": "scripts/testing/run-all.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "7049bbc531132f0848601fa60b4c3b0b7c5ca4a7cfbf19d8a8996e7420b03d99",
+    "sourceSha256": "ed1f68d72e142323b7013ab2ec38d05774423f7a2241188ae805dc707d83646d",
     "evidence": [],
     "prerequisites": []
   },
@@ -1729,7 +1776,15 @@
     "file": "scripts/testing/run-commerce.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "877ff5fdc1f7b499a21576a0771e6a3ce8b3b5a53b2334b52e3145f38ad6fd28",
+    "sourceSha256": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "scripts/testing/run-engine-load.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "b9fa8427d9da2565f2d8527f976b4c096f7df0d44341a39795e0c5a17eafb5d6",
     "evidence": [],
     "prerequisites": []
   },
@@ -1742,10 +1797,18 @@
     "prerequisites": []
   },
   {
+    "file": "scripts/testing/run-operations.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "425912c00617e46f971e3c1ed1dfe8bfab6fb4dc3c20dce0be420150479f5836",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
     "file": "scripts/testing/run-pdim-smoke.mjs",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "e906088eafffbd5985e9555ac832d35d6e021ed203528fdd8567d0d71b489145",
+    "sourceSha256": "759d1d283f51008d8056b9e42f710373650e71fd6c260d30bf2d640b266cd515",
     "evidence": [],
     "prerequisites": []
   },
@@ -1753,7 +1816,7 @@
     "file": "scripts/testing/run-python-suites.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "8bb4e34798ca7c2a8405f57a2ddd2c7afd1902207a5c8d1e312e5669ad26331a",
+    "sourceSha256": "4c54897643efcac387cac990f43cc3995eefd4fcba6b1123fded6ebd52c2e21a",
     "evidence": [],
     "prerequisites": []
   },
@@ -1769,7 +1832,7 @@
     "file": "scripts/testing/summarize-results.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "5eb0b53c28d978105f8b63a34da47abd5e8ab8913fc03475782de2a5bdc89d86",
+    "sourceSha256": "34cf6a35e6af4f9a25d68a5c6d52125acbe15a0543ea60d0ceb4e226c0b8a767",
     "evidence": [],
     "prerequisites": []
   },
@@ -2601,6 +2664,43 @@
     "prerequisites": []
   },
   {
+    "file": "server/services/backup/__tests__/databaseRestore.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "5cfb184fb091da579c6eac78e686c76752ff1f064a66d4c7c887d15be27660dd",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "server/services/backup/__tests__/postgresTools.test.ts",
     "group": "root-unit",
     "status": "executed",
@@ -2657,7 +2757,7 @@
     "file": "server/services/commerce.isolated.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "bcce02f369a9160a93c7e3bffb5027ad18ff890a88bce29af07cf6ca85a8db84",
+    "sourceSha256": "8724bce65bf7edc06e37d8432396c21006d65bfdbb8c9b93886debbed972f920",
     "evidence": [
       {
         "status": "passed",
@@ -2670,7 +2770,7 @@
     "file": "server/services/commerce/orchestrator.isolated.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "0f8a45a655fd54d515b983cb51892218d1e298fda54d679b68e5c586e2c0e2e9",
+    "sourceSha256": "7928d4f89a02287bc3a13d33d79dda424e590c7203c49a06a5c3afef1e38527d",
     "evidence": [
       {
         "status": "passed",
@@ -2844,7 +2944,7 @@
   {
     "file": "tests/ai-analytics-integration.test.ts",
     "group": "integration-browser",
-    "status": "executed",
+    "status": "failed",
     "sourceSha256": "dd9932419c8c625bfe9a59d0812b15839025a926ae39adbd203899b51a47e859",
     "evidence": [
       {
@@ -2884,7 +2984,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "passed",
+        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -2905,8 +3005,8 @@
   {
     "file": "tests/api-guards.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "5d29a4644e9df0aad529ecea2cb180458852b997232f4c75a5f9faf22df79421",
+    "status": "executed",
+    "sourceSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
     "evidence": [
       {
         "status": "passed",
@@ -2953,7 +3053,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3091,8 +3195,8 @@
   {
     "file": "tests/auth-2fa.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "1e1168cba5f3da3311345066bcb334577a89b312db95a756f50ead7da7dcc56f",
+    "status": "executed",
+    "sourceSha256": "8154915e4a7b7cdbdd04b70e313c33edd510296c69c3437e4c184a8fed60f950",
     "evidence": [
       {
         "status": "passed",
@@ -3103,23 +3207,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3127,35 +3215,51 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       }
     ],
@@ -3164,8 +3268,8 @@
   {
     "file": "tests/auth-flows.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "a8f91cef7cdb4e40d238015e389a39d7c36dddcd4727c66e4b22671b0f11e1fe",
+    "status": "executed",
+    "sourceSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
     "evidence": [
       {
         "status": "passed",
@@ -3180,26 +3284,6 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
@@ -3217,14 +3301,6 @@
       },
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3260,7 +3336,35 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3286,7 +3390,7 @@
     "evidence": [
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/browser.tap"
+        "evidence": "reports/test-verification/orchestration/browser.txt"
       }
     ],
     "prerequisites": []
@@ -3294,16 +3398,12 @@
   {
     "file": "tests/awareness-public-read-smoke.py",
     "group": "python",
-    "status": "failed",
+    "status": "blocked_or_skipped",
     "sourceSha256": "018c0d8ac1e6a26dd522f8d9599352b2e6079cd14f273faf257847d28c568892",
     "evidence": [
       {
         "status": "blocked",
         "evidence": "reports/test-verification/python/results.json"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/root/public-feeds.json"
       }
     ],
     "prerequisites": []
@@ -3324,14 +3424,10 @@
   {
     "file": "tests/billing-lifecycle.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "d404a547847e4fe8ade9ff6291fca7ac723b7b93b522d5f749cd5fa41d9d3043",
+    "status": "executed",
+    "sourceSha256": "4fa8ee102099997981b1f1370e8b5162a494dec1c2835db1e47559920e143bfe",
     "evidence": [
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
@@ -3360,19 +3456,23 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       }
     ],
@@ -3564,7 +3664,7 @@
     "file": "tests/critical-paths.test.ts",
     "group": "integration-browser",
     "status": "failed",
-    "sourceSha256": "68e7a3659b3cd288e2cf7b9ea70ba24bbec0b6a84ce90204505a5e9ad7b332b1",
+    "sourceSha256": "1828910efd69e9dff34cdd4c7c70e3705ca32d644b1a0735234ff90ccab162fd",
     "evidence": [
       {
         "status": "passed",
@@ -3591,139 +3691,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3743,16 +3711,173 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
+        "status": "skipped",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "skipped",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "skipped",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
         "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "passed",
+        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "passed",
+        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "failed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/database-backup-restore-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__database-backup-restore-postgres.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -3805,6 +3930,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__dependency-security-paths.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/dependency-transport-teardown.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "a8c4b42efbfb063e46b278d5dbf4e295d300d1f0000f1a0aca21a88e6a1fecbb",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__dependency-transport-teardown.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -3914,6 +4052,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/deployment-remainder-contract.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "d5a981b451ff0492af134fad69f9dc03f1eac39b6de5f936559867d1b7e2331a",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__deployment-remainder-contract.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/deployment-rust-phase.test.mjs",
     "group": "root-node",
     "status": "executed",
@@ -3946,15 +4097,15 @@
   {
     "file": "tests/direct-upload.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "2dc7640269280d97f8b464c43d29570ba1b9c01c25f17a6b6b4c740da8660421",
+    "status": "executed",
+    "sourceSha256": "dffb53dbdfea5a75c7cd9e6feeb1fbc29a5e9d156570329d8c439dfa7f27c10c",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3962,8 +4113,21 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/distribution-workflow-tenancy.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "4ca2788826501481e8619d891a0f4d73578e19e14b9536f5d2914fda774d8592",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__distribution-workflow-tenancy.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -3972,7 +4136,7 @@
     "file": "tests/dns-dependency-consumers.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "38ba8f7c099148dc34263327abc3b6d5ef6c2ce2076c90c9d4bac4909b37a8da",
+    "sourceSha256": "cb4be8847e2fb664fb119925b652970cacd893c21c5a6ef8a8b88cbd58f7792d",
     "evidence": [
       {
         "status": "passed",
@@ -4017,25 +4181,111 @@
     ]
   },
   {
+    "file": "tests/fabric-deletion-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "bc33a720dd7302beca565ae348841a99ef4a8076f527afe39a7b91eeb347078c",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-deletion-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/fabric-imported-reconcile-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "029db4db6ae2b4b777eb51ece7d044a039e994fbb5e3b492e57325849e8adfec",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-imported-reconcile-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/fabric-object-lineage.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "06946ff7f79fd908ad5e86be90df31f2a07799e2627a69a1bf231f4001a4cb23",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-object-lineage.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/fabric-replica-generation.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "9cb6ee9d2a12a6d88be04f17c28d44555dca1ce6902f81c4208ad32319575649",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-replica-generation.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/fabric-root-storage-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "cf6f225292aaf7b8aea84436599c16ec01d7fdbd7b3edeaf43a393f2174e25cc",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-root-storage-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/fabric-schema-generation.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "1d933613cf83b3267ee6d87117ccc186c2460f587480e7fda27ec59528531868",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-schema-generation.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/feature-catalog-production.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "6fcd2fc3cb45ec0d297aa07d3c4d683fe6074941ce4f4720784dd492bba55068",
+    "status": "executed",
+    "sourceSha256": "6564177a6f09af587cb8d474d801ff6b05001445b2b547d89960a32ae5e83f3c",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4059,15 +4309,19 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4087,15 +4341,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4107,7 +4357,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4119,15 +4373,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4139,11 +4385,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4160,8 +4402,8 @@
   {
     "file": "tests/feature-marketplace-distribution.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "8503ac9e6c51063d250d559b9590bf14da9bfcae13f416c568c0088a86235d8c",
+    "status": "executed",
+    "sourceSha256": "58f7ffa2e3f04fe4efa912942c9b9b3e328fc5b9fa7a4a046f056b994b4066fd",
     "evidence": [
       {
         "status": "passed",
@@ -4244,15 +4486,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4260,7 +4494,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4276,11 +4510,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4292,27 +4526,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4320,7 +4534,39 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4337,27 +4583,15 @@
   {
     "file": "tests/feature-press-pitching-ar.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "d1df1dff87592b6abb73a7e0adfdd0c67148d07d9acbdbc83dcbc24f99c9646a",
+    "status": "executed",
+    "sourceSha256": "b29f91664c5473fcb096b8771aae193a92d32d8f5dfb025e77a194e7ee8886dc",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4365,15 +4599,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4389,19 +4615,15 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4417,15 +4639,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4437,15 +4655,47 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4482,26 +4732,14 @@
   {
     "file": "tests/feature-revenue-merch.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "f9ec13775d41927167a052cf13663411e9f649665251f0acfcf9b362df3dfdae",
+    "status": "executed",
+    "sourceSha256": "924f087eb8359799a5cd880087e7cd737eed5caaa86913dc76011b9ed38cc2f7",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
@@ -4518,23 +4756,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4542,11 +4764,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4578,19 +4796,19 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4610,11 +4828,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4622,11 +4836,47 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4639,8 +4889,8 @@
   {
     "file": "tests/feature-storefront-dns.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "69d81485d4521c87e7555fbd79ab30280330515e12b5b096d01f31a3a17c2a34",
+    "status": "executed",
+    "sourceSha256": "2831eb5748f4a2de2098c06881fabaa37c24d09f0078b6aa630cf83d992b645c",
     "evidence": [
       {
         "status": "passed",
@@ -4651,15 +4901,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4667,7 +4909,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4691,11 +4933,23 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4719,10 +4973,6 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
@@ -4739,7 +4989,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4792,8 +5042,8 @@
   {
     "file": "tests/file-management.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "9853261d3a85772e6d9de8206e37ea113e694398aa1da57ab730fdb87d8e9735",
+    "status": "executed",
+    "sourceSha256": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
     "evidence": [
       {
         "status": "passed",
@@ -4804,15 +5054,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4832,15 +5074,27 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -4948,10 +5202,18 @@
     "prerequisites": []
   },
   {
+    "file": "tests/fixtures/legacy-pdim-fixture.ts",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "0880bc6edc9940217a06b8e00bdc6d6dc16feec4e68d225f4f789db7af44758f",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
     "file": "tests/fixtures/pdim-recovery-cluster-fixture.ts",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "16e6af40755516de5b04da56d2ba7436727819de36142637a7612b2b47d51328",
+    "sourceSha256": "596afc9cf1a7ca64228da851e17e769ea935710fbed2415ee693a11e192f1f24",
     "evidence": [],
     "prerequisites": []
   },
@@ -4959,7 +5221,7 @@
     "file": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+    "sourceSha256": "aaa67ffb4766592d1955eaabea7e0fb4e881ef7e2774b36e761eb50814c325c6",
     "evidence": [],
     "prerequisites": []
   },
@@ -5003,8 +5265,8 @@
   {
     "file": "tests/health.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "53bd2924b701cb5d21adc36a85b7afd63932d232be6c6b8521b0283400ff56cb",
+    "status": "executed",
+    "sourceSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
     "evidence": [
       {
         "status": "passed",
@@ -5015,11 +5277,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5027,7 +5285,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5066,14 +5328,43 @@
     "prerequisites": []
   },
   {
+    "file": "tests/helpers-http-fixture.ts",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "bfd04e3007011c9d4950a678c60f4916a7462239bfb3ff1433223e325dfdf451",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/helpers-http-saved-data.ts",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "ba9e700a70b667a4ef7e1c935d805c04afef9ddc6858d5cbdcff6bfdec8f9709",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
     "file": "tests/http-dependency-consumers.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "34daacfd970eb568798dbcf4abdbeddc1d6f80d1b587384c67b9f95cb88cc44a",
+    "sourceSha256": "dbc8c13945d1c309c711daa205f7504a9b576adf9ff78edc9c3d5712b9975114",
     "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__http-dependency-consumers.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/hybrid-storage-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "9d1455806be56c3ec9b54caf8dfef65dcbeb21d34ef2f5976524137fb9f0b7fe",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__hybrid-storage-postgres.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -5094,11 +5385,11 @@
   {
     "file": "tests/integration/maxcore-local-supervisor.integration.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "71a7ae61a2fa9888969148959c4fa58ab53c61da696a6f98284a4a4e30694c9d",
+    "status": "executed",
+    "sourceSha256": "081722358385e5d0429e83f6039d5efdb10e6ea729f8593c02b9f267ad6adc7a",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5138,6 +5429,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__isolated-acceptance-readiness.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/isolated-codec-guard.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "b120915f0950bffc154d9d70a3de2042d6e64019ffa81098bdeebe6c46299615",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__isolated-codec-guard.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -5244,7 +5548,7 @@
     "evidence": [
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/browser.tap"
+        "evidence": "reports/test-verification/orchestration/browser.txt"
       }
     ],
     "prerequisites": []
@@ -5305,7 +5609,7 @@
     "file": "tests/npm-start-isolated-smoke.py",
     "group": "python",
     "status": "blocked_or_skipped",
-    "sourceSha256": "bffd0c3401c0dac754a32aee4ddb974be37df42ec1142276a30901e539d0a690",
+    "sourceSha256": "1d14f33cbf6ec90e44ab60566558b5af73007786940e850421241adcbb7052a4",
     "evidence": [
       {
         "status": "blocked",
@@ -5341,8 +5645,8 @@
   {
     "file": "tests/paid-user-e2e.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "5ccf9e920dc77d871cb024aa588128bb5a72af05dc67e33a73d825e2fe5c96be",
+    "status": "executed",
+    "sourceSha256": "26578fd010a861800fdf1ba6844308f27250a66430699df9029e5468f7bea118",
     "evidence": [
       {
         "status": "passed",
@@ -5361,182 +5665,6 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
         "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
@@ -5546,14 +5674,6 @@
       },
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5581,19 +5701,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "skipped",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "skipped",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5609,15 +5721,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5625,11 +5729,223 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "skipped",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "skipped",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -5667,11 +5983,11 @@
   {
     "file": "tests/patent-pdf-runtime.test.mjs",
     "group": "root-node",
-    "status": "failed",
-    "sourceSha256": "bc7505bfe63f83a9fed44d21c9750c40c79db46a8311c4b46d44a8d50b7c7841",
+    "status": "executed",
+    "sourceSha256": "5b45880916b19ce8077f89d6c97d2b72210c240fdd76a87ad96fd54e5c58c2e3",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/node/tests__patent-pdf-runtime.test.mjs.txt"
       }
     ],
@@ -5681,7 +5997,7 @@
     "file": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
     "group": "commerce",
     "status": "executed",
-    "sourceSha256": "f6e13b33d057943341662c0b331b8426cb05f70c2aca69c01d97876eb865f0ba",
+    "sourceSha256": "8aea6d8eac9b291fdf95c6c85d29b1b9a021eade12c1e8339c20242cf7860b56",
     "evidence": [
       {
         "status": "passed",
@@ -5725,6 +6041,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/payment-processing/compensation-races-postgres.test.mjs",
+    "group": "commerce",
+    "status": "executed",
+    "sourceSha256": "fa9428977a529d1183aae5121b47dea9593225c0fb12bb84f4d8c56227d5d5d7",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/commerce/compensation-races-postgres.test.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/payment-processing/database-commerce.test.mjs",
     "group": "commerce",
     "status": "executed",
@@ -5735,6 +6064,14 @@
         "evidence": "reports/test-verification/commerce/database-commerce.test.txt"
       }
     ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/payment-processing/helpers-beat-media-asgi.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "0dd92c7ecbe53d6558ec6cb6ba2b5d82faa36ba0edbd991f088da819a50e844e",
+    "evidence": [],
     "prerequisites": []
   },
   {
@@ -5886,7 +6223,7 @@
     "file": "tests/payment-processing/outbound-commerce.mjs",
     "group": "commerce",
     "status": "executed",
-    "sourceSha256": "d8f3ffdabf1cf016871198e78de314c01b6c6137c7e0fc2abceddac1bd81fea9",
+    "sourceSha256": "14c8263681acfe15099eba0d33745de36878ea87a96b619880ba0c5604b1e746",
     "evidence": [
       {
         "status": "passed",
@@ -5912,7 +6249,7 @@
     "file": "tests/payment-processing/outbound-services-webhooks.mjs",
     "group": "commerce",
     "status": "executed",
-    "sourceSha256": "d5f145657185c71c07195ef97fa62461b012c0f3c0ffe9be561c2f0bb43adcbe",
+    "sourceSha256": "62611f6919a0aef4467c08afd20f7c4c95e2fa479681d2b59ba5cd9117799069",
     "evidence": [
       {
         "status": "passed",
@@ -5961,6 +6298,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/payment-processing/provider-only-preferences.test.mjs",
+    "group": "commerce",
+    "status": "executed",
+    "sourceSha256": "82d8f5a4b907e14bead1ab3ca6c79e8d74439f99988245452799dd2d7d272bde",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/commerce/provider-only-preferences.test.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/payment-processing/real-stripe-api.mjs",
     "group": "manual-destructive-provider",
     "status": "executed",
@@ -5987,13 +6337,54 @@
   {
     "file": "tests/payment-processing/run.mjs",
     "group": "commerce",
-    "status": "not_run",
-    "sourceSha256": "2ca99f853318a01f076a6b7eabdb8ae0ec40ed067d24767a77970c643bde17a4",
-    "evidence": [],
-    "prerequisites": [
-      "Node.js >=22.12 and npm ci",
-      "Use the commerce runner's offline mode; see commerce.md"
-    ]
+    "status": "executed",
+    "sourceSha256": "bc838d0a9dcbf40374a99f9a20cbe8ded62801f6df1080addfb2991e26519288",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/operations/run.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/payment-processing/settlement-dispute-hold-postgres.test.mjs",
+    "group": "commerce",
+    "status": "executed",
+    "sourceSha256": "cba70b0eed690688a2fea580e1dda2193b51000c7161cd299aecc9fa91251339",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/commerce/settlement-dispute-hold-postgres.test.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/payment-processing/subscription-authority-postgres.test.mjs",
+    "group": "commerce",
+    "status": "executed",
+    "sourceSha256": "c9310838205a2ae99fd1224787d3a56a3e7dd1a201f97eeb307d16da1990d070",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/commerce/subscription-authority-postgres.test.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/pdim-acknowledged-crash-capacity.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "3996eb1c2e531b45f3bf205b233603f3c0f4d1ea60f2140058af22fcce8ba351",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__pdim-acknowledged-crash-capacity.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
   },
   {
     "file": "tests/pdim-bucket-cloud-smoke.ts",
@@ -6028,6 +6419,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__pdim-staging-archive.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/pocket-durable-delete.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "51bdfa3542c0dcf25d49af910e7e6e58141682d542cad288a5a931c64ad733c8",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__pocket-durable-delete.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -6127,7 +6531,7 @@
     "file": "tests/publishing-cache-isolation.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "75b6e195697b0dc4b3f3f4fefd44c6441518700bcf1e5c479a9fdfbce4b4d3bc",
+    "sourceSha256": "ef8de426737afbc81614d086844075f41a8777b0a072903cf18d3cf14ca39e98",
     "evidence": [
       {
         "status": "passed",
@@ -6215,6 +6619,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/recovery-snapshot-integrity.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "d8277ad9169c5b2649db0772f2647c0404dd487f7b3688403b0c375483046b87",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__recovery-snapshot-integrity.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/release-threads.test.mjs",
     "group": "root-node",
     "status": "executed",
@@ -6223,6 +6640,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__release-threads.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/replit-chunk-delete.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "e800771e3afde0c685dd9b4ec957d3246f8b2aa72e2b7528862896661c67d244",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__replit-chunk-delete.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -6249,6 +6679,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__replit-profile.contract.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/request-validation-security.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "b0f3bcc854f29f64cdb81a5b65473e04cd41cb6d2996c6c8a8cd7c072b30006d",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__request-validation-security.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -6283,7 +6726,7 @@
     "file": "tests/runtime-artifact-gates.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "82b0bae82f9d35ce599214006620a0a79c6d570cfc831588d2f122e591007d98",
+    "sourceSha256": "8b98695a233680025acdacf301b20a0cab71c8b956579537b70410d7b0b7d087",
     "evidence": [
       {
         "status": "passed",
@@ -6321,8 +6764,8 @@
   {
     "file": "tests/security-hardening.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "63d74f05f3da42b9454c89d4062c4bb0a8affd7203e0f1dc5ada697976076d08",
+    "status": "executed",
+    "sourceSha256": "7ec70cba3a3a46fd2c0aabd25fc95d4b70ac4c88f662a682c837789928319ffb",
     "evidence": [
       {
         "status": "passed",
@@ -6369,11 +6812,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
-        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
-      },
-      {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -6381,7 +6820,7 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -6389,7 +6828,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -6469,6 +6912,19 @@
     ]
   },
   {
+    "file": "tests/social-media-jobs-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "e4f5b186da1f9f48e08edaecc3717b4ce8020511d4d25ee47d88e42bd20836e2",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__social-media-jobs-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/social-oauth-state.cjs",
     "group": "root-node",
     "status": "executed",
@@ -6477,6 +6933,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__social-oauth-state.cjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/social-publish-now-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "fe0ba7c066ef94ab0732edd832f5f5a97e0322f1c529677b107b53870ef2c023",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__social-publish-now-postgres.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -6508,6 +6977,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/storage-chunk-shared-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "1755ea455a03813b87f6d7d146071a4886df6056f5eec9fd52d9903359751d30",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__storage-chunk-shared-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/storefront-canonical-links.test.mjs",
     "group": "root-node",
     "status": "executed",
@@ -6528,7 +7010,7 @@
     "evidence": [
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/browser.tap"
+        "evidence": "reports/test-verification/orchestration/browser.txt"
       }
     ],
     "prerequisites": []
@@ -6541,7 +7023,7 @@
     "evidence": [
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/browser.tap"
+        "evidence": "reports/test-verification/orchestration/browser.txt"
       }
     ],
     "prerequisites": []
@@ -6554,7 +7036,7 @@
     "evidence": [
       {
         "status": "passed",
-        "evidence": "reports/test-verification/integration-browser/browser.tap"
+        "evidence": "reports/test-verification/orchestration/browser.txt"
       }
     ],
     "prerequisites": []
@@ -6633,6 +7115,45 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/python/tests__test_torch_provenance.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/testing/test_archived_quality_verifiers.py",
+    "group": "python",
+    "status": "executed",
+    "sourceSha256": "812c5790b53bdbb4e87d9d76824e5363eadd836a743ebf01fb37c0eeec11ff59",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/python/tests__testing__test_archived_quality_verifiers.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/testing/test_remediation.py",
+    "group": "python",
+    "status": "executed",
+    "sourceSha256": "8149c44cc3304d98a817483d61ea70222e3ed5d165e74019aa6618c80333b779",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/python/tests__testing__test_remediation.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/testing/test_summary_results.py",
+    "group": "python",
+    "status": "executed",
+    "sourceSha256": "278d820406ba97c9fb3d29fc7aeaa9ce9980ab0daa9708706229b3237f19befe",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/python/tests__testing__test_summary_results.txt"
       }
     ],
     "prerequisites": []
@@ -6863,11 +7384,65 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/analytics-dashboard-response.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "66590541756872eadd66bfad75336aaf24e84ac7b8693f2036ba77190058a714",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/unit/analytics-pending-render.test.ts",
     "group": "root-unit",
     "status": "executed",
     "sourceSha256": "4931d29897fc26b7a6883530ad4f3b5d392d6bb4244a0cf1f3a13e1ef3b988b3",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/analytics-tabs-render.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "7d0b20dc692e9c348ef84d21aa303d5b6406190f0bcfac6e89fef07d014650b5",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -7341,8 +7916,44 @@
     "file": "tests/unit/auto-posting-recovery.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "0affc58872838b551964aae623fff4ffc67c69f9d19128194c77bc1500d506a4",
+    "sourceSha256": "9af40734bcb2d4a91519007ee996cd1e143982dbdb247f5acc7cf8dd7fb2271a",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -7526,6 +8137,31 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/autonomous-dispatch-state.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "ee2bc7d5b34805af9584739e449142ef501f67421191583c93ee1bc8c694aa95",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/unit/autopilot-knowledge-base.test.ts",
     "group": "root-unit",
     "status": "executed",
@@ -7571,8 +8207,36 @@
     "file": "tests/unit/awareness-proxy-independence.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "bd1ac609c4db58f3fd9288b7a7731edd2655ca699f0f3abf8a99a49b8a5c5e93",
+    "sourceSha256": "cafd226c9eb2cea0300c52f8458e8c3aaa6bcb0bab6544df0d344c5485cfce16",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -7673,11 +8337,11 @@
   {
     "file": "tests/unit/beat-audio-generation-owner.test.ts",
     "group": "root-unit",
-    "status": "executed",
+    "status": "failed",
     "sourceSha256": "a6add4a541f025528ada7d785ec2a5e9e8c3c08740dfa128ac1edcdc0437135d",
     "evidence": [
       {
-        "status": "passed",
+        "status": "failed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
@@ -8575,6 +9239,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/contract-template-catalog.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "92259b7d7be8fa1b16a91e36cd2a2580039e2299577a4cb97ead84ecdcf50908",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/unit/coverage-gaps.test.ts",
     "group": "root-unit",
     "status": "executed",
@@ -8789,6 +9466,131 @@
     "status": "executed",
     "sourceSha256": "f43d7de99a5c2e714d3fc03b9a748d0a8cb9fb4740463291b6fec23dadbc141e",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/delta-engine-integrity.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "d985d68700272119cf0c4bf51f3b0cdbd4dec157616913841da002fcbf87fb83",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -9613,6 +10415,827 @@
     "status": "executed",
     "sourceSha256": "12887f20879adb38450694026923a69f87f4fdfb63a39b3f80f66a4610a9c74d",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/dsp-production-contracts.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "0006f11c8c71e3ffc22a2343207d7b18ec893cd28030033cbc8895efe193b3f6",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -10592,7 +12215,7 @@
     "file": "tests/unit/hybrid-storage-index-recovery.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "b3a37284447f34ab19a46d20051827349f62698808e12be966deeffccfa90d66",
+    "sourceSha256": "918f7fa9344eed19490fe1cad8a86ee519b74402a5561a845f971ea9af440fc4",
     "evidence": [
       {
         "status": "passed",
@@ -12097,6 +13720,31 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "8aa878bb0e08ad197570ddea74e81f574daa0da063bba42003fc3de81ee29c60",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/unit/maxcore-python-launcher.test.ts",
     "group": "root-unit",
     "status": "executed",
@@ -13274,7 +14922,7 @@
     "file": "tests/unit/pdim-canonical-owner.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "37716dff757d0ad452a55a2066bb9c4bc4dc7f9afe7d59de333e994c105cf4ec",
+    "sourceSha256": "42ddfffd07f4d405b316e097db9e09fa50f062bfe50d57e89c3d3047042ee47b",
     "evidence": [
       {
         "status": "passed",
@@ -13790,6 +15438,39 @@
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/production-auth-rate-limit.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "691ad571d8de75f48d6e84e37d5747121080db0c491cbc0aabeb3fd12e1abbd7",
+    "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -15073,7 +16754,7 @@
     "file": "tests/unit/release-workflow-honesty.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "6db0035d80435a6278496e8d90f07d375c26f35a1c7e8f502ac1f0a4325d640a",
+    "sourceSha256": "9dc98db6e2ae618477531bc79a7b8be61b6b8cd5bacdb757a0187517f12d42b0",
     "evidence": [
       {
         "status": "passed",
@@ -15115,8 +16796,41 @@
     "file": "tests/unit/retained-pdim-recovery-simulation.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "bf2d07167ddcb69538c3da25d77e319579f71e0d43e231724c0cabe0e724214b",
+    "sourceSha256": "0bc27d4bb3a4d5138127a7ec5c9cf035efd61a9f754e07d184482e1032752803",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/route-registration-readiness.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "97a3d39f865d8a985a6ad98608b7ef0f8438ca6555f5717920b26cae7f6e14c1",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -16358,7 +18072,20 @@
     "file": "tests/unit/social-batch-publish-route.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "6785fe87d7521fea5937d1584e9d84f6049e6212dd10f26728a683a8f618cc1b",
+    "sourceSha256": "232bc49e1a2d8292f2d89878b35e37e60d46041f63248bc45dd4a00167de2637",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/social-hashtag-availability.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "8c864ec442f091ae7378bfebaa7edcd520298451a9a250870cbae4bebacec4b5",
     "evidence": [
       {
         "status": "passed",
@@ -16591,7 +18318,7 @@
   {
     "file": "tests/unit/social-url-maxcore-contract.test.ts",
     "group": "root-unit",
-    "status": "executed",
+    "status": "failed",
     "sourceSha256": "5465d557205149cd8d6ea3bc0e059481435daa9cdfc794700182e2e82638b3c6",
     "evidence": [
       {
@@ -16619,9 +18346,34 @@
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
+        "status": "failed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
+      {
+        "status": "failed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/social-video-proxy-credentials.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "e39086de550723d4ede06aecb2bcbdbd4982a405e51242ba92c112f4fc33af46",
+    "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -16802,6 +18554,59 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/storage-chunk-sessions.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "e6f57954cb096c255eab4ffeccb8570bd8067314d0ca5c83d5ead8bff8286e84",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/unit/storefront-builder-null-state.test.ts",
     "group": "root-unit",
     "status": "executed",
@@ -16895,6 +18700,23 @@
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/stripe-lazy-availability.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "7c7b04bf8650d93a4c002b868271e946f763ead376a8ca599fa29e753b6f51f4",
+    "evidence": [
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -17794,6 +19616,71 @@
     "prerequisites": []
   },
   {
+    "file": "tests/unit/workspace-ownership-boundaries.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "90b6c3426f7988b839b476a0a626ecf8692d7566129369b69414d1433e07e824",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/url-video-test.sh",
     "group": "manual-destructive-provider",
     "status": "not_run",
@@ -17826,6 +19713,19 @@
       {
         "status": "passed",
         "evidence": "reports/test-verification/node/tests__vst3-binary-inspection.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/web-ci-scope.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "ac30ba725131e5d2b0e76fc253c645a4d82b798e6b04c737b2a87d43a18458fc",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__web-ci-scope.test.mjs.txt"
       }
     ],
     "prerequisites": []
@@ -17892,7 +19792,7 @@
     "file": "vitest.config.ts",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "efcb1f6c7584fde476aa6cc07d65d000c6f0f138d7117e5b7d727196c7764998",
+    "sourceSha256": "7a81637a04bfbd87620db2dda1145ed6771384292a923caf70ac6a8ae9c07ccb",
     "evidence": [],
     "prerequisites": []
   },
@@ -17901,6 +19801,14 @@
     "group": "runner-support",
     "status": "support",
     "sourceSha256": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "vitest.platform.config.ts",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "87d482e96c41db7d1ad2e1e576bbc2dc9fa43ce4e0c385a612f6cf1158b69a1c",
     "evidence": [],
     "prerequisites": []
   }

@@ -1,3 +1,4 @@
+import { withFabricCatalogLock } from "../../lib/db.js";
 import { createHash, randomUUID } from "crypto";
 import type { PocketRegistry } from "./infra/PocketRegistry.js";
 import type { VolumeRegistry } from "./infra/VolumeRegistry.js";
@@ -26,6 +27,7 @@ import type {
 import { ReedSolomon } from "./erasure/ReedSolomon.js";
 import { zstdEngine } from "./compression/ZstdEngine.js";
 import { logger } from "../../logger.js";
+import { DeletionOutbox } from "./infra/DeletionOutbox.js";
 
 const DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB
 
@@ -69,6 +71,7 @@ export interface RetrievedObject {
 }
 
 export class PocketStorageService {
+  private readonly deletionOutbox = new DeletionOutbox();
   constructor(
     private readonly pocketRegistry: PocketRegistry,
     private readonly volumeRegistry: VolumeRegistry,
@@ -81,9 +84,9 @@ export class PocketStorageService {
   ) {}
 
   /**
-   * Per-chunk in-process mutex. The fabric runs as a single-process singleton,
-   * so serializing the (physical-write + index-insert) and (index-release +
-   * physical-delete) critical sections per chunk id closes the eager-GC race:
+   * Per-chunk in-process mutex keeps local waiters off the shared database
+   * fence. Serializing physical-write/index-insert and index-release/delete
+   * critical sections per chunk id closes the eager-GC race:
    * a delete that frees a chunk's last reference cannot interleave with a
    * concurrent dedup store of the same chunk, so a live index row can never
    * point at physically deleted bytes.
@@ -103,7 +106,12 @@ export class PocketStorageService {
     this.chunkLocks.set(chunkId, mine);
     await prev;
     try {
-      return await fn();
+      return await this.deletionOutbox.withChunkLock(chunkId, async () => {
+        // Complete an interrupted deletion before a deduped write can revive
+        // this content id. The fence is shared by all PDIM worker processes.
+        await this.deletionOutbox.drainClaimedChunk(chunkId, nodeId => this.chunkStoreFactory(nodeId).deleteChunk(chunkId));
+        return fn();
+      });
     } finally {
       release();
       if (this.chunkLocks.get(chunkId) === mine) {
@@ -339,6 +347,11 @@ export class PocketStorageService {
     data: Buffer,
     opts: StoreObjectOptions = {},
   ): Promise<FabricObject> {
+    return withFabricCatalogLock(() => this.storeObjectLocked(volumeId, originalName, contentType, data, opts));
+  }
+
+  private async storeObjectLocked(volumeId: VolumeId, originalName: string, contentType: string, data: Buffer,
+    opts: StoreObjectOptions): Promise<FabricObject> {
     const policy = opts.policy ?? {};
 
     // Large objects are split into ordered segments, each independently
@@ -633,6 +646,10 @@ export class PocketStorageService {
   }
 
   async retrieveObject(objectId: ObjectId): Promise<RetrievedObject> {
+    return withFabricCatalogLock(() => this.retrieveObjectLocked(objectId));
+  }
+
+  private async retrieveObjectLocked(objectId: ObjectId): Promise<RetrievedObject> {
     const object = await this.objectIndex.getObject(objectId);
     if (!object) throw new Error(`Object ${objectId} not found`);
 
@@ -1124,36 +1141,29 @@ export class PocketStorageService {
    * another volume still depends on.
    */
   async deleteObject(objectId: ObjectId): Promise<void> {
-    // Atomically claim (delete) the object row FIRST. Under concurrent deletes
-    // of the same object only one caller gets the row back; everyone else gets
-    // null and no-ops, so a chunk reference is released exactly once and shared
-    // (deduped) chunks can never be double-released / lost.
-    const object = await this.objectIndex.deleteObject(objectId);
+    return withFabricCatalogLock(() => this.deleteObjectLocked(objectId));
+  }
+
+  private async deleteObjectLocked(objectId: ObjectId): Promise<void> {
+    // Removing the object and recording every release are one transaction.
+    // A repeated DELETE resumes its retained journal after a worker/node loss.
+    const object = await this.deletionOutbox.claim(objectId);
     if (!object) return;
-
-    // Release chunk references (and free physical bytes for any chunk whose last
-    // reference this object held) FIRST. The parent object aggregates every
-    // segment's chunk ids, so this is the authoritative cleanup; it must run
-    // before segment-row deletion so a DB error dropping segment metadata can
-    // never strand storage or leak refcounts.
-    for (const chunkId of object.chunkIds) {
-      await this.withChunkLock(chunkId, async () => {
-        const { deleted, loc } = await this.chunkIndex.releaseChunk(chunkId);
-        if (deleted && loc) {
-          for (const nodeId of loc.nodeIds) {
-            const store = this.chunkStoreFactory(nodeId);
-            await store.deleteChunk(chunkId).catch(() => {});
-            await this.nodeRegistry.addUsedBytes(nodeId, -loc.sizeBytes);
-          }
-        }
-      });
+    const errors: unknown[] = [];
+    for (const chunkId of new Set(object.chunkIds)) {
+      try { await this.withChunkLock(chunkId, async () => undefined); }
+      catch (error) { errors.push(error); }
     }
+    if (errors.length) throw new AggregateError(errors, "Fabric deletion remains pending");
+    await this.deletionOutbox.finish(objectId);
+  }
 
-    // Drop segment metadata rows last (if any). Physical bytes are already freed
-    // above; these rows only carry per-segment manifests.
-    if (object.manifest?.storageMode === "segmented") {
-      await this.segmentIndex.deleteSegmentsByObject(object.id);
+  async drainPendingDeletions(): Promise<void> {
+    const errors: unknown[] = [];
+    for (const objectId of await this.deletionOutbox.pendingObjects()) {
+      try { await this.deleteObject(objectId); } catch (error) { errors.push(error); }
     }
+    if (errors.length) throw new AggregateError(errors, "Fabric deletion remains pending");
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
@@ -1186,6 +1196,10 @@ export class PocketStorageService {
    * accounting bugs) and keeps per-node telemetry truthful.
    */
   async reconcileNodeUsage(): Promise<void> {
+    return withFabricCatalogLock(() => this.reconcileNodeUsageLocked());
+  }
+
+  private async reconcileNodeUsageLocked(): Promise<void> {
     const usage = await this.chunkIndex.getUsageByNode();
     const nodes = await this.nodeRegistry.listAllNodes();
     for (const node of nodes) {
@@ -1194,13 +1208,15 @@ export class PocketStorageService {
   }
 
   /**
-   * Rebuild chunk reference counts from the authoritative set of live objects
-   * and garbage-collect any orphaned chunks (no remaining references). Run at
-   * boot to heal accounting drift and migrate chunk rows created before
-   * reference counting existed. Pair with {@link reconcileNodeUsage} afterwards
-   * so per-node usage reflects only surviving chunks.
+   * Reconcile confirmed references while retaining unproven unpublished chunks.
+   * Complete writes and reconciliation share the catalog fence; an interrupted
+   * writer's absent object is never treated as permission for physical GC.
    */
   async reconcileRefCounts(): Promise<void> {
+    return withFabricCatalogLock(() => this.reconcileRefCountsLocked());
+  }
+
+  private async reconcileRefCountsLocked(): Promise<void> {
     const objects = await this.objectIndex.listAllObjects();
     const counts = new Map<ChunkId, number>();
     for (const obj of objects) {
@@ -1208,18 +1224,9 @@ export class PocketStorageService {
         counts.set(cid, (counts.get(cid) ?? 0) + 1);
       }
     }
-    const orphans = await this.chunkIndex.reconcileRefCounts(counts);
-    for (const loc of orphans) {
-      for (const nodeId of loc.nodeIds) {
-        await this.chunkStoreFactory(nodeId)
-          .deleteChunk(loc.id)
-          .catch(() => {});
-      }
-    }
-    if (orphans.length > 0) {
-      logger.info(
-        `[PocketFabric] Reconciled refcounts — GC'd ${orphans.length} orphan chunk(s)`,
-      );
+    const retained = await this.chunkIndex.reconcileRefCounts(counts);
+    if (retained.length > 0) {
+      logger.warn(`[PocketFabric] Retained ${retained.length} chunk(s) without proven ownership; no snapshot-based physical GC performed`);
     }
   }
 

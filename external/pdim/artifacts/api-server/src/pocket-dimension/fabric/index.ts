@@ -275,9 +275,12 @@ export async function initializeFabric(): Promise<void> {
       }
     }
 
-    // Heal accounting on boot: first rebuild chunk reference counts from live
-    // objects (GC'ing orphans and migrating pre-refCount rows), then derive
-    // per-node usage from the surviving chunks so telemetry starts truthful.
+    startDeletionDrain();
+    // A claimed object is no longer live. Its retained releases must finish
+    // before reconciliation can recompute references or physical-byte usage.
+    await fabricStorage.drainPendingDeletions();
+    // Reconcile confirmed references while retaining unproven interrupted
+    // publications, then derive usage from every retained indexed chunk.
     await fabricStorage.reconcileRefCounts();
     await fabricStorage.reconcileNodeUsage();
 
@@ -290,6 +293,20 @@ export async function initializeFabric(): Promise<void> {
   } catch (err) {
     logger.warn("[PocketFabric] Fabric init error (non-fatal):", err);
   }
+}
+
+let deletionDrainTimer: ReturnType<typeof setInterval> | undefined;
+function startDeletionDrain(): void {
+  if (deletionDrainTimer) return;
+  let running = false;
+  deletionDrainTimer = setInterval(() => {
+    if (running) return;
+    running = true;
+    void fabricStorage.drainPendingDeletions()
+      .catch(error => logger.warn({ err: error }, "[PocketFabric] Pending deletion retained for retry"))
+      .finally(() => { running = false; });
+  }, 30_000);
+  deletionDrainTimer.unref();
 }
 
 /**

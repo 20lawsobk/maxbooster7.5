@@ -1,19 +1,57 @@
 {
-  "scope": "Bounded disposable or read-only evidence verifiers; no production/provider mutations",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
   "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/platform-register.py",
+        "--self-test"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T23:48:25.557388+00:00",
+      "durationSeconds": 0.266,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/platform-register.py.txt",
+      "logSha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91",
+      "file": "scripts/testing/platform-register.py"
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "scripts/testing/run-engine-load.py",
+        "--python",
+        "/workspace/.cloud-python/bin/python",
+        "--output",
+        "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T23:48:25.825224+00:00",
+      "durationSeconds": 0.315,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/operations/load_test.py.txt",
+      "logSha256": "92bd7628d63d7d84a124ed10a67103d840713164f3c2a7670b532ff18c26444c",
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
+      "operationalProfile": "bounded-legacy-digital-gpu-numeric-dedup-v1",
+      "evidence": "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load/results.json"
+    },
     {
       "command": [
         "/workspace/.cloud-python/bin/python",
         "evaluations/maxcore-quality/verify_types.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-25T21:56:34.082801+00:00",
-      "durationSeconds": 0.065,
-      "exitCode": 1,
+      "startedAt": "2026-10-26T23:48:26.142526+00:00",
+      "durationSeconds": 0.064,
+      "exitCode": 0,
       "timedOut": false,
-      "status": "failed",
+      "status": "passed",
       "log": "reports/test-verification/operations/verify_types.py.txt",
-      "logSha256": "61d775c3f0ecc7c02bd57ad5c78691eb29c48fd3944423317180a1fa31e70cdd",
+      "logSha256": "691363e9eab1755dbdd5c05f8f6cdeef85e7c640e0f745e9bd96037266ff67d4",
       "file": "evaluations/maxcore-quality/verify_types.py"
     },
     {
@@ -22,13 +60,13 @@
         "evaluations/maxcore-quality/verify_evidence.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-25T21:56:34.148417+00:00",
-      "durationSeconds": 0.065,
-      "exitCode": 1,
+      "startedAt": "2026-10-26T23:48:26.208988+00:00",
+      "durationSeconds": 0.032,
+      "exitCode": 0,
       "timedOut": false,
-      "status": "failed",
+      "status": "passed",
       "log": "reports/test-verification/operations/verify_evidence.py.txt",
-      "logSha256": "1843ba3b3a0b3677180302904c41c0ce820cad83eb006ba40f23ee86035e054e",
+      "logSha256": "a0f71bf11dda59c66151378bcdc0d7ce48f61c7c6134e3e3594d6808a9337be5",
       "file": "evaluations/maxcore-quality/verify_evidence.py"
     },
     {
@@ -37,8 +75,8 @@
         "scripts/maxcore-isolated-recovery-acceptance.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-25T21:56:34.213644+00:00",
-      "durationSeconds": 6.306,
+      "startedAt": "2026-10-26T23:48:26.243458+00:00",
+      "durationSeconds": 5.913,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -52,13 +90,13 @@
         "tests/payment-processing/run.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-25T21:56:40.519619+00:00",
-      "durationSeconds": 2.784,
+      "startedAt": "2026-10-26T23:48:32.159216+00:00",
+      "durationSeconds": 13.626,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/operations/run.mjs.txt",
-      "logSha256": "ab3d8cfea375c0da76ba9f922d4e9b34c87cd9db6da4a8f646d265670dfb2d32",
+      "logSha256": "8fa65ed72d0210f00f3526fce64117b79d4cfea87a4c4c385c57d1d67c3dac95",
       "file": "tests/payment-processing/run.mjs"
     }
   ]

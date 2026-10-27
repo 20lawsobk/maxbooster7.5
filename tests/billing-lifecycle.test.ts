@@ -3,7 +3,7 @@
  *
  * Tests cover:
  * 1. Webhook signature validation (no sig / bad sig → rejected, valid sig → accepted)
- * 2. customer.subscription.created processing: tier is reflected in GET /api/billing/subscription
+ * 2. Signed subscription payloads cannot grant a tier without provider authority
  * 3. Idempotency: same Stripe event ID processed twice — second response carries the
  *    "already processed" message and the tier does NOT change a second time
  * 4. checkout.session.completed accepted for valid events
@@ -11,6 +11,7 @@
  */
 import { describe, it, expect } from "vitest";
 import crypto from "crypto";
+import { withFixtureDatabase } from "./helpers-http-fixture";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 const WEBHOOK_PATH = "/api/webhooks/stripe";
@@ -26,7 +27,6 @@ const testUser = {
 let authCookies = "";
 let csrfToken = "";
 let testUserId = "";
-let testUserStripeCustomerId: string | null = null;
 
 async function api(
   method: string,
@@ -34,6 +34,10 @@ async function api(
   body?: Record<string, unknown> | string,
   extraHeaders?: Record<string, string>,
 ) {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()) &&
+      !authCookies.split("; ").some(cookie => cookie.startsWith("csrf-token="))) {
+    await api("GET", "/api/csrf-token");
+  }
   const isStringBody = typeof body === "string";
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -86,6 +90,22 @@ async function api(
     json = text;
   }
   return { status: res.status, json };
+}
+
+async function setFixtureCustomer(customerId: string) {
+  return withFixtureDatabase(testUser.email, async client => {
+    const result = await client.query("UPDATE users SET stripe_customer_id=$1 WHERE email=$2 RETURNING id", [customerId, testUser.email]);
+    expect(result.rowCount).toBe(1);
+    return result.rows[0].id;
+  });
+}
+
+async function fixtureTier() {
+  return withFixtureDatabase(testUser.email, async client => {
+    const result = await client.query("SELECT subscription_tier FROM users WHERE email=$1", [testUser.email]);
+    expect(result.rowCount).toBe(1);
+    return result.rows[0].subscription_tier;
+  });
 }
 
 /**
@@ -186,7 +206,7 @@ async function fireWebhook(payload: string, secret: string) {
 
 describe("Billing Webhook Lifecycle", () => {
   // ──────────────────── Setup ────────────────────
-  it("1. registers and logs in test user; captures user ID and stripeCustomerId", async () => {
+  it("1. registers and logs in an owned fixture user and captures its ID", async () => {
     await api("POST", "/api/auth/register", testUser);
     const loginR = await api("POST", "/api/auth/login", {
       email: testUser.email,
@@ -200,8 +220,6 @@ describe("Billing Webhook Lifecycle", () => {
     expect(meR.status).toBe(200);
     const me = meR.json as Record<string, unknown>;
     testUserId = me.id as string;
-    testUserStripeCustomerId =
-      (me.stripeCustomerId as string | undefined) ?? null;
     expect(typeof testUserId).toBe("string");
   });
 
@@ -224,7 +242,7 @@ describe("Billing Webhook Lifecycle", () => {
       body: JSON.stringify({ type: "test.event" }),
       signal: AbortSignal.timeout(8000),
     });
-    expect([400, 401, 500]).toContain(res.status);
+    expect(res.status).toBe(400);
     expect(res.status).not.toBe(200);
   });
 
@@ -239,30 +257,19 @@ describe("Billing Webhook Lifecycle", () => {
       body: JSON.stringify({ type: "checkout.session.completed" }),
       signal: AbortSignal.timeout(8000),
     });
-    expect([400, 401, 500]).toContain(res.status);
+    expect(res.status).toBe(401);
     expect(res.status).not.toBe(200);
   });
 
   // ──────────────────── Valid-signature processing ────────────────────
-  it("5. valid customer.subscription.created is accepted and returns received:true", async () => {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.warn(
-        "[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping valid-signature test",
-      );
-      return;
-    }
-
-    const event = makeSubscriptionEvent(
-      {},
-      testUserStripeCustomerId ?? undefined,
-    );
-    const payload = JSON.stringify(event);
-    const r = await fireWebhook(payload, webhookSecret);
-
-    expect(r.status).toBe(200);
-    const body = r.json as Record<string, unknown>;
-    expect(body.received).toBe(true);
+  it("5. a signed subscription event cannot grant entitlement without current provider verification", async () => {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    expect(secret, "The isolated runner supplies an owned webhook secret").toBeTruthy();
+    const before = await fixtureTier();
+    const event = makeSubscriptionEvent({}, `cus_unlinked_${crypto.randomBytes(8).toString("hex")}`);
+    const result = await fireWebhook(JSON.stringify(event), secret!);
+    expect(result.status).toBe(500);
+    expect(await fixtureTier()).toBe(before);
   });
 
   it("6. checkout.session.completed (subscription mode) updates subscription_tier", async () => {
@@ -276,15 +283,7 @@ describe("Billing Webhook Lifecycle", () => {
 
     // Plant a unique stripeCustomerId on the test user for this test
     const fakeCusId6 = `cus_cs_${crypto.randomBytes(8).toString("hex")}`;
-    const setupR = await api("POST", "/api/testing/setup-stripe-customer", {
-      stripeCustomerId: fakeCusId6,
-    });
-    if (setupR.status !== 200) {
-      console.warn(
-        `[BillingTest] setup-stripe-customer returned ${setupR.status} — skipping checkout.session tier-update`,
-      );
-      return;
-    }
+    expect(await setFixtureCustomer(fakeCusId6)).toBe(testUserId);
 
     // Fire checkout.session.completed with mode:subscription → should update tier to 'monthly'
     const event = makeCheckoutSessionEvent(fakeCusId6, "monthly");
@@ -296,9 +295,7 @@ describe("Billing Webhook Lifecycle", () => {
     expect(body.received).toBe(true);
 
     // Verify tier updated directly in DB (bypasses Stripe API sync)
-    const tierR = await api("GET", "/api/testing/user-tier");
-    expect(tierR.status).toBe(200);
-    expect((tierR.json as Record<string, unknown>).tier).toBe("monthly");
+    expect(await fixtureTier()).toBe("monthly");
   });
 
   // ──────────────────── Idempotency ────────────────────
@@ -311,10 +308,10 @@ describe("Billing Webhook Lifecycle", () => {
       return;
     }
 
-    // Use a customer ID that does NOT match any real user so we can assert tier stays 'free'
-    const fakeCusId = `cus_idem_${crypto.randomBytes(8).toString("hex")}`;
+    const ownedCustomer = `cus_idem_${crypto.randomBytes(8).toString("hex")}`;
+    expect(await setFixtureCustomer(ownedCustomer)).toBe(testUserId);
     const sharedEventId = `evt_idem_${crypto.randomBytes(8).toString("hex")}`;
-    const event = makeSubscriptionEvent({ id: sharedEventId }, fakeCusId);
+    const event = makeCheckoutSessionEvent(ownedCustomer, "monthly", { id: sharedEventId });
     const payload = JSON.stringify(event);
 
     // Snapshot tier before
@@ -342,7 +339,7 @@ describe("Billing Webhook Lifecycle", () => {
       );
     }
 
-    // Tier must NOT have changed — the fake customer ID has no matching user
+    // Replaying the verified checkout must not change the already applied tier
     const tierAfter = await api("GET", "/api/billing/subscription");
     if (tierAfter.status === 200) {
       const tierAfterVal = (tierAfter.json as Record<string, unknown>).tier;
@@ -350,70 +347,27 @@ describe("Billing Webhook Lifecycle", () => {
     }
   });
 
-  // ──────────────────── Tier update when customer ID matches ────────────────────
-  it("8. subscription.created linked to real user updates subscription_tier", async () => {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      console.warn(
-        "[BillingTest] STRIPE_WEBHOOK_SECRET not set — skipping tier-update test",
-      );
-      return;
-    }
-
-    // Use the test-only helper to stamp a known stripeCustomerId onto the user
-    // (NODE_ENV=test gates this endpoint; no live Stripe connection required)
-    const fakeCusId = `cus_inttest_${crypto.randomBytes(8).toString("hex")}`;
-    const setupR = await api("POST", "/api/testing/setup-stripe-customer", {
-      stripeCustomerId: fakeCusId,
-    });
-    if (setupR.status !== 200) {
-      console.warn(
-        `[BillingTest] setup-stripe-customer returned ${setupR.status} — skipping tier-update test`,
-      );
-      return;
-    }
-
-    // Confirm baseline tier before webhook fires
-    const beforeR = await api("GET", "/api/billing/subscription");
-    const tierBefore =
-      beforeR.status === 200
-        ? (beforeR.json as Record<string, unknown>).tier
-        : "free";
-
-    // Fire customer.subscription.created with the planted customerId + planId: 'yearly'
-    const eventPayload = makeSubscriptionEvent({
-      id: `evt_tier_${crypto.randomBytes(8).toString("hex")}`,
-      data: {
-        object: {
-          id: `sub_tier_${crypto.randomBytes(8).toString("hex")}`,
-          object: "subscription",
-          customer: fakeCusId,
-          status: "active",
-          current_period_end:
-            Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
-          metadata: { planId: "yearly" },
-          items: { data: [{ price: { id: "price_test_yearly" } }] },
-        },
-      },
-    });
-    const rawPayload = JSON.stringify(eventPayload);
-    const webhookR = await fireWebhook(rawPayload, webhookSecret);
-    expect(webhookR.status).toBe(200);
-    expect((webhookR.json as Record<string, unknown>).received).toBe(true);
-
-    // Verify via the direct-DB test endpoint (bypasses Stripe subscription-sync logic
-    // which would error on the fake customerId and could obscure the DB value).
-    const tierR = await api("GET", "/api/testing/user-tier");
-    expect(tierR.status).toBe(200);
-    const tierBody = tierR.json as Record<string, unknown>;
-    expect(tierBody.tier).toBe("yearly");
-    expect(tierBody.tier).not.toBe(tierBefore);
+  // Provider-state authority is exercised with real SQL in subscription-authority-postgres.test.mjs.
+  it("8. a valid signed event cannot replace a user's tier from unverified payload metadata", async () => {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    expect(secret).toBeTruthy();
+    const customer = `cus_authority_${crypto.randomBytes(8).toString("hex")}`;
+    expect(await setFixtureCustomer(customer)).toBe(testUserId);
+    const before = await fixtureTier();
+    const event = makeSubscriptionEvent({ data: { object: {
+      id: `sub_unverified_${crypto.randomBytes(8).toString("hex")}`,
+      customer, status: "active", metadata: { planId: "yearly" },
+      items: { data: [{ price: { id: "price_unverified_yearly" } }] },
+    } } });
+    const result = await fireWebhook(JSON.stringify(event), secret!);
+    expect(result.status).toBe(500);
+    expect(await fixtureTier()).toBe(before);
   });
 
   // ──────────────────── Subscription endpoint shape ────────────────────
   it("9. GET /api/billing/subscription returns complete tier shape when authenticated", async () => {
     const r = await api("GET", "/api/billing/subscription");
-    expect([200, 500, 503]).toContain(r.status);
+    expect(r.status).toBe(200);
     if (r.status === 200) {
       const body = r.json as Record<string, unknown>;
       // Required fields
@@ -428,10 +382,12 @@ describe("Billing Webhook Lifecycle", () => {
 
   it("10. GET /api/billing/subscription returns 401 when unauthenticated", async () => {
     const saved = authCookies;
+    const savedCsrf = csrfToken;
     authCookies = "";
     const r = await api("GET", "/api/billing/subscription");
     expect([401, 403]).toContain(r.status);
     authCookies = saved;
+    csrfToken = savedCsrf;
   });
 
   it("11. GET /api/billing/plans returns a non-empty plan list without auth", async () => {
@@ -449,8 +405,7 @@ describe("Billing Webhook Lifecycle", () => {
     const r = await api("POST", "/api/billing/create-checkout-session", {
       planId: "invalid_plan_xyz",
     });
-    // 400 = validation error, 401/403 = auth gate, 503 = Stripe not configured
-    expect([400, 401, 403, 503]).toContain(r.status);
+    expect(r.status).toBe(400);
     expect(r.status).not.toBe(200);
   });
 });

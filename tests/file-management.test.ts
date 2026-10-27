@@ -11,6 +11,8 @@
  */
 import { describe, it, expect } from "vitest";
 
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
 const testUser = {
@@ -98,13 +100,18 @@ async function apiJson(
 
 describe("File Management (Storage Round-Trip)", () => {
   it("1. registers and logs in a test user", async () => {
-    await apiJson("POST", "/api/auth/register", testUser);
+    const registered = await apiJson("POST", "/api/auth/register", testUser);
+    expect(registered.status).toBe(200);
+    await provisionFixtureEntitlement(testUser.email);
     const r = await apiJson("POST", "/api/auth/login", {
       email: testUser.email,
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await apiJson("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
   });
 
   it("2. rejects unauthenticated upload with 401 or 403", async () => {
@@ -129,6 +136,37 @@ describe("File Management (Storage Round-Trip)", () => {
     csrfToken = savedCsrf;
   });
 
+  it("isolates private hybrid bytes on both download routes", async () => {
+    const form = new FormData();
+    form.append("file", new Blob([uploadPayload], { type: "audio/wav" }), "private-hybrid.wav");
+    const uploaded = await apiJson("POST", "/api/hybrid-storage/upload", form);
+    expect(uploaded.status).toBe(200);
+    const key = (uploaded.json as { key: string }).key;
+    expect(key).toBeTruthy();
+    const canonicalPath = "/api/storage/file/" + key.split("/").map(encodeURIComponent).join("/");
+    const own = await api("GET", canonicalPath);
+    expect(own.status).toBe(200);
+    expect(Buffer.from(await own.arrayBuffer())).toEqual(uploadPayload);
+    const ownerCookies = authCookies, ownerCsrf = csrfToken;
+    try {
+      authCookies = "";
+      csrfToken = "";
+      const stranger = { ...testUser, email: `hybrid_other_${Date.now()}@maxbooster-test.invalid` };
+      const strangerHeaders = { "x-maxbooster-fixture-client": "foreign-hybrid-owner" };
+      expect((await apiJson("POST", "/api/auth/register", stranger, strangerHeaders)).status).toBe(200);
+      await provisionFixtureEntitlement(stranger.email);
+      expect((await api("GET", "/api/auth/me", undefined, strangerHeaders)).status).toBe(200);
+      const denied = await api("GET", canonicalPath, undefined, strangerHeaders);
+      expect(denied.status).toBe(403);
+      expect(await denied.text()).not.toContain(uploadPayload.toString());
+      expect((await api("GET", "/api/hybrid-storage/file/" + encodeURIComponent(key), undefined, strangerHeaders)).status).toBe(403);
+    } finally {
+      authCookies = ownerCookies;
+      csrfToken = ownerCsrf;
+      expect((await api("DELETE", "/api/hybrid-storage/file/" + encodeURIComponent(key))).status).toBe(200);
+    }
+  });
+
   it("3. uploads a small audio file and receives a storage key", async () => {
     const form = new FormData();
     form.append(
@@ -140,20 +178,6 @@ describe("File Management (Storage Round-Trip)", () => {
 
     const r = await apiJson("POST", "/api/storage/upload", form);
 
-    if (r.status === 500 || r.status === 503) {
-      // Storage service not configured in this environment — document and skip
-      console.warn(
-        "[FileTest] Storage backend unavailable (500/503) — skipping upload assertions",
-      );
-      return;
-    }
-    if (r.status === 403) {
-      // Trial/subscription gate fired — this is valid behavior for new users
-      console.warn(
-        "[FileTest] Upload blocked by subscription gate (403) — downstream tests will be skipped",
-      );
-      return;
-    }
 
     expect(r.status).toBe(200);
     const body = r.json as Record<string, unknown>;
@@ -169,15 +193,10 @@ describe("File Management (Storage Round-Trip)", () => {
   });
 
   it("4. downloads the uploaded file and verifies content-type and byte payload", async () => {
-    if (!uploadedFileKey) {
-      console.warn(
-        "[FileTest] Upload step did not produce a key — skipping download test",
-      );
-      return;
-    }
+    expect(uploadedFileKey, "The upload must succeed before file lifecycle checks").toBeTruthy();
     const res = await api("GET", `/api/storage/file/${uploadedFileKey}`);
 
-    expect([200, 206, 403, 404]).toContain(res.status);
+    expect(res.status).toBe(200);
 
     if (res.status === 200 || res.status === 206) {
       const contentType = res.headers.get("content-type");
@@ -205,13 +224,10 @@ describe("File Management (Storage Round-Trip)", () => {
   });
 
   it("6. deletes the uploaded file and returns success", async () => {
-    if (!uploadedFileKey) {
-      console.warn("[FileTest] No uploaded key — skipping delete test");
-      return;
-    }
+    expect(uploadedFileKey, "The upload must succeed before file lifecycle checks").toBeTruthy();
     const r = await apiJson("DELETE", `/api/storage/file/${uploadedFileKey}`);
     // 200 = deleted, 403 = subscription gate blocked delete, 404 = file not tracked in DB
-    expect([200, 403, 404]).toContain(r.status);
+    expect(r.status).toBe(200);
 
     if (r.status === 200) {
       const body = r.json as Record<string, unknown>;
@@ -220,16 +236,11 @@ describe("File Management (Storage Round-Trip)", () => {
   });
 
   it("7. GET of a deleted file returns 404", async () => {
-    if (!uploadedFileKey) {
-      console.warn(
-        "[FileTest] No uploaded key — skipping post-delete 404 test",
-      );
-      return;
-    }
+    expect(uploadedFileKey, "The upload must succeed before file lifecycle checks").toBeTruthy();
     // If the delete in test 6 didn't return 200, this test is informational only
     const res = await api("GET", `/api/storage/file/${uploadedFileKey}`);
     // 404 expected after delete; 403 if the delete was blocked and file still exists
-    expect([403, 404, 410]).toContain(res.status);
+    expect(res.status).toBe(404);
     expect(res.status).not.toBe(200);
   });
 
@@ -242,7 +253,7 @@ describe("File Management (Storage Round-Trip)", () => {
 
   it("9. GET /api/storage/quota returns quota info when authenticated", async () => {
     const r = await apiJson("GET", "/api/storage/quota");
-    expect([200, 401, 403, 503]).toContain(r.status);
+    expect(r.status).toBe(200);
     if (r.status === 200) {
       const body = r.json as Record<string, unknown>;
       expect(typeof body.limit).toBe("number");
@@ -257,44 +268,38 @@ describe("File Management (Storage Round-Trip)", () => {
     const r = await api(
       "GET",
       "/api/storage/file/users%2Fsomeone%2F%252e%252e%2F%252e%252e%2Fetc%2Fpasswd",
+      undefined, { "x-maxbooster-fixture-client": "hostile-double-encoding" },
     );
     expect([400, 403, 404]).toContain(r.status);
   });
 
   it("10b. literal '..' segments in file key are rejected (never 200)", async () => {
-    const r = await api("GET", "/api/storage/file/users/x/../../etc/passwd");
+    const r = await api("GET", "/api/storage/file/users/x/../../etc/passwd", undefined,
+      { "x-maxbooster-fixture-client": "hostile-traversal" });
     expect([400, 403, 404]).toContain(r.status);
   });
 
   it("10c. backslash and encoded-NUL keys are rejected (never 200)", async () => {
-    const r1 = await api("GET", "/api/storage/file/users%5Cx%5Csecrets");
+    const r1 = await api("GET", "/api/storage/file/users%5Cx%5Csecrets", undefined,
+      { "x-maxbooster-fixture-client": "hostile-backslash" });
     expect([400, 403, 404]).toContain(r1.status);
-    const r2 = await api("GET", "/api/storage/file/users%2Fx%2Ffile%00.wav");
+    const r2 = await api("GET", "/api/storage/file/users%2Fx%2Ffile%00.wav", undefined,
+      { "x-maxbooster-fixture-client": "hostile-nul" });
     expect([400, 403, 404]).toContain(r2.status);
   });
 
   it("10d. restore of the deleted file makes it downloadable again", async () => {
-    if (!uploadedFileKey) return; // upload test did not run
+    expect(uploadedFileKey, "A prior create/upload step must have succeeded").toBeTruthy();
     const restore = await apiJson(
       "POST",
       `/api/storage/restore/${encodeURIComponent(uploadedFileKey)}`,
     );
-    // Restore may be unsupported for permanently-deleted keys; only assert
-    // the round trip when the API reports success.
-    if (restore.status === 200) {
-      const r = await api(
-        "GET",
-        `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
-      );
-      expect(r.status).toBe(200);
-      // Re-delete so the suite leaves no live file behind.
-      await api(
-        "DELETE",
-        `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
-      );
-    } else {
-      expect([400, 404, 410]).toContain(restore.status);
-    }
+    expect(restore.status).toBe(200);
+    const r = await api("GET", `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`);
+    expect(r.status).toBe(200);
+    expect(Buffer.from(await r.arrayBuffer())).toEqual(uploadPayload);
+    const removed = await api("DELETE", `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`);
+    expect(removed.status).toBe(200);
   });
 
   it("10. GET /api/storage/quota returns 401 or 403 without authentication", async () => {

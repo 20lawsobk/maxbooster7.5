@@ -1,20 +1,21 @@
 {
   "status": "passed",
   "command": "node scripts/pdim-content-recovery-drill.mjs",
-  "scope": "synthetic disposable PDIM content recovery",
-  "implementation": "HybridStorageService upload/read using PocketDimension hybrid-cold-storage entries and hybrid:storage:index over the local implementation of the production PDIM HTTP exec contract",
+  "scope": "synthetic disposable legacy-format PDIM content recovery",
+  "currentSqlMetadataRecovered": false,
+  "implementation": "Historical-format fixture seed plus read-only HybridStorageService/PocketDimension verification of hybrid:storage:index over local PDIM; current PostgreSQL metadata is not included",
   "evidence": {
     "productionDataTouched": false,
     "contentKeys": [
-      "synthetic-pdim-owner/synthetic-recovery/29207238-recovery-tone.raw",
-      "synthetic-pdim-owner/synthetic-recovery/c98751eb-cover-fragment.bin"
+      "synthetic-pdim-owner/legacy-0-recovery-tone.raw",
+      "synthetic-pdim-owner/legacy-1-cover-fragment.bin"
     ],
     "contentChecksums": [
       "dc40db3711bde1a6ffb0d913163184ec8fcbf01f9dd85b74111f67fdce644fc8",
       "d7ab55e103d55fe20db18f4951f59dbfa1c5d2eb7e6dbe58c8cdfcb0c8ec09a6"
     ],
-    "snapshotSha256": "7e7867aae708bfba0cecb192bf685e02a6e91076a8ebb7571e67588724c6c461",
-    "snapshotBytes": 4413,
+    "snapshotSha256": "528e4b273afeed94c435143f5a995b9adf8db552e1845adac391d6f8e22bdd3c",
+    "snapshotBytes": 4321,
     "productionPocketId": "hybrid-cold-storage",
     "productionEntryPrefix": "storage/",
     "hybridIndexKey": "hybrid:storage:index",
@@ -35,8 +36,7 @@
   },
   "recoveryGate": {
     "behavior": "PocketDimension metadata/index and the hybrid ownership index now initialize empty only after authoritative null reads; malformed JSON, invalid shapes, partial records, and PDIM read failures fail explicitly before writes.",
-    "focusedTestCommand": "NODE_OPTIONS=--max-old-space-size=256 npx vitest run server/pocket-dimension/__tests__/index.test.ts tests/unit/hybrid-storage-index-recovery.test.ts --pool=threads --maxWorkers=1",
-    "focusedTestsPassed": 18
+    "focusedTestCommand": "NODE_OPTIONS=--max-old-space-size=256 npx vitest run server/pocket-dimension/__tests__/index.test.ts tests/unit/hybrid-storage-index-recovery.test.ts --pool=threads --maxWorkers=1"
   },
   "cleanup": {
     "attempted": true,
@@ -44,8 +44,9 @@
   },
   "failure": null,
   "gaps": [
+    "This legacy-format snapshot does not recover current hybrid_storage_files/imports PostgreSQL metadata or new immutable blob keys; coordinated Neon and PDIM backup/restore remains required.",
     "Off-instance transport was simulated with a separate local temporary export directory only; no remote backup service or independent machine was used.",
     "No AppStorage, shared database, production credentials, or actual user data was read, exported, restored, or deleted.",
-    "This proves the real HybridStorageService -> PocketDimension -> PDIM key path for synthetic content, not recovery of retained production user PDIM content; that operational recovery remains a gap."
+    "This proves the real historical HybridStorageService -> PocketDimension -> PDIM key path for synthetic content, not recovery of retained production user PDIM content; that operational recovery remains a gap."
   ]
 }

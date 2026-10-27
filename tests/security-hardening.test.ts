@@ -12,7 +12,14 @@ async function req(
   path: string,
   body?: unknown,
   headers: Record<string, string> = {},
+  withCsrf = true,
 ) {
+  if (withCsrf && ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase())) {
+    const bootstrap = await fetch(`${BASE}/api/csrf-token`);
+    const token = await bootstrap.json();
+    const cookie = bootstrap.headers.getSetCookie().map(value => value.split(";")[0]).join("; ");
+    headers = { Cookie: cookie, "x-csrf-token": token.csrfToken, ...headers };
+  }
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { "Content-Type": "application/json", ...headers },
@@ -55,6 +62,7 @@ describe("Authentication Guards", () => {
 describe("Input Validation — Auth Endpoints", () => {
   it("register rejects missing email", async () => {
     const r = await req("POST", "/api/auth/register", {
+      birthdate: "1990-01-01",
       password: "ValidPass123!",
     });
     expect(r.status).toBe(400);
@@ -91,30 +99,29 @@ describe("Input Validation — Auth Endpoints", () => {
   it("does not expose password in user object after register", async () => {
     const email = `sec_test_${Date.now()}@maxbooster-test.invalid`;
     const r = await req("POST", "/api/auth/register", {
+      birthdate: "1990-01-01",
       email,
       password: "SecurePass123!",
       firstName: "Test",
       lastName: "User",
     });
-    if (r.status === 200 && typeof r.json === "object" && r.json !== null) {
-      const obj = r.json as Record<string, unknown>;
-      expect(obj.password).toBeUndefined();
-      expect(obj.twoFactorSecret).toBeUndefined();
-    }
+    expect(r.status).toBe(200);
+    const obj = r.json as Record<string, unknown>;
+    expect(obj.id).toBeDefined();
+    expect(obj.email).toBe(email);
+    expect(obj.password).toBeUndefined();
+    expect(obj.twoFactorSecret).toBeUndefined();
   });
 });
 
 describe("CSRF Protection", () => {
-  it("state-changing POST without CSRF cookie is accepted for auth endpoints (cookie SameSite handles it)", async () => {
-    // Our CSRF implementation uses double-submit cookie.
-    // Login and register are CSRF-exempt (they're auth initiation flows).
-    // This test verifies the endpoints respond (not blocked at the network level).
+  it("login without the CSRF cookie/header is rejected before credentials are checked", async () => {
     const r = await req("POST", "/api/auth/login", {
       email: "x@x.com",
       password: "x",
-    });
-    // Must get a real app response (not a CSRF middleware 403)
-    expect(r.status).not.toBe(403);
+    }, {}, false);
+    expect(r.status).toBe(403);
+    expect((r.json as Record<string, unknown>).error).toBe("CSRF validation failed");
   });
 
   it("health endpoints are not blocked by CSRF", async () => {

@@ -16,7 +16,7 @@ import { AlertCircle, RefreshCw, WifiOff, Clock, Plus, Home, AlertTriangle, Chec
 import { useToast } from "@/hooks/use-toast";
 import { errorService, captureException } from "@/lib/errorService";
 import { apiRequest } from "@/lib/queryClient";
-import { useRouter } from "wouter/use-location";
+import { useLocation } from "wouter";
 
 interface LoadingState {
   projects: boolean;
@@ -42,7 +42,7 @@ interface StudioLoaderProps {
 export function StudioLoader({ children, _userId }: StudioLoaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, navigate] = useRouter();
+  const [, navigate] = useLocation();
 
   const [loadingState, setLoadingState] = useState<LoadingState>({
     projects: true,
@@ -77,39 +77,37 @@ export function StudioLoader({ children, _userId }: StudioLoaderProps) {
     queryKey: ["/api/studio/projects"],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    onError: (error: any) => {
-      captureException(error, {
-        component: "StudioLoader",
-        action: "load-projects",
-      });
-      setErrorState((prev) => ({ ...prev, projects: error as Error }));
-    },
-    onSuccess: () => {
-      setLoadingState((prev) => ({ ...prev, projects: false }));
-      setErrorState((prev) => ({ ...prev, projects: undefined }));
-    },
   });
 
   // Query for samples with error handling
   const {
     data: samplesData,
-    
-    
+    isLoading: samplesLoading,
+    error: samplesErrorData,
     
     refetch: refetchSamples,
   } = useQuery({
     queryKey: ["/api/studio/samples"],
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    onError: (error: any) => {
-      // Don't capture sample loading errors as they're not critical
-      setErrorState((prev) => ({ ...prev, samples: error as Error }));
-    },
-    onSuccess: () => {
-      setLoadingState((prev) => ({ ...prev, samples: false }));
-      setErrorState((prev) => ({ ...prev, samples: undefined }));
-    },
   });
+
+  // Query v5 exposes outcomes through the result; query onSuccess/onError
+  // callbacks are no longer supported. Keep presentation state in sync with
+  // the real observer, including recovery after a manual refetch.
+  useEffect(() => {
+    setLoadingState((prev) => ({ ...prev, projects: projectsLoading, samples: samplesLoading }));
+    setErrorState({
+      projects: projectsErrorData ?? undefined,
+      samples: samplesErrorData ?? undefined,
+    });
+  }, [projectsLoading, samplesLoading, projectsErrorData, samplesErrorData]);
+
+  useEffect(() => {
+    if (projectsErrorData) {
+      captureException(projectsErrorData, { component: "StudioLoader", action: "load-projects" });
+    }
+  }, [projectsErrorData]);
 
   // Check if we have partial data
   useEffect(() => {
@@ -122,9 +120,6 @@ export function StudioLoader({ children, _userId }: StudioLoaderProps) {
   const handleRetryAll = useCallback(async () => {
     setIsRetrying(true);
     setRetryCount((prev) => prev + 1);
-
-    // Clear errors
-    setErrorState({});
 
     // Calculate retry delay
     const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
@@ -147,8 +142,10 @@ export function StudioLoader({ children, _userId }: StudioLoaderProps) {
 
     // Retry failed queries
     const retryPromises = [];
-    if (errorState.projects) retryPromises.push(refetchProjects());
-    if (errorState.samples) retryPromises.push(refetchSamples());
+    // Refetch normally resolves even when its result contains an error. Throw
+    // here so a failed retry cannot display the success acknowledgement.
+    if (errorState.projects) retryPromises.push(refetchProjects({ throwOnError: true }));
+    if (errorState.samples) retryPromises.push(refetchSamples({ throwOnError: true }));
 
     try {
       await Promise.all(retryPromises);
@@ -236,13 +233,17 @@ export function StudioLoader({ children, _userId }: StudioLoaderProps) {
 
   // Show error state if critical resources failed
   if (hasCriticalError) {
+    // A refetch clears the observer's error before the synchronization effect
+    // commits. Keep the previous error for that transition instead of reading
+    // a null observer result during render.
+    const errorMessage = (projectsErrorData ?? errorState.projects)?.message ?? "";
     const isNetworkError =
-      projectsErrorData.message.includes("Network") ||
-      projectsErrorData.message.includes("fetch");
-    const isTimeoutError = projectsErrorData.message.includes("timeout");
+      errorMessage.includes("Network") ||
+      errorMessage.includes("fetch");
+    const isTimeoutError = errorMessage.includes("timeout");
     const isAuthError =
-      projectsErrorData.message.includes("401") ||
-      projectsErrorData.message.includes("403");
+      errorMessage.includes("401") ||
+      errorMessage.includes("403");
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">

@@ -1,0 +1,38 @@
+{
+  "sourceFiles": {
+    "tests/hybrid-storage-postgres.test.mjs": "1d14534e3b0f4c301ba31dc841886a058f624429cf118d7d41790825cf96c47c",
+    "tests/social-media-jobs-postgres.test.mjs": "5fe08b3e9e165912015390eea710837033a8225e4e218f104eb73593fe578086",
+    "tests/contracts/helpers-contract-hooks.mjs": "48eb4c6078fe81ce53bd87ce5c76f08bd50edc0193011da73a62a00ac67a1cba",
+    "tests/contracts/helpers-hybrid-storage-contracts.mjs": "6c681341c04be7bff2515844ed3d7b472ae42df9342a6c629b2542037e840e5d",
+    "tests/contracts/helpers-social-media-job-contracts.mjs": "05de81b69855741392297b4fd84f300c60e0afd60199d284463c01b2173425a4",
+    "tests/coverage/hybrid-storage-live-repository.test.ts": "b4479d9a6c148d6f6a4c3659eb353bf3ccf10cf4115e4197c7acccab0941058f",
+    "tests/coverage/social-media-jobs-live-repository.test.ts": "2f08d278b548dfc49e78214c77691db4005e0edeafc6aab343b41ba8e35b52ed"
+  },
+  "nodeReceipt": "/workspace/onboarding-results/critical-coverage-node-final.json",
+  "vitestReceipt": "/workspace/onboarding-results/critical-coverage-vitest-final.json",
+  "vitestAssertionsPassed": 24,
+  "coverageScope": "Six named critical files, not global source",
+  "thresholdsUnchangedByThisTask": true,
+  "lint": {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "tests/hybrid-storage-postgres.test.mjs",
+      "tests/social-media-jobs-postgres.test.mjs",
+      "tests/contracts/helpers-contract-hooks.mjs",
+      "tests/contracts/helpers-hybrid-storage-contracts.mjs",
+      "tests/contracts/helpers-social-media-job-contracts.mjs",
+      "tests/coverage/hybrid-storage-live-repository.test.ts",
+      "tests/coverage/social-media-jobs-live-repository.test.ts",
+      "--quiet"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T05:06:01.226196+00:00",
+    "durationSeconds": 1.275,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "/workspace/onboarding-results/critical-coverage-lint.txt",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

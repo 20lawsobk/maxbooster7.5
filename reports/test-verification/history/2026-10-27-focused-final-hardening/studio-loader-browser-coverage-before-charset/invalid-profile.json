@@ -1,0 +1,8 @@
+{
+  "valid": false,
+  "excludedFromAnyCertifiedCoverage": true,
+  "reason": "Fixture omitted UTF-8 Content-Type. V8 ranges exceed the exact generated script length, so this source-map profile cannot be used. Replaced by explicit UTF-8 and Debugger.getScriptSource SHA256 validation.",
+  "scriptUtf16Units": 1424398,
+  "maximumV8EndOffset": 1424424,
+  "excessUnits": 26
+}

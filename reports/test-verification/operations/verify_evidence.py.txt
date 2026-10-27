@@ -3,14 +3,5 @@
 2026-09-23-frozen: evidence consistent (20 samples)
 2026-09-23-full-prefix: evidence consistent (20 samples)
 2026-09-23-traced: evidence consistent (20 samples)
-Traceback (most recent call last):
-  File "/workspace/maxbooster7.5/evaluations/maxcore-quality/verify_evidence.py", line 18, in <module>
-    result = json.loads((directory / "results.json").read_text())
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1027, in read_text
-    with self.open(mode='r', encoding=encoding, errors=errors) as f:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/workspace/maxbooster7.5/reports/maxcore-quality/2026-09-24-final/results.json'
+Assessment consistent: 0/20 diagnostic samples pass
+Frozen archive integrity PASS; no current inference or output-quality pass is inferred

@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: DNS validator and serializer resolve compatible patched fast-uri majors
 ok 1 - DNS validator and serializer resolve compatible patched fast-uri majors
   ---
-  duration_ms: 21.612562
+  duration_ms: 25.050514
   type: 'test'
   ...
 # Subtest: real Fastify validator/serializer compile remote-ID refs without networking
 ok 2 - real Fastify validator/serializer compile remote-ID refs without networking
   ---
-  duration_ms: 214.270155
+  duration_ms: 246.185593
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - real Fastify validator/serializer compile remote-ID refs without networki
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 355.043621
+# duration_ms 411.960926

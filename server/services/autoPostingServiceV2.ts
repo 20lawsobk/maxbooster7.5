@@ -10,8 +10,10 @@ import type { User } from "../../shared/schema.js";
 import { autopilotLearningService } from "./autopilotLearningService.js";
 import { detectHookPattern } from "./postingUtils.js";
 import { notificationService } from "./notificationService.js";
-import { claimSocialPost, checkpointSocialPost, recoverStrandedSocialPosts } from "./socialPostingRepository.js";
+import { claimSocialPost, checkpointSocialPost, recoverStrandedSocialPosts, requestImmediateSocialPost, updateQueuedSocialPost } from "./socialPostingRepository.js";
 import { socialOAuth } from "./socialOAuthService.js";
+import { SocialPublishRequestError } from "./socialPublishRequestError.js";
+export { SocialPublishRequestError } from "./socialPublishRequestError.js";
 
 // Max posts to dequeue and process concurrently per 2-second tick.
 // Override with AUTO_POST_BATCH_SIZE env var.
@@ -245,6 +247,8 @@ class AutoPostingServiceV2 {
       if (!claimed) return; // Duplicate queue deliveries must not repeat external side effects.
       post = await storage.getScheduledPostById(post.id);
       if (!post) throw new Error("Scheduled post disappeared before dispatch");
+      post.content = normalizePostContent(post.content, post.mediaUrls || []);
+      post.platforms = [...new Set((post.platforms || [post.platform]).map(normalizePublishingPlatform))];
       if (!(await this.hasCurrentPublishConsent(post))) {
         const cancelledResults = (post.platforms || []).map((platform) => ({
           platform,
@@ -549,20 +553,77 @@ class AutoPostingServiceV2 {
       status: "pending",
       createdBy,
     };
-    await storage.updateScheduledPost(postId, {
+    const prepared = await updateQueuedSocialPost(existingPost.userId, postId, existingPost.status, {
       platforms,
       content,
       mediaUrls,
       scheduledTime,
-      status: "pending",
       createdBy,
     });
+    if (!prepared) {
+      throw new SocialPublishRequestError("Delivery state changed; refresh before scheduling", 409, "DELIVERY_STATE_CHANGED");
+    }
     const delay = Math.max(0, scheduledTime.getTime() - Date.now());
     await this.postQueue.add("auto-post", scheduledPost, {
       jobId: postId,
       delay,
     });
     return scheduledPost;
+  }
+
+  /** Enqueue an existing row for immediate dispatch; queue acceptance is not
+   * provider delivery. The normal atomic claim/receipt executor handles both
+   * this job and any previously delayed job, so only one can send. */
+  async publishExistingPostNow(userId: string, postId: string): Promise<ScheduledPost> {
+    const post = await storage.getScheduledPostById(postId);
+    if (!post || post.userId !== userId) {
+      throw new SocialPublishRequestError("Post not found", 404, "POST_NOT_FOUND");
+    }
+    if (!["draft", "scheduled", "pending"].includes(post.status) ||
+        post.engagement?.postingRecoveryRequired === true ||
+        (post.results || []).some((receipt: PostResult) => receipt.success === true ||
+          ["started", "unknown", "confirmed"].includes(receipt.outcome || ""))) {
+      throw new SocialPublishRequestError("Delivery has started or requires reconciliation", 409, "DELIVERY_RECONCILIATION_REQUIRED");
+    }
+    const targets = post.platforms?.length ? post.platforms : [post.platform];
+    if (!targets.every(platform => typeof platform === "string")) {
+      throw new SocialPublishRequestError("Post has an unsupported platform", 400, "INVALID_PUBLISHING_PLATFORM");
+    }
+    const platforms = [...new Set(targets.map(normalizePublishingPlatform))];
+    if (!platforms.length || platforms.some(platform => !PUBLISHING_PLATFORMS.has(platform))) {
+      throw new SocialPublishRequestError("Post has an unsupported platform", 400, "INVALID_PUBLISHING_PLATFORM");
+    }
+    const accounts = await storage.getSocialAccounts(userId);
+    const missing = platforms.filter(platform => !accounts.some(account =>
+      account.isActive === true && typeof account.accessToken === "string" && account.accessToken.length > 0 &&
+      normalizePublishingPlatform(account.platform) === platform &&
+      (!account.tokenExpiresAt || new Date(account.tokenExpiresAt).getTime() > Date.now() || !!account.refreshToken)));
+    if (missing.length) {
+      throw new SocialPublishRequestError("Connect the post's publishing platforms before publishing", 409, "PUBLISHING_CONNECTION_REQUIRED");
+    }
+    if (!await this.hasCurrentPublishConsent(post)) {
+      throw new SocialPublishRequestError("Automated publishing requires current consent", 409, "PUBLISHING_CONSENT_REQUIRED");
+    }
+    try {
+      await this.initialize();
+    } catch {
+      throw new SocialPublishRequestError("Publishing queue is temporarily unavailable", 503, "PUBLISHING_QUEUE_UNAVAILABLE");
+    }
+    if (!await requestImmediateSocialPost(userId, postId)) {
+      throw new SocialPublishRequestError("Delivery state changed; refresh before retrying", 409, "DELIVERY_STATE_CHANGED");
+    }
+    const current = await storage.getScheduledPostById(postId);
+    if (!current || current.userId !== userId) throw new Error("Owned publishing row disappeared");
+    const queued = { ...current, platforms, content: normalizePostContent(current.content, current.mediaUrls || []) };
+    try {
+      // A separate stable job advances an existing delayed job without deleting
+      // it or racing BullMQ active locks. Both jobs use the same SQL claim.
+      await this.postQueue.add("auto-post", queued, { jobId: `immediate_${postId}`, delay: 0 });
+    } catch {
+      // The durable pending row remains discoverable by startup recovery.
+      throw new SocialPublishRequestError("Publishing queue is temporarily unavailable; retry this same post", 503, "PUBLISHING_QUEUE_UNAVAILABLE");
+    }
+    return queued;
   }
 
   async postNow(

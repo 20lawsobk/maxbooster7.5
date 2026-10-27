@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+import { seedSavedCareerRecommendation } from "./helpers-http-saved-data";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+const isolated = Boolean(process.env.MAXBOOSTER_ISOLATED_FIXTURE_TOKEN);
+const noMaxCore = process.env.TEST_EXPECT_MAXCORE_UNAVAILABLE === "1";
 let cookies = "";
 let csrfToken = "";
 let testUserId = "";
 const testUser = {
   birthdate: "1990-01-01",
-  email: `test_${Date.now()}@maxbooster-test.com`,
+  email: `test_${Date.now()}@maxbooster-test.invalid`,
   password: "SecurePass123!",
   username: `TestUser_${Date.now()}`,
   firstName: "Test",
@@ -18,9 +22,15 @@ async function api(
   path: string,
   body?: any,
   useCookies = true,
+  extraHeaders?: Record<string, string>,
 ) {
+  if (useCookies && ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()) &&
+      !cookies.split("; ").some(cookie => cookie.startsWith("csrf-token="))) {
+    await api("GET", "/api/csrf-token");
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...extraHeaders,
   };
   if (useCookies && cookies) {
     headers["Cookie"] = cookies;
@@ -79,6 +89,7 @@ describe("Critical Path Tests - Production Readiness", () => {
       expect(res.json.email).toBe(testUser.email);
       expect(res.json.password).toBeUndefined();
       testUserId = res.json.id;
+      expect(await provisionFixtureEntitlement(testUser.email)).toBe(testUserId);
     });
 
     it("should reject duplicate email registration", async () => {
@@ -169,12 +180,19 @@ describe("Critical Path Tests - Production Readiness", () => {
   describe("3. Distribution - Core Paid Feature", () => {
     let releaseId: string;
 
-    it("should list distribution platforms", async () => {
+    it.skipIf(isolated)("should list live distribution platforms through a connected Too Lost account", async () => {
       const res = await api("GET", "/api/distribution/platforms");
       expect(res.status).toBe(200);
       expect(res.json.platforms).toBeDefined();
       expect(Array.isArray(res.json.platforms)).toBe(true);
       expect(res.json.platforms.length).toBeGreaterThan(0);
+    });
+
+    it.runIf(isolated)("requires a connected distributor before claiming a live DSP catalog", async () => {
+      const res = await api("GET", "/api/distribution/platforms");
+      expect(res.status).toBe(409);
+      expect(res.json.requiresConnection).toBe(true);
+      expect(res.json.platforms).toBeUndefined();
     });
 
     it("should create a release", async () => {
@@ -193,9 +211,9 @@ describe("Critical Path Tests - Production Readiness", () => {
       releaseId = res.json.id;
     });
 
-    it("should reject release with missing required fields", async () => {
+    it("should reject a release draft without its required title", async () => {
       const res = await api("POST", "/api/distribution/releases", {
-        title: "Incomplete",
+        artistName: "Test Artist",
       });
       expect(res.status).toBe(400);
     });
@@ -208,9 +226,16 @@ describe("Critical Path Tests - Production Readiness", () => {
       expect(found).toBeDefined();
     });
 
-    it("should get earnings summary", async () => {
+    it.skipIf(isolated)("should get provider-confirmed earnings for an owned distributor connection", async () => {
       const res = await api("GET", "/api/distribution/earnings/summary");
       expect(res.status).toBe(200);
+    });
+
+    it.runIf(isolated)("does not present shared or missing provider earnings as personal revenue", async () => {
+      const res = await api("GET", "/api/distribution/earnings/summary");
+      expect(res.status).toBe(409);
+      expect(res.json.code).toBe("OWNED_DISTRIBUTOR_ACCOUNT_REQUIRED");
+      expect(res.json.totalEarnings).toBeUndefined();
     });
 
     it("should get HyperFollow links", async () => {
@@ -228,10 +253,16 @@ describe("Critical Path Tests - Production Readiness", () => {
         content: "Test post content #newmusic",
         scheduledAt: new Date(Date.now() + 86400000).toISOString(),
       });
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(201);
       expect(res.json.success).toBe(true);
-      expect(res.json.post.status).toBe("scheduled");
+      expect(res.json.queued).toBe(true);
+      expect(res.json.post.status).toBe("pending");
       postId = res.json.post.id;
+      expect(typeof postId).toBe("string");
+      const persisted = await api("GET", "/api/social/posts");
+      expect(persisted.status).toBe(200);
+      // The UI projection calls a future pending queue item "scheduled".
+      expect(persisted.json.find((post: { id: string }) => post.id === postId)).toMatchObject({ id: postId, status: "scheduled" });
     });
 
     it("should reject post without required fields", async () => {
@@ -247,10 +278,12 @@ describe("Critical Path Tests - Production Readiness", () => {
       expect(Array.isArray(res.json)).toBe(true);
     });
 
-    it("should publish a scheduled post", async () => {
+    it("does not claim publication before a platform connection and provider confirmation", async () => {
       const res = await api("POST", `/api/social/calendar/${postId}/publish`);
-      expect(res.status).toBe(200);
-      expect(res.json.post.status).toBe("published");
+      expect(res.status).toBe(409);
+      expect(res.json.code).toBe("PUBLISHING_CONNECTION_REQUIRED");
+      const posts = await api("GET", "/api/social/posts");
+      expect(posts.json.find((post: { id: string }) => post.id === postId)?.status).not.toBe("published");
     });
 
     it("should reject publishing non-existent post", async () => {
@@ -267,15 +300,22 @@ describe("Critical Path Tests - Production Readiness", () => {
       expect(res.json.totalFollowers).toBeDefined();
     });
 
-    it("should get trending hashtags", async () => {
+    it.skipIf(noMaxCore)("should get hashtags from available MaxCore generation", async () => {
       const res = await api("GET", "/api/social/hashtags/trending");
       expect(res.status).toBe(200);
       expect(Array.isArray(res.json)).toBe(true);
       // May be empty for a fresh test user with no social data
       if (res.json.length > 0) {
         expect(res.json[0].hashtag).toBeDefined();
-        expect(res.json[0].trend).toBeDefined();
+        expect(res.json[0].category).toBeDefined();
+        expect(res.json[0].trend).toBeUndefined();
       }
+    });
+
+    it.runIf(noMaxCore)("reports unavailable hashtag generation without invented trend metrics", async () => {
+      const res = await api("GET", "/api/social/hashtags/trending");
+      expect(res.status).toBe(503);
+      expect(res.json.code).toBe("AI_UNAVAILABLE");
     });
 
     it("should get inbox messages", async () => {
@@ -359,11 +399,13 @@ describe("Critical Path Tests - Production Readiness", () => {
   });
 
   describe("8. Career Coach", () => {
-    it("should get recommendations", async () => {
+    it("should read an owned saved recommendation without claiming fresh generation", async () => {
+      const fixtureId = await seedSavedCareerRecommendation(testUser.email);
       const res = await api("GET", "/api/career-coach/recommendations");
       expect(res.status).toBe(200);
       expect(res.json.success).toBe(true);
       expect(res.json.data.recommendations).toBeDefined();
+      expect(res.json.data.recommendations.some((item: { id: string }) => item.id === fixtureId)).toBe(true);
     });
 
     it("should get goals", async () => {
@@ -418,6 +460,9 @@ describe("Critical Path Tests - Production Readiness", () => {
       const res = await api(
         "GET",
         "/api/search/unified?q='; DROP TABLE users; --",
+        undefined,
+        true,
+        { "x-maxbooster-fixture-client": "hostile-search" },
       );
       expect([200, 400]).toContain(res.status);
     });

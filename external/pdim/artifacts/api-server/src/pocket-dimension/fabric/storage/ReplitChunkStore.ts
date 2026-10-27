@@ -89,9 +89,12 @@ export class ReplitChunkStore implements ChunkStore {
 
   async deleteChunk(chunkId: ChunkId): Promise<void> {
     const client = await this.getClient();
-    await (client["delete"] as (key: string) => Promise<void>)(
-      this.key(chunkId),
-    );
+    const result = await (client["delete"] as (
+      key: string, options: { ignoreNotFound: boolean },
+    ) => Promise<{ ok: boolean; error?: { message: string } }>)(this.key(chunkId), { ignoreNotFound: true });
+    // The SDK resolves an Err result for authorization/network failures. Only
+    // confirmed absence may be credited in the durable deletion receipt.
+    if (!result.ok) throw new Error(`ReplitChunkStore.deleteChunk failed: ${result.error?.message ?? "unknown storage error"}`);
   }
 
   async hasChunk(chunkId: ChunkId): Promise<boolean> {

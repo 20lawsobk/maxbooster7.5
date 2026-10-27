@@ -21,7 +21,13 @@ function preferenceHandler(method, url, dependencies, file = 'server/routes.ts',
   };
   visit(source);
   assert.ok(handler, `${method} ${url} is registered`);
-  return vm.runInNewContext(ts.transpile(`const handler = ${handler}; handler;`, {
+  // These handlers close over the module's actual immutable alert defaults
+  // and field allowlist. Preserve that lexical boundary in the VM fixture.
+  const declarations = source.statements.filter(ts.isVariableStatement)
+    .flatMap(statement => [...statement.declarationList.declarations])
+    .filter(declaration => ['securityAlertDefaults', 'securityAlertBooleanFields'].includes(declaration.name.getText(source)))
+    .map(declaration => `const ${declaration.getText(source)};`).join('\n');
+  return vm.runInNewContext(ts.transpile(`${declarations}\nconst handler = ${handler}; handler;`, {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None,
   }), { publicPaymentPreferences, hasBankCredentials, ...dependencies });
 }
@@ -221,6 +227,7 @@ test('authenticated user preference routes reject nested banking fields and reda
 
   const read = responseHarness();
   await get({ user: { id: 'owner' } }, read);
+  assert.equal(read.statusCode, 200);
   assert.equal(hasBankCredentials(read.body), false);
   assert.equal(read.body.payout.paypalEmail, 'owner@example.invalid');
   assert.equal(read.body.custom[0].label, 'retained');

@@ -21,6 +21,7 @@ import fs from "fs";
 import path from "path";
 import ignore from "ignore";
 import { DEPLOYMENT_CONTROL_FILES } from "./deploymentControlFiles.js";
+import { PRODUCTION_SCRATCH_DIRECTORY_PREFIXES } from "../../scripts/lib/production-simulation-copy.mjs";
 
 /**
  * Directories/files this scan must never report as "remaining" even though
@@ -81,7 +82,8 @@ function loadDockerignoreMatcher(root: string) {
   // Runtime-only lock/scratch files from a capsule restore never exist at
   // build time in a clean checkout, but guard anyway for safety when this
   // scan is run against a workspace that has actually booted before.
-  ig.add([".pdim-restore.lock", "*.pdim-restore.lock", ".pdim-scratch-*"]);
+  ig.add([".pdim-restore.lock", "*.pdim-restore.lock",
+    ...PRODUCTION_SCRATCH_DIRECTORY_PREFIXES.map(prefix => `/${prefix}*`)]);
   return ig;
 }
 

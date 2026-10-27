@@ -1,0 +1,18 @@
+[
+  {
+    "url": "https://maxbooster.replit.app/api/health",
+    "curlExitCode": 0,
+    "response": "404 text/html; charset=utf-8",
+    "bytes": 8417,
+    "sha256": "7635515c8b5a86a74ecc1f676f409a931d49dc9307f7c9498ef6826c84dabb60",
+    "scope": "Candidate host derived from repository defaults/project name; deployment identity not established"
+  },
+  {
+    "url": "https://max-booster--blawzmusic89.replit.app/api/health",
+    "curlExitCode": 0,
+    "response": "404 text/html; charset=utf-8",
+    "bytes": 8417,
+    "sha256": "7635515c8b5a86a74ecc1f676f409a931d49dc9307f7c9498ef6826c84dabb60",
+    "scope": "Candidate host derived from repository defaults/project name; deployment identity not established"
+  }
+]

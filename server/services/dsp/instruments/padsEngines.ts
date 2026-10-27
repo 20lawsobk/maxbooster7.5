@@ -123,6 +123,8 @@ export class WarmPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.lfo1.reset();
@@ -250,6 +252,7 @@ export class StringPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.sections.forEach((section) => {
       section?.oscillators.forEach((o) => o?.reset());
     });
@@ -391,6 +394,8 @@ export class ChoirPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.breathEnvelope.reset();
     this.formantOscs.forEach((o) => o?.reset());
     this.formantFilters.forEach((f) => f?.clear());
     this.vibratoLFO.reset();
@@ -523,6 +528,8 @@ export class GlassPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.shimmerEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.bellOscs.forEach((o) => o?.reset());
     this.shimmerLFO.reset();
@@ -654,6 +661,8 @@ export class DarkPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.noiseOsc.reset();
@@ -798,6 +807,8 @@ export class EvolvingPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.morphLFO.reset();
     this.panLFO.reset();
@@ -934,6 +945,8 @@ export class NoisePadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.noiseOscs.forEach((o) => o?.reset());
     this.toneOscs.forEach((o) => o?.reset());
     this.lpFilters.forEach((f) => f?.clear());
@@ -1067,6 +1080,8 @@ export class BrassPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.vibratoLFO.reset();
     this.growlLFO.reset();
@@ -1172,6 +1187,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.stereoLFO.reset();
     this.phaseLFO.reset();
@@ -1317,6 +1333,8 @@ export class SpacePadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.reverbEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.combFilters.forEach((c) => c?.clear());
     this.allpassFilters.forEach((a) => a?.clear());

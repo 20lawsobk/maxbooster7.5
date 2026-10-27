@@ -107,6 +107,8 @@ export class MinimoogSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.osc3.reset();
@@ -231,6 +233,8 @@ export class ProphetSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((v) => {
       v?.osc1.reset();
       v?.osc2.reset();
@@ -368,6 +372,8 @@ export class JupiterSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.chorusLFO1.reset();
@@ -477,6 +483,8 @@ export class OberheimSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.lfo.reset();
@@ -593,6 +601,8 @@ export class ARP2600Synth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.vco1.reset();
     this.vco2.reset();
     this.vco3.reset();
@@ -692,6 +702,8 @@ export class SH101Synth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc.reset();
     this.subOsc.reset();
     this.lfo.reset();
@@ -809,6 +821,8 @@ export class JunoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.chorusLFO.reset();
@@ -918,6 +932,8 @@ export class MS20Synth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.lfo.reset();
@@ -1025,6 +1041,8 @@ export class OdysseySynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.lfo.reset();
@@ -1164,6 +1182,8 @@ export class PolysixSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.chorusLFO.reset();

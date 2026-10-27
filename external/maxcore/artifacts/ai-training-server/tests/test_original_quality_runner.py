@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 RUNNER = Path(__file__).resolve().parents[1] / "scripts" / "run-maxcore-original-quality.py"
 spec = importlib.util.spec_from_file_location("original_quality_runner", RUNNER)
@@ -22,8 +23,24 @@ class RunnerContractTests(unittest.TestCase):
                 runner.loopback_origin(origin)
 
     def test_hashes_match_unchanged_sources(self):
-        self.assertEqual(runner.hashes(), runner.hashes())
-        self.assertEqual(set(runner.hashes()), set(runner.FILES))
+        # Hashing contract is independent of a locally installed checkpoint.
+        # Synthetic files are fixtures, never a serving release or quality proof.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in runner.FILES:
+                file = root / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_bytes(name.encode())
+            with patch.object(runner, "ROOT", root):
+                before = runner.hashes()
+                self.assertEqual(before, runner.hashes())
+                self.assertEqual(set(before), set(runner.FILES))
+                changed = root / runner.FILES[0]
+                changed.write_bytes(b"different source")
+                self.assertNotEqual(before[runner.FILES[0]], runner.hashes()[runner.FILES[0]])
+                (root / "ai_model/weights/model.pt").unlink()
+                with self.assertRaises(FileNotFoundError):
+                    runner.hashes()
 
     def test_counters_exclude_text_and_do_not_subtract_booleans(self):
         before = {"ops": 1, "available": True, "token": "sensitive", "nested": {"hits": 2}}

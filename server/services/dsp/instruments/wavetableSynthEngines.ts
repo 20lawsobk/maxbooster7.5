@@ -265,6 +265,8 @@ export class SerumSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.subOsc.reset();
@@ -377,6 +379,8 @@ export class MassiveSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lfo.reset();
     this.lpFilter.clear();
@@ -505,6 +509,8 @@ export class SynthwaveSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.osc1.reset();
     this.osc2.reset();
     this.arpOsc.reset();
@@ -637,6 +643,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.formantFilters.forEach((f) => f?.clear());
     this.morphLFO.reset();
@@ -759,6 +766,8 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.breathEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.morphLFO.reset();
     this.breathLFO.reset();
@@ -876,6 +885,8 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.morphLFO.reset();
     this.lpFilter.clear();
@@ -987,6 +998,8 @@ export class PPGSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.morphLFO.reset();
     this.pwmLFO.reset();
@@ -1115,6 +1128,8 @@ export class MicrotonalSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.morphLFO.reset();
     this.microtonalLFO.reset();
@@ -1241,6 +1256,8 @@ export class HybridSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.wtOscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.noiseOsc.reset();
@@ -1406,6 +1423,8 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.grains.forEach((g) => {
       g?.osc.reset();
       g.phase = 0;

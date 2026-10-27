@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="1" errors="0" time="29.427276257">
+    <testsuite name="tests/unit/studio-loader-browser.test.ts" timestamp="2026-10-27T09:59:04.476Z" hostname="2fc971e77ddd" tests="1" failures="1" errors="0" skipped="0" time="29.427276257">
+        <testcase classname="tests/unit/studio-loader-browser.test.ts" name="StudioLoader with the installed Query client &gt; reacts to actual query completion, failure, retry and authentication outcomes" time="28.649678538">
+            <failure message="Invalid URL" type="TypeError">
+TypeError: Invalid URL
+ ❯ CoverageMapper.create node_modules/ast-v8-to-istanbul/dist/index.mjs:461:11
+ ❯ convert node_modules/ast-v8-to-istanbul/dist/index.mjs:599:35
+ ❯ collectCoverage tests/unit/studio-loader-browser.test.ts:126:33
+ ❯ tests/unit/studio-loader-browser.test.ts:196:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;ERR_INVALID_URL&apos;, input: &apos;/tmp/studio-loader-query-qhdXih/fixture.js&apos; }
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

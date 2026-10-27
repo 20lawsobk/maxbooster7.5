@@ -8,6 +8,7 @@ import {
 } from "../services/maxcoreConnector.js";
 import fsPromises from "fs/promises";
 import { storageService } from "../services/storageService.js";
+import { cleanupMediaUploadFiles } from "../services/mediaUploadCleanup.js";
 import { pocketManager } from "../pocket-dimension/index.js";
 import { generateAndStorePosterThumbnail } from "../services/advancedVideoRendererService.js";
 import path from "path";
@@ -18,7 +19,18 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../logger";
-import { db } from "../db";
+import { db, pool } from "../db";
+import {
+  SocialMediaJobRepository,
+  keepMediaJobAlive,
+  type MediaJobLease,
+  type TerminalMediaJob,
+} from "../services/socialMediaJobRepository.js";
+import {
+  createVideoJobPollHandler,
+  createMusicVideoJobPollHandler,
+  rejectInvalidMusicVideoSceneRequest,
+} from "./socialMediaJobHandlers.js";
 import { socialInboxMessages, socialReplyTemplates, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar, users, workspaceMembers } from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull, or } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
@@ -32,8 +44,8 @@ import {
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError, requireMaxCore } from "../lib/aiSource.js";
-import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { generatedImageUrl, persistGeneratedImage } from "../services/generatedImageAsset.js";
 import { generateSocialUrlWithMaxCore } from "../services/socialUrlMaxCoreTransport.js";
 import { resolveFirstPartySocialSource } from "../services/firstPartySocialSource.js";
@@ -52,6 +64,7 @@ import {
 import {
   autoPostingServiceV2,
   normalizePublishingPlatform,
+  SocialPublishRequestError,
 } from "../services/autoPostingServiceV2.js";
 import {
   audioUpload,
@@ -84,24 +97,6 @@ let competitorBenchmarkService:
 let pythonAIService:
   | typeof import("../services/pythonAIService.js").pythonAIService
   | null = null;
-
-function cleanupMediaUploadFiles(req: Request): Promise<void> {
-  const fieldFiles = Array.isArray(req.files)
-    ? req.files
-    : Object.values(
-        (req.files || {}) as Record<string, Express.Multer.File[]>,
-      ).flat();
-  const files = [
-    ...(req.file ? [req.file] : []),
-    ...fieldFiles,
-  ];
-  return Promise.all(
-    files
-      .map((file) => file?.path)
-      .filter((filePath): filePath is string => Boolean(filePath))
-      .map((filePath) => fsPromises.unlink(filePath).catch(() => {})),
-  ).then(() => undefined);
-}
 
 function handleMediaUpload(
   upload: (req: Request, res: Response, callback: (error?: unknown) => void) => void,
@@ -201,26 +196,12 @@ async function getMaxcoreVideoUrlStore() {
 
 const router = Router();
 
-// ── Async FFmpeg job store ─────────────────────────────────────────────────────
-// Holds in-progress and completed FFmpeg video jobs.  Jobs are pruned after
-// 10 minutes so memory never grows unbounded.  The client uses the existing
-// /video-job/:jobId polling endpoint to check completion — same contract as
-// the Python AI service, so no client changes are needed.
-
-interface FFmpegJob {
-  status: "processing" | "done" | "error";
-  userId: string;
-  result?: Record<string, unknown>;
-  error?: string;
-  createdAt: number;
-}
-
-const ffmpegJobs = new Map<string, FFmpegJob>();
-
-function pruneStaleFFmpegJobs() {
-  const now = Date.now();
-  for (const [id, job] of ffmpegJobs?.entries() ?? []) {
-    if (now - job?.createdAt > 10 * 60 * 1000) ffmpegJobs?.delete(id);
+// Render status is shared across Node workers. Uploaded staging files and
+// renderer assets have separate storage requirements; this is not a blob cache.
+const mediaJobs = new SocialMediaJobRepository(pool);
+async function finishMediaJob(lease: MediaJobLease, job: TerminalMediaJob) {
+  if (!await mediaJobs.finish(lease, job)) {
+    throw new Error("Render worker no longer owns this job lease");
   }
 }
 
@@ -511,28 +492,41 @@ router.post(
       const userId = req.user!.id;
       const { postIds } = req.body as { postIds: string[] };
 
-      if (!Array.isArray(postIds) || postIds?.length === 0) {
+      if (!Array.isArray(postIds) || postIds.length === 0 || postIds.length > 100 ||
+          postIds.some(id => typeof id !== "string" || !id.trim())) {
         return res
           .status(400)
-          .json({ error: "postIds must be a non-empty array" });
+          .json({ error: "postIds must contain between 1 and 100 non-empty identifiers" });
       }
+      const requestedIds = [...new Set(postIds)];
 
       const existing = await db
         .select()
         .from(posts)
-        .where(and(inArray(posts.id, postIds), eq(posts.userId, userId)));
+        .where(and(inArray(posts.id, requestedIds), eq(posts.userId, userId)));
 
-      if (existing?.length === 0) {
-        return res.status(404).json({ error: "No matching posts found" });
+      if (existing.length !== requestedIds.length) {
+        return res.status(404).json({ error: "One or more posts were not found" });
       }
 
-      // As with the single-post route, do not claim delivery by changing a
-      // terminal status before a platform API has accepted each post.
-      return res.status(409).json({
-        error:
-          "Direct calendar publishing is unavailable until a platform delivery is configured",
-        postIds: existing.map((post) => post.id),
-      });
+      const outcomes = [];
+      for (const post of existing) {
+        try {
+          const queued = await autoPostingServiceV2.publishExistingPostNow(userId, post.id);
+          outcomes.push({ postId: post.id, queued: true, status: 202, post: queued });
+        } catch (error) {
+          const known = error instanceof SocialPublishRequestError;
+          outcomes.push({ postId: post.id, queued: false,
+            status: known ? error.status : 500,
+            code: known ? error.code : "PUBLISHING_REQUEST_FAILED",
+            error: known ? error.message : "Publishing request failed" });
+        }
+      }
+      const queuedCount = outcomes.filter(outcome => outcome.queued).length;
+      const status = queuedCount === outcomes.length ? 202 : queuedCount > 0 ? 207 :
+        outcomes.every(outcome => outcome.status === outcomes[0].status) ? outcomes[0].status : 409;
+      return res.status(status).json({ queued: queuedCount > 0, queuedCount, outcomes,
+        ...(queuedCount === 0 ? { error: "No posts were queued" } : {}) });
     } catch (error) {
       logger.warn({ err: error }, "Batch publish error");
       res.status(500).json({ error: "Failed to batch publish posts" });
@@ -557,15 +551,12 @@ router.post(
         return res.status(404).json({ error: "Post not found" });
       }
 
-      // This calendar route has no platform publishing integration. Marking the
-      // record published here would make a scheduled post disappear without
-      // ever being delivered to its connected account.
-      return res.status(409).json({
-        error:
-          "Direct calendar publishing is unavailable until a platform delivery is configured",
-        postId: post.id,
-      });
+      const queued = await autoPostingServiceV2.publishExistingPostNow(userId, post.id);
+      return res.status(202).json({ success: true, queued: true, post: queued });
     } catch (error) {
+      if (error instanceof SocialPublishRequestError) {
+        return res.status(error.status).json({ error: error.message, code: error.code });
+      }
       logger.warn({ err: error }, "Failed to publish post:");
       res.status(500).json({ error: "Failed to publish post" });
     }
@@ -1554,10 +1545,11 @@ router.get(
         })),
       );
     } catch (error) {
-      if (error instanceof AIUnavailableError) {
+      if (error instanceof AIUnavailableError ||
+          (error instanceof MaxCoreControlError && error.status === 503)) {
         return res.status(503).json({
           success: false,
-          code: error.code,
+          code: "AI_UNAVAILABLE",
           error: "Trending hashtag generation is temporarily unavailable",
         });
       }
@@ -4281,11 +4273,14 @@ router.post(
       // rendering runs in a background job and the polling endpoint serves the
       // validated result.
       const jobId = `video_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      pruneStaleFFmpegJobs();
-      ffmpegJobs?.set(jobId, {
-        status: "processing",
-        userId,
-        createdAt: Date.now(),
+      let jobLease;
+      try {
+        jobLease = await mediaJobs.create("video", jobId, userId);
+      } catch {
+        return res.status(503).json({ success: false, message: "Unable to save render job. Please try again." });
+      }
+      const stopHeartbeat = keepMediaJobAlive(mediaJobs, jobLease, () => {
+        logger.warn({ jobId }, "[VideoGen] Render status lease lost");
       });
 
       // ── Background job: MaxCore video render ──────────────────────────────────
@@ -4336,28 +4331,22 @@ router.post(
           });
 
           if (result?.success) {
-            ffmpegJobs?.set(jobId, {
+            await finishMediaJob(jobLease, {
               status: "done",
-              userId,
               result: result as unknown as Record<string, unknown>,
-              createdAt: Date.now(),
             });
             logger.info(`[VideoGen] Job ${jobId} completed`);
           } else {
-            ffmpegJobs?.set(jobId, {
+            await finishMediaJob(jobLease, {
               status: "error",
-              userId,
               error: "Video generation failed",
-              createdAt: Date.now(),
             });
             logger.warn({ jobId }, "[VideoGen] Background render failed");
           }
         } catch (err) {
-          ffmpegJobs?.set(jobId, {
+          await finishMediaJob(jobLease, {
             status: "error",
-            userId,
             error: "Video generation failed",
-            createdAt: Date.now(),
           });
           logger.warn(
             {
@@ -4366,8 +4355,12 @@ router.post(
             },
             "[VideoGen] Background job failed",
           );
+        } finally {
+          stopHeartbeat();
         }
-      })();
+      })().catch(() => {
+        logger.warn({ jobId }, "[VideoGen] Failed to persist terminal render status");
+      });
 
       logger.info(`[VideoGen] Job ${jobId} queued — responding immediately`);
       return res.json({ success: true, job_id: jobId, status: "processing" });
@@ -4386,85 +4379,7 @@ router.post(
 router.get(
   "/video-job/:jobId",
   requireAuthOnly,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { jobId } = req.params as Record<string, string>;
-
-      // Check the authenticated MaxCore render job map first.
-      const ffmpegJob = ffmpegJobs?.get(jobId);
-      if (ffmpegJob) {
-        if (ffmpegJob.userId !== req.user?.id) {
-          return res.status(404).json({
-            success: false,
-            status: "error",
-            message: "Job not found. Please generate a new video.",
-          });
-        }
-        if (ffmpegJob?.status === "processing") {
-          return res.json({ status: "processing", progress: 50 });
-        }
-        if (ffmpegJob?.status === "done" && ffmpegJob?.result) {
-          const r = ffmpegJob?.result;
-          // If the renderer marked success but returned no URL, treat it as an
-          // error so the client shows a clear retry prompt instead of silently
-          // polling until the 3-minute timeout fires.
-          const resolvedUrl = r.url || r.video_url || null;
-          if (!resolvedUrl) {
-            return res.status(500).json({
-              status: "error",
-              error: "Video was generated but no file URL was returned. Please try again.",
-            });
-          }
-          return res.json({
-            ...r,
-            status: "completed",
-            url: resolvedUrl,
-            video_url: resolvedUrl,
-            thumbnail_url: r.thumbnail_url ?? r?.thumbnailUrl ?? null,
-            metadata: r.metadata ?? {},
-          });
-        }
-        // error or unknown state — use `error` (the field the client reads),
-        // keep `message` for any older consumers.
-        const jobErr = "Video generation failed";
-        return res.status(500).json({
-          status: "error",
-          error: jobErr,
-          message: jobErr,
-        });
-      }
-
-      // video_* jobs are MaxCore-backed. If they are absent, the server restarted
-      // and the in-memory job is gone; return a clear retryable failure.
-      if (jobId.startsWith("video_")) {
-        return res.status(410).json({
-          status: "error",
-          error:
-            "Server was restarted while your video was rendering. Please generate again.",
-        });
-      }
-
-      // Unknown job ID format — all video jobs are FFmpeg-backed ("video_*")
-      // so anything else is either a typo or a stale reference from before a restart.
-      return res.status(404).json({
-        success: false,
-        status: "error",
-        message: "Job not found. Please generate a new video.",
-      });
-    } catch (error) {
-      logger.warn(
-        { errorType: error instanceof Error ? error.name : typeof error },
-        "Failed to poll video job",
-      );
-      res
-        .status(500)
-        .json({
-          success: false,
-          status: "error",
-          message: "Job status check failed",
-        });
-    }
-  },
+  createVideoJobPollHandler(mediaJobs),
 );
 
 /**
@@ -6457,30 +6372,6 @@ router.post(
   },
 );
 
-// Track async music video jobs in the same pattern as ffmpegJobs
-interface MusicVideoJob {
-  status: "processing" | "done" | "error";
-  result?: Record<string, unknown>;
-  error?: string;
-  createdAt: number;
-}
-const musicVideoJobs = new Map<string, MusicVideoJob>();
-const musicVideoJobOwners = new Map<string, string>();
-
-// Prune jobs older than 15 minutes
-setInterval(
-  () => {
-    const cutoff = Date.now() - 15 * 60 * 1000;
-    for (const [id, job] of musicVideoJobs.entries()) {
-      if (job.createdAt < cutoff) {
-        musicVideoJobs.delete(id);
-        musicVideoJobOwners.delete(id);
-      }
-    }
-  },
-  3 * 60 * 1000,
-);
-
 /**
  * POST /generate-music-video
  * Accepts multipart/form-data:
@@ -6513,58 +6404,21 @@ router.post(
         .status(401)
         .json({ success: false, error: "Authentication required" });
     }
-    const requestBody = (req.body ?? {}) as Record<string, unknown>;
-    const requestFiles = req.files as
-      | Record<string, Express.Multer.File[]>
-      | undefined;
-    if (requestBody.ai_generate_scenes === "true") {
-      const hasExplicitDirection = [
-        requestBody.topic,
-        requestBody.hook,
-        requestBody.body,
-      ].some((value) => typeof value === "string" && value.trim().length > 0);
-      const hasUrlDirection = [
-        requestBody.topic,
-        requestBody.hook,
-        requestBody.body,
-      ].some(
-        (value) =>
-          typeof value === "string" && /^https?:\/\//i.test(value.trim()),
-      );
-      const targetPlatform =
-        typeof requestBody.platform === "string"
-          ? requestBody.platform.trim()
-          : "";
-      if (!hasExplicitDirection) {
-        return res.status(400).json({
-          success: false,
-          error: "A video topic, hook, or body is required",
-        });
-      }
-      if (hasUrlDirection) {
-        return res.status(400).json({
-          success: false,
-          error:
-            "URL topics are not supported here; use the URL analysis workflow",
-        });
-      }
-      if (!VALID_PLATFORMS.includes(targetPlatform)) {
-        return res.status(400).json({
-          success: false,
-          error: "A supported platform is required for video generation",
-        });
-      }
-      if (!requestFiles?.audio?.[0]) {
-        return res.status(400).json({
-          success: false,
-          error: "An audio file is required for music video generation",
-        });
-      }
+    if (await rejectInvalidMusicVideoSceneRequest(req, res, VALID_PLATFORMS)) {
+      return;
     }
 
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    musicVideoJobOwners.set(jobId, authenticatedUserId);
-    musicVideoJobs.set(jobId, { status: "processing", createdAt: Date.now() });
+    let jobLease;
+    try {
+      jobLease = await mediaJobs.create("music-video", jobId, authenticatedUserId);
+    } catch {
+      await cleanupMediaUploadFiles(req);
+      return res.status(503).json({ success: false, error: "Unable to save render job. Please try again." });
+    }
+    const stopHeartbeat = keepMediaJobAlive(mediaJobs, jobLease, () => {
+      logger.warn({ jobId }, "[MusicVideo] Render status lease lost");
+    });
 
     // Respond immediately
     res.json({
@@ -6592,10 +6446,9 @@ router.post(
         // that surpasses InVideo (no beat sync, no music AI) and Google Veo (8s cap).
         if (body.ai_generate_scenes === "true") {
           if (!audioFile) {
-            musicVideoJobs.set(jobId, {
+            await finishMediaJob(jobLease, {
               status: "error",
               error: "Audio file required for AI scene generation",
-              createdAt: Date.now(),
             });
             return;
           }
@@ -6625,10 +6478,9 @@ router.post(
           });
 
           if (!studioResult.success) {
-            musicVideoJobs.set(jobId, {
+            await finishMediaJob(jobLease, {
               status: "error",
               error: "Music video generation failed",
-              createdAt: Date.now(),
             });
             return;
           }
@@ -6637,19 +6489,17 @@ router.post(
           // the completed video in PDIM. Do not look for or re-upload a local
           // scratch filename that no longer exists.
           if (!studioResult.url) {
-            musicVideoJobs.set(jobId, {
+            await finishMediaJob(jobLease, {
               status: "error",
               error: "MaxCore completed without a durable video URL",
-              createdAt: Date.now(),
             });
             return;
           }
           (studioResult as any).video_url = studioResult.url;
 
-          musicVideoJobs.set(jobId, {
+          await finishMediaJob(jobLease, {
             status: "done",
             result: studioResult as unknown as Record<string, unknown>,
-            createdAt: Date.now(),
           });
           logger.info({ jobId }, "[MusicVideo/Studio] Generation completed");
           return;
@@ -6657,10 +6507,9 @@ router.post(
 
         // ── Legacy mode: user provides their own images ────────────────────────
         if (!imageFiles.length) {
-          musicVideoJobs.set(jobId, {
+          await finishMediaJob(jobLease, {
             status: "error",
             error: "At least one image is required",
-            createdAt: Date.now(),
           });
           return;
         }
@@ -6727,10 +6576,9 @@ router.post(
         });
 
         if (!result.success) {
-          musicVideoJobs.set(jobId, {
+          await finishMediaJob(jobLease, {
             status: "error",
             error: "Music video generation failed",
-            createdAt: Date.now(),
           });
           return;
         }
@@ -6738,10 +6586,9 @@ router.post(
           throw new Error("MaxCore completed without a durable video URL");
         }
         (result as any).video_url = result.url;
-        musicVideoJobs.set(jobId, {
+        await finishMediaJob(jobLease, {
           status: "done",
           result: result as unknown as Record<string, unknown>,
-          createdAt: Date.now(),
         });
         logger.info({ jobId }, "[MusicVideo] Generation completed");
         return;
@@ -6751,12 +6598,12 @@ router.post(
           { jobId, errorType: e instanceof Error ? e.name : typeof e },
           "[MusicVideo] Generation failed",
         );
-        musicVideoJobs.set(jobId, {
+        await finishMediaJob(jobLease, {
           status: "error",
           error: "Music video generation failed",
-          createdAt: Date.now(),
         });
       } finally {
+        stopHeartbeat();
         const files = req.files as
           | Record<string, Express.Multer.File[]>
           | undefined;
@@ -6771,7 +6618,9 @@ router.post(
           await fsPromises.unlink(voiceSynthPath).catch(() => {});
         }
       }
-    })();
+    })().catch(() => {
+      logger.warn({ jobId }, "[MusicVideo] Failed to persist terminal render status");
+    });
   },
 );
 
@@ -6783,44 +6632,7 @@ router.post(
 router.get(
   "/music-video-job/:jobId",
   requireAuthOnly,
-  async (req: AuthenticatedRequest, res: Response) => {
-    const { jobId } = req.params as Record<string, string>;
-    const job = musicVideoJobs?.get(jobId);
-
-    if (!job || musicVideoJobOwners.get(jobId) !== req.user!.id) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Job not found or expired" });
-    }
-
-    if (job?.status === "processing") {
-      return res.json({
-        success: true,
-        status: "processing",
-        message: "Music video is being rendered…",
-      });
-    }
-
-    if (job?.status === "error") {
-      // 200 (not 500) so the client poll can read the failure instead of throwing.
-      return res.json({
-        success: false,
-        status: "failed",
-        error: job.error,
-      });
-    }
-
-    // Normalize to the contract the client expects: status "completed" plus a
-    // flat videoUrl/thumbnailUrl (poster) so the new VideoPlayer can render.
-    const doneResult = job.result as Record<string, unknown> | undefined;
-    res.json({
-      success: true,
-      status: "completed",
-      videoUrl: (doneResult?.url as string) ?? null,
-      thumbnailUrl: (doneResult?.thumbnail_url as string) ?? null,
-      result: job.result,
-    });
-  },
+  createMusicVideoJobPollHandler(mediaJobs),
 );
 
 /**

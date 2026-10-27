@@ -1063,7 +1063,7 @@ router.get(
       const userId = req.user!.id;
 
       const buffer = await hybridStorageService?.read(userId, key);
-      const metadata = hybridStorageService?.getMetadata(key);
+      const metadata = await hybridStorageService?.getMetadata(key);
 
       const ext = path?.extname(key).toLowerCase();
       const mimeTypes: Record<string, string> = {
@@ -1158,7 +1158,7 @@ router.get("/hybrid/list", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { tier, folder, includePublic } = req.query;
 
-    const files = hybridStorageService?.listFiles(userId, {
+    const files = await hybridStorageService?.listFiles(userId, {
       tier: tier as "hot" | "cold" | undefined,
       folder: folder as string | undefined,
       includePublic: includePublic === "true",
@@ -1263,7 +1263,7 @@ router.post(
     }
       const userId = req.user!.id;
 
-      const metadata = hybridStorageService?.getMetadata(key);
+      const metadata = await hybridStorageService?.getMetadata(key);
       if (!metadata || metadata?.userId !== userId) {
         return res.status(403).json({ error: "Access denied" });
       }
@@ -1323,7 +1323,7 @@ router.get(
     }
       const userId = req.user!.id;
 
-      const metadata = hybridStorageService?.getMetadata(key);
+      const metadata = await hybridStorageService?.getMetadata(key);
       if (!metadata) {
         return res.status(404).json({ error: "File not found" });
       }

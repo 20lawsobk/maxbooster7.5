@@ -147,8 +147,8 @@ export class AllPassFilter {
 
   process(input: number): number {
     const delayed = this.delay.read(this.delaySamples);
-    const output = -input + delayed;
-    this.delay.write(input + delayed * this.feedback);
+    const output = delayed - input * this.feedback;
+    this.delay.write(input + output * this.feedback);
     return output;
   }
 
@@ -355,8 +355,11 @@ export class OnePoleFilter {
   private a0: number = 1;
   private b1: number = 0;
   private y1: number = 0;
+  private x1: number = 0;
+  private highpass: boolean = false;
 
   setLowpass(frequency: number, sampleRate: number): void {
+    this.highpass = false;
     const x = Math.exp((-2 * Math.PI * frequency) / sampleRate);
     this.a0 = 1 - x;
     this.b1 = x;
@@ -365,17 +368,20 @@ export class OnePoleFilter {
   setHighpass(frequency: number, sampleRate: number): void {
     const x = Math.exp((-2 * Math.PI * frequency) / sampleRate);
     this.a0 = (1 + x) / 2;
-    this.b1 = -x;
+    this.b1 = x;
+    this.highpass = true;
   }
 
   process(input: number): number {
-    const output = this.a0 * input + this.b1 * this.y1;
+    const output = this.a0 * (this.highpass ? input - this.x1 : input) + this.b1 * this.y1;
+    this.x1 = input;
     this.y1 = output;
     return output;
   }
 
   clear(): void {
     this.y1 = 0;
+    this.x1 = 0;
   }
 }
 
@@ -688,5 +694,12 @@ export class ADSR {
 
   getState(): string {
     return this.state;
+  }
+
+  reset(): void {
+    this.state = "idle";
+    this.currentLevel = 0;
+    this.releaseLevel = 0;
+    this.sampleCount = 0;
   }
 }

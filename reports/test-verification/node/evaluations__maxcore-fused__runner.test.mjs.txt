@@ -2,37 +2,37 @@ TAP version 13
 # Subtest: canonical replay ignores key insertion order, not values
 ok 1 - canonical replay ignores key insertion order, not values
   ---
-  duration_ms: 1.433862
+  duration_ms: 1.212779
   type: 'test'
   ...
 # Subtest: no unsafe API paths
 ok 2 - no unsafe API paths
   ---
-  duration_ms: 0.443579
+  duration_ms: 0.41772
   type: 'test'
   ...
 # Subtest: full telemetry required, heuristic quality is ignored
 ok 3 - full telemetry required, heuristic quality is ignored
   ---
-  duration_ms: 0.368175
+  duration_ms: 0.41098
   type: 'test'
   ...
 # Subtest: explicit refusal and fallback are not quality passes
 ok 4 - explicit refusal and fallback are not quality passes
   ---
-  duration_ms: 0.107322
+  duration_ms: 0.11917
   type: 'test'
   ...
 # Subtest: live is blocked before network without parent approval
 ok 5 - live is blocked before network without parent approval
   ---
-  duration_ms: 0.474205
+  duration_ms: 0.45087
   type: 'test'
   ...
 # Subtest: incomplete contract cannot become a live experiment
 ok 6 - incomplete contract cannot become a live experiment
   ---
-  duration_ms: 0.184779
+  duration_ms: 0.216437
   type: 'test'
   ...
 1..6
@@ -43,4 +43,4 @@ ok 6 - incomplete contract cannot become a live experiment
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 113.552883
+# duration_ms 114.877533

@@ -13,9 +13,8 @@ const { startLocalPdimServer, stopLocalPdimServer } = await import(
 
 try {
   await startLocalPdimServer();
-  const { hybridStorageService } = await import(
-    "../server/services/hybridStorageService.ts"
-  );
+  const { legacyHybridSnapshotReader } = await import("./legacy-hybrid-recovery.js");
+  const hybridStorageService = legacyHybridSnapshotReader();
   const { pocketManager } = await import("../server/pocket-dimension/index.ts");
   const { getPdimClient } = await import("../server/lib/pdimClient.ts");
 
@@ -38,7 +37,7 @@ try {
     const contentSha256 = createHash("sha256").update(bytes).digest("hex");
     assert.equal(contentSha256, file.contentHash);
     assert.equal(bytes.length, file.sizeBytes);
-    const metadata = hybridStorageService.getMetadata(key);
+    const metadata = await hybridStorageService.getMetadata(key);
     assert(metadata);
     assert.equal(metadata.userId, owner);
     owners.set(owner, (owners.get(owner) ?? 0) + 1);
@@ -48,7 +47,7 @@ try {
   const ownershipEvidence: string[] = [];
   for (const [owner, count] of [...owners].sort(([left], [right]) =>
     left.localeCompare(right))) {
-    assert.equal(hybridStorageService.listFiles(owner).length, count);
+    assert.equal((await hybridStorageService.listFiles(owner)).length, count);
     ownershipEvidence.push(`${owner}\0${count}`);
   }
 
@@ -68,6 +67,8 @@ try {
     fileContentEvidenceSha256: digest(fileEvidence),
     ownershipCountsSha256: digest(ownershipEvidence),
     everyFileReadByActualClasses: true,
+    metadataScope: "legacy-pdim-index-only",
+    currentSqlMetadataRecovered: false,
   };
   await pocketManager.closeAll();
   await stopLocalPdimServer();

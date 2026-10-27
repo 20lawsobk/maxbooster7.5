@@ -13,6 +13,8 @@ import {
   serial,
   index,
   unique,
+  check,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -7044,6 +7046,7 @@ export const fabricObjects = pgTable("fabric_objects", {
     .notNull()
     .default(sql`'[]'`),
   contentHash: varchar("content_hash", { length: 128 }).notNull(),
+  dependenciesIndexed: boolean("dependencies_indexed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -7055,8 +7058,49 @@ export const fabricChunks = pgTable("fabric_chunks", {
     .default(sql`'[]'`),
   sizeBytes: varchar("size_bytes").notNull().default("0"),
   checksum: varchar("checksum", { length: 128 }).notNull().default(""),
+  refCount: integer("ref_count").notNull().default(1),
+  physicalKeys: jsonb("physical_keys").notNull().default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const fabricCatalogFence = pgTable("fabric_catalog_fence", {
+  id: text("id").primaryKey(), generation: bigint("generation", { mode: "bigint" }).notNull().default(sql`0`),
+});
+export const fabricObjectDependencies = pgTable("fabric_object_dependencies", {
+  objectId: varchar("object_id").primaryKey().references(() => fabricObjects.id, { onDelete: "cascade" }),
+  baseObjectId: varchar("base_object_id").notNull().references(() => fabricObjects.id, { onDelete: "restrict" }),
+}, table => [index("fabric_object_dependencies_base_idx").on(table.baseObjectId)]);
+
+export const fabricDeletionObjects = pgTable("fabric_deletion_objects", {
+  objectId: text("object_id").primaryKey(),
+  objectData: jsonb("object_data").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export const fabricDeletionChunks = pgTable("fabric_deletion_chunks", {
+  objectId: text("object_id").notNull(), ordinal: integer("ordinal").notNull(),
+  chunkId: text("chunk_id").notNull(), state: text("state").notNull().default("pending"),
+  location: jsonb("location"), doneNodes: jsonb("done_nodes").notNull().default([]),
+}, table => [primaryKey({ columns: [table.objectId, table.ordinal] }),
+  index("fabric_deletion_chunks_chunk_idx").on(table.chunkId)]);
+
+// Migration 0099: bind the durable replica-move journal to generated schemas
+// and the read-only prelaunch schema gate, as well as its raw SQL controller.
+export const fabricMigrationJobs = pgTable("fabric_migration_jobs", {
+  id: text("id").primaryKey(),
+  chunkId: text("chunk_id").notNull().unique(),
+  fromNode: text("from_node").notNull(),
+  toNode: text("to_node").notNull(),
+  sourceKey: text("source_key").notNull(),
+  targetKey: text("target_key").notNull().unique(),
+  sizeBytes: bigint("size_bytes", { mode: "bigint" }).notNull(),
+  checksum: text("checksum").notNull(),
+  state: text("state").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  check("fabric_migration_jobs_size_nonnegative", sql`${table.sizeBytes}>=0`),
+  check("fabric_migration_jobs_state_valid", sql`${table.state} IN ('copying','published')`),
+  check("fabric_migration_jobs_distinct_nodes", sql`${table.fromNode}<>${table.toNode}`),
+]);
 
 export const insertFabricPocketSchema = createInsertSchema(fabricPockets).omit({
   id: true,
@@ -8578,3 +8622,45 @@ export type BeatPricingSnapshot = typeof beatPricingSnapshots.$inferSelect;
 export const insertBeatPricingSnapshotSchema = createInsertSchema(
   beatPricingSnapshots,
 ).omit({ id: true, appliedAt: true });
+
+// Per-file hybrid storage authority; legacy PDIM index remains a retained import source.
+export const hybridStorageFiles = pgTable("hybrid_storage_files", {
+  key: text("key").primaryKey(),
+  userId: text("user_id").notNull(),
+  blobKey: text("blob_key").notNull(),
+  state: text("state").notNull(),
+  metadata: jsonb("metadata").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => ({
+  byUser: index("hybrid_storage_files_user_idx").on(t.userId, t.state),
+  byBlob: index("hybrid_storage_files_blob_idx").on(t.blobKey),
+  byHash: index("hybrid_storage_files_hash_idx").on(sql`(${t.metadata}->>'contentHash')`),
+}));
+export const hybridStorageImports = pgTable("hybrid_storage_imports", {
+  source: text("source").primaryKey(),
+  importedCount: integer("imported_count").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Shared status authority for asynchronous social-video render jobs. Actual
+// renderer assets are committed separately before a terminal result is saved.
+export const socialMediaJobs = pgTable(
+  "social_media_jobs",
+  {
+    id: varchar("id").primaryKey(),
+    family: text("family").notNull(),
+    ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("processing"),
+    result: jsonb("result").$type<Record<string, unknown>>(),
+    error: text("error"),
+    leaseToken: varchar("lease_token").notNull(),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    byOwner: index("social_media_jobs_owner_idx").on(table.ownerId, table.family, table.createdAt),
+    byLease: index("social_media_jobs_lease_idx").on(table.status, table.leaseExpiresAt),
+    byUpdated: index("social_media_jobs_updated_idx").on(table.updatedAt),
+  }),
+);

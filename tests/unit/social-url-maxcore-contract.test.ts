@@ -1,4 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import express from "express";
+import type { AddressInfo } from "node:net";
+import vm from "node:vm";
+import ts from "typescript";
+import {
+  createVideoJobPollHandler,
+  rejectInvalidMusicVideoSceneRequest,
+} from "../../server/routes/socialMediaJobHandlers.js";
+import { cleanupMediaUploadFiles } from "../../server/services/mediaUploadCleanup.js";
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
@@ -207,15 +216,48 @@ describe("authenticated async video generation contract", () => {
     const source = await import("node:fs/promises").then((fs) =>
       fs.readFile("server/routes/socialMedia.ts", "utf8"),
     );
-    const pollStart = source.indexOf('"/video-job/:jobId"');
-    const pollEnd = source.indexOf('"/video-templates"', pollStart);
-    const handler = source.slice(pollStart, pollEnd);
-
-    expect(pollStart).toBeGreaterThanOrEqual(0);
-    expect(pollEnd).toBeGreaterThan(pollStart);
-    expect(handler).toContain("ffmpegJob.userId !== req.user?.id");
-    expect(handler).toContain('const jobErr = "Video generation failed"');
-    expect(handler).not.toContain("ffmpegJob.error ??");
+    const tree = ts.createSourceFile("socialMedia.ts", source, ts.ScriptTarget.Latest, true);
+    const registrations = tree.statements.filter(node => ts.isExpressionStatement(node) &&
+      ts.isCallExpression(node.expression) && node.expression.expression.getText(tree) === "router.get" &&
+      ts.isStringLiteral(node.expression.arguments[0]) && node.expression.arguments[0].text === "/video-job/:jobId");
+    expect(registrations).toHaveLength(1);
+    const router = express.Router();
+    const get = vi.fn(async (_family: string, _id: string, owner: string) => owner === "owner"
+      ? { status: "done", result: { url: "/api/files/owned-video" } } : undefined);
+    const requireAuthOnly = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const owner = req.get("X-Fixture-Owner");
+      if (!owner) return void res.status(401).json({ error: "Authentication required" });
+      req.user = { id: owner } as Express.User;
+      next();
+    };
+    // Execute the actual mounted registration with the production polling
+    // handler. The real-PG Node suite separately proves row-owner isolation.
+    vm.runInNewContext(ts.transpileModule(registrations[0].getText(tree), {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    }).outputText, { router, requireAuthOnly, createVideoJobPollHandler, mediaJobs: { get } });
+    const app = express(); app.use(router);
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise<void>(resolve => server.once("listening", resolve));
+    try {
+      const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/video-job/video-owned`;
+      expect((await fetch(url)).status).toBe(401);
+      expect(get).not.toHaveBeenCalled();
+      const foreign = await fetch(url, { headers: { "X-Fixture-Owner": "foreign" } });
+      expect(foreign.status).toBe(404);
+      expect(await foreign.json()).not.toHaveProperty("url");
+      expect(get).toHaveBeenLastCalledWith("video", "video-owned", "foreign");
+      const owned = await fetch(url, { headers: { "X-Fixture-Owner": "owner" } });
+      expect(owned.status).toBe(200);
+      expect(await owned.json()).toMatchObject({ status: "completed", url: "/api/files/owned-video" });
+      expect(get).toHaveBeenLastCalledWith("video", "video-owned", "owner");
+      get.mockRejectedValueOnce(new Error("private provider response and credential"));
+      const unavailable = await fetch(url, { headers: { "X-Fixture-Owner": "owner" } });
+      expect(unavailable.status).toBe(503);
+      expect(await unavailable.json()).toEqual({ success: false, status: "error", message: "Job status is temporarily unavailable" });
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
   });
 });
 
@@ -258,12 +300,60 @@ describe("explicit social generation inputs and private failures", () => {
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
-    expect(handler).toContain("hasExplicitDirection");
-    expect(handler).toContain("hasUrlDirection");
-    expect(handler).toContain(
-      "URL topics are not supported here; use the URL analysis workflow",
-    );
-    expect(handler).toContain("musicVideoJobOwners.set(jobId, authenticatedUserId)");
+    const tree = ts.createSourceFile("socialMedia.ts", route, ts.ScriptTarget.Latest, true);
+    const registrations = tree.statements.filter(node => ts.isExpressionStatement(node) &&
+      ts.isCallExpression(node.expression) && node.expression.expression.getText(tree) === "router.post" &&
+      ts.isStringLiteral(node.expression.arguments[0]) && node.expression.arguments[0].text === "/generate-music-video");
+    expect(registrations).toHaveLength(1);
+    const router = express.Router();
+    const create = vi.fn().mockRejectedValue(new Error("private database diagnostic"));
+    const requireAuthOnly = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const owner = req.get("X-Fixture-Owner");
+      if (!owner) return void res.status(401).json({ error: "Authentication required" });
+      req.user = { id: owner } as Express.User;
+      next();
+    };
+    vm.runInNewContext(ts.transpileModule(registrations[0].getText(tree), {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 },
+    }).outputText, {
+      router, requireAuthOnly, rejectInvalidMusicVideoSceneRequest, cleanupMediaUploadFiles,
+      mediaJobs: { create }, VALID_PLATFORMS: ["tiktok"],
+      handleMediaUpload: (middleware: express.RequestHandler) => middleware,
+      mediaUpload: { fields: () => (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+        req.files = req.body.fixtureAudio ? { audio: [{ path: "" } as Express.Multer.File] } : {};
+        next();
+      } },
+    });
+    const app = express(); app.use(express.json()); app.use(router);
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise<void>(resolve => server.once("listening", resolve));
+    try {
+      const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/generate-music-video`;
+      const send = (body: Record<string, unknown>, owner?: string) => fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json", ...(owner ? { "X-Fixture-Owner": owner } : {}) },
+        body: JSON.stringify(body),
+      });
+      expect((await send({})).status).toBe(401);
+      const valid = { ai_generate_scenes: "true", platform: "tiktok", topic: "My release", fixtureAudio: true };
+      for (const [overrides, message] of [
+        [{ topic: "" }, "A video topic, hook, or body is required"],
+        [{ topic: "https://source.invalid/music" }, "URL topics are not supported here; use the URL analysis workflow"],
+        [{ platform: "invalid" }, "A supported platform is required for video generation"],
+        [{ fixtureAudio: false }, "An audio file is required for music video generation"],
+      ] as const) {
+        const response = await send({ ...valid, ...overrides }, "owner");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ success: false, error: message });
+      }
+      expect(create).not.toHaveBeenCalled();
+      const admitted = await send(valid, "owner");
+      expect(admitted.status).toBe(503);
+      expect(await admitted.json()).toEqual({ success: false, error: "Unable to save render job. Please try again." });
+      expect(create).toHaveBeenCalledWith("music-video", expect.stringMatching(/^mvjob_/), "owner");
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
     expect(handler).toContain('error: "Music video generation failed"');
     expect(handler).not.toContain("error: studioResult.error");
     expect(handler).not.toContain("error: result.error");

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="48" failures="0" errors="0" time="11.417320152">
+    <testsuite name="tests/api-guards.test.ts" timestamp="2026-10-26T02:43:12.895Z" hostname="2fc971e77ddd" tests="34" failures="0" errors="0" skipped="0" time="1.111702188">
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/me → 200 (public, returns null)" time="0.12421548">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/notifications → 401" time="0.062994927">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/sessions → 401" time="0.04915284">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/auth/login-history → 401" time="0.032475664">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/admin/users → 401 or 403" time="0.031178517">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/marketplace/my-beats → 401" time="0.037908995">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/marketplace/listings → 401 or 403" time="0.026361846">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/distribution/releases → 401" time="0.031894527">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/royalties → 401" time="0.033975882">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/workspace → 401" time="0.042724138">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/analytics/overview → 401" time="0.026047512">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; POST /api/billing/create-checkout-session requires an existing account" time="0.003719611">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; public registration checkout validates input before any provider request" time="0.001980758">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/files/list → 401" time="0.03168123">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/artist-profiles → 401" time="0.021984663">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/achievements → 401" time="0.02635099">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/shows → 401" time="0.029092259">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/merch → 401" time="0.025983906">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/label-submissions → 401" time="0.024744596">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/venues → 401" time="0.025780108">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/music-videos → 401" time="0.033177161">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/fan-campaigns → 401" time="0.023539204">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Unauthenticated route guards &gt; GET /api/collaboration → 401" time="0.023260944">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/not-a-uuid/download → 400 or 401" time="0.022552245">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/artist-profiles/bad-id → 400 or 401" time="0.032047513">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; PATCH /api/artist-profiles/bad-id → 400 or 401 or 403" time="0.002639883">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Param validation — UUID guard returns 400 for malformed IDs &gt; GET /api/files/sql-injection-attempt/download → 400 or 401" time="0.023067777">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/health is public" time="0.001939015">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /health is public" time="0.001274642">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /ready is public" time="0.001352556">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/ping is public" time="0.000952377">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Public routes are accessible &gt; GET /api/marketplace/beats is public" time="0.033623295">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors accepts client error reports without auth" time="0.028428223">
+        </testcase>
+        <testcase classname="tests/api-guards.test.ts" name="Error reporting endpoint &gt; POST /api/errors rate-limits excessive reports" time="0.187667541">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/health.test.ts" timestamp="2026-10-26T02:43:12.910Z" hostname="2fc971e77ddd" tests="12" failures="0" errors="0" skipped="0" time="0.125376311">
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /health returns 200" time="0.034438299">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/health returns 200" time="0.004870542">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /ready reflects the actual admitted dependency set" time="0.002855147">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ready does not confuse a sealed fixture with full readiness" time="0.051678856">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /healthz returns 200" time="0.010190883">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /readyz uses the same truthful readiness contract" time="0.002009982">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; GET /api/ping returns ok:true" time="0.001919025">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Liveness and Readiness Endpoints &gt; /startup returns startup phase details" time="0.002524969">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Content-Type-Options is nosniff" time="0.003418436">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-Frame-Options is present" time="0.002165627">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; X-XSS-Protection header is set" time="0.001585001">
+        </testcase>
+        <testcase classname="tests/health.test.ts" name="Security Headers &gt; Server header is absent or masked" time="0.005926039">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/integration/maxcore-local-supervisor.integration.test.ts" timestamp="2026-10-26T02:43:12.914Z" hostname="2fc971e77ddd" tests="2" failures="0" errors="0" skipped="0" time="10.180241653">
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; launches real Python and storage while keeping an absent inference candidate unready" time="10.152862191">
+        </testcase>
+        <testcase classname="tests/integration/maxcore-local-supervisor.integration.test.ts" name="MaxCore local subsystem (real spawn) &gt; stops cleanly and the port is released" time="0.012881952">
+        </testcase>
+    </testsuite>
+</testsuites>

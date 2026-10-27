@@ -1,357 +1,299 @@
 
-[globalSetup] Server ready at http://127.0.0.1:33251 ✅  (0s elapsed)
-[15:37:39.335] [32mINFO[39m (121053): [36m[MaxCoreLocal] Starting MaxCore api-server (port 8091, model port 9891)…[39m
-[15:37:39.998] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Cluster] Primary 121084 — forking 1 workers on port 8091[39m
-[15:37:40.001] [32mINFO[39m (121053): [36m[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…[39m
-[15:37:40.589] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Cluster] Worker 121094 listening on port 8091[39m
-[15:37:41.379] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:37:41.428] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:37:46.060] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] Starting AI training server (port 9891)...[39m
-[15:37:46.371] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:37:46.517] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
-[15:37:46.522] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] /workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:1842: DeprecationWarning: 
+[globalSetup] Server ready at http://127.0.0.1:44781 ✅  (0s elapsed)
+[23:44:02.272] [32mINFO[39m (406038): [36m[LocalPDIM] Local PDIM exec server started on port 42131 (local fsynced AOF and snapshots)[39m
+[23:44:02.306] [32mINFO[39m (406038): [36m[MaxCoreLocal] Starting MaxCore api-server (port 37707, model port 34247)…[39m
+[23:44:03.003] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Cluster] Primary 406072 — forking 1 workers on port 37707[39m
+[23:44:03.033] [32mINFO[39m (406038): [36m[MaxCoreLocal] [WarmService] Polling /api/warm/status until deep-warm completes…[39m
+[23:44:03.702] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Cluster] Worker 406084 listening on port 37707[39m
+[23:44:04.358] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (6ms): AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}[39m
+[23:44:04.360] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}[39m
+[23:44:06.374] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}
+[Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}[39m
+[23:44:08.380] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (1ms): AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}
+[Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}[39m
+[23:44:09.062] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] Starting AI training server (port 34247)...[39m
+[23:44:09.533] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
+[23:44:09.539] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] /workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:1842: DeprecationWarning: 
         on_event is deprecated, use lifespan event handlers instead.
 
         Read more about it in the
         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
         
-  @app.on_event("startup")[39m
-[15:37:46.522] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] /workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:2588: DeprecationWarning: 
+  @app.on_event("startup")
+/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:2588: DeprecationWarning: 
         on_event is deprecated, use lifespan event handlers instead.
 
         Read more about it in the
         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
         
   @app.on_event("shutdown")[39m
-[15:37:47.625] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] /workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+[23:44:10.393] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Proxy] Error proxying to /health (3ms): AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}
+[Proxy] Network error proxying to /health: AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1135:18)
+    at afterConnectMultiple (node:net:1716:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    },
+    Error: connect ECONNREFUSED [REDACTED]:34247
+        at createConnectionError (node:net:1679:14)
+        at afterConnectMultiple (node:net:1709:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '[REDACTED]',
+      port: 34247
+    }
+  ]
+}[39m
+[23:44:10.783] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] /workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
         on_event is deprecated, use lifespan event handlers instead.
 
         Read more about it in the
         [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
         
   @app.on_event("startup")[39m
-[15:37:47.721] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [Server] Starting MaxBooster AI Training Server on port 9891 (1 uvicorn workers, 5 CPUs detected)[39m
-[15:37:47.760] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
-[15:37:47.941] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Started server process [121264][39m
-[15:37:47.944] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Waiting for application startup.[39m
-[15:37:47.953] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [Server] Healthz liveness server on port 9892 (event-loop-independent)[39m
-[15:37:47.955] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python][39m
-[15:37:47.974] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [Server] Bootstrap administrator credential stored in private state directory[39m
-[15:37:47.975] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python][39m
-[15:37:48.129] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] Exception in thread Thread-2 (_init_storage):
+[23:44:10.878] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Server] Starting MaxBooster AI Training Server on port 34247 (1 uvicorn workers, 5 CPUs detected)[39m
+[23:44:10.906] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Server] Director API mounted at /api/director[39m
+[23:44:11.102] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Started server process [406138]
+INFO:     Waiting for application startup.[39m
+[23:44:11.118] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Server] Healthz liveness server on port 34248 (event-loop-independent)[39m
+[23:44:11.130] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Server] Bootstrap administrator credential stored in private state directory[39m
+[23:44:11.131] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python][39m
+[23:44:11.330] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Application startup complete.
+INFO:     Uvicorn running on http://[REDACTED]:34247 (Press CTRL+C to quit)[39m
+[23:44:11.330] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Storage] Connected to MaxBooster storage server[39m
+[23:44:11.334] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] [Storage] DataPuller auto-started (30-min pull cycle, audio auto-growth enabled)[39m
+[23:44:11.334] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python][39m
+[23:44:11.335] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] Exception in thread Thread-2 (_init_storage):
 Traceback (most recent call last):
-  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1075, in _bootstrap_inner[39m
-[15:37:48.129] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python]     self.run()
-[Python]   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1012, in run[39m
-[15:37:48.130] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python][39m
-[15:37:48.134] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] self._target(*self._args, **self._kwargs)[39m
-[15:37:48.136] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python]   File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 2238, in _init_storage
-[Python]     storage = get_storage()
-              ^^^^^^^^^^^^^
-[Python]   File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/storage_client.py", line 1522, in get_storage[39m
-[15:37:48.136] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python]     _storage_client = StorageClient()[39m
-[15:37:48.136] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python]                       ^[Python] ^^^^^^^^^^^^^^
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/storage_client.py", line 245, in __init__[39m
-[15:37:48.137] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python]     raise StorageUnavailable("Local PDIM requires inherited loopback STORAGE_HTTP_URL")
-storage_client.StorageUnavailable: Local PDIM requires inherited loopback STORAGE_HTTP_URL[39m
-[15:37:48.149] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Application startup complete.
-[Python] INFO:     Uvicorn running on http://[REDACTED]:9891 (Press CTRL+C to quit)[39m
-[15:37:48.577] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] AI training server ready on port 9891[39m
-[15:37:48.588] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:37:49.058] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:37:51.373] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:37:51.595] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:37:52.069] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:37:54.598] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:37:55.074] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:37:56.377] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:37:57.601] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:37:58.078] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:00.605] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:01.083] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:01.380] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:03.611] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:04.089] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:06.381] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:06.615] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:07.092] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:09.620] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:10.095] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:11.391] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:11.441] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:38:12.623] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:13.098] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:15.626] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:16.102] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:16.393] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:18.628] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:19.107] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:21.395] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:21.631] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:22.114] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:24.633] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:25.118] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:26.398] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:27.637] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:28.123] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:30.640] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:31.130] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:31.399] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:33.643] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:34.134] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:36.402] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:36.452] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:38:36.647] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:37.137] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:39.649] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:40.140] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:41.404] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:42.657] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:43.144] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:45.659] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:46.147] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:46.406] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:48.664] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:49.150] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:51.409] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:51.667] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:52.153] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:54.670] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:55.155] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:38:56.411] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:38:57.674] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:38:58.162] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:00.676] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:01.163] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:01.412] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:01.462] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:03.679] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:04.167] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:06.415] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:06.683] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:07.172] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:09.687] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:10.176] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:11.413] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:11.416] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:12.690] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:13.178] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:15.694] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:16.186] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:16.388] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:16.417] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:18.131] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] ScriptAgent checkpoint generation failed
-Traceback (most recent call last):
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py", line 983, in run
-    if getattr(self.model, "generation_token_unit", None) == "utf8_byte":
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[Python]   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1075, in _bootstrap_inner[39m
+[23:44:11.335] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python]     self.run()[39m
+[23:44:11.335] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python]   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1012, in run[39m
+[23:44:11.336] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python]     self._target(*self._args, **self._kwargs)
+[Python]   File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/server.py", line 2313, in _init_storage[39m
+[23:44:11.336] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python]     _original_generate_ref[0] = getattr(_creative_model, "_orig_generate", None)[39m
+[23:44:11.337] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python][39m
+[23:44:11.337] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] ^^^^^^^^^^^^^^[39m
+[23:44:11.338] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/generation/live_serving.py", line 65, in __getattr__
     raise LiveModelUnavailable("No operationally capable certified public live-awareness candidate is selected")
 ai_model.generation.live_serving.LiveModelUnavailable: No operationally capable certified public live-awareness candidate is selected[39m
-[15:39:18.135] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] ScriptAgent checkpoint generation failed
-Traceback (most recent call last):
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py", line 983, in run
-    if getattr(self.model, "generation_token_unit", None) == "utf8_byte":
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/generation/live_serving.py", line 65, in __getattr__
-    raise LiveModelUnavailable("No operationally capable certified public live-awareness candidate is selected")
-ai_model.generation.live_serving.LiveModelUnavailable: No operationally capable certified public live-awareness candidate is selected
-ScriptAgent checkpoint generation failed
-Traceback (most recent call last):
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/agents/script_agent.py", line 983, in run
-    if getattr(self.model, "generation_token_unit", None) == "utf8_byte":
-       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/generation/live_serving.py", line 65, in __getattr__
-    raise LiveModelUnavailable("No operationally capable certified public live-awareness candidate is selected")
-ai_model.generation.live_serving.LiveModelUnavailable: No operationally capable certified public live-awareness candidate is selected[39m
-[15:39:18.696] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:19.189] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:21.413] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:21.418] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:21.700] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:22.192] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:24.702] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:25.196] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:26.382] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:26.419] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:26.469] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:27.706] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:28.200] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:30.708] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:31.202] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:31.398] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:31.420] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:33.711] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:34.204] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:36.412] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:36.420] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:36.470] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:36.715] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:37.207] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:39.718] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:40.213] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:41.422] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:41.432] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:41.472] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:42.725] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:43.214] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:45.725] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:46.216] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:46.395] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:46.423] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:46.472] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:48.728] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:49.219] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:51.411] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:51.424] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:51.474] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:39:51.732] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:52.223] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:54.736] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:55.226] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:39:56.425] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:39:56.441] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:39:57.739] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:39:58.231] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:00.742] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:01.233] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:01.408] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:01.426] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:03.746] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:04.236] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:06.424] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:06.428] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:06.477] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:40:06.749] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:07.240] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:09.753] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:10.243] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:11.433] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:11.449] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:12.757] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:13.247] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:15.761] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:16.250] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:16.411] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:16.433] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:18.766] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:19.253] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:21.415] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:21.436] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:21.771] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:22.258] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:24.777] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:25.263] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:26.420] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:26.438] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:27.782] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:28.266] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:30.786] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:31.270] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:31.439] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:31.439] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:31.489] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (0s)[39m
-[15:40:33.790] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:34.275] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:36.421] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:36.442] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:36.794] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:37.278] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50306 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
-[15:40:39.798] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:40.279] [32mINFO[39m (121053): [36m[MaxCoreLocal] [WarmService] Deep-warm settled: timeout[39m
-[15:40:41.421] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (180s)[39m
-[15:40:41.441] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:41.443] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:42.802] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:45.805] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:50300 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:46.392] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (180s)[39m
-[15:40:46.442] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] Python unavailable — holding GET /health (up to 90s)[39m
-[15:40:46.442] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Proxy] still holding request for Python recovery (90s)[39m
-[15:40:48.219] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] pocket pre-registration skipped: No operationally capable certified public live-awareness candidate is selected
-[WarmStart] replica pool: 5 replicas ready
-[WarmStart] digital_gpu: {'ok': True, 'ms': 33}[39m
-[15:40:48.294] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] diffusion_pipeline: {'ok': True, 'ms': 74}[39m
-[15:40:48.298] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] retrieval_index: {'ok': True, 'ms': 3}[39m
-[15:40:48.323] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] intent_detector: {'ok': True, 'ms': 25}[39m
-[15:40:48.327] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] audio_stack: {'ok': False, 'ms': 3, 'error': 'StorageUnavailable: Local PDIM requires inherited loopback STORAGE_HTTP_URL'}[39m
-[15:40:48.328] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] awareness_buffer: {'ok': True, 'ms': 0}[39m
-[15:40:48.335] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] [WarmStart] request_intelligence: {'ok': True, 'ms': 6}
-[WarmStart] complete: partial[39m
-[15:40:48.806] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] Model did not become ready within 3 min — readiness remains unavailable[39m
-[15:40:48.806] [32mINFO[39m (121053): [36m[MaxCoreLocal] [ServerState] Python ready — releasing held requests[39m
-[15:40:48.853] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38314 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38328 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38330 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38332 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38334 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38346 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38348 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38352 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38360 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.857] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38370 - "GET /health HTTP/1.1" 200 OK
-INFO:     [REDACTED]:38372 - "GET /health HTTP/1.1" 200 OK
-INFO:     [REDACTED]:38386 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.893] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38398 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.893] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38410 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38424 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.893] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38440 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.894] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38450 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.894] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38458 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38468 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.916] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38478 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38480 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38496 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38498 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38500 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38510 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38512 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38528 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38532 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38548 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38558 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38570 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38576 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38580 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38592 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38600 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38606 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38614 - "GET /health HTTP/1.1" 200 OK
-[Python] INFO:     [REDACTED]:38628 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.928] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:38314 - "GET /health HTTP/1.1" 200 OK[39m
-[15:40:48.946] [32mINFO[39m (121053): [36m[MaxCoreLocal] Stopping MaxCore api-server…[39m
-[15:40:48.947] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Cluster] Primary shutting down…[39m
-[15:40:48.948] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Keepalive] Stopped[39m
-[15:40:48.948] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] Stopping AI training server...[39m
-[15:40:48.962] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Cluster] Worker 121094 died (code=0, signal=none) — respawning…[39m
-[15:40:48.987] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Cluster] Primary shutting down…
-[Keepalive] Stopped[39m
-[15:40:49.008] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Shutting down[39m
-[15:40:49.111] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Waiting for application shutdown.[39m
-[15:40:49.113] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] INFO:     Application shutdown complete.
-[Python] INFO:     Finished server process [121264][39m
-[15:40:49.140] [32mINFO[39m (121053): [36m[MaxCoreLocal] [Python] Server shut down gracefully (intentional).[39m
-[15:41:05.190] [32mINFO[39m (122640): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
-[15:41:06.178] [33mWARN[39m (122640): [36m[RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)[39m
-[15:41:06.178] [33mWARN[39m (122640): [36m[RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)[39m
-[15:41:06.178] [33mWARN[39m (122640): [36m[RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)[39m
-[15:41:06.178] [33mWARN[39m (122640): [36m[RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)[39m
-(node:122822) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+[23:44:11.575] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] AI training server ready on port 34247[39m
+[23:44:11.588] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49716 - "GET /health HTTP/1.1" 200 OK[39m
+[23:44:12.063] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49730 - "GET /api/warm/status HTTP/1.1" 200 OK[39m
+[23:44:12.401] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49740 - "GET /health HTTP/1.1" 200 OK[39m
+[23:44:12.414] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49740 - "GET /health HTTP/1.1" 200 OK[39m
+[23:44:12.443] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     [REDACTED]:49740 - "GET /health HTTP/1.1" 200 OK[39m
+[23:44:12.457] [32mINFO[39m (406038): [36m[MaxCoreLocal] Stopping MaxCore api-server…[39m
+[23:44:12.465] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Cluster] Primary shutting down…
+[Keepalive] Stopped
+[Python] Stopping AI training server...[39m
+[23:44:12.506] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Cluster] Worker 406084 died (code=0, signal=none) — respawning…[39m
+[23:44:12.530] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Shutting down[39m
+[23:44:12.632] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Waiting for application shutdown.[39m
+[23:44:12.648] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Application shutdown complete.[39m
+[23:44:12.648] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] INFO:     Finished server process [406138][39m
+[23:44:12.675] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Python] Server shut down gracefully (intentional).[39m
+[23:44:13.071] [32mINFO[39m (406038): [36m[MaxCoreLocal] [Cluster] Worker 406202 listening on port 37707[39m
+[23:44:15.485] [32mINFO[39m (406038): [36m[MaxCoreLocal] Child exited during shutdown (intentional).[39m
+[23:44:40.266] [32mINFO[39m (406376): [36m[PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms[39m
+[23:44:41.111] [33mWARN[39m (406376): [36m[RateLimiter] PDIM not configured — global rate limiter disabled (dev mode)[39m
+[23:44:41.111] [33mWARN[39m (406376): [36m[RateLimiter] PDIM not configured — api rate limiter disabled (dev mode)[39m
+[23:44:41.111] [33mWARN[39m (406376): [36m[RateLimiter] PDIM not configured — ai rate limiter disabled (dev mode)[39m
+[23:44:41.111] [33mWARN[39m (406376): [36m[RateLimiter] PDIM not configured — auth rate limiter disabled (dev mode)[39m
+(node:406722) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-[15:41:21.425] [31mERROR[39m (122822): [36m[AUDIT] [security] audit_test_1792942881423 - FAILED [Object: null prototype] {
+[23:45:01.581] [31mERROR[39m (406722): [36m[AUDIT] [security] audit_test_1793058301575 - FAILED [Object: null prototype] {
   userId: undefined,
   targetId: 'target-123',
   details: [Object: null prototype] { probe: true }
 }[39m
-[15:41:21.445] [32mINFO[39m (122822): [36m[AUDIT] [payment] audit_confirmed_test_1792942881445 - SUCCESS [Object: null prototype] {
+[23:45:01.605] [32mINFO[39m (406722): [36m[AUDIT] [payment] audit_confirmed_test_1793058301604 - SUCCESS [Object: null prototype] {
   userId: undefined,
   targetId: 'tr_confirmed_123',
   details: [Object: null prototype] { probe: true }
 }[39m
-[15:41:21.448] [32mINFO[39m (122822): [36m[AUDIT] [payment] audit_confirmed_fk_fail_1792942881448 - SUCCESS [Object: null prototype] {
+[23:45:01.609] [32mINFO[39m (406722): [36m[AUDIT] [payment] audit_confirmed_fk_fail_1793058301609 - SUCCESS [Object: null prototype] {
   userId: '00000000-0000-0000-0000-000000000000',
   targetId: undefined,
   details: [Object: null prototype] {}
 }[39m
 JUNIT report written to /workspace/maxbooster7.5/reports/test-verification/integration-browser/http/integration.junit.xml
-[globalTeardown] Removing 14 test user(s)...
-[globalTeardown] Cleanup complete — removed 14 test user(s)
+[globalTeardown] Removing 16 test user(s)...
+[globalTeardown] Cleanup complete — removed 16 test user(s)

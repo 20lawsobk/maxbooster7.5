@@ -256,6 +256,23 @@ class DistributionAgent:
         caption = self.model.generate(
             awareness + "\n" + f"Platform: {req.platform}\nCaption for:\n{req.script}",
             seed=sampling_seed(), snapshot_hash=snapshot_hash())
+        from ..request_intelligence import looks_garbled, garble_reason
+        from .script_agent import (
+            _contains_metadata_leak, _awareness_without_controls,
+            _control_payloads, _control_values,
+        )
+        controls = _control_payloads(awareness)
+        semantics = " ".join(value for payload in controls.values()
+                             for value in _control_values(payload))
+        whitelist = f"{req.script} {_awareness_without_controls(awareness)} {semantics}"
+        if looks_garbled(caption or "", whitelist=whitelist):
+            logger.warning("[garble-guard] rejecting unreadable distribution output reason=%s platform=%s",
+                           garble_reason(caption or "", whitelist=whitelist), req.platform)
+            raise ValueError("Checkpoint output failed distribution readability check")
+        if _contains_metadata_leak(caption or "", awareness):
+            logger.warning("[garble-guard] distribution output copied awareness metadata; rejecting candidate platform=%s",
+                           req.platform)
+            raise ValueError("Checkpoint output copied distribution awareness metadata")
         if not self._is_meaningful(caption):
             raise ValueError("Model returned no meaningful distribution caption")
         return DistributionResponse(

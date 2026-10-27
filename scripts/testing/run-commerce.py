@@ -62,7 +62,8 @@ def main():
               'boundary': 'No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only',
               'commands': [], 'blocked': [], 'selection': args.only}
     with tempfile.TemporaryDirectory(prefix='commerce-suite-home-') as home:
-        env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': home, 'LANG': 'C', 'TZ': 'UTC', 'CI': '1'}
+        env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'HOME': home, 'LANG': 'C', 'TZ': 'UTC', 'CI': '1',
+               'MAXBOOSTER_TEST_PYTHON': os.sys.executable}
         if os.environ.get('LD_LIBRARY_PATH'):
             env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
         jobs = [(p.stem, str(p.relative_to(ROOT)), [node, '--test', '--test-concurrency=1',

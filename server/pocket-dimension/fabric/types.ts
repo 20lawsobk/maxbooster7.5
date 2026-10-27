@@ -61,6 +61,7 @@ export interface FabricObject {
 }
 
 export interface FabricChunkLocation {
+  physicalKeys?: Record<NodeId, string>;
   id: ChunkId;
   objectId: ObjectId;
   nodeIds: NodeId[];

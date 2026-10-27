@@ -1624,11 +1624,16 @@ export async function registerRoutes(
       let storageTier = "unknown";
       let hybridReadError: unknown;
 
-      const hybridMeta = hybridStorageService.getMetadata(key);
+      const hybridMeta = await hybridStorageService.getMetadata(key);
       if (hybridMeta) {
+        if (hybridMeta.userId !== req.user.id && !hybridMeta.isPublic && stemAccess !== true) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
         try {
-          fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
+          // Only a verified marketplace entitlement can read on behalf of the
+          // owner. Ordinary downloads must retain the caller's identity.
+          fileBuffer = await hybridStorageService.read(stemAccess === true ? hybridMeta.userId : req.user.id, key);
         } catch (err) {
           hybridReadError = err;
           fileBuffer = null;

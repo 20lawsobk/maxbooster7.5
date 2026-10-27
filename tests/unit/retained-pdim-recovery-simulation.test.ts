@@ -189,6 +189,8 @@ describe("retained PDIM pre-deployment recovery simulation", () => {
         ownerCount: 2,
         physicalFileCount: 2,
         everyFileReadByActualClasses: true,
+        metadataScope: "legacy-pdim-index-only",
+        currentSqlMetadataRecovered: false,
       });
 
       const snapshotPath = join(sourceRoot, "data/local-pdim-store.json");

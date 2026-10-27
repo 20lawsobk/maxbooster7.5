@@ -1,0 +1,2 @@
+[10:02:07.948] [32mINFO[39m (482728): [36m[AutoCluster] Eval — 0/0 healthy util=0.0% raw=0 B/s ema=0 B/s projection=48.0h projected=0 B[39m
+JUNIT report written to /workspace/onboarding-results/fabric-migration-canonical-unit.xml

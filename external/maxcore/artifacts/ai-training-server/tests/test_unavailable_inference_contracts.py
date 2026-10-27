@@ -1,8 +1,16 @@
 """Contract guards for MaxCore capabilities that have no real model yet."""
 
 import ast
+import asyncio
+import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import patch
+
+import pytest
+from fastapi import HTTPException
 
 
 SERVER = Path(__file__).resolve().parents[1] / "server.py"
@@ -68,8 +76,21 @@ def test_text_content_mode_never_returns_template_fallback():
     source = ast.unparse(_function("api_generate_text"))
     assert "deterministic_candidate" not in source
     assert "Generated content for intent" not in source
-    assert "source not in {'model', 'ai_model'}" in source
+    assert "_require_model_script(sr)" in source
     assert "Cached text result lacks genuine model provenance" in source
+    tree = ast.parse(SERVER.read_text(encoding="utf-8"))
+    guard = next(node for node in tree.body
+                 if isinstance(node, ast.FunctionDef) and node.name == "_require_model_script")
+    namespace = {"Any": Any, "HTTPException": HTTPException}
+    exec(compile(ast.Module(body=[guard], type_ignores=[]), str(SERVER), "exec"), namespace)
+    for source in ("awareness", "template", "unknown", ""):
+        with pytest.raises(HTTPException) as error:
+            namespace["_require_model_script"](SimpleNamespace(
+                source=source, hook="Real hook", body="Real body", cta="Real CTA"))
+        assert error.value.status_code == 503
+    for source in ("model", "ai_model", "model_composed"):
+        namespace["_require_model_script"](SimpleNamespace(
+            source=source, hook="Real hook", body="Real body", cta="Real CTA"))
 
 
 def test_model_readiness_reports_terminal_initialization_failure():
@@ -78,15 +99,24 @@ def test_model_readiness_reports_terminal_initialization_failure():
         node for node in tree.body
         if isinstance(node, ast.FunctionDef) and node.name == "_init_ai_model"
     )
-    init_source = ast.unparse(sync_init)
-    wait_source = ast.unparse(_function("_wait_for_model_ready"))
     server_source = SERVER.read_text(encoding="utf-8")
-
-    assert "_model_init_error" in init_source
-    assert "type(e).__name__" in init_source
-    assert "_model_ready = False" in init_source
-    assert "_model_init_error is not None" in wait_source
-    assert 'status_code=503' in wait_source
+    # Execute the actual init/wait functions with a failing owned initializer;
+    # spelling of its exception variable must not define the contract.
+    def unavailable():
+        raise ValueError("public candidate is unavailable")
+    namespace = {"os": os, "HTTPException": HTTPException, "asyncio": asyncio,
+                 "_init_live_awareness_model": unavailable}
+    exec(compile(ast.Module(body=[sync_init, _function("_wait_for_model_ready")],
+                            type_ignores=[]), str(SERVER), "exec"), namespace)
+    with patch.dict(os.environ, {"MAXCORE_SERVING_RELEASE": "live-awareness"}):
+        namespace["_init_ai_model"]()
+    assert namespace["_model_ready"] is False
+    assert namespace["_model_init_error"] == "ValueError: public candidate is unavailable"
+    assert namespace["_serving_release_status"]["active"] is None
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(namespace["_wait_for_model_ready"](max_wait=0))
+    assert error.value.status_code == 503
+    assert "public candidate is unavailable" in error.value.detail
     assert '"weights_source": "disk" if weights_path.exists() else "unavailable"' in server_source
     assert '"random_init"' not in server_source
 

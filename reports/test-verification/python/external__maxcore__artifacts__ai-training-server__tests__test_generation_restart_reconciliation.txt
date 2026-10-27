@@ -33,4 +33,4 @@ tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_
     return self.router.on_event(event_type)  # ty: ignore[deprecated]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-8 passed, 16 warnings, 3 subtests passed in 1.28s
+8 passed, 16 warnings, 3 subtests passed in 1.80s

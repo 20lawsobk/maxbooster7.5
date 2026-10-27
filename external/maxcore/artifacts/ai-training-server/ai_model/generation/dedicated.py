@@ -56,11 +56,19 @@ def render(modality, controls, uploads_path, *, owner_id, persist_job, read_job,
         controls = conditioned_controls(modality, controls)
         if "seed" in inspect.signature(renderer).parameters:
             controls.setdefault("seed", sampling_seed())
-        record["effective_controls"] = dict(controls)
         internal = {"path", "job_id"}
-        unknown = set(controls) - (set(inspect.signature(renderer).parameters) - internal)
+        parameters = inspect.signature(renderer).parameters
+        unknown = set(controls) - (set(parameters) - internal)
         if unknown:
             raise ValueError("Unsupported dedicated controls: " + ", ".join(sorted(unknown)))
+        # A durable receipt must describe the parameters actually applied,
+        # including renderer defaults. Resolve live measured conditioning first;
+        # defaults must never replace those measurements or explicit controls.
+        defaults = {name: parameter.default for name, parameter in parameters.items()
+                    if name not in internal | {"subject", "reference", "style"}
+                    and parameter.default is not inspect.Parameter.empty}
+        controls = {**defaults, **controls}
+        record["effective_controls"] = dict(controls)
         root = Path(uploads_path).resolve()
         # Allocate an exclusively owned artifact; never delete engine cache files.
         artifact_path = root / ("dedicated_" + uuid4().hex + (".wav" if modality == "audio" else ".artifact"))

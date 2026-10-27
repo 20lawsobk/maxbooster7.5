@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-27T04:55:41.555439+00:00",
+  "finishedAt": "2026-10-27T04:55:43.581725+00:00",
+  "durationSeconds": 2.026,
+  "command": [
+    "/workspace/maxbooster7.5/python_runtime/bin/python3",
+    "-I",
+    "-B",
+    "/workspace/maxbooster7.5/tests/awareness-public-read-smoke.py"
+  ],
+  "exitCode": 0,
+  "timedOut": false,
+  "scope": "Four fixed public credential-free GET adapters; no app, scheduler, publisher, database or semantic generation",
+  "proxyEnabled": true,
+  "tlsVerification": true,
+  "sourceSha256": {
+    "tests/awareness-public-read-smoke.py": "018c0d8ac1e6a26dd522f8d9599352b2e6079cd14f273faf257847d28c568892",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "50ef05704a303fe4e844986ddd0d37d6ad10b90f1984a2194745b5f849dcdba7",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py": "ebdb3164c24b07aa823b48c4c99a356fde9ce2f8007e56b8a50bbe785b855d49"
+  },
+  "logSha256": "30006235478e2b9bbb566808b3ed30dbaaac7dedcd821a511ec07868c4fbf60a",
+  "result": {
+    "check": "public-read-only-ingestion",
+    "sources": [
+      {
+        "source": "apple_charts",
+        "domain": "music",
+        "rows": 50,
+        "passed": true
+      },
+      {
+        "source": "mastodon_trending",
+        "domain": "social",
+        "rows": 19,
+        "passed": true
+      },
+      {
+        "source": "marketing_dive",
+        "domain": "advertising",
+        "rows": 10,
+        "passed": true
+      },
+      {
+        "source": "guardian_culture",
+        "domain": "culture",
+        "rows": 26,
+        "passed": true
+      }
+    ]
+  },
+  "productionReady": false
+}

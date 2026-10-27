@@ -2,49 +2,49 @@ TAP version 13
 # Subtest: StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce
 ok 1 - StripeService refunds enforce buyer scope and pass validated exact cents and stable key to commerce
   ---
-  duration_ms: 37.960887
+  duration_ms: 73.915245
   type: 'test'
   ...
 # Subtest: refund request orchestration persists one idempotent operation and leaves failed execution retryable
 ok 2 - refund request orchestration persists one idempotent operation and leaves failed execution retryable
   ---
-  duration_ms: 9.698736
+  duration_ms: 15.777848
   type: 'test'
   ...
 # Subtest: Connect onboarding creates an Express account with requested capabilities and exact return URLs
 ok 3 - Connect onboarding creates an Express account with requested capabilities and exact return URLs
   ---
-  duration_ms: 24.234126
+  duration_ms: 38.457525
   type: 'test'
   ...
 # Subtest: charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities
 ok 4 - charge refund/dispute reconciliation sums provider states, releases won holds, and writes operation identities
   ---
-  duration_ms: 9.630423
+  duration_ms: 13.449105
   type: 'test'
   ...
 # Subtest: actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures
 ok 5 - actual webhook signature middleware preserves raw-byte signature boundary and rejects invalid, missing, or unconfigured signatures
   ---
-  duration_ms: 22.560437
+  duration_ms: 20.203147
   type: 'test'
   ...
 # Subtest: webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate
 ok 6 - webhook receipt transaction retries failed settlement and ignores a successfully replayed duplicate
   ---
-  duration_ms: 29.5584
+  duration_ms: 28.016037
   type: 'test'
   ...
 # Subtest: repository payout idempotency cannot silently move a reserved withdrawal to a different Connect account
 ok 7 - repository payout idempotency cannot silently move a reserved withdrawal to a different Connect account
   ---
-  duration_ms: 19.425555
+  duration_ms: 27.380427
   type: 'test'
   ...
 # Subtest: refund provider failure preserves the same operation key for retry
 ok 8 - refund provider failure preserves the same operation key for retry
   ---
-  duration_ms: 8.330884
+  duration_ms: 10.706979
   type: 'test'
   ...
 1..8
@@ -55,4 +55,4 @@ ok 8 - refund provider failure preserves the same operation key for retry
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 228.796605
+# duration_ms 323.325786

@@ -1,6 +1,7 @@
 # Direct Python dependencies used by the recorded verification environment.
 # Install CPU PyTorch separately as documented in docs/testing/README.md.
 pytest==9.1.1
+coverage>=7.13,<8
 numpy==2.4.6
 scipy==1.17.1
 fastapi==0.136.3

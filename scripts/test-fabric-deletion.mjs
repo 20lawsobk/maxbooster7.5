@@ -15,6 +15,8 @@ function seed(refs = 1) {
   };
 }
 async function execute({ text, values: v }) {
+  if (text.startsWith("CREATE ")) return [];
+  if (text.startsWith("SELECT pg_advisory_xact_lock")) return [];
   if (text.startsWith("DELETE FROM fabric_objects")) {
     const old = state.object; state.object = null; return old ? [old] : [];
   }
@@ -61,7 +63,7 @@ try {
       b.onLoad({ filter: /.*/, namespace: "mock" }, args => ({
         contents: args.path === "drizzle-orm"
           ? `export const sql=(s,...values)=>({text:s.join("?").replace(/\\s+/g," ").trim(),values});`
-          : `export const db=globalThis.fixtureDb;`,
+          : `export const db=globalThis.fixtureDb; export const withFabricChunkLock=async(_key,work)=>work();`,
       }));
     } }],
   });

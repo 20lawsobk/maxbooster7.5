@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="91" failures="0" errors="0" time="9.725486614">
+    <testsuite name="tests/billing-lifecycle.test.ts" timestamp="2026-10-26T23:14:00.742Z" hostname="2fc971e77ddd" tests="12" failures="0" errors="0" skipped="0" time="1.26987272">
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 1. registers and logs in an owned fixture user and captures its ID" time="0.698704627">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 2. webhook endpoint exists (not 404)" time="0.023987965">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 3. rejects webhook with no stripe-signature header" time="0.022750475">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 4. rejects webhook with an invalid stripe-signature header" time="0.026782403">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 5. a signed subscription event cannot grant entitlement without current provider verification" time="0.046874741">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 6. checkout.session.completed (subscription mode) updates subscription_tier" time="0.040606372">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 7. idempotency: same event ID fired twice — second response is idempotent, tier unchanged" time="0.189426622">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 8. a valid signed event cannot replace a user&apos;s tier from unverified payload metadata" time="0.052786428">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 9. GET /api/billing/subscription returns complete tier shape when authenticated" time="0.049083577">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 10. GET /api/billing/subscription returns 401 when unauthenticated" time="0.031627998">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 11. GET /api/billing/plans returns a non-empty plan list without auth" time="0.038195318">
+        </testcase>
+        <testcase classname="tests/billing-lifecycle.test.ts" name="Billing Webhook Lifecycle &gt; 12. POST /api/billing/create-checkout-session rejects invalid plan" time="0.046191431">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/paid-user-e2e.test.ts" timestamp="2026-10-26T23:14:00.746Z" hostname="2fc971e77ddd" tests="79" failures="0" errors="0" skipped="4" time="8.455613894">
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should register successfully with strong password" time="0.468967823">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject weak passwords" time="0.070453062">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should prevent duplicate registration" time="0.071830939">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should login with correct credentials" time="0.393751505">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should reject login with wrong password" time="0.289499033">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should provide CSRF token for session protection" time="0.036654345">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should return authenticated user profile" time="0.036550238">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 1: Account Creation &amp; Security Foundation &gt; should have security headers in response" time="0.02626286">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should update profile with clean data" time="0.031814659">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should strip HTML tags from profile fields (XSS protection)" time="0.102366668">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 2: Profile Management (XSS-safe) &gt; should reject excessively long profile data" time="0.038277541">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should list available subscription plans with pricing" time="0.05019119">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should show current subscription status with full plan details" time="0.05662472">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create real Stripe checkout session with checkout URL" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should create checkout sessions for all plan types" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; reports missing Stripe configuration without claiming a checkout session was created" time="0.198729846">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should reject invalid plan IDs" time="0.070481067">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return billing history as array" time="0.0603201">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should return payment method info" time="0.057078383">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should handle cancel-subscription gracefully when no subscription" time="0.05957073">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 3: Billing &amp; Stripe Payment Infrastructure &gt; should map Stripe error codes to user-friendly messages" time="0.000338591">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks without signature" time="0.05564337">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject webhooks with invalid signature" time="0.035841869">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should reject forged payment events (no valid Stripe signature)" time="0.033857348">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 4: Stripe Webhook Security &amp; Event Handling &gt; should handle all critical webhook event types" time="0.000359862">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list live distribution platforms from a connected Too Lost account" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; requires a distributor connection before live platform discovery" time="0.034871197">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should list user releases" time="0.038439576">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get earnings breakdown" time="0.035505352">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should get HyperFollow links" time="0.033751899">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should create a distribution release with valid data" time="0.055852085">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 5: Distribution - Core Paid Feature &gt; should reject a release draft without its required title" time="0.071428756">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list social connections" time="0.03129085">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should schedule a post" time="0.40271328">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should list calendar posts" time="0.04436302">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get generated hashtags without fabricated provider metrics" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; reports missing hashtag generation as a retryable503" time="0.034441749">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get social metrics" time="0.033687497">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should generate AI content" time="0.038384417">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should get inbox messages" time="0.029225426">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for unsupported platform" time="0.040058607">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 6: Social Media Management &gt; should handle connect for Meta platform (covers Facebook+Instagram)" time="0.034898437">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should list projects" time="0.042936495">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get sample library" time="0.03015046">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 7: Studio &amp; Music Production &gt; should get project templates" time="0.033976137">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should get analytics dashboard data" time="0.043946452">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 8: Analytics Dashboard &gt; should handle analytics date range filtering" time="0.037297254">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should read an owned saved career recommendation without claiming model generation" time="0.049310729">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 9: AI Career Coach &gt; should get career goals" time="0.039447435">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list contract templates" time="0.028489496">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 10: Contracts &amp; Collaboration &gt; should list collaboration connections" time="0.027013492">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should perform unified search with results" time="0.041034463">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should handle empty search gracefully" time="0.030300286">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should search with type filter" time="0.037734132">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 11: Search Functionality &gt; should get search suggestions" time="0.034441879">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in login" time="0.330970081">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject SQL injection in search" time="0.051920518">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should reject malformed JSON body" time="0.013530927">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should return 404 for non-existent API routes" time="0.074206717">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should prevent path traversal attempts" time="0.043925346">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not leak stack traces in production errors" time="0.047527745">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 12: Security Hardening Verification &gt; should not expose sensitive headers" time="0.032857246">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; should rate limit failed login attempts" time="2.879701937">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 13: Rate Limiting Verification &gt; counts authenticated billing requests in the actual configured limiter" time="0.156531669">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 14: Email Service Verification &gt; should have email service properly structured" time="0.033536229">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; returns OAuth URLs only when configured and reports missing configuration explicitly" time="0.237632895">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with missing code" time="0.026551715">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 15: OAuth Flow Structure Verification &gt; should handle OAuth callback with invalid state" time="0.030711958">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should return structured error responses with helpful messages" time="0.045887938">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle concurrent requests without crashes" time="0.164977646">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 16: Error Handling &amp; Graceful Degradation &gt; should handle very large request bodies gracefully" time="0.034630739">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should get notifications when authenticated" time="0.024612722">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 17: Notifications &amp; Real-Time &gt; should reject notifications without auth" time="0.028821037">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should not expose other users data in profile" time="0.025179056">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 18: Data Integrity &amp; Isolation &gt; should scope social posts to authenticated user" time="0.028873735">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should logout successfully" time="0.028445381">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access after logout (no cookies)" time="0.0346211">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to billing after logout" time="0.030299495">
+        </testcase>
+        <testcase classname="tests/paid-user-e2e.test.ts" name="PAID USER END-TO-END INTEGRATION TESTS &gt; Phase 19: Session &amp; Logout Security &gt; should deny access to distribution after logout" time="0.020737381">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -7,7 +7,6 @@
 
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
-import { createStripeClient } from "../lib/stripeClient";
 import { logger } from "../logger.js";
 import { pool } from "../db";
 import { env } from "../config/env.js";
@@ -59,10 +58,6 @@ export function stripeWebhookMiddleware(
   }
 
   try {
-    const stripe = createStripeClient(env?.STRIPE_SECRET_KEY as string, {
-      apiVersion: "2026-02-25.clover" as any,
-    });
-
     // Verify the signature using the raw body
     const rawBody = (req as unknown as Record<string, unknown>).rawBody as string | Buffer | undefined;
     if (!rawBody) {
@@ -71,7 +66,8 @@ export function stripeWebhookMiddleware(
       );
     }
 
-    const event = stripe?.webhooks.constructEvent(
+    // Local HMAC verification requires the endpoint secret, not an API key.
+    const event = Stripe.webhooks.constructEvent(
       rawBody,
       signature as string,
       webhookSecret,

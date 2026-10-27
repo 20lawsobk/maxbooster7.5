@@ -66,6 +66,7 @@ export const ALL_INSTRUMENT_SYNTHESIZERS: Record<
 };
 
 export function getEffectProcessor(pluginId: string): DSPProcessor | null {
+  if (!Object.hasOwn(ALL_EFFECT_PROCESSORS, pluginId)) return null;
   const factory = ALL_EFFECT_PROCESSORS[pluginId];
   return factory ? factory() : null;
 }
@@ -73,6 +74,7 @@ export function getEffectProcessor(pluginId: string): DSPProcessor | null {
 export function getInstrumentSynthesizer(
   pluginId: string,
 ): SynthesizerEngine | null {
+  if (!Object.hasOwn(ALL_INSTRUMENT_SYNTHESIZERS, pluginId)) return null;
   const SynthClass = ALL_INSTRUMENT_SYNTHESIZERS[pluginId];
   return SynthClass ? new SynthClass() : null;
 }

@@ -1,0 +1,1 @@
+{"gate": "UNVERIFIED", "routedPageDeclarations": 80, "uiInteractionDeclarations": 8374, "backendRegistrations": 2901, "frontendApiContracts": 932, "scannedTypeScriptJavaScriptFiles": 3352, "actualCoverageFiles": 2639, "requiredChecks": 33504, "unverifiedChecks": 33504, "unknownMappings": 127, "invalidEvidenceLinks": 0}

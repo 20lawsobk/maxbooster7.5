@@ -1,0 +1,192 @@
+{
+  "scope": "Dormant StudioLoader wrapper and HOC in actual React DOM with installed Query v5, controlled HTTP/reporting boundaries; no routed-page/provider/backend-delivery claim",
+  "status": "behavior_assertions_passed",
+  "productionReady": false,
+  "finalCommand": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "tests/unit/studio-loader-browser.test.ts",
+    "--reporter=junit",
+    "--outputFile=/workspace/onboarding-results/studio-loader-node22-final.xml"
+  ],
+  "environment": {
+    "MAXBOOSTER_STUDIO_COVERAGE_DIR": "/workspace/onboarding-results/studio-loader-browser-coverage",
+    "Node": "22.23.3",
+    "Chromium": "154.0.8037.57",
+    "Query": "5.104.3"
+  },
+  "cases": {
+    "tests": 1,
+    "failures": 0,
+    "durationSeconds": 59.609057111
+  },
+  "coverage": {
+    "lines": {
+      "total": 85,
+      "covered": 85,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 92,
+      "covered": 92,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 23,
+      "covered": 23,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 70,
+      "covered": 69,
+      "skipped": 0,
+      "pct": 98.57
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": "Unknown"
+    }
+  },
+  "coverageTarget": {
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100,
+    "passed": false
+  },
+  "mergedIntoGlobalCoverage": false,
+  "uncoveredBranches": [
+    {
+      "id": "0",
+      "map": {
+        "loc": {
+          "start": {
+            "line": 66,
+            "column": 36
+          },
+          "end": {
+            "line": 66,
+            "column": 56
+          }
+        },
+        "type": "binary-expr",
+        "locations": [
+          {
+            "start": {
+              "line": 66,
+              "column": 36
+            },
+            "end": {
+              "line": 66,
+              "column": 50
+            }
+          },
+          {
+            "start": {
+              "line": 66,
+              "column": 50
+            },
+            "end": {
+              "line": 66,
+              "column": 56
+            }
+          }
+        ],
+        "line": 66
+      },
+      "counts": [
+        42,
+        0
+      ]
+    }
+  ],
+  "remainingBranchExplanation": "loadingState has five fixed keys on every construction and update; totalItems || 1 fallback at StudioLoader.tsx:66 cannot be reached through the public component contract. Retained unchanged; no fake hits or exclusion.",
+  "sourceFiles": {
+    "client/src/components/studio/StudioLoader.tsx": "a1d42a95b4a86c403d7fea8f0a737c5c09d6f7e4ceee2db4c043d31960ef4f12",
+    "tests/unit/studio-loader-browser.test.ts": "af63e70a0b3657caf24f149da4a71ebba0b6b8d87baf80bbe437d7b7c4c2bf73"
+  },
+  "assertedBehaviors": [
+    "Pending query shows skeleton without child controls",
+    "Real query success updates progress and shows child controls and success announcement",
+    "HOC forwards child props",
+    "Network critical failure and reporting",
+    "Dashboard and login navigation",
+    "Denied project creation reports failure",
+    "Failed refetch produces destructive acknowledgement and no false success",
+    "Successful retry recovers critical error",
+    "Independent sample-only and project-only degraded modes retain controls and recover",
+    "Timeout, generic and missing-message rejection presentations",
+    "Successful creation sends exact POST body and awaits all three real QueryClient invalidations",
+    "Actual window.location.reload reconstructs the component and loads again",
+    "Settled component unmount clears rendered controls"
+  ],
+  "integrity": [
+    "Explicit UTF-8 HTTP Content-Type",
+    "Every executed bundle script ID is SHA256-verified before discarded context reuse",
+    "Original source contents match source-map contents and current source hash",
+    "Precise coverage snapshots reset counters and merge only byte-identical bundles across actual reload",
+    "All artifact hashes match producer provenance"
+  ],
+  "checks": {
+    "lint": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "artifacts": {
+    "studio-loader-node22-final.xml": {
+      "sha256": "fe3d82bdd9e7aff91a6503ae2056c8c44e1b983d8521680bb4ea20609ca4735b",
+      "bytes": 594
+    },
+    "studio-loader-node22-final.txt": {
+      "sha256": "8e3cf418927a584dc4ce7755ad0c18014026cd7c637e52760b79ca5a4b403651",
+      "bytes": 85
+    },
+    "studio-loader-lint.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "studio-loader-diff-check.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "studio-loader-browser-coverage/browser-script.js": {
+      "sha256": "f95f996dd1cad55ca1395f4ec35136a6e968bfab579aa5066db92f92c6c5f760",
+      "bytes": 1425291
+    },
+    "studio-loader-browser-coverage/browser-script.js.map": {
+      "sha256": "eb92669991fcf960e281be0d8c7f8a3014e8725ce7fd4b85c1372c5b91eb9a16",
+      "bytes": 2276494
+    },
+    "studio-loader-browser-coverage/browser-v8.json": {
+      "sha256": "2f21710c3f144058329ebd38bde034a06b32ad36df0ffdbbb99b12526a151419",
+      "bytes": 1049525
+    },
+    "studio-loader-browser-coverage/coverage-final.json": {
+      "sha256": "ab41fbd0f130f87573e0a1a7682fb8558fe744a165bf1aa8195e5d3610f3eb52",
+      "bytes": 25412
+    },
+    "studio-loader-browser-coverage/coverage-summary.json": {
+      "sha256": "c4a85d219f3193b97f429701b38e8bf24a3e5c527ddcff7825c34db07991eaca",
+      "bytes": 1031
+    },
+    "studio-loader-browser-coverage/provenance.json": {
+      "sha256": "4af6f0c2ed2962c7cbfc886e4fdf1df2a6c5ed1c00d7ff9299cfd6e1fb86ba0d",
+      "bytes": 1337
+    }
+  },
+  "historicalFailures": {
+    "studio-loader-before.xml": "Actual Query-v5 unsupported query callback: loaded progress never updates",
+    "studio-loader-after.xml": "First effect fix exposed null observer error while refetching, corrected with prior-error fallback",
+    "studio-loader-instrumented.xml": "Collector-only source-map URL format error, corrected",
+    "studio-loader-instrumented-final.xml": "Harness-only pre-document.body navigation race, corrected",
+    "studio-loader-final-valid.xml": "Collector-only discarded script ID on actual reload, corrected by caching only previously verified identities"
+  },
+  "invalidPriorProfile": "studio-loader-browser-coverage-before-charset/invalid-profile.json",
+  "usage": "Set CHROMIUM_PATH (or REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE) to Chromium/Chrome and MAXBOOSTER_STUDIO_COVERAGE_DIR to an output directory; run the finalCommand from the repository root. Omit the coverage directory for behavior-only execution. This producer does not merge its profile into the global Vitest report.",
+  "recordedAt": "2026-10-27T10:11:39.454163+00:00"
+}

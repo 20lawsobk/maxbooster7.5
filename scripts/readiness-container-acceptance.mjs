@@ -68,12 +68,16 @@ try {
   fs.writeFileSync(path.join(temp,'schema/schema.ts'),fs.readFileSync(path.join(root,'shared/schema.ts'),'utf8').replace('export * from "./readiness-schema";',''));
   fs.writeFileSync(path.join(temp,'drizzle.json'),JSON.stringify({dialect:'postgresql',schema:path.join(temp,'schema/schema.ts'),out:path.join(temp,'generated')}));
   run(process.execPath,['node_modules/drizzle-kit/bin.cjs','generate',`--config=${path.join(temp,'drizzle.json')}`]);
-  for(const file of fs.readdirSync(path.join(temp,'generated')).filter(file=>file.endsWith('.sql')).sort())docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(temp,'generated',file),'utf8')});
+  const baselineMigrations=fs.readdirSync(path.join(temp,'generated')).filter(file=>file.endsWith('.sql')).sort();
+  if(!baselineMigrations.length||baselineMigrations.some(file=>!fs.readFileSync(path.join(temp,'generated',file),'utf8').trim()))throw Error('Schema generator produced no usable SQL; exit zero alone does not establish a fixture schema');
+  for(const file of baselineMigrations)docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(temp,'generated',file),'utf8')});
   for(const file of fs.readdirSync(path.join(root,'migrations')).filter(file=>/^\d+.*\.sql$/.test(file)&&Number(file.split('_')[0])>=20).sort())docker(['exec','-i',db,'psql','-U','packed','-d','postgres','-v','ON_ERROR_STOP=1'],{input:fs.readFileSync(path.join(root,'migrations',file),'utf8')});
   fs.unlinkSync(path.join(temp,'node_modules'));evidence.ephemeralDatabase='pass';
   const fixture=path.join(temp,'fixture');fs.mkdirSync(fixture);
   const guard=fs.readFileSync(path.join(root,'scripts/readiness-egress-guard.mjs'),'utf8').split('for (const method of [')[0].replace('const allowedHosts = new Set([',`const allowedHosts = new Set([${JSON.stringify(databaseIp)},`)+'\nsyncBuiltinESMExports();\n';
   fs.writeFileSync(path.join(fixture,'guard.mjs'),guard);
+  fs.mkdirSync(path.join(fixture,'lib'));
+  fs.copyFileSync(path.join(root,'scripts/lib/isolated-codec-process.mjs'),path.join(fixture,'lib/isolated-codec-process.mjs'));
   fs.mkdirSync(path.join(fixture,'python'));
   fs.writeFileSync(path.join(fixture,'python/sitecustomize.py'),`import socket\n_original=socket.socket.connect\ndef _connect(self,address):\n    if isinstance(address,tuple) and address[0] not in ('localhost','127.0.0.1','::1',${JSON.stringify(databaseIp)}):\n        raise OSError('container-rehearsal-egress-denied')\n    return _original(self,address)\nsocket.socket.connect=_connect\n`);
   const state=path.join(temp,'state');fs.mkdirSync(state,{mode:0o700});fs.cpSync(models,path.join(state,'models'),{recursive:true,verbatimSymlinks:true});

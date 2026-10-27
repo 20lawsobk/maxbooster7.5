@@ -193,6 +193,10 @@ export class AcousticDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.hihatEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.roomDelay.clear();
@@ -347,6 +351,10 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.hihatEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.kickFilter.clear();
@@ -487,6 +495,10 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.hihatEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.kickFilter.clear();
@@ -651,6 +663,11 @@ export class TrapDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.subEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.hihatEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.subOsc.reset();
     this.snareOsc.reset();
@@ -808,6 +825,10 @@ export class JazzDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.brushEnvelope.reset();
+    this.rideEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.kickFilter.clear();
@@ -985,6 +1006,11 @@ export class RockDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.tomEnvelope.reset();
+    this.crashEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.tomOsc.reset();
@@ -1138,6 +1164,8 @@ export class PercussionSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.pitchEnvelope.reset();
     this.congaOsc.reset();
     this.bongoOsc.reset();
     this.bodyFilter.clear();
@@ -1286,6 +1314,8 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.hitEnvelope.reset();
     this.metalOsc1.reset();
     this.metalOsc2.reset();
     this.metalOsc3.reset();
@@ -1446,6 +1476,10 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.kickEnvelope.reset();
+    this.snareEnvelope.reset();
+    this.hihatEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.kickOsc.reset();
     this.snareOsc.reset();
     this.kickFilter.clear();
@@ -1632,6 +1666,10 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.timpaniEnvelope.reset();
+    this.bassDrumEnvelope.reset();
+    this.cymbalEnvelope.reset();
+    this.pitchEnvelope.reset();
     this.timpaniOsc.reset();
     this.bassDrumOsc.reset();
     this.timpaniFilter.clear();
@@ -1643,15 +1681,15 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
   }
 }
 
-export const DRUMS_SYNTHESIZERS: Record<string, () => SynthesizerEngine> = {
-  "acoustic-drums": () => new AcousticDrumsSynth(),
-  "electronic-drums": () => new ElectronicDrumsSynth(),
-  "breakbeat-drums": () => new BreakbeatDrumsSynth(),
-  "trap-drums": () => new TrapDrumsSynth(),
-  "jazz-drums": () => new JazzDrumsSynth(),
-  "rock-drums": () => new RockDrumsSynth(),
-  percussion: () => new PercussionSynth(),
-  "industrial-drums": () => new IndustrialDrumsSynth(),
-  "lofi-drums": () => new LoFiDrumsSynth(),
-  "orchestral-drums": () => new OrchestralDrumsSynth(),
+export const DRUMS_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
+  "acoustic-drums": AcousticDrumsSynth,
+  "electronic-drums": ElectronicDrumsSynth,
+  "breakbeat-drums": BreakbeatDrumsSynth,
+  "trap-drums": TrapDrumsSynth,
+  "jazz-drums": JazzDrumsSynth,
+  "rock-drums": RockDrumsSynth,
+  percussion: PercussionSynth,
+  "industrial-drums": IndustrialDrumsSynth,
+  "lofi-drums": LoFiDrumsSynth,
+  "orchestral-drums": OrchestralDrumsSynth,
 };

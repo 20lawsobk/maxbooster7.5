@@ -47,11 +47,14 @@ try {
   fs.writeFileSync(path.join(temp, 'drizzle.json'), JSON.stringify({ dialect: 'postgresql',
     schema: path.join(root, 'external/pdim/lib/db/src/schema/index.ts'), out: path.join(temp, 'schema') }));
   run(process.execPath, ['node_modules/drizzle-kit/bin.cjs', 'generate', `--config=${path.join(temp, 'drizzle.json')}`]);
-  for (const file of fs.readdirSync(path.join(temp, 'schema')).filter(file => file.endsWith('.sql')).sort()) {
+  const baselineMigrations = fs.readdirSync(path.join(temp, 'schema')).filter(file => file.endsWith('.sql')).sort();
+  if (!baselineMigrations.length) throw new Error('Drizzle produced no baseline SQL despite exiting zero');
+  for (const file of baselineMigrations) {
     await database.pool.query(fs.readFileSync(path.join(temp, 'schema', file), 'utf8'));
   }
   // Reuse the transport guard, allowing only loopback/Unix socket traffic.
   const guard = fs.readFileSync(path.join(root, 'scripts/readiness-egress-guard.mjs'), 'utf8')
+    .replaceAll('\"./lib/isolated-codec-process.mjs\"', JSON.stringify(path.join(root, 'scripts/lib/isolated-codec-process.mjs')))
     .split('for (const method of [')[0] + '\nsyncBuiltinESMExports();\n';
   fs.writeFileSync(path.join(temp, 'loopback-guard.mjs'), guard);
   const fixture = `import app from ${JSON.stringify(path.join(root, 'external/pdim/artifacts/api-server/src/app.ts'))};

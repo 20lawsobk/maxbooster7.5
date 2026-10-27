@@ -77,6 +77,13 @@ const EXCLUDED_SOURCE_SUBTREES = [
   "client/public/videos",
 ];
 
+// Restore workers and cluster tests create private, disposable workspace
+// trees. They are neither application source nor runtime capsule members.
+export const PRODUCTION_SCRATCH_DIRECTORY_PREFIXES = Object.freeze([
+  ".pdim-scratch-",
+  ".pdim-cluster-test-",
+]);
+
 export const REQUIRED_SIMULATION_TEST_PATHS = Object.freeze([
   "tests/fixtures/pdim-recovery-cluster-fixture.ts",
   "tests/fixtures/retained-pdim-source-fixture-worker.ts",
@@ -114,6 +121,7 @@ export function shouldCopyProductionSimulationPath(relativePath) {
 
   const parts = normalized.split("/");
   const basename = parts[parts.length - 1];
+  if (PRODUCTION_SCRATCH_DIRECTORY_PREFIXES.some(prefix => parts[0].startsWith(prefix))) return false;
   if (parts[0] === "tests") {
     return REQUIRED_SIMULATION_TEST_PATHS.some(
       (requiredPath) =>

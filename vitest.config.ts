@@ -51,9 +51,10 @@ export default defineConfig({
       exclude: ["server/services/diffusion/**", "**/__tests__/**", "**/*.d.ts", "**/*.test.*", "**/*.spec.*"],
       reporter: ["text", "lcov"],
       thresholds: {
-        statements: 20,
-        functions: 20,
-        lines: 20,
+        statements: 100,
+        functions: 100,
+        lines: 100,
+        branches: 100,
       },
     },
   },

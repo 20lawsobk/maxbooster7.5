@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
-  "workingTreeInputDigest": "045d7893df3b4b376654f87d260bfe8edfabe7447665a86a0877170745542c69",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "workingTreeInputDigest": "c55f606e107bd9cdf4cce75eb6b7a28faa03c72757b0f2667a1bb929431a5060",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 566,
-    "supportSourceFiles": 55,
+    "canonicalTestFiles": 616,
+    "supportSourceFiles": 68,
     "retainedSnapshotFiles": 71,
     "nonExecutableSupportFiles": 10,
     "byGroup": {
-      "commerce": 17,
+      "commerce": 21,
       "integration-browser": 26,
       "manual-destructive-provider": 37,
-      "python": 115,
-      "root-node": 89,
-      "root-unit": 277,
-      "runner-support": 55,
+      "python": 120,
+      "root-node": 112,
+      "root-unit": 295,
+      "runner-support": 68,
       "subsystems": 5
     }
   },
@@ -173,7 +173,7 @@
     },
     {
       "path": "evaluations/maxcore-quality/verify_evidence.py",
-      "sha256": "89b98042d03bac3a2c1b2772497a28dbe45c63248947348f827a0c6673f3fe43",
+      "sha256": "985ea1eb6beda7e90c0bfdbeeb2bb2278e220d2a7f47c27ddaeee256a779e1ab",
       "category": "test",
       "group": "python",
       "runner": "python-script",
@@ -191,7 +191,7 @@
     },
     {
       "path": "evaluations/maxcore-quality/verify_types.py",
-      "sha256": "14d9dc1eed554b2f442fd52f3529fe066fa45a55f59521cd6db306590b60d8c5",
+      "sha256": "aed0de984ae358890b77047279f15031d3da7315d69107f415a1fa3fc4ece66b",
       "category": "test",
       "group": "python",
       "runner": "python-script",
@@ -203,7 +203,7 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Check immutable diagnostic records and media bytes; not a quality scorer.",
+      "purpose": "Check completed archived diagnostic records/media; current model identity is opt-in.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -376,7 +376,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
-      "sha256": "4f9419b4a6e1d4bc1ffed90bdcc26b5eb113cf2f5061891d60de6b10a1febdf0",
+      "sha256": "0ae884972b2c7f1368818caa171110f699dbfc14ee80eebeeae2670c00d53e03",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -407,6 +407,8 @@
         "PeakSourceTests.test_old_future_irrelevant_short_instructions_and_oversized_posts_excluded",
         "PeakSourceTests.test_flagged_and_noncanonical_public_record_addresses_excluded",
         "PeakSourceTests.test_mastodon_only_public_recent_complete_measured_posts_are_peak",
+        "PeakSourceTests.test_mastodon_context_omits_empty_unsafe_or_unresolvable_observations",
+        "PeakSourceTests.test_mastodon_short_zero_counter_context_is_canonical_not_a_peak_example",
         "PeakSourceTests.test_mastodon_peak_combines_actual_trending_and_topic_counters_deduplicated"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
@@ -978,7 +980,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py",
-      "sha256": "72f273a23f0693ac56af937332e74e83916edd3096392ede586d43097140dfec",
+      "sha256": "6e034b3786126a90bcd6b044febeda50b86a97d2ed57a58c40a953298cdc1c84",
       "category": "test",
       "group": "manual-destructive-provider",
       "runner": "isolated-python",
@@ -1926,7 +1928,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py",
-      "sha256": "e3473d13d8ca35189ce5e418778d248bdcb5cdffccafd32204adb562e1287c5f",
+      "sha256": "c8b6feca07041c36a42128b6d32c530eb7d3f78531d7a8ff9b8fd11478825841",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1942,6 +1944,7 @@
       "caseTitles": [
         "SelectionScalingTests.test_newest_beyond_first_hundred_and_peak_only",
         "SelectionScalingTests.test_two_new_probes_per_tick_and_cached_failures_progress",
+        "SelectionScalingTests.test_fresh_scans_do_not_starve_older_capable_candidate",
         "SelectionScalingTests.test_cache_binds_checkpoint_report_certificate_configuration_budget",
         "SelectionScalingTests.test_requested_peak_never_falls_back_to_reviewed_selection",
         "SelectionScalingTests.test_operational_cache_is_scoped_to_the_actual_live_scan",
@@ -2086,7 +2089,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py",
-      "sha256": "2fad58e758e412fd5a68ed3be5435d513375b18c1c60bea05dbaae7729712b46",
+      "sha256": "70bceb94f74672cd7729a88f776facf9c4a5cd51ee5f194cb01a94aee535aa12",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2098,9 +2101,18 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Campaign slots must remain complete without asserting unverified outcomes.",
+      "purpose": "Real rollout assembly with a controlled inference boundary and public scan.",
       "caseTitles": [
-        "test_unverified_release_keeps_all_slots_without_invented_milestones"
+        "test_unverified_release_keeps_all_slots_without_invented_milestones",
+        "test_multiplatform_campaign_keeps_normalized_names_and_actual_sections",
+        "test_backend_provenance_failure_never_substitutes_complete_template",
+        "test_backend_exception_aborts_whole_campaign_without_leaking_plan",
+        "test_unverified_metrics_links_and_marketing_claims_fail_explicitly",
+        "test_invalid_campaign_controls_fail_before_any_backend_call",
+        "test_failed_optional_asset_is_explicit_without_inventing_delivery",
+        "test_actual_script_agent_runs_under_unique_slot_plans_and_one_public_scan",
+        "test_specification_or_unsafe_asset_identifiers_never_count_as_generated_images",
+        "test_expired_inherited_budget_blocks_inference_and_preserves_context"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -2186,7 +2198,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py",
-      "sha256": "4a87c2f8bdc86d8396558140194ca3dd18eb4bec8c4c5d6e47efb5ed8541221b",
+      "sha256": "e196f7b10a11953f0f99c12d0794922279bf02623a96bf05cc1587966c69a214",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2198,7 +2210,7 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Handler-level routing contracts; no checkpoint or media inference.",
+      "purpose": "Handler/legacy body contracts, distinct from real media route admission. The dedicated-media HTTP tests exercise the production admission and delivery pipeline. Explicit ``__wrapped__`` calls below test retained internal handlers;",
       "caseTitles": [
         "test_ads_meta_uses_social_awareness_but_keeps_network_identity",
         "test_ad_script_uses_agent_run_and_exposes_source",
@@ -2215,11 +2227,12 @@
         "test_api_content_rejects_cached_fake_score",
         "test_api_text_rejects_legacy_cached_score",
         "test_api_content_fresh_copy_is_model_text_without_fake_scores",
-        "test_alias_media_endpoints_mark_asset_identifiers_as_specs",
+        "test_alias_media_bodies_mark_asset_identifiers_as_specs",
+        "test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs",
         "test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool",
         "test_audio_synth_receives_actual_instrument_and_prompt",
-        "test_audio_reference_mode_rejects_unfulfillable_piano_direction",
-        "test_audio_handler_caller_mood_and_targets_beat_fast_priors",
+        "test_audio_reference_body_rejects_unfulfillable_piano_direction",
+        "test_audio_internal_body_caller_mood_and_targets_beat_fast_priors",
         "test_daw_and_social_model_failures_are_service_unavailable"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
@@ -2275,7 +2288,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py",
-      "sha256": "1a149de19a6cf5f932986f398a23819a93d14957b09d018df1afc617809839fd",
+      "sha256": "3a0deae7a638d65266274be3b688c8e684dbb5263ba9cc2d5d5f6977f419f30d",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2602,7 +2615,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py",
-      "sha256": "0741fe2b8158af10147666eacaaae3ad5f718590e412be64c1b3d2a748cec9dc",
+      "sha256": "45a314b316b3df18297baf693ad68a7353a2102367390cf32b0d82babf70e0af",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2621,6 +2634,7 @@
         "LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content",
         "LiveServingTests.test_restart_reports_retained_candidate_while_cooling_down",
         "LiveServingTests.test_interrupted_attempt_cannot_be_reported_as_success_after_restart",
+        "LiveServingTests.test_blocked_training_rights_remains_honest_across_restart_and_cooldown",
         "LiveServingTests.test_failed_worker_keeps_durable_cooldown_and_retries_later",
         "LiveServingTests.test_bad_selected_update_retains_the_previous_verified_model",
         "LiveServingTests.test_observation_failure_does_not_stop_loading_reviewed_releases",
@@ -2800,7 +2814,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py",
-      "sha256": "778490b8ef3017b5c8c50c1d419472b68022cc88cf767ab6236044ac6935ef4c",
+      "sha256": "67cd3539806a6edf0fa073b987950577a0536b20e8f09a2644409afbb73bd57a",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2824,7 +2838,7 @@
         "test_distribution_agent_receives_effective_awareness",
         "test_audio_job_identity_contains_effective_awareness",
         "test_platform_video_coalescer_uses_consumed_awareness",
-        "test_campaign_post_composer_adds_slot_platform_awareness"
+        "test_campaign_script_backend_receives_canonical_slot_and_caller_awareness"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -2852,7 +2866,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py",
-      "sha256": "894b4f73a5cb70e09b12a44a5f790237d175a2116a323be533098324bbff2f50",
+      "sha256": "cc6669dbb76321381f4cea42871a3f0ea7423cffd5fb891ba420f0883cd1e869",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2921,7 +2935,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py",
-      "sha256": "ecc8f61d10368d306806bf62d8102f9d9f2edcdfe297b32e02c13732546f7a06",
+      "sha256": "a87806e6b388cba99cb17656adfbfcb183f7400292e8487ad60f481e6d249d42",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -2936,6 +2950,10 @@
       "purpose": "Actual bounded public-content training; fixtures never claim model quality.",
       "caseTitles": [
         "PublicPeakCurriculumTests.test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor",
+        "PublicPeakCurriculumTests.test_unknown_rights_peak_posts_block_before_worker_and_preserve_awareness",
+        "PublicPeakCurriculumTests.test_legacy_mode_cannot_train_unknown_rights_raw_peak_posts",
+        "PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata",
+        "PublicPeakCurriculumTests.test_explicit_owned_licensed_manifest_still_trains_real_weights",
         "PublicPeakCurriculumTests.test_stage_supervision_preserves_exact_words_and_requires_real_cta",
         "PublicPeakCurriculumTests.test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only",
         "PublicPeakCurriculumTests.test_missing_peak_content_never_falls_back_to_context",
@@ -3110,6 +3128,38 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py",
+      "sha256": "ecba857f1c0c29cf3ccf6458f15136aec844097678a8748c8c5fff2417675028",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Operator receipts bind test-authored posts; no source permissions are inferred.",
+      "caseTitles": [
+        "TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness",
+        "TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission",
+        "TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration",
+        "TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed",
+        "TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match",
+        "TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required",
+        "TextTrainingRightsTests.test_invalid_batches_never_partially_attach_receipts",
+        "TextTrainingRightsTests.test_duplicate_grants_and_oversized_manifest_are_refused",
+        "TextTrainingRightsTests.test_ambiguous_or_excessively_nested_json_fails_closed",
+        "TextTrainingRightsTests.test_evidence_cannot_escape_local_directory_or_use_symlinks",
+        "TextTrainingRightsTests.test_symlink_directories_and_writable_evidence_are_refused",
+        "TextTrainingRightsTests.test_private_record_is_not_licensed_by_a_matching_public_receipt",
+        "TextTrainingRightsTests.test_admission_persists_receipts_in_hash_bound_input_without_running_trainer"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py",
       "sha256": "45a0d1f9207e810d22979b0f59998a121e09ce799461922d8da9529949eba12c",
       "category": "test",
@@ -3136,7 +3186,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py",
-      "sha256": "a097f4bc2afe550ea0cf61fc795dece536335cac32370c6612a8821640069d24",
+      "sha256": "a7d194de95b1a87bbce973e343c6c6749fa33769d1b3f8e150a9004061863ee4",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3162,7 +3212,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py",
-      "sha256": "0d11ef86b79517eb9b982f406c296a4616911118488544c471c36631284858d5",
+      "sha256": "fb4558259131335d28dd154f55595240b3f9e7d16f64ac131a11b386f8d65f0a",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3221,7 +3271,9 @@
         "TestGarbleReason.test_whitelist_respected_for_glue_but_not_labels",
         "TestGuardLogsWarning.test_ranking_penalty_logs_reason",
         "TestGuardLogsWarning.test_script_agent_suppression_logs_reason",
-        "TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason"
+        "TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason",
+        "TestGuardLogsWarning.test_distribution_agent_rejects_structured_control_keys",
+        "TestGuardLogsWarning.test_distribution_agent_preserves_meaningful_caption_and_sampling_identity"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3253,7 +3305,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py",
-      "sha256": "ea87da98f3e016d101d9de2ee5e541e7ea4bc0e19fb9adc44c43e54498310da1",
+      "sha256": "a4415c20a660f0d6e09b1573112f3bea23f206c056b25025df469916f4532e87",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3279,7 +3331,7 @@
         "TestSynthesizeVoiceover.test_empty_text_returns_false",
         "TestMixAndTrack.test_voice_dominates_ducked_music",
         "TestMixAndTrack.test_voiceover_track_end_to_end",
-        "TestMixAndTrack.test_never_raises_on_bad_music_path"
+        "TestMixAndTrack.test_missing_requested_music_never_returns_narration_as_success"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3332,7 +3384,7 @@
     },
     {
       "path": "external/maxcore/scripts/check-js-security-versions.js",
-      "sha256": "2f0ae0d8d157515af2ce591bd85dbe6b3467915a6227e2706a44d7c4ddb5c49b",
+      "sha256": "fdd83b9bccf793a6a25c48128af3aecbedb9d1299fafce7d5108eef362edd473",
       "category": "test",
       "group": "subsystems",
       "runner": "node-assertion-script",
@@ -3548,7 +3600,7 @@
     },
     {
       "path": "scripts/readiness-container-acceptance.mjs",
-      "sha256": "ef2ef06b37a87c5cb56cef91e0f332724318cd45b39800a4fc79c7f8d628d34d",
+      "sha256": "92d6ac58864200a56e8210d060e6594b18ec4a3cb37a65462b6e355d2b9e7d06",
       "category": "test",
       "group": "manual-destructive-provider",
       "runner": "node",
@@ -3570,7 +3622,7 @@
     },
     {
       "path": "scripts/readiness-packed-acceptance.mjs",
-      "sha256": "6204946e8ed31b3f6f34c2b533a9ed00d17de0e1a09a626b1762057b8a4fccd8",
+      "sha256": "8395cc09e4cf5b2cae046731ae7da6988e4b257bc8364b40033f11cbb9bc73fa",
       "category": "test",
       "group": "manual-destructive-provider",
       "runner": "node",
@@ -3611,7 +3663,7 @@
     },
     {
       "path": "scripts/test-data-runtime.mjs",
-      "sha256": "6ab17a3fe022f0f2416d278d175b3cec61ca2bdcb559bfd5af535d4b43a134f1",
+      "sha256": "92cf5a501e895e370e51e112d137fb78f52755dc95f1f684c32a8df2628bd3b0",
       "category": "test",
       "group": "root-node",
       "runner": "node-assertion-script",
@@ -3629,7 +3681,7 @@
     },
     {
       "path": "scripts/test-fabric-deletion.mjs",
-      "sha256": "51ec5d217183faf9c6a821349f20df87f22410e21360b153fd059e07c64d376b",
+      "sha256": "36240e545c403a469331b3618a5286d9e58884d3d79695231329b97a838f2a41",
       "category": "test",
       "group": "root-node",
       "runner": "node-assertion-script",
@@ -3687,7 +3739,7 @@
     },
     {
       "path": "scripts/testing/commerce-legacy-fixture.mjs",
-      "sha256": "c2431cb06fe7ce06b506254a0d467c354a12805819be0fc22d9a04dbfeebd56f",
+      "sha256": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3704,7 +3756,7 @@
     },
     {
       "path": "scripts/testing/common.py",
-      "sha256": "0cf0eeb1229023f501bcfd65147a1da488b3865beb1ddb8f0d866a876d860fc8",
+      "sha256": "29b1af5de5defcbb4c82853dced9275db8260a9dd74a9c17ff6765b80a9d13bb",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3721,7 +3773,7 @@
     },
     {
       "path": "scripts/testing/generate-catalog.py",
-      "sha256": "2492e0abd43f9c89039e8882af8c1a6c9add779f1d5d0550b4ed36bfbbd99bcc",
+      "sha256": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3739,8 +3791,25 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/generate-platform-plan.py",
+      "sha256": "92322ef9dd196e67e135dab63766f4d7edca0e20fd72a0a1ecf0bac9d8896e23",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Generate the exhaustive work ledger; inventory completeness is not readiness.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/integration-browser.mjs",
-      "sha256": "429bd86fce76e9870a2a5e49bda6dbf125435681669697d22c5010902c725d71",
+      "sha256": "9fa027334d8682fec28ba9a950b240fb0a7d660b523fb8c953c107a4deb8f84f",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3757,7 +3826,7 @@
     },
     {
       "path": "scripts/testing/page80-acceptance.mjs",
-      "sha256": "5c58134fc083f20f28ba88d32103a5e17a39afad1197719541f2573553124060",
+      "sha256": "900864610ffeaab8ba6f1cd67a9a29dfb5d8c42e22266830ec4dfefcd0deb97a",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3773,8 +3842,42 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/platform-register.py",
+      "sha256": "bfda1529d437095ae114c57efb45bdee47fd2b84ced730aa2becd539fe184f8d",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Index platform surfaces and require explicit behavioral evidence for closure. This source inventory never treats a route match, import, line coverage or page render as proof that a feature's business behavior passed.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/remediation.py",
+      "sha256": "6f802791534beb6853a9dc89decac055d7e47a68e20804112f4d4d2dc41b440a",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Turn recorded test failures, exclusions and coverage gaps into repair tasks. Generating a guide does not repair a feature or make a failed check pass. Use --strict when unresolved tasks must make a master verification fail.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/run-all.py",
-      "sha256": "7049bbc531132f0848601fa60b4c3b0b7c5ca4a7cfbf19d8a8996e7420b03d99",
+      "sha256": "f40f9eaf6ab65cb6871493a0a5ce51ace1339fae8cb45d5d195b49de0aca9d2e",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3791,7 +3894,7 @@
     },
     {
       "path": "scripts/testing/run-commerce.py",
-      "sha256": "877ff5fdc1f7b499a21576a0771e6a3ce8b3b5a53b2334b52e3145f38ad6fd28",
+      "sha256": "c4d9a0b188f5e1eae9eaed3e0b56a9b1ac02bd7222f4cc7df60f78cc9c027919",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3803,6 +3906,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Requires Node 22+, npm dependencies, PostgreSQL server tools, Redis and FFmpeg. Remote Stripe modes and the Stripe.js browser fixture are recorded as not run.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/run-engine-load.py",
+      "sha256": "b9fa8427d9da2565f2d8527f976b4c096f7df0d44341a39795e0c5a17eafb5d6",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Bounded execution of the existing numeric DigitalGPU/dedup scale benchmark. The 90M value remains a projection. This profile executes 40 cold graph calls, 500 contention calls, 400 serial and 160 threaded cache calls, plus one priming",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3824,8 +3944,25 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/run-operations.py",
+      "sha256": "425912c00617e46f971e3c1ed1dfe8bfab6fb4dc3c20dce0be420150479f5836",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Bounded, disposable recovery and read-only retained-evidence verification.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/run-pdim-smoke.mjs",
-      "sha256": "e906088eafffbd5985e9555ac832d35d6e021ed203528fdd8567d0d71b489145",
+      "sha256": "759d1d283f51008d8056b9e42f710373650e71fd6c260d30bf2d640b266cd515",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3842,7 +3979,7 @@
     },
     {
       "path": "scripts/testing/run-python-suites.py",
-      "sha256": "8bb4e34798ca7c2a8405f57a2ddd2c7afd1902207a5c8d1e312e5669ad26331a",
+      "sha256": "4c54897643efcac387cac990f43cc3995eefd4fcba6b1123fded6ebd52c2e21a",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3876,7 +4013,7 @@
     },
     {
       "path": "scripts/testing/summarize-results.py",
-      "sha256": "5eb0b53c28d978105f8b63a34da47abd5e8ab8913fc03475782de2a5bdc89d86",
+      "sha256": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -4762,6 +4899,36 @@
       ]
     },
     {
+      "path": "server/services/backup/__tests__/databaseRestore.test.ts",
+      "sha256": "5cfb184fb091da579c6eac78e686c76752ff1f064a66d4c7c887d15be27660dd",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts server/services/backup/__tests__/databaseRestore.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "bounded database restore process; accepts a completed process and passes credentials only in discrete libpq environment",
+      "caseTitles": [
+        "bounded database restore process",
+        "accepts a completed process and passes credentials only in discrete libpq environment",
+        "bounds a real hung process and confirms close before rejecting",
+        "kills a real diagnostic flood without retaining unlimited output",
+        "redacts a failing process diagnostic",
+        "fails promptly when psql cannot start",
+        "escalates TERM-resistant children to KILL",
+        "reports unconfirmed teardown with bounded failure instead of hanging forever"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "server/services/backup/__tests__/postgresTools.test.ts",
       "sha256": "6b9120b497a9d9b39457197dd814b5d6774f6e4099c804b1866ea381ae5f8123",
       "category": "test",
@@ -4797,7 +4964,7 @@
     },
     {
       "path": "server/services/commerce.isolated.test.mjs",
-      "sha256": "bcce02f369a9160a93c7e3bffb5027ad18ff890a88bce29af07cf6ca85a8db84",
+      "sha256": "8724bce65bf7edc06e37d8432396c21006d65bfdbb8c9b93886debbed972f920",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -4826,7 +4993,7 @@
     },
     {
       "path": "server/services/commerce/orchestrator.isolated.test.mjs",
-      "sha256": "0f8a45a655fd54d515b983cb51892218d1e298fda54d679b68e5c586e2c0e2e9",
+      "sha256": "7928d4f89a02287bc3a13d33d79dda424e590c7203c49a06a5c3afef1e38527d",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -5079,7 +5246,7 @@
     },
     {
       "path": "tests/ai-analytics-integration.test.ts",
-      "sha256": "dd9932419c8c625bfe9a59d0812b15839025a926ae39adbd203899b51a47e859",
+      "sha256": "9cfcbc14247c7b2a5bc358105069192d6c6421df1e6b589e7b7f1727fe7e8ded",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5099,16 +5266,17 @@
         "GET /api/analytics/music/fanbase \u2192 401 when unauthenticated",
         "GET /api/analytics/music/fanbase \u2192 200 with correct shape",
         "GET /api/analytics/music/fanbase \u2192 returns array-safe topPlatforms when available",
-        "POST /api/ai/analytics/predict \u2192 200 with predictions array",
-        "POST /api/ai/analytics/predict \u2192 400 or 401 for invalid metric",
+        "POST /api/ai/analytics/predict reports its missing generation contract explicitly",
+        "POST /api/ai/analytics/predict rejects an invalid metric before generation",
         "GET /api/analytics/dashboard \u2192 200 with expected overview fields",
-        "GET /api/analytics/dashboard?period=7d \u2192 200 or 401",
-        "GET /api/analytics/dashboard?period=90d \u2192 200 or 401",
-        "GET /api/advertising \u2192 200 or 401 depending on auth state",
-        "GET /api/analytics/anomalies \u2192 200 with anomalies array",
-        "GET /api/analytics/release-strategy \u2192 200 with strategy shape",
-        "GET /api/analytics/milestones \u2192 200 with milestones array",
-        "GET /api/analytics/dashboard?limit=1000 \u2192 does not crash (pagination cap)"
+        "GET /api/analytics/dashboard?timeRange=7d \u2192 authenticated 200",
+        "GET /api/analytics/dashboard?timeRange=90d \u2192 authenticated 200",
+        "GET /api/advertising/campaigns \u2192 authenticated owned campaign array",
+        "GET /api/analytics/anomalies requires an authenticated administrator",
+        "an administrator with a real verified factor reads only owned persisted anomalies",
+        "GET /api/analytics/music/release-strategy \u2192 200 with missing history explicit",
+        "GET /api/analytics/music/milestones \u2192 200 with owned persisted progress",
+        "GET /api/analytics/dashboard?limit=1000 preserves the authorized response"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -5117,7 +5285,7 @@
     },
     {
       "path": "tests/api-guards.test.ts",
-      "sha256": "5d29a4644e9df0aad529ecea2cb180458852b997232f4c75a5f9faf22df79421",
+      "sha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5145,7 +5313,8 @@
         "GET /api/royalties \u2192 401",
         "GET /api/workspace \u2192 401",
         "GET /api/analytics/overview \u2192 401",
-        "POST /api/create-checkout-session \u2192 401",
+        "POST /api/billing/create-checkout-session requires an existing account",
+        "public registration checkout validates input before any provider request",
         "GET /api/files/list \u2192 401",
         "GET /api/artist-profiles \u2192 401",
         "GET /api/achievements \u2192 401",
@@ -5248,7 +5417,7 @@
     },
     {
       "path": "tests/auth-2fa.test.ts",
-      "sha256": "1e1168cba5f3da3311345066bcb334577a89b312db95a756f50ead7da7dcc56f",
+      "sha256": "8154915e4a7b7cdbdd04b70e313c33edd510296c69c3437e4c184a8fed60f950",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5277,7 +5446,7 @@
         "10. login with password + valid TOTP code fully authenticates",
         "11. GET /api/auth/me confirms full session is active after 2FA login",
         "16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }",
-        "12. POST /api/auth/2fa/disable with wrong password returns 400",
+        "12. POST /api/auth/2fa/disable with wrong password requires reauthentication",
         "13. POST /api/auth/2fa/disable with correct password + valid TOTP disables 2FA",
         "14. GET /api/auth/2fa/status confirms 2FA is disabled",
         "15. logout and re-login works without 2FA code after disable"
@@ -5289,7 +5458,7 @@
     },
     {
       "path": "tests/auth-flows.test.ts",
-      "sha256": "a8f91cef7cdb4e40d238015e389a39d7c36dddcd4727c66e4b22671b0f11e1fe",
+      "sha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5321,7 +5490,7 @@
         "12. GET /api/social/callback/:platform with no state redirects with error",
         "13. GET /api/social/callback/:platform with tampered/invalid state redirects with invalid_state",
         "14. GET /api/social/callback/:platform with base64-but-bad-HMAC state redirects with invalid_state",
-        "15. GET /api/social/callback/:platform with OAuth provider error redirects with oauth_denied",
+        "15. an OAuth provider error without session-bound state is rejected as invalid_state",
         "16. POST /api/social/connect/:platform without auth returns 401 or 403",
         "17. POST /api/social/connect/:platform with valid auth returns an authUrl",
         "18. GET /api/social/platforms returns a platform list",
@@ -5402,7 +5571,7 @@
     },
     {
       "path": "tests/billing-lifecycle.test.ts",
-      "sha256": "d404a547847e4fe8ade9ff6291fca7ac723b7b93b522d5f749cd5fa41d9d3043",
+      "sha256": "4fa8ee102099997981b1f1370e8b5162a494dec1c2835db1e47559920e143bfe",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5419,14 +5588,14 @@
       "purpose": "Integration tests for billing webhook lifecycle. Tests cover: 1. Webhook signature validation (no sig / bad sig \u2192 rejected, valid sig \u2192 accepted)",
       "caseTitles": [
         "Billing Webhook Lifecycle",
-        "1. registers and logs in test user; captures user ID and stripeCustomerId",
+        "1. registers and logs in an owned fixture user and captures its ID",
         "2. webhook endpoint exists (not 404)",
         "3. rejects webhook with no stripe-signature header",
         "4. rejects webhook with an invalid stripe-signature header",
-        "5. valid customer.subscription.created is accepted and returns received:true",
+        "5. a signed subscription event cannot grant entitlement without current provider verification",
         "6. checkout.session.completed (subscription mode) updates subscription_tier",
         "7. idempotency: same event ID fired twice \u2014 second response is idempotent, tier unchanged",
-        "8. subscription.created linked to real user updates subscription_tier",
+        "8. a valid signed event cannot replace a user's tier from unverified payload metadata",
         "9. GET /api/billing/subscription returns complete tier shape when authenticated",
         "10. GET /api/billing/subscription returns 401 when unauthenticated",
         "11. GET /api/billing/plans returns a non-empty plan list without auth",
@@ -5724,6 +5893,101 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/contracts/helpers-contract-hooks.mjs",
+      "sha256": "48eb4c6078fe81ce53bd87ce5c76f08bd50edc0193011da73a62a00ac67a1cba",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Always attempt every owned-fixture cleanup, even after another one fails.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/contracts/helpers-hybrid-storage-contracts.mjs",
+      "sha256": "0ebb230bf69f7100f0d2e868314a628a7351d31ef2820217e02a895a6d19e73c",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Reused behavior assertions: bundled Node subjects and instrumented direct TS subjects.",
+      "caseTitles": [
+        "hybrid metadata is shared across independent services without lost updates",
+        "concurrent writes, fresh reads, unique same-name keys and ownership",
+        "public bytes have independent ownership records",
+        "concurrent final deletion and dedup admission preserve every successful upload",
+        "independent immutable handles reject missing/corrupt bytes and replacement",
+        "metadata publication failures retain invisible recoverable intents and never ACK",
+        "physical delete failure remains durable and retryable from another worker",
+        "empty analytics, missing objects and download authority have explicit outcomes",
+        "invalid uploads never create an intent and zero-byte files remain readable",
+        "folder and tier filters preserve owner boundaries and stable download URLs",
+        "physical analytics count shared bytes once and scope logical ownership",
+        "cleanup recommendations and deletion honor age, access and owner",
+        "legacy hot-tier decisions only migrate old, infrequently used physical entries",
+        "SQL publication and duplicate-key failures reject without partial committed rows",
+        "invalid byte receipts and corrupted pending data never become visible",
+        "deduplicated and active reads verify full content before acknowledgement",
+        "immutable publication needs a confirmed manifest and rejects corrupt metadata",
+        "legacy parser rejects public-map corruption and cyclic or unresolved ownership",
+        "verified containers reject inconsistent headers and decoded lengths",
+        "rollback transport failures preserve the original error and release SQL clients",
+        "a deletion waiting on the content lock observes a completed concurrent deletion",
+        "legacy aliases retain the original blob after primary deletion and cannot resurrect",
+        "unknown legacy references abort the entire import and retain the source"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/contracts/helpers-social-media-job-contracts.mjs",
+      "sha256": "b9bddd752e56fc4e9927edea1b4b8248a15844a6689d13c5a36fd99d573df56f",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Same real PostgreSQL/owned-file contracts run through both test frameworks.",
+      "caseTitles": [
+        "social media jobs share PostgreSQL status and fence interrupted render workers",
+        "a second worker polls a real committed video result with the same public response contract",
+        "music-video status survives a new repository instance and handlers isolate owner/family/auth",
+        "foreign polls cannot expire another owner's row; owned polls persist an explicit interruption",
+        "lease expiry fences a stalled writer even before another worker polls",
+        "forged tokens and duplicate terminal writes cannot overwrite acknowledged results",
+        "concurrent terminal writers acknowledge exactly one immutable outcome",
+        "completed jobs require actual asset references and cannot persist an oversized result",
+        "polling never reports corrupt persisted URL values as completed media",
+        "real heartbeat extends ownership and the timer stops after shutdown",
+        "new admissions bound stale metadata cleanup without pruning healthy rendering jobs",
+        "database outage returns an explicit retryable polling error",
+        "terminal validation rejects malformed URLs and accepts explicit HTTP assets without weakening ownership",
+        "legacy incomplete rows have explicit private polling failures and fallback metadata",
+        "lost leases and database failures stop heartbeat renewal exactly once",
+        "queued heartbeat callbacks cannot renew or notify after cancellation",
+        "scene validation releases actual owned staged uploads on every early 400 branch",
+        "valid and non-scene requests retain their staged files for the real renderer",
+        "cleanup handles single, array and absent multipart paths including missing files"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/coverage-gaps.config.ts",
       "sha256": "fcb3eee5606a69d5884cbc4f96655227bee8bd76fe1837c3aac34ef5c8905bb5",
       "category": "support",
@@ -5741,8 +6005,50 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/coverage/hybrid-storage-live-repository.test.ts",
+      "sha256": "899ce3cecc593a36e214c2dd06767a4c859ecc19881087b687a80547cb627ebe",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest-platform",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.platform.config.ts tests/coverage/hybrid-storage-live-repository.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "PostgreSQL server tools on PATH; owned private fixture only",
+        "Coverage target100% remains enforced; a focused file run does not establish global coverage"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "hybrid storage live repository",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": []
+    },
+    {
+      "path": "tests/coverage/social-media-jobs-live-repository.test.ts",
+      "sha256": "2f08d278b548dfc49e78214c77691db4005e0edeafc6aab343b41ba8e35b52ed",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest-platform",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.platform.config.ts tests/coverage/social-media-jobs-live-repository.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "PostgreSQL server tools on PATH; owned private fixture only",
+        "Coverage target100% remains enforced; a focused file run does not establish global coverage"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "social media jobs live repository",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": []
+    },
+    {
       "path": "tests/critical-paths.test.ts",
-      "sha256": "68e7a3659b3cd288e2cf7b9ea70ba24bbec0b6a84ce90204505a5e9ad7b332b1",
+      "sha256": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5773,20 +6079,17 @@
         "should update profile",
         "should strip XSS from profile fields",
         "3. Distribution - Core Paid Feature",
-        "should list distribution platforms",
         "should create a release",
-        "should reject release with missing required fields",
+        "should reject a release draft without its required title",
         "should list user releases",
-        "should get earnings summary",
         "should get HyperFollow links",
         "4. Social Media Management",
         "should schedule a post",
         "should reject post without required fields",
         "should list user posts",
-        "should publish a scheduled post",
+        "does not claim publication before a platform connection and provider confirmation",
         "should reject publishing non-existent post",
         "should get social metrics",
-        "should get trending hashtags",
         "should get inbox messages",
         "should generate AI content",
         "5. Billing & Payments",
@@ -5802,7 +6105,7 @@
         "should perform unified search",
         "should handle empty search gracefully",
         "8. Career Coach",
-        "should get recommendations",
+        "should read an owned saved recommendation without claiming fresh generation",
         "should get goals",
         "9. Contracts & Collaborations",
         "should list contract templates",
@@ -5824,6 +6127,30 @@
       "configMembership": [
         "vitest.integration.config.ts"
       ]
+    },
+    {
+      "path": "tests/database-backup-restore-postgres.test.mjs",
+      "sha256": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/database-backup-restore-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Actual local pg_dump/psql recovery. No provider, private Neon, storage or global SLO claim.",
+      "caseTitles": [
+        "owned PostgreSQL: real dump bytes restore schema, data, sequence and a pinned snapshot",
+        "schema constraints, exact Unicode/JSON/null/numeric/bytea values and identity sequence survive actual restore",
+        "exported snapshot excludes a concurrent commit without changing source data",
+        "a failing operator recovery invariant rolls back the entire actual restore transaction",
+        "real pg_dump output over the byte budget fails and removes partial private files"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
       "path": "tests/database-recovery-schema.test.mjs",
@@ -5913,6 +6240,27 @@
         "real Electron packager verifies checksum, downloads via patched transport, then reuses artifact cache",
         "installed code generators compile each real OpenAPI spec into isolated React-query and Zod outputs",
         "PDIM's installed upload middleware parses multipart bytes and enforces size limits"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/dependency-transport-teardown.test.mjs",
+      "sha256": "a8c4b42efbfb063e46b278d5dbf4e295d300d1f0000f1a0aca21a88e6a1fecbb",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/dependency-transport-teardown.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "${scope}: pending asynchronous upload filter cannot reopen an aborted request; ${scope}: fetch refuses excessive response encodings and remains usable",
+      "caseTitles": [
+        "${scope}: pending asynchronous upload filter cannot reopen an aborted request",
+        "${scope}: fetch refuses excessive response encodings and remains usable"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -6104,6 +6452,27 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/deployment-remainder-contract.test.mjs",
+      "sha256": "3d065e31199fa0d870c22f1e05b62624a3a6aca84e5ce223e34ae42d544de53f",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/deployment-remainder-contract.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "publishing graph builds the application remainder before finalizing; remainder inventory retains pre-restore modules and selects runtime assets",
+      "caseTitles": [
+        "publishing graph builds the application remainder before finalizing",
+        "remainder inventory retains pre-restore modules and selects runtime assets"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/deployment-rust-phase.test.mjs",
       "sha256": "ff4a59d97e864bd5a3f8fa8c530d3885f75deb540d2a45efc2d663963eb8f60d",
       "category": "test",
@@ -6149,7 +6518,7 @@
     },
     {
       "path": "tests/direct-upload.test.ts",
-      "sha256": "2dc7640269280d97f8b464c43d29570ba1b9c01c25f17a6b6b4c740da8660421",
+      "sha256": "dffb53dbdfea5a75c7cd9e6feeb1fbc29a5e9d156570329d8c439dfa7f27c10c",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6177,8 +6546,37 @@
       ]
     },
     {
+      "path": "tests/distribution-workflow-tenancy.test.mjs",
+      "sha256": "4ca2788826501481e8619d891a0f4d73578e19e14b9536f5d2914fda774d8592",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/distribution-workflow-tenancy.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "distribution workflow isolates owners and records real state changes in private PostgreSQL; foreign transition and history access do not expose or change the release",
+      "caseTitles": [
+        "distribution workflow isolates owners and records real state changes in private PostgreSQL",
+        "foreign transition and history access do not expose or change the release",
+        "owner can submit without options and real version data survives SQL insertion",
+        "stored administrative authority retains review access without transferring ownership",
+        "metadata changes cannot transfer ownership or rewrite lifecycle state",
+        "public transition handler cannot claim reviewer or distributor success",
+        "pending request lists stay scoped except for a stored administrator",
+        "legacy null draft status transitions through the real nullable schema",
+        "audit failures roll back release state, requests and version history together",
+        "concurrent metadata writes serialize their actual previous state and version numbers"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/dns-dependency-consumers.test.mjs",
-      "sha256": "38ba8f7c099148dc34263327abc3b6d5ef6c2ce2076c90c9d4bac4909b37a8da",
+      "sha256": "cb4be8847e2fb664fb119925b652970cacd893c21c5a6ef8a8b88cbd58f7792d",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -6265,8 +6663,151 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/fabric-deletion-postgres.test.mjs",
+      "sha256": "bc33a720dd7302beca565ae348841a99ef4a8076f527afe39a7b91eeb347078c",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-deletion-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "real SQL deletion journals survive node/commit failures and fence concurrent releases",
+      "caseTitles": [
+        "real SQL deletion journals survive node/commit failures and fence concurrent releases"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-imported-reconcile-postgres.test.mjs",
+      "sha256": "029db4db6ae2b4b777eb51ece7d044a039e994fbb5e3b492e57325849e8adfec",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-imported-reconcile-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "imported startup reconciliation waits for full object publication and retains unproven chunks",
+      "caseTitles": [
+        "imported startup reconciliation waits for full object publication and retains unproven chunks"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-migration-outbox-postgres.test.mjs",
+      "sha256": "131ec89457c694263b6b94dc067f65a668f00c30a54d7e71e89e18523cc058f6",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-migration-outbox-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "fabric migration journals recover physical I/O and accounting across process restarts; discard after lost SQL owner atomically denies delayed old PDIM publication",
+      "caseTitles": [
+        "fabric migration journals recover physical I/O and accounting across process restarts",
+        "discard after lost SQL owner atomically denies delayed old PDIM publication",
+        "two independent processes serialize migration without duplicate capacity charges"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-object-lineage.test.mjs",
+      "sha256": "06946ff7f79fd908ad5e86be90df31f2a07799e2627a69a1bf231f4001a4cb23",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-object-lineage.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "actual fabric handlers require pocket\u2192volume\u2192object lineage before reading or deleting bytes",
+      "caseTitles": [
+        "actual fabric handlers require pocket\u2192volume\u2192object lineage before reading or deleting bytes"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-replica-generation.test.mjs",
+      "sha256": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-replica-generation.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "canonical PDIM permanently fences deleted replica keys and refuses immutable replacement; a delayed replica publication cannot resurrect bytes after a newer cleanup ACK",
+      "caseTitles": [
+        "canonical PDIM permanently fences deleted replica keys and refuses immutable replacement",
+        "a delayed replica publication cannot resurrect bytes after a newer cleanup ACK"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-root-storage-postgres.test.mjs",
+      "sha256": "cf6f225292aaf7b8aea84436599c16ec01d7fdbd7b3edeaf43a393f2174e25cc",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-root-storage-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "active root fabric preserves shared bytes and recovers failed SQL publication/deletion",
+      "caseTitles": [
+        "active root fabric preserves shared bytes and recovers failed SQL publication/deletion"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/fabric-schema-generation.test.mjs",
+      "sha256": "1d933613cf83b3267ee6d87117ccc186c2460f587480e7fda27ec59528531868",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/fabric-schema-generation.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "real Drizzle generation emits catalog epoch/dependency SQL rather than exiting zero with an empty migration",
+      "caseTitles": [
+        "real Drizzle generation emits catalog epoch/dependency SQL rather than exiting zero with an empty migration"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/feature-catalog-production.test.ts",
-      "sha256": "6fcd2fc3cb45ec0d297aa07d3c4d683fe6074941ce4f4720784dd492bba55068",
+      "sha256": "6564177a6f09af587cb8d474d801ff6b05001445b2b547d89960a32ae5e83f3c",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6328,7 +6869,7 @@
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
-      "sha256": "8503ac9e6c51063d250d559b9590bf14da9bfcae13f416c568c0088a86235d8c",
+      "sha256": "58f7ffa2e3f04fe4efa912942c9b9b3e328fc5b9fa7a4a046f056b994b4066fd",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6369,10 +6910,11 @@
         "GET /api/marketplace/my-beats without auth \u2192 401/403",
         "GET /api/marketplace/purchases without auth \u2192 401/403",
         "Music Distribution",
-        "GET /api/distribution/platforms returns available DSPs",
-        "GET /api/distribution/platforms/status returns platform connectivity status",
+        "GET /api/distribution/platforms requires a connected distributor before a live catalog is claimed",
+        "GET /api/distribution/platforms/status reports no fabricated provider connection",
         "GET /api/distribution/releases returns user releases",
         "GET /api/distribution/policies returns DSP submission policies",
+        "POST /api/distribution/releases rejects a draft without a title",
         "POST /api/distribution/releases creates a release",
         "GET /api/distribution/releases/:id retrieves release",
         "PATCH /api/distribution/releases/:id updates release metadata",
@@ -6401,7 +6943,7 @@
     },
     {
       "path": "tests/feature-press-pitching-ar.test.ts",
-      "sha256": "d1df1dff87592b6abb73a7e0adfdd0c67148d07d9acbdbc83dcbc24f99c9646a",
+      "sha256": "b29f91664c5473fcb096b8771aae193a92d32d8f5dfb025e77a194e7ee8886dc",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6433,7 +6975,8 @@
         "PUT /api/venues/:id updates the venue",
         "DELETE /api/venues/:id removes the venue",
         "Playlist Pitching",
-        "GET /api/playlist-pitching/curators returns curators without auth",
+        "GET /api/playlist-pitching/curators requires authentication",
+        "GET /api/playlist-pitching/curators returns curators for a paid account",
         "GET /api/playlist-pitching returns list",
         "GET /api/playlist-pitching/stats returns statistics",
         "POST /api/playlist-pitching creates a pitch",
@@ -6466,7 +7009,7 @@
     },
     {
       "path": "tests/feature-revenue-merch.test.ts",
-      "sha256": "f9ec13775d41927167a052cf13663411e9f649665251f0acfcf9b362df3dfdae",
+      "sha256": "924f087eb8359799a5cd880087e7cd737eed5caaa86913dc76011b9ed38cc2f7",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6534,7 +7077,7 @@
     },
     {
       "path": "tests/feature-storefront-dns.test.ts",
-      "sha256": "69d81485d4521c87e7555fbd79ab30280330515e12b5b096d01f31a3a17c2a34",
+      "sha256": "2831eb5748f4a2de2098c06881fabaa37c24d09f0078b6aa630cf83d992b645c",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6599,7 +7142,7 @@
     },
     {
       "path": "tests/file-management.test.ts",
-      "sha256": "9853261d3a85772e6d9de8206e37ea113e694398aa1da57ab730fdb87d8e9735",
+      "sha256": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6618,6 +7161,7 @@
         "File Management (Storage Round-Trip)",
         "1. registers and logs in a test user",
         "2. rejects unauthenticated upload with 401 or 403",
+        "isolates private hybrid bytes on both download routes",
         "3. uploads a small audio file and receives a storage key",
         "4. downloads the uploaded file and verifies content-type and byte payload",
         "5. cross-user access to a file is rejected (403) or not found (404)",
@@ -6828,8 +7372,25 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/fixtures/legacy-pdim-fixture.ts",
+      "sha256": "0880bc6edc9940217a06b8e00bdc6d6dc16feec4e68d225f4f789db7af44758f",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Synthetic historical-format bytes/index only; never used by production uploads.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/fixtures/pdim-recovery-cluster-fixture.ts",
-      "sha256": "16e6af40755516de5b04da56d2ba7436727819de36142637a7612b2b47d51328",
+      "sha256": "596afc9cf1a7ca64228da851e17e769ea935710fbed2415ee693a11e192f1f24",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -6846,7 +7407,7 @@
     },
     {
       "path": "tests/fixtures/retained-pdim-source-fixture-worker.ts",
-      "sha256": "0ef20d8b1d90ddd2fc521d68fcc32fec7f3f9af4c89b06598e531d127f55ad47",
+      "sha256": "aaa67ffb4766592d1955eaabea7e0fb4e881ef7e2774b36e761eb50814c325c6",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -6932,7 +7493,7 @@
     },
     {
       "path": "tests/health.test.ts",
-      "sha256": "53bd2924b701cb5d21adc36a85b7afd63932d232be6c6b8521b0283400ff56cb",
+      "sha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -6951,10 +7512,10 @@
         "Liveness and Readiness Endpoints",
         "GET /health returns 200",
         "GET /api/health returns 200",
-        "GET /ready returns 200 (probes passed)",
-        "GET /api/ready returns 200",
+        "GET /ready reflects the actual admitted dependency set",
+        "GET /api/ready does not confuse a sealed fixture with full readiness",
         "GET /healthz returns 200",
-        "GET /readyz returns 200",
+        "GET /readyz uses the same truthful readiness contract",
         "GET /api/ping returns ok:true",
         "/startup returns startup phase details",
         "Security Headers",
@@ -6986,8 +7547,42 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/helpers-http-fixture.ts",
+      "sha256": "bfd04e3007011c9d4950a678c60f4916a7462239bfb3ff1433223e325dfdf451",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Prepare a paid account only in the HTTP runner's owned disposable database. Authentication still uses the real registration, password and session routes. This fixture does not verify payment settlement or alter application gates.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/helpers-http-saved-data.ts",
+      "sha256": "ba9e700a70b667a4ef7e1c935d805c04afef9ddc6858d5cbdcff6bfdec8f9709",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "helpers http saved data",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/http-dependency-consumers.test.mjs",
-      "sha256": "34daacfd970eb568798dbcf4abdbeddc1d6f80d1b587384c67b9f95cb88cc44a",
+      "sha256": "dbc8c13945d1c309c711daa205f7504a9b576adf9ff78edc9c3d5712b9975114",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7006,6 +7601,24 @@
         "Google's installed gaxios consumer resolves patched Undici and sends real HTTP",
         "patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior"
       ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/hybrid-storage-postgres.test.mjs",
+      "sha256": "1d14534e3b0f4c301ba31dc841886a058f624429cf118d7d41790825cf96c47c",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/hybrid-storage-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "hybrid storage postgres",
+      "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
@@ -7028,7 +7641,7 @@
     },
     {
       "path": "tests/integration/maxcore-local-supervisor.integration.test.ts",
-      "sha256": "71a7ae61a2fa9888969148959c4fa58ab53c61da696a6f98284a4a4e30694c9d",
+      "sha256": "081722358385e5d0429e83f6039d5efdb10e6ea729f8593c02b9f267ad6adc7a",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -7045,7 +7658,7 @@
       "purpose": "Integration test: starts the REAL local MaxCore subsystem (imported Node api-server supervising the Python model server) on alternate ports and asserts the Python-backed health endpoint becomes healthy, then verifies",
       "caseTitles": [
         "MaxCore local subsystem (real spawn)",
-        "launches, becomes healthy (Python-backed), and reports ready",
+        "launches real Python and storage while keeping an absent inference candidate unready",
         "stops cleanly and the port is released"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
@@ -7107,6 +7720,27 @@
         "sealed ML absence is asserted explicitly without establishing full readiness",
         "unrelated ${name} failures cannot hide behind expected ML absence",
         "missing or malformed dependency evidence fails closed"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/isolated-codec-guard.test.mjs",
+      "sha256": "b120915f0950bffc154d9d70a3de2042d6e64019ffa81098bdeebe6c46299615",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/isolated-codec-guard.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "storage fixture codecs accept streams and deny files, shells and extra options; codec children have bounded concurrency/lifetime and no application credentials",
+      "caseTitles": [
+        "storage fixture codecs accept streams and deny files, shells and extra options",
+        "codec children have bounded concurrency/lifetime and no application credentials"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -7336,7 +7970,7 @@
     },
     {
       "path": "tests/neon-schema-contract.test.mjs",
-      "sha256": "9abe180c806608133897cfca7a0a7fc4a728021796a50e9ff69da9d0aefd56bc",
+      "sha256": "d2364bfe95f0f149a2bffcd7e020121d2f1e51b4799abd5f6ae47546eff8ae6a",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7354,7 +7988,8 @@
         "same-named tables in another schema cannot satisfy the contract",
         "additional historical columns are preserved, not reported as removals",
         "missing Neon configuration fails instead of targeting the managed DB",
-        "prelaunch checks the selected app database schema, not just SELECT 1"
+        "prelaunch checks the selected app database schema, not just SELECT 1",
+        "the required schema includes the complete durable replica-migration journal"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -7413,7 +8048,7 @@
     },
     {
       "path": "tests/npm-start-isolated-smoke.py",
-      "sha256": "bffd0c3401c0dac754a32aee4ddb974be37df42ec1142276a30901e539d0a690",
+      "sha256": "1d14f33cbf6ec90e44ab60566558b5af73007786940e850421241adcbb7052a4",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -7475,7 +8110,7 @@
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
-      "sha256": "5ccf9e920dc77d871cb024aa588128bb5a72af05dc67e33a73d825e2fe5c96be",
+      "sha256": "26578fd010a861800fdf1ba6844308f27250a66430699df9029e5468f7bea118",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -7508,8 +8143,6 @@
         "Phase 3: Billing & Stripe Payment Infrastructure",
         "should list available subscription plans with pricing",
         "should show current subscription status with full plan details",
-        "should create real Stripe checkout session with checkout URL",
-        "should create checkout sessions for all plan types",
         "should reject invalid plan IDs",
         "should return billing history as array",
         "should return payment method info",
@@ -7521,17 +8154,15 @@
         "should reject forged payment events (no valid Stripe signature)",
         "should handle all critical webhook event types",
         "Phase 5: Distribution - Core Paid Feature",
-        "should list all distribution platforms",
         "should list user releases",
         "should get earnings breakdown",
         "should get HyperFollow links",
         "should create a distribution release with valid data",
-        "should reject release creation with missing required fields",
+        "should reject a release draft without its required title",
         "Phase 6: Social Media Management",
         "should list social connections",
         "should schedule a post",
         "should list calendar posts",
-        "should get trending hashtags (dynamic, time-based)",
         "should get social metrics",
         "should generate AI content",
         "should get inbox messages",
@@ -7545,7 +8176,7 @@
         "should get analytics dashboard data",
         "should handle analytics date range filtering",
         "Phase 9: AI Career Coach",
-        "should get AI recommendations",
+        "should read an owned saved career recommendation without claiming model generation",
         "should get career goals",
         "Phase 10: Contracts & Collaboration",
         "should list contract templates",
@@ -7565,11 +8196,11 @@
         "should not expose sensitive headers",
         "Phase 13: Rate Limiting Verification",
         "should rate limit failed login attempts",
-        "should have billing rate limiter active",
+        "counts authenticated billing requests in the actual configured limiter",
         "Phase 14: Email Service Verification",
         "should have email service properly structured",
         "Phase 15: OAuth Flow Structure Verification",
-        "should return proper OAuth URLs for supported platforms",
+        "returns OAuth URLs only when configured and reports missing configuration explicitly",
         "should handle OAuth callback with missing code",
         "should handle OAuth callback with invalid state",
         "Phase 16: Error Handling & Graceful Degradation",
@@ -7616,7 +8247,7 @@
     },
     {
       "path": "tests/patent-pdf-runtime.test.mjs",
-      "sha256": "bc7505bfe63f83a9fed44d21c9750c40c79db46a8311c4b46d44a8d50b7c7841",
+      "sha256": "5b45880916b19ce8077f89d6c97d2b72210c240fdd76a87ad96fd54e5c58c2e3",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -7629,7 +8260,7 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "Real local-file consumer acceptance; no app server or remote document.",
+      "purpose": "Real local-document consumer acceptance; no app server or remote document.",
       "caseTitles": [
         "upstream Puppeteer browser manager no longer requires extract-zip",
         "actual patent generator renders valid Letter PDF using supplied local Chromium"
@@ -7638,7 +8269,7 @@
     },
     {
       "path": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
-      "sha256": "f6e13b33d057943341662c0b331b8426cb05f70c2aca69c01d97876eb865f0ba",
+      "sha256": "8aea6d8eac9b291fdf95c6c85d29b1b9a021eade12c1e8339c20242cf7860b56",
       "category": "test",
       "group": "commerce",
       "runner": "node:test",
@@ -7662,7 +8293,8 @@
         "concurrent manual requests cannot overlap and pause clears queued cycles",
         "listing failure rolls back beat and royalty rows and removes public/audio uploads",
         "silent audio is rejected before listing even without renderer quality metadata",
-        "renderer failure lists nothing, releases the slot and records backoff"
+        "renderer failure lists nothing, releases the slot and records backoff",
+        "real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -7728,6 +8360,34 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/payment-processing/compensation-races-postgres.test.mjs",
+      "sha256": "fa9428977a529d1183aae5121b47dea9593225c0fb12bb84f4d8c56227d5d5d7",
+      "category": "test",
+      "group": "commerce",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-commerce.py --only compensation-races-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "Disposable PostgreSQL where required; see commerce.md"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "refund reconciliation preserves newer dispute transitions in real isolated PostgreSQL; older dispute event reads current provider state after delayed refund pagination",
+      "caseTitles": [
+        "refund reconciliation preserves newer dispute transitions in real isolated PostgreSQL",
+        "older dispute event reads current provider state after delayed refund pagination",
+        "authoritative dispute reads serialize on the same source transaction",
+        "dispute identity mismatch rolls back without fees or hold changes",
+        "hung dispute read rolls back and releases its source lock",
+        "pending refund observations serialize: ${kind}",
+        "legacy lifetime entitlement uses current provider status instead of stale event status",
+        "legacy lifetime provider observations serialize before entitlement writes"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/payment-processing/database-commerce.test.mjs",
       "sha256": "540f1e0e023ea44a23c9cae2c2f0ac8efb61a56ec19579e8b41ffbd9532fdb4b",
       "category": "test",
@@ -7760,6 +8420,23 @@
         "production commerce webhook inbox deduplicates concurrent duplicate events",
         "real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL"
       ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/payment-processing/helpers-beat-media-asgi.py",
+      "sha256": "0dd92c7ecbe53d6558ec6cb6ba2b5d82faa36ba0edbd991f088da819a50e844e",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Disposable real ASGI/rendering boundary for the Node beat-loop SQL test. Only public observations and private durable delivery use controlled fixtures. Actual production request models, owner middleware, immutable plans, renderer",
+      "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
@@ -8037,7 +8714,7 @@
     },
     {
       "path": "tests/payment-processing/outbound-commerce.mjs",
-      "sha256": "d8f3ffdabf1cf016871198e78de314c01b6c6137c7e0fc2abceddac1bd81fea9",
+      "sha256": "14c8263681acfe15099eba0d33745de36878ea87a96b619880ba0c5604b1e746",
       "category": "test",
       "group": "commerce",
       "runner": "node:test",
@@ -8085,7 +8762,7 @@
     },
     {
       "path": "tests/payment-processing/outbound-services-webhooks.mjs",
-      "sha256": "d5f145657185c71c07195ef97fa62461b012c0f3c0ffe9be561c2f0bb43adcbe",
+      "sha256": "62611f6919a0aef4467c08afd20f7c4c95e2fa479681d2b59ba5cd9117799069",
       "category": "test",
       "group": "commerce",
       "runner": "node:test",
@@ -8179,6 +8856,36 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/payment-processing/provider-only-preferences.test.mjs",
+      "sha256": "82d8f5a4b907e14bead1ab3ca6c79e8d74439f99988245452799dd2d7d272bde",
+      "category": "test",
+      "group": "commerce",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-commerce.py --only provider-only-preferences.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "Disposable PostgreSQL where required; see commerce.md"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "registered generic preference routes reject bank writes and redact historical credentials; legacy payout routes fail closed and historical bank records are never treated as verified",
+      "caseTitles": [
+        "registered generic preference routes reject bank writes and redact historical credentials",
+        "legacy payout routes fail closed and historical bank records are never treated as verified",
+        "paid and administrator dashboard account responses redact banking and verification secrets",
+        "generic preference privacy preserves settings without exposing historical banking fields",
+        "payment preferences reject bank credentials before persistence and preserve provider settings",
+        "royalty split acceptance rejects bank credentials without storage writes and preserves provider identity",
+        "generic preference guard rejects common bank credential key spellings",
+        "routine preference responses redact key variants without mutating stored JSON",
+        "authenticated user preference routes reject nested banking fields and redact historical values",
+        "security alert preference responses redact legacy banking fields on reads and updates"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/payment-processing/real-stripe-api.mjs",
       "sha256": "e4c172b69f62607cf1b3d1caad182cf13bfc1d95bf1892471d03f1cb5ac21229",
       "category": "test",
@@ -8220,7 +8927,7 @@
     },
     {
       "path": "tests/payment-processing/run.mjs",
-      "sha256": "2ca99f853318a01f076a6b7eabdb8ae0ec40ed067d24767a77970c643bde17a4",
+      "sha256": "bc838d0a9dcbf40374a99f9a20cbe8ded62801f6df1080addfb2991e26519288",
       "category": "test",
       "group": "commerce",
       "runner": "node",
@@ -8234,6 +8941,84 @@
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Payment verification runner. Ordinary contract tests receive NO credentials or database environment. Remote tests are explicit and test-key-only.",
       "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/payment-processing/settlement-dispute-hold-postgres.test.mjs",
+      "sha256": "cba70b0eed690688a2fea580e1dda2193b51000c7161cd299aecc9fa91251339",
+      "category": "test",
+      "group": "commerce",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-commerce.py --only settlement-dispute-hold-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "Disposable PostgreSQL where required; see commerce.md"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "all settlement consumers use current dispute accounting under the source lock; ${consumer}: historical charge.disputed=true with current ${status}",
+      "caseTitles": [
+        "all settlement consumers use current dispute accounting under the source lock",
+        "${consumer}: historical charge.disputed=true with current ${status}",
+        "stale initial snapshot replay never queues recovery against an already drawn won allocation",
+        "invalid initial compensation rolls back booking, allocations and journals",
+        "real refund engine/provider refresh pending state inside the source transaction"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/payment-processing/subscription-authority-postgres.test.mjs",
+      "sha256": "c9310838205a2ae99fd1224787d3a56a3e7dd1a201f97eeb307d16da1990d070",
+      "category": "test",
+      "group": "commerce",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-commerce.py --only subscription-authority-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci",
+        "Disposable PostgreSQL where required; see commerce.md"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Actual PostgreSQL and production subscription/catalog policies. Only the provider SDK is a controlled fixture; no provider credentials or requests.",
+      "caseTitles": [
+        "subscription authority validates provider state before real SQL admission",
+        "discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy",
+        "${plan} catalog identity overrides stale event and contradictory provider metadata",
+        "valid legacy inline monthly/yearly metadata remains supported",
+        "a delayed older event cannot supersede the current newer subscription",
+        "a newer inactive subscription cannot replace an existing paid subscription",
+        "a validated newer active subscription atomically advances only the observed pointer",
+        "lifetime entitlement is never downgraded by a recurring event",
+        "unknown and ambiguously linked customers fail without changing SQL",
+        "provider retrieval failure for ${failed} preserves pointer and entitlement",
+        "invalid newer recurring plan ${invalidPlan} is rejected before pointer mutation",
+        "mismatched provider subscription or customer identity is rejected before SQL mutation",
+        "concurrent ${race} during provider refresh wins over a stale admission"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/pdim-acknowledged-crash-capacity.test.mjs",
+      "sha256": "3996eb1c2e531b45f3bf205b233603f3c0f4d1ea60f2140058af22fcce8ba351",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/pdim-acknowledged-crash-capacity.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "local PDIM preserves every concurrent acknowledged increment after abrupt process loss",
+      "caseTitles": [
+        "local PDIM preserves every concurrent acknowledged increment after abrupt process loss"
+      ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
@@ -8292,6 +9077,27 @@
       "purpose": "staging archival: ${mode}",
       "caseTitles": [
         "staging archival: ${mode}"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/pocket-durable-delete.test.mjs",
+      "sha256": "51bdfa3542c0dcf25d49af910e7e6e58141682d542cad288a5a931c64ad733c8",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/pocket-durable-delete.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "pocket deletion persists immediately and retains chunks still referenced by another entry; failed physical reclamation resumes from a persisted receipt after reopening",
+      "caseTitles": [
+        "pocket deletion persists immediately and retains chunks still referenced by another entry",
+        "failed physical reclamation resumes from a persisted receipt after reopening"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8452,7 +9258,7 @@
     },
     {
       "path": "tests/publishing-cache-isolation.test.mjs",
-      "sha256": "75b6e195697b0dc4b3f3f4fefd44c6441518700bcf1e5c479a9fdfbce4b4d3bc",
+      "sha256": "ef8de426737afbc81614d086844075f41a8777b0a072903cf18d3cf14ca39e98",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -8618,6 +9424,28 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/recovery-snapshot-integrity.test.mjs",
+      "sha256": "d8277ad9169c5b2649db0772f2647c0404dd487f7b3688403b0c375483046b87",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/recovery-snapshot-integrity.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "recovery publishes the exact verified bytes when the source changes before publication; recovery rejects changed bytes before creating a destination",
+      "caseTitles": [
+        "recovery publishes the exact verified bytes when the source changes before publication",
+        "recovery rejects changed bytes before creating a destination",
+        "recovery retains exclusive destination protection"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/release-threads.test.mjs",
       "sha256": "0b28fed49275cc2387444153fcbeaf2a2f084ca2dc8448eb4cd92e7624073a9f",
       "category": "test",
@@ -8634,6 +9462,27 @@
       "purpose": "compression threads default to serial and honor explicit quota-bounded allocation",
       "caseTitles": [
         "compression threads default to serial and honor explicit quota-bounded allocation"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/replit-chunk-delete.test.mjs",
+      "sha256": "e800771e3afde0c685dd9b4ec957d3246f8b2aa72e2b7528862896661c67d244",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/replit-chunk-delete.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Replit deletion requests idempotent absence and retains the physical node namespace; resolved SDK deletion errors reject before accounting can be credited",
+      "caseTitles": [
+        "Replit deletion requests idempotent absence and retains the physical node namespace",
+        "resolved SDK deletion errors reject before accounting can be credited"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8679,6 +9528,27 @@
         "deployment runs the capsule-aware build and production launcher",
         "Nix profile retains the lightweight required system dependencies",
         "Node release is pinned to major 22"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/request-validation-security.test.mjs",
+      "sha256": "b0f3bcc854f29f64cdb81a5b65473e04cd41cb6d2996c6c8a8cd7c072b30006d",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/request-validation-security.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "oversized Zod collections reject before producing an issue per member; compressed JSON with trailing bytes cannot crash the HTTP parser process",
+      "caseTitles": [
+        "oversized Zod collections reject before producing an issue per member",
+        "compressed JSON with trailing bytes cannot crash the HTTP parser process"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8729,7 +9599,7 @@
     },
     {
       "path": "tests/runtime-artifact-gates.test.mjs",
-      "sha256": "82b0bae82f9d35ce599214006620a0a79c6d570cfc831588d2f122e591007d98",
+      "sha256": "8b98695a233680025acdacf301b20a0cab71c8b956579537b70410d7b0b7d087",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -8801,8 +9671,32 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/security-alert-recipients-postgres.test.mjs",
+      "sha256": "e70b71cba793d47cc87bc0d58e5f4eb088c3c1ddc772ecd2b5fb4129ef7913d6",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/security-alert-recipients-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "security alerts use real administrator recipients and retain honest delivery outcomes; two actual admins receive FK-valid inbox alerts while an ordinary user does not",
+      "caseTitles": [
+        "security alerts use real administrator recipients and retain honest delivery outcomes",
+        "two actual admins receive FK-valid inbox alerts while an ordinary user does not",
+        "no-admin installations retain threat and structured-log evidence without claiming an inbox delivery",
+        "a real notification-write failure is recorded as failed and does not leak database diagnostics",
+        "an unavailable recipient query cannot create a false delivery acknowledgement"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/security-hardening.test.ts",
-      "sha256": "63d74f05f3da42b9454c89d4062c4bb0a8affd7203e0f1dc5ada697976076d08",
+      "sha256": "7ec70cba3a3a46fd2c0aabd25fc95d4b70ac4c88f662a682c837789928319ffb",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -8827,7 +9721,7 @@
         "login returns 401 for wrong password",
         "does not expose password in user object after register",
         "CSRF Protection",
-        "state-changing POST without CSRF cookie is accepted for auth endpoints (cookie SameSite handles it)",
+        "login without the CSRF cookie/header is rejected before credentials are checked",
         "health endpoints are not blocked by CSRF",
         "Rate Limiting",
         "login endpoint has rate limit headers on response",
@@ -8923,6 +9817,24 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/social-media-jobs-postgres.test.mjs",
+      "sha256": "5fe08b3e9e165912015390eea710837033a8225e4e218f104eb73593fe578086",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/social-media-jobs-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "social media jobs postgres",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/social-oauth-state.cjs",
       "sha256": "baabbeb666f43bacc9f4d9c7a688097eb189f3b8c8df25b502e9d5cd828169e0",
       "category": "test",
@@ -8939,6 +9851,31 @@
       "purpose": "real Redis atomic OAuth state is session/user/provider bound, opaque and single-use",
       "caseTitles": [
         "real Redis atomic OAuth state is session/user/provider bound, opaque and single-use"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/social-publish-now-postgres.test.mjs",
+      "sha256": "fe0ba7c066ef94ab0732edd832f5f5a97e0322f1c529677b107b53870ef2c023",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/social-publish-now-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "publish-now and schedule edits never reset a real racing worker claim or uncertain delivery; owned immediate admission advances the due time without claiming provider success",
+      "caseTitles": [
+        "publish-now and schedule edits never reset a real racing worker claim or uncertain delivery",
+        "owned immediate admission advances the due time without claiming provider success",
+        "worker claim winning the row lock rejects both subsequent admission paths",
+        "only one SQL dispatcher claims after duplicate immediate admissions",
+        "all receipt representations and terminal states remain fenced",
+        "schedule updates require the observed status and retain owned normalized content"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -8983,6 +9920,36 @@
         "liveness text, malformed JSON and degraded dependencies never count as ready",
         "hung responses have a bounded deadline",
         "real boot stub preserves root liveness but reports API unavailability"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/storage-chunk-shared-postgres.test.mjs",
+      "sha256": "1755ea455a03813b87f6d7d146071a4886df6056f5eec9fd52d9903359751d30",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/storage-chunk-shared-postgres.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "storage chunk protocol crosses worker boundaries with real private PostgreSQL locks; alternating workers retain exact bytes and a single shared reservation",
+      "caseTitles": [
+        "storage chunk protocol crosses worker boundaries with real private PostgreSQL locks",
+        "alternating workers retain exact bytes and a single shared reservation",
+        "simultaneous final claims have exactly one owner",
+        "restart retains an uncertain claim and cannot start a duplicate object",
+        "foreign owners and changed duplicate bytes cannot reuse receipts",
+        "per-user and global reservations are shared across workers",
+        "actual private chunk tampering fails before completion claim",
+        "a crashed empty initial session is reclaimed without losing occupied reservations",
+        "a symlinked staging parent is rejected before retaining bytes",
+        "corrupt manifests fail closed without freeing reservations",
+        "symlinked chunks cannot escape private staging"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -9208,6 +10175,104 @@
       "caseTitles": [
         "ProvenanceTests.test_installed_record_verifies_real_bytes_then_rejects_tampering_and_missing_file",
         "ProvenanceTests.test_only_unique_official_frozen_wheel_is_accepted"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_archived_quality_verifiers.py",
+      "sha256": "812c5790b53bdbb4e87d9d76824e5363eadd836a743ebf01fb37c0eeec11ff59",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_archived_quality_verifiers.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Archive integrity must stay distinct from missing current inference evidence.",
+      "caseTitles": [
+        "test_completed_archives_validate_without_requiring_obsolete_serving_weights",
+        "test_current_identity_check_fails_when_model_bytes_are_missing",
+        "test_incomplete_later_archive_cannot_be_promoted_to_verified_evidence"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_platform_plan.py",
+      "sha256": "5ee9f4e7f872cc4c20aa69a71ff444e0eedc6d5e80e01c61ae4838f43589a637",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_plan.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Exhaustive ledger preserves aliases, unresolved work and exact evidence states.",
+      "caseTitles": [
+        "test_preserves_all_details_aliases_unrouted_entities_and_original_statuses",
+        "test_missing_reference_or_template_and_page_deduplication_fail_closed",
+        "test_emitted_work_validator_detects_lost_details_and_missing_tasks",
+        "test_business_sections_bind_exact_pages_and_reject_invented_references",
+        "test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns",
+        "test_all_page_sections_and_exact_work_dimensions_become_distinct_actions",
+        "test_both_supplement_source_inventory_schemas_detect_stale_analysis"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_remediation.py",
+      "sha256": "8149c44cc3304d98a817483d61ea70222e3ed5d165e74019aa6618c80333b779",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_remediation.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Pure-data contracts for the master verification's repair guide.",
+      "caseTitles": [
+        "test_empty_or_malformed_evidence_cannot_produce_a_closed_strict_run",
+        "test_unrecognized_assertion_retains_exact_source_case_and_unconfirmed_cause",
+        "test_managed_browser_policy_has_a_supported_remedy_without_an_override",
+        "test_new_successful_master_audit_supersedes_its_older_failed_snapshot",
+        "test_istanbul_gaps_retain_statement_function_and_branch_locations",
+        "test_one_case_diagnosis_does_not_borrow_another_cases_junit_error"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_summary_results.py",
+      "sha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Retain every case in mixed Node/Vitest JUnit layouts without double counts.",
+      "caseTitles": [
+        "test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once",
+        "test_suite_names_and_explicit_file_survive_without_default_file",
+        "test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load",
+        "test_source_identity_detects_new_code_changes_and_excludes_generated_private_state",
+        "test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage",
+        "test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -9453,6 +10518,29 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/unit/analytics-dashboard-response.test.ts",
+      "sha256": "66590541756872eadd66bfad75336aaf24e84ac7b8693f2036ba77190058a714",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/analytics-dashboard-response.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "the registered dashboard handler returns reported per-platform stream counts without inventing missing counts",
+      "caseTitles": [
+        "the registered dashboard handler returns reported per-platform stream counts without inventing missing counts"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "sha256": "4931d29897fc26b7a6883530ad4f3b5d392d6bb4244a0cf1f3a13e1ef3b988b3",
       "category": "test",
@@ -9471,6 +10559,34 @@
         "Analytics absent query data",
         "renders unavailable and empty states before the query has data",
         "renders a retryable query error without reading missing analytics"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/analytics-tabs-render.test.ts",
+      "sha256": "7d0b20dc692e9c348ef84d21aa303d5b6406190f0bcfac6e89fef07d014650b5",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/analytics-tabs-render.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "${name} analytics tab; renders the real loading component before query data exists",
+      "caseTitles": [
+        "${name} analytics tab",
+        "renders the real loading component before query data exists",
+        "renders a retryable failure instead of a false empty dataset",
+        "renders successful empty analytics without accessing missing optional sections",
+        "distinguishes unavailable listener counts from measured zero and positive counts",
+        "keeps unsupported payout amounts unavailable while preserving measured zero"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -9674,7 +10790,7 @@
     },
     {
       "path": "tests/unit/auto-posting-recovery.test.ts",
-      "sha256": "0affc58872838b551964aae623fff4ffc67c69f9d19128194c77bc1500d506a4",
+      "sha256": "9af40734bcb2d4a91519007ee996cd1e143982dbdb247f5acc7cf8dd7fb2271a",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -9686,9 +10802,12 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "scheduled social post recovery; repairs a persisted-but-unqueued idempotent post without creating another job",
+      "purpose": "scheduled social post recovery; enqueues publish-now under a stable identity without resetting delivery or repeating a delayed job",
       "caseTitles": [
         "scheduled social post recovery",
+        "enqueues publish-now under a stable identity without resetting delivery or repeating a delayed job",
+        "refuses cross-owner publish-now and missing connections before queue or state mutations",
+        "does not enqueue when a racing worker changed durable state before admission",
         "repairs a persisted-but-unqueued idempotent post without creating another job",
         "does not repair an idempotent post with an uncertain delivery receipt",
         "retains successful delivery without a nonexistent secondary storage write",
@@ -9787,6 +10906,32 @@
       ]
     },
     {
+      "path": "tests/unit/autonomous-dispatch-state.test.ts",
+      "sha256": "ee2bc7d5b34805af9584739e449142ef501f67421191583c93ee1bc8c694aa95",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/autonomous-dispatch-state.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "leaves accepted scheduled work claimable instead of claiming provider publication; does not overwrite a worker claim that races with queue acceptance",
+      "caseTitles": [
+        "leaves accepted scheduled work claimable instead of claiming provider publication",
+        "does not overwrite a worker claim that races with queue acceptance",
+        "preserves scheduled work when no platform account accepts it",
+        "does not fabricate published state after a queue failure"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/autopilot-knowledge-base.test.ts",
       "sha256": "7bd4a8b3bf4031997d61e512e4951a520b062926fc8e33b75c74b893ca25b8a1",
       "category": "test",
@@ -9840,7 +10985,7 @@
     },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "sha256": "bd1ac609c4db58f3fd9288b7a7731edd2655ca699f0f3abf8a99a49b8a5c5e93",
+      "sha256": "cafd226c9eb2cea0300c52f8458e8c3aaa6bcb0bab6544df0d344c5485cfce16",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -9855,7 +11000,9 @@
       "purpose": "dispatches only explicit deterministic planning during model warmup with auth and a bounded deadline; forwards fresh live-conditioned content to the actual capability gate during warmup",
       "caseTitles": [
         "dispatches only explicit deterministic planning during model warmup with auth and a bounded deadline",
-        "forwards fresh live-conditioned content to the actual capability gate during warmup"
+        "forwards fresh live-conditioned content to the actual capability gate during warmup",
+        "serves authenticated health diagnostics while the model is unready",
+        "forwards missing awareness receipts to authoritative validation without a warmup hold"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -9914,7 +11061,7 @@
     },
     {
       "path": "tests/unit/beat-audio-generation-owner.test.ts",
-      "sha256": "a6add4a541f025528ada7d785ec2a5e9e8c3c08740dfa128ac1edcdc0437135d",
+      "sha256": "0fa647507c6838269eb0269b0366db6a65bb2a1e5f213477c6b0024266673f71",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -10698,6 +11845,29 @@
       ]
     },
     {
+      "path": "tests/unit/contract-template-catalog.test.ts",
+      "sha256": "92259b7d7be8fa1b16a91e36cd2a2580039e2299577a4cb97ead84ecdcf50908",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/contract-template-catalog.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "lists the real built-in catalog on a fresh database, preserves stored overrides and category filters",
+      "caseTitles": [
+        "lists the real built-in catalog on a fresh database, preserves stored overrides and category filters"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/coverage-gaps.test.ts",
       "sha256": "6b7d538ac01fd677bdca9b6f02f24fcd16c77be447a7393169c5fbe7f07357a9",
       "category": "test",
@@ -10874,6 +12044,33 @@
         "renders invalid activity timestamps as unavailable",
         "Dashboard paid entitlement contract",
         "keeps the client and server paid-only Dashboard AI endpoints aligned"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/delta-engine-integrity.test.ts",
+      "sha256": "d985d68700272119cf0c4bf51f3b0cdbd4dec157616913841da002fcbf87fb83",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/delta-engine-integrity.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "delta wire integrity and bounded matching; preserves the first source offset when maximal matches tie",
+      "caseTitles": [
+        "delta wire integrity and bounded matching",
+        "preserves the first source offset when maximal matches tie",
+        "reconstructs a real edited repetitive version without rescanning equivalent maximal matches",
+        "decodes an existing mixed copy/literal wire program",
+        "validates the complete program before allocating its declared output"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -11458,6 +12655,50 @@
         "ships the fs-read platform registry without unrelated shared source or secrets",
         "excludes workspace credentials and local-only files from the app remainder",
         "omits the root workspace venv and its external wrapper while preserving capsule outputs"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/dsp-production-contracts.test.ts",
+      "sha256": "0006f11c8c71e3ffc22a2343207d7b18ec893cd28030033cbc8895efe193b3f6",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/dsp-production-contracts.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "registered Studio effects process actual sample blocks; ${id} preserves timing, stereo shape, finite samples and caller-owned input",
+      "caseTitles": [
+        "registered Studio effects process actual sample blocks",
+        "${id} preserves timing, stereo shape, finite samples and caller-owned input",
+        "${id} mix=0 preserves dry samples exactly",
+        "digital delay time moves a real impulse and feedback creates a decaying repeat",
+        "registered Studio instrument render lifecycle",
+        "${id} renders exact finite stereo frames and reset deactivates the voice",
+        "DSP primitive signal contracts",
+        "unsupported and inherited plugin names do not invoke object prototype members",
+        "copy and dry/wet mixing do not alias the input and preserve unity endpoints",
+        "high-pass rejects DC while low-pass retains DC after settling",
+        "all-pass changes phase while preserving impulse energy",
+        "lowpass attenuates alternating Nyquist input and reset clears filter history",
+        "delay interpolation preserves a fractional impulse and clear removes history",
+        "ADSR attack reaches sustain and release reaches zero without nonfinite samples",
+        "shared offline synthesizer actual waveform generation",
+        "oscillator frequency ratios change the actual played fundamental",
+        "rejects nonfinite envelopes and excessive oscillator counts before allocating render work",
+        "${drum} generates nonempty bounded audio for the requested duration",
+        "kick zero distortion and tone are genuine controls rather than replaced defaults",
+        "FM and wavetable preserve exact requested samples, are bounded and respect voice choice",
+        "formant and ring controls preserve dry mix exactly, do not mutate input and affect wet audio",
+        "rejects unsupported instruments, invalid notes and nonfinite/resource-exhausting render controls"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -12083,7 +13324,7 @@
     },
     {
       "path": "tests/unit/hybrid-storage-index-recovery.test.ts",
-      "sha256": "b3a37284447f34ab19a46d20051827349f62698808e12be966deeffccfa90d66",
+      "sha256": "918f7fa9344eed19490fe1cad8a86ee519b74402a5561a845f971ea9af440fc4",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -13018,6 +14259,32 @@
       ]
     },
     {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "sha256": "8aa878bb0e08ad197570ddea74e81f574daa0da063bba42003fc3de81ee29c60",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "cancels a held request on disconnect and releases timers/listeners; bounds unavailable recovery instead of leaving a permanent polling loop",
+      "caseTitles": [
+        "cancels a held request on disconnect and releases timers/listeners",
+        "bounds unavailable recovery instead of leaving a permanent polling loop",
+        "finishes recovery and removes its timers after a successful request",
+        "does not replay mutations after a lost response and bounds safe-read retries"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/maxcore-python-launcher.test.ts",
       "sha256": "28992bfddeacc59d39d092c00e25a41d6dae279ab3ba8e58bebf20f20fffa2e6",
       "category": "test",
@@ -13851,7 +15118,7 @@
     },
     {
       "path": "tests/unit/pdim-canonical-owner.test.ts",
-      "sha256": "37716dff757d0ad452a55a2066bb9c4bc4dc7f9afe7d59de333e994c105cf4ec",
+      "sha256": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -13873,7 +15140,7 @@
         "preserves stream groups and pending delivery through owner snapshots",
         "PocketFabric consumer wiring",
         "retains the actual constructor dependencies and coalesces overlapping evaluations",
-        "does not retire or remove a source when drain verification fails"
+        "does not retire or remove a source while durable migration recovery fails"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -14286,8 +15553,37 @@
       ]
     },
     {
+      "path": "tests/unit/production-auth-rate-limit.test.ts",
+      "sha256": "691ad571d8de75f48d6e84e37d5747121080db0c491cbc0aabeb3fd12e1abbd7",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/production-auth-rate-limit.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Production authentication admission through internal proxies; enforces login and registration limits for loopback and private client addresses",
+      "caseTitles": [
+        "Production authentication admission through internal proxies",
+        "enforces login and registration limits for loopback and private client addresses",
+        "atomically admits at most ten simultaneous requests for one login authority",
+        "enforces the production limit when Replit sets deployment mode",
+        "retains the reduced admission bound when authority acquisition fails",
+        "enforces the actual per-user billing threshold and isolates another user",
+        "runs the same atomic limiter on the canonical embedded PDIM engine"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/unit/production-simulation-copy.test.ts",
-      "sha256": "74ba2a45fa4f3a69845146b43be3ae44eef8b1c430fbd723e3e62a600241d0b3",
+      "sha256": "f1a1f6c1f569b9075779864e6e99ca685175e315e1fed7c9a5d6457e76afdbfd",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -14303,6 +15599,7 @@
       "caseTitles": [
         "production simulation filtered copy",
         "filters sensitive/generated paths before copying and retains runtime source",
+        "ignores changing restore/test scratch in release identity while binding runtime changes",
         "production deployment candidate preflight",
         "refuses a candidate-only selection whose run artifacts are excluded"
       ],
@@ -14943,7 +16240,7 @@
     },
     {
       "path": "tests/unit/release-workflow-honesty.test.ts",
-      "sha256": "6db0035d80435a6278496e8d90f07d375c26f35a1c7e8f502ac1f0a4325d640a",
+      "sha256": "9dc98db6e2ae618477531bc79a7b8be61b6b8cd5bacdb757a0187517f12d42b0",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -14995,7 +16292,7 @@
     },
     {
       "path": "tests/unit/retained-pdim-recovery-simulation.test.ts",
-      "sha256": "bf2d07167ddcb69538c3da25d77e319579f71e0d43e231724c0cabe0e724214b",
+      "sha256": "0bc27d4bb3a4d5138127a7ec5c9cf035efd61a9f754e07d184482e1032752803",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15011,6 +16308,35 @@
       "caseTitles": [
         "retained PDIM pre-deployment recovery simulation",
         "retains an exact generation and restores it through independent real consumers"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/route-registration-readiness.test.ts",
+      "sha256": "97a3d39f865d8a985a6ad98608b7ef0f8438ca6555f5717920b26cae7f6e14c1",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/route-registration-readiness.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "critical route registration readiness; distinguishes boot completion from a failed critical import",
+      "caseTitles": [
+        "critical route registration readiness",
+        "distinguishes boot completion from a failed critical import",
+        "does not introduce an optional-route readiness requirement",
+        "rejects a critical module with no usable export",
+        "registers a valid router without reporting a failure",
+        "retains a critical Express mount failure",
+        "retains synchronous and asynchronous critical setup failures"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -15428,7 +16754,7 @@
     },
     {
       "path": "tests/unit/selfHealingSecurityEngine.test.ts",
-      "sha256": "a64dcc8dc8b9e9bed66828eee28b4b2099bd3c5509bb03ccc83f6ab36832befe",
+      "sha256": "736e61bc439911c6079da4e0ee2c5bc1653e72b1143374ab2c2c92ff3891408b",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15445,6 +16771,14 @@
         "real self-healing engine detect/respond/recover",
         "exposes running lifecycle, counters, latency, and SLO status",
         "keeps benign content below the false-positive boundary",
+        "handles partial events and exempts only browser session-maintenance paths",
+        "retains all indicators and SQL precedence for a mixed injection",
+        "bounds metrics history while retaining lifetime threat counters",
+        "expires a completed request-rate window before admitting a new observation",
+        "accumulates suspicious repeat history without losing the original XSS classification",
+        "immediately inspects subsequent requests from an IP with established high threat history",
+        "reports slow acknowledged containment as an SLO breach",
+        "records failed session containment when the attacker has no authenticated user",
         "blocks SQLi once and deduplicates persistence and recovery",
         "marks unwired control actions unsupported instead of executed",
         "dispatches typed controls to real guards and records acknowledgements",
@@ -15453,6 +16787,16 @@
         "detects brute force only after the auth threshold and expires the window",
         "detects request flooding only after the DDoS window threshold",
         "persistence, recovery, and database failure policy",
+        "contains an unexpectedly rejected scheduled refresh and keeps the engine running",
+        "contains a throwing queued-threat observer and continues draining requests",
+        "initializes once through concurrent start calls and exposes ready/stop state",
+        "retries a transient initial policy query with bounded backoff",
+        "recovers unknown initial policy through the scheduled resynchronization",
+        "filters expired, malformed and incomplete persisted block records",
+        "keeps the last finite policy when a refresh fails",
+        "does not discard active blocks when bulk durable deletion fails",
+        "records an undelivered inbox alert when no administrator exists",
+        "redacts non-Error administrator lookup failures without undoing containment",
         "loads a persisted block, expires it, and supports durable unblock",
         "fails closed for an unknown initial blocklist",
         "enforces a detected block in memory when DB writes fail",
@@ -15618,7 +16962,7 @@
     },
     {
       "path": "tests/unit/social-batch-publish-route.test.ts",
-      "sha256": "6785fe87d7521fea5937d1584e9d84f6049e6212dd10f26728a683a8f618cc1b",
+      "sha256": "232bc49e1a2d8292f2d89878b35e37e60d46041f63248bc45dd4a00167de2637",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15633,6 +16977,29 @@
       "purpose": "routes batch publishing before post IDs, retains ownership and never claims unverified delivery",
       "caseTitles": [
         "routes batch publishing before post IDs, retains ownership and never claims unverified delivery"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/social-hashtag-availability.test.ts",
+      "sha256": "8c864ec442f091ae7378bfebaa7edcd520298451a9a250870cbae4bebacec4b5",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/social-hashtag-availability.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "keeps unavailable hashtag generation retryable, unexpected failures500, and never fabricates trend metrics",
+      "caseTitles": [
+        "keeps unavailable hashtag generation retryable, unexpected failures500, and never fabricates trend metrics"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -15786,7 +17153,7 @@
     },
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
-      "sha256": "5465d557205149cd8d6ea3bc0e059481435daa9cdfc794700182e2e82638b3c6",
+      "sha256": "4473f1da2b61774cd8a577e69a592be366b044f16b7c77621a75cd868a3e8ab4",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15815,6 +17182,30 @@
         "requires explicit direction in music-video studio and redacts its failures",
         "does not return or log MaxCore video diagnostics on failed renders",
         "uses shared MaxCore transport for video submission and owner-bound polling"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/social-video-proxy-credentials.test.ts",
+      "sha256": "e39086de550723d4ede06aecb2bcbdbd4982a405e51242ba92c112f4fc33af46",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/social-video-proxy-credentials.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "retrieves an external CDN artifact through the guarded public transport without credentials; binds credentials and owner only to MaxCore and refuses automatic redirects",
+      "caseTitles": [
+        "retrieves an external CDN artifact through the guarded public transport without credentials",
+        "binds credentials and owner only to MaxCore and refuses automatic redirects"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -15923,6 +17314,41 @@
         "retains the legacy TensorFlow DTO member without probing it",
         "uses MaxCore readiness and reaches ready without local TensorFlow",
         "isReady returns boolean"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/storage-chunk-sessions.test.ts",
+      "sha256": "e6f57954cb096c255eab4ffeccb8570bd8067314d0ca5c83d5ead8bff8286e84",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/storage-chunk-sessions.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "bounded shared storage chunk sessions; rejects infeasible declarations and malformed parameters before reservation",
+      "caseTitles": [
+        "bounded shared storage chunk sessions",
+        "rejects infeasible declarations and malformed parameters before reservation",
+        "retains identical retries once and refuses changed metadata, bytes and foreign owners",
+        "requires exact actual totals and releases malformed assemblies",
+        "enforces aggregate and per-owner reservations and session counts",
+        "retains the supported 500MiB declaration and frees it on cancellation",
+        "expires inactive sessions and preserves unknown completion claims across expiry",
+        "registered storage chunk handlers",
+        "rejects the reproduced declared-one-byte/million-chunk attack before retention or provider writes",
+        "assembles exact owned bytes once and tracks actual size using frozen metadata",
+        "preserves unknown provider outcomes and refuses cancellation or duplicate writes",
+        "reconciles a committed tracking row after response loss without uploading or deleting twice",
+        "rolls back an untrackable object instead of reporting upload success"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -16052,6 +17478,31 @@
         "sends opaque proxy bindings as Bearer credentials over verified HTTPS",
         "does not mistake credential presence for successful authentication",
         "rejects missing/header-injected credentials and foreign proxy destinations"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/stripe-lazy-availability.test.ts",
+      "sha256": "7c7b04bf8650d93a4c002b868271e946f763ead376a8ca599fa29e753b6f51f4",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/stripe-lazy-availability.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "optional Stripe operation boundary; allows a service to initialize without credentials, but rejects provider use as unavailable",
+      "caseTitles": [
+        "optional Stripe operation boundary",
+        "allows a service to initialize without credentials, but rejects provider use as unavailable",
+        "creates and reuses a real SDK only for a configured binding, and invalidates it when removed"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -16216,6 +17667,30 @@
       "caseTitles": [
         "Studio project query failure",
         "renders recovery instead of dereferencing absent project data"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "sha256": "af63e70a0b3657caf24f149da4a71ebba0b6b8d87baf80bbe437d7b7c4c2bf73",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/studio-loader-browser.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "StudioLoader with the installed Query client; reacts to actual query completion, failure, retry and authentication outcomes",
+      "caseTitles": [
+        "StudioLoader with the installed Query client",
+        "reacts to actual query completion, failure, retry and authentication outcomes"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -16725,6 +18200,37 @@
       ]
     },
     {
+      "path": "tests/unit/workspace-ownership-boundaries.test.ts",
+      "sha256": "90b6c3426f7988b839b476a0a626ecf8692d7566129369b69414d1433e07e824",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/workspace-ownership-boundaries.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "workspace ownership boundaries; rejects ownership and identifier mass assignment before persistence",
+      "caseTitles": [
+        "workspace ownership boundaries",
+        "rejects ownership and identifier mass assignment before persistence",
+        "preserves supported settings while retaining the real owner",
+        "cannot demote the owner or an owner record whose role is already inconsistent",
+        "rejects owner promotion and custom roles from another tenant",
+        "updates ordinary roles and clears a removed custom role",
+        "requires active administrator membership for direct role changes",
+        "preserves same-workspace custom roles and supports legacy null roles",
+        "registered settings endpoint rejects forbidden fields before calling the service"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
       "path": "tests/url-video-test.sh",
       "sha256": "c76dcd9fc1ed5f155a42ee17817d48b8ab398ff447cc036745e72cd3c297f1c2",
       "category": "test",
@@ -16788,6 +18294,26 @@
         "malformed and truncated executables fail closed within bounded export tables",
         "repository inventory exposes actual factory verification without claiming processing",
         "inspection CLI reports static evidence and rejects invalid input"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/web-ci-scope.test.mjs",
+      "sha256": "ac30ba725131e5d2b0e76fc253c645a4d82b798e6b04c737b2a87d43a18458fc",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/web-ci-scope.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "web/API CI runs runtime contracts without desktop/mobile packaging gates",
+      "caseTitles": [
+        "web/API CI runs runtime contracts without desktop/mobile packaging gates"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -16883,7 +18409,7 @@
     },
     {
       "path": "vitest.config.ts",
-      "sha256": "efcb1f6c7584fde476aa6cc07d65d000c6f0f138d7117e5b7d727196c7764998",
+      "sha256": "70a05b445fc97945d94580970864ffc302f17f41b6c8fc75dfdb203aa7cc8647",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -16912,6 +18438,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "vitest.integration.config",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "vitest.platform.config.ts",
+      "sha256": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "vitest.platform.config",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     }
@@ -17321,7 +18864,7 @@
     },
     {
       "path": "tests/payment-processing/README.md",
-      "sha256": "fb8f8cdd9c5c17430b42422899f95ba70d8793bd01aa93f8f1e8c3685e4b4444",
+      "sha256": "f3af25e88b4b22cd7f734a795169fb2422a564d68458d3643b6ed783cb3b6926",
       "reason": "Non-executable test data/documentation/fixture"
     }
   ]

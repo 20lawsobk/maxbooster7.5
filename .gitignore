@@ -25,6 +25,7 @@ attached_assets/
 # All caches
 .cache/
 /coverage/
+/reports/test-verification/coverage/lcov-report/
 
 # Desktop installer outputs (built by GitHub Actions)
 *.exe

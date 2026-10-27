@@ -10,11 +10,15 @@ fixture = json.loads(fixture_path.read_text())
 expected = {(c["id"], s) for c in fixture["cases"] for s in fixture["seeds"]}
 fixture_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
 
-for directory in sorted(BASE.iterdir()):
-    if not directory.is_dir():
-        continue
-    if directory.name in ("2026-09-23-all-types", "2026-09-23-types-corrected"):
-        continue  # Validated separately by verify_types.py.
+# This verifier owns the frozen text/GPU/awareness archive format. Dedicated
+# media/type records and later local-stack manifests have separate validators;
+# they are not malformed frozen-text runs merely because results.json is absent.
+ARCHIVED_TEXT_RUNS = (
+    "2026-09-23-aware-connected", "2026-09-23-aware-traced",
+    "2026-09-23-frozen", "2026-09-23-full-prefix", "2026-09-23-traced",
+)
+for name in ARCHIVED_TEXT_RUNS:
+    directory = BASE / name
     result = json.loads((directory / "results.json").read_text())
     assert result["fixture_sha256"] == fixture_hash, directory
     if directory.name in ("2026-09-23-aware-connected", "2026-09-23-aware-traced"):
@@ -62,3 +66,4 @@ passing = sum(s == [2, 2, 2] for s in scores.values())
 assert passing == assessment["passing_samples"]
 assert len(scores) == assessment["scored_samples"]
 print(f"Assessment consistent: {passing}/{len(scores)} diagnostic samples pass")
+print("Frozen archive integrity PASS; no current inference or output-quality pass is inferred")

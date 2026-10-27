@@ -1,0 +1,77 @@
+TAP version 13
+# Subtest: storage chunk protocol crosses worker boundaries with real private PostgreSQL locks
+    # Subtest: alternating workers retain exact bytes and a single shared reservation
+    ok 1 - alternating workers retain exact bytes and a single shared reservation
+      ---
+      duration_ms: 47.07981
+      type: 'test'
+      ...
+    # Subtest: simultaneous final claims have exactly one owner
+    ok 2 - simultaneous final claims have exactly one owner
+      ---
+      duration_ms: 8.032527
+      type: 'test'
+      ...
+    # Subtest: restart retains an uncertain claim and cannot start a duplicate object
+    ok 3 - restart retains an uncertain claim and cannot start a duplicate object
+      ---
+      duration_ms: 181.659157
+      type: 'test'
+      ...
+    # Subtest: foreign owners and changed duplicate bytes cannot reuse receipts
+    ok 4 - foreign owners and changed duplicate bytes cannot reuse receipts
+      ---
+      duration_ms: 8.446171
+      type: 'test'
+      ...
+    # Subtest: per-user and global reservations are shared across workers
+    ok 5 - per-user and global reservations are shared across workers
+      ---
+      duration_ms: 355.248987
+      type: 'test'
+      ...
+    # Subtest: actual private chunk tampering fails before completion claim
+    ok 6 - actual private chunk tampering fails before completion claim
+      ---
+      duration_ms: 14.856596
+      type: 'test'
+      ...
+    # Subtest: a crashed empty initial session is reclaimed without losing occupied reservations
+    ok 7 - a crashed empty initial session is reclaimed without losing occupied reservations
+      ---
+      duration_ms: 9.435013
+      type: 'test'
+      ...
+    # Subtest: a symlinked staging parent is rejected before retaining bytes
+    ok 8 - a symlinked staging parent is rejected before retaining bytes
+      ---
+      duration_ms: 150.295781
+      type: 'test'
+      ...
+    # Subtest: corrupt manifests fail closed without freeing reservations
+    ok 9 - corrupt manifests fail closed without freeing reservations
+      ---
+      duration_ms: 32.985959
+      type: 'test'
+      ...
+    # Subtest: symlinked chunks cannot escape private staging
+    ok 10 - symlinked chunks cannot escape private staging
+      ---
+      duration_ms: 9.676597
+      type: 'test'
+      ...
+    1..10
+ok 1 - storage chunk protocol crosses worker boundaries with real private PostgreSQL locks
+  ---
+  duration_ms: 1813.57841
+  type: 'test'
+  ...
+1..1
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1940.024443

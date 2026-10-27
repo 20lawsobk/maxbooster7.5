@@ -14,8 +14,13 @@ Redis instances, and the provider report's offline aggregation/redaction
 self-check. It does not start the application, use the application
 database, or submit provider requests with inherited credentials.
 
-Required tools are Node 22+, Python 3, installed root npm dependencies,
-PostgreSQL 17 (`initdb`, `pg_ctl`), Redis (`redis-server`), and FFmpeg. They are
+Required tools are Node 22+, prepared Python 3.12+ with the
+[test requirements](../../scripts/testing/requirements.txt), installed root npm dependencies,
+PostgreSQL 17 (`initdb`, `pg_ctl`), Redis (`redis-server`), FFmpeg and espeak-ng.
+The actual renderer case uses that interpreter via `MAXBOOSTER_TEST_PYTHON`,
+which the runner sets to its own Python executable. Invoke the runner with the
+prepared interpreter if `python3` selects an unprepared system installation.
+The system tools are
 declared by `replit.nix`; outside Replit, put them on `PATH` first. PostgreSQL
 must run as a non-root user. The runner preserves the tool `PATH` and optional
 `LD_LIBRARY_PATH`, creates a temporary home, and drops inherited application
@@ -40,10 +45,10 @@ not run even when the local command exits 0.
 
 ## Latest complete rerun
 
-The October 25, 2026 rerun used application/test baseline `f5716662` and the
-new fixture scripts included in this change. All 18 commands exited 0
-(17 framework suites and one bundled CLI self-check):
-**78 JUnit leaf cases passed, 1 skipped, 0 failed, 0 errors**. The skip is the
+The completed October 26, 2026 integrated master run used checkout baseline
+`4c72114a` plus its recorded working-tree source digest. All 22 commands exited 0
+(21 framework suites and one bundled CLI self-check):
+**136 JUnit leaf cases passed, 1 skipped, 0 failed, 0 errors**. The skip is the
 real Stripe-backed case inside `database-commerce.test.mjs`, because the
 credential-free subprocess has no dedicated Stripe test bindings. Node TAP
 also counts parent tests; its count can exceed JUnit's leaf count. Do not add
@@ -53,8 +58,14 @@ The CLI self-check is counted separately from JUnit cases. It exercises
 pass/fail/blocked/cleanup aggregation and diagnostic redaction through
 `node tests/payment-processing/real-stripe-api.mjs --self-test-summary`.
 That flag does not construct a Stripe client or make provider requests. The
-same file's full remote execution mode remains not run. Selecting its basename
-with this Python runner invokes only this offline flag.
+same file's full remote execution mode is excluded from this credential-free
+group. Selecting its basename with this Python runner invokes only this offline
+flag. A separate dedicated Stripe TEST API run is recorded below.
+
+That completed master still failed other scopes. Its
+[pre-recheck archive](../../reports/test-verification/history/2026-10-26-integrated-before-rechecks/README.md)
+preserves the actual run; later source repairs and the final integrated rerun
+must be distinguished from this commerce result.
 
 The initial legacy fixture attempt passed 13/14 cases and failed the queue
 import because no queue backend was configured. That evidence is retained
@@ -87,6 +98,7 @@ inherited dedicated Stripe bindings cannot accidentally enable a remote case.
 | `beat-loop-lifecycle-postgres.test.mjs` | Singleton/lock ownership; decoded audio and shorter preview; awareness artwork; atomic beat/listing/royalty writes; completed-sale idempotency; pause/recovery; rollback; silence and renderer failures. | Full disposable PostgreSQL schema, actual FFmpeg/codec validation, isolated renderer/storage/social ports. |
 | `business-integrity-postgres.test.mjs` | SQL ownership, concurrent royalty caps, shipping rejection, merchandise reservation rollback and expiry. | Disposable PostgreSQL and production services. |
 | `business-integrity.test.mjs` | Settlement excludes pending attackers; royalty mutations enforce ownership and caps; mounted routes delegate to the ownership service. | Injected repositories/transports. |
+| `compensation-races-postgres.test.mjs` | Concurrent refunds, reversals and retry compensation preserve immutable ownership and amounts. | Disposable PostgreSQL and production commerce services. |
 | `database-commerce.test.mjs` | Durable checkout retries and rollback; migration constraints; balanced settlement/allocations; concurrent duplicate settlement; payout/refund/reversal SQL; webhook inbox deduplication. | Disposable PostgreSQL. One real-provider case skips without explicit dedicated test bindings. |
 | `inbound-billing.test.mjs` | Cancellation, setup/portal/invoice/retry/refund/3DS/dispute route contracts. | Actual route handlers with isolated SDK/repository boundaries. |
 | `inbound-commerce.test.mjs` | Marketplace, merchant and merchandise checkout/fulfillment contracts; ownership, immutable pricing and verified events; billing catalog rejects caller prices. | In-memory transactional repositories and provider fixtures. |
@@ -100,6 +112,9 @@ inherited dedicated Stripe bindings cannot accidentally enable a remote case.
 | `outbound-stripe-resource-ownership.test.mjs` | Cleanup/catalog resources must belong to the current test run. | Pure ownership predicates. |
 | `outbound-stripe-test-transport.test.mjs` | Dedicated transport rejects live or unsupported bindings and constrains key usage. | Local fake bindings and transport checks; no remote provider call. |
 | `outbound-topup-journal.mjs` | Lost top-up creation responses remain unresolved; old journals cannot disguise missing cleanup; blocked preflight and verified cleanup remain distinct. | Pure persisted-journal fixtures. |
+| `provider-only-preferences.test.mjs` | Provider-specific connection preferences enforce validation and permission boundaries through actual handlers. | Isolated SDK/storage boundaries and actual module constants. |
+| `settlement-dispute-hold-postgres.test.mjs` | Dispute holds and settlement accounting preserve ownership and funds across durable transitions. | Disposable PostgreSQL and real settlement code. |
+| `subscription-authority-postgres.test.mjs` | Provider subscription identity, tier authority, customer ownership, concurrent pointer replacement and signed-event rejection cannot overwrite authoritative subscriptions. | Disposable PostgreSQL and production entitlement logic. |
 
 ## Legacy beat-sale integration file
 
@@ -134,6 +149,15 @@ These were not run in the credential-free verification. Their existing
 commands remain available for an explicitly selected isolated Stripe TEST
 account, after its test-only credentials and webhook isolation are checked.
 Do not interpret these instructions as evidence of provider acceptance.
+
+The separately retained [October 26 dedicated Stripe TEST API report](../../reports/provider-acceptance/stripe-test-api-2026-10-26.json)
+records 28 passes, four account/fixture prerequisite blocks and one skip. It also
+records 26 successful cleanup operations and six documented cleanup skips.
+Those observations concern the dedicated test account and newly created
+Express fixture; they do not establish production-account misconfiguration.
+This API-only run did not exercise application routes, deployed webhook
+delivery or browser confirmation. Its result must remain separate from the
+credential-free commerce group's counts.
 
 | File | What it does | Command/prerequisites |
 | --- | --- | --- |

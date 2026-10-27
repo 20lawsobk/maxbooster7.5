@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeAll } from "vitest";
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+import { seedSavedCareerRecommendation } from "./helpers-http-saved-data";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
+const isolated = Boolean(process.env.MAXBOOSTER_ISOLATED_FIXTURE_TOKEN);
+const noMaxCore = process.env.TEST_EXPECT_MAXCORE_UNAVAILABLE === "1";
 let cookies = "";
 let testUserId = "";
 let csrfToken = "";
 const testUser = {
   birthdate: "1990-01-01",
-  email: `paidtest_${Date.now()}@maxbooster-test.com`,
+  email: `paidtest_${Date.now()}@maxbooster-test.invalid`,
   password: "SecurePass123!@#",
   username: `PaidUser_${Date.now()}`,
   firstName: "Paid",
@@ -19,6 +23,10 @@ async function api(
   body?: any,
   opts?: { raw?: boolean; customHeaders?: Record<string, string> },
 ) {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()) &&
+      !cookies.split("; ").some(cookie => cookie.startsWith("csrf-token="))) {
+    await api("GET", "/api/csrf-token");
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...opts?.customHeaders,
@@ -85,6 +93,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(res.json.password).toBeUndefined();
       expect(res.json.passwordHash).toBeUndefined();
       testUserId = res.json.id;
+      expect(await provisionFixtureEntitlement(testUser.email)).toBe(testUserId);
     });
 
     it("should reject weak passwords", async () => {
@@ -197,7 +206,8 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(res.status).toBe(200);
       expect(res.json.tier).toBeDefined();
       expect(res.json.status).toBeDefined();
-      expect(res.json.stripeConfigured).toBe(true);
+      // The sealed runner deliberately supplies no outbound Stripe key.
+      expect(res.json.stripeConfigured).toBe(!process.env.MAXBOOSTER_ISOLATED_FIXTURE_TOKEN);
       expect(res.json.planBenefits).toBeDefined();
       expect(res.json.pricing).toBeDefined();
       expect(res.json.pricing.monthly).toBe(49);
@@ -207,29 +217,32 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(Array.isArray(res.json.upgradeOptions)).toBe(true);
     });
 
-    it("should create real Stripe checkout session with checkout URL", async () => {
+    it.skipIf(isolated)("should create real Stripe checkout session with checkout URL", async () => {
       const res = await api("POST", "/api/billing/create-checkout-session", {
         planId: "monthly",
       });
-      // 200 when Stripe is configured; 500/503 when STRIPE_SECRET_KEY is not set in this environment
-      expect([200, 500, 503]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.json.url).toBeDefined();
-        expect(res.json.url).toContain("checkout.stripe.com");
-        expect(res.json.sessionId).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      expect(res.json.url).toContain("checkout.stripe.com");
+      expect(res.json.sessionId).toBeDefined();
     });
 
-    it("should create checkout sessions for all plan types", async () => {
+    it.skipIf(isolated)("should create checkout sessions for all plan types", async () => {
       for (const plan of ["monthly", "yearly", "lifetime"]) {
         const res = await api("POST", "/api/billing/create-checkout-session", {
           planId: plan,
         });
-        // 200 when Stripe is configured; 500/503 when STRIPE_SECRET_KEY is not set in this environment
-        expect([200, 500, 503]).toContain(res.status);
-        if (res.status === 200) {
-          expect(res.json.url).toContain("checkout.stripe.com");
-        }
+        expect(res.status).toBe(200);
+        expect(res.json.url).toContain("checkout.stripe.com");
+      }
+    });
+
+    it.runIf(isolated)("reports missing Stripe configuration without claiming a checkout session was created", async () => {
+      for (const planId of ["monthly", "yearly", "lifetime"]) {
+        const response = await api("POST", "/api/billing/create-checkout-session", { planId });
+        expect(response.status).toBe(503);
+        expect(response.json.code).toBe("STRIPE_NOT_CONFIGURED");
+        expect(response.json.url).toBeUndefined();
+        expect(response.json.sessionId).toBeUndefined();
       }
     });
 
@@ -334,7 +347,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
   });
 
   describe("Phase 5: Distribution - Core Paid Feature", () => {
-    it("should list all distribution platforms", async () => {
+    it.skipIf(isolated)("should list live distribution platforms from a connected Too Lost account", async () => {
       const res = await api("GET", "/api/distribution/platforms");
       expect(res.status).toBe(200);
       expect(res.json.platforms).toBeDefined();
@@ -342,6 +355,13 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       const platform = res.json.platforms[0];
       expect(platform.name).toBeDefined();
       expect(platform.category).toBeDefined();
+    });
+
+    it.runIf(isolated)("requires a distributor connection before live platform discovery", async () => {
+      const res = await api("GET", "/api/distribution/platforms");
+      expect(res.status).toBe(409);
+      expect(res.json.requiresConnection).toBe(true);
+      expect(res.json.platforms).toBeUndefined();
     });
 
     it("should list user releases", async () => {
@@ -379,9 +399,9 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(res.json.metadata.primaryGenre).toBe("Hip Hop");
     });
 
-    it("should reject release creation with missing required fields", async () => {
+    it("should reject a release draft without its required title", async () => {
       const res = await api("POST", "/api/distribution/releases", {
-        title: "Incomplete Release",
+        artistName: "Test Artist",
       });
       expect(res.status).toBe(400);
     });
@@ -418,7 +438,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       expect(Array.isArray(res.json)).toBe(true);
     });
 
-    it("should get trending hashtags (dynamic, time-based)", async () => {
+    it.skipIf(noMaxCore)("should get generated hashtags without fabricated provider metrics", async () => {
       const res1 = await api("GET", "/api/social/hashtags/trending");
       expect(res1.status).toBe(200);
       expect(Array.isArray(res1.json)).toBe(true);
@@ -426,11 +446,16 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       if (res1.json.length > 0) {
         const hashtag = res1.json[0];
         expect(hashtag.hashtag).toBeDefined();
-        expect(hashtag.posts).toBeDefined();
-        expect(typeof hashtag.posts).toBe("number");
-        expect(hashtag.trend).toBeDefined();
+        expect(hashtag.posts).toBeUndefined();
+        expect(hashtag.trend).toBeUndefined();
         expect(hashtag.category).toBeDefined();
       }
+    });
+
+    it.runIf(noMaxCore)("reports missing hashtag generation as a retryable503", async () => {
+      const res = await api("GET", "/api/social/hashtags/trending");
+      expect(res.status).toBe(503);
+      expect(res.json.code).toBe("AI_UNAVAILABLE");
     });
 
     it("should get social metrics", async () => {
@@ -508,9 +533,11 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
   });
 
   describe("Phase 9: AI Career Coach", () => {
-    it("should get AI recommendations", async () => {
+    it("should read an owned saved career recommendation without claiming model generation", async () => {
+      const fixtureId = await seedSavedCareerRecommendation(testUser.email);
       const res = await api("GET", "/api/career-coach/recommendations");
       expect(res.status).toBe(200);
+      expect(res.json.data.recommendations.some((item: { id: string }) => item.id === fixtureId)).toBe(true);
     });
 
     it("should get career goals", async () => {
@@ -564,7 +591,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       const res = await api("POST", "/api/auth/login", {
         email: "admin'--",
         password: "' OR 1=1 --",
-      });
+      }, { customHeaders: { "x-maxbooster-fixture-client": "hostile-login" } });
       expect([400, 401]).toContain(res.status);
       cookies = tempCookies;
       csrfToken = tempCsrf;
@@ -574,6 +601,8 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       const res = await api(
         "GET",
         "/api/search/unified?q=' OR 1=1; DROP TABLE users; --",
+        undefined,
+        { customHeaders: { "x-maxbooster-fixture-client": "hostile-search" } },
       );
       expect([200, 400]).toContain(res.status);
     });
@@ -588,7 +617,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
         headers,
         body: "{invalid json!!!",
       });
-      expect([400, 422, 500]).toContain(res.status);
+      expect(res.status).toBe(400);
     });
 
     it("should return 404 for non-existent API routes", async () => {
@@ -597,7 +626,9 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
     });
 
     it("should prevent path traversal attempts", async () => {
-      const res = await api("GET", "/api/../../../etc/passwd");
+      const res = await api("GET", "/api/../../../etc/passwd", undefined, {
+        customHeaders: { "x-maxbooster-fixture-client": "hostile-traversal" },
+      });
       expect([200, 301, 302, 400, 403, 404]).toContain(res.status);
       if (res.status === 200) {
         const body =
@@ -628,28 +659,35 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       const tempCsrf = csrfToken;
       cookies = "";
       const results = [];
-      for (let i = 0; i < 8; i++) {
+      const responses = [];
+      for (let i = 0; i < 11; i++) {
         const res = await api("POST", "/api/auth/login", {
-          email: `ratelimit_${Date.now()}_${i}@test.com`,
+          email: "bounded-failed-login@maxbooster-test.invalid",
           password: "wrong",
-        });
+        }, { customHeaders: { "x-maxbooster-fixture-client": "failed-login-rate" } });
         results.push(res.status);
+        responses.push(res);
       }
       cookies = tempCookies;
       csrfToken = tempCsrf;
       const has429 = results.includes(429);
       const allFailed = results.every((s) => [401, 429, 400].includes(s));
       expect(allFailed).toBe(true);
+      expect(has429).toBe(true);
+      expect(Number(responses.find(response => response.status === 429)!.headers.get("Retry-After"))).toBeGreaterThan(0);
     });
 
-    it("should have billing rate limiter active", async () => {
-      const results = [];
-      for (let i = 0; i < 30; i++) {
-        const res = await api("GET", "/api/billing/plans");
-        results.push(res.status);
+    it("counts authenticated billing requests in the actual configured limiter", async () => {
+      let remaining: number | undefined;
+      for (let i = 0; i < 3; i++) {
+        const res = await api("GET", "/api/billing/subscription");
+        expect(res.status).toBe(200);
+        expect(res.headers.get("X-RateLimit-Limit")).toBe("60");
+        const next = Number(res.headers.get("X-RateLimit-Remaining"));
+        expect(Number.isFinite(next)).toBe(true);
+        if (remaining !== undefined) expect(next).toBe(remaining - 1);
+        remaining = next;
       }
-      const allValid = results.every((s) => [200, 429].includes(s));
-      expect(allValid).toBe(true);
     });
   });
 
@@ -662,7 +700,7 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
   });
 
   describe("Phase 15: OAuth Flow Structure Verification", () => {
-    it("should return proper OAuth URLs for supported platforms", async () => {
+    it("returns OAuth URLs only when configured and reports missing configuration explicitly", async () => {
       const platforms = [
         "spotify",
         "tiktok",
@@ -674,15 +712,17 @@ describe("PAID USER END-TO-END INTEGRATION TESTS", () => {
       ];
       for (const platform of platforms) {
         const res = await api("POST", `/api/social/connect/${platform}`);
-        expect([200, 400, 503]).toContain(res.status);
-        if (res.status === 200) {
-          expect(res.json.authUrl || res.json.url).toBeDefined();
-          const url = res.json.authUrl || res.json.url;
-          expect(url.startsWith("http")).toBe(true);
+        if (isolated) {
+          expect(res.status).toBe(503);
+          expect(res.json.needsConfiguration).toBe(true);
+          expect(typeof (res.json.error ?? res.json.message)).toBe("string");
+          expect(res.json.authUrl).toBeUndefined();
+          continue;
         }
-        if (res.status === 503) {
-          expect(res.json.message).toBeDefined();
-        }
+        expect(res.status).toBe(200);
+        const url = new URL(res.json.authUrl || res.json.url);
+        expect(url.protocol).toBe("https:");
+        expect(url.searchParams.get("state")).toBeTruthy();
       }
     });
 

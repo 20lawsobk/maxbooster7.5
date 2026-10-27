@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: profile deletion locks an owned row before deleting any associations
 ok 1 - profile deletion locks an owned row before deleting any associations
   ---
-  duration_ms: 147.936745
+  duration_ms: 259.572834
   type: 'test'
   ...
 # Subtest: release lookup scopes profiles to the requester
 ok 2 - release lookup scopes profiles to the requester
   ---
-  duration_ms: 24.321558
+  duration_ms: 37.600563
   type: 'test'
   ...
 # Subtest: private collaboration cannot be joined but public open projects can
 ok 3 - private collaboration cannot be joined but public open projects can
   ---
-  duration_ms: 17.874435
+  duration_ms: 27.407446
   type: 'test'
   ...
 # Subtest: alternate storefront route refuses unpublished stores without requiring a session
 ok 4 - alternate storefront route refuses unpublished stores without requiring a session
   ---
-  duration_ms: 4.251161
+  duration_ms: 8.845995
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - alternate storefront route refuses unpublished stores without requiring a
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 627.552362
+# duration_ms 894.289999

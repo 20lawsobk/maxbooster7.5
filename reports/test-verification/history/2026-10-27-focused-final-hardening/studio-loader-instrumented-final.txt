@@ -1,0 +1,1 @@
+JUNIT report written to /workspace/onboarding-results/studio-loader-instrumented-final.xml

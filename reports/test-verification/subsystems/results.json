@@ -1,7 +1,13 @@
 {
-  "generatedAt": "2026-10-25T15:24:31.066510+00:00",
-  "revision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "generatedAt": "2026-10-26T23:42:15.926258+00:00",
+  "revision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
   "scope": "Canonical native/imported subsystem checks; no production database or provider credentials",
+  "settings": {
+    "includeRustConcurrency": true,
+    "includePdimSmoke": true,
+    "offline": false,
+    "portableRustSelected": true
+  },
   "results": [
     {
       "id": "rust-boosterstate",
@@ -22,17 +28,17 @@
         "boosterstate/tests/runtime_dependency.rs"
       ],
       "stdoutFile": "rust-boosterstate.txt",
-      "passedTests": 2,
       "sourceSha256": {
         "boosterstate/tests/runtime_dependency.rs": "061b70cf7dec26cbc3b268b0bf6e1812ac315de7ad37a7ee9f1e7e72adab9cb6"
-      }
+      },
+      "passedTests": 2
     },
     {
       "id": "go-dns",
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.419,
+      "seconds": 0.469,
       "command": [
         "go",
         "test",
@@ -46,17 +52,17 @@
         "dns-os/services/dns-authoritative/dependency_runtime_test.go"
       ],
       "stdoutFile": "go-dns.txt",
-      "passedTests": 2,
       "sourceSha256": {
         "dns-os/services/dns-authoritative/dependency_runtime_test.go": "2127be4589281ccde342b5c24799878089a22fedb15a36e3a70e6ba9964807c0"
-      }
+      },
+      "passedTests": 2
     },
     {
       "id": "pdim-erasure",
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.165,
+      "seconds": 0.171,
       "command": [
         "node",
         "--import",
@@ -68,10 +74,10 @@
         "external/pdim/artifacts/api-server/src/pocket-dimension/fabric/erasure/__rs_test.ts"
       ],
       "stdoutFile": "pdim-erasure.txt",
-      "passedScenarios": 60,
       "sourceSha256": {
         "external/pdim/artifacts/api-server/src/pocket-dimension/fabric/erasure/__rs_test.ts": "f6323c8f2cefaf7c6a2622b764cec4ae6adf483c0430694cefd9d86cf299d27b"
-      }
+      },
+      "passedScenarios": 60
     },
     {
       "id": "maxcore-js-security",
@@ -89,7 +95,7 @@
       ],
       "stdoutFile": "maxcore-js-security.txt",
       "sourceSha256": {
-        "external/maxcore/scripts/check-js-security-versions.js": "2f0ae0d8d157515af2ce591bd85dbe6b3467915a6227e2706a44d7c4ddb5c49b"
+        "external/maxcore/scripts/check-js-security-versions.js": "fdd83b9bccf793a6a25c48128af3aecbedb9d1299fafce7d5108eef362edd473"
       }
     },
     {
@@ -97,7 +103,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 38.168,
+      "seconds": 37.767,
       "command": [
         "node",
         "--test",
@@ -108,17 +114,17 @@
         "tests/deployment-rust-phase.test.mjs"
       ],
       "stdoutFile": "rust-cleanup-concurrency.txt",
-      "passedTests": 2,
       "sourceSha256": {
         "tests/deployment-rust-phase.test.mjs": "ff4a59d97e864bd5a3f8fa8c530d3885f75deb540d2a45efc2d663963eb8f60d"
-      }
+      },
+      "passedTests": 2
     },
     {
       "id": "pdim-http-load",
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 4.001,
+      "seconds": 4.499,
       "command": [
         "node",
         "scripts/testing/run-pdim-smoke.mjs",
@@ -129,18 +135,12 @@
         "external/pdim/scripts/src/smoke-load-test.ts"
       ],
       "stdoutFile": "pdim-http-load.txt",
-      "passedTests": 54,
-      "totalTests": 54,
-      "fixtureReport": "pdim-smoke-results.json",
       "sourceSha256": {
         "external/pdim/scripts/src/smoke-load-test.ts": "56b3e0f1b3fc88e92a0b0d10dd4f5c8bfc7b1b782a97e9c90aa2bc5bf7ca3710"
-      }
+      },
+      "passedTests": 54,
+      "totalTests": 54,
+      "fixtureReport": "pdim-smoke-results.json"
     }
-  ],
-  "settings": {
-    "includeRustConcurrency": true,
-    "includePdimSmoke": true,
-    "offline": false,
-    "portableRustSelected": true
-  }
+  ]
 }

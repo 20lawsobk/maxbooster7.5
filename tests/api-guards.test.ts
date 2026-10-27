@@ -74,9 +74,12 @@ describe("Unauthenticated route guards", () => {
   });
 
   // --- Payments ---
-  it("POST /api/create-checkout-session → 401", async () => {
-    const s = await unauthPost("/api/create-checkout-session", { tier: "pro" });
+  it("POST /api/billing/create-checkout-session requires an existing account", async () => {
+    const s = await unauthPost("/api/billing/create-checkout-session", { tier: "pro" });
     expect([401, 403]).toContain(s);
+  });
+  it("public registration checkout validates input before any provider request", async () => {
+    expect(await unauthPost("/api/create-checkout-session", { tier: "pro" })).toBe(400);
   });
 
   // --- Files ---

@@ -260,6 +260,7 @@ def test_video_checkpoint_unavailable_maps_to_503_not_500():
 
 def test_model_failure_never_runs_awareness_template_substitute(monkeypatch):
     from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
+    from ai_model.generation.plan import GenerationPlan, active_plan
 
     class Model:
         def generate(self, *args, **kwargs):
@@ -268,9 +269,14 @@ def test_model_failure_never_runs_awareness_template_substitute(monkeypatch):
     agent = ScriptAgent(Model())
     monkeypatch.setattr(agent, "_awareness_compose",
                         lambda req: pytest.fail("unrequested fallback"))
-    with pytest.raises(ValueError, match="checkpoint vocabulary"):
-        agent.run(ScriptRequest("Paper Lanterns", "instagram", "streams",
-                                "calm", awareness="Quiet nights"))
+    request = ScriptRequest("Paper Lanterns", "instagram", "streams",
+                            "calm", awareness="Quiet nights")
+    token = active_plan.set(GenerationPlan.from_request(request, "text"))
+    try:
+        with pytest.raises(ValueError, match="checkpoint vocabulary"):
+            agent.run(request)
+    finally:
+        active_plan.reset(token)
 
 
 def test_private_supervisor_auth_requires_secret_and_loopback(monkeypatch):
@@ -312,6 +318,10 @@ def test_render_worker_owns_gpu_until_it_returns():
     ns = server_functions(
         "_run_gpu_job", _get_gpu_pool=lambda: Pool(),
         _job_update=lambda *a: pytest.fail("unexpected render failure"),
+        _job_read=lambda _: {"generation_plan": {
+            "request": {"topic": "Saved render request"},
+            "modality": "video", "checkpoint": "fixture", "seed": 12,
+        }},
     )
     ns["_run_gpu_job"]("job-1", lambda: events.append(("worker", "job-1")))
     assert [event[0] for event in events] == ["born", "worker", "dead"]

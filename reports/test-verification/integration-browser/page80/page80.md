@@ -8,9 +8,9 @@ Artifact label: **sealed non-ML source application acceptance; not full-stack or
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/testing/page80-acceptance.mjs`
 
-Run started: 2026-10-25T15:17:43.274Z
+Run started: 2026-10-26T23:45:02.484Z
 
-Report generated: 2026-10-25T15:20:21.151Z
+Report generated: 2026-10-26T23:47:30.371Z
 
 ## Safety boundary
 
@@ -49,7 +49,7 @@ Report generated: 2026-10-25T15:20:21.151Z
       },
       "routes": {
         "status": "ok",
-        "detail": "all route sections registered"
+        "detail": "critical routes registered; route loading complete"
       },
       "audit": {
         "status": "unknown",
@@ -69,7 +69,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     "status": 200,
     "contentType": "text/html; charset=utf-8",
     "bytes": 16213,
-    "sha256": "23266a565cc9834fc27f35dd75c95df72169b4755e54a9054495474634905287"
+    "sha256": "904544a3a06d30d58b179edc8364681fabcb589bbe38ad89245832b83adac6ce"
   },
   "authHttp": {
     "csrfCookieHeaderBinding": "pass",
@@ -172,7 +172,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Projects\nYour Projects\n\n1 project total\n\nNew Project\nMy Projects\nSongwriting\nReview sync conflicts\nPage80 studio fixture\n\n10/25/2026\n\nSETUP\n10% Complete\n\nDisposable owned project\n\nPlay\nContinue",
+        "textSample": "Projects\nYour Projects\n\n1 project total\n\nNew Project\nMy Projects\nSongwriting\nReview sync conflicts\nPage80 studio fixture\n\n10/26/2026\n\nSETUP\n10% Complete\n\nDisposable owned project\n\nPlay\nContinue",
         "requestedPath": "/projects",
         "expectedPath": "/projects",
         "finalPath": "/projects",
@@ -270,7 +270,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Royalties\nUnable to load royalties\n\nYour saved data is temporarily unavailable. Please retry.\n\nRetry",
+        "textSample": "Royalties\nRoyalty Management\n\nTrack your earnings and manage payouts across all platforms\n\nCurrent Month\nExport Report\nConnect Bank Account\nRequest Payout\n\nTotal Earnings\n\n$0.00\n\nNo earnings yet\n\nPending Payouts\n\n$0.00\n\n0 payouts\n\nTotal Streams\n\n0\n\nStart streaming to earn\n\nAvg. RPM\n\n$0.00\n\nRevenue per 1K streams\n\nOverview\nPayouts\nStatements\nCollaborators\nPublishing\nDisputes\nSettings\nTax & Revenue\nEarnings by Platform\n\nNo platform data yet\n\nRoyalty breakdowns will appear once your first statement is processed.\n\nRecent Payouts\n\nNo payouts yet\n\nYour first payout will appear here once earnings rea",
         "requestedPath": "/royalties",
         "expectedPath": "/royalties",
         "finalPath": "/royalties",
@@ -285,9 +285,9 @@ Report generated: 2026-10-25T15:20:21.151Z
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
         "textSample": "P.In\nP.Out\nLoop Rec\nTIME\n00:00.000\nBARS\n1.1.000\nBPM\nSIG\n4/4\nMASTER\n80\nPlugins\nAI Co-Producer\nGenerate\nPage80 studio fixture\nVersions\nSimple\nTRACKS\nFILES\nPLUGINS\nPRESETS\nAdd Track\n\nNo tracks yet.\n\nI/O\nKeys\nTimeline\nMixer\nFlow\n100%\nTrack\nAuto\nEditor\nLyrics\nAI\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n42\n43\n44\n45\n46\n47\n48\n49\n50\n51\n52\n53\n54\n55\n56\n57\n58\n59\n60\n\nStart Your Session\n\nAdd your first track to begin composing\n\nAudio\nInstrument\nMIDI\nBus\nINSPECTOR\n\nSelect a track to inspect its properties and plugin chain.",
-        "requestedPath": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-        "expectedPath": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-        "finalPath": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
+        "requestedPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+        "expectedPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+        "finalPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": true,
@@ -298,7 +298,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "A\naccept_48084ea3538a1367\nPro\n1\nSongs\n0\nProjects\n0\nShows\nCREATE NEW\nSong\nMulti-track recording & arrangement\nProject\nAlbum mastering & production\nShow\nLive performance setlist\nDOCUMENTS\nRecent\n1\nSongs\n1\nProjects\n0\nShows\n0\nHelp & Tutorials\nRecent Documents\n\nPick up where you left off\n\nPage80 studio fixture\n0 tracks\nTemplates\nView All\nAll Templates\nRecording\nProduction\nMastering\nMy Templates\nEmpty Song\n0\nBuilt-in\nHip Hop Beat\n8 tracks\nBuilt-in\nPop Production\n10 tracks\nBuilt-in\nElectronic/EDM\n12 tracks\nBuilt-in\nR&B Soul\n8 tracks\nBuilt-in\nPodcast/Voice Recording\n4 tracks\nBuilt-in\nMastering Session",
+        "textSample": "A\naccept_596e77c97e4dcf45\nPro\n1\nSongs\n0\nProjects\n0\nShows\nCREATE NEW\nSong\nMulti-track recording & arrangement\nProject\nAlbum mastering & production\nShow\nLive performance setlist\nDOCUMENTS\nRecent\n1\nSongs\n1\nProjects\n0\nShows\n0\nHelp & Tutorials\nRecent Documents\n\nPick up where you left off\n\nPage80 studio fixture\n0 tracks\nTemplates\nView All\nAll Templates\nRecording\nProduction\nMastering\nMy Templates\nEmpty Song\n0\nBuilt-in\nHip Hop Beat\n8 tracks\nBuilt-in\nPop Production\n10 tracks\nBuilt-in\nElectronic/EDM\n12 tracks\nBuilt-in\nR&B Soul\n8 tracks\nBuilt-in\nPodcast/Voice Recording\n4 tracks\nBuilt-in\nMastering Session",
         "requestedPath": "/studio",
         "expectedPath": "/studio",
         "finalPath": "/studio",
@@ -355,9 +355,9 @@ Report generated: 2026-10-25T15:20:21.151Z
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
         "textSample": "Support\nTickets\nDetails\nPage80 owned support ticket\n\nStatus: open\n\nDisposable local support fixture\n\nSend reply",
-        "requestedPath": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-        "expectedPath": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-        "finalPath": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+        "requestedPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+        "expectedPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+        "finalPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": false,
@@ -438,7 +438,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Workspaces\nWorkspaces\n\nCollaborate with your team, label, or management\n\nCreate Workspace\nYour Workspaces\n\nAcceptance workspace 3d6e0698\n\nmembers\n\nMember\nSelect a workspace\n\nChoose a workspace from the list to view details",
+        "textSample": "Workspaces\nWorkspaces\n\nCollaborate with your team, label, or management\n\nCreate Workspace\nYour Workspaces\n\nAcceptance workspace 59512ef5\n\nmembers\n\nMember\nSelect a workspace\n\nChoose a workspace from the list to view details",
         "requestedPath": "/workspaces",
         "expectedPath": "/workspaces",
         "finalPath": "/workspaces",
@@ -480,7 +480,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Assistant\nMax\nIn-House AI\n\nFull history saved across sessions\n\nHey accept_48084ea3538a1367! I'm Max — your in-house AI assistant, built by the B-Lawz Music team. I remember our full conversation history across every session. Ask me anything about Max Booster — Studio, distribution, royalties, marketplace, social media, advertising, analytics, and more. What can I help you with today?\nHow do I use the DAW studio?\nHow does music distribution work?\nTell me about the AI autopilot system\nHow do I monetize my music?\nWhat can Max Booster do for my career?\nHow does the beat marketplace work?",
+        "textSample": "Assistant\nMax\nIn-House AI\n\nFull history saved across sessions\n\nHey accept_596e77c97e4dcf45! I'm Max — your in-house AI assistant, built by the B-Lawz Music team. I remember our full conversation history across every session. Ask me anything about Max Booster — Studio, distribution, royalties, marketplace, social media, advertising, analytics, and more. What can I help you with today?\nHow do I use the DAW studio?\nHow does music distribution work?\nTell me about the AI autopilot system\nHow do I monetize my music?\nWhat can Max Booster do for my career?\nHow does the beat marketplace work?",
         "requestedPath": "/assistant",
         "expectedPath": "/assistant",
         "finalPath": "/assistant",
@@ -536,10 +536,10 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "owned-record-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
-        "textSample": "Notifications\nDetails\nNotification\nSystem & Platform\nRead\nPage80 owned notification\n\n10/25/2026, 3:18:08 PM\n\nDisposable local notification\n\nDelete",
-        "requestedPath": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-        "expectedPath": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-        "finalPath": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+        "textSample": "Notifications\nDetails\nNotification\nSystem & Platform\nRead\nPage80 owned notification\n\n10/26/2026, 11:45:20 PM\n\nDisposable local notification\n\nDelete",
+        "requestedPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+        "expectedPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+        "finalPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": false,
@@ -662,7 +662,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Press Kit\nPress Kit (EPK)\n\nBuild and manage your professional Electronic Press Kit.\n\nPreview EPK\nView Live\nDownload PDF\nCopy EPK Link\nGeneral\nMedia\nLinks\nPerformance\nArtist Information\nEssential details about your musical project.\nArtist/Band Name\nGenres (comma separated)\nShort Pitch (One sentence)\nFull Biography\nContact Information\nGeneral Contact Email\nBooking Email\nOfficial Website URL\n\nPublic Visibility\n\nWhen on, your EPK is viewable via a public link.\n\nCustom URL Slug\nhttp://localhost:45675/epk/\n\nLowercase letters, numbers and hyphens only. Will be applied when you save.\n\nhttp://localhost",
+        "textSample": "Press Kit\nPress Kit (EPK)\n\nBuild and manage your professional Electronic Press Kit.\n\nPreview EPK\nView Live\nDownload PDF\nCopy EPK Link\nGeneral\nMedia\nLinks\nPerformance\nArtist Information\nEssential details about your musical project.\nArtist/Band Name\nGenres (comma separated)\nShort Pitch (One sentence)\nFull Biography\nContact Information\nGeneral Contact Email\nBooking Email\nOfficial Website URL\n\nPublic Visibility\n\nWhen on, your EPK is viewable via a public link.\n\nCustom URL Slug\nhttp://localhost:35753/epk/\n\nLowercase letters, numbers and hyphens only. Will be applied when you save.\n\nhttp://localhost",
         "requestedPath": "/press-kit",
         "expectedPath": "/press-kit",
         "finalPath": "/press-kit",
@@ -763,9 +763,9 @@ Report generated: 2026-10-25T15:20:21.151Z
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
         "textSample": "Admin\nSupport\nTickets\nDetails\nBack to tickets\nPage80 owned support ticket\nOpen\nMEDIUM\nDisposable local support fixture\nAdd\nConversation\n\nNo replies yet.\n\nSend reply",
-        "requestedPath": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-        "expectedPath": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-        "finalPath": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+        "requestedPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+        "expectedPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+        "finalPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": true,
@@ -776,7 +776,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Admin\nSupport\nOpen Tickets\n1\nIn Progress\n0\nAvg Response Time\n0h\nSatisfaction\n0%\nSupport Tickets\nView and manage customer support requests\nAll Status\nAll Priority\nSubject\tStatus\tPriority\tCategory\tCreated\tActions\nPage80 owned support ticket\tOPEN\tMEDIUM\tGeneral\t10/25/2026\t\nStart\nView",
+        "textSample": "Admin\nSupport\nOpen Tickets\n1\nIn Progress\n0\nAvg Response Time\n0h\nSatisfaction\n0%\nSupport Tickets\nView and manage customer support requests\nAll Status\nAll Priority\nSubject\tStatus\tPriority\tCategory\tCreated\tActions\nPage80 owned support ticket\tOPEN\tMEDIUM\tGeneral\t10/26/2026\t\nStart\nView",
         "requestedPath": "/admin/support",
         "expectedPath": "/admin/support",
         "finalPath": "/admin/support",
@@ -832,7 +832,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Admin\nDashboard\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n67%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nSystem Metrics\nCPU Usage\n0%\nMemory Usage\n74%\nDisk Usage\n46%\nNetwork I/O\nUnavailable\nUser Analytics\n\n3\n\nNew Users Today\n\n0\n\nTotal Revenue\n\nMonthly Growth\n+100%\nTop Countries\n\nNo data available\n\nRecent Activity\n\nNew user registered: workspace-d76a25644e6bcb8b@example.invalid\n\n",
+        "textSample": "Admin\nDashboard\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n60%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nSystem Metrics\nCPU Usage\n1%\nMemory Usage\n69%\nDisk Usage\n68%\nNetwork I/O\nUnavailable\nUser Analytics\n\n3\n\nNew Users Today\n\n0\n\nTotal Revenue\n\nMonthly Growth\n+100%\nTop Countries\n\nNo data available\n\nRecent Activity\n\nNew user registered: workspace-56644ee6cb42df03@example.invalid\n\n",
         "requestedPath": "/admin/dashboard",
         "expectedPath": "/admin/dashboard",
         "finalPath": "/admin/dashboard",
@@ -846,7 +846,7 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "normal-route-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": null,
-        "textSample": "Admin\nBeat Money Loop\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n68%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nBeat Money Loop\nPAUSED\nEnable\nRun cycle now\nAutonomous: scan trending music context → generate beat → list on the marketplace at a competitive price → optional organic promotion (MaxCore/PDIM, no paid spend) → wait for a completed marketplace order before marking the c",
+        "textSample": "Admin\nBeat Money Loop\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n60%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nBeat Money Loop\nPAUSED\nEnable\nRun cycle now\nAutonomous: scan trending music context → generate beat → list on the marketplace at a competitive price → optional organic promotion (MaxCore/PDIM, no paid spend) → wait for a completed marketplace order before marking the c",
         "requestedPath": "/admin/beat-money-loop",
         "expectedPath": "/admin/beat-money-loop",
         "finalPath": "/admin/beat-money-loop",
@@ -1213,9 +1213,9 @@ Report generated: 2026-10-25T15:20:21.151Z
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
         "textSample": "Skip to main content\n(Alt+1)\nPage80 public storefront\nFollow\nviews\n0\nlikes\n0\nfollowers\n0\nproducts\n0\nmembership tiers\nProducts\n\nNo products available yet",
-        "requestedPath": "/storefront/page80-store-43778f3f75bd",
-        "expectedPath": "/storefront/page80-store-43778f3f75bd",
-        "finalPath": "/storefront/page80-store-43778f3f75bd",
+        "requestedPath": "/storefront/page80-store-1510a0c1b097",
+        "expectedPath": "/storefront/page80-store-1510a0c1b097",
+        "finalPath": "/storefront/page80-store-1510a0c1b097",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": true,
@@ -1227,9 +1227,9 @@ Report generated: 2026-10-25T15:20:21.151Z
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
         "textSample": "Skip to main content\n(Alt+1)\nPage80 public storefront\nFollow\nviews\n0\nlikes\n0\nfollowers\n0\nproducts\n0\nmembership tiers\nProducts\n\nNo products available yet",
-        "requestedPath": "/store/page80-store-43778f3f75bd",
-        "expectedPath": "/store/page80-store-43778f3f75bd",
-        "finalPath": "/store/page80-store-43778f3f75bd",
+        "requestedPath": "/store/page80-store-1510a0c1b097",
+        "expectedPath": "/store/page80-store-1510a0c1b097",
+        "finalPath": "/store/page80-store-1510a0c1b097",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": true,
@@ -1254,10 +1254,10 @@ Report generated: 2026-10-25T15:20:21.151Z
         "scenario": "published-record-render",
         "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
         "expectedFixtureContentRendered": true,
-        "textSample": "Skip to main content\n(Alt+1)\n\nELECTRONIC PRESS KIT\n\nAcceptance artist 8374015f\nElectronic\n\nA saved browser press kit\n\nBiography\n\nDisposable artist biography saved through the actual browser form. Updated after the anonymous cache was populated.\n\nContact & Booking\n\nGENERAL\n\nartist@example.test\n\nBOOKING\n\nbooking@example.test\n\nWEBSITE\n\nexample.test\n\nPress kit powered by\n\nMax Booster",
-        "requestedPath": "/epk/acceptance-bfb09cddfa3be20d",
-        "expectedPath": "/epk/acceptance-bfb09cddfa3be20d",
-        "finalPath": "/epk/acceptance-bfb09cddfa3be20d",
+        "textSample": "Skip to main content\n(Alt+1)\n\nELECTRONIC PRESS KIT\n\nAcceptance artist f6566f98\nElectronic\n\nA saved browser press kit\n\nBiography\n\nDisposable artist biography saved through the actual browser form. Updated after the anonymous cache was populated.\n\nContact & Booking\n\nGENERAL\n\nartist@example.test\n\nBOOKING\n\nbooking@example.test\n\nWEBSITE\n\nexample.test\n\nPress kit powered by\n\nMax Booster",
+        "requestedPath": "/epk/acceptance-10228fc6eaf52524",
+        "expectedPath": "/epk/acceptance-10228fc6eaf52524",
+        "finalPath": "/epk/acceptance-10228fc6eaf52524",
         "hydrated": true,
         "crashed": false,
         "permissionOrEmptyState": false,
@@ -1313,12 +1313,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/auth/login",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/login",
-      "path": "/api/auth/me",
+      "path": "/api/auth/login",
       "status": 200
     },
     {
@@ -1338,22 +1338,27 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/login",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/login",
       "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -1364,6 +1369,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/login",
       "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/dashboard/comprehensive",
       "status": 200
     },
     {
@@ -1383,17 +1393,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/dashboard/comprehensive",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/ai/insights",
       "status": 503
     },
     {
       "route": "/login",
-      "path": "/api/analytics/dashboard",
+      "path": "/api/user/preferences",
       "status": 200
     },
     {
@@ -1403,17 +1408,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
+      "path": "/api/analytics/dashboard",
+      "status": 200
+    },
+    {
+      "route": "/login",
       "path": "/api/projects",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/user/preferences",
       "status": 200
     },
     {
@@ -1428,12 +1428,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/workspace/bff6c0fc-5454-41cf-ab92-90e6dbd03174",
+      "path": "/api/workspace/f710fab4-1eda-4f11-ba97-a91b41638089",
       "status": 200
     },
     {
       "route": "/login",
-      "path": "/api/workspace/bff6c0fc-5454-41cf-ab92-90e6dbd03174/members",
+      "path": "/api/workspace/f710fab4-1eda-4f11-ba97-a91b41638089/members",
       "status": 200
     },
     {
@@ -1448,22 +1448,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
       "route": "/login",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/login",
       "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -1489,6 +1489,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/login",
       "path": "/api/bootstrap",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -1508,11 +1513,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/version",
       "status": 200
     },
@@ -1538,12 +1538,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/version",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/login",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -1573,22 +1573,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/press-kit",
       "status": 200
     },
     {
@@ -1600,6 +1585,11 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/login",
       "path": "/api/version",
       "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/login",
@@ -1613,12 +1603,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/login",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -1638,12 +1623,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/login",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -1653,17 +1638,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/login",
       "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/login",
-      "path": "/api/press-kit",
       "status": 200
     },
     {
@@ -1673,12 +1648,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
+      "path": "/api/press-kit",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/login",
       "path": "/api/press-kit/publish",
       "status": 200
     },
     {
       "route": "/login",
-      "path": "/api/press-kit/public/acceptance-bfb09cddfa3be20d",
+      "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
       "status": 200
     },
     {
@@ -1688,7 +1673,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/press-kit/public/acceptance-bfb09cddfa3be20d",
+      "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
       "status": 200
     },
     {
@@ -1698,7 +1683,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/login",
-      "path": "/api/press-kit/public/acceptance-bfb09cddfa3be20d",
+      "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
       "status": 404
     },
     {
@@ -1723,13 +1708,18 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/dashboard",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/dashboard",
       "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/dashboard",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/heartbeat",
+      "status": 200
     },
     {
       "route": "/dashboard",
@@ -1739,21 +1729,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/dashboard",
       "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/dashboard",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/dashboard",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/dashboard",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -1768,17 +1743,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/dashboard",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/dashboard",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/dashboard",
       "path": "/api/auth/onboarding-status",
       "status": 200
     },
     {
       "route": "/dashboard",
       "path": "/api/dashboard/comprehensive",
-      "status": 200
-    },
-    {
-      "route": "/dashboard",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -1795,6 +1775,11 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/dashboard",
       "path": "/api/ai/insights",
       "status": 503
+    },
+    {
+      "route": "/dashboard",
+      "path": "/api/health",
+      "status": 200
     },
     {
       "route": "/dashboard",
@@ -1818,6 +1803,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/simplified-dashboard",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/simplified-dashboard",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -1828,17 +1818,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/simplified-dashboard",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/simplified-dashboard",
       "path": "/api/version",
       "status": 200
     },
     {
       "route": "/simplified-dashboard",
       "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/simplified-dashboard",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -1863,17 +1853,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/simplified-dashboard",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/simplified-dashboard",
       "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/simplified-dashboard",
-      "path": "/api/dashboard/comprehensive",
       "status": 200
     },
     {
@@ -1883,8 +1863,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/simplified-dashboard",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/simplified-dashboard",
+      "path": "/api/dashboard/comprehensive",
+      "status": 200
     },
     {
       "route": "/projects",
@@ -1898,18 +1883,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/projects",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/projects",
       "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/projects",
-      "path": "/api/auth/refresh-token",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/projects",
@@ -1938,17 +1918,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/projects",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/projects",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/projects",
-      "path": "/api/notifications",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
       "route": "/projects",
-      "path": "/api/notifications/preferences",
+      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -1959,11 +1944,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/projects",
       "path": "/api/projects",
-      "status": 200
-    },
-    {
-      "route": "/projects",
-      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -1973,6 +1953,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/projects",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/projects",
       "path": "/api/projects",
       "status": 200
     },
@@ -1988,37 +1973,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/analytics/ai",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/analytics/ai",
       "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/analytics/ai",
       "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/analytics/ai",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/analytics/ai",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/analytics/ai",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/analytics/ai",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2028,12 +1988,27 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/analytics/ai",
-      "path": "/api/bootstrap",
+      "path": "/api/version",
       "status": 200
     },
     {
       "route": "/analytics/ai",
-      "path": "/api/notifications",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/analytics/ai",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/analytics/ai",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/analytics/ai",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -2043,12 +2018,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/analytics/ai",
-      "path": "/api/auth/me",
+      "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/analytics/ai",
       "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/analytics/ai",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -2058,6 +2038,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/analytics/ai",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/analytics/ai",
       "path": "/api/projects",
       "status": 200
     },
@@ -2078,17 +2063,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/analytics",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/analytics",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/analytics",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2124,11 +2104,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/analytics",
       "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/analytics",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -2139,6 +2114,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/analytics",
       "path": "/api/analytics/dashboard/30d",
+      "status": 200
+    },
+    {
+      "route": "/analytics",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -2162,6 +2142,11 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
+      "route": "/analytics",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
       "route": "/developer-api",
       "path": "/api/version",
       "status": 200
@@ -2228,12 +2213,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/developer-api",
-      "path": "/api/developer/usage",
+      "path": "/api/developer/keys",
       "status": 200
     },
     {
       "route": "/developer-api",
-      "path": "/api/developer/keys",
+      "path": "/api/developer/usage",
       "status": 200
     },
     {
@@ -2245,11 +2230,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/social-media",
       "path": "/api/version",
       "status": 200
-    },
-    {
-      "route": "/social-media",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/social-media",
@@ -2283,17 +2263,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/social-media",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/social-media",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/social-media",
       "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/social-media",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2338,17 +2318,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/social-media",
-      "path": "/api/social/calendar",
-      "status": 200
-    },
-    {
-      "route": "/social-media",
       "path": "/api/social/weekly-stats",
       "status": 200
     },
     {
       "route": "/social-media",
+      "path": "/api/social/calendar",
+      "status": 200
+    },
+    {
+      "route": "/social-media",
       "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/social-media",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -2363,8 +2348,8 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/social-media",
-      "path": "/api/auth/me",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/social-media",
@@ -2383,13 +2368,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/advertising",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/me",
+      "status": 200
     },
     {
       "route": "/advertising",
-      "path": "/api/auth/me",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/advertising",
@@ -2418,12 +2403,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/advertising",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/advertising",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2438,11 +2423,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/advertising",
-      "path": "/api/onboarding/progress",
-      "status": 200
-    },
-    {
-      "route": "/advertising",
       "path": "/api/social/promotable-content",
       "status": 200
     },
@@ -2453,7 +2433,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/advertising",
-      "path": "/api/advertising/creative-fatigue",
+      "path": "/api/onboarding/progress",
       "status": 200
     },
     {
@@ -2463,17 +2443,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/advertising",
+      "path": "/api/advertising/creative-fatigue",
+      "status": 200
+    },
+    {
+      "route": "/advertising",
       "path": "/api/advertising/forecasts",
-      "status": 200
-    },
-    {
-      "route": "/advertising",
-      "path": "/api/advertising/competitor-insights",
-      "status": 200
-    },
-    {
-      "route": "/advertising",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -2484,6 +2459,16 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/advertising",
       "path": "/api/organic/recommendations",
+      "status": 200
+    },
+    {
+      "route": "/advertising",
+      "path": "/api/advertising/competitor-insights",
+      "status": 200
+    },
+    {
+      "route": "/advertising",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -2518,12 +2503,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/preferences",
+      "status": 200
     },
     {
       "route": "/marketplace",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2533,12 +2518,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/marketplace",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -2578,17 +2558,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace",
-      "path": "/api/marketplace/purchases",
-      "status": 200
-    },
-    {
-      "route": "/marketplace",
       "path": "/api/marketplace/sales-analytics",
       "status": 200
     },
     {
       "route": "/marketplace",
       "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/marketplace",
+      "path": "/api/marketplace/purchases",
       "status": 200
     },
     {
@@ -2603,18 +2583,28 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace",
-      "path": "/api/projects",
+      "path": "/api/studio/projects",
       "status": 200
     },
     {
       "route": "/marketplace",
-      "path": "/api/studio/projects",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/marketplace",
+      "path": "/api/projects",
       "status": 200
     },
     {
       "route": "/royalties",
       "path": "/api/version",
       "status": 200
+    },
+    {
+      "route": "/royalties",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/royalties",
@@ -2628,22 +2618,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/royalties",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/heartbeat",
+      "status": 200
     },
     {
       "route": "/royalties",
       "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -2653,17 +2633,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/royalties",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/royalties",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/royalties",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
       "path": "/api/bootstrap",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2683,6 +2668,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/royalties",
+      "path": "/api/royalties/payment-methods",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
       "path": "/api/royalties/top-tracks",
       "status": 200
     },
@@ -2693,42 +2683,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/royalties",
-      "path": "/api/royalties/payment-methods",
-      "status": 200
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/royalties/payout-settings",
-      "status": 200
-    },
-    {
-      "route": "/royalties",
       "path": "/api/royalties/splits",
       "status": 200
     },
     {
       "route": "/royalties",
-      "path": "/api/payouts/statements",
-      "status": 404
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/payouts/history",
-      "status": 404
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/payouts/disputes",
-      "status": 404
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/payouts/tax-forms",
-      "status": 404
-    },
-    {
-      "route": "/royalties",
-      "path": "/api/health",
+      "path": "/api/royalties/payout-settings",
       "status": 200
     },
     {
@@ -2742,103 +2702,128 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/studio/projects/22134813-8756-4476-b5e7-6b654a60a01d/daw-state",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/projects",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/projects",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/studio/projects/22134813-8756-4476-b5e7-6b654a60a01d",
-      "status": 200
-    },
-    {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
+      "route": "/royalties",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
+      "route": "/royalties",
+      "path": "/api/payouts/statements",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
+      "path": "/api/payouts/disputes",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
+      "path": "/api/payouts/tax-forms",
+      "status": 200
+    },
+    {
+      "route": "/royalties",
+      "path": "/api/payouts/history",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/studio/22134813-8756-4476-b5e7-6b654a60a01d",
-      "path": "/api/studio/projects/22134813-8756-4476-b5e7-6b654a60a01d/tracks",
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504/daw-state",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/bootstrap",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/notifications/preferences",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/projects",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/projects",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504/tracks",
+      "status": 200
+    },
+    {
+      "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -2863,7 +2848,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/studio",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2873,7 +2858,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/studio",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -2883,12 +2868,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/studio",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/studio",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -2923,12 +2908,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/studio",
-      "path": "/api/health",
+      "path": "/api/projects",
       "status": 200
     },
     {
       "route": "/studio",
-      "path": "/api/projects",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -2953,12 +2938,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/show",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/show",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -2993,12 +2978,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/show",
-      "path": "/api/notifications/preferences",
+      "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/show",
-      "path": "/api/notifications",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -3028,16 +3013,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/distribution",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/distribution",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/distribution",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
@@ -3048,17 +3023,27 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/distribution",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/distribution",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/distribution",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/distribution",
       "path": "/api/bootstrap",
+      "status": 200
+    },
+    {
+      "route": "/distribution",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3073,12 +3058,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/distribution",
-      "path": "/api/distribution/releases",
+      "path": "/api/distribution/hyperfollow",
       "status": 200
     },
     {
       "route": "/distribution",
-      "path": "/api/distribution/hyperfollow",
+      "path": "/api/distribution/releases",
       "status": 200
     },
     {
@@ -3128,17 +3113,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/subscribe/monthly",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/subscribe/monthly",
       "path": "/api/version",
       "status": 200
     },
     {
       "route": "/subscribe/monthly",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/subscribe/monthly",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -3148,7 +3133,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/subscribe/monthly",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -3167,77 +3152,77 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/preferences",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/support/my/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "status": 200
-    },
-    {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/support/my/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "status": 200
+    },
+    {
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/notifications/preferences",
       "status": 200
     },
     {
-      "route": "/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/health",
       "status": 200
     },
@@ -3258,12 +3243,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/settings",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/settings",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3283,12 +3268,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/settings",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/settings",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -3298,32 +3283,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/settings",
-      "path": "/api/auth/notifications",
-      "status": 200
-    },
-    {
-      "route": "/settings",
       "path": "/api/notifications/preferences",
       "status": 200
-    },
-    {
-      "route": "/settings",
-      "path": "/api/billing/subscription",
-      "status": 404
-    },
-    {
-      "route": "/settings",
-      "path": "/api/billing/payment-method",
-      "status": 404
     },
     {
       "route": "/settings",
       "path": "/api/auth/profile",
-      "status": 200
-    },
-    {
-      "route": "/settings",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -3333,22 +3298,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/settings",
-      "path": "/api/billing/history",
-      "status": 404
-    },
-    {
-      "route": "/settings",
-      "path": "/api/auth/me",
+      "path": "/api/auth/notifications",
       "status": 200
     },
     {
       "route": "/settings",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/billing/subscription",
+      "status": 200
     },
     {
       "route": "/settings",
-      "path": "/api/projects",
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/settings",
+      "path": "/api/billing/payment-method",
       "status": 200
     },
     {
@@ -3358,6 +3323,26 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/settings",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/settings",
+      "path": "/api/projects",
+      "status": 200
+    },
+    {
+      "route": "/settings",
+      "path": "/api/billing/history",
+      "status": 200
+    },
+    {
+      "route": "/settings",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/settings",
       "path": "/api/auth/update-onboarding",
       "status": 200
     },
@@ -3373,12 +3358,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/onboarding",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/onboarding",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
       "route": "/onboarding",
-      "path": "/api/auth/me",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -3394,11 +3384,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/onboarding",
       "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/onboarding",
-      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -3448,12 +3433,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/storefront",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/storefront",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
       "route": "/storefront",
-      "path": "/api/auth/me",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/storefront",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -3473,17 +3468,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/storefront",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/storefront",
       "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/storefront",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3513,16 +3498,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/verification",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/verification",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/verification",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
@@ -3538,12 +3513,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/verification",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/verification",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -3553,12 +3528,27 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/verification",
-      "path": "/api/notifications",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/verification",
       "path": "/api/notifications/preferences",
+      "status": 200
+    },
+    {
+      "route": "/verification",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/verification",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/verification",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -3567,11 +3557,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/verification",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
       "route": "/contracts",
       "path": "/api/version",
       "status": 200
@@ -3583,17 +3568,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/contracts",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/contracts",
       "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/contracts",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/contracts",
-      "path": "/api/version",
       "status": 200
     },
     {
@@ -3608,7 +3588,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/contracts",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/contracts",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -3623,17 +3608,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/contracts",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/contracts",
       "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/contracts",
       "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/contracts",
-      "path": "/api/contracts/templates",
       "status": 200
     },
     {
@@ -3648,13 +3633,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/contracts",
-      "path": "/api/health",
+      "path": "/api/contracts/templates",
       "status": 200
     },
     {
       "route": "/contracts",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/health",
+      "status": 200
     },
     {
       "route": "/workspaces",
@@ -3678,11 +3663,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workspaces",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/workspaces",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
@@ -3693,17 +3673,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workspaces",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/workspaces",
       "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/workspaces",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/workspaces",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3743,11 +3728,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/collaborations",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/collaborations",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -3758,17 +3738,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/collaborations",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/collaborations",
       "path": "/api/version",
       "status": 200
     },
     {
       "route": "/collaborations",
       "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/collaborations",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3818,6 +3798,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/collaborations",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/collaborations",
       "path": "/api/health",
       "status": 200
     },
@@ -3843,7 +3828,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/career-coach",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3858,7 +3843,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/career-coach",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -3874,21 +3859,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/career-coach",
       "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/career-coach",
-      "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/career-coach",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/career-coach",
-      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -3898,7 +3868,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/career-coach",
-      "path": "/api/career-coach/insights",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/career-coach",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -3908,6 +3883,16 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/career-coach",
+      "path": "/api/career-coach/insights",
+      "status": 200
+    },
+    {
+      "route": "/career-coach",
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/career-coach",
       "path": "/api/assistant/history",
       "status": 200
     },
@@ -3938,7 +3923,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/assistant",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -3948,7 +3933,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/assistant",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -3958,12 +3943,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/assistant",
-      "path": "/api/assistant/history",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/assistant",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/assistant/history",
       "status": 200
     },
     {
@@ -4008,6 +3993,16 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/release-countdown",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/release-countdown",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/release-countdown",
       "path": "/api/auth/preferences",
       "status": 200
     },
@@ -4028,27 +4023,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/release-countdown",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/release-countdown",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/release-countdown",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/release-countdown",
-      "path": "/api/notifications",
+      "path": "/api/health",
       "status": 200
     },
     {
       "route": "/release-countdown",
       "path": "/api/notifications/preferences",
+      "status": 200
+    },
+    {
+      "route": "/release-countdown",
+      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -4057,19 +4047,9 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/release-countdown",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
       "route": "/invoices",
       "path": "/api/version",
       "status": 200
-    },
-    {
-      "route": "/invoices",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/invoices",
@@ -4083,7 +4063,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/invoices",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -4093,7 +4073,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/invoices",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -4124,6 +4104,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/invoices",
       "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/invoices",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -4133,18 +4118,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/invoices",
-      "path": "/api/health",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/handle-link",
       "path": "/api/version",
       "status": 200
-    },
-    {
-      "route": "/handle-link",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/handle-link",
@@ -4163,17 +4143,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/handle-link",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/handle-link",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/handle-link",
       "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/handle-link",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4193,97 +4173,102 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/handle-link",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/handle-link",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/notifications",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/notifications/preferences",
       "status": 200
     },
     {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/notifications/6463623d-c00c-4959-9947-73e64137f45c/read",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "path": "/api/notifications/6463623d-c00c-4959-9947-73e64137f45c",
-      "status": 200
-    },
-    {
-      "route": "/notifications/6463623d-c00c-4959-9947-73e64137f45c",
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96/read",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+      "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
       "status": 200
     },
     {
@@ -4308,12 +4293,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/notifications",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/notifications",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4323,7 +4308,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/notifications",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -4368,17 +4353,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workflow-automations",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/workflow-automations",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
       "route": "/workflow-automations",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/me",
+      "status": 200
+    },
+    {
+      "route": "/workflow-automations",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -4388,7 +4373,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workflow-automations",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/workflow-automations",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4404,16 +4394,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/workflow-automations",
       "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/workflow-automations",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/workflow-automations",
-      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -4423,7 +4403,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workflow-automations",
-      "path": "/api/music-workflow-automations",
+      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -4433,6 +4413,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/workflow-automations",
+      "path": "/api/music-workflow-automations",
+      "status": 200
+    },
+    {
+      "route": "/workflow-automations",
       "path": "/api/health",
       "status": 200
     },
@@ -4448,17 +4433,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/shows",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/shows",
       "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/shows",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/shows",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4468,12 +4453,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/shows",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/shows",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -4494,11 +4479,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/shows",
       "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/shows",
-      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -4509,6 +4489,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/shows",
       "path": "/api/shows/stats",
+      "status": 200
+    },
+    {
+      "route": "/shows",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -4548,12 +4533,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-hub",
-      "path": "/api/version",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/fan-hub",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -4568,12 +4553,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-hub",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/fan-hub",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -4633,17 +4618,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-memberships",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/fan-memberships",
       "path": "/api/version",
       "status": 200
     },
     {
       "route": "/fan-memberships",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4663,6 +4643,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-memberships",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/fan-memberships",
       "path": "/api/notifications",
       "status": 200
     },
@@ -4673,17 +4658,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-memberships",
-      "path": "/api/fan-memberships/revenue",
-      "status": 200
-    },
-    {
-      "route": "/fan-memberships",
       "path": "/api/fan-memberships/tiers",
-      "status": 200
-    },
-    {
-      "route": "/fan-memberships",
-      "path": "/api/fan-memberships/members",
       "status": 200
     },
     {
@@ -4693,7 +4668,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/fan-memberships",
+      "path": "/api/fan-memberships/revenue",
+      "status": 200
+    },
+    {
+      "route": "/fan-memberships",
       "path": "/api/fan-memberships/wallet-config",
+      "status": 200
+    },
+    {
+      "route": "/fan-memberships",
+      "path": "/api/fan-memberships/members",
       "status": 200
     },
     {
@@ -4713,17 +4698,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/ar-intelligence",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/ar-intelligence",
       "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/ar-intelligence",
-      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -4738,6 +4713,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/ar-intelligence",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/ar-intelligence",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
@@ -4748,17 +4728,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/ar-intelligence",
-      "path": "/api/bootstrap",
-      "status": 200
-    },
-    {
-      "route": "/ar-intelligence",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/ar-intelligence",
-      "path": "/api/notifications",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -4768,7 +4743,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/ar-intelligence",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/ar-intelligence",
       "path": "/api/ar-intelligence/trend-forecast",
+      "status": 501
+    },
+    {
+      "route": "/ar-intelligence",
+      "path": "/api/ar-intelligence/release-timing",
       "status": 501
     },
     {
@@ -4783,18 +4768,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/ar-intelligence",
-      "path": "/api/ar-intelligence/release-timing",
-      "status": 501
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/outreach",
       "path": "/api/version",
       "status": 200
-    },
-    {
-      "route": "/outreach",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/outreach",
@@ -4808,17 +4788,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/outreach",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/outreach",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/outreach",
-      "path": "/api/version",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/outreach",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -4848,17 +4833,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/outreach",
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/outreach",
       "path": "/api/notifications/preferences",
       "status": 200
     },
     {
       "route": "/outreach",
       "path": "/api/outreach/campaigns",
-      "status": 200
-    },
-    {
-      "route": "/outreach",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -4878,6 +4863,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/merch",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/merch",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -4888,12 +4878,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/merch",
-      "path": "/api/version",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/merch",
-      "path": "/api/auth/preferences",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -4908,12 +4898,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/merch",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/merch",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -4924,11 +4914,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/merch",
       "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/merch",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -4948,8 +4933,8 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/merch",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/health",
+      "status": 200
     },
     {
       "route": "/press-kit",
@@ -4973,7 +4958,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/press-kit",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -4983,12 +4968,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/press-kit",
-      "path": "/api/version",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/press-kit",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -5053,11 +5038,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/playlist-pitching",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/playlist-pitching",
       "path": "/api/version",
       "status": 200
     },
@@ -5068,17 +5048,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/playlist-pitching",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/playlist-pitching",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/playlist-pitching",
-      "path": "/api/bootstrap",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/playlist-pitching",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/bootstrap",
       "status": 200
     },
     {
@@ -5093,12 +5078,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/playlist-pitching",
-      "path": "/api/playlist-pitching/curators",
+      "path": "/api/playlist-pitching",
       "status": 200
     },
     {
       "route": "/playlist-pitching",
-      "path": "/api/playlist-pitching",
+      "path": "/api/playlist-pitching/curators",
       "status": 200
     },
     {
@@ -5123,17 +5108,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/publishing",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/publishing",
       "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/publishing",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5144,6 +5119,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/publishing",
       "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/publishing",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5168,17 +5148,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/publishing",
-      "path": "/api/notifications",
-      "status": 200
-    },
-    {
-      "route": "/publishing",
-      "path": "/api/publishing",
-      "status": 200
-    },
-    {
-      "route": "/publishing",
       "path": "/api/notifications/preferences",
+      "status": 200
+    },
+    {
+      "route": "/publishing",
+      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -5188,8 +5163,18 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/publishing",
+      "path": "/api/publishing",
+      "status": 200
+    },
+    {
+      "route": "/publishing",
       "path": "/api/health",
       "status": 200
+    },
+    {
+      "route": "/publishing",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/sync-licensing",
@@ -5218,12 +5203,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/sync-licensing",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/sync-licensing",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5233,7 +5213,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/sync-licensing",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/sync-licensing",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5253,7 +5238,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/sync-licensing",
-      "path": "/api/notifications/preferences",
+      "path": "/api/sync-licensing/stats",
       "status": 200
     },
     {
@@ -5263,7 +5248,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/sync-licensing",
-      "path": "/api/sync-licensing/stats",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -5288,21 +5273,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/page80-unmatched",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/page80-unmatched",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/page80-unmatched",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/page80-unmatched",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
@@ -5318,13 +5288,28 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/page80-unmatched",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/page80-unmatched",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/page80-unmatched",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/page80-unmatched",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/page80-unmatched",
-      "path": "/api/auth/refresh-token",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/page80-unmatched",
@@ -5363,22 +5348,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/security",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/admin/security",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
       "route": "/admin/security",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/security",
-      "path": "/api/version",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -5388,7 +5363,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/security",
+      "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/admin/security",
       "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/admin/security",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/security",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5403,22 +5393,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/security",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/security",
       "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/admin/security",
       "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/admin/security",
-      "path": "/api/security/behavioral-alerts",
       "status": 200
     },
     {
@@ -5428,7 +5408,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/security",
-      "path": "/api/security/anomaly-detection",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -5438,7 +5418,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/security",
-      "path": "/api/health",
+      "path": "/api/security/behavioral-alerts",
+      "status": 200
+    },
+    {
+      "route": "/admin/security",
+      "path": "/api/security/anomaly-detection",
       "status": 200
     },
     {
@@ -5453,17 +5438,22 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/audit-log",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/admin/audit-log",
       "path": "/api/auth/me",
       "status": 200
     },
     {
       "route": "/admin/audit-log",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
       "route": "/admin/audit-log",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5473,17 +5463,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/audit-log",
+      "path": "/api/auth/preferences",
+      "status": 200
+    },
+    {
+      "route": "/admin/audit-log",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/audit-log",
       "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/admin/audit-log",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/audit-log",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5493,12 +5483,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/audit-log",
-      "path": "/api/notifications/preferences",
+      "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/admin/audit-log",
-      "path": "/api/notifications",
+      "path": "/api/notifications/preferences",
       "status": 200
     },
     {
@@ -5513,86 +5503,81 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/audit-log",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/admin/audit-log",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/preferences",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
-      "path": "/api/notifications",
-      "status": 200
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/notifications/preferences",
       "status": 200
     },
     {
-      "route": "/admin/support/tickets/f0ac139c-3557-43aa-b763-ee9995e9a825",
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+      "path": "/api/notifications",
+      "status": 200
+    },
+    {
+      "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
       "path": "/api/health",
       "status": 200
     },
@@ -5608,17 +5593,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/support",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/admin/support",
       "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/admin/support",
-      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5633,17 +5608,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/support",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/admin/support",
       "path": "/api/version",
       "status": 200
     },
     {
       "route": "/admin/support",
       "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/admin/support",
-      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5653,18 +5628,28 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/support",
-      "path": "/api/support/tickets/all",
-      "status": 200
-    },
-    {
-      "route": "/admin/support",
       "path": "/api/bootstrap",
       "status": 200
     },
     {
       "route": "/admin/support",
-      "path": "/api/notifications",
+      "path": "/api/auth/refresh-token",
       "status": 200
+    },
+    {
+      "route": "/admin/support",
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/admin/support",
+      "path": "/api/support/tickets/all",
+      "status": 200
+    },
+    {
+      "route": "/admin/support",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/admin/support",
@@ -5673,7 +5658,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/support",
-      "path": "/api/health",
+      "path": "/api/notifications",
       "status": 200
     },
     {
@@ -5688,12 +5673,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/kyc",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/me",
+      "status": 200
     },
     {
       "route": "/admin/kyc",
-      "path": "/api/auth/me",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5713,16 +5698,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/kyc",
-      "path": "/api/auth/heartbeat",
-      "status": 200
-    },
-    {
-      "route": "/admin/kyc",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/kyc",
       "path": "/api/auth/refresh-token",
       "status": 200
     },
@@ -5730,6 +5705,16 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/admin/kyc",
       "path": "/api/bootstrap",
       "status": 200
+    },
+    {
+      "route": "/admin/kyc",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/kyc",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/admin/kyc",
@@ -5758,17 +5743,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/training",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/admin/training",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/admin/training",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5778,7 +5758,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/training",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -5798,18 +5778,23 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/training",
-      "path": "/api/notifications/preferences",
+      "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/admin/training",
-      "path": "/api/notifications",
+      "path": "/api/health",
       "status": 200
     },
     {
       "route": "/admin/training",
       "path": "/api/training/status",
       "status": 503
+    },
+    {
+      "route": "/admin/training",
+      "path": "/api/notifications/preferences",
+      "status": 200
     },
     {
       "route": "/admin/training",
@@ -5823,18 +5808,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/training",
-      "path": "/api/health",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/admin/content-sampler",
       "path": "/api/version",
       "status": 200
-    },
-    {
-      "route": "/admin/content-sampler",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/admin/content-sampler",
@@ -5848,7 +5828,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/content-sampler",
-      "path": "/api/version",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/admin/content-sampler",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/content-sampler",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -5858,7 +5848,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/content-sampler",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/version",
       "status": 200
     },
     {
@@ -5878,17 +5868,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/content-sampler",
-      "path": "/api/auth/refresh-token",
-      "status": 200
-    },
-    {
-      "route": "/admin/content-sampler",
       "path": "/api/notifications",
       "status": 200
     },
     {
       "route": "/admin/content-sampler",
       "path": "/api/notifications/preferences",
+      "status": 200
+    },
+    {
+      "route": "/admin/content-sampler",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -5897,11 +5887,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/admin/content-sampler",
-      "path": "/api/health",
-      "status": 200
-    },
-    {
       "route": "/admin/dashboard",
       "path": "/api/version",
       "status": 200
@@ -5918,8 +5903,8 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/dashboard",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/version",
+      "status": 200
     },
     {
       "route": "/admin/dashboard",
@@ -5928,17 +5913,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/dashboard",
-      "path": "/api/auth/preferences",
-      "status": 200
-    },
-    {
-      "route": "/admin/dashboard",
-      "path": "/api/version",
-      "status": 200
-    },
-    {
-      "route": "/admin/dashboard",
       "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/dashboard",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
@@ -5964,21 +5944,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     {
       "route": "/admin/dashboard",
       "path": "/api/notifications/preferences",
-      "status": 200
-    },
-    {
-      "route": "/admin/dashboard",
-      "path": "/api/audit/results",
-      "status": 200
-    },
-    {
-      "route": "/admin/dashboard",
-      "path": "/api/admin/metrics",
-      "status": 200
-    },
-    {
-      "route": "/admin/dashboard",
-      "path": "/api/testing/results",
       "status": 200
     },
     {
@@ -5988,7 +5953,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/dashboard",
-      "path": "/api/admin/activity",
+      "path": "/api/admin/metrics",
+      "status": 200
+    },
+    {
+      "route": "/admin/dashboard",
+      "path": "/api/audit/results",
+      "status": 200
+    },
+    {
+      "route": "/admin/dashboard",
+      "path": "/api/testing/results",
       "status": 200
     },
     {
@@ -5998,7 +5973,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/dashboard",
-      "path": "/api/admin/system-health",
+      "path": "/api/admin/activity",
       "status": 200
     },
     {
@@ -6007,14 +5982,19 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/admin/beat-money-loop",
-      "path": "/api/version",
+      "route": "/admin/dashboard",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/admin/dashboard",
+      "path": "/api/admin/system-health",
       "status": 200
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/version",
+      "status": 200
     },
     {
       "route": "/admin/beat-money-loop",
@@ -6028,7 +6008,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -6038,12 +6018,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/preferences",
       "status": 200
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/auth/preferences",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -6078,7 +6058,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/audit/results",
+      "path": "/api/admin/metrics",
       "status": 200
     },
     {
@@ -6088,7 +6068,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/beat-money-loop",
-      "path": "/api/admin/metrics",
+      "path": "/api/audit/results",
+      "status": 200
+    },
+    {
+      "route": "/admin/beat-money-loop",
+      "path": "/api/health",
       "status": 200
     },
     {
@@ -6103,17 +6088,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/beat-money-loop",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/admin/beat-money-loop",
       "path": "/api/admin/system-health",
       "status": 200
     },
     {
       "route": "/admin/beat-money-loop",
       "path": "/api/admin/users",
-      "status": 200
-    },
-    {
-      "route": "/admin/beat-money-loop",
-      "path": "/api/health",
       "status": 200
     },
     {
@@ -6133,44 +6118,8 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/admin",
-      "path": "/api/auth/refresh-token",
-      "status": 429,
-      "retryAfter": "60"
-    },
-    {
-      "route": "/admin",
       "path": "/api/auth/heartbeat",
-      "status": 429,
-      "retryAfter": "60"
-    },
-    {
-      "route": "/admin",
-      "path": "/api/auth/preferences",
-      "status": 429,
-      "retryAfter": "60"
-    },
-    {
-      "route": "/admin",
-      "path": "/api/auth/refresh-token",
-      "status": 429,
-      "retryAfter": "60"
-    },
-    {
-      "route": "/admin",
-      "path": "/api/auth/heartbeat",
-      "status": 429,
-      "retryAfter": "60"
-    },
-    {
-      "route": "/admin",
-      "path": "/api/bootstrap",
-      "status": 429,
-      "retryAfter": "60"
+      "status": 200
     },
     {
       "route": "/admin",
@@ -6179,13 +6128,32 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin",
-      "path": "/api/admin/analytics",
-      "status": 429,
-      "retryAfter": "60"
+      "path": "/api/auth/preferences",
+      "status": 200
     },
     {
       "route": "/admin",
-      "path": "/api/admin/users",
+      "path": "/api/auth/heartbeat",
+      "status": 200
+    },
+    {
+      "route": "/admin",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin",
+      "path": "/api/bootstrap",
+      "status": 200
+    },
+    {
+      "route": "/admin",
+      "path": "/api/admin/analytics",
       "status": 429,
       "retryAfter": "60"
     },
@@ -6215,7 +6183,18 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin",
+      "path": "/api/admin/users",
+      "status": 200
+    },
+    {
+      "route": "/admin",
       "path": "/api/admin/payment-bypass/status",
+      "status": 429,
+      "retryAfter": "60"
+    },
+    {
+      "route": "/admin",
+      "path": "/api/metrics/web-vitals",
       "status": 429,
       "retryAfter": "60"
     },
@@ -6237,13 +6216,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/metrics/web-vitals",
+      "path": "/api/auth/me",
       "status": 429,
       "retryAfter": "60"
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/auth/me",
+      "path": "/api/metrics/web-vitals",
       "status": 429,
       "retryAfter": "60"
     },
@@ -6286,12 +6265,17 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
+      "path": "/api/auth/refresh-token",
+      "status": 200
+    },
+    {
+      "route": "/admin/autonomy",
       "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/auth/heartbeat",
       "status": 200
     },
     {
@@ -6301,7 +6285,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/auth/heartbeat",
+      "path": "/api/auth/refresh-token",
       "status": 200
     },
     {
@@ -6311,17 +6295,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/auth/refresh-token",
+      "path": "/api/dashboard/comprehensive",
       "status": 200
     },
     {
       "route": "/admin/autonomy",
       "path": "/api/auth/onboarding-status",
-      "status": 200
-    },
-    {
-      "route": "/admin/autonomy",
-      "path": "/api/dashboard/comprehensive",
       "status": 200
     },
     {
@@ -6336,11 +6315,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/auth/logout",
-      "status": 200
-    },
-    {
-      "route": "/admin/autonomy",
       "path": "/api/studio/projects",
       "status": 200
     },
@@ -6351,16 +6325,21 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/admin/autonomy",
-      "path": "/api/projects",
-      "status": 200
-    },
-    {
-      "route": "/admin/autonomy",
       "path": "/api/analytics/dashboard",
       "status": 200
     },
     {
       "route": "/admin/autonomy",
+      "path": "/api/projects",
+      "status": 200
+    },
+    {
+      "route": "/admin/autonomy",
+      "path": "/api/auth/logout",
+      "status": 200
+    },
+    {
+      "route": "/admin/autonomy",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6368,6 +6347,11 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/",
       "path": "/api/version",
       "status": 200
+    },
+    {
+      "route": "/",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/",
@@ -6386,11 +6370,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6436,13 +6415,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/forgot-password",
-      "path": "/api/auth/me",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/forgot-password",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/me",
+      "status": 200
     },
     {
       "route": "/forgot-password",
@@ -6546,6 +6525,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/register/success",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/register/success",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6558,11 +6542,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/register/success",
       "path": "/api/auth/me",
       "status": 200
-    },
-    {
-      "route": "/register/success",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/desktop-app",
@@ -6576,13 +6555,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/desktop-app",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/me",
+      "status": 200
     },
     {
       "route": "/desktop-app",
-      "path": "/api/auth/me",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/desktop-app",
@@ -6606,13 +6585,13 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace/beat/page80-missing",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/auth/me",
+      "status": 200
     },
     {
       "route": "/marketplace/beat/page80-missing",
-      "path": "/api/auth/me",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/marketplace/beat/page80-missing",
@@ -6626,7 +6605,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace/beat/page80-missing",
-      "path": "/api/auth/me",
+      "path": "/api/marketplace/beats",
       "status": 200
     },
     {
@@ -6636,7 +6615,7 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace/beat/page80-missing",
-      "path": "/api/marketplace/beats",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -6671,12 +6650,12 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/marketplace/producer/page80-missing",
-      "path": "/api/auth/me",
+      "path": "/api/marketplace/producers",
       "status": 200
     },
     {
       "route": "/marketplace/producer/page80-missing",
-      "path": "/api/marketplace/producers",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -6751,18 +6730,23 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/documentation",
-      "path": "/api/health",
-      "status": 200
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/documentation",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
+      "path": "/api/health",
+      "status": 200
     },
     {
       "route": "/about",
       "path": "/api/version",
       "status": 200
+    },
+    {
+      "route": "/about",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/about",
@@ -6778,11 +6762,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/about",
       "path": "/api/health",
       "status": 200
-    },
-    {
-      "route": "/about",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/blog",
@@ -6821,6 +6800,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/blog/welcome-to-max-booster",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/blog/welcome-to-max-booster",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6830,11 +6814,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/blog/welcome-to-max-booster",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
       "route": "/solo-founder-story",
       "path": "/api/version",
       "status": 200
@@ -6871,6 +6850,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/security",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/security",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6878,11 +6862,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/security",
       "path": "/api/health",
       "status": 200
-    },
-    {
-      "route": "/security",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     },
     {
       "route": "/dmca",
@@ -6896,11 +6875,6 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/dmca",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/dmca",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6908,6 +6882,11 @@ Report generated: 2026-10-25T15:20:21.151Z
       "route": "/dmca",
       "path": "/api/health",
       "status": 200
+    },
+    {
+      "route": "/dmca",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
     },
     {
       "route": "/terms",
@@ -6946,6 +6925,11 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/privacy",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/privacy",
       "path": "/api/auth/me",
       "status": 200
     },
@@ -6955,11 +6939,6 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/privacy",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
       "route": "/help",
       "path": "/api/version",
       "status": 200
@@ -6985,108 +6964,123 @@ Report generated: 2026-10-25T15:20:21.151Z
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
+      "route": "/storefront/page80-store-1510a0c1b097",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
+      "route": "/storefront/page80-store-1510a0c1b097",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/storefront/page80-store-1510a0c1b097",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
+      "route": "/storefront/page80-store-1510a0c1b097",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/storefront/public/page80-store-43778f3f75bd",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/storefront/public/page80-store-1510a0c1b097",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/membership-tiers/public",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/membership-tiers/public",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/bogo-promotions",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/listings",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/social",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/social",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/listings",
+      "route": "/storefront/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/bogo-promotions",
       "status": 200
     },
     {
-      "route": "/storefront/page80-store-43778f3f75bd",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/store/page80-store-43778f3f75bd",
+      "route": "/store/page80-store-1510a0c1b097",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
+      "route": "/store/page80-store-1510a0c1b097",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/store/page80-store-1510a0c1b097",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
+      "route": "/store/page80-store-1510a0c1b097",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/storefront/public/page80-store-43778f3f75bd",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/storefront/public/page80-store-1510a0c1b097",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/listings",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/membership-tiers/public",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/bogo-promotions",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/bogo-promotions",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/social",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/listings",
       "status": 200
     },
     {
-      "route": "/store/page80-store-43778f3f75bd",
-      "path": "/api/storefront/aba7588c-4462-4e53-9b14-ef9517197d45/membership-tiers/public",
+      "route": "/store/page80-store-1510a0c1b097",
+      "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/social",
       "status": 200
     },
     {
       "route": "/s/page80-missing",
       "path": "/api/version",
+      "status": 200
+    },
+    {
+      "route": "/s/page80-missing",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/s/page80-missing",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/s/page80-missing",
+      "path": "/api/auth/me",
       "status": 200
     },
     {
@@ -7096,85 +7090,102 @@ Report generated: 2026-10-25T15:20:21.151Z
     },
     {
       "route": "/s/page80-missing",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/s/page80-missing",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
-    },
-    {
-      "route": "/s/page80-missing",
-      "path": "/api/auth/me",
-      "status": 200
-    },
-    {
-      "route": "/s/page80-missing",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
-      "path": "/api/press-kit/public/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
+      "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/version",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/metrics/web-vitals",
       "status": 204
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/auth/me",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
+      "path": "/api/metrics/web-vitals",
+      "status": 204
+    },
+    {
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/health",
       "status": 200
     },
     {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
+      "route": "/epk/acceptance-10228fc6eaf52524",
       "path": "/api/auth/me",
       "status": 200
-    },
-    {
-      "route": "/epk/acceptance-bfb09cddfa3be20d",
-      "path": "/api/metrics/web-vitals",
-      "status": 204
     }
-  ]
+  ],
+  "lastReadinessObservation": {
+    "status": 503,
+    "aggregate": "degraded",
+    "unifiedAwarenessReady": false,
+    "subsystems": [
+      {
+        "name": "database",
+        "status": "ok"
+      },
+      {
+        "name": "redis",
+        "status": "ok"
+      },
+      {
+        "name": "routes",
+        "status": "ok"
+      },
+      {
+        "name": "audit",
+        "status": "unknown"
+      },
+      {
+        "name": "automation",
+        "status": "ok"
+      },
+      {
+        "name": "maxcore",
+        "status": "unknown"
+      }
+    ],
+    "routeRegistrationDetail": "critical routes registered; route loading complete"
+  }
 }
 ```
 

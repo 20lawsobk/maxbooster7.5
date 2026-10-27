@@ -26,19 +26,27 @@ python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --
 
 Use `--python /path/to/python` to select another prepared interpreter, `--workers 1` to run serially, or `--timeout 180` to change the per-file timeout. The default is two workers and 120 seconds per file. A selected run writes only its selected suites; use a fresh output directory to preserve earlier reports.
 
+Add `--coverage` to measure first-party Python statements and branches with coverage.py. It is optional for this scoped runner and enabled by the master platform runner. The selected interpreter must contain `coverage>=7.13,<8`; a missing instrumentation dependency blocks the run with a nonzero exit rather than silently falling back to an uninstrumented run.
+
+```sh
+python3 scripts/testing/run-python-suites.py --coverage --file tests/test_secure_http.py --output /tmp/maxbooster-python-coverage
+```
+
 The runner creates a fresh interpreter, HOME and private model-state directory for each file, removes inherited application credentials, and allows only ephemeral loopback fixture connections. Fixed application ports and external network connections are refused. Each test process group is cleaned up, including after timeouts. The tool never starts training against live public/private records; small in-memory/disposable training fixtures exercise optimizer and checkpoint contracts.
 
 ## Read the results
 
 `results.json` records the exact source digest, command, case descriptions, duration, exit code and status for every file. Each executed pytest file also has JUnit XML and a sanitized `.txt` console log. A direct assertion script such as fsspec has a log but no fabricated JUnit case count.
 
+With `--coverage`, `coverage.json` contains standard coverage.py file-level executed/missing lines, executed/missing branches, function summaries and totals; `results.json.coverage` records the instrumentation version, source roots, omitted test/vendor paths and export exit codes. Each run uses a new temporary data directory, combines only its own measurements, exports JSON and removes the SQLite caches. It never merges old runs to inflate coverage. The JSON also binds measured source and selected test-file hashes. A selected-file run measures only that selected scope. Coverage-export success is not a claim that every line/branch or business journey was exercised; canonical source not reached remains visible. Dynamically compiled AST functions and uninstrumented child processes may not map to their original source lines. Nonexistent non-Python runtime labels such as `job-update` are retained with their measured lines/arcs in `coverage.unmappedDynamicFiles` and `coverage.json.maxbooster.unmappedDynamicFiles`; they are not credited to a canonical source file. Missing `.py`, `.pyw`, `.pyi` or `.pyx` source remains a hard export failure. No `ignore_errors` or blanket reporter exclusions are used. A prior failed dynamic-source export is retained under `coverage-diagnostics/` when the output directory is reused.
+
 A passing file may contain skipped cases; skips are counted separately. Blocked live/operational tools and helper modules are inventoried but never counted as passes. The runner exits nonzero for any failed, timed-out or unexpectedly empty executable suite. Its zero exit is a statement about the executed subset, not a claim that blocked journeys or production readiness passed.
 
 ## Recorded run
 
-- Source baseline: `f571666292938651db15f56ffa3d7d4ab75b4305`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 9, "passed": 93, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1138; failures: 31; errors: 0; skipped: 12.
+- Source baseline: `4c72114a55a9425d4af743a72a71e4c58a532d2f`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 106, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1225; failures: 0; errors: 0; skipped: 12.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -49,7 +57,7 @@ The wrapper commands below reproduce the same isolated per-file execution. For b
 
 Fast evaluator-contract tests: no model import or inference.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file evaluations/maxcore-quality/test_protocol.py --output /tmp/maxbooster-python-single
@@ -71,7 +79,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the Conductor (audio_analysis). Run:
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py --output /tmp/maxbooster-python-single
@@ -95,7 +103,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test controls
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_controls.py --output /tmp/maxbooster-python-single
@@ -117,7 +125,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Real backend execution and decodes, not facade-call mocks.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_media_facade.py --output /tmp/maxbooster-python-single
@@ -143,7 +151,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Short soundtrack planning regression; does not run native synthesis.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/audio/test_short_duration.py --output /tmp/maxbooster-python-single
@@ -164,7 +172,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Isolated fixtures only; never accesses production PDIM or live network.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_engine.py --output /tmp/maxbooster-python-single
@@ -208,7 +216,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 26}.
 
 Real Lua/Redis atomicity tests in an isolated temporary Unix-socket Redis.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_lease.py --output /tmp/maxbooster-python-single
@@ -232,7 +240,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test sources
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /tmp/maxbooster-python-single
@@ -268,7 +276,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 test director
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py --output /tmp/maxbooster-python-single
@@ -300,7 +308,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 Campaign generation must not substitute the retired template composer.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/generation/test_campaign.py --output /tmp/maxbooster-python-single
@@ -320,7 +328,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 Tests for the native SIMD kernel library.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py --output /tmp/maxbooster-python-single
@@ -353,7 +361,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Tests for the DigitalGPUBackend bridge methods: alloc/free/run_kernel.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py --output /tmp/maxbooster-python-single
@@ -379,7 +387,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Comprehensive tests for the digital GPU system.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py --output /tmp/maxbooster-python-single
@@ -534,7 +542,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 137}.
 
 Regression tests for the redesigned HyperSIMDCore kernels.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py --output /tmp/maxbooster-python-single
@@ -557,7 +565,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Real small-kernel/inference checks; no checkpoints or training involved.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py --output /tmp/maxbooster-python-single
@@ -593,7 +601,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 1, "tests": 18}.
 
 Tests for the digital-silicon performance model and its wiring.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py --output /tmp/maxbooster-python-single
@@ -619,7 +627,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 test controls
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py --output /tmp/maxbooster-python-single
@@ -641,7 +649,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Lightweight regression checks: no model inference or GPU needed.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/image/test_image_contract.py --output /tmp/maxbooster-python-single
@@ -663,7 +671,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the honest backend auto-selector (registry.select_backend).
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/backend/tests/test_select_backend.py --output /tmp/maxbooster-python-single
@@ -729,7 +737,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the from-scratch memory (VramPool) and orchestration (StreamScheduler) layers, and their integration into Runtime/DigitalGPU.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_gpu_native_orchestration.py --output /tmp/maxbooster-python-single
@@ -770,7 +778,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 Tests for the runtime thread/hardware configuration.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_hardware.py --output /tmp/maxbooster-python-single
@@ -795,7 +803,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Tests for the MaxCore / DigitalGPU stack.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_maxcore.py --output /tmp/maxbooster-python-single
@@ -844,7 +852,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 31}.
 
 Tests for the precision/quantization numerics reference.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_precision.py --output /tmp/maxbooster-python-single
@@ -868,7 +876,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Tests for resource_plan.py — the CPU/memory/tile-size planning layer.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_resource_plan.py --output /tmp/maxbooster-python-single
@@ -901,7 +909,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Correctness tests: SiliconSimtBackend vs. the reference DigitalGPUBackend / NumPy.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/test_silicon_simt_backend.py --output /tmp/maxbooster-python-single
@@ -937,7 +945,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Small, checkpoint-free regressions for the live generation contracts.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_generation_regressions.py --output /tmp/maxbooster-python-single
@@ -967,7 +975,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Focused request-local replay tests; tiny deterministic logits, no checkpoints.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampling_context.py --output /tmp/maxbooster-python-single
@@ -992,7 +1000,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 test text
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_text.py --output /tmp/maxbooster-python-single
@@ -1015,7 +1023,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 test website
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/native_analysis/test_website.py --output /tmp/maxbooster-python-single
@@ -1038,7 +1046,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Tests for Phase 4 — brand identity centroid, embedding cache, seeded-render dedupe, and the generated-asset ingestor.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py --output /tmp/maxbooster-python-single
@@ -1066,7 +1074,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 Tests for the retrieval real-asset pipeline (image features + anchor/seed library + gap ingestion). Renders REAL images via the in-house ImageEngine, so it is a slower integration test than test_retrieval.py.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py --output /tmp/maxbooster-python-single
@@ -1092,7 +1100,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Tests for the live RCGS query path: the probe ring buffer, retrieval-conditioned background compositing, and the CoverageWatchdog's context-carrying probe handling.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py --output /tmp/maxbooster-python-single
@@ -1114,7 +1122,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Tests for the retrieval spine (AssetIndex) and the self-healing CoverageWatchdog.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py --output /tmp/maxbooster-python-single
@@ -1145,7 +1153,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 Regression tests for the RTA-1 fabric's strict correctness contracts.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py --output /tmp/maxbooster-python-single
@@ -1166,7 +1174,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Mandatory-awareness compatibility tests; replaces obsolete retirement tests.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py --output /tmp/maxbooster-python-single
@@ -1188,7 +1196,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 test ranker upgrades
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py --output /tmp/maxbooster-python-single
@@ -1219,7 +1227,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 test request intelligence trends
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py --output /tmp/maxbooster-python-single
@@ -1243,7 +1251,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test candidate
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate.py --output /tmp/maxbooster-python-single
@@ -1270,7 +1278,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 Real bounded runtime evidence tests, NOT synthetic quality-approval fixtures.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_generic.py --output /tmp/maxbooster-python-single
@@ -1290,7 +1298,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 test candidate manual
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_candidate_manual.py --output /tmp/maxbooster-python-single
@@ -1311,7 +1319,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Contract tests cover rolling live-source admission and candidate isolation.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_live_learning.py --output /tmp/maxbooster-python-single
@@ -1342,7 +1350,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 test public content model
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/training/test_public_content_model.py --output /tmp/maxbooster-python-single
@@ -1364,7 +1372,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 test controls
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_controls.py --output /tmp/maxbooster-python-single
@@ -1384,7 +1392,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 Cheap duration/transition regression checks; no model or video inference.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_duration_contract.py --output /tmp/maxbooster-python-single
@@ -1407,7 +1415,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 test sampler upgrades
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/video/test_sampler_upgrades.py --output /tmp/maxbooster-python-single
@@ -1435,7 +1443,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 test admin content loop
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_admin_content_loop.py --output /tmp/maxbooster-python-single
@@ -1466,7 +1474,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Real encoded file checks; isolated receipt transport exercises retry semantics.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_artifact_delivery_contract.py --output /tmp/maxbooster-python-single
@@ -1492,7 +1500,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Focused integration checks for audio dataset auto-growth.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_auto_growth.py --output /tmp/maxbooster-python-single
@@ -1517,7 +1525,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 Audio BPM/key match validation — end-to-end + unit tests.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_bpm_key_match.py --output /tmp/maxbooster-python-single
@@ -1565,7 +1573,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 5, "tests": 30}.
 
 Tests for the audio-generation seeding guard.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_audio_seeding_guard.py --output /tmp/maxbooster-python-single
@@ -1591,7 +1599,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Selection policy; real signatures and artifact verification covered by integration.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection.py --output /tmp/maxbooster-python-single
@@ -1614,19 +1622,20 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 Selector scheduling/cache checks; capability itself keeps real-agent guards.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `SelectionScalingTests.test_newest_beyond_first_hundred_and_peak_only`: newest beyond first hundred and peak only
 - `SelectionScalingTests.test_two_new_probes_per_tick_and_cached_failures_progress`: two new probes per tick and cached failures progress
+- `SelectionScalingTests.test_fresh_scans_do_not_starve_older_capable_candidate`: fresh scans do not starve older capable candidate
 - `SelectionScalingTests.test_cache_binds_checkpoint_report_certificate_configuration_budget`: cache binds checkpoint report certificate configuration budget
 - `SelectionScalingTests.test_requested_peak_never_falls_back_to_reviewed_selection`: requested peak never falls back to reviewed selection
 - `SelectionScalingTests.test_operational_cache_is_scoped_to_the_actual_live_scan`: operational cache is scoped to the actual live scan
@@ -1696,7 +1705,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Tests for the expanded AwarenessConditioner vocab.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py --output /tmp/maxbooster-python-single
@@ -1743,7 +1752,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 Beat-marketplace conditioning — regression guards.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py --output /tmp/maxbooster-python-single
@@ -1764,20 +1773,29 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 ### `external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py`
 
-Campaign slots must remain complete without asserting unverified outcomes.
+Real rollout assembly with a controlled inference boundary and public scan.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 1}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `test_unverified_release_keeps_all_slots_without_invented_milestones`: unverified release keeps all slots without invented milestones
+- `test_multiplatform_campaign_keeps_normalized_names_and_actual_sections`: multiplatform campaign keeps normalized names and actual sections
+- `test_backend_provenance_failure_never_substitutes_complete_template`: backend provenance failure never substitutes complete template
+- `test_backend_exception_aborts_whole_campaign_without_leaking_plan`: backend exception aborts whole campaign without leaking plan
+- `test_unverified_metrics_links_and_marketing_claims_fail_explicitly`: unverified metrics links and marketing claims fail explicitly
+- `test_invalid_campaign_controls_fail_before_any_backend_call`: invalid campaign controls fail before any backend call
+- `test_failed_optional_asset_is_explicit_without_inventing_delivery`: failed optional asset is explicit without inventing delivery
+- `test_actual_script_agent_runs_under_unique_slot_plans_and_one_public_scan`: actual script agent runs under unique slot plans and one public scan
+- `test_specification_or_unsafe_asset_identifiers_never_count_as_generated_images`: specification or unsafe asset identifiers never count as generated images
+- `test_expired_inherited_budget_blocks_inference_and_preserves_context`: expired inherited budget blocks inference and preserves context
 
 </details>
 
@@ -1785,7 +1803,7 @@ JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 1}.
 
 test checkpoint release
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py --output /tmp/maxbooster-python-single
@@ -1857,15 +1875,15 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 ### `external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py`
 
-Handler-level routing contracts; no checkpoint or media inference.
+Handler/legacy body contracts, distinct from real media route admission.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 11, "skipped": 0, "tests": 22}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 23}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1885,11 +1903,12 @@ JUnit: {"errors": 0, "failures": 11, "skipped": 0, "tests": 22}.
 - `test_api_content_rejects_cached_fake_score`: api content rejects cached fake score
 - `test_api_text_rejects_legacy_cached_score`: api text rejects legacy cached score
 - `test_api_content_fresh_copy_is_model_text_without_fake_scores`: api content fresh copy is model text without fake scores
-- `test_alias_media_endpoints_mark_asset_identifiers_as_specs`: alias media endpoints mark asset identifiers as specs
+- `test_alias_media_bodies_mark_asset_identifiers_as_specs`: alias media bodies mark asset identifiers as specs
+- `test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs`: unavailable model media routes never enter legacy render or create jobs
 - `test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool`: audio explicit direction reaches synth and avoids genre pool
 - `test_audio_synth_receives_actual_instrument_and_prompt`: audio synth receives actual instrument and prompt
-- `test_audio_reference_mode_rejects_unfulfillable_piano_direction`: audio reference mode rejects unfulfillable piano direction
-- `test_audio_handler_caller_mood_and_targets_beat_fast_priors`: audio handler caller mood and targets beat fast priors
+- `test_audio_reference_body_rejects_unfulfillable_piano_direction`: audio reference body rejects unfulfillable piano direction
+- `test_audio_internal_body_caller_mood_and_targets_beat_fast_priors`: audio internal body caller mood and targets beat fast priors
 - `test_daw_and_social_model_failures_are_service_unavailable`: daw and social model failures are service unavailable
 
 </details>
@@ -1898,7 +1917,7 @@ JUnit: {"errors": 0, "failures": 11, "skipped": 0, "tests": 22}.
 
 Real procedural artifacts through actual ASGI admission and private delivery.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py --output /tmp/maxbooster-python-single
@@ -1924,7 +1943,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Regression guard: get_diffusion_frame must denoise at native resolution.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py --output /tmp/maxbooster-python-single
@@ -1945,13 +1964,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Offline stack contracts: no server startup, storage, weights, or training.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_documented_stack_restore.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 20}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 20}.
 
 <details>
 <summary>What each case checks</summary>
@@ -1977,7 +1996,7 @@ JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 20}.
 
 Operational admission executes real agent guards without training fixtures.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_capability.py --output /tmp/maxbooster-python-single
@@ -2000,7 +2019,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 Real WAV commit validation; synthetic awareness and renderer fixtures, no quality claim.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_durable_delivery.py --output /tmp/maxbooster-python-single
@@ -2027,7 +2046,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 
 Offline handler-contract tests. No server startup, media render or weight access.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_plan_contract.py --output /tmp/maxbooster-python-single
@@ -2057,7 +2076,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Startup selection tests, with no model initialization/training or server start.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_release_selection.py --output /tmp/maxbooster-python-single
@@ -2083,7 +2102,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 8}.
 
 Exercise registered startup handlers with isolated on-disk production journals.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_restart_reconciliation.py --output /tmp/maxbooster-python-single
@@ -2109,7 +2128,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 Exercise production gates without importing server's background daemons.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_route_bindings.py --output /tmp/maxbooster-python-single
@@ -2144,7 +2163,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 17}.
 
 Focused immutable plan and fail-closed binding regressions.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_generation_snapshot_contract.py --output /tmp/maxbooster-python-single
@@ -2168,7 +2187,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Incremental v2 inference must preserve full causal computation, not its tape.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_incremental_candidate_inference.py --output /tmp/maxbooster-python-single
@@ -2192,7 +2211,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 test intent url reader safe http
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_intent_url_reader_safe_http.py --output /tmp/maxbooster-python-single
@@ -2212,7 +2231,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 Tiny fake native functions exercise real process isolation, never rendering.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_isolated_audio.py --output /tmp/maxbooster-python-single
@@ -2236,7 +2255,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Real ASGI planner requests without server startup, weights or provider calls.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_awareness_planner_http.py --output /tmp/maxbooster-python-single
@@ -2260,13 +2279,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 test live serving
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 16}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2276,6 +2295,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 - `LiveServingTests.test_restart_and_timestamp_only_refresh_do_not_retrain_same_content`: restart and timestamp only refresh do not retrain same content
 - `LiveServingTests.test_restart_reports_retained_candidate_while_cooling_down`: restart reports retained candidate while cooling down
 - `LiveServingTests.test_interrupted_attempt_cannot_be_reported_as_success_after_restart`: interrupted attempt cannot be reported as success after restart
+- `LiveServingTests.test_blocked_training_rights_remains_honest_across_restart_and_cooldown`: blocked training rights remains honest across restart and cooldown
 - `LiveServingTests.test_failed_worker_keeps_durable_cooldown_and_retries_later`: failed worker keeps durable cooldown and retries later
 - `LiveServingTests.test_bad_selected_update_retains_the_previous_verified_model`: bad selected update retains the previous verified model
 - `LiveServingTests.test_observation_failure_does_not_stop_loading_reviewed_releases`: observation failure does not stop loading reviewed releases
@@ -2293,7 +2313,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 15}.
 
 Real training and cryptographic selection in a disposable test-only registry.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py --output /tmp/maxbooster-python-single
@@ -2313,7 +2333,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Private local PDIM transport contracts; no real service or SQLite opened.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_local_canonical_storage.py --output /tmp/maxbooster-python-single
@@ -2335,7 +2355,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 
 Isolated tests: no server startup, model loading, network, or live data.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py --output /tmp/maxbooster-python-single
@@ -2374,7 +2394,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 21}.
 
 test media learning
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py --output /tmp/maxbooster-python-single
@@ -2403,7 +2423,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 24}.
 
 test native analysis api
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py --output /tmp/maxbooster-python-single
@@ -2427,7 +2447,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 test native analysis safe http
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py --output /tmp/maxbooster-python-single
@@ -2450,13 +2470,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 14}.
 
 Regression coverage for awareness at native MaxCore consumer seams.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_awareness_cascade.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 10, "skipped": 0, "tests": 13}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2471,7 +2491,7 @@ JUnit: {"errors": 0, "failures": 10, "skipped": 0, "tests": 13}.
 - `test_distribution_agent_receives_effective_awareness`: distribution agent receives effective awareness
 - `test_audio_job_identity_contains_effective_awareness`: audio job identity contains effective awareness
 - `test_platform_video_coalescer_uses_consumed_awareness`: platform video coalescer uses consumed awareness
-- `test_campaign_post_composer_adds_slot_platform_awareness`: campaign post composer adds slot platform awareness
+- `test_campaign_script_backend_receives_canonical_slot_and_caller_awareness`: campaign script backend receives canonical slot and caller awareness
 
 </details>
 
@@ -2479,7 +2499,7 @@ JUnit: {"errors": 0, "failures": 10, "skipped": 0, "tests": 13}.
 
 test native media analysis
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py --output /tmp/maxbooster-python-single
@@ -2500,13 +2520,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Offline, lightweight contract tests for the original quality runner.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 9}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 9}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2522,7 +2542,7 @@ JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 9}.
 
 test platform awareness wiring
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py --output /tmp/maxbooster-python-single
@@ -2542,7 +2562,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 test public fetch proxy
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_fetch_proxy.py --output /tmp/maxbooster-python-single
@@ -2565,18 +2585,22 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Actual bounded public-content training; fixtures never claim model quality.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_public_peak_curriculum.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 7}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 11}.
 
 <details>
 <summary>What each case checks</summary>
 
 - `PublicPeakCurriculumTests.test_real_isolated_v2_updates_resume_weights_optimizer_and_cursor`: real isolated v2 updates resume weights optimizer and cursor
+- `PublicPeakCurriculumTests.test_unknown_rights_peak_posts_block_before_worker_and_preserve_awareness`: unknown rights peak posts block before worker and preserve awareness
+- `PublicPeakCurriculumTests.test_legacy_mode_cannot_train_unknown_rights_raw_peak_posts`: legacy mode cannot train unknown rights raw peak posts
+- `PublicPeakCurriculumTests.test_peak_training_rights_never_infer_license_from_public_metadata`: peak training rights never infer license from public metadata
+- `PublicPeakCurriculumTests.test_explicit_owned_licensed_manifest_still_trains_real_weights`: explicit owned licensed manifest still trains real weights
 - `PublicPeakCurriculumTests.test_stage_supervision_preserves_exact_words_and_requires_real_cta`: stage supervision preserves exact words and requires real cta
 - `PublicPeakCurriculumTests.test_bootstrap_replays_fresh_content_with_durable_budget_then_changed_only`: bootstrap replays fresh content with durable budget then changed only
 - `PublicPeakCurriculumTests.test_missing_peak_content_never_falls_back_to_context`: missing peak content never falls back to context
@@ -2590,7 +2614,7 @@ JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 7}.
 
 test safe feed xml
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_safe_feed_xml.py --output /tmp/maxbooster-python-single
@@ -2611,7 +2635,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Focused regression tests for runtime SAST remediations.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_sast_runtime_remediation.py --output /tmp/maxbooster-python-single
@@ -2635,7 +2659,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 Model admission belongs to executing work, not queued callers or caches.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_scoped_batch_admission.py --output /tmp/maxbooster-python-single
@@ -2656,7 +2680,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 Token-unit boundary tests; no generated prose fixtures or fallback output.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_script_byte_budget.py --output /tmp/maxbooster-python-single
@@ -2688,7 +2712,7 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Social + advertising quality beacon — regression guards.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_ad_beacon.py --output /tmp/maxbooster-python-single
@@ -2709,7 +2733,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test social generation controls
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_social_generation_controls.py --output /tmp/maxbooster-python-single
@@ -2732,11 +2756,42 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 12}.
 
 </details>
 
+### `external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py`
+
+Operator receipts bind test-authored posts; no source permissions are inferred.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_text_training_rights.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 37}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `TextTrainingRightsTests.test_exact_operator_grants_attach_bound_receipts_without_relabeling_awareness`: exact operator grants attach bound receipts without relabeling awareness
+- `TextTrainingRightsTests.test_missing_either_operator_configuration_value_cannot_grant_permission`: missing either operator configuration value cannot grant permission
+- `TextTrainingRightsTests.test_receipts_supplied_as_record_metadata_are_not_operator_configuration`: receipts supplied as record metadata are not operator configuration
+- `TextTrainingRightsTests.test_manifest_and_evidence_mutations_fail_closed`: manifest and evidence mutations fail closed
+- `TextTrainingRightsTests.test_source_domain_citation_and_complete_text_must_match`: source domain citation and complete text must match
+- `TextTrainingRightsTests.test_permission_license_purpose_and_dated_evidence_are_required`: permission license purpose and dated evidence are required
+- `TextTrainingRightsTests.test_invalid_batches_never_partially_attach_receipts`: invalid batches never partially attach receipts
+- `TextTrainingRightsTests.test_duplicate_grants_and_oversized_manifest_are_refused`: duplicate grants and oversized manifest are refused
+- `TextTrainingRightsTests.test_ambiguous_or_excessively_nested_json_fails_closed`: ambiguous or excessively nested json fails closed
+- `TextTrainingRightsTests.test_evidence_cannot_escape_local_directory_or_use_symlinks`: evidence cannot escape local directory or use symlinks
+- `TextTrainingRightsTests.test_symlink_directories_and_writable_evidence_are_refused`: symlink directories and writable evidence are refused
+- `TextTrainingRightsTests.test_private_record_is_not_licensed_by_a_matching_public_receipt`: private record is not licensed by a matching public receipt
+- `TextTrainingRightsTests.test_admission_persists_receipts_in_hash_bound_input_without_running_trainer`: admission persists receipts in hash bound input without running trainer
+
+</details>
+
 ### `external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py`
 
 Offline trust-boundary tests for configured service HTTP.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_trusted_http.py --output /tmp/maxbooster-python-single
@@ -2759,13 +2814,13 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 Contract guards for MaxCore capabilities that have no real model yet.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 7}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2784,13 +2839,13 @@ JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 7}.
 
 Unit tests for the URL-parser label-echo garble guard.
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_url_label_garble_guard.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 46}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 48}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2839,8 +2894,10 @@ JUnit: {"errors": 0, "failures": 2, "skipped": 0, "tests": 46}.
 - `TestGarbleReason.test_looks_garbled_consistency`: looks_garbled must be exactly bool(garble_reason) for any input.
 - `TestGarbleReason.test_whitelist_respected_for_glue_but_not_labels`: whitelist respected for glue but not labels
 - `TestGuardLogsWarning.test_ranking_penalty_logs_reason`: ranking penalty logs reason
-- `TestGuardLogsWarning.test_script_agent_suppression_logs_reason`: When the model 'output' echoes awareness labels, ScriptAgent must fall back AND log the reason at WARNING level.
+- `TestGuardLogsWarning.test_script_agent_suppression_logs_reason`: When the model 'output' echoes awareness labels, ScriptAgent must reject the candidate AND log the reason at WARNING level.
 - `TestGuardLogsWarning.test_distribution_agent_suppression_logs_reason`: distribution agent suppression logs reason
+- `TestGuardLogsWarning.test_distribution_agent_rejects_structured_control_keys`: distribution agent rejects structured control keys
+- `TestGuardLogsWarning.test_distribution_agent_preserves_meaningful_caption_and_sampling_identity`: distribution agent preserves meaningful caption and sampling identity
 
 </details>
 
@@ -2869,13 +2926,13 @@ python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/a
 
 Voice-over synthesis regression tests (Task: birdcall narration fix).
 
-Status: **failed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 13}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 13}.
 
 <details>
 <summary>What each case checks</summary>
@@ -2892,7 +2949,7 @@ JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 13}.
 - `TestSynthesizeVoiceover.test_empty_text_returns_false`: empty text returns false
 - `TestMixAndTrack.test_voice_dominates_ducked_music`: voice dominates ducked music
 - `TestMixAndTrack.test_voiceover_track_end_to_end`: voiceover track end to end
-- `TestMixAndTrack.test_never_raises_on_bad_music_path`: never raises on bad music path
+- `TestMixAndTrack.test_missing_requested_music_never_returns_narration_as_success`: missing requested music never returns narration as success
 
 </details>
 
@@ -2900,7 +2957,7 @@ JUnit: {"errors": 0, "failures": 1, "skipped": 0, "tests": 13}.
 
 API-level regression tests: the voice-over flag must be strictly opt-in.
 
-Status: **skipped**. 
+Status: **skipped**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_voiceover_api.py --output /tmp/maxbooster-python-single
@@ -2974,7 +3031,7 @@ python3 scripts/testing/run-python-suites.py --file tests/dns-production-smoke.p
 
 Real filesystem/template consumers, without network or app database access.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/fsspec-advisories.py --output /tmp/maxbooster-python-single
@@ -3034,7 +3091,7 @@ python3 scripts/testing/run-python-suites.py --file tests/production_fixture_sup
 
 test ltx adapter download
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_ltx_adapter_download.py --output /tmp/maxbooster-python-single
@@ -3053,7 +3110,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 1}.
 
 Portable compiler verification must fail before an altered compiler is run.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_portable_rust_toolchain.py --output /tmp/maxbooster-python-single
@@ -3074,7 +3131,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 
 test production fixture support
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_production_fixture_support.py --output /tmp/maxbooster-python-single
@@ -3095,7 +3152,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test secure http
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single
@@ -3119,7 +3176,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 Regression tests for the supplemental CPU Torch integrity gate.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/test_torch_provenance.py --output /tmp/maxbooster-python-single
@@ -3135,11 +3192,78 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 2}.
 
 </details>
 
+### `tests/testing/test_archived_quality_verifiers.py`
+
+Archive integrity must stay distinct from missing current inference evidence.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_archived_quality_verifiers.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_completed_archives_validate_without_requiring_obsolete_serving_weights`: completed archives validate without requiring obsolete serving weights
+- `test_current_identity_check_fails_when_model_bytes_are_missing`: current identity check fails when model bytes are missing
+- `test_incomplete_later_archive_cannot_be_promoted_to_verified_evidence`: incomplete later archive cannot be promoted to verified evidence
+
+</details>
+
+### `tests/testing/test_remediation.py`
+
+Pure-data contracts for the master verification's repair guide.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_remediation.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_empty_or_malformed_evidence_cannot_produce_a_closed_strict_run`: empty or malformed evidence cannot produce a closed strict run
+- `test_unrecognized_assertion_retains_exact_source_case_and_unconfirmed_cause`: unrecognized assertion retains exact source case and unconfirmed cause
+- `test_managed_browser_policy_has_a_supported_remedy_without_an_override`: managed browser policy has a supported remedy without an override
+- `test_new_successful_master_audit_supersedes_its_older_failed_snapshot`: new successful master audit supersedes its older failed snapshot
+- `test_istanbul_gaps_retain_statement_function_and_branch_locations`: istanbul gaps retain statement function and branch locations
+- `test_one_case_diagnosis_does_not_borrow_another_cases_junit_error`: one case diagnosis does not borrow another cases junit error
+
+</details>
+
+### `tests/testing/test_summary_results.py`
+
+Retain every case in mixed Node/Vitest JUnit layouts without double counts.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_mixed_root_cases_and_nested_suites_keep_skips_and_each_case_once`: mixed root cases and nested suites keep skips and each case once
+- `test_suite_names_and_explicit_file_survive_without_default_file`: suite names and explicit file survive without default file
+- `test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load`: master plan keeps sandbox mutations opt in and builds before http load
+- `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
+
+</details>
+
 ### `tests/urllib3-security-paths.py`
 
 Real loopback streaming regressions, runnable with both app interpreters.
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tests/urllib3-security-paths.py --output /tmp/maxbooster-python-single
@@ -3160,7 +3284,7 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 test sophia
 
-Status: **passed**. 
+Status: **passed**.
 
 ```sh
 python3 scripts/testing/run-python-suites.py --file tools/sophia-agent-runner/tests/test_sophia.py --output /tmp/maxbooster-python-single
@@ -3178,4 +3302,3 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 5}.
 - `TestSophia.test_url_is_quoted`: url is quoted
 
 </details>
-

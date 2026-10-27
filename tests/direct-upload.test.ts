@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
 const testUser = {
@@ -97,13 +99,18 @@ async function apiJson(
 
 describe("Direct upload URL flow", () => {
   it("1. registers and logs in a test user", async () => {
-    await apiJson("POST", "/api/auth/register", testUser);
+    const registered = await apiJson("POST", "/api/auth/register", testUser);
+    expect(registered.status).toBe(200);
+    await provisionFixtureEntitlement(testUser.email);
     const r = await apiJson("POST", "/api/auth/login", {
       email: testUser.email,
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await apiJson("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
   });
 
   it("2. issues a reserved direct upload URL", async () => {
@@ -114,10 +121,6 @@ describe("Direct upload URL flow", () => {
       category: "audio",
     });
 
-    if (r.status === 403) {
-      console.warn("[DirectUploadTest] Upload reservation blocked by subscription gate");
-      return;
-    }
 
     expect(r.status).toBe(200);
     const body = r.json as Record<string, unknown>;
@@ -127,10 +130,7 @@ describe("Direct upload URL flow", () => {
   });
 
   it("3. uploads the reserved bytes and persists the file", async () => {
-    if (!uploadedFileKey) {
-      console.warn("[DirectUploadTest] No reserved key — skipping upload test");
-      return;
-    }
+    expect(uploadedFileKey, "Direct upload reservation must succeed").toBeTruthy();
 
     const reservation = await apiJson("POST", "/api/uploads/request-url", {
       name: "direct-test.wav",

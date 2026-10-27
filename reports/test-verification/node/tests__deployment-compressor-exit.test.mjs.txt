@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: real workers and capsule verification complete and let the CLI exit naturally
 ok 1 - real workers and capsule verification complete and let the CLI exit naturally
   ---
-  duration_ms: 664.130443
+  duration_ms: 769.618124
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - real workers and capsule verification complete and let the CLI exit natur
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 763.114931
+# duration_ms 928.314477

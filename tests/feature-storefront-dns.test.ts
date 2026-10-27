@@ -3,6 +3,7 @@
  * DNS Manager, Domain Registrar
  */
 import { describe, it, expect } from "vitest";
+import { provisionFixtureEntitlement } from "./helpers-http-fixture";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
@@ -65,13 +66,18 @@ async function api(method: string, path: string, body?: unknown) {
 
 describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar", () => {
   it("setup: register and login test user", async () => {
-    await api("POST", "/api/auth/register", testUser);
+    const registered = await api("POST", "/api/auth/register", testUser);
+    expect(registered.status).toBe(200);
+    await provisionFixtureEntitlement(testUser.email);
     const r = await api("POST", "/api/auth/login", {
       email: testUser.email,
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await api("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
     // Ensure CSRF token is fetched so subsequent POST/PUT/DELETE calls include it
     await api("GET", "/api/csrf-token");
   });
@@ -135,7 +141,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("GET /api/storefront/:slug retrieves storefront by slug (public)", async () => {
-      if (!storefrontSlug) return;
+      expect(storefrontSlug, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await fetch(`${BASE}/api/storefront/${storefrontSlug}`, {
         signal: AbortSignal.timeout(10000),
       });
@@ -143,7 +149,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("GET /api/storefront/public/:slug retrieves public storefront", async () => {
-      if (!storefrontSlug) return;
+      expect(storefrontSlug, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await fetch(`${BASE}/api/storefront/public/${storefrontSlug}`, {
         signal: AbortSignal.timeout(10000),
       });
@@ -151,7 +157,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("PUT /api/storefront/:id/customize customizes the storefront", async () => {
-      if (!storefrontId) return;
+      expect(storefrontId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PUT", `/api/storefront/${storefrontId}/customize`, {
         theme: "light",
         primaryColor: "#FF6B35",
@@ -162,15 +168,18 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("PATCH /api/storefront/:id/publish publishes the storefront", async () => {
-      if (!storefrontId) return;
+      expect(storefrontId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PATCH", `/api/storefront/${storefrontId}/publish`, {
         isPublished: true,
       });
       expect([200, 204]).toContain(r.status);
+      const published = await fetch(`${BASE}/api/storefront/public/${storefrontSlug}`, { signal: AbortSignal.timeout(10000) });
+      expect(published.status).toBe(200);
+      expect(await published.json()).toMatchObject({ id: storefrontId, isPublic: true });
     });
 
     it("GET /api/storefront/:storefrontId/listings returns storefront listings", async () => {
-      if (!storefrontId) return;
+      expect(storefrontId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await fetch(`${BASE}/api/storefront/${storefrontId}/listings`, {
         signal: AbortSignal.timeout(10000),
       });
@@ -195,7 +204,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("DELETE /api/storefront/:id removes the storefront", async () => {
-      if (!storefrontId) return;
+      expect(storefrontId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/storefront/${storefrontId}`);
       expect([200, 204]).toContain(r.status);
     });
@@ -265,12 +274,12 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
 
     it("GET /api/dns-manager/usage returns DNS usage stats", async () => {
       const r = await api("GET", "/api/dns-manager/usage");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/dns-manager/zones returns user DNS zones", async () => {
       const r = await api("GET", "/api/dns-manager/zones");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/dns-manager/zones creates a DNS zone", async () => {
@@ -279,8 +288,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
         domain,
         provider: "internal",
       });
-      // 403 may occur if CSRF token hasn't been populated yet
-      expect([200, 201, 400, 403, 409]).toContain(r.status);
+      expect(r.status).toBe(200);
       if ([200, 201].includes(r.status)) {
         const body = r.json as Record<string, unknown>;
         zoneId = (body.id ?? body.zone?.id) as string;
@@ -288,13 +296,13 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("GET /api/dns-manager/zones/:zoneId/records lists zone records", async () => {
-      if (!zoneId) return;
+      expect(zoneId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/dns-manager/zones/${zoneId}/records`);
       expect([200, 404]).toContain(r.status);
     });
 
     it("POST /api/dns-manager/zones/:zoneId/records adds a DNS record", async () => {
-      if (!zoneId) return;
+      expect(zoneId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("POST", `/api/dns-manager/zones/${zoneId}/records`, {
         type: "A",
         name: "@",
@@ -305,7 +313,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
     });
 
     it("DELETE /api/dns-manager/zones/:zoneId removes zone", async () => {
-      if (!zoneId) return;
+      expect(zoneId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/dns-manager/zones/${zoneId}`);
       expect([200, 204, 404]).toContain(r.status);
     });
@@ -347,7 +355,7 @@ describe("Feature: Storefront, Storefront Domains, DNS Manager, Domain Registrar
 
     it("GET /api/domain-registrar/my-domains returns user registered domains", async () => {
       const r = await api("GET", "/api/domain-registrar/my-domains");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/domain-registrar/contacts returns user contact profiles", async () => {

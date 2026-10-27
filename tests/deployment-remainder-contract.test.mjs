@@ -48,6 +48,8 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
     "node_modules.manifest.json",
     "scripts/port-contract.sh",
     "scripts/redis-supervisor.sh",
+    ".pdim-scratch-external_maxcore-123/external/maxcore/.agents/memory/MEMORY.md",
+    ".pdim-cluster-test-123/cluster-fixture.mjs",
   ];
   for (const file of files) {
     const dest = path.join(root, file);
@@ -74,5 +76,10 @@ test("remainder inventory retains pre-restore modules and selects runtime assets
     "build.sh", ".node_bin/node", "node_modules.pdim",
     "node_modules.manifest.json", "scripts/port-contract.sh"]) {
     assert.ok(!members.includes(bootstrap), `bootstrap must remain outside capsule: ${bootstrap}`);
+  }
+  for (const scratch of files.filter(file => file.startsWith(".pdim-"))) {
+    assert.ok(!members.includes(scratch), `private scratch must not enter capsule: ${scratch}`);
+    assert.equal(fs.readFileSync(path.join(root, scratch), "utf8"), "fixture",
+      "selection must preserve the unrelated scratch tree");
   }
 });

@@ -1,0 +1,17 @@
+{
+  "format": "Istanbul FileCoverageData",
+  "removedOptionalField": "meta",
+  "preserved": [
+    "path",
+    "statementMap",
+    "fnMap",
+    "branchMap",
+    "s",
+    "f",
+    "b"
+  ],
+  "originalBytes": 60426892,
+  "bytes": 48870770,
+  "originalSha256": "acddc21a5c78ec3f837c219293ca2dd83591fa4204445450e99f54e7054228de",
+  "sha256": "f6ea466c82fe0c7cb91a8a2133baabbd7850cc9a0c2bc969b680004a1eb5db5d"
+}

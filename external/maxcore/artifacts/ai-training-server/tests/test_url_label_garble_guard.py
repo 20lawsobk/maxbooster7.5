@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import sys
 import os
+import pytest
+from contextlib import contextmanager
 
 # Ensure the ai-training-server package root is on sys.path so the import works
 # both when run via pytest from the repo root and when invoked directly.
@@ -21,6 +23,16 @@ if _SERVER_ROOT not in sys.path:
     sys.path.insert(0, _SERVER_ROOT)
 
 from ai_model.request_intelligence import garble_reason, looks_garbled  # noqa: E402
+
+
+@contextmanager
+def planned(request):
+    from ai_model.generation.plan import GenerationPlan, active_plan
+    token = active_plan.set(GenerationPlan.from_request(request, "text"))
+    try:
+        yield
+    finally:
+        active_plan.reset(token)
 
 
 # ---------------------------------------------------------------------------
@@ -396,7 +408,7 @@ class TestGuardLogsWarning:
 
     def test_script_agent_suppression_logs_reason(self, caplog):
         """When the model 'output' echoes awareness labels, ScriptAgent must
-        fall back AND log the reason at WARNING level."""
+        reject the candidate AND log the reason at WARNING level."""
         from ai_model.agents.script_agent import ScriptAgent, ScriptRequest
 
         class _EchoModel:
@@ -414,9 +426,9 @@ class TestGuardLogsWarning:
             idea="midnight drive", platform="instagram", goal="streams",
             tone="energetic", awareness="[HIGH] Night-drive playlists trending",
         )
-        with caplog.at_level(logging.WARNING, logger="script_agent"):
-            resp = agent.run(req)
-        assert resp.source != "ai_model", "echoed output must not be returned"
+        with planned(req), caplog.at_level(logging.WARNING, logger="script_agent"):
+            with pytest.raises(ValueError, match="readability check"):
+                agent.run(req)
         msgs = [r.message for r in caplog.records if "[garble-guard]" in r.message]
         assert msgs, "ScriptAgent must WARN when suppressing model output"
         assert "reason=label_echo" in msgs[0]
@@ -436,9 +448,47 @@ class TestGuardLogsWarning:
             platform="instagram", goal="streams",
             awareness="[HIGH] Night-drive playlists trending on instagram",
         )
-        with caplog.at_level(logging.WARNING, logger="distribution_agent"):
-            resp = agent.run(req)
-        assert "Genre:" not in resp.caption, "echoed caption must be suppressed"
+        with planned(req), caplog.at_level(logging.WARNING, logger="distribution_agent"):
+            with pytest.raises(ValueError, match="readability check"):
+                agent.run(req)
         msgs = [r.message for r in caplog.records if "[garble-guard]" in r.message]
         assert msgs, "DistributionAgent must WARN when suppressing model caption"
         assert "reason=label_echo" in msgs[0]
+
+    def test_distribution_agent_rejects_structured_control_keys(self, caplog):
+        from ai_model.agents.distribution_agent import DistributionAgent, DistributionRequest
+
+        class LeakingModel:
+            def generate(self, prompt, **kwargs):
+                return 'A quiet studio release for listeners {"campaignId":"release-42"} today.'
+
+        request = DistributionRequest(
+            script="A quiet studio release for listeners today.", platform="instagram",
+            goal="engagement", awareness='[CONTROL_CONTEXT] {"campaignId":"release-42"}',
+        )
+        with planned(request), caplog.at_level(logging.WARNING, logger="distribution_agent"):
+            with pytest.raises(ValueError, match="awareness metadata"):
+                DistributionAgent(LeakingModel()).run(request)
+        assert "copied awareness metadata" in caplog.text
+
+    def test_distribution_agent_preserves_meaningful_caption_and_sampling_identity(self):
+        from ai_model.agents.distribution_agent import DistributionAgent, DistributionRequest
+        from ai_model.generation.plan import active_plan
+
+        caption = "Lunarvoss brings a quiet studio release to your next late-night listen."
+        calls = []
+
+        class Model:
+            def generate(self, prompt, **kwargs):
+                calls.append((prompt, kwargs))
+                return caption
+
+        request = DistributionRequest(script=caption, platform="instagram", goal="streams",
+                                      awareness="[HIGH] Night-drive playlists trending")
+        with planned(request):
+            plan = active_plan.get()
+            response = DistributionAgent(Model()).run(request)
+        assert response.caption == caption
+        assert len(calls) == 1
+        assert caption in calls[0][0]
+        assert calls[0][1] == {"seed": plan.seed, "snapshot_hash": None}

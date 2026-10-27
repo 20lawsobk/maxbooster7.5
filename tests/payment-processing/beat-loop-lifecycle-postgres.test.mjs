@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, symlink, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+import { createHash } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { startDisposablePostgres, loadDatabaseSubject } from './helpers-database-postgres.mjs';
 
@@ -26,10 +28,12 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
   await symlink(path.resolve('node_modules'), path.join(root, 'node_modules'));
   await writeFile(path.join(root, 'schema/schema.ts'), (await readFile('shared/schema.ts', 'utf8')).replace('export * from "./readiness-schema";', ''));
   await writeFile(path.join(root, 'drizzle.json'), JSON.stringify({ dialect: 'postgresql', schema: path.join(root, 'schema/schema.ts'), out: path.join(root, 'generated') }));
-  execFileSync(process.execPath, ['node_modules/drizzle-kit/bin.cjs', 'generate', `--config=${path.join(root, 'drizzle.json')}`], {
+  const schemaGeneration = execFileSync(process.execPath, ['node_modules/drizzle-kit/bin.cjs', 'generate', `--config=${path.join(root, 'drizzle.json')}`], {
     env: { PATH: process.env.PATH, HOME: root }, stdio: 'pipe', timeout: 45000,
   });
-  for (const file of (await readdir(path.join(root, 'generated'))).filter(f => f.endsWith('.sql')).sort()) {
+  const generatedFiles = (await readdir(path.join(root, 'generated'))).filter(f => f.endsWith('.sql')).sort();
+  assert(generatedFiles.length > 0, `Drizzle produced no SQL despite exit zero: ${String(schemaGeneration).slice(-1200)}`);
+  for (const file of generatedFiles) {
     await pg.pool.query(await readFile(path.join(root, 'generated', file), 'utf8'));
   }
   for (const file of (await readdir('migrations')).filter(f => /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20).sort()) {
@@ -50,26 +54,53 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     storage: {
       async uploadFile(bytes, category, filename) { const key = `${category}/${filename}`; assets.set(key, Buffer.from(bytes)); return key; },
       async uploadGeneratedFile(bytes, owner, category, filename) { const key = `users/${owner}/${category}/${filename}`; assets.set(key, Buffer.from(bytes)); return key; },
-      async downloadFile(key) { assert(assets.has(key), 'requested durable fixture asset must exist'); return assets.get(key); },
+      async downloadFile(key) {
+        if (assets.has(key)) return assets.get(key);
+        assert(fixture.pythonObjects && key.startsWith('users/loop-admin/'), 'requested durable fixture asset must exist for its owner');
+        return readFile(path.join(fixture.pythonObjects, key));
+      },
       async deleteFile(key) { assets.delete(key); },
       async getDownloadUrl(key) { return `/api/storage/file/${encodeURIComponent(key)}`; },
     },
-    async prepare(endpoint, body) { requests.push({ endpoint, body }); return { ...body, awareness: { snapshot_id: 'public-fixture-scan', awareness: 'Current public music signals', expires_at: Date.now() / 1000 + 60 } }; },
+    async prepare(endpoint, body) {
+      requests.push({ endpoint, body });
+      if (fixture.actualOrigin) {
+        const response = await previous.fetch(`${fixture.actualOrigin}/api/awareness/unified/context`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${fixture.privateKey}` },
+          body: JSON.stringify({ modality: endpoint.endsWith('/audio') ? 'audio' : 'image', platform: body.platform }),
+          signal: AbortSignal.timeout(5000),
+        });
+        assert.equal(response.status, 200); const receipt = await response.json();
+        assert.equal(receipt.ready, true); fixture.actualSnapshot = receipt.snapshot_id;
+        return { ...body, awareness: receipt };
+      }
+      return { ...body, awareness: { snapshot_id: 'public-fixture-scan', awareness: 'Current public music signals', expires_at: Date.now() / 1000 + 60 } };
+    },
     async infer() { return { hook: 'Find your next sound.', body: 'Preview this original beat and explore the license.', cta: 'License this beat.' }; },
     async dispatch() { return { success: true, message: 'Fixture dispatch', results: { postsCreated, platformsUsed: postsCreated ? ['instagram'] : [], errors: [] } }; },
   };
   globalThis.fetch = async (url, init) => {
     const value = String(url);
+    if (fixture.actualOrigin && new URL(value).origin === fixture.actualOrigin) {
+      const response = await previous.fetch(url, init);
+      if (value.endsWith('/api/generate/audio') || value.endsWith('/api/generate/image')) {
+        const result = await response.clone().json(); fixture.actualResults.push(result);
+      }
+      return response;
+    }
     if (value.endsWith('/api/health')) return Response.json({ ok: true });
     if (value.endsWith('/api/generate/audio')) {
       if (blockAudio) await blockAudio;
       const body = JSON.parse(init.body); assert.equal(body.owner_id, 'loop-admin'); assert.equal(body.instrument, 'ensemble');
       assert.equal(body.awareness.snapshot_id, 'public-fixture-scan');
+      assert.equal(body.dedicated_controls.duration_sec, 10); assert.equal(body.dedicated_controls.instrument, 'ensemble');
+      assert.equal(body.style, undefined); assert.equal(body.context.semantic_style_applied, false);
       return failAudio ? Response.json({ error: 'Renderer unavailable' }, { status: 503 }) : Response.json({ wav_b64: (silentAudio ? Buffer.concat([wav.subarray(0,44), Buffer.alloc(wav.length - 44)]) : wav).toString('base64'), backend: 'fixture-audio', bpm: 128, key: 'D minor', genre: 'house', mood: 'bright' });
     }
     if (value.endsWith('/api/generate/image')) {
       const body = JSON.parse(init.body); assert.equal(body.owner_id, 'loop-admin'); assert.equal(body.awareness.snapshot_id, 'public-fixture-scan');
       assert.equal(init.headers['X-MaxCore-User-Id'], 'loop-admin');
+      assert.equal(body.dedicated_controls.mode, 'poster'); assert.equal(body.style, undefined);
       return Response.json({ url: '/uploads/images/fixture.png' });
     }
     if (value.endsWith('/uploads/images/fixture.png')) return new Response(png, { headers: { 'content-type': 'image/png' } });
@@ -79,7 +110,7 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     '../db.js': 'export const {db,pool}=globalThis.__beatLoopFixture;',
     '../logger.js': 'export const logger={info(){},warn(){},error(){}};',
     './storageService.js': 'export const storageService=globalThis.__beatLoopFixture.storage;',
-    './audioSourceAuthorization.js': 'export async function authorizeAudioSource(){throw new Error("Unexpected existing image grant");}',
+    './audioSourceAuthorization.js': 'export async function authorizeAudioSource(url,owner){const key=decodeURIComponent(url.slice("/api/storage/file/".length));if(!key.startsWith(`users/${owner}/`))throw new Error("Wrong generated asset owner");await globalThis.__beatLoopFixture.storage.downloadFile(key);}',
     '../infrastructure/distributedCache.js': 'export const distributedCache={invalidatePattern:async()=>{}};',
     './unifiedAIController.js': 'export const MaxCoreAIClient={infer:(...args)=>globalThis.__beatLoopFixture.infer(...args)};',
     './awarenessContext.js': 'export async function getAwarenessContext(){return {contextString:"Public fixture signals"};}',
@@ -87,7 +118,7 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     './adaptiveGenerationEngine.js': 'export async function recordGeneration(){}',
     './advertisingDispatchService.js': 'export const advertisingDispatchService={activateCampaign:(...args)=>globalThis.__beatLoopFixture.dispatch(...args)};',
     '../instrument.js': 'export function captureSentryException(){}',
-    './maxcoreConnector.js': 'export const getMaxcoreOrigin=()=>"http://maxcore.fixture";export const getMaxcoreOriginOrDefault=getMaxcoreOrigin;export const getMaxcoreGenerationKey=()=>"fixture-private-channel";export const getMaxcoreGenerationHeaders=()=>({Authorization:"Bearer fixture-private-channel"});export const isAllowedMaxcoreMediaPath=p=>/^\\/uploads\\//.test(p);',
+    './maxcoreConnector.js': 'export const getMaxcoreOrigin=()=>globalThis.__beatLoopFixture.actualOrigin||"http://maxcore.fixture";export const getMaxcoreOriginOrDefault=getMaxcoreOrigin;export const getMaxcoreGenerationKey=()=>globalThis.__beatLoopFixture.privateKey||"fixture-private-channel";export const getMaxcoreGenerationHeaders=()=>({Authorization:`Bearer ${getMaxcoreGenerationKey()}`});export const isAllowedMaxcoreMediaPath=p=>/^\\/uploads\\//.test(p);',
   })).beatMoneyLoopService;
   await pg.pool.query("INSERT INTO users(id,email,password,role) VALUES('loop-admin','admin@fixture.invalid','fixture','admin'),('buyer','buyer@fixture.invalid','fixture','user')");
   // Promotion's expensive video renderer is a port; actual preview extraction and
@@ -187,5 +218,79 @@ test('Beat Money Loop lifecycle on a disposable PostgreSQL database', { timeout:
     assert.equal(Number((await pg.pool.query('SELECT count(*) AS n FROM listings')).rows[0].n), before);
     const status = await service.getStatus(); assert.equal(status.failedCycles, 3); assert.equal(status.currentCadenceMs, 12 * 60 * 60 * 1000);
     await service.disable(); assert.equal((await service.tick()).reason, 'disabled');
+  });
+  await t.test('real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint', { timeout: 120000 }, async () => {
+    const listener = createServer();
+    await new Promise(resolve => listener.listen(0, '127.0.0.1', resolve));
+    const port = listener.address().port;
+    await new Promise(resolve => listener.close(resolve));
+    const pythonRoot = path.join(root, 'python-media');
+    const child = spawn(process.env.MAXBOOSTER_TEST_PYTHON || 'python3', [
+      'tests/payment-processing/helpers-beat-media-asgi.py', pythonRoot, String(port),
+    ], { env: { PATH: process.env.PATH, HOME: root, LANG: 'C',
+      ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) },
+    stdio: ['ignore', 'pipe', 'pipe'] });
+    let diagnostics = ''; child.stdout.on('data', chunk => { diagnostics = (diagnostics + chunk).slice(-3000); });
+    child.stderr.on('data', chunk => { diagnostics = (diagnostics + chunk).slice(-3000); });
+    try {
+      const origin = `http://127.0.0.1:${port}`;
+      const deadline = Date.now() + 20000; let ready = false;
+      while (Date.now() < deadline) {
+        if (child.exitCode !== null) throw new Error(`Actual ASGI fixture exited: ${diagnostics}`);
+        try { const response = await previous.fetch(`${origin}/_fixture/health`, { signal: AbortSignal.timeout(2000) }); if (response.ok) { assert.equal((await response.json()).model_loaded, false); ready = true; break; } } catch {}
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert(ready, `Actual ASGI fixture did not start: ${diagnostics}`);
+      fixture.actualOrigin = origin; fixture.privateKey = 'isolated-dedicated-media-channel';
+      fixture.pythonObjects = path.join(pythonRoot, 'durable'); fixture.actualResults = [];
+      failAudio = false; silentAudio = false; postsCreated = 0;
+      const cycle = await service.runCycle('manual');
+      assert.equal(cycle.status, 'awaiting_sale', JSON.stringify({ cycle, diagnostics, responses: fixture.actualResults }).slice(-10000));
+      assert.equal(cycle.advertised, false);
+      assert.equal(fixture.actualResults.length, 2, 'actual audio and artwork ASGI requests must both execute');
+      for (const result of fixture.actualResults) {
+        assert.equal(result.status, 'completed'); assert.equal(result.delivery_status, 'durable');
+        assert.equal(result.checkpoint_inference, false); assert.equal(result.generation_plan.checkpoint, '');
+        assert.equal(result.snapshot_id, fixture.actualSnapshot); assert.equal(result.receipt.owner_id, 'loop-admin');
+        assert.equal(result.validation.artifact_validated, true); assert.equal(result.capability.trained, false);
+        assert.equal(result.validation.quality, 'not_evaluated');
+        const key = decodeURIComponent(result.url.slice('/api/storage/file/'.length));
+        const bytes = await fixture.storage.downloadFile(key);
+        assert.equal(bytes.length, result.receipt.size_bytes);
+        assert.equal(createHash('sha256').update(bytes).digest('hex'), result.receipt.sha256);
+      }
+      const audio = fixture.actualResults.find(result => result.capability.kind === 'synthesis');
+      assert.equal(audio.receipt.effective_controls.instrument, 'ensemble');
+      assert.equal(audio.receipt.effective_controls.key, 'C minor');
+      assert.equal(audio.receipt.effective_controls.bpm, 120);
+      assert.equal(audio.receipt.effective_controls.sample_rate, 44100);
+      assert.equal(audio.receipt.effective_controls.arrangement, 'structured');
+      assert.equal(audio.receipt.duration, 10);
+      const poster = fixture.actualResults.find(result => result.capability.kind === 'layout');
+      assert.equal(poster.receipt.width, 640); assert.equal(poster.receipt.height, 640);
+      const persisted = (await pg.pool.query('SELECT audio_gen_backend,scan_context FROM beat_money_loop_cycles WHERE id=$1', [cycle.cycleId])).rows[0];
+      assert.equal(persisted.audio_gen_backend, 'digital-gpu-parametric-synth');
+      assert.equal(persisted.scan_context.tempo, audio.receipt.effective_controls.bpm);
+      assert.equal(persisted.scan_context.genre, undefined);
+      assert.equal(persisted.scan_context.mood, undefined);
+      const listing = (await pg.pool.query("SELECT * FROM listings WHERE metadata->>'beatId'=$1", [cycle.beatId])).rows[0];
+      assert(listing.artwork_url); assert.notEqual(listing.audio_url, listing.preview_url);
+      assert.equal(listing.category, 'instrumental');
+      assert.equal(listing.metadata.genre, 'instrumental');
+      assert.equal(listing.metadata.mood, 'unspecified');
+      assert.equal(listing.metadata.genreSource, 'unspecified');
+      assert.equal(listing.metadata.moodSource, 'unspecified');
+      assert.equal(listing.metadata.key, audio.receipt.effective_controls.key);
+      assert.equal(listing.metadata.bpm, audio.receipt.effective_controls.bpm);
+      assert(!/trap|dark|professionally|cinematic|exclusive rights available/i.test(listing.description));
+      const deliveredAudio = await fixture.storage.downloadFile(decodeURIComponent(audio.url.slice('/api/storage/file/'.length)));
+      assert.deepEqual(assets.get(listing.audio_url.slice('/api/marketplace/audio/'.length)), deliveredAudio);
+      assert.equal((await pg.pool.query('SELECT percentage FROM royalty_splits WHERE release_id=$1', [cycle.beatId])).rows[0].percentage, 100);
+    } finally {
+      delete fixture.actualOrigin; delete fixture.privateKey; delete fixture.pythonObjects;
+      child.kill('SIGTERM');
+      await Promise.race([new Promise(resolve => child.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 3000))]);
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    }
   });
 });

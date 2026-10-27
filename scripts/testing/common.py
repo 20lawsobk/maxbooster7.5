@@ -35,6 +35,43 @@ def source_revision():
     return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
 
 
+def coverage_parse_exclusions(log):
+    """A provider's skipped source is a failed evidence gate, even on exit0."""
+    return sorted(set(re.findall(r"^Failed to parse (.+)\. Excluding it from coverage\.$", log, re.M)))
+
+
+def source_inputs():
+    """Hash code/config inputs, including new files, without generated evidence."""
+    paths = set()
+    for flags in (("--cached",), ("--others", "--exclude-standard")):
+        raw = subprocess.check_output(["git", "ls-files", "-z", *flags], cwd=ROOT)
+        paths.update(p for p in raw.decode().split("\0") if p)
+    extensions = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".sh",
+                  ".go", ".rs", ".cpp", ".cc", ".h", ".json", ".yaml", ".yml",
+                  ".toml", ".nix", ".sql"}
+    hashes = {}
+    for name in sorted(paths):
+        path = Path(name)
+        if path.parts[0] in {"reports", "docs", "dist"} or path.parts[0].startswith(".pdim-") or any(
+                part in {"node_modules", "__pycache__", ".snapshots", "dist"}
+                for part in path.parts):
+            continue
+        # tests/coverage contains executable database contracts, not generated
+        # counters. Keep those inputs in the same source-integrity boundary.
+        if "coverage" in path.parts and path.parts[:2] != ("tests", "coverage"):
+            continue
+        if path.suffix not in extensions and path.name not in {
+                ".replit", ".dockerignore", "Dockerfile", "Dockerfile.prod", "package-lock.json",
+                "pnpm-lock.yaml", "Cargo.lock", "go.sum", "requirements.txt"}:
+            continue
+        full = ROOT / path
+        if full.is_file():
+            hashes[name] = hashlib.sha256(full.read_bytes()).hexdigest()
+    encoded = json.dumps(hashes, sort_keys=True, separators=(",", ":")).encode()
+    return {"scope": "Git-visible code/config inputs; generated dist, reports, documentation and ignored state excluded",
+            "sha256": hashlib.sha256(encoded).hexdigest(), "files": hashes}
+
+
 def run_command(command, logfile, timeout=180, cwd=ROOT, extra_env=None):
     """Bound an owned process group, preserve its true exit status and log."""
     logfile = Path(logfile)

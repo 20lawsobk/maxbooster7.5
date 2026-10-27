@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="21" failures="0" errors="0" time="0.85026261">
+    <testsuite name="tests/coverage/social-media-jobs-live-repository.test.ts" timestamp="2026-10-27T09:53:37.884Z" hostname="2fc971e77ddd" tests="21" failures="0" errors="0" skipped="0" time="0.85026261">
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; a second worker polls a real committed video result with the same public response contract" time="0.00745249">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; music-video status survives a new repository instance and handlers isolate owner/family/auth" time="0.003985611">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; foreign polls cannot expire another owner&apos;s row; owned polls persist an explicit interruption" time="0.003414289">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; lease expiry fences a stalled writer even before another worker polls" time="0.001871482">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; forged tokens and duplicate terminal writes cannot overwrite acknowledged results" time="0.003769385">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; concurrent terminal writers acknowledge exactly one immutable outcome" time="0.009982566">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; completed jobs require actual asset references and cannot persist an oversized result" time="0.006967549">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; polling never reports corrupt persisted URL values as completed media" time="0.001948859">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; real heartbeat extends ownership and the timer stops after shutdown" time="0.038347657">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; new admissions bound stale metadata cleanup without pruning healthy rendering jobs" time="0.007474964">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; database outage returns an explicit retryable polling error" time="0.000294104">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; terminal validation rejects malformed URLs and accepts explicit HTTP assets without weakening ownership" time="0.004890246">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; legacy incomplete rows have explicit private polling failures and fallback metadata" time="0.009470964">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; lost leases and database failures stop heartbeat renewal exactly once" time="0.04319053">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="social media jobs share PostgreSQL status and fence interrupted render workers &gt; queued heartbeat callbacks cannot renew or notify after cancellation" time="0.000744954">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; missing direction" time="0.002469955">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; URL direction" time="0.001227372">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; unsupported platform" time="0.001281393">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; missing audio" time="0.000947178">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; valid and non-scene requests retain their staged files for the real renderer" time="0.001330487">
+        </testcase>
+        <testcase classname="tests/coverage/social-media-jobs-live-repository.test.ts" name="scene validation releases actual owned staged uploads on every early 400 branch &gt; cleanup handles single, array and absent multipart paths including missing files" time="0.001178217">
+        </testcase>
+    </testsuite>
+</testsuites>

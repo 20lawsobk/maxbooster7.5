@@ -52,7 +52,7 @@ export interface FilterParams {
 
 export interface OscillatorParams {
   type: OscillatorType;
-  frequency: number;
+  frequency: number; // Ratio to the played note (1 = fundamental, .5 = sub).
   detune: number; // cents
   pulseWidth?: number; // for pulse wave, 0-1
   pitchEnvelope?: {
@@ -143,7 +143,9 @@ const NOTE_FREQUENCIES: Record<string, number> = {
 // ============================================================================
 
 function getNoteFrequency(note: string, octave: number): number {
-  const baseFreq = NOTE_FREQUENCIES[note] || 440;
+  if (!Object.hasOwn(NOTE_FREQUENCIES, note)) throw new RangeError("Unsupported note name");
+  if (!Number.isInteger(octave) || octave < -1 || octave > 9) throw new RangeError("Octave must be an integer from -1 to 9");
+  const baseFreq = NOTE_FREQUENCIES[note];
   const octaveDiff = octave - 4;
   return baseFreq * Math.pow(2, octaveDiff);
 }
@@ -152,6 +154,50 @@ function getNoteFrequency(note: string, octave: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function validateSampleRate(sampleRate: number): void {
+  if (!Number.isInteger(sampleRate) || sampleRate < 8000 || sampleRate > 192000) {
+    throw new RangeError("Sample rate must be an integer from 8000 to 192000 Hz");
+  }
+}
+
+function renderLength(sampleRate: number, duration: number): number {
+  validateSampleRate(sampleRate);
+  const samples = Math.floor(sampleRate * duration);
+  if (!Number.isFinite(duration) || duration <= 0 || duration > 300 || samples < 1 || samples > 16_777_216) {
+    throw new RangeError("Render duration must produce 1 to 16777216 samples within 300 seconds");
+  }
+  return samples;
+}
+
+function finiteControl(name: string, value: number, minimum: number, maximum: number): void {
+  if (!Number.isFinite(value) || value < minimum || value > maximum) {
+    throw new RangeError(`${name} must be finite and in [${minimum}, ${maximum}]`);
+  }
+}
+
+function validateDrum(params: DrumParams): void {
+  for (const key of ["tone", "snap", "noise", "distortion"] as const) {
+    if (params[key] !== undefined) finiteControl(key, params[key]!, 0, 1);
+  }
+  if (params.decay !== undefined) finiteControl("decay", params.decay, .00001, 300);
+  if (params.pitch !== undefined) finiteControl("pitch", params.pitch, 1, 20000);
+}
+
+function validateEnvelope(params: EnvelopeParams): void {
+  finiteControl("envelope attack", params.attack, 0, 5);
+  finiteControl("envelope decay", params.decay, 0, 5);
+  finiteControl("envelope sustain", params.sustain, 0, 1);
+  finiteControl("envelope release", params.release, 0, 10);
+}
+
+function validateFilter(params: FilterParams): void {
+  if (!["lowpass", "highpass", "bandpass", "notch"].includes(params.type)) throw new RangeError("Unsupported filter type");
+  finiteControl("filter cutoff", params.cutoff, 0, 192000);
+  finiteControl("filter resonance", params.resonance, 0, 100);
+  finiteControl("filter envelope amount", params.envAmount, -10, 10);
+  validateEnvelope(params.envelope);
 }
 
 
@@ -353,6 +399,11 @@ class BiquadFilter {
     Q: number,
     sampleRate: number,
   ) {
+    validateSampleRate(sampleRate);
+    finiteControl("filter frequency", frequency, 0, 192000);
+    finiteControl("filter resonance", Q, 0, 100);
+    frequency = clamp(frequency, 1, sampleRate * .499);
+    Q = Math.max(Q, .0001);
     const w0 = (2 * Math.PI * frequency) / sampleRate;
     const cosW0 = Math.cos(w0);
     const sinW0 = Math.sin(w0);
@@ -818,15 +869,16 @@ export function synthesizeKick(
   params: DrumParams,
   genParams: GenerationParams,
 ): Float32Array {
+  validateDrum(params);
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
 
-  const pitch = params.pitch || 60;
-  const decay = params.decay || 0.5;
-  const tone = params.tone || 0.5;
-  const snap = params.snap || 0.5;
-  const distortion = params.distortion || 0.3;
+  const pitch = params.pitch ?? 60;
+  const decay = params.decay ?? 0.5;
+  const tone = params.tone ?? 0.5;
+  const snap = params.snap ?? 0.5;
+  const distortion = params.distortion ?? 0.3;
 
   // Kick has pitch envelope (starts high, drops to base)
   const pitchStart = pitch * 4; // Start 2 octaves higher
@@ -870,16 +922,17 @@ export function synthesizeSnare(
   params: DrumParams,
   genParams: GenerationParams,
 ): Float32Array {
+  validateDrum(params);
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
   const rng = new SeededRandom(Date.now());
 
-  const pitch = params.pitch || 200;
-  const decay = params.decay || 0.2;
-  const tone = params.tone || 0.5;
-  const snap = params.snap || 0.7;
-  const noiseAmount = params.noise || 0.6;
+  const pitch = params.pitch ?? 200;
+  const decay = params.decay ?? 0.2;
+  const tone = params.tone ?? 0.5;
+  const snap = params.snap ?? 0.7;
+  const noiseAmount = params.noise ?? 0.6;
 
   // Snare body filter
   const bodyFilter = new BiquadFilter();
@@ -929,14 +982,15 @@ export function synthesizeHihat(
   params: DrumParams,
   genParams: GenerationParams,
 ): Float32Array {
+  validateDrum(params);
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
   const rng = new SeededRandom(Date.now());
 
-  const decay = params.decay || 0.1; // Short for closed, long for open
-  const tone = params.tone || 0.7; // Higher = brighter
-  const snap = params.snap || 0.8;
+  const decay = params.decay ?? 0.1; // Short for closed, long for open
+  const tone = params.tone ?? 0.7; // Higher = brighter
+  const snap = params.snap ?? 0.8;
 
   // Multiple bandpass filters for metallic sound
   const filters: BiquadFilter[] = [];
@@ -983,13 +1037,14 @@ export function synthesizeClap(
   params: DrumParams,
   genParams: GenerationParams,
 ): Float32Array {
+  validateDrum(params);
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
   const rng = new SeededRandom(Date.now());
 
-  const decay = params.decay || 0.3;
-  const tone = params.tone || 0.5;
+  const decay = params.decay ?? 0.3;
+  const tone = params.tone ?? 0.5;
 
   // Bandpass filter for clap body
   const bpFilter = new BiquadFilter();
@@ -1026,8 +1081,14 @@ export function synthesizeBass(
   params: BassParams,
   genParams: GenerationParams,
 ): Float32Array {
+  if (!["sub", "808", "synth", "reese", "growl"].includes(params.type)) throw new RangeError("Unsupported bass type");
+  validateFilter(params.filter);
+  finiteControl("distortion", params.distortion ?? 0, 0, 1);
+  finiteControl("sub oscillator mix", params.subOscMix ?? .3, 0, 1);
+  if (params.glide !== undefined) finiteControl("glide", params.glide, 0, 10);
+  if (params.glide) throw new RangeError("Portamento requires a previous-note voice and is unsupported by this single-note renderer");
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
   new SeededRandom(Date.now());
 
@@ -1137,8 +1198,32 @@ export function synthesizeSynth(
   octave: number,
   genParams: GenerationParams,
 ): Float32Array {
+  validateFilter(params.filter);
+  validateEnvelope(params.ampEnvelope);
+  if (!Array.isArray(params.oscillators) || !params.oscillators.length || params.oscillators.length > 16) throw new RangeError("Synth requires 1 to 16 oscillators");
+  for (const oscillator of params.oscillators) {
+    if (!["sine", "square", "sawtooth", "triangle", "noise", "pulse"].includes(oscillator.type)) throw new RangeError("Unsupported oscillator type");
+    finiteControl("oscillator ratio", oscillator.frequency, 1 / 64, 64);
+    finiteControl("oscillator detune", oscillator.detune, -2400, 2400);
+    if (oscillator.pulseWidth !== undefined) finiteControl("pulse width", oscillator.pulseWidth, .001, .999);
+    if (oscillator.pitchEnvelope) {
+      finiteControl("pitch envelope amount", oscillator.pitchEnvelope.amount, -48, 48);
+      finiteControl("pitch envelope decay", oscillator.pitchEnvelope.decay, .00001, 10);
+    }
+  }
+  if (params.unison) {
+    finiteControl("unison voices", params.unison.voices, 1, 16);
+    if (!Number.isInteger(params.unison.voices)) throw new RangeError("Unison voices must be an integer");
+    finiteControl("unison detune", params.unison.detune, 0, 1200);
+    finiteControl("unison spread", params.unison.spread, 0, 1);
+  }
+  if (params.lfo) {
+    finiteControl("LFO rate", params.lfo.rate, 0, 100);
+    finiteControl("LFO depth", params.lfo.depth, 0, 1);
+    if (!["pitch", "filter", "amplitude"].includes(params.lfo.target)) throw new RangeError("Unsupported LFO target");
+  }
   const { sampleRate, duration } = genParams;
-  const samples = Math.floor(sampleRate * duration);
+  const samples = renderLength(sampleRate, duration);
   const output = new Float32Array(samples);
   const rng = new SeededRandom(Date.now());
 
@@ -1196,7 +1281,7 @@ export function synthesizeSynth(
 
       for (let oIdx = 0; oIdx < oscillators.length; oIdx++) {
         const osc = oscillators[oIdx];
-        let oscFreq = voiceFreq * pitchMod * Math.pow(2, osc.detune / 1200);
+        let oscFreq = voiceFreq * pitchMod * osc.frequency * Math.pow(2, osc.detune / 1200);
 
         if (osc.pitchEnvelope) {
           const pitchEnv = Math.exp(-t / osc.pitchEnvelope.decay);
@@ -1486,6 +1571,7 @@ export class SynthesizerEngine {
   private sampleRate: number;
 
   constructor(sampleRate: number = 48000) {
+    validateSampleRate(sampleRate);
     this.sampleRate = sampleRate;
   }
 
@@ -1495,6 +1581,11 @@ export class SynthesizerEngine {
     duration: number = 1,
   ): Float32Array {
     let params: DrumParams;
+
+    if (preset && type in DRUM_PRESETS && !Object.hasOwn(DRUM_PRESETS[type as keyof typeof DRUM_PRESETS], preset)) {
+      throw new RangeError("Unsupported drum preset");
+    }
+    if (type === "clap" && preset && preset !== "trap") throw new RangeError("Unsupported clap preset");
 
     switch (type) {
       case "kick":
@@ -1541,10 +1632,7 @@ export class SynthesizerEngine {
         });
 
       default:
-        return synthesizeKick(
-          { type: "kick" },
-          { sampleRate: this.sampleRate, duration, tempo: 120 },
-        );
+        throw new RangeError(`Unsupported drum type: ${type}`);
     }
   }
 
@@ -1571,7 +1659,7 @@ export class SynthesizerEngine {
         params = { ...BASS_PRESETS.reese(), note, octave };
         break;
       default:
-        params = { ...BASS_PRESETS.trap808(), note, octave };
+        throw new RangeError(`Unsupported bass preset: ${preset}`);
     }
 
     return synthesizeBass(params, {
@@ -1589,6 +1677,11 @@ export class SynthesizerEngine {
     duration: number = 1,
   ): Float32Array {
     let params: SynthParams;
+
+    const allowed = { lead: ["classic", "supersaw"], pad: ["classic", "warm", "ethereal"], pluck: ["classic", "acoustic", "digital"] };
+    if (!Object.hasOwn(allowed, type) || !allowed[type].includes(preset)) {
+      throw new RangeError("Unsupported synth type or preset");
+    }
 
     switch (type) {
       case "lead":
@@ -1634,6 +1727,7 @@ export class SynthesizerEngine {
     },
     duration: number = 1,
   ): Float32Array {
+    renderLength(this.sampleRate, duration);
     const {
       brightness,
       attack,
@@ -1643,6 +1737,14 @@ export class SynthesizerEngine {
       instrumentName,
       velocity = 0.8,
     } = instrumentParams;
+    finiteControl("brightness", brightness, 0, 1);
+    finiteControl("attack", attack, 0, 2);
+    finiteControl("decay", decay, 0, 5);
+    finiteControl("sustain", sustain, 0, 1);
+    finiteControl("velocity", velocity, 0, 1);
+    if (synthType && !["sine", "square", "sawtooth", "triangle"].includes(synthType)) {
+      throw new RangeError("Unsupported instrument oscillator shape");
+    }
 
     // Use 2x oversampling for anti-aliasing
     const oversampleFactor = 2;
@@ -2304,9 +2406,12 @@ export function generateFMTone(
   presetName: string = "electric_piano",
   velocity: number = 0.8,
 ): Float32Array {
-  const preset = FM_PRESETS[presetName] || FM_PRESETS.electric_piano;
+  finiteControl("frequency", frequency, 0, sampleRate / 2);
+  finiteControl("velocity", velocity, 0, 1);
+  if (!Object.hasOwn(FM_PRESETS, presetName)) throw new RangeError("Unsupported FM preset");
+  const preset = FM_PRESETS[presetName];
   const algorithm = FM_ALGORITHMS[preset.algorithm] || FM_ALGORITHMS.dx7_7;
-  const totalSamples = Math.ceil(duration * sampleRate);
+  const totalSamples = renderLength(sampleRate, duration);
   const output = new Float32Array(totalSamples);
 
   const phases = new Float32Array(4);
@@ -2382,7 +2487,13 @@ export function generateWavetableTone(
   morphTime: number = 0.5,
   detune: number = 0,
 ): Float32Array {
-  const totalSamples = Math.ceil(duration * sampleRate);
+  finiteControl("frequency", frequency, 0, sampleRate / 2);
+  finiteControl("morph time", morphTime, 0, 300);
+  finiteControl("detune", detune, -1200, 1200);
+  if (!Object.hasOwn(WAVE_FNS, startShape) || !Object.hasOwn(WAVE_FNS, endShape)) {
+    throw new RangeError("Unsupported wavetable shape");
+  }
+  const totalSamples = renderLength(sampleRate, duration);
   const output = new Float32Array(totalSamples);
   const freq = frequency * Math.pow(2, detune / 1200);
   const phaseInc = (2 * Math.PI * freq) / sampleRate;

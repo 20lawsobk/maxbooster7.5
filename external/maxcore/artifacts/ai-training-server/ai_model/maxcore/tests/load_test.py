@@ -142,19 +142,24 @@ def main() -> int:
     compute_calls.clear()
     src_counts: Counter[str] = Counter()
     src_lock = threading.Lock()
-    per_thread = max(1, CONC // THREADS)
+    per_thread, remainder = divmod(CONC, THREADS)
     barrier = threading.Barrier(THREADS)
 
     def hammer(seed):
         r = random.Random(seed)
         local = Counter()
-        barrier.wait()  # release all threads simultaneously for max contention
-        for _ in range(per_thread):
-            req = requests[r.randrange(UNIQUE)]
-            res = orch2.compute(req, compute_fn, namespace=ns_conc)
-            local[res["source"]] += 1
-        with src_lock:
-            src_counts.update(local)
+        try:
+            barrier.wait()  # release all threads simultaneously for max contention
+            for _ in range(per_thread + int(seed < remainder)):
+                req = requests[r.randrange(UNIQUE)]
+                res = orch2.compute(req, compute_fn, namespace=ns_conc)
+                local[res["source"]] += 1
+        except Exception as exc:
+            with src_lock:
+                errors.append(f"Phase 1 worker {seed} failed: {type(exc).__name__}: {exc}")
+        finally:
+            with src_lock:
+                src_counts.update(local)
 
     t0 = time.time()
     threads = [threading.Thread(target=hammer, args=(i,)) for i in range(THREADS)]
@@ -167,6 +172,8 @@ def main() -> int:
     recomputed_twice = [k for k, v in compute_calls.items() if v > 1]
     coalesced = src_counts.get("coalesced", 0)
     computed = src_counts.get("compute", 0)
+    if issued != CONC:
+        errors.append(f"Phase 1 completed {issued} requests, expected exactly {CONC}")
     if recomputed_twice:
         errors.append(f"single-flight violation: {len(recomputed_twice)} keys computed >1x")
     if computed == 0:
@@ -194,13 +201,19 @@ def main() -> int:
     # to demonstrate the GIL ceiling (in-process threads do not scale this path),
     # not to move the full sample (which under contention would dominate runtime).
     mt_total = int(os.getenv("LOAD_MT", "40000"))
-    mt_per = max(1, mt_total // THREADS)
+    mt_per, mt_remainder = divmod(mt_total, THREADS)
     mt_barrier = threading.Barrier(THREADS)
+    mt_completed = [0] * THREADS
 
-    def fast(_):
-        mt_barrier.wait()
-        for _ in range(mt_per):
-            orch2.compute(warm_req, compute_fn, namespace=ns)
+    def fast(index):
+        try:
+            mt_barrier.wait()
+            for _ in range(mt_per + int(index < mt_remainder)):
+                orch2.compute(warm_req, compute_fn, namespace=ns)
+                mt_completed[index] += 1
+        except Exception as exc:
+            with src_lock:
+                errors.append(f"Phase 2 worker {index} failed: {type(exc).__name__}: {exc}")
 
     t0 = time.time()
     mts = [threading.Thread(target=fast, args=(i,)) for i in range(THREADS)]
@@ -209,10 +222,14 @@ def main() -> int:
     for t in mts:
         t.join()
     mt_dur = time.time() - t0
-    mt_ops = (mt_per * THREADS) / mt_dur
+    mt_issued = sum(mt_completed)
+    if mt_issued != mt_total:
+        errors.append(f"Phase 2 completed {mt_issued} multi-thread operations, expected exactly {mt_total}")
+    mt_ops = mt_issued / mt_dur
 
     print(f"\n[Phase 2] dedup fast-path: single-thread {_fmt(st_ops)} req/s, "
           f"{THREADS}-thread aggregate {_fmt(mt_ops)} req/s")
+    print(f"          executed fast-path operations: single-thread={SAMPLE} multi-thread={mt_issued}")
 
     # projection to the 90M target at the working-set duplication factor
     dup_factor = TARGET / max(1, UNIQUE)

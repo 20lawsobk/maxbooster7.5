@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: requires the production 4 CPU / 8 GiB profile and safe headroom
 ok 1 - requires the production 4 CPU / 8 GiB profile and safe headroom
   ---
-  duration_ms: 0.852856
+  duration_ms: 1.130035
   type: 'test'
   ...
 # Subtest: fails before heavy work when a native-child network namespace is unavailable
 ok 2 - fails before heavy work when a native-child network namespace is unavailable
   ---
-  duration_ms: 0.194823
+  duration_ms: 0.202345
   type: 'test'
   ...
 # Subtest: rejects inherited provider and database credentials
 ok 3 - rejects inherited provider and database credentials
   ---
-  duration_ms: 0.643951
+  duration_ms: 0.624042
   type: 'test'
   ...
 # Subtest: runtime policy covers native descendants, not only Node
 ok 4 - runtime policy covers native descendants, not only Node
   ---
-  duration_ms: 0.155244
+  duration_ms: 0.142835
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - runtime policy covers native descendants, not only Node
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 113.987567
+# duration_ms 117.624351

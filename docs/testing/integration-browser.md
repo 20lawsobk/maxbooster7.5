@@ -115,20 +115,20 @@ For each row below, use the same wrapper command and append the listed file:
 | `tests/webhook-security.test.ts` | Stripe/provider webhook signature rejection and malformed event handling. |
 | `tests/critical-paths.test.ts` | Registration, projects, marketplace and other critical HTTP journeys; now honors the fixture's `TEST_BASE_URL`. |
 | `tests/audit-persistence.test.ts` | Real SQL persistence, canonical audit field mapping and confirmed/idempotent audit writes. Uses only the wrapper's temporary database. |
-| `tests/paid-user-e2e.test.ts` | Broad paid-user application contracts, including subscription/payment configuration assumptions; now honors `TEST_BASE_URL`. Provider-dependent expectations can fail without configuration. |
+| `tests/paid-user-e2e.test.ts` | Broad paid-user application contracts, real authentication/billing limit assertions and persisted records; provider-positive cases explicitly skip in the sealed fixture while unavailable-provider responses remain asserted. |
 | `tests/ai-analytics-integration.test.ts` | Fanbase, analytics and prediction route response/authorization contracts. Some assertions permit unauthenticated responses and therefore do not prove successful authenticated analytics. |
 | `tests/cache-invalidation.test.ts` | HTTP cache behavior after mutations and account isolation. |
 | `tests/unit/cache-cross-pod.test.ts` | Two-pod cache invalidation simulation using controlled PDIM state; no real multi-host delivery is claimed. |
-| `tests/file-management.test.ts` | User-scoped file listing, upload, download and deletion contracts. |
+| `tests/file-management.test.ts` | User-scoped file listing, upload, byte readback and deletion; both private hybrid download routes reject a second fixture owner. |
 | `tests/direct-upload.test.ts` | Direct upload flow and ownership/error handling; remote storage configuration is not provided by the fixture. |
-| `tests/billing-lifecycle.test.ts` | Billing webhook rejection, lifecycle/tier behavior and configuration; certain signed-event branches return early when a webhook secret/helper is absent. A passing case does not prove those branches ran. |
+| `tests/billing-lifecycle.test.ts` | Real signed-webhook rejection/provider-authority checks, persisted tier transitions, event deduplication and subscription response shape. Fixture-owned customer writes require the isolated database guard. No live provider delivery is implied. |
 | `tests/auth-2fa.test.ts` | Authenticator enrollment/challenge/verification and recovery/session boundaries. |
 | `tests/feature-press-pitching-ar.test.ts` | Press kits, venues/booking, playlist/radio pitches, label submissions and shows. |
 | `tests/feature-catalog-production.test.ts` | Catalog and production feature API operations. |
 | `tests/feature-revenue-merch.test.ts` | Revenue, merchandise and related feature response contracts; no live sale or payout occurs. |
 | `tests/feature-marketplace-distribution.test.ts` | Marketplace and distribution route contracts with fixture-owned records; no provider submission occurs. |
 | `tests/feature-storefront-dns.test.ts` | Storefront CRUD, DNS-manager and domain registrar configuration/error contracts; no domain purchase or live DNS publication occurs. |
-| `tests/integration/maxcore-local-supervisor.integration.test.ts` | Real local MaxCore/Python launch, authenticated health/readiness and shutdown. Requires the compatible Python dependencies and a model satisfying the existing readiness gate. An alive Python process alone is insufficient. Uses ports 8091/9891; keep those free. |
+| `tests/integration/maxcore-local-supervisor.integration.test.ts` | Real local MaxCore/Python and owned PDIM launch, authenticated health and shutdown on ephemeral ports with temporary private state. The deliberately absent inference candidate must report `model_loaded=false` and generation readiness false; this is lifecycle proof rather than generation acceptance. |
 
 ## Eighty-page acceptance
 
@@ -148,7 +148,9 @@ frontend, denies application external network access and child processes, and
 removes its database and app at the end. MaxCore is intentionally absent from
 this sealed fixture. Its readiness contract accepts only the specifically
 expected ML-unavailable `503` while requiring the fixture's database, Redis and
-routes to be healthy. That is not application production readiness.
+routes to be healthy. A generic `503` does not pass. The current integrated
+run passed this scoped predicate. Its decision remains
+`PASS_WITH_UNTESTED_CATEGORIES`; full aggregate readiness is not established.
 
 Outputs go to `reports/test-verification/integration-browser/page80` by default;
 set `MAXBOOSTER_TEST_REPORT_DIR` before the Node command to retain another run.
@@ -159,26 +161,40 @@ the 80-page sweep, so do not report it as page coverage.
 
 ## Recorded results
 
-The machine-readable overview is
-`reports/test-verification/integration-browser/browser-page80-summary.json`.
-The focused browser rerun passed all five tests. The first attempt passed three
-and failed two in temporary profile cleanup (`ENOTEMPTY`); its TAP output is
-retained as `browser.initial.tap`. Owned Chromium descendant cleanup repaired
-that harness defect without changing test assertions, and `browser.tap`
-contains the successful retry.
+The completed October 26 integrated master run at checkout baseline `4c72114a`
+plus its recorded source digest passed all five focused browser tests. Its
+receipt is `integration-browser/browser-run.json`;
+the actual command output is `orchestration/browser.txt` under
+`reports/test-verification/`.
 
-The 80-page run passed all 80 scenarios with no failures and cleanup passed. Its
-decision remains `PASS_WITH_UNTESTED_CATEGORIES`, with readiness `503` explicitly
-recorded. Fourteen legacy registration fixtures were updated to include the required
-adult birthdate; assertions and security gates were retained. The pre-update
-HTTP run (267 passed, 201 failed, 16 skipped) is preserved in
-`http-before-registration-update/`. Its common setup failure was the missing
-birthdate, which cascaded into unauthorized responses. An earlier reporting
-attempt and unconfigured Python runtime are retained in `http-initial/`; that
-attempt wrote JSON and JUnit to the same legacy output path, so the saved
-`integration.initial-invalid-report.txt` must not be parsed or counted as
-valid results. The runner now selects one scoped JUnit output.
+All 80 page-render observations passed (42 authenticated, 11 administrator and
+27 public), and cleanup passed. The page acceptance result is
+**PASS_WITH_UNTESTED_CATEGORIES**: the final readiness predicate accepted only
+the specifically expected non-ML `503` with healthy fixture dependencies.
+Saved-data journeys and page observations are retained individually in
+`integration-browser/page80/page80.json`.
+They do not prove every interaction or successful semantic generation.
 
-The final HTTP integration outcome is recorded separately in `http/` and
-the consolidated report; do not count the page sweep as evidence that every
-HTTP integration assertion passed.
+The same HTTP run recorded **478 passed, 5 failed and 9 skipped cases** across
+21 files. Its failures concern the analytics authorization contract and
+critical-path checks affected by intentional hostile-client probes. Repairs and
+the final rerun remain distinct from these preserved outcomes. Inspect
+`integration-browser/http/summary.json`, its JUnit XML, the consolidated
+[results](results.md) and [fix checklist](remediation.md).
+
+The separate bounded HTTP profile also passed: 70 requests with 10 workers over
+20 seconds, then 80 requests with 20 workers over 10 seconds, each with 100%
+success. The measured p95 latencies were 159.00 ms and 331.20 ms; p99 latencies
+were 174.11 ms and 357.58 ms. Sessions were paced by 3 seconds between requests.
+This source-application measurement is not a global concurrency or soak test.
+See `integration-browser/http-load/page80.json` for actual callbacks and limits.
+
+Earlier attempts are preserved under `http-before-registration-update/`,
+`http-initial/` and the existing historical browser artifacts. The old
+`browser-page80-summary.json` describes the earlier `f5716662` baseline and is
+not the current acceptance verdict. The invalid initial mixed JSON/JUnit output
+must not be parsed as a valid run. The consolidated reporter uses fresh artifacts
+from the current master invocation.
+
+The [completed pre-recheck master](../../reports/test-verification/history/2026-10-26-integrated-before-rechecks/README.md)
+preserves its original reports and source inventory before the final rerun.

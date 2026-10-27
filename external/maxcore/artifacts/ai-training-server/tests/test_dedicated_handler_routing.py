@@ -1,9 +1,28 @@
-"""Handler-level routing contracts; no checkpoint or media inference."""
+"""Handler/legacy body contracts, distinct from real media route admission.
+
+The dedicated-media HTTP tests exercise the production admission and delivery
+pipeline. Explicit ``__wrapped__`` calls below test retained internal handlers;
+they are not evidence that a retired automatic fallback is available publicly.
+"""
 import asyncio
 from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
+
+
+@pytest.fixture(autouse=True)
+def immutable_public_plan():
+    from ai_model.awareness import bind
+    from ai_model.generation.plan import GenerationPlan, active_plan
+    from test_generation_route_bindings import snapshot
+    with bind(snapshot()):
+        token = active_plan.set(GenerationPlan.from_request(
+            {"topic": "Paper Lanterns routing fixture"}, "content", "routing-fixture"))
+        try:
+            yield
+        finally:
+            active_plan.reset(token)
 
 
 def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
@@ -15,6 +34,7 @@ def test_ads_meta_uses_social_awareness_but_keeps_network_identity(monkeypatch):
             return None
 
     monkeypatch.setattr(storage_client, "get_ads_client", lambda: Ads())
+    monkeypatch.setattr(server, "_model_ready", True)
     monkeypatch.setattr(storage_client, "get_curriculum_client",
                         lambda: SimpleNamespace(get_top_performers=lambda *a, **k: []))
     seen = []
@@ -111,6 +131,9 @@ def test_campaign_passes_platform_specific_awareness_to_builder(monkeypatch):
     import ai_model.generation as generation
 
     captured = {}
+    monkeypatch.setattr(server, "_model_ready", True)
+    script_backend = SimpleNamespace(run=lambda request: None)
+    monkeypatch.setattr(server, "_script_agent", script_backend)
 
     def build_campaign(**kwargs):
         captured.update(kwargs)
@@ -126,6 +149,7 @@ def test_campaign_passes_platform_specific_awareness_to_builder(monkeypatch):
     result = asyncio.run(server.api_generate_campaign(req, _key={}))
     assert captured["awareness"] == "quiet harbor; platform=instagram"
     assert captured["platforms"] == ["instagram"]
+    assert captured["script_fn"] == script_backend.run
     assert result["phases"] == []
     assert result["source"] == "campaign_composer"
 
@@ -153,6 +177,7 @@ def test_requested_pathtrace_passes_subject_and_rejects_unsupported(monkeypatch)
     import ai_model.request_intelligence as ri
 
     subject = []
+    monkeypatch.setattr(server, "_model_ready", True)
 
     def reject(**kwargs):
         subject.append(kwargs["prompt"])
@@ -371,12 +396,13 @@ def test_api_content_fresh_copy_is_model_text_without_fake_scores(monkeypatch):
         platform="instagram", topic="Paper Lanterns", tone="authentic",
         artistProfileId="bypass-cache", include_hashtags=False)
     result = asyncio.run(server.api_generate_content(req, _key={}))
-    assert result["source"] == "ai_model"
+    assert result["source"] == "model"
+    assert result["provenance"]["script"]["checkpoint_inference"] is True
     assert "Paper lanterns by the harbor" in result["caption"]
     assert "quality_score" not in result and "confidence" not in result
 
 
-def test_alias_media_endpoints_mark_asset_identifiers_as_specs(monkeypatch):
+def test_alias_media_bodies_mark_asset_identifiers_as_specs(monkeypatch):
     import server
 
     monkeypatch.setattr(server, "_model_ready", False)
@@ -389,10 +415,34 @@ def test_alias_media_endpoints_mark_asset_identifiers_as_specs(monkeypatch):
         inputs={"normalized": {"semantic": {"topic": "Paper Lanterns"}}})
     for handler in (server.maxcore_generate_image, server.maxcore_generate_audio,
                     server.maxcore_generate_video):
-        result = asyncio.run(handler(req, _key={}))
+        result = asyncio.run(handler.__wrapped__(req, _key={}))
         assert result["kind"] == "specification"
         assert result["outputs"][0]["asset_status"] == "spec_only"
         assert result["outputs"][0]["url"].startswith("asset://")
+
+
+def test_unavailable_model_media_routes_never_enter_legacy_render_or_create_jobs(monkeypatch):
+    import server
+    import inspect
+    from fastapi import Request
+    monkeypatch.setattr(server, "_model_ready", False)
+    monkeypatch.setattr(server, "_live_serving_model", None)
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Unavailable route must not fabricate a media job or render")
+    monkeypatch.setattr(server, "_job_write", forbidden)
+    monkeypatch.setattr(server, "_render_audio_from_dataset", forbidden)
+    requests = (
+        (server.api_generate_audio, server.ApiGenerateAudioRequest(prompt="Piano music")),
+        (server.api_generate_image, server.ApiGenerateImageRequest(prompt="Quiet harbor")),
+        (server.api_generate_video, server.ApiGenerateVideoRequest(idea="Quiet harbor")),
+    )
+    for handler, request in requests:
+        transport = {"request": Request({"type": "http", "headers": [],
+                     "client": ("127.0.0.1", 1)})} if "request" in inspect.signature(handler).parameters else {}
+        with pytest.raises(HTTPException) as error:
+            asyncio.run(handler(request, _key={}, **transport))
+        assert error.value.status_code == 503
+        assert error.value.detail == "Selected model unavailable"
 
 
 def test_audio_explicit_direction_reaches_synth_and_avoids_genre_pool(monkeypatch, tmp_path):
@@ -451,27 +501,29 @@ def test_audio_synth_receives_actual_instrument_and_prompt(monkeypatch):
         "calm", "piano", "Mellow piano instrumental with soft drums"))
 
 
-def test_audio_reference_mode_rejects_unfulfillable_piano_direction():
+def test_audio_reference_body_rejects_unfulfillable_piano_direction():
     import server
 
     req = server.ApiGenerateAudioRequest(
         reference_sample_idx=3, prompt="Mellow piano with soft drums",
         genre="hip-hop", mood="calm")
     with pytest.raises(HTTPException) as err:
-        asyncio.run(server.api_generate_audio(req, _key={}))
+        asyncio.run(server.api_generate_audio.__wrapped__(req, _key={}))
     assert err.value.status_code == 422
 
 
 @pytest.mark.parametrize(("request_mood", "expected_mood"), [
     ("calm", "calm"), (None, "mellow"),
 ])
-def test_audio_handler_caller_mood_and_targets_beat_fast_priors(
+def test_audio_internal_body_caller_mood_and_targets_beat_fast_priors(
         monkeypatch, request_mood, expected_mood):
     import server
     import ai_model.request_intelligence as ri
     import ai_model.generation as generation
     import ai_model.isolated_audio as isolated
     import ai_model.media_contract as contract
+    from contextlib import nullcontext
+    from ai_model.generation.plan import active_plan
 
     jobs = {}
     seen = {}
@@ -481,11 +533,14 @@ def test_audio_handler_caller_mood_and_targets_beat_fast_priors(
     monkeypatch.setattr(server, "_effective_awareness", lambda *args: "")
     monkeypatch.setattr(server, "_extract_awareness_genres", lambda text: ["dance"])
     monkeypatch.setattr(server, "_extract_awareness_moods", lambda text: ["vibrant"])
-    monkeypatch.setattr(server, "_job_write", lambda key, data: jobs.update({key: data}))
+    def write_job(key, data):
+        jobs[key] = {**data, "generation_plan": active_plan.get().to_dict()}
+    monkeypatch.setattr(server, "_job_write", write_job)
     monkeypatch.setattr(server, "_job_read", lambda key: jobs.get(key))
     monkeypatch.setattr(server, "_job_update",
                         lambda key, data: jobs[key].update(data))
     monkeypatch.setattr(server, "_fw_ingest_audio_render", lambda *args: None)
+    monkeypatch.setattr(server, "_get_gpu_pool", lambda: SimpleNamespace(spawn_sync=lambda *args: nullcontext()))
 
     class Thread:
         def __init__(self, target, name=None, **kwargs):
@@ -517,7 +572,7 @@ def test_audio_handler_caller_mood_and_targets_beat_fast_priors(
         prompt="Mellow piano instrumental with soft drums", genre="hip-hop",
         mood=request_mood, target_bpm=82, target_key="C minor",
         duration=4, instrument="piano")
-    result = asyncio.run(server.api_generate_audio(req, _key={}))
+    result = asyncio.run(server.api_generate_audio.__wrapped__(req, _key={}))
     job = jobs[result["job_id"]]
     assert seen["prompt"] == req.prompt
     assert seen["instrument"] == "piano"

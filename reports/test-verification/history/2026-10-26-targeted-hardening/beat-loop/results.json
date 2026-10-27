@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "startedAt": "2026-10-26T18:26:30.745011+00:00",
+  "nodeVersion": "v22.23.3",
+  "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
+  "commands": [
+    {
+      "id": "beat-loop-lifecycle-postgres.test",
+      "path": "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/onboarding-results/fix-beatloop-neutral-final/beat-loop-lifecycle-postgres.test.xml",
+        "tests/payment-processing/beat-loop-lifecycle-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 18.062,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "beat-loop-lifecycle-postgres.test.txt",
+      "junit": "beat-loop-lifecycle-postgres.test.xml"
+    }
+  ],
+  "blocked": [
+    {
+      "path": "tests/payment-processing/real-stripe-api.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/inbound-real-stripe.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/real-stripe-topup.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    },
+    {
+      "path": "tests/payment-processing/browser-fixture.mjs",
+      "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
+      "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
+    }
+  ],
+  "selection": "beat-loop-lifecycle-postgres.test",
+  "finishedAt": "2026-10-26T18:26:48.813437+00:00",
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "timeout": 0,
+    "remoteNotRun": 4
+  },
+  "productionReady": false
+}

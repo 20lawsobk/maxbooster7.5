@@ -17,6 +17,10 @@ const testUser = {
 };
 
 async function api(method: string, path: string, body?: any) {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()) &&
+      !authCookies.split("; ").some(cookie => cookie.startsWith("csrf-token="))) {
+    await api("GET", "/api/csrf-token");
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -113,7 +117,10 @@ describe("Full Auth Flow", () => {
   it("7. sessions list is accessible", async () => {
     const r = await api("GET", "/api/auth/sessions");
     expect(r.status).toBe(200);
-    expect(Array.isArray(r.json)).toBe(true);
+    expect(Array.isArray(r.json.sessions)).toBe(true);
+    expect(r.json.totalCount).toBe(r.json.sessions.length);
+    expect(r.json.sessions.some((session: { id: string; current: boolean }) =>
+      session.current && session.id === r.json.currentSessionId)).toBe(true);
   });
 
   it("8. login history is accessible", async () => {
@@ -212,8 +219,8 @@ describe("OAuth Callback Structure", () => {
     }
   });
 
-  it("15. GET /api/social/callback/:platform with OAuth provider error redirects with oauth_denied", async () => {
-    // Provider sends error=access_denied — the callback should redirect to the error page
+  it("15. an OAuth provider error without session-bound state is rejected as invalid_state", async () => {
+    // An untrusted provider-error query does not bypass session/state validation.
     const res = await fetch(
       `${BASE}/api/social/callback/youtube?error=access_denied&error_description=User+denied`,
       {
@@ -224,8 +231,7 @@ describe("OAuth Callback Structure", () => {
     expect([301, 302, 303, 307, 308, 400]).toContain(res.status);
     if (res.status >= 300 && res.status < 400) {
       const location = res.headers.get("location") ?? "";
-      // Server redirects to frontend with error=oauth_denied
-      expect(location).toMatch(/oauth_denied/i);
+      expect(location).toMatch(/invalid_state/i);
     }
   });
 
@@ -354,26 +360,16 @@ describe("OAuth Callback Structure", () => {
 
   it("24b. GET /api/auth/oauth/initiate?platform=google with auth redirects to Google or error page", async () => {
     // Re-authenticate so we have a valid session for this request
-    const loginRes = await fetch(`${BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: testUser.email,
-        password: testUser.password,
-      }),
-      signal: AbortSignal.timeout(8000),
-      redirect: "manual",
+    const loginRes = await api("POST", "/api/auth/login", {
+      email: testUser.email,
+      password: testUser.password,
     });
-    const sessionCookies =
-      loginRes.headers
-        .getSetCookie?.()
-        .map((c) => c.split(";")[0])
-        .join("; ") ?? "";
+    expect(loginRes.status).toBe(200);
 
     const res = await fetch(`${BASE}/api/auth/oauth/initiate?platform=google`, {
       signal: AbortSignal.timeout(8000),
       redirect: "manual",
-      headers: sessionCookies ? { Cookie: sessionCookies } : {},
+      headers: { Cookie: authCookies },
     });
     // Must redirect — either to Google OAuth or to the google_not_configured error page
     expect([301, 302, 303, 307, 308]).toContain(res.status);

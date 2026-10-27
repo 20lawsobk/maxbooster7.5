@@ -25,7 +25,9 @@ try {
   const config = path.join(temp, 'drizzle.json');
   await writeFile(config, JSON.stringify({ dialect: 'postgresql', schema: path.join(temp, 'schema/schema.ts'), out: path.join(temp, 'generated') }));
   execFileSync(process.execPath, ['node_modules/drizzle-kit/bin.cjs', 'generate', `--config=${config}`], { env: base, stdio: 'pipe', timeout: 60_000 });
-  for (const file of (await readdir(path.join(temp, 'generated'))).filter(f => f.endsWith('.sql')).sort()) {
+  const baselineMigrations = (await readdir(path.join(temp, 'generated'))).filter(f => f.endsWith('.sql')).sort();
+  if (!baselineMigrations.length) throw new Error('Drizzle produced no baseline SQL despite exiting zero');
+  for (const file of baselineMigrations) {
     await cluster.pool.query(await readFile(path.join(temp, 'generated', file), 'utf8'));
   }
   for (const file of (await readdir('migrations')).filter(f => /^\d+.*\.sql$/.test(f) && Number(f.split('_')[0]) >= 20).sort()) {
@@ -36,7 +38,9 @@ try {
   // Vitest itself forks workers; retain the transport guard without the app
   // rehearsal's child-process prohibition. Every worker inherits this preload.
   const guard = path.join(temp, 'loopback-guard.mjs');
-  await writeFile(guard, (await readFile('scripts/readiness-egress-guard.mjs', 'utf8')).split('for (const method of [')[0] + '\nsyncBuiltinESMExports();\n');
+  await writeFile(guard, (await readFile('scripts/readiness-egress-guard.mjs', 'utf8'))
+    .replaceAll('"./lib/isolated-codec-process.mjs"', JSON.stringify(path.join(root, 'scripts/lib/isolated-codec-process.mjs')))
+    .split('for (const method of [')[0] + '\nsyncBuiltinESMExports();\n');
   const listener = net.createServer();
   await new Promise(resolve => listener.listen(0, '127.0.0.1', resolve));
   const redisPort = listener.address().port;

@@ -42,7 +42,8 @@ test("historical publishing owns packing; ordinary compilation cannot launch a s
   const plan=buildPlan();
   const source=plan.find(task=>task.id==="source");
   assert.deepEqual(new Set(source.deps),new Set(["pack_node","pack_python","pack_maxcore","pack_pdim"]));
-  assert.deepEqual(plan.find(task=>task.id==="finalize").deps,["source"]);
+  assert.deepEqual(plan.find(task=>task.id==="remainder").deps,["source"]);
+  assert.deepEqual(plan.find(task=>task.id==="finalize").deps,["remainder"]);
   const bootstrap=fs.readFileSync("script/deployment/bootstrap.sh","utf8");
   assert.ok(bootstrap.indexOf("isolate_publishing_caches") < bootstrap.indexOf('for candidate'));
   assert.ok(bootstrap.indexOf("--recover") < bootstrap.indexOf('for manager in npm pnpm'));

@@ -88,8 +88,8 @@ const FALLBACK_PRICE = 29.99;
 const PRICE_UNDERCUT_FACTOR = 0.95;
  // ~ 8 bars at 120 BPM — short preview-grade beat
 
-const TRENDING_GENRE_FALLBACK = "trap";
-const TRENDING_MOOD_FALLBACK = "dark";
+const DEFAULT_GENRE_LABEL = "instrumental";
+const DEFAULT_MOOD_LABEL = "unspecified";
 
 function getPublicAppOrigin(): string {
   const origin =
@@ -697,8 +697,8 @@ class BeatMoneyLoopService {
       // observed values — not the pre-generation fallbacks.
       const concreteScan = {
         ...scan,
-        genre: scan.genre ?? TRENDING_GENRE_FALLBACK,
-        mood: scan.mood ?? TRENDING_MOOD_FALLBACK,
+        genre: scan.genre ?? DEFAULT_GENRE_LABEL,
+        mood: scan.mood ?? DEFAULT_MOOD_LABEL,
         tempo: scan.tempo ?? 120,
       };
       const {
@@ -1034,20 +1034,22 @@ class BeatMoneyLoopService {
       duration: durationSec,
       instrument: "ensemble",
       format: "wav",
-      prompt: ["Create an original instrumental beat without vocals.",
-        scan.genre && `Genre: ${scan.genre}.`, scan.mood && `Mood: ${scan.mood}.`,
-        scan.tempo && `Tempo: ${scan.tempo} BPM.`, scan.requestedKey && `Key: ${scan.requestedKey}.`,
-        scan.productionStyles.length && `Production: ${scan.productionStyles.slice(0, 5).join(", ")}.`,
-        scan.hooks.length && `Creative direction: ${scan.hooks.slice(0, 5).join("; ")}.`,
-      ].filter(Boolean).join(" "),
+      prompt: "Parametric instrumental synthesis without vocals",
+      dedicated_controls: {
+        duration_sec: durationSec, instrument: "ensemble", arrangement: "structured", sample_rate: 44100,
+        ...(scan.genre !== undefined ? { genre: scan.genre } : {}),
+        ...(scan.mood !== undefined ? { mood: scan.mood } : {}),
+        ...(scan.tempo !== undefined ? { bpm: scan.tempo } : {}),
+        ...(scan.requestedKey !== undefined ? { key: scan.requestedKey } : {}),
+      },
+      // These public observations remain context, not promises that a
+      // procedural synthesizer imitates a reference or creative style.
+      context: { productionStyles: scan.productionStyles, hooks: scan.hooks,
+        synthesis_scope: "parametric_instrumental", semantic_style_applied: false },
     };
     // Send the requested key so MaxCore generates in that tonality, giving
     // each cycle a different key rather than always defaulting to C Minor.
     if (scan.requestedKey) body.key = scan.requestedKey;
-    if (scan.productionStyles.length > 0)
-      body.style = scan.productionStyles.slice(0, 5).join(", ");
-    if (scan.hooks.length > 0)
-      body.context = scan.hooks.slice(0, 5).join("; ");
 
     // This legacy raw transport must use the same canonical live receipt as
     // the shared client, and bind the existing administrative listing owner.
@@ -1125,9 +1127,13 @@ class BeatMoneyLoopService {
       /** Style/production hook MaxCore used when generating */
       style_hook?: string;
       backend?: string;
+      source?: string;
+      capability?: { renderer?: string; trained?: boolean; kind?: string };
+      generation_plan?: Record<string, unknown>;
+      receipt?: { effective_controls?: Record<string, unknown> };
     };
 
-    const backend = data.backend ?? "maxcore";
+    const backend = data.capability?.renderer ?? data.source ?? data.backend ?? "maxcore";
     const validateWav = async (bytes: Buffer): Promise<Buffer> => {
       // A successful HTTP response is not sufficient evidence that MaxCore
       // produced playable audio: upstream error pages and truncated payloads
@@ -1161,20 +1167,32 @@ class BeatMoneyLoopService {
     }> => {
       // Real BPM: prefer top-level `bpm` (audio engine output) over `mc_bpm`
       // which is the requested BPM echoed back. Key is only in the new field.
-      const mcBpm = d.bpm ?? d.mc_bpm;
+      const rendered = d.receipt?.effective_controls;
+      const renderedBpm = typeof rendered?.bpm === "number" ? rendered.bpm : undefined;
+      const renderedKey = typeof rendered?.key === "string" ? rendered.key : undefined;
+      const mcBpm = d.bpm ?? renderedBpm;
       const extras = {
-        observation: beatAudioObservation(d as unknown as Record<string, unknown>, {
+        observation: beatAudioObservation({ ...d,
+          ...(renderedBpm !== undefined ? { bpm: renderedBpm } : {}),
+          ...(renderedKey !== undefined ? { key: renderedKey } : {}),
+          ...(typeof rendered?.genre === "string" && rendered.genre ? { genre: rendered.genre } : {}),
+          ...(typeof rendered?.mood === "string" && rendered.mood ? { mood: rendered.mood } : {}),
+        } as Record<string, unknown>, {
           ...awarenessPayload,
           ...(data as unknown as Record<string, unknown>).snapshot_id !== undefined
             ? { snapshot_id: (data as unknown as Record<string, unknown>).snapshot_id } : {},
+          ...(d.generation_plan ? { generation_plan: d.generation_plan } : {}),
+          renderer_provenance: { renderer: d.capability?.renderer ?? backend,
+            trained: d.capability?.trained ?? null, effective_controls: rendered ?? null,
+            semantic_style_applied: false, quality: "not_evaluated" },
         }),
         mcKey: d.mc_key,
         mcBpm,
-        mcMusicalKey: d.key,
+        mcMusicalKey: d.key ?? renderedKey,
         audioAnalysis: d.audio_analysis,
         concept: d.concept,
         styleHook: d.style_hook,
-        backend: d.backend ?? backend,
+        backend: d.capability?.renderer ?? d.source ?? d.backend ?? backend,
       };
       const b64 = d.wav_b64 ?? d.audio_b64;
       if (b64) {
@@ -1683,8 +1701,11 @@ class BeatMoneyLoopService {
       const base = getMaxcoreOriginOrDefault();
       const aiKey = getMaxcoreGenerationKey();
       const body = await prepareGenerationAwareness("/api/generate/image", {
-        prompt: `${args.scan.mood} ${args.scan.genre} music producer album cover art, high contrast`,
-        platform: "instagram", style: "cinematic", aspect_ratio: "1:1",
+        prompt: args.title,
+        platform: "instagram",
+        dedicated_controls: { headline: args.title, mode: "poster", width: 640, height: 640,
+          color_scheme: "high_contrast", img_format: "png" },
+        context: { artwork_scope: "typographic_poster", subject_synthesis: false },
       });
       Object.assign(body, { user_id: adminId, userId: adminId, owner_id: adminId });
       const artRes = await fetch(`${base}/api/generate/image`, {
@@ -1784,6 +1805,8 @@ class BeatMoneyLoopService {
               genre: args.scan.genre,
               mood: args.scan.mood,
               bpm: args.scan.tempo,
+              genreSource: args.scan.genre === DEFAULT_GENRE_LABEL ? "unspecified" : "requested_or_render_controls",
+              moodSource: args.scan.mood === DEFAULT_MOOD_LABEL ? "unspecified" : "requested_or_render_controls",
               key: keyDisplay,
               tempo: args.scan.tempo,
               licenseType: "basic",
@@ -2097,79 +2120,18 @@ class BeatMoneyLoopService {
       .trim();
   }
 
-  /**
-   * Generate a real marketplace-quality beat description — no placeholder text.
-   * Reads like a producer wrote it, not a script.
-   */
+  /** Describe applied controls and requested direction without inferred quality claims. */
   private _buildBeatDescription(
     scan: { genre: string; mood: string; tempo: number; hooks: string[] },
     price: number,
   ): string {
-    // Fix 8: three-sentence structure — emotional lead, production detail,
-    // target artist type. Buyers make decisions here; specs alone don't close.
-
-    // Sentence 1: emotional feel — what this beat makes you feel, not BPM/key
-    const emotionalLeadMap: Record<string, string> = {
-      dark:       "A cinematic beat built for artists who paint pictures with words — raw, atmospheric, and impossible to skip.",
-      empowering: "An anthem-grade production built for artists who make records that move rooms.",
-      driven:     "High-momentum energy that demands a verse with something to prove.",
-      aggressive: "Hard-hitting production with no filler — made for artists who don't pull punches.",
-      melancholy: "Emotionally rich and cinematic — the kind of beat that turns a journal entry into a record.",
-      chill:      "Smooth, late-night energy that gives artists room to breathe, flow, and say something real.",
-      upbeat:     "Feel-good and infectious — the kind of record listeners play twice before they even know why.",
-      mysterious: "Dark and layered with a hook that lingers long after the track ends.",
-      euphoric:   "Euphoric energy that lifts the room — built for moments that matter.",
-      romantic:   "Warm and intimate production that gives love songs the sonic space they deserve.",
-    };
-    const moodKey = (scan.mood ?? "").toLowerCase();
-    const emotionalLead =
-      emotionalLeadMap[moodKey] ??
-      `${scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1)} energy with the kind of production that sticks.`;
-
-    // Sentence 2: specific production elements that differentiate this beat
-    const productionDetailMap: Record<string, string> = {
-      trap:      "Features rolling hi-hats, punchy 808s, and layered synth textures at " + scan.tempo + " BPM.",
-      drill:     "Dark sliding 808s, staccato hi-hats, and cinematic strings locked at " + scan.tempo + " BPM.",
-      rnb:       "Smooth chord stabs, warm bass, and live-feel percussion at " + scan.tempo + " BPM.",
-      "r&b":     "Smooth chord stabs, warm bass, and live-feel percussion at " + scan.tempo + " BPM.",
-      hiphop:    "Sampled-feel drums, deep sub bass, and melodic layers at " + scan.tempo + " BPM.",
-      "hip-hop": "Sampled-feel drums, deep sub bass, and melodic layers at " + scan.tempo + " BPM.",
-      afrobeats: "Percussive rhythm beds, bright plucks, and afro-swing groove at " + scan.tempo + " BPM.",
-      dancehall: "Riddim-ready percussion, catchy melody loops, and sub bass at " + scan.tempo + " BPM.",
-      pop:       "Punchy drums, ear-catching hooks, and radio-ready arrangement at " + scan.tempo + " BPM.",
-      indie:     "Live-textured drums, guitar-adjacent tones, and lo-fi warmth at " + scan.tempo + " BPM.",
-      lo_fi:     "Dusty samples, mellow chords, and a boom-bap swing at " + scan.tempo + " BPM.",
-      jazz:      "Neo-soul chord progressions, brushed drums, and melodic bass at " + scan.tempo + " BPM.",
-    };
-    const genreKey = (scan.genre ?? "").toLowerCase().replace(/[-\s]/g, "");
-    const productionDetail =
-      productionDetailMap[(scan.genre ?? "").toLowerCase()] ||
-      productionDetailMap[genreKey] ||
-      `Professionally arranged at ${scan.tempo} BPM with full mix headroom.`;
-
-    // Sentence 3: artist type comparison — the question every buyer asks is
-    // "is this for someone like me?" Answer it directly.
-    const artistTypeMap: Record<string, string> = {
-      trap:      "Ideal for introspective trap, story-driven rap, and cinematic R&B — think Cole, Kendrick, or JID.",
-      drill:     "Built for UK and Brooklyn drill — artists in the lane of Central Cee, Pop Smoke, or Fivio.",
-      rnb:       "Perfect for modern R&B vocalists and neo-soul artists who write with feeling first.",
-      "r&b":     "Perfect for modern R&B vocalists and neo-soul artists who write with feeling first.",
-      hiphop:    "Made for lyricists who have something to say — classic boom-bap energy, modern mix.",
-      "hip-hop": "Made for lyricists who have something to say — classic boom-bap energy, modern mix.",
-      afrobeats: "For Afrobeats and Afropop artists who move between genres — the lane of Burna, Wizkid, and Rema.",
-      dancehall: "Caribbean artists and global pop crossovers — think Sean Paul, Popcaan, or Kranium.",
-      pop:       "Radio-ready for pop and crossover artists building a streaming catalogue.",
-      indie:     "Indie artists and alternative singer-songwriters who value texture over trend.",
-      lo_fi:     "Content creators, study channels, and chill-hop artists who need something timeless.",
-      jazz:      "Neo-soul and jazz-influenced artists in the lane of Sampha, Sault, or Thundercat.",
-    };
-    const artistType =
-      artistTypeMap[(scan.genre ?? "").toLowerCase()] ||
-      artistTypeMap[genreKey] ||
-      "Built for independent artists who take their craft seriously.";
-
-    const cleanPrice = Math.round(price);
-    return `${emotionalLead} ${productionDetail} ${artistType} Non-exclusive lease from $${cleanPrice} — exclusive rights available on request.`;
+    return [
+      `Instrumental synthesis at ${scan.tempo} BPM.`,
+      scan.genre !== DEFAULT_GENRE_LABEL ? `Requested genre direction: ${scan.genre}.` : "",
+      scan.mood !== DEFAULT_MOOD_LABEL ? `Requested mood direction: ${scan.mood}.` : "",
+      "Preview the recording to decide whether its sound suits your project.",
+      `Basic non-exclusive license: $${price.toFixed(2)}. Review the license terms at checkout.`,
+    ].filter(Boolean).join(" ");
   }
 
   /**

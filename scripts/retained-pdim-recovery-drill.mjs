@@ -28,6 +28,9 @@ const jsonPath = join(reportDirectory, "retained-pdim-recovery-drill.json");
 const markdownPath = join(reportDirectory, "retained-pdim-recovery-drill.md");
 const workerPath = join(workspace, "scripts/retained-pdim-recovery-worker.ts");
 const tsxLoader = join(workspace, "node_modules/tsx/dist/loader.mjs");
+// Legacy snapshots contain their ownership index. Current SQL metadata must be
+// restored separately with its corresponding blob snapshot; this drill cannot
+// certify that joint recovery. No production database is accessed here.
 const command =
   'env -i PATH="$PATH" HOME=/tmp DATABASE_RECOVERY_BUCKET_ID="$DATABASE_RECOVERY_BUCKET_ID" node --max-old-space-size=192 scripts/retained-pdim-recovery-drill.mjs';
 const bucketId = process.env.DATABASE_RECOVERY_BUCKET_ID;
@@ -46,6 +49,8 @@ const restoredPath = join(restoreRoot, "data/local-pdim-store.json");
 const result = {
   reportVersion: 1,
   status: "blocked",
+  metadataScope: "legacy-pdim-index-only",
+  currentSqlMetadataRecovered: false,
   command,
   scope: "actual stopped local PDIM persistence",
   durableBackupCreated: false,
@@ -123,6 +128,8 @@ const recoverySource = () => {
   const files = [
     "scripts/retained-pdim-recovery-drill.mjs",
     "scripts/retained-pdim-recovery-worker.ts",
+    "scripts/legacy-hybrid-recovery.ts",
+    "server/services/hybridStorageRepository.ts",
     "scripts/recovery-private-store.mjs",
     "server/lib/localPdimServer.ts",
     "server/services/hybridStorageService.ts",
@@ -266,12 +273,14 @@ try {
   await mkdir(reportDirectory, { recursive: true });
   await writeFile(jsonPath, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o644 });
   const lines = [
-    "# Retained PDIM recovery drill",
+    "# Retained legacy-format PDIM recovery drill",
     "",
     `**Result: ${result.status.toUpperCase()}**`,
     `**Capture complete: ${result.captureComplete ? "YES" : "NO"}**`,
     "",
     `Exact command: \`${command}\``,
+    "",
+    "This verifies historical PDIM ownership snapshots only. Current PostgreSQL hybrid metadata and its matching immutable blobs require a separate coordinated backup/restore.",
     "",
     "## Safety",
     "",

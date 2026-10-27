@@ -7,12 +7,14 @@ import type {
   NodeId,
   ObjectId,
 } from "../types.js";
+import { withFabricCatalogLock, withFabricCatalogTransaction } from "./DeletionOutbox.js";
 
 export class ChunkIndex {
+  withCatalogLock<T>(work: () => Promise<T>): Promise<T> { return withFabricCatalogLock(work); }
   async putChunkLocation(
     loc: Omit<FabricChunkLocation, "createdAt">,
   ): Promise<void> {
-    await db
+    await withFabricCatalogTransaction(async tx => tx
       .insert(fabricChunks)
       .values({
         id: loc.id,
@@ -20,12 +22,13 @@ export class ChunkIndex {
         nodeIds: loc.nodeIds,
         sizeBytes: String(loc?.sizeBytes),
         checksum: loc.checksum,
+        physicalKeys: loc.physicalKeys ?? {},
         createdAt: new Date(),
       })
       .onConflictDoUpdate({
         target: fabricChunks.id,
-        set: { nodeIds: loc.nodeIds, sizeBytes: String(loc?.sizeBytes) },
-      });
+        set: { nodeIds: loc.nodeIds, sizeBytes: String(loc?.sizeBytes), physicalKeys: loc.physicalKeys ?? {} },
+      }));
   }
 
   async getChunkLocation(
@@ -81,6 +84,7 @@ export class ChunkIndex {
       nodeIds: row.nodeIds as NodeId[],
       sizeBytes: Number(row?.sizeBytes),
       checksum: row.checksum,
+      physicalKeys: row.physicalKeys as Record<NodeId, string>,
       createdAt: row.createdAt,
     };
   }

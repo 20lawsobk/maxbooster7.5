@@ -1,51 +1,54 @@
 {
-  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "startedAt": "2026-10-27T10:12:18.602588+00:00",
   "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
   "selectedGroups": [
-    "root"
+    "browser",
+    "checks",
+    "commerce",
+    "coverage",
+    "http",
+    "load",
+    "node",
+    "operations",
+    "pages",
+    "python",
+    "root",
+    "subsystems"
   ],
   "runs": [
     {
       "command": [
         "npm",
         "run",
-        "test:ci"
+        "build"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-25T15:33:39.830842+00:00",
-      "durationSeconds": 127.377,
+      "startedAt": "2026-10-27T10:12:20.715802+00:00",
+      "durationSeconds": 25.688,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
-      "log": "reports/test-verification/orchestration/ci.txt",
-      "logSha256": "024077a8ce1d2328cbe919d389a246af4c2f0a9006e5e872d20d084962a55ab5",
-      "group": "root",
-      "id": "ci"
-    },
-    {
-      "command": [
-        "node",
-        "node_modules/vitest/vitest.mjs",
-        "run",
-        "--config",
-        "vitest.additional.config.ts",
-        "--reporter=verbose",
-        "--reporter=junit",
-        "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
-      ],
-      "cwd": ".",
-      "startedAt": "2026-10-25T15:35:47.208941+00:00",
-      "durationSeconds": 0.935,
-      "exitCode": 0,
-      "timedOut": false,
-      "status": "passed",
-      "log": "reports/test-verification/orchestration/additional.txt",
-      "logSha256": "b8a9bc9cf861dc84935644a83b3f7342623b1a1e85936bc4f04707958d5cda8a",
-      "group": "root",
-      "id": "additional"
+      "log": "reports/test-verification/orchestration/build.txt",
+      "logSha256": "aa7fcf4567d91393fff14ceb28b72232195c3095f9c19aa77f2852b6ce7def0d",
+      "group": "checks",
+      "id": "build"
     }
   ],
   "productionReady": false,
-  "status": "executed_groups_passed",
-  "allTestsPassed": false
+  "sourceInputsSha256": "b250db2d50dedf927cde5280527e0defc59391edd8b2ce833d0d501c92024c04",
+  "catalog": {
+    "command": [
+      "/workspace/.cloud-python/bin/python",
+      "scripts/testing/generate-catalog.py"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-27T10:12:18.825090+00:00",
+    "durationSeconds": 1.891,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/test-verification/orchestration/catalog.txt",
+    "logSha256": "d9d5a9c3c8e297673369ed83bd978b604fe1b6f01cf0d047bf3e51ae2f4c5f9d"
+  }
 }

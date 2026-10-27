@@ -5,6 +5,7 @@ import tls from "node:tls";
 import dgram from "node:dgram";
 import childProcess from "node:child_process";
 import { syncBuiltinESMExports } from "node:module";
+import { isIsolatedCodecInvocation, spawnIsolatedCodec } from "./lib/isolated-codec-process.mjs";
 
 if (process.env.READINESS_EGRESS_GUARD !== "1") {
   throw new Error("Readiness egress guard loaded without its safety marker");
@@ -64,6 +65,7 @@ dgram.createSocket = () => {
   throw new Error("[readiness-egress-denied] UDP sockets are disabled");
 };
 
+const nativeSpawn = childProcess.spawn.bind(childProcess);
 for (const method of [
   "exec",
   "execFile",
@@ -73,7 +75,10 @@ for (const method of [
   "execFileSync",
   "spawnSync",
 ]) {
-  childProcess[method] = () => {
+  childProcess[method] = (...args) => {
+    if (method === "spawn" && process.env.READINESS_LOCAL_CODECS === "1" && isIsolatedCodecInvocation(...args)) {
+      return spawnIsolatedCodec(nativeSpawn, args[0], args[1]);
+    }
     throw new Error(`[readiness-egress-denied] child_process.${method} is disabled`);
   };
 }

@@ -65,10 +65,12 @@ try {
   fs.writeFileSync(path.join(temp,'schema/schema.ts'),fs.readFileSync(path.join(root,'shared/schema.ts'),'utf8').replace('export * from "./readiness-schema";',''));
   fs.writeFileSync(path.join(temp,'drizzle.json'),JSON.stringify({dialect:'postgresql',schema:path.join(temp,'schema/schema.ts'),out:path.join(temp,'generated')}));
   run(process.execPath,['node_modules/drizzle-kit/bin.cjs','generate',`--config=${path.join(temp,'drizzle.json')}`],base);
+  const baselineMigrations=fs.readdirSync(path.join(temp,'generated')).filter(file=>file.endsWith('.sql')).sort();
+  if(!baselineMigrations.length||baselineMigrations.some(file=>!fs.readFileSync(path.join(temp,'generated',file),'utf8').trim()))throw Error('Schema generator produced no usable SQL; exit zero alone does not establish a fixture schema');
   run('initdb',['-D',path.join(temp,'pg'),'-U','packed','--auth=trust','--no-locale','--encoding=UTF8'],base);
   run('pg_ctl',['-D',path.join(temp,'pg'),'-l',path.join(out,'packed-postgres.log'),'-o',`-h 127.0.0.1 -k ${temp} -p ${pgPort} -c shared_buffers=32MB -c max_connections=40`,'-w','start'],base);postgresStarted=true;
   client=new pg.Client({host:'127.0.0.1',port:pgPort,user:'packed',database:'postgres'});await client.connect();
-  for(const file of fs.readdirSync(path.join(temp,'generated')).filter(f=>f.endsWith('.sql')).sort()) await client.query(fs.readFileSync(path.join(temp,'generated',file),'utf8'));
+  for(const file of baselineMigrations) await client.query(fs.readFileSync(path.join(temp,'generated',file),'utf8'));
   for(const file of fs.readdirSync(path.join(root,'migrations')).filter(f=>/^\d+.*\.sql$/.test(f)&&Number(f.split('_')[0])>=20).sort()) await client.query(fs.readFileSync(path.join(root,'migrations',file),'utf8'));
   evidence.ephemeralDatabase='pass';
   // Schema generation needed checkout dependencies above. Remove that setup
@@ -79,6 +81,8 @@ try {
   // Keep the existing TCP/TLS/UDP transport guard. Unlike the source-only
   // fixture, the cold executive must launch its real local child runtimes.
   const guard=fs.readFileSync(path.join(root,'scripts/readiness-egress-guard.mjs'),'utf8').split('for (const method of [')[0]+'\nsyncBuiltinESMExports();\n';
+  fs.mkdirSync(path.join(temp,'lib'));
+  fs.copyFileSync(path.join(root,'scripts/lib/isolated-codec-process.mjs'),path.join(temp,'lib/isolated-codec-process.mjs'));
   fs.writeFileSync(path.join(temp,'loopback-guard.mjs'),guard);
   fs.mkdirSync(path.join(temp,'python-guard'));
   fs.writeFileSync(path.join(temp,'python-guard/sitecustomize.py'),`import socket\n_original_connect=socket.socket.connect\ndef _connect(self,address):\n    if isinstance(address,tuple) and address[0] not in ('localhost','127.0.0.1','::1'):\n        raise OSError('packed-rehearsal-egress-denied')\n    return _original_connect(self,address)\nsocket.socket.connect=_connect\n`);

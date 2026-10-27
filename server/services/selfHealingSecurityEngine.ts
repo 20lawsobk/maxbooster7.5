@@ -15,7 +15,7 @@ import { randomBytes } from "crypto";
 import { EventEmitter } from "events";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
-import { securityThreats, ipBlacklist, notifications } from "@shared/schema";
+import { securityThreats, ipBlacklist, notifications, users } from "@shared/schema";
 import { eq, gte } from "drizzle-orm";
 import type { ContainmentAdapters, ContainmentEffect } from "./securityContainment.js";
 
@@ -476,7 +476,8 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     if (this.threatPatterns.nosqlInjection?.test(content)) return true;
 
     const ipScore = this.ipThreatScores.get(source?.ip);
-    if (ipScore && ipScore?.score > 80) return true;
+    // updateIpThreatScore stores a normalized 0..1 score, not a percentage.
+    if (ipScore && ipScore?.score > 0.8) return true;
 
     return false;
   }
@@ -794,8 +795,10 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       }
 
       case "alert":
-        await this.sendSecurityAlert(assessment);
-        action.details.alertSent = true;
+        const recipientCount = await this.sendSecurityAlert(assessment);
+        action.details.alertSent = recipientCount > 0;
+        action.details.recipientCount = recipientCount;
+        action.details.alertDelivery = recipientCount > 0 ? "inbox" : "structured_log";
         break;
 
     }
@@ -866,16 +869,25 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
   }
 
-  private async sendSecurityAlert(assessment: ThreatAssessment): Promise<void> {
+  private async sendSecurityAlert(assessment: ThreatAssessment): Promise<number> {
     try {
-      await this.database.insert(notifications).values({
-        userId: "system",
+      const recipients = await this.database.select({ id: users.id }).from(users).where(eq(users.role, "admin"));
+      if (recipients.length === 0) {
+        logger.warn({ threatId: assessment.id, threatType: assessment.threatType },
+          "Security alert has no administrator recipients; structured threat evidence retained");
+        return 0;
+      }
+      await this.database.insert(notifications).values(recipients.map(recipient => ({
+        userId: recipient.id,
         type: "security_alert",
         title: `Security Alert: ${assessment?.threatType}`,
         message: `Threat detected and mitigated. Level: ${(assessment?.threatLevel * 100).toFixed(0)}%. Indicators: ${assessment?.indicators.join(", ")}`,
-      });
+      })));
+      return recipients.length;
     } catch (error) {
-      logger.warn({ err: error }, "Failed to send security alert:");
+      logger.warn({ threatId: assessment.id, errorType: error instanceof Error ? error.name : typeof error },
+        "Security alert persistence failed");
+      throw new Error("Security alert persistence failed");
     }
   }
 
@@ -896,6 +908,9 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       supported: action.details.supported !== false,
       effect: action.details.effect,
       error: action.details.error,
+      alertSent: action.details.alertSent,
+      recipientCount: action.details.recipientCount,
+      alertDelivery: action.details.alertDelivery,
     }));
 
     try {

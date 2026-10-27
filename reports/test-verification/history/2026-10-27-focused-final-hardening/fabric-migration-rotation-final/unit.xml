@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="7" failures="0" errors="0" time="0.061940666">
+    <testsuite name="tests/unit/pdim-canonical-owner.test.ts" timestamp="2026-10-27T10:13:12.505Z" hostname="2fc971e77ddd" tests="7" failures="0" errors="0" skipped="0" time="0.061940666">
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="canonical local PDIM owner &gt; uses shared recovered state and executes actual Lua rather than script-pattern stubs" time="0.030136731">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="canonical local PDIM owner &gt; provides Redis TIME to Lua scripts that fence canonical publications" time="0.00365334">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="canonical local PDIM owner &gt; publishes exact and Redis-glob pattern messages from direct and Lua commands" time="0.003440709">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="canonical local PDIM owner &gt; blocks until another client supplies a list item and times out honestly" time="0.01186233">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="canonical local PDIM owner &gt; preserves stream groups and pending delivery through owner snapshots" time="0.002132416">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="PocketFabric consumer wiring &gt; retains the actual constructor dependencies and coalesces overlapping evaluations" time="0.004082257">
+        </testcase>
+        <testcase classname="tests/unit/pdim-canonical-owner.test.ts" name="PocketFabric consumer wiring &gt; does not retire or remove a source while durable migration recovery fails" time="0.004529952">
+        </testcase>
+    </testsuite>
+</testsuites>

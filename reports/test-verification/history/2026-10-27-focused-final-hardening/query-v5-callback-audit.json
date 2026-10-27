@@ -1,0 +1,29 @@
+{
+  "scope": "Direct object options on imported useQuery/useInfiniteQuery; mutations/cache callbacks excluded; spread/wrapper options not resolved",
+  "findings": [
+    {
+      "file": "client/src/components/studio/StudioLoader.tsx",
+      "line": 80,
+      "hook": "useQuery",
+      "callback": "onError"
+    },
+    {
+      "file": "client/src/components/studio/StudioLoader.tsx",
+      "line": 87,
+      "hook": "useQuery",
+      "callback": "onSuccess"
+    },
+    {
+      "file": "client/src/components/studio/StudioLoader.tsx",
+      "line": 104,
+      "hook": "useQuery",
+      "callback": "onError"
+    },
+    {
+      "file": "client/src/components/studio/StudioLoader.tsx",
+      "line": 108,
+      "hook": "useQuery",
+      "callback": "onSuccess"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { posts } from "../../shared/schema";
 import { expect, it } from "vitest";
+import { SocialPublishRequestError } from "../../server/services/socialPublishRequestError.js";
 
 it("routes batch publishing before post IDs, retains ownership and never claims unverified delivery", async () => {
   const source = fs.readFileSync("server/routes/socialMedia.ts", "utf8");
@@ -20,6 +21,8 @@ it("routes batch publishing before post IDs, retains ownership and never claims 
     limit: async () => [{ id: "fixture-post" }],
     then(resolve: (rows: unknown[]) => unknown) { return Promise.resolve([{ id: "fixture-post" }]).then(resolve); } };
   const router = express.Router();
+  let connected = false;
+  const admissions: string[][] = [];
   const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const owner = req.get("X-Fixture-Owner");
     if (!owner) { res.status(401).json({ error: "Authentication required" }); return; }
@@ -27,7 +30,12 @@ it("routes batch publishing before post IDs, retains ownership and never claims 
   };
   vm.runInNewContext(ts.transpileModule(selected.map(node => node.getText(tree)).join("\n"), {
     compilerOptions: { target: ts.ScriptTarget.ES2022 },
-  }).outputText, { router, requireAuth, db: { select: () => ({ from: () => chain }) }, posts, eq, and, inArray, logger: { warn() {} } });
+  }).outputText, { router, requireAuth, db: { select: () => ({ from: () => chain }) }, posts, eq, and, inArray,
+    SocialPublishRequestError, autoPostingServiceV2: { publishExistingPostNow: async (owner: string, id: string) => {
+      admissions.push([owner, id]);
+      if (!connected) throw new SocialPublishRequestError("Connect the platform", 409, "PUBLISHING_CONNECTION_REQUIRED");
+      return { id, status: "pending" };
+    } }, logger: { warn() {} } });
   const app = express(); app.use(express.json()); app.use(router);
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>(resolve => server.once("listening", resolve));
@@ -41,12 +49,20 @@ it("routes batch publishing before post IDs, retains ownership and never claims 
     expect(predicates).toHaveLength(0);
     const batch = await send("batch", { postIds: ["fixture-post"] }, "owner-fixture");
     expect(batch.status).toBe(409);
-    expect(await batch.json()).toMatchObject({ postIds: ["fixture-post"] });
+    expect(await batch.json()).toMatchObject({ queuedCount: 0, outcomes: [{ postId: "fixture-post", queued: false, code: "PUBLISHING_CONNECTION_REQUIRED" }] });
     const query = new PgDialect().sqlToQuery(predicates[0] as Parameters<PgDialect["sqlToQuery"]>[0]);
     expect(query.params).toEqual(["fixture-post", "owner-fixture"]);
     const single = await send("fixture-post", {}, "owner-fixture");
     expect(single.status).toBe(409);
-    expect(await single.json()).toMatchObject({ postId: "fixture-post" });
+    expect(await single.json()).toMatchObject({ code: "PUBLISHING_CONNECTION_REQUIRED" });
+    connected = true;
+    const accepted = await send("fixture-post", {}, "owner-fixture");
+    expect(accepted.status).toBe(202);
+    expect(await accepted.json()).toMatchObject({ queued: true, post: { id: "fixture-post", status: "pending" } });
+    const acceptedBatch = await send("batch", { postIds: ["fixture-post", "fixture-post"] }, "owner-fixture");
+    expect(acceptedBatch.status).toBe(202);
+    expect(await acceptedBatch.json()).toMatchObject({ queuedCount: 1 });
+    expect(admissions.every(([owner, id]) => owner === "owner-fixture" && id === "fixture-post")).toBe(true);
   } finally {
     server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve()));
   }

@@ -8,6 +8,7 @@ import {
   bigint,
   jsonb,
   index,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -174,6 +175,23 @@ export const fabricChunks = pgTable(
 export const insertFabricChunkSchema = createInsertSchema(fabricChunks);
 export type InsertFabricChunk = z.infer<typeof insertFabricChunkSchema>;
 export type FabricChunk = typeof fabricChunks.$inferSelect;
+
+// Deletion journals outlive their live object/chunk rows. They deliberately
+// have no foreign keys to those rows, which are removed before node retries.
+export const fabricDeletionObjects = pgTable("fabric_deletion_objects", {
+  objectId: text("object_id").primaryKey(),
+  objectData: jsonb("object_data").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export const fabricDeletionChunks = pgTable("fabric_deletion_chunks", {
+  objectId: text("object_id").notNull(),
+  ordinal: integer("ordinal").notNull(),
+  chunkId: text("chunk_id").notNull(),
+  state: text("state").notNull().default("pending"),
+  location: jsonb("location"),
+  doneNodes: jsonb("done_nodes").notNull().default([]),
+}, table => [primaryKey({ columns: [table.objectId, table.ordinal] }),
+  index("fabric_deletion_chunks_chunk_idx").on(table.chunkId)]);
 
 // Large objects are split into ordered segments (64–256 MB each). Each segment
 // is independently compressed and chunked/erasure-coded, and carries its own

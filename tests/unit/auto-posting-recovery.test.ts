@@ -20,6 +20,9 @@ const state = vi.hoisted(() => ({
   claimSocialPost: vi.fn(),
   checkpointSocialPost: vi.fn(),
   recordPerformance: vi.fn(),
+  getSocialAccounts: vi.fn(),
+  requestImmediateSocialPost: vi.fn(),
+  updateQueuedSocialPost: vi.fn(),
 }));
 
 vi.mock("bullmq", () => {
@@ -96,6 +99,7 @@ vi.mock("../../server/storage.js", () => ({
     getScheduledPosts: state.getScheduledPosts,
     getScheduledPostById: state.getScheduledPostById,
     updateScheduledPost: state.updateScheduledPost,
+    getSocialAccounts: state.getSocialAccounts,
   },
 }));
 
@@ -130,6 +134,8 @@ vi.mock("../../server/services/socialPostingRepository.js", () => ({
   claimSocialPost: state.claimSocialPost,
   checkpointSocialPost: state.checkpointSocialPost,
   recoverStrandedSocialPosts: state.recoverStrandedSocialPosts,
+  requestImmediateSocialPost: state.requestImmediateSocialPost,
+  updateQueuedSocialPost: state.updateQueuedSocialPost,
 }));
 
 vi.mock("../../server/services/socialOAuthService.js", () => ({
@@ -182,6 +188,10 @@ function resetFakes() {
   state.workers.length = 0;
   state.queueCloseCount = 0;
   state.updateScheduledPost.mockReset().mockResolvedValue(undefined);
+  state.updateQueuedSocialPost.mockReset().mockImplementation(async (_userId: string, id: string, _status: string, updates: unknown) => {
+    await state.updateScheduledPost(id, { ...updates as object, status: "pending" });
+    return { id };
+  });
   state.claimSocialPost.mockReset().mockResolvedValue({ id: POST_ID });
   state.checkpointSocialPost.mockReset().mockResolvedValue(undefined);
   state.recordPerformance.mockReset().mockResolvedValue(undefined);
@@ -192,6 +202,15 @@ function resetFakes() {
   state.getScheduledPostById
     .mockReset()
     .mockImplementation(async (id: string) => state.posts.get(id) ?? null);
+  state.getSocialAccounts.mockReset().mockResolvedValue([
+    { platform: "twitter", isActive: true, accessToken: "isolated-fixture-token" },
+  ]);
+  state.requestImmediateSocialPost.mockReset().mockImplementation(async (_userId: string, id: string) => {
+    const post = state.posts.get(id);
+    post.status = "pending";
+    post.scheduledTime = new Date();
+    return { id };
+  });
 }
 
 describe("scheduled social post recovery", () => {
@@ -200,6 +219,54 @@ describe("scheduled social post recovery", () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
     resetFakes();
+  });
+
+  it("enqueues publish-now under a stable identity without resetting delivery or repeating a delayed job", async () => {
+    state.pendingRows = [];
+    const service = await loadService();
+    await service.publishExistingPostNow("user-1", POST_ID);
+    await service.publishExistingPostNow("user-1", POST_ID);
+    expect(state.queuedJobs.size).toBe(1);
+    expect(state.queuedJobs.get(`immediate_${POST_ID}`).options.delay).toBe(0);
+    expect(state.requestImmediateSocialPost).toHaveBeenCalledWith("user-1", POST_ID);
+    expect(state.updateScheduledPost).not.toHaveBeenCalled();
+    expect(state.posts.get(POST_ID).status).toBe("pending");
+    expect(state.claimSocialPost).not.toHaveBeenCalled();
+  });
+
+  it("refuses cross-owner publish-now and missing connections before queue or state mutations", async () => {
+    state.pendingRows = [];
+    const service = await loadService();
+    await expect(service.publishExistingPostNow("other-owner", POST_ID)).rejects.toMatchObject({ status: 404 });
+    state.getSocialAccounts.mockResolvedValue([]);
+    await expect(service.publishExistingPostNow("user-1", POST_ID)).rejects.toMatchObject({ status: 409, code: "PUBLISHING_CONNECTION_REQUIRED" });
+    expect(state.requestImmediateSocialPost).not.toHaveBeenCalled();
+    expect(state.queuedJobs.size).toBe(0);
+  });
+
+  it.each(["posting", "completed", "failed"])("never resets %s delivery for publish-now", async status => {
+    state.pendingRows = [];
+    state.posts.get(POST_ID).status = status;
+    const service = await loadService();
+    await expect(service.publishExistingPostNow("user-1", POST_ID)).rejects.toMatchObject({ status: 409, code: "DELIVERY_RECONCILIATION_REQUIRED" });
+    expect(state.requestImmediateSocialPost).not.toHaveBeenCalled();
+    expect(state.posts.get(POST_ID).status).toBe(status);
+  });
+
+  it.each(["started", "unknown", "confirmed"])("preserves %s receipts when publish-now is requested", async outcome => {
+    state.pendingRows = [];
+    state.posts.get(POST_ID).results = [{ platform: "twitter", outcome }];
+    const service = await loadService();
+    await expect(service.publishExistingPostNow("user-1", POST_ID)).rejects.toMatchObject({ status: 409 });
+    expect(state.requestImmediateSocialPost).not.toHaveBeenCalled();
+  });
+
+  it("does not enqueue when a racing worker changed durable state before admission", async () => {
+    state.pendingRows = [];
+    state.requestImmediateSocialPost.mockResolvedValue(undefined);
+    const service = await loadService();
+    await expect(service.publishExistingPostNow("user-1", POST_ID)).rejects.toMatchObject({ status: 409, code: "DELIVERY_STATE_CHANGED" });
+    expect(state.queuedJobs.size).toBe(0);
   });
 
   it("repairs a persisted-but-unqueued idempotent post without creating another job", async () => {

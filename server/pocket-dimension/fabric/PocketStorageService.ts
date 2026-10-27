@@ -24,9 +24,11 @@ import { cdcChunker } from "./compression/ContentDefinedChunker.js";
 import { isContainer } from "./compression/ContainerFormat.js";
 import type { StoreOptions } from "./compression/types.js";
 import { logger } from "../../logger.js";
+import { DeletionOutbox, withFabricCatalogLock } from "./infra/DeletionOutbox.js";
 
 
 export class PocketStorageService {
+  private readonly deletionOutbox = new DeletionOutbox();
   constructor(
     private pocketRegistry: PocketRegistry,
     private volumeRegistry: VolumeRegistry,
@@ -72,6 +74,9 @@ export class PocketStorageService {
     return this.volumeRegistry.listVolumes(pocketId);
   }
 
+  async getVolume(volumeId: VolumeId): Promise<FabricVolume | null> { return this.volumeRegistry.getVolume(volumeId); }
+  async getObjectMetadata(objectId: ObjectId): Promise<FabricObject | null> { return this.objectIndex.getObject(objectId); }
+
   async putObject(
     pocketId: PocketId,
     volumeId: VolumeId,
@@ -79,6 +84,21 @@ export class PocketStorageService {
     originalName: string,
     contentType = "application/octet-stream",
     storeOpts: StoreOptions = {},
+  ): Promise<ObjectId> {
+    return withFabricCatalogLock(async () => {
+      await this.drainPendingDeletionsLocked();
+      try { return await this.putObjectLocked(pocketId, volumeId, data, originalName, contentType, storeOpts); }
+      catch (error) {
+        try { await this.drainPendingDeletionsLocked(); }
+        catch (cleanupError) { throw new AggregateError([error, cleanupError], "Fabric write failed; cleanup retained for retry"); }
+        throw error;
+      }
+    });
+  }
+
+  private async putObjectLocked(
+    pocketId: PocketId, volumeId: VolumeId, data: Buffer, originalName: string,
+    contentType: string, storeOpts: StoreOptions,
   ): Promise<ObjectId> {
     const pocket = await this.pocketRegistry.getPocket(pocketId);
     if (!pocket) throw new Error(`Pocket ${pocketId} not found`);
@@ -106,7 +126,7 @@ export class PocketStorageService {
     // degrades to a full (non-delta) store rather than failing the write.
     let priorVersionData: Buffer | undefined;
     if (storeOpts.versionOf) {
-      const prior = await this.getObject(storeOpts.versionOf as ObjectId);
+      const prior = await this.getObjectLocked(storeOpts.versionOf as ObjectId);
       if (prior) {
         priorVersionData = prior.data;
       } else {
@@ -138,6 +158,7 @@ export class PocketStorageService {
     const cdcChunks = cdcChunker?.chunk(containerBytes);
 
     const objectId = randomUUID() as ObjectId;
+    await this.deletionOutbox.beginWrite(objectId);
 
     interface ChunkMeta {
       id: ChunkId;
@@ -145,12 +166,16 @@ export class PocketStorageService {
       sizeBytes: number;
       checksum: string;
       isDedup: boolean;
+      physicalKeys?: Record<NodeId, string>;
     }
     const chunkMetas: ChunkMeta[] = [];
 
     for (const cdcChunk of cdcChunks) {
       const chunkId = cdcChunk?.hash as ChunkId;
       const chunkChecksum = cdcChunk?.hash;
+
+      const repeated = chunkMetas.find(meta => meta.id === chunkId);
+      if (repeated) { chunkMetas.push({ ...repeated, isDedup: true }); continue; }
 
       const existingLoc = await this.chunkIndex.getChunkLocation(chunkId);
       if (existingLoc) {
@@ -163,6 +188,7 @@ export class PocketStorageService {
           sizeBytes: cdcChunk.length,
           checksum: chunkChecksum,
           isDedup: true,
+          physicalKeys: existingLoc.physicalKeys,
         });
         continue;
       }
@@ -172,23 +198,19 @@ export class PocketStorageService {
         cdcChunk?.length,
         pocket?.policy,
       );
+      const ordinal = chunkMetas.length;
+      const physicalKeys = Object.fromEntries(decision.nodeIds.map(node => [node, `${chunkId}.${randomUUID()}`]));
+      await this.deletionOutbox.stageWriteChunk(objectId, ordinal, chunkId, decision.nodeIds, cdcChunk.data.length, physicalKeys);
 
-      await Promise.all(
+      const stored = await Promise.allSettled(
         decision?.nodeIds.map(async (nodeId) => {
           const store = this.chunkStoreFactory(nodeId);
-          await store?.putChunk(chunkId, cdcChunk?.data);
+          await store?.putChunk(physicalKeys[nodeId], cdcChunk?.data);
+          await this.deletionOutbox.creditWriteNode(objectId, ordinal, nodeId, cdcChunk.data.length);
         }),
       );
-
-      await Promise.all(
-        decision?.nodeIds.map(async (nodeId) => {
-          const node = await this.nodeRegistry.getNode(nodeId);
-          if (node)
-            await this.nodeRegistry.updateNode(nodeId, {
-              usedBytes: node.usedBytes + cdcChunk?.data.length,
-            });
-        }),
-      );
+      const failed = stored.filter(result => result.status === "rejected");
+      if (failed.length) throw new AggregateError(failed.map(result => result.reason), "Fabric chunk write failed");
 
       chunkMetas?.push({
         id: chunkId,
@@ -196,12 +218,13 @@ export class PocketStorageService {
         sizeBytes: cdcChunk.data.length,
         checksum: chunkChecksum,
         isDedup: false,
+        physicalKeys,
       });
     }
 
     const chunkIds = chunkMetas?.map((c) => c?.id);
 
-    const obj = await this.objectIndex.putObject(
+    const obj = await this.objectIndex.putObjectWithChunks(
       volumeId,
       originalName,
       contentType,
@@ -209,20 +232,8 @@ export class PocketStorageService {
       chunkIds,
       contentHash,
       objectId,
-    );
-
-    await Promise.all(
-      chunkMetas
-        .filter((c) => !c?.isDedup)
-        .map((meta) =>
-          this.chunkIndex.putChunkLocation({
-            id: meta.id,
-            objectId: obj.id,
-            nodeIds: meta.nodeIds,
-            sizeBytes: meta.sizeBytes,
-            checksum: meta.checksum,
-          }),
-        ),
+      chunkMetas,
+      compressionResult.isDelta ? compressionResult.deltaBaseId : undefined,
     );
 
     const dedupCount = chunkMetas?.filter((c) => c?.isDedup).length;
@@ -240,6 +251,10 @@ export class PocketStorageService {
   async getObject(
     objectId: ObjectId,
   ): Promise<{ data: Buffer; object: FabricObject } | null> {
+    return withFabricCatalogLock(() => this.getObjectLocked(objectId));
+  }
+
+  private async getObjectLocked(objectId: ObjectId): Promise<{ data: Buffer; object: FabricObject } | null> {
     const obj = await this.objectIndex.getObject(objectId);
     if (!obj) return null;
 
@@ -260,7 +275,7 @@ export class PocketStorageService {
       for (const nodeId of loc?.nodeIds ?? []) {
         try {
           const store = this.chunkStoreFactory(nodeId);
-          const chunk = await store?.getChunk(chunkId);
+          const chunk = await store?.getChunk(loc.physicalKeys?.[nodeId] ?? chunkId);
           buffers?.push(chunk);
           retrieved = true;
           break;
@@ -288,7 +303,7 @@ export class PocketStorageService {
     }
 
     const resolveDeltaBase = async (deltaBaseId: string): Promise<Buffer> => {
-      const base = await this.getObject(deltaBaseId as ObjectId);
+      const base = await this.getObjectLocked(deltaBaseId as ObjectId);
       if (!base) {
         throw new Error(
           `Delta base object ${deltaBaseId} not found — cannot reconstruct ${objectId}`,
@@ -306,39 +321,32 @@ export class PocketStorageService {
   }
 
   async deleteObject(objectId: ObjectId): Promise<void> {
-    const obj = await this.objectIndex.getObject(objectId);
-    if (!obj) return;
+    return withFabricCatalogLock(() => this.deleteObjectLocked(objectId));
+  }
 
-    const chunkLocations = await this.chunkIndex.getManyChunkLocations(
-      obj?.chunkIds,
-    );
+  private async deleteObjectLocked(objectId: ObjectId): Promise<void> {
+    const object = await this.deletionOutbox.claim(objectId);
+    if (!object) return;
+    const errors: unknown[] = [];
+    for (const chunkId of new Set(object.chunkIds)) {
+      try {
+        await this.deletionOutbox.drainClaimedChunk(chunkId, (nodeId, physicalKey) => this.chunkStoreFactory(nodeId).deleteChunk(physicalKey ?? chunkId));
+      } catch (error) { errors.push(error); }
+    }
+    if (errors.length) throw new AggregateError(errors, "Fabric deletion remains pending");
+    await this.deletionOutbox.finish(objectId);
+  }
 
-    await Promise.all(
-      obj?.chunkIds.map(async (chunkId) => {
-        const loc = chunkLocations?.get(chunkId);
-        if (loc) {
-          await Promise.all(
-            loc?.nodeIds.map(async (nodeId) => {
-              try {
-                const store = this.chunkStoreFactory(nodeId);
-                await store?.deleteChunk(chunkId);
-                const node = await this.nodeRegistry.getNode(nodeId);
-                if (node)
-                  await this.nodeRegistry.updateNode(nodeId, {
-                    usedBytes: Math.max(0, node?.usedBytes - loc?.sizeBytes),
-                  });
-              } catch {
-                /* intentional: per-node chunk delete runs in parallel forEach — one failure does not cancel others */
-              }
-            }),
-          );
-          await this.chunkIndex.deleteChunkLocation(chunkId);
-        }
-      }),
-    );
+  async drainPendingDeletions(): Promise<void> {
+    return withFabricCatalogLock(() => this.drainPendingDeletionsLocked());
+  }
 
-    await this.objectIndex.deleteObject(objectId);
-    logger.info(`[PocketFabric] Deleted object ${objectId}`);
+  private async drainPendingDeletionsLocked(): Promise<void> {
+    const errors: unknown[] = [];
+    for (const objectId of await this.deletionOutbox.pendingObjects()) {
+      try { await this.deleteObjectLocked(objectId); } catch (error) { errors.push(error); }
+    }
+    if (errors.length) throw new AggregateError(errors, "Fabric deletion remains pending");
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {

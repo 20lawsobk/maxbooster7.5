@@ -11,9 +11,8 @@ const { startLocalPdimServer, stopLocalPdimServer } = await import(
 );
 await startLocalPdimServer();
 
-const { hybridStorageService: hybridStorage } = await import(
-  "../server/services/hybridStorageService.ts"
-);
+const { legacyHybridSnapshotReader } = await import("./legacy-hybrid-recovery.js");
+const hybridStorage = legacyHybridSnapshotReader();
 const { pocketManager } = await import("../server/pocket-dimension/index.ts");
 
 const owner = "synthetic-pdim-owner";
@@ -39,15 +38,11 @@ function digest(bytes: Buffer) {
 
 async function seed() {
   const content = [];
-  for (const fixture of fixtures) {
-    const uploaded = await hybridStorage.upload(
-      owner,
-      fixture.name,
-      fixture.bytes,
-      fixture.mimeType,
-      { folder: "synthetic-recovery", metadata: fixture.metadata },
-    );
-    const metadata = hybridStorage.getMetadata(uploaded.key);
+  const { seedLegacyPdimFixture } = await import("../tests/fixtures/legacy-pdim-fixture.js");
+  const entries = await seedLegacyPdimFixture(fixtures.map(fixture => ({ ...fixture, owner })));
+  for (const [index, fixture] of fixtures.entries()) {
+    const uploaded = entries[index];
+    const metadata = await hybridStorage.getMetadata(uploaded.key);
     assert(metadata);
     assert.equal(metadata.userId, owner);
     assert.equal(metadata.location, "pocket-dimension");
@@ -75,7 +70,7 @@ async function verify() {
     const bytes = await hybridStorage.read(owner, item.key);
     assert.equal(bytes.length, item.bytes);
     assert.equal(digest(bytes), item.sha256);
-    const metadata = hybridStorage.getMetadata(item.key);
+    const metadata = await hybridStorage.getMetadata(item.key);
     assert(metadata);
     assert.equal(metadata.userId, owner);
     assert.equal(metadata.originalName, item.name);
@@ -88,10 +83,10 @@ async function verify() {
     );
   }
   assert.deepEqual(
-    hybridStorage.listFiles(owner).map((entry) => entry.key).sort(),
+    (await hybridStorage.listFiles(owner)).map((entry) => entry.key).sort(),
     expected.content.map((item: { key: string }) => item.key).sort(),
   );
-  assert.equal(hybridStorage.listFiles(stranger).length, 0);
+  assert.equal((await hybridStorage.listFiles(stranger)).length, 0);
   await pocketManager.closeAll();
   process.stdout.write(
     `PDIM_DRILL_RESULT ${JSON.stringify({

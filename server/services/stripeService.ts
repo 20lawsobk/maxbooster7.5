@@ -1,6 +1,6 @@
 import { billingAccountStatus } from "./billingAccountStatus";
 import Stripe from "stripe";
-import { createStripeClient, hasStripeCredential } from "../lib/stripeClient";
+import { lazyStripeClient, hasStripeCredential } from "../lib/stripeClient";
 import { validateCustomerRefund } from "./commercePolicy";
 import { initiateCommerceRefund } from "./commerce/compensation";
 import { storage } from "../storage";
@@ -37,12 +37,9 @@ if (!actualStripeKey) {
     "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
   );
   logger.warn("   Configure a Stripe secret key or supported proxy credential binding.");
-  throw new Error(
-    "Invalid Stripe configuration - cannot initialize payment service",
-  );
 }
 
-const stripe = createStripeClient(actualStripeKey, {
+const getStripe = lazyStripeClient(() => actualStripeKey, {
   apiVersion: "2026-02-25.clover" as any,
 });
 
@@ -51,6 +48,7 @@ export class StripeService {
     userId: string,
     tier: "monthly" | "yearly" | "lifetime",
   ) {
+    const stripe = getStripe();
     try {
       let user = await storage.getUser(userId);
       if (!user) {
@@ -155,6 +153,7 @@ export class StripeService {
     price: number,
     sellerId?: string,
   ) {
+    const stripe = getStripe();
     try {
       const result = await executeStripeOperation(() =>
         stripe?.paymentIntents?.create({
@@ -185,6 +184,7 @@ export class StripeService {
     licenseType: "standard" | "exclusive";
     amountCents: number;
   }) {
+    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.retrieve(
       input.paymentIntentId,
     );
@@ -336,6 +336,7 @@ export class StripeService {
         .limit(1);
 
       if (user && subscriptionId) {
+        const stripe = getStripe();
         // Update subscription status
         const subscription =
           await stripe?.subscriptions?.retrieve(subscriptionId);

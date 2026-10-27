@@ -9,10 +9,8 @@ import { logger } from "../logger.js";
 const isProductionEnv = (): boolean =>
   process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
-// ── Production rate limits calibrated for 90M-user scale ─────────────────────
-// At 90M users with ~1% DAU = 900K concurrent-peak, these limits prevent
-// individual IPs/users from monopolising server capacity while leaving ample
-// headroom for legitimate traffic bursts on high-tier subscriptions.
+// Per-client admission limits bound individual usage. They do not establish
+// aggregate capacity; deployment throughput requires a measured load profile.
 //
 // Enforcement strategy (defence-in-depth):
 //   Layer 1 — express-rate-limit (security?.ts): 2 000 req / 15 min per IP
@@ -84,6 +82,32 @@ export const RATE_LIMITS = {
 };
 
 const REDIS_KEY_PREFIX = "ratelimit:";
+
+// One atomic operation prevents parallel callers from all seeing free slots.
+// Bounded pruning uses the commands supported by both Redis and canonical PDIM.
+const SLIDING_WINDOW_SCRIPT = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local maximum = tonumber(ARGV[3])
+local cutoff = now - window
+local stale = redis.call('ZRANGEBYSCORE', key, '-inf', cutoff, 'LIMIT', 0, 1000)
+if #stale > 0 then
+  local expand = table.unpack or unpack
+  redis.call('ZREM', key, expand(stale))
+end
+local count = redis.call('ZCOUNT', key, '(' .. cutoff, '+inf')
+if count >= maximum then
+  local oldest = redis.call('ZRANGEBYSCORE', key, '(' .. cutoff, '+inf', 'WITHSCORES', 'LIMIT', 0, 1)
+  local reset = now + window
+  if #oldest > 1 then reset = tonumber(oldest[2]) + window end
+  return {0, 0, reset, count}
+end
+redis.call('ZADD', key, now, ARGV[4])
+redis.call('EXPIRE', key, math.ceil(window / 1000) + 60)
+return {1, maximum - count - 1, now + window, count + 1}
+`;
+
 
 interface SlidingWindowResult {
   allowed: boolean;
@@ -180,14 +204,6 @@ async function slidingWindowCheck(
   maxRequests: number,
 ): Promise<SlidingWindowResult> {
   const now = Date.now();
-  const windowStart = now - windowMs;
-  const redis = await getRedisClient();
-
-  if (!redis) {
-    logger.warn("[RateLimit] Redis unavailable — degraded mode (25% limits)");
-    return degradedLimiter?.check(key, windowMs, maxRequests);
-  }
-
   const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
   // Wrap all Redis ops in a 400ms timeout — if PDIM is congested the race
@@ -198,37 +214,18 @@ async function slidingWindowCheck(
   try {
     const result = await Promise.race<SlidingWindowResult>([
       (async () => {
-        // PDIM does not support ZREMRANGEBYSCORE; use ZCOUNT to count only
-        // in-window members (scores >= windowStart) without pruning old entries.
-        const requestCount: number = await (redis as any)?.zcount(
-          redisKey,
-          windowStart,
-          "+inf",
-        );
-
-        if (requestCount >= maxRequests) {
-          const oldest: string[] = await (redis as any)?.zrange(redisKey, 0, 0);
-          let resetAt = now + windowMs;
-
-          if (oldest?.length > 0) {
-            const oldestTimestamp = parseInt(oldest[0], 10);
-            resetAt = oldestTimestamp + windowMs;
-          }
-
-          return { allowed: false, remaining: 0, resetAt, total: requestCount };
+        const redis = await getRedisClient();
+        if (!redis || typeof redis !== "object" || !("eval" in redis) || typeof redis.eval !== "function") {
+          throw new Error("Rate-limit authority does not support atomic scripts");
         }
-
-        const requestId = `${now}:${randomBytes(4).toString("hex")}`;
-        await (redis as any)?.zadd(redisKey, now, requestId);
-        // fire-and-forget expire — doesn't need to block the response
-        (redis as any)?.expire(redisKey, Math.ceil(windowMs / 1000) + 60).catch(() => {});
-
-        return {
-          allowed: true,
-          remaining: maxRequests - requestCount - 1,
-          resetAt: now + windowMs,
-          total: requestCount + 1,
-        };
+        const result = await redis.eval(SLIDING_WINDOW_SCRIPT, 1, redisKey,
+          now, windowMs, maxRequests, `${now}:${randomBytes(8).toString("hex")}`);
+        if (!Array.isArray(result) || result.length !== 4) throw new Error("Invalid rate-limit authority response");
+        const [allowed, remaining, resetAt, total] = result.map(Number);
+        if (![allowed, remaining, resetAt, total].every(Number.isFinite) || ![0, 1].includes(allowed)) {
+          throw new Error("Invalid rate-limit authority counters");
+        }
+        return { allowed: allowed === 1, remaining, resetAt, total };
       })(),
       new Promise<SlidingWindowResult>((_, reject) =>
         setTimeout(
@@ -361,16 +358,6 @@ export const loginRateLimiter: RequestHandler = async (
 
   const ip = getClientIP(req);
 
-  if (
-    ip === "127.0.0.1" ||
-    ip === "::1" ||
-    ip === "::ffff:127.0.0.1" ||
-    ip?.startsWith("10.82.") ||
-    ip?.startsWith("10.")
-  ) {
-    next();
-    return;
-  }
   const key = `auth:login:${ip}`;
   const { login } = RATE_LIMITS?.auth ?? {};
 
@@ -398,16 +385,6 @@ export const registerRateLimiter: RequestHandler = async (
 
   const ip = getClientIP(req);
 
-  if (
-    ip === "127.0.0.1" ||
-    ip === "::1" ||
-    ip === "::ffff:127.0.0.1" ||
-    ip?.startsWith("10.82.") ||
-    ip?.startsWith("10.")
-  ) {
-    next();
-    return;
-  }
 
   const key = `auth:register:${ip}`;
   const { register } = RATE_LIMITS?.auth ?? {};

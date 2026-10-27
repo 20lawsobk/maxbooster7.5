@@ -1,9 +1,9 @@
 git rev-parse HEAD
-f571666292938651db15f56ffa3d7d4ab75b4305
+4c72114a55a9425d4af743a72a71e4c58a532d2f
 
-/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-r1XAkJ/drizzle.json
-Reading config file '/tmp/maxbooster-http-tests-r1XAkJ/drizzle.json'
-274 tables
+/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-uoLjzw/drizzle.json
+Reading config file '/tmp/maxbooster-http-tests-uoLjzw/drizzle.json'
+281 tables
 achievements 11 columns 0 indexes 0 fks
 ad_campaigns 21 columns 0 indexes 0 fks
 ad_creatives 15 columns 0 indexes 0 fks
@@ -95,8 +95,12 @@ email_messages 11 columns 0 indexes 0 fks
 email_preferences 11 columns 0 indexes 0 fks
 exchange_rates 6 columns 1 indexes 0 fks
 explanation_logs 11 columns 0 indexes 0 fks
-fabric_chunks 6 columns 0 indexes 0 fks
-fabric_objects 8 columns 0 indexes 1 fks
+fabric_catalog_fence 2 columns 0 indexes 0 fks
+fabric_chunks 8 columns 0 indexes 0 fks
+fabric_deletion_chunks 6 columns 1 indexes 0 fks
+fabric_deletion_objects 3 columns 0 indexes 0 fks
+fabric_object_dependencies 2 columns 1 indexes 2 fks
+fabric_objects 9 columns 0 indexes 1 fks
 fabric_pockets 6 columns 0 indexes 0 fks
 fabric_storage_nodes 9 columns 0 indexes 0 fks
 fabric_volumes 5 columns 0 indexes 1 fks
@@ -116,6 +120,8 @@ global_rankings 25 columns 0 indexes 0 fks
 hashtag_research 16 columns 0 indexes 0 fks
 historical_analytics 28 columns 0 indexes 0 fks
 hns_auctions 11 columns 2 indexes 0 fks
+hybrid_storage_files 6 columns 3 indexes 0 fks
+hybrid_storage_imports 3 columns 0 indexes 0 fks
 hyperfollow_pages 7 columns 1 indexes 0 fks
 inference_runs 15 columns 0 indexes 0 fks
 instant_payouts 12 columns 2 indexes 0 fks
@@ -214,6 +220,7 @@ social_autopilot_content 13 columns 0 indexes 0 fks
 social_campaigns 11 columns 2 indexes 0 fks
 social_inbox_messages 28 columns 0 indexes 0 fks
 social_keywords 7 columns 0 indexes 0 fks
+social_media_jobs 10 columns 3 indexes 1 fks
 social_mentions 17 columns 0 indexes 0 fks
 social_pattern_aggregates 14 columns 0 indexes 0 fks
 social_reply_templates 6 columns 1 indexes 0 fks
@@ -279,9 +286,9 @@ workspaces 10 columns 0 indexes 0 fks
 youtube_connections 10 columns 0 indexes 0 fks
 youtube_uploads 13 columns 0 indexes 0 fks
 
-[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-r1XAkJ/generated/0000_same_the_twelve.sql 🚀
+[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-uoLjzw/generated/0000_bumpy_deadpool.sql 🚀
 
-initdb -D /tmp/maxbooster-http-tests-r1XAkJ/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
+initdb -D /tmp/maxbooster-http-tests-uoLjzw/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
 The files belonging to this database system will be owned by user "agent".
 This user must also own the server process.
 
@@ -290,7 +297,7 @@ The default text search configuration will be set to "english".
 
 Data page checksums are disabled.
 
-creating directory /tmp/maxbooster-http-tests-r1XAkJ/pg ... ok
+creating directory /tmp/maxbooster-http-tests-uoLjzw/pg ... ok
 creating subdirectories ... ok
 selecting dynamic shared memory implementation ... posix
 selecting default "max_connections" ... 100
@@ -303,10 +310,10 @@ syncing data to disk ... ok
 
 Success. You can now start the database server using:
 
-    pg_ctl -D /tmp/maxbooster-http-tests-r1XAkJ/pg -l logfile start
+    pg_ctl -D /tmp/maxbooster-http-tests-uoLjzw/pg -l logfile start
 
 
-pg_ctl -D /tmp/maxbooster-http-tests-r1XAkJ/pg -l /tmp/maxbooster-http-tests-r1XAkJ/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-r1XAkJ -p 43409 -c shared_buffers=32MB -c max_connections=40 -w start
+pg_ctl -D /tmp/maxbooster-http-tests-uoLjzw/pg -l /tmp/maxbooster-http-tests-uoLjzw/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-uoLjzw -p 44397 -c shared_buffers=32MB -c max_connections=40 -w start
 waiting for server to start.... done
 server started
 

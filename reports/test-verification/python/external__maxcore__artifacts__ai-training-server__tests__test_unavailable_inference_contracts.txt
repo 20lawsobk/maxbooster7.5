@@ -1,39 +1,8 @@
-....FF.                                                                  [100%]
-=================================== FAILURES ===================================
-____________ test_text_content_mode_never_returns_template_fallback ____________
-
-    def test_text_content_mode_never_returns_template_fallback():
-        source = ast.unparse(_function("api_generate_text"))
-        assert "deterministic_candidate" not in source
-        assert "Generated content for intent" not in source
->       assert "source not in {'model', 'ai_model'}" in source
-E       assert "source not in {'model', 'ai_model'}" in '@app.post(\'/api/generate/text\')\n@_planned_generation(\'text\', deterministic_planner=True)\nasync def api_generate...uality may be reduced"\n    result[\'processing_time_ms\'] = round((time.time() - start) * 1000, 1)\n    return result'
-
-tests/test_unavailable_inference_contracts.py:71: AssertionError
-_________ test_model_readiness_reports_terminal_initialization_failure _________
-
-    def test_model_readiness_reports_terminal_initialization_failure():
-        tree = ast.parse(SERVER.read_text(encoding="utf-8"))
-        sync_init = next(
-            node for node in tree.body
-            if isinstance(node, ast.FunctionDef) and node.name == "_init_ai_model"
-        )
-        init_source = ast.unparse(sync_init)
-        wait_source = ast.unparse(_function("_wait_for_model_ready"))
-        server_source = SERVER.read_text(encoding="utf-8")
-    
-        assert "_model_init_error" in init_source
->       assert "type(e).__name__" in init_source
-E       assert 'type(e).__name__' in "def _init_ai_model():\n    global _serving_release_status, _model_ready, _model_init_error\n    global _creative_mode...mode, 'active': None, 'candidate_quality': 'blocked', 'backend_exclusive': 'not_verified', 'error': _model_init_error}"
-
-tests/test_unavailable_inference_contracts.py:86: AssertionError
+.......                                                                  [100%]
 =============================== warnings summary ===============================
 tests/test_unavailable_inference_contracts.py::test_real_conductor_analyzes_tiny_waveform
   /workspace/.cloud-python/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=690
     warnings.warn(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ============================
-FAILED tests/test_unavailable_inference_contracts.py::test_text_content_mode_never_returns_template_fallback
-FAILED tests/test_unavailable_inference_contracts.py::test_model_readiness_reports_terminal_initialization_failure
-2 failed, 5 passed, 1 warning in 8.24s
+7 passed, 1 warning in 13.54s

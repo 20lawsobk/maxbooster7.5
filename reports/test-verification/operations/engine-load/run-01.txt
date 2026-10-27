@@ -1,0 +1,29 @@
+========================================================================
+MaxCore DigitalGPU — 90M-scale concurrency smoke / load test
+target=90.00M requests | unique working set=40 | threads=8 | contention=500.00 | sample=400.00
+========================================================================
+
+[Phase 0] 40 unique real graph computes in 0.1s (543/s) — correctness OK=True
+
+[Phase 1] 500.00 concurrent requests across 8 threads in 0.0s (14,338 req/s aggregate)
+          sources: {'compute': 40, 'cache': 437, 'coalesced': 23}
+          distinct real computes=40 (== compute source 40, <= unique 40); coalesced (single-flight collapse)=23
+          single-flight guarantee — any key computed twice? False (max per-key computes=1)
+
+[Phase 2] dedup fast-path: single-thread 225.26K req/s, 8-thread aggregate 73.06K req/s
+          executed fast-path operations: single-thread=400 multi-thread=160
+
+[Projection] dedup fast-path projection over a bounded 40-unique working set — NOT an executed 90.00M-concurrent run
+             90.00M requests @ dup factor 2,250,000x = 40 cold real computes (543/s) + 90.00M dedup hits
+             single-thread: 6.7m (=225.26K req/s)
+             note: Python's GIL caps in-process thread scaling for this pure-Python fast path (8-thread aggregate 73.06K req/s = 20.5m); a process-per-core deployment scales near-linearly.
+
+[Phase 3] engine audit
+          engine kernels used: {'dgpu.gemm.engine': 240}
+          numpy (no-engine-kernel) ops: {}
+          ENGINE FALLBACKS: {} (total=0)
+
+========================================================================
+RESULT: PASS — single-flight collapsed all duplicates, zero engine fallbacks, all results correct.
+        90.00M requests projected at 6.7m single-thread on this Digital GPU node via the dedup fast path (process-per-core scales further).
+========================================================================

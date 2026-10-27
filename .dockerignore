@@ -132,6 +132,7 @@ scripts/*
 # server-bundled private-storage helper. Production executes only dist/*.mjs,
 # but both deployment build paths must be able to regenerate those artifacts.
 !scripts/retained-pdim-recovery-worker.ts
+!scripts/legacy-hybrid-recovery.ts
 !scripts/recovery-private-store.mjs
 .agents/
 attached_assets/

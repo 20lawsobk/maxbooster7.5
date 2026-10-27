@@ -1,0 +1,73 @@
+{
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-root-storage-postgres.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:38:34.200457+00:00",
+      "durationSeconds": 1.629,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/final-regression-rechecks/tests__fabric-root-storage-postgres.test.mjs.txt",
+      "logSha256": "2736e0f3e41d844922db97a004d84fc0802ec400fa5c449203f32a9bd177578a",
+      "file": "tests/fabric-root-storage-postgres.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/fabric-schema-generation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-26T18:38:35.832160+00:00",
+      "durationSeconds": 1.07,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "/workspace/onboarding-results/fix-node-operations/final-regression-rechecks/tests__fabric-schema-generation.test.mjs.txt",
+      "logSha256": "f8ea302e1795bbc16dd76f9b3ade6f9d9af62aceb07697a36c5fbabc41386cba",
+      "file": "tests/fabric-schema-generation.test.mjs",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 2,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

@@ -265,6 +265,10 @@ def classify(p: str, source: str, titles: list[str]) -> dict:
             result["command"] = f"python3 scripts/testing/run-commerce.py --only {shlex.quote(Path(p).name)}"
         return result
     if "from \"vitest\"" in source or "from 'vitest'" in source or "@jest/globals" in source:
+        if p.startswith("tests/coverage/"):
+            result.update(group="root-unit", runner="vitest-platform", command='env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C CI=1 ' + f"npx vitest run --config vitest.platform.config.ts {q}",
+                          prerequisites=["Node.js >=22.12", "npm ci", "PostgreSQL server tools on PATH; owned private fixture only", "Coverage target100% remains enforced; a focused file run does not establish global coverage"])
+            return result
         if "@jest/globals" in source:
             result.update(group="root-unit", runner="legacy-jest", command=None, prerequisites=["Legacy Jest example: port its imports/configuration to Vitest or supply a dedicated Jest installation/config; it is excluded from the default suite"])
             return result

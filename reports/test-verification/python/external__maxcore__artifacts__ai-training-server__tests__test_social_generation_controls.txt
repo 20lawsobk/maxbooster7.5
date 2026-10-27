@@ -34,7 +34,7 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     @app.on_event("shutdown")
 
 tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits_the_real_control_contract
-  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:372: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/ai_model/training/live_learning.py:531: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -52,4 +52,4 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     @app.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-12 passed, 8 warnings in 1.62s
+12 passed, 8 warnings in 3.36s

@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: distribution workflow isolates owners and records real state changes in private PostgreSQL
+    # Subtest: foreign transition and history access do not expose or change the release
+    ok 1 - foreign transition and history access do not expose or change the release
+      ---
+      duration_ms: 10.658681
+      type: 'test'
+      ...
+    # Subtest: owner can submit without options and real version data survives SQL insertion
+    ok 2 - owner can submit without options and real version data survives SQL insertion
+      ---
+      duration_ms: 10.469712
+      type: 'test'
+      ...
+    # Subtest: stored administrative authority retains review access without transferring ownership
+    ok 3 - stored administrative authority retains review access without transferring ownership
+      ---
+      duration_ms: 7.222734
+      type: 'test'
+      ...
+    # Subtest: metadata changes cannot transfer ownership or rewrite lifecycle state
+    ok 4 - metadata changes cannot transfer ownership or rewrite lifecycle state
+      ---
+      duration_ms: 6.31165
+      type: 'test'
+      ...
+    # Subtest: public transition handler cannot claim reviewer or distributor success
+    ok 5 - public transition handler cannot claim reviewer or distributor success
+      ---
+      duration_ms: 179.342878
+      type: 'test'
+      ...
+    # Subtest: pending request lists stay scoped except for a stored administrator
+    ok 6 - pending request lists stay scoped except for a stored administrator
+      ---
+      duration_ms: 2.30096
+      type: 'test'
+      ...
+    # Subtest: legacy null draft status transitions through the real nullable schema
+    ok 7 - legacy null draft status transitions through the real nullable schema
+      ---
+      duration_ms: 4.034275
+      type: 'test'
+      ...
+    # Subtest: audit failures roll back release state, requests and version history together
+    ok 8 - audit failures roll back release state, requests and version history together
+      ---
+      duration_ms: 13.623329
+      type: 'test'
+      ...
+    # Subtest: concurrent metadata writes serialize their actual previous state and version numbers
+    ok 9 - concurrent metadata writes serialize their actual previous state and version numbers
+      ---
+      duration_ms: 17.666667
+      type: 'test'
+      ...
+    1..9
+ok 1 - distribution workflow isolates owners and records real state changes in private PostgreSQL
+  ---
+  duration_ms: 1636.55504
+  type: 'test'
+  ...
+1..1
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3886.8316

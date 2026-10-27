@@ -117,6 +117,8 @@ export { nodeRegistry as fabricNodeRegistry };
 
 let initialization: Promise<void> | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let deletionDrainTimer: ReturnType<typeof setInterval> | null = null;
+let deletionDrainActive = false;
 const ownsControlPlane = () => process.env.CLUSTER_WORKER_ID === undefined ||
   process.env.CLUSTER_WORKER_ID === "0";
 
@@ -197,6 +199,15 @@ async function initializeFabricOnce(): Promise<void> {
     }
 
     if (ownsControlPlane()) {
+      deletionDrainTimer ??= setInterval(() => {
+        if (deletionDrainActive) return;
+        deletionDrainActive = true;
+        void fabricStorage.drainPendingDeletions()
+          .catch(err => logger.warn({ err }, "[PocketFabric] Deletion retained for retry"))
+          .finally(() => { deletionDrainActive = false; });
+      }, 30_000);
+      deletionDrainTimer.unref();
+      await fabricStorage.drainPendingDeletions();
       // Local pockets share this host, not fictional remote regional machines.
       // Heartbeat only active pockets so a drained node is not resurrected.
       const heartbeat = async () => {

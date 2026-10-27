@@ -102,6 +102,8 @@ export class ElectricBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.ampEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -196,6 +198,8 @@ export class SynthBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillator1.reset();
     this.oscillator2.reset();
     this.subOsc.reset();
@@ -317,6 +321,8 @@ export class AcousticBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.bodyEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -392,6 +398,7 @@ export class SubBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillator.reset();
     this.subOsc.reset();
     this.lpFilter.clear();
@@ -490,6 +497,8 @@ export class WobbleBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillator1.reset();
     this.oscillator2.reset();
     this.subOsc.reset();
@@ -614,6 +623,9 @@ export class FunkBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.slapEnvelope.reset();
+    this.popEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -706,6 +718,8 @@ export class ReesBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -809,6 +823,8 @@ export class FMBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.modEnvelope.reset();
     this.carrierOsc.reset();
     this.modulatorOsc1.reset();
     this.modulatorOsc2.reset();
@@ -920,6 +936,8 @@ export class PluckBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillator.reset();
     this.subOsc.reset();
     this.lpFilter.clear();
@@ -1043,6 +1061,8 @@ export class GrowlBassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillator1.reset();
     this.oscillator2.reset();
     this.oscillator3.reset();
@@ -1057,15 +1077,15 @@ export class GrowlBassSynth implements SynthesizerEngine {
   }
 }
 
-export const BASS_SYNTHESIZERS: Record<string, () => SynthesizerEngine> = {
-  "electric-bass": () => new ElectricBassSynth(),
-  "synth-bass": () => new SynthBassSynth(),
-  "acoustic-bass": () => new AcousticBassSynth(),
-  "sub-bass": () => new SubBassSynth(),
-  "wobble-bass": () => new WobbleBassSynth(),
-  "funk-bass": () => new FunkBassSynth(),
-  "reese-bass": () => new ReesBassSynth(),
-  "fm-bass": () => new FMBassSynth(),
-  "pluck-bass": () => new PluckBassSynth(),
-  "growl-bass": () => new GrowlBassSynth(),
+export const BASS_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
+  "electric-bass": ElectricBassSynth,
+  "synth-bass": SynthBassSynth,
+  "acoustic-bass": AcousticBassSynth,
+  "sub-bass": SubBassSynth,
+  "wobble-bass": WobbleBassSynth,
+  "funk-bass": FunkBassSynth,
+  "reese-bass": ReesBassSynth,
+  "fm-bass": FMBassSynth,
+  "pluck-bass": PluckBassSynth,
+  "growl-bass": GrowlBassSynth,
 };

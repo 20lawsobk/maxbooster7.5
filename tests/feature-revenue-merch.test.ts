@@ -69,7 +69,10 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await api("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
     // Ensure CSRF token is populated for subsequent POST/PUT/DELETE calls
     await api("GET", "/api/csrf-token");
   });
@@ -84,60 +87,46 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
     });
 
     it("GET /api/fan-campaigns/stats returns statistics", async () => {
-      try {
-        const r = await api("GET", "/api/fan-campaigns/stats");
-        expect([200, 500]).toContain(r.status);
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("GET", "/api/fan-campaigns/stats");
+      expect(r.status).toBe(200);
     });
 
     it("POST /api/fan-campaigns creates a campaign", async () => {
       // Schema requires: name, subject, body (not content); campaignType enum: newsletter/announcement/promotion/event
-      try {
-        const r = await api("POST", "/api/fan-campaigns", {
-          name: "Album Launch Campaign",
-          campaignType: "newsletter",
-          subject: "My new album is out NOW!",
-          body: "Check out my brand new album available everywhere.",
-          status: "draft",
-        });
-        expect([200, 201]).toContain(r.status);
-        const json = r.json as Record<string, unknown>;
-        campaignId = (json.id ?? json.campaign?.id) as string;
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("POST", "/api/fan-campaigns", {
+        name: "Album Launch Campaign",
+        campaignType: "newsletter",
+        subject: "My new album is out NOW!",
+        body: "Check out my brand new album available everywhere.",
+        status: "draft",
+      });
+      expect([200, 201]).toContain(r.status);
+      const json = r.json as Record<string, unknown>;
+      campaignId = (json.id ?? json.campaign?.id) as string;
     });
 
     it("GET /api/fan-campaigns/:id retrieves campaign", async () => {
-      if (!campaignId) return;
+      expect(campaignId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/fan-campaigns/${campaignId}`);
       expect(r.status).toBe(200);
     });
 
     it("PUT /api/fan-campaigns/:id updates campaign", async () => {
-      if (!campaignId) return;
+      expect(campaignId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PUT", `/api/fan-campaigns/${campaignId}`, {
         name: "Updated Campaign",
       });
-      expect([200, 204]).toContain(r.status);
+      expect(r.status).toBe(200);
+      const saved = await api("GET", `/api/fan-campaigns/${campaignId}`);
+      expect(saved.status).toBe(200);
+      expect(saved.json).toMatchObject({ name: "Updated Campaign" });
     });
 
     it("DELETE /api/fan-campaigns/:id removes campaign", async () => {
-      if (!campaignId) return;
+      expect(campaignId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/fan-campaigns/${campaignId}`);
       expect([200, 204]).toContain(r.status);
+      expect((await api("GET", `/api/fan-campaigns/${campaignId}`)).status).toBe(404);
     });
 
     it("GET /api/fan-campaigns without auth → 401", async () => {
@@ -202,40 +191,31 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
 
     it("POST /api/project-budgets creates a budget", async () => {
       // Schema uses `budgetType` (not `projectType`) for the type field
-      try {
-        const r = await api("POST", "/api/project-budgets", {
-          projectName: "Album Recording 2025",
-          budgetType: "album",
-          totalBudget: 25000,
-          currency: "USD",
-        });
-        expect([200, 201]).toContain(r.status);
-        const body = r.json as Record<string, unknown>;
-        budgetId = (body.id ?? body.budget?.id) as string;
-      } catch (e) {
-        if (
-          (e as Error).name === "AbortError" ||
-          (e as Error).name === "TimeoutError"
-        )
-          return;
-        throw e;
-      }
+      const r = await api("POST", "/api/project-budgets", {
+        projectName: "Album Recording 2025",
+        budgetType: "album",
+        totalBudget: 25000,
+        currency: "USD",
+      });
+      expect([200, 201]).toContain(r.status);
+      const body = r.json as Record<string, unknown>;
+      budgetId = (body.id ?? body.budget?.id) as string;
     });
 
     it("GET /api/project-budgets/:id retrieves budget", async () => {
-      if (!budgetId) return;
+      expect(budgetId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/project-budgets/${budgetId}`);
       expect(r.status).toBe(200);
     });
 
     it("GET /api/project-budgets/:id/items returns budget items", async () => {
-      if (!budgetId) return;
+      expect(budgetId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/project-budgets/${budgetId}/items`);
       expect(r.status).toBe(200);
     });
 
     it("POST /api/project-budgets/:id/items adds a budget item", async () => {
-      if (!budgetId) return;
+      expect(budgetId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("POST", `/api/project-budgets/${budgetId}/items`, {
         category: "studio",
         description: "Recording studio 5 days",
@@ -248,21 +228,24 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
     });
 
     it("PUT /api/project-budgets/:id updates budget", async () => {
-      if (!budgetId) return;
+      expect(budgetId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PUT", `/api/project-budgets/${budgetId}`, {
         totalBudget: 30000,
       });
-      expect([200, 204]).toContain(r.status);
+      expect(r.status).toBe(200);
+      const saved = await api("GET", `/api/project-budgets/${budgetId}`);
+      expect(saved.status).toBe(200);
+      expect(saved.json).toMatchObject({ totalBudget: 30000 });
     });
 
     it("DELETE /api/project-budgets/items/:id removes budget item", async () => {
-      if (!itemId) return;
+      expect(itemId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/project-budgets/items/${itemId}`);
       expect([200, 204]).toContain(r.status);
     });
 
     it("DELETE /api/project-budgets/:id removes budget", async () => {
-      if (!budgetId) return;
+      expect(budgetId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/project-budgets/${budgetId}`);
       expect([200, 204]).toContain(r.status);
     });
@@ -312,13 +295,13 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
     });
 
     it("GET /api/merch/:id retrieves merch item", async () => {
-      if (!merchId) return;
+      expect(merchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/merch/${merchId}`);
       expect(r.status).toBe(200);
     });
 
     it("PUT /api/merch/:id updates merch item", async () => {
-      if (!merchId) return;
+      expect(merchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PUT", `/api/merch/${merchId}`, {
         price: 39.99,
         inventory: 150,
@@ -327,7 +310,7 @@ describe("Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contract
     });
 
     it("DELETE /api/merch/:id removes merch item", async () => {
-      if (!merchId) return;
+      expect(merchId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/merch/${merchId}`);
       expect([200, 204]).toContain(r.status);
     });

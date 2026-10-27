@@ -4,6 +4,7 @@ import type { ChunkIndex } from "../infra/ChunkIndex.js";
 import type { ChunkStore } from "../storage/ChunkStore.js";
 import type { PlacementStrategy } from "./PlacementStrategy.js";
 import type { NodeId, ChunkId } from "../types.js";
+import { MigrationOutbox } from "../infra/MigrationOutbox.js";
 import { logger } from "../../../logger.js";
 
 // All fabric controllers in the owning process share one physical migration
@@ -12,6 +13,8 @@ let migrationTail: Promise<void> = Promise.resolve();
 
 export class Rebalancer {
   private running = false;
+  private recoveryTimer: NodeJS.Timeout | null = null;
+  private readonly migrations: Pick<MigrationOutbox, "pending" | "begin" | "resume">;
   private intervalId: NodeJS.Timeout | null = null;
   private readonly HIGH_WATERMARK = 0.8;
 
@@ -21,17 +24,23 @@ export class Rebalancer {
     private placement: PlacementStrategy,
     private chunkStoreFactory: (nodeId: NodeId) => ChunkStore,
     private intervalMs = 6 * 60 * 60 * 1000,
-  ) {}
+    migrations?: Pick<MigrationOutbox, "pending" | "begin" | "resume">,
+  ) { this.migrations = migrations ?? new MigrationOutbox(chunkStoreFactory); }
 
   start(): void {
     if (this.running) return;
     this.running = true;
+    const recover = () => { void this.drainPendingMigrations().catch(err => logger.warn({ err }, "[FabricRebalancer] Migration retained for retry")); };
+    recover();
+    this.recoveryTimer = setInterval(recover, 30_000);
+    this.recoveryTimer.unref();
     this.intervalId = setInterval(() => this.rebalance(), this.intervalMs);
     logger.info("[FabricRebalancer] Background rebalancer started");
   }
 
   stop(): void {
     this.running = false;
+    if (this.recoveryTimer) { clearInterval(this.recoveryTimer); this.recoveryTimer = null; }
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
@@ -45,6 +54,7 @@ export class Rebalancer {
     let errors = 0;
 
     try {
+      await this.drainPendingMigrations();
       const { hot, cold } = await this.placement.findRebalanceCandidates(
         this.HIGH_WATERMARK,
       );
@@ -98,7 +108,7 @@ export class Rebalancer {
     fromNodeId: NodeId,
     toNodeId: NodeId,
   ): Promise<void> {
-    const operation = migrationTail.then(() => this.migrateChunkOnce(chunkId, fromNodeId, toNodeId));
+    const operation = migrationTail.then(() => this.chunkIndex.withCatalogLock(() => this.migrateChunkOnce(chunkId, fromNodeId, toNodeId)));
     migrationTail = operation.catch(() => {});
     return operation;
   }
@@ -108,46 +118,29 @@ export class Rebalancer {
     fromNodeId: NodeId,
     toNodeId: NodeId,
   ): Promise<void> {
-    const fromStore = this.chunkStoreFactory(fromNodeId);
-    const toStore = this.chunkStoreFactory(toNodeId);
+    let recoveredRequestedMove = false;
+    for (const job of await this.migrations.pending()) {
+      await this.migrations.resume(job);
+      if (job.chunk_id === chunkId && job.from_node === fromNodeId && job.to_node === toNodeId) recoveredRequestedMove = true;
+    }
+    if (recoveredRequestedMove) return;
+    const job = await this.migrations.begin(chunkId, fromNodeId, toNodeId);
+    await this.migrations.resume(job);
+  }
 
-    const loc = await this.chunkIndex.getChunkLocation(chunkId);
-    if (!loc || !loc.nodeIds.includes(fromNodeId)) {
-      throw new Error(`Cannot migrate unindexed source chunk ${chunkId}`);
-    }
-    if (loc.nodeIds.includes(toNodeId)) {
-      throw new Error(`Migration would reduce replica count for ${chunkId}`);
-    }
-    const data = await fromStore?.getChunk(chunkId);
-    await toStore?.putChunk(chunkId, data);
-    const verified = await toStore.getChunk(chunkId);
-    if (!verified.equals(data)) throw new Error(`Migration verification failed: ${chunkId}`);
-    if (loc) {
-      const newNodeIds = [
-        ...(loc?.nodeIds?.filter((id) => id !== fromNodeId) ?? []),
-        toNodeId,
-      ];
-      await this.chunkIndex.putChunkLocation({ ...loc, nodeIds: newNodeIds });
-    }
-
-    await fromStore?.deleteChunk(chunkId);
-    await this.nodeRegistry.updateNode(fromNodeId, {
-      usedBytes: Math.max(
-        0,
-        (await this.nodeRegistry.getNode(fromNodeId))!.usedBytes -
-          (loc?.sizeBytes ?? 0),
-      ),
-    });
-    await this.nodeRegistry.updateNode(toNodeId, {
-      usedBytes:
-        (await this.nodeRegistry.getNode(toNodeId))!.usedBytes +
-        (loc?.sizeBytes ?? 0),
-    });
+  async drainPendingMigrations(): Promise<void> {
+    const operation = migrationTail.then(() => this.chunkIndex.withCatalogLock(async () => {
+      for (const job of await this.migrations.pending()) await this.migrations.resume(job);
+    }));
+    migrationTail = operation.catch(() => {});
+    return operation;
   }
 
   async drainNode(nodeId: NodeId): Promise<{ moved: number; errors: number }> {
     let moved = 0;
     let errors = 0;
+    try { await this.drainPendingMigrations(); }
+    catch (err) { logger.warn({ err }, "[FabricRebalancer] Pending migration prevents node retirement"); return { moved, errors: 1 }; }
     const chunks = await this.chunkIndex.getChunksByNode(nodeId);
     // Sequential physical I/O; logical node count does not create host capacity.
     for (const chunk of chunks) {

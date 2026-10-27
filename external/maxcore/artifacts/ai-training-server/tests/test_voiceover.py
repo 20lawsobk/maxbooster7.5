@@ -176,14 +176,15 @@ class TestMixAndTrack:
         sr, _ = _read_wav(path)
         assert sr == VO_SAMPLE_RATE
 
-    def test_never_raises_on_bad_music_path(self, tmp_path):
+    def test_missing_requested_music_never_returns_narration_as_success(self, tmp_path, caplog):
         path = voiceover_track(
             "Hello world narration.", out_dir=str(tmp_path),
-            job_id="badmusicjob1", duration_sec=2.0,
+            job_id="badmusicjob1", duration_sec=4.0,
             music_path=str(tmp_path / "missing.wav"),
         )
-        # Falls back to narration-only, never raises
-        assert path and Path(path).exists()
+        # Never raises, but a missing required mix is not a delivered artifact.
+        assert path is None
+        assert "Required audio artifact is missing" in caplog.text
 
 
 if __name__ == "__main__":

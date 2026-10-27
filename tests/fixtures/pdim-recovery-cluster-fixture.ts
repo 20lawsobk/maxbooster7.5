@@ -22,15 +22,9 @@ if (cluster.isPrimary) {
   if (!isLocalPdimServerOwnedByThisProcess()) {
     throw new Error("fixture primary did not own local PDIM");
   }
-  const { hybridStorageService } = await import(
-    "../../server/services/hybridStorageService.ts"
-  );
-  await hybridStorageService.upload(
-    "cluster-simulation-owner",
-    "authority.bin",
-    Buffer.from("cluster primary recovery authority fixture\n"),
-    "application/octet-stream",
-  );
+  const { seedLegacyPdimFixture } = await import("./legacy-pdim-fixture.js");
+  await seedLegacyPdimFixture([{ owner: "cluster-simulation-owner", name: "authority.bin",
+    bytes: Buffer.from("cluster primary recovery authority fixture\n") }]);
   initializePdimRecoveryAuthority(
     process.env.PDIM_RECOVERY_JOB_STORE_PATH,
     async (job: PublicPdimRecoveryJob) => {

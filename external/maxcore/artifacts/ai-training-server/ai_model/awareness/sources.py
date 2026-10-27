@@ -92,6 +92,8 @@ def _complete_text(value):
 
 
 def social():
+    from .engine import MAX_OBSERVATION_TEXT, clean, citation
+
     data = json.loads(_fetch(legacy.MASTODON_TRENDS_STATUSES))
     if not isinstance(data, list):
         return []
@@ -103,12 +105,21 @@ def social():
         likes, reposts = post.get("favourites_count"), post.get("reblogs_count")
         if not _counter(likes) or not _counter(reposts):
             continue
-        text = _complete_text(post.get("content"))
+        content = post.get("content")
+        if not isinstance(content, str):
+            continue
+        context_text, cite = clean(content, MAX_OBSERVATION_TEXT), citation(post.get("url"))
+        # Media-only posts can legitimately have no text. They are not text
+        # observations; never emit an empty or unsafe contextual row merely
+        # because its public engagement counters are present.
+        if not context_text or not cite:
+            continue
+        text = _complete_text(content)
         eligible = (text and post.get("visibility") == "public"
                     and post.get("sensitive") is False and not post.get("reblog")
                     and _recent_publication(post.get("created_at"))
                     and relevant_peak_text(text, "social") and likes + reposts > 0)
-        rows.append(_row(text if eligible else post.get("content"), post.get("url"),
+        rows.append(_row(text if eligible else context_text, cite,
                          likes + reposts, PEAK_METRIC if eligible else
                          "mastodon_reblogs_plus_favourites"))
     return rows

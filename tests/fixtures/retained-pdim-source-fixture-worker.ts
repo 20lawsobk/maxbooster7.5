@@ -8,29 +8,14 @@ const {
 
 try {
   await startLocalPdimServer();
-  const { hybridStorageService } = await import(
-    "../../server/services/hybridStorageService.ts"
-  );
+  const { seedLegacyPdimFixture } = await import("./legacy-pdim-fixture.js");
   const first = Buffer.from("isolated retained PDIM recovery fixture alpha\n");
   const second = Buffer.from("isolated retained PDIM recovery fixture beta\n");
-  await hybridStorageService.upload(
-    "simulation-owner-a",
-    "alpha.bin",
-    first,
-    "application/octet-stream",
-  );
-  await hybridStorageService.upload(
-    "simulation-owner-b",
-    "alpha-copy.bin",
-    first,
-    "application/octet-stream",
-  );
-  await hybridStorageService.upload(
-    "simulation-owner-a",
-    "beta.bin",
-    second,
-    "application/octet-stream",
-  );
+  await seedLegacyPdimFixture([
+    { owner: "simulation-owner-a", name: "alpha.bin", bytes: first },
+    { owner: "simulation-owner-b", name: "alpha-copy.bin", bytes: first },
+    { owner: "simulation-owner-a", name: "beta.bin", bytes: second },
+  ]);
   const descriptor = openConsistentLocalPdimSnapshot();
   closeSync(descriptor.fd);
   await stopLocalPdimServer();

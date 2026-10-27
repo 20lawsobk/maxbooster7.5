@@ -1,4 +1,4 @@
-// Real local-file consumer acceptance; no app server or remote document.
+// Real local-document consumer acceptance; no app server or remote document.
 // node --import tsx --test tests/patent-pdf-runtime.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -38,5 +38,5 @@ test("actual patent generator renders valid Letter PDF using supplied local Chro
   assert.equal(bytes.length, size);
   assert.ok(size > 1000);
   assert.match(bytes.toString("latin1"), /\/MediaBox\s*\[0 0 612 792\]/);
-  await assert.rejects(generatePatentPdf(path.join(dir, "missing.html"), pdf, executable), /ERR_FILE_NOT_FOUND/);
+  await assert.rejects(generatePatentPdf(path.join(dir, "missing.html"), pdf, executable), /ENOENT/);
 });

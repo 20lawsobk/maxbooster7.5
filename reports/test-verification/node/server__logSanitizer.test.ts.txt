@@ -2,37 +2,37 @@ TAP version 13
 # Subtest: nested provider secrets and PII are redacted without mutating source
 ok 1 - nested provider secrets and PII are redacted without mutating source
   ---
-  duration_ms: 1.148512
+  duration_ms: 0.99437
   type: 'test'
   ...
 # Subtest: cycles, accessors, binary and errors remain bounded and diagnostic
 ok 2 - cycles, accessors, binary and errors remain bounded and diagnostic
   ---
-  duration_ms: 2.405738
+  duration_ms: 1.880427
   type: 'test'
   ...
 # Subtest: production JSON emission covers interpolated messages, errors and child bindings
 ok 3 - production JSON emission covers interpolated messages, errors and child bindings
   ---
-  duration_ms: 3.310552
+  duration_ms: 2.700634
   type: 'test'
   ...
 # Subtest: text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics
 ok 4 - text masks IPv4/IPv6 and credentials, keeps useful nonpersonal diagnostics
   ---
-  duration_ms: 4.80112
+  duration_ms: 4.641122
   type: 'test'
   ...
 # Subtest: typed event runtime boundary rejects raw personal fields and unknown provider errors
 ok 5 - typed event runtime boundary rejects raw personal fields and unknown provider errors
   ---
-  duration_ms: 0.70915
+  duration_ms: 0.548708
   type: 'test'
   ...
 # Subtest: valid typed events use the real logger consumer and retain opaque correlation
 ok 6 - valid typed events use the real logger consumer and retain opaque correlation
   ---
-  duration_ms: 1.619532
+  duration_ms: 0.659716
   type: 'test'
   ...
 1..6
@@ -43,4 +43,4 @@ ok 6 - valid typed events use the real logger consumer and retain opaque correla
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 292.097716
+# duration_ms 312.813872

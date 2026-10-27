@@ -2,19 +2,19 @@ TAP version 13
 # Subtest: actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
 ok 1 - actual storefront membership service prices tiers, subscribes, and cancels with customer ownership
   ---
-  duration_ms: 29.671636
+  duration_ms: 37.010953
   type: 'test'
   ...
 # Subtest: legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
 ok 2 - legacy marketplace service delegates frozen checkout and creates/reuses Connect onboarding accounts
   ---
-  duration_ms: 22.534388
+  duration_ms: 28.438604
   type: 'test'
   ...
 # Subtest: legacy StripeService and BeatService execute subscription/payment-intent purchase functions
 ok 3 - legacy StripeService and BeatService execute subscription/payment-intent purchase functions
   ---
-  duration_ms: 28.929322
+  duration_ms: 40.685455
   type: 'test'
   ...
 1..3
@@ -25,4 +25,4 @@ ok 3 - legacy StripeService and BeatService execute subscription/payment-intent 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 146.764767
+# duration_ms 183.880384

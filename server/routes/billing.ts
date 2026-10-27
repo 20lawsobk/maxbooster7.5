@@ -53,8 +53,8 @@ import {
 
 const router = Router();
 
-// SECURITY: Apply rate limiting to all billing endpoints
-router.use(billingRateLimiter);
+// Per-user billing limits run after authentication resolves session or JWT.
+// Public plan discovery has the application IP limiter.
 
 const stripeSecretKey = env?.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -354,8 +354,16 @@ router.get("/plans", async (_req: Request, res: Response) => {
 router.post(
   "/create-checkout-session",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { planId } = req.body;
+      if (!planId || !["monthly", "yearly", "lifetime"].includes(planId)) {
+        return res.status(400).json({
+          error: "Invalid plan",
+          message: "Please select a valid plan: monthly, yearly, or lifetime",
+        });
+      }
       if (!stripe) {
         return res.status(503).json({
           message: "Billing service not configured",
@@ -363,16 +371,6 @@ router.post(
           retryable: false,
           suggestedAction: "Please contact support to enable billing features.",
         });
-      }
-
-      const { planId } = req.body;
-      if (!planId || !["monthly", "yearly", "lifetime"].includes(planId)) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid plan",
-            message: "Please select a valid plan: monthly, yearly, or lifetime",
-          });
       }
 
       const userId = req.user!.id;
@@ -488,6 +486,7 @@ router.post(
 router.get(
   "/subscription",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -709,6 +708,7 @@ router.get(
 router.get(
   "/payment-method",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -757,6 +757,7 @@ router.get(
 router.get(
   "/history",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -804,16 +805,9 @@ router.get(
 router.post(
   "/cancel-subscription",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripe) {
-        return res.status(503).json({
-          message: "Billing service not configured",
-          code: "STRIPE_NOT_CONFIGURED",
-          retryable: false,
-        });
-      }
-
       const userId = req.user!.id;
       const { immediately = false, reason } = req.body;
 
@@ -839,6 +833,13 @@ router.post(
         });
       }
 
+      if (!stripe) {
+        return res.status(503).json({
+          message: "Billing service not configured",
+          code: "STRIPE_NOT_CONFIGURED",
+          retryable: false,
+        });
+      }
       const subscriptions = await stripe?.subscriptions?.list({
         customer: user.stripeCustomerId,
         limit: 1,
@@ -936,6 +937,7 @@ router.post(
 router.post(
   "/reactivate-subscription",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
@@ -1050,6 +1052,7 @@ router.post(
 router.get(
   "/invoices/:invoiceId/download",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
@@ -1139,6 +1142,7 @@ router.get(
 router.post(
   "/update-payment",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
@@ -1170,6 +1174,7 @@ router.post(
 router.post(
   "/create-portal-session",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
@@ -1206,6 +1211,7 @@ router.post(
 router.post(
   "/refund",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1262,6 +1268,7 @@ router.post(
 router.get(
   "/refund/:refundId",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { refundId } = req.params as Record<string, string>;
@@ -1286,6 +1293,7 @@ router.get(
 router.get(
   "/order/:orderId/refunds",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { orderId } = req.params as Record<string, string>;
@@ -1306,6 +1314,7 @@ router.get(
 router.get(
   "/ledger",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1332,6 +1341,7 @@ router.get(
 router.post(
   "/retry-payment",
   requireAuth,
+  billingRateLimiter,
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -1460,6 +1470,7 @@ router.post(
 router.delete(
   "/payment-method",
   requireAuth,
+  billingRateLimiter,
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -1535,6 +1546,7 @@ router.delete(
 router.post(
   "/3ds/confirm",
   requireAuth,
+  billingRateLimiter,
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -1686,6 +1698,7 @@ router.post(
 router.post(
   "/refund/request",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1881,6 +1894,7 @@ router.post(
 router.post(
   "/dispute/evidence",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -2007,6 +2021,7 @@ router.post(
 router.get(
   "/grace-period-status",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -2148,6 +2163,7 @@ router.get(
 router.get(
   "/disputes",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -2242,6 +2258,7 @@ router.get(
 router.get(
   "/invoices",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -2349,6 +2366,7 @@ router.get(
 router.get(
   "/refunds",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -2427,6 +2445,7 @@ router.get(
 router.get(
   "/usage",
   requireAuth,
+  billingRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;

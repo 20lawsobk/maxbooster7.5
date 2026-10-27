@@ -99,6 +99,7 @@ export interface PocketDimensionConfig {
   storage?: {
     get(key: string): Promise<string | null>;
     set(key: string, value: string): Promise<unknown>;
+    del?(...keys: string[]): Promise<unknown>;
   };
   id: string;
   name: string;
@@ -406,6 +407,12 @@ export class PocketDimension extends EventEmitter {
     this.emit("closed", { id: this.id });
   }
 
+  /** Fabric callers hold the database fence while refreshing shared backing state. */
+  async refresh(): Promise<void> {
+    this.isOpen = false;
+    await this.open();
+  }
+
   private async persistMetadata(): Promise<void> {
     await this.backingStore.set(
       `pdim:meta:${this.id}:metadata`,
@@ -683,28 +690,42 @@ export class PocketDimension extends EventEmitter {
 
   async delete(entryPath: string): Promise<boolean> {
     if (!this.isOpen) await this.open();
-
     const entry = this.entries.get(entryPath);
-    if (!entry) return false;
-
-    // If it's a dimension, close and remove it
-    if (entry.type === "dimension") {
+    const store = this.backingStore;
+    const reclaim = !this.enableVersioning && typeof store.del === "function";
+    const journal = `pdim:delete:${this.id}:${createHash("sha256").update(entryPath).digest("hex")}`;
+    const pendingRaw = reclaim ? await store.get(journal) : null;
+    let pending: string[] = [];
+    if (pendingRaw !== null) {
+      const decoded: unknown = JSON.parse(pendingRaw);
+      if (!Array.isArray(decoded) || !decoded.every(id => typeof id === "string")) throw new Error("Invalid pocket deletion journal");
+      pending = decoded;
+    }
+    if (!entry && pendingRaw === null) return false;
+    if (reclaim && entry) {
+      pending = [...new Set([...pending, ...entry.chunks])];
+      await store.set(journal, JSON.stringify(pending));
+    }
+    if (entry?.type === "dimension") {
       const nested = this.nestedDimensions.get(entryPath);
-      if (nested) {
-        await nested.close();
-        this.nestedDimensions.delete(entryPath);
+      if (nested) { await nested.close(); this.nestedDimensions.delete(entryPath); }
+    }
+    this.entries.delete(entryPath);
+    const liveChunks = new Set([...this.entries.values()].flatMap(value => value.chunks));
+    if (reclaim) {
+      for (const id of pending) {
+        if (!liveChunks.has(id)) { this.chunks.delete(id); this.chunkData.delete(id); }
       }
     }
-
-    // Note: In production, we'd garbage collect orphaned chunks
-    // For now, just remove the entry
-    this.entries.delete(entryPath);
-
-    this.metadata.totalSize -= entry?.size;
-    this.metadata.compressedSize -= entry?.compressedSize;
-
+    this.updateMetadata(0, 0);
+    await this.persistMetadata();
+    if (reclaim) {
+      for (const id of pending) {
+        if (!liveChunks.has(id)) await store.del!(`pdim:chunk:${this.id}:${id}`);
+      }
+      await store.del!(journal);
+    }
     this.emit("deleted", { path: entryPath });
-
     return true;
   }
 
@@ -863,9 +884,9 @@ export class PocketDimension extends EventEmitter {
     return createHash("sha256").update(data).digest("hex");
   }
 
-  private updateMetadata(originalSize: number, compressedSize: number): void {
-    this.metadata.totalSize += originalSize;
-    this.metadata.compressedSize += compressedSize;
+  private updateMetadata(_originalSize: number, _compressedSize: number): void {
+    this.metadata.totalSize = [...this.entries.values()].reduce((size, entry) => size + entry.size, 0);
+    this.metadata.compressedSize = [...this.entries.values()].reduce((size, entry) => size + entry.compressedSize, 0);
     this.metadata.chunkCount = this.chunks.size;
     this.metadata.updatedAt = new Date();
   }

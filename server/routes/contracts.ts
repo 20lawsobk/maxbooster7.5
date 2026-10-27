@@ -123,9 +123,14 @@ router.get("/templates", requireAuth, async (req: Request, res: Response) => {
       .from(contractTemplates)
       .where(eq(contractTemplates.isDefault, true))
       .limit(50);
-    const allTemplates = dbTemplates.map((template) =>
-      toTemplateResponse(template),
-    );
+    // Built-in templates are also addressable by /templates/:id and power
+    // generation. A fresh database must expose that same catalog in the UI.
+    // Persisted defaults override a built-in with the same stable ID.
+    const byId = new Map(contractTemplateService.getTemplates().map(template =>
+      [template.id, { ...template, isCustom: false }],
+    ));
+    for (const template of dbTemplates) byId.set(template.id, toTemplateResponse(template));
+    const allTemplates = [...byId.values()];
 
     if (category) {
       const filtered = allTemplates?.filter((t) => t?.category === category);

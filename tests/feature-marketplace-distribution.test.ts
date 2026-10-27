@@ -68,7 +68,10 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
       password: testUser.password,
     });
     expect(r.status).toBe(200);
-    expect(authCookies).toBeTruthy();
+    expect(authCookies).toContain("sessionId=");
+    const session = await api("GET", "/api/auth/me");
+    expect(session.status).toBe(200);
+    expect(session.json).toMatchObject({ email: testUser.email });
   });
 
   // ── BEAT MARKETPLACE (Public) ──────────────────────────────────────────────
@@ -114,7 +117,7 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
     it("GET /api/marketplace/license-templates returns license templates", async () => {
       // Route requires authentication — use api() with auth cookies
       const r = await api("GET", "/api/marketplace/license-templates");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
   });
 
@@ -122,57 +125,57 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
   describe("Beat Marketplace — Authenticated", () => {
     it("GET /api/marketplace/my-beats returns authenticated user beats", async () => {
       const r = await api("GET", "/api/marketplace/my-beats");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/purchases returns user purchases", async () => {
       const r = await api("GET", "/api/marketplace/purchases");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/for-you returns personalised recommendations", async () => {
       const r = await api("GET", "/api/marketplace/for-you");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/ai-recommendations returns AI beat recs", async () => {
       const r = await api("GET", "/api/marketplace/ai-recommendations");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/taste-profile returns listener taste profile", async () => {
       const r = await api("GET", "/api/marketplace/taste-profile");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/my-stems returns stems for authenticated user", async () => {
       const r = await api("GET", "/api/marketplace/my-stems");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/collaborations returns collab requests", async () => {
       const r = await api("GET", "/api/marketplace/collaborations");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/contracts returns contract list", async () => {
       const r = await api("GET", "/api/marketplace/contracts");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/affiliates returns affiliate program info", async () => {
       const r = await api("GET", "/api/marketplace/affiliates");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/escrow returns escrow transactions", async () => {
       const r = await api("GET", "/api/marketplace/escrow");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
 
     it("GET /api/marketplace/sales-analytics returns sales data", async () => {
       const r = await api("GET", "/api/marketplace/sales-analytics");
-      expect([200, 401]).toContain(r.status);
+      expect(r.status).toBe(200);
     });
   });
 
@@ -196,16 +199,16 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
   describe("Music Distribution", () => {
     let releaseId = "";
 
-    it("GET /api/distribution/platforms returns available DSPs", async () => {
+    it("GET /api/distribution/platforms requires a connected distributor before a live catalog is claimed", async () => {
       const r = await api("GET", "/api/distribution/platforms");
-      expect(r.status).toBe(200);
-      const body = r.json as Record<string, unknown>;
-      expect(Array.isArray(body.platforms ?? body)).toBe(true);
+      expect(r.status).toBe(409);
+      expect(r.json).toMatchObject({ requiresConnection: true });
     });
 
-    it("GET /api/distribution/platforms/status returns platform connectivity status", async () => {
+    it("GET /api/distribution/platforms/status reports no fabricated provider connection", async () => {
       const r = await api("GET", "/api/distribution/platforms/status");
-      expect(r.status).toBe(200);
+      expect(r.status).toBe(409);
+      expect(r.json).toEqual({ connected: false, requiresConnection: true, apiStatus: "not_connected" });
     });
 
     it("GET /api/distribution/releases returns user releases", async () => {
@@ -222,19 +225,24 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
       expect(r.status).toBe(200);
     });
 
+    it("POST /api/distribution/releases rejects a draft without a title", async () => {
+      const response = await api("POST", "/api/distribution/releases", { artistName: "Test Artist" });
+      expect(response.status).toBe(400);
+    });
+
     it("POST /api/distribution/releases creates a release", async () => {
       const r = await api("POST", "/api/distribution/releases", {
         title: "My Test EP",
-        releaseType: "ep",
-        genre: "r&b",
-        primaryArtist: "Test Artist",
+        releaseType: "EP",
+        primaryGenre: "r&b",
+        artistName: "Test Artist",
         releaseDate: new Date(Date.now() + 60 * 24 * 3600 * 1000)
           .toISOString()
           .split("T")[0],
-        label: "Independent",
+        labelName: "Independent",
         language: "en",
       });
-      expect([200, 201, 400]).toContain(r.status);
+      expect(r.status).toBe(200);
       if ([200, 201].includes(r.status)) {
         const body = r.json as Record<string, unknown>;
         releaseId = (body.id ?? body.release?.id) as string;
@@ -242,26 +250,30 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
     });
 
     it("GET /api/distribution/releases/:id retrieves release", async () => {
-      if (!releaseId) return;
+      expect(releaseId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("GET", `/api/distribution/releases/${releaseId}`);
       expect(r.status).toBe(200);
     });
 
     it("PATCH /api/distribution/releases/:id updates release metadata", async () => {
-      if (!releaseId) return;
+      expect(releaseId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("PATCH", `/api/distribution/releases/${releaseId}`, {
-        label: "Test Label LLC",
+        labelName: "Test Label LLC",
       });
-      expect([200, 204]).toContain(r.status);
+      expect(r.status).toBe(200);
+      const saved = await api("GET", `/api/distribution/releases/${releaseId}`);
+      expect(saved.status).toBe(200);
+      expect(saved.json).toMatchObject({ title: "My Test EP", metadata: { labelName: "Test Label LLC" } });
     });
 
     it("GET /api/distribution/releases/:id/status gets release status", async () => {
-      if (!releaseId) return;
+      expect(releaseId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api(
         "GET",
         `/api/distribution/releases/${releaseId}/status`,
       );
-      expect([200, 404]).toContain(r.status);
+      expect(r.status).toBe(200);
+      expect(r.json).toMatchObject({ statuses: [], overallProgress: null, toolostStatus: null });
     });
 
     it("GET /api/distribution/hyperfollow returns HyperFollow pages", async () => {
@@ -279,9 +291,10 @@ describe("Feature: Beat Marketplace & Music Distribution", () => {
     });
 
     it("DELETE /api/distribution/releases/:id removes release", async () => {
-      if (!releaseId) return;
+      expect(releaseId, "A prior create/upload step must have succeeded").toBeTruthy();
       const r = await api("DELETE", `/api/distribution/releases/${releaseId}`);
       expect([200, 204]).toContain(r.status);
+      expect((await api("GET", `/api/distribution/releases/${releaseId}`)).status).toBe(404);
     });
 
     it("GET /api/distribution/releases without auth → 401", async () => {

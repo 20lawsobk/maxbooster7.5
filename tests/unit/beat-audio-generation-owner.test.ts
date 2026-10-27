@@ -63,7 +63,13 @@ describe("Beat Money Loop private audio identity", () => {
     });
     const request = JSON.parse(String(f.calls[0].init.body));
     expect(request).toMatchObject({ instrument: "ensemble", format: "wav" });
-    expect(request.prompt).toContain("128 BPM");
+    expect(request.dedicated_controls).toEqual({
+      duration_sec: 10, instrument: "ensemble", arrangement: "structured",
+      sample_rate: 44100, genre: "house", bpm: 128,
+    });
+    expect(request.context).toMatchObject({
+      synthesis_scope: "parametric_instrumental", semantic_style_applied: false,
+    });
     expect(request).not.toHaveProperty("mode");
     expect(f.downloadFile).toHaveBeenCalledWith("users/actual-admin/generated-audio/beat.wav");
   });

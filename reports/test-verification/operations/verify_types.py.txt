@@ -1,13 +1,5 @@
-2026-09-23-all-types: 21 complete records and media hashes verified
-2026-09-23-types-corrected: 8 complete records and media hashes verified
-Traceback (most recent call last):
-  File "/workspace/maxbooster7.5/evaluations/maxcore-quality/verify_types.py", line 39, in <module>
-    assert hashlib.sha256((model / relative).read_bytes()).hexdigest() == expected
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1019, in read_bytes
-    with self.open(mode='rb') as f:
-         ^^^^^^^^^^^^^^^^^^^^
-  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/weights/model.pt'
+2026-09-23-all-types: 21 complete archived records and media hashes verified
+2026-09-23-types-corrected: 8 complete archived records and media hashes verified
+Current checkpoint identity NOT_CHECKED (use --check-current-checkpoint when comparing the historical model)
+Later Sept 24 archives NOT_CHECKED (use --include-later-archives; post-fix campaign evidence is incomplete)
+Archive integrity PASS; this does not score output quality or certify current serving readiness

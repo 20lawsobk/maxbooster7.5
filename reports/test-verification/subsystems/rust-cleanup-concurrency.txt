@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: actual publishing Rust phase fails closed even with a stale binary
 ok 1 - actual publishing Rust phase fails closed even with a stale binary
   ---
-  duration_ms: 11.790258
+  duration_ms: 11.816138
   type: 'test'
   ...
 # Subtest: real Rust compilation survives concurrent workspace cleanup
 ok 2 - real Rust compilation survives concurrent workspace cleanup
   ---
-  duration_ms: 38019.73619
+  duration_ms: 37638.313777
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - real Rust compilation survives concurrent workspace cleanup
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 38089.064027
+# duration_ms 37710.308205

@@ -122,15 +122,18 @@ describe("PocketFabric consumer wiring", () => {
     expect(DEFAULT_RULES.maxNodes).toBe(Infinity);
   });
 
-  it("does not retire or remove a source when drain verification fails", async () => {
-    const source = { getChunk: vi.fn(async () => Buffer.from("source")), deleteChunk: vi.fn() };
-    const target = { putChunk: vi.fn(), getChunk: vi.fn(async () => Buffer.from("corrupt")) };
-    const location = { id: "chunk", nodeIds: ["source"], sizeBytes: 6 };
-    const registry = { listHealthyNodes: async () => [{ id: "target", capacityBytes: 100, usedBytes: 0 }] };
-    const chunks = { getChunksByNode: async () => [location], getChunkLocation: async () => location, putChunkLocation: vi.fn() };
+  it("does not retire or remove a source while durable migration recovery fails", async () => {
+    const source = { deleteChunk: vi.fn() };
+    const registry = { listHealthyNodes: vi.fn() };
+    const chunks = { getChunksByNode: vi.fn(), putChunkLocation: vi.fn(),
+      withCatalogLock: async <T>(work: () => Promise<T>) => work() };
+    const journal = { pending: vi.fn(async () => [{ id: "pending-migration" }]), begin: vi.fn(),
+      resume: vi.fn(async () => { throw Error("target verification unavailable"); }) };
     const rebalancer = new Rebalancer(registry as any, chunks as any, {} as any,
-      (id) => (id === "source" ? source : target) as any);
+      () => source as any, undefined, journal as any);
     expect(await rebalancer.drainNode("source")).toEqual({ moved: 0, errors: 1 });
+    expect(journal.resume).toHaveBeenCalledWith({ id: "pending-migration" });
+    expect(chunks.getChunksByNode).not.toHaveBeenCalled();
     expect(source.deleteChunk).not.toHaveBeenCalled();
     expect(chunks.putChunkLocation).not.toHaveBeenCalled();
   });

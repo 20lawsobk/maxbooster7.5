@@ -21,12 +21,17 @@ const testUser = {
 let authCookies = "";
 let csrfToken = "";
 let totpSecret = "";
+let consumedTimeStep = -1;
 
 async function api(
   method: string,
   path: string,
   body?: Record<string, unknown>,
 ) {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase()) &&
+      !authCookies.split("; ").some(cookie => cookie.startsWith("csrf-token="))) {
+    await api("GET", "/api/csrf-token");
+  }
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -88,6 +93,17 @@ function checkCode(token: string, secret: string): boolean {
   return result?.valid ?? false;
 }
 
+/** Successful security actions atomically consume a step across all endpoints. */
+async function freshCode(): Promise<string> {
+  if (!totpSecret) throw new Error("No TOTP secret from setup step");
+  const nowStep = Math.floor(Date.now() / 30_000);
+  if (nowStep <= consumedTimeStep) {
+    await new Promise(resolve => setTimeout(resolve, (consumedTimeStep + 1) * 30_000 - Date.now() + 100));
+  }
+  consumedTimeStep = Math.floor(Date.now() / 30_000);
+  return genCode(totpSecret);
+}
+
 describe("2FA Flow (TOTP)", () => {
   it("1. registers a new user", async () => {
     const r = await api("POST", "/api/auth/register", testUser);
@@ -130,7 +146,7 @@ describe("2FA Flow (TOTP)", () => {
 
   it("5. POST /api/auth/2fa/verify with a valid TOTP code enables 2FA", async () => {
     if (!totpSecret) throw new Error("No TOTP secret from setup step");
-    const code = genCode(totpSecret);
+    const code = await freshCode();
     const r = await api("POST", "/api/auth/2fa/verify", { code });
     // Server accepts the code and enables 2FA
     expect(r.status).toBe(200);
@@ -171,7 +187,7 @@ describe("2FA Flow (TOTP)", () => {
 
   it("10. login with password + valid TOTP code fully authenticates", async () => {
     if (!totpSecret) throw new Error("No TOTP secret from setup step");
-    const code = genCode(totpSecret);
+    const code = await freshCode();
     const r = await api("POST", "/api/auth/login", {
       email: testUser.email,
       password: testUser.password,
@@ -198,26 +214,27 @@ describe("2FA Flow (TOTP)", () => {
 
   it("16. POST /api/auth/2fa/validate with a valid TOTP code returns { valid: true }", async () => {
     if (!totpSecret) throw new Error("No TOTP secret from setup step");
-    const code = genCode(totpSecret);
+    const code = await freshCode();
     const r = await api("POST", "/api/auth/2fa/validate", { code });
     expect(r.status).toBe(200);
     const body = r.json as Record<string, unknown>;
     expect(body.valid).toBe(true);
   });
 
-  it("12. POST /api/auth/2fa/disable with wrong password returns 400", async () => {
+  it("12. POST /api/auth/2fa/disable with wrong password requires reauthentication", async () => {
+    if (!totpSecret) throw new Error("No TOTP secret from setup step");
     const r = await api("POST", "/api/auth/2fa/disable", {
       password: "WrongPassword!",
-      code: genCode(totpSecret || "FALLBACK"),
+      code: genCode(totpSecret),
     });
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(403);
     const body = r.json as Record<string, unknown>;
-    expect(body.message).toMatch(/password/i);
+    expect(body.requiresReauthentication).toBe(true);
   });
 
   it("13. POST /api/auth/2fa/disable with correct password + valid TOTP disables 2FA", async () => {
     if (!totpSecret) throw new Error("No TOTP secret from setup step");
-    const code = genCode(totpSecret);
+    const code = await freshCode();
     const r = await api("POST", "/api/auth/2fa/disable", {
       password: testUser.password,
       code,

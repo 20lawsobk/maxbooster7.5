@@ -213,6 +213,7 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
 
   reset(): void {
     this.sections.forEach((section) => {
+      section.envelope.reset();
       section?.oscillators.forEach((o) => o?.reset());
     });
     this.vibratoLFO.reset();
@@ -325,6 +326,7 @@ export class ViolinSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.vibratoLFO.reset();
     this.bowLFO.reset();
@@ -431,6 +433,7 @@ export class CelloSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.vibratoLFO.reset();
     this.expressionLFO.reset();
@@ -538,6 +541,7 @@ export class ContrabassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.vibratoLFO.reset();
@@ -640,6 +644,7 @@ export class ViolaSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.vibratoLFO.reset();
     this.lpFilter.clear();
@@ -783,6 +788,7 @@ export class StringQuartetSynth implements SynthesizerEngine {
 
   reset(): void {
     this.instruments.forEach((inst) => {
+      inst.envelope.reset();
       inst?.oscillators.forEach((o) => o?.reset());
       inst?.vibratoLFO.reset();
     });
@@ -927,6 +933,7 @@ export class CinematicStringsSynth implements SynthesizerEngine {
 
   reset(): void {
     this.layers.forEach((layer) => {
+      layer.envelope.reset();
       layer?.oscillators.forEach((o) => o?.reset());
     });
     this.vibratoLFO.reset();
@@ -1043,6 +1050,8 @@ export class PizzicatoStringsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.pluckEnvelope.reset();
+    this.bodyEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.stringModel.clear();
     this.lpFilter.clear();
@@ -1144,6 +1153,7 @@ export class TremoloStringsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.tremoloLFO.reset();
     this.vibratoLFO.reset();
@@ -1258,6 +1268,8 @@ export class SynthStringsSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.oscillators.forEach((o) => o?.reset());
     this.subOsc.reset();
     this.chorusLFO.reset();
@@ -1268,15 +1280,15 @@ export class SynthStringsSynth implements SynthesizerEngine {
   }
 }
 
-export const STRINGS_SYNTHESIZERS: Record<string, () => SynthesizerEngine> = {
-  "orchestral-strings": () => new OrchestralStringsSynth(),
-  violin: () => new ViolinSynth(),
-  cello: () => new CelloSynth(),
-  contrabass: () => new ContrabassSynth(),
-  viola: () => new ViolaSynth(),
-  "string-quartet": () => new StringQuartetSynth(),
-  "cinematic-strings": () => new CinematicStringsSynth(),
-  "pizzicato-strings": () => new PizzicatoStringsSynth(),
-  "tremolo-strings": () => new TremoloStringsSynth(),
-  "synth-strings": () => new SynthStringsSynth(),
+export const STRINGS_SYNTHESIZERS: Record<string, new () => SynthesizerEngine> = {
+  "orchestral-strings": OrchestralStringsSynth,
+  violin: ViolinSynth,
+  cello: CelloSynth,
+  contrabass: ContrabassSynth,
+  viola: ViolaSynth,
+  "string-quartet": StringQuartetSynth,
+  "cinematic-strings": CinematicStringsSynth,
+  "pizzicato-strings": PizzicatoStringsSynth,
+  "tremolo-strings": TremoloStringsSynth,
+  "synth-strings": SynthStringsSynth,
 };

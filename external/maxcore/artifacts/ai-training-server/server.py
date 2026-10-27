@@ -8557,6 +8557,7 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
             release_date=req.release_date,
             hashtag_fn=_api_hashtags,
             normalize_platform_fn=normalize_platform,
+            script_fn=_script_agent.run,
             image_fn=image_fn,
             teaser_fn=teaser_fn,
             seed=abs(hash(f"{artist}|{req.title}")) % 100000,
@@ -8564,13 +8565,9 @@ async def api_generate_campaign(req: ApiGenerateCampaignRequest, _key=Depends(re
                 _campaign_platform, _campaign_awareness),
         )
 
-    # Asset generation renders images inline (blocking PIL work), so run the
-    # whole build off the event loop when assets are requested; the fast
-    # text-only path stays synchronous.
-    if image_fn or teaser_fn:
-        plan = await _in_thread(_build)
-    else:
-        plan = _build()
+    # Every slot executes real model inference, including text-only campaigns.
+    # Keep those CPU-bound calls off the API event loop as well as asset work.
+    plan = await _in_thread(_build)
     plan["source"] = "campaign_composer"
     plan["processing_time_ms"] = round((time.time() - start) * 1000, 1)
     return plan

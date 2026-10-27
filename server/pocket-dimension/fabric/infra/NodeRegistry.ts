@@ -1,6 +1,6 @@
 import { db } from "../../../db.js";
 import { fabricStorageNodes } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import type {
   FabricStorageNode,
@@ -9,7 +9,12 @@ import type {
   CostTier,
 } from "../types.js";
 
+import { withFabricCatalogTransaction } from "./DeletionOutbox.js";
+
 export class NodeRegistry {
+  async addUsedBytesFenced(id: NodeId, delta: number): Promise<void> {
+    await withFabricCatalogTransaction(tx => tx.execute(sql`UPDATE fabric_storage_nodes SET used_bytes=(GREATEST(0,used_bytes::bigint+${delta}))::text WHERE id=${id}`));
+  }
   async registerNode(
     node: Omit<FabricStorageNode, "id" | "lastHeartbeat">,
   ): Promise<FabricStorageNode> {
@@ -50,10 +55,9 @@ export class NodeRegistry {
     }
   }
 
-  async heartbeat(id: NodeId, usedBytes: number): Promise<void> {
+  async heartbeat(id: NodeId, _usedBytes: number): Promise<void> {
     await this.updateNode(id, {
       lastHeartbeat: new Date(),
-      usedBytes,
       healthy: true,
     });
   }

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--config",
+    "vitest.platform.config.ts",
+    "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "tests/unit/hybrid-storage-index-recovery.test.ts",
+    "--reporter=junit",
+    "--outputFile=/workspace/onboarding-results/hybrid-coverage-closure-final/vitest.xml",
+    "--coverage.include=server/services/{hybridStorageService,hybridStorageRepository,hybridImmutableByteStore}.ts",
+    "--coverage.reporter=json-summary",
+    "--coverage.reporter=json",
+    "--coverage.reportsDirectory=/workspace/onboarding-results/hybrid-coverage-closure-final/coverage"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T09:56:04.639878+00:00",
+  "durationSeconds": 4.515,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "/workspace/onboarding-results/hybrid-coverage-closure-final/vitest.txt",
+  "logSha256": "4ee19d9549d0dfdfbe31b028cc5ec6316b420bc3f715e6343c1f123047bdf32d"
+}

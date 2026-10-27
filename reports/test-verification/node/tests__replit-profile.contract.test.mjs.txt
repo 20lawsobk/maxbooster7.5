@@ -2,31 +2,31 @@ TAP version 13
 # Subtest: Replit configuration and template contain no inline credentials
 ok 1 - Replit configuration and template contain no inline credentials
   ---
-  duration_ms: 0.84833
+  duration_ms: 0.899166
   type: 'test'
   ...
 # Subtest: public mapping is exactly app 5000 -> external 80
 ok 2 - public mapping is exactly app 5000 -> external 80
   ---
-  duration_ms: 0.785685
+  duration_ms: 0.748429
   type: 'test'
   ...
 # Subtest: deployment runs the capsule-aware build and production launcher
 ok 3 - deployment runs the capsule-aware build and production launcher
   ---
-  duration_ms: 0.232811
+  duration_ms: 0.260824
   type: 'test'
   ...
 # Subtest: Nix profile retains the lightweight required system dependencies
 ok 4 - Nix profile retains the lightweight required system dependencies
   ---
-  duration_ms: 0.290728
+  duration_ms: 0.307183
   type: 'test'
   ...
 # Subtest: Node release is pinned to major 22
 ok 5 - Node release is pinned to major 22
   ---
-  duration_ms: 0.146701
+  duration_ms: 0.362016
   type: 'test'
   ...
 1..5
@@ -37,4 +37,4 @@ ok 5 - Node release is pinned to major 22
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 105.983046
+# duration_ms 117.318573

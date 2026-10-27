@@ -1,0 +1,53 @@
+{
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "finishedAt": "2026-10-25T22:19:55.129979+00:00",
+  "summary": {
+    "passed": 96,
+    "failed": 8,
+    "timeout": 0,
+    "skipped": 1,
+    "blocked": 19,
+    "empty": 0
+  },
+  "counts": {
+    "tests": 1187,
+    "failures": 30,
+    "errors": 0,
+    "skipped": 12
+  },
+  "coverage": {
+    "enabled": true,
+    "status": "failed",
+    "version": "7.17.0",
+    "sourceRoots": [
+      "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server",
+      "/workspace/maxbooster7.5/server",
+      "/workspace/maxbooster7.5/scripts",
+      "/workspace/maxbooster7.5/tools/sophia-agent-runner/scripts"
+    ],
+    "omitted": [
+      "*/tests/*",
+      "*/test_*.py",
+      "*/__tests__/*",
+      "*/node_modules/*",
+      "*/vendor/*",
+      "*/vendored/*",
+      "*/third_party/*",
+      "*/third-party/*",
+      "*/.pdim-*/*",
+      "*/python_runtime/*",
+      "*/site-packages/*",
+      "*/.venv/*",
+      "*/venv/*",
+      "*/.cache/*",
+      "*/.local/*",
+      "*/.prepared-release/*",
+      "*/target/*",
+      "/workspace/maxbooster7.5/scripts/testing/*"
+    ],
+    "dataStorage": "Fresh owned temporary directory, removed after export",
+    "combineExitCode": 0,
+    "jsonExitCode": 1,
+    "reason": "Coverage json failed; instrumentation gaps are not counted as passes"
+  }
+}

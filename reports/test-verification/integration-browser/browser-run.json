@@ -1,0 +1,18 @@
+{
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "files": [
+    "tests/auth-session-transient-browser.test.mjs",
+    "tests/local-media-renderer-browser.test.mjs",
+    "tests/storefront-hook-transition.test.mjs",
+    "tests/studio-load-save-guard.test.mjs",
+    "tests/studio-plugin-audio-browser.test.mjs"
+  ],
+  "exitCode": 0,
+  "counts": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+  },
+  "log": "reports/test-verification/orchestration/browser.txt"
+}

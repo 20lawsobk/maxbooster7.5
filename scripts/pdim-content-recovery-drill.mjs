@@ -249,23 +249,24 @@ try {
 }
 
 const gaps = [
+  "This legacy-format snapshot does not recover current hybrid_storage_files/imports PostgreSQL metadata or new immutable blob keys; coordinated Neon and PDIM backup/restore remains required.",
   "Off-instance transport was simulated with a separate local temporary export directory only; no remote backup service or independent machine was used.",
   "No AppStorage, shared database, production credentials, or actual user data was read, exported, restored, or deleted.",
-  "This proves the real HybridStorageService -> PocketDimension -> PDIM key path for synthetic content, not recovery of retained production user PDIM content; that operational recovery remains a gap.",
+  "This proves the real historical HybridStorageService -> PocketDimension -> PDIM key path for synthetic content, not recovery of retained production user PDIM content; that operational recovery remains a gap.",
 ];
 const report = {
   status,
   command: commandLine,
-  scope: "synthetic disposable PDIM content recovery",
+  scope: "synthetic disposable legacy-format PDIM content recovery",
+  currentSqlMetadataRecovered: false,
   implementation:
-    "HybridStorageService upload/read using PocketDimension hybrid-cold-storage entries and hybrid:storage:index over the local implementation of the production PDIM HTTP exec contract",
+    "Historical-format fixture seed plus read-only HybridStorageService/PocketDimension verification of hybrid:storage:index over local PDIM; current PostgreSQL metadata is not included",
   evidence,
   recoveryGate: {
     behavior:
       "PocketDimension metadata/index and the hybrid ownership index now initialize empty only after authoritative null reads; malformed JSON, invalid shapes, partial records, and PDIM read failures fail explicitly before writes.",
     focusedTestCommand:
       "NODE_OPTIONS=--max-old-space-size=256 npx vitest run server/pocket-dimension/__tests__/index.test.ts tests/unit/hybrid-storage-index-recovery.test.ts --pool=threads --maxWorkers=1",
-    focusedTestsPassed: 18,
   },
   cleanup: { attempted: true, failures: cleanupFailures },
   failure,
@@ -283,7 +284,7 @@ await writeFile(
     "",
     "## Scope and evidence",
     "",
-    `- Actual content path: \`HybridStorageService.upload/read\` -> pocket \`${evidence.productionPocketId ?? "not reached"}\` -> entries \`${evidence.productionEntryPrefix ?? "not reached"}<generated key>\`.`,
+    `- Actual content path: \`Legacy fixture seed / HybridStorageService.read\` -> pocket \`${evidence.productionPocketId ?? "not reached"}\` -> entries \`${evidence.productionEntryPrefix ?? "not reached"}<generated key>\`.`,
     `- Ownership index path: \`${evidence.hybridIndexKey ?? "not reached"}\`.`,
     `- Synthetic files independently restored and byte-checksummed: ${evidence.independentProcessVerifiedFiles ?? 0}.`,
     `- Snapshot: ${evidence.snapshotBytes ?? "n/a"} bytes, SHA-256 \`${evidence.snapshotSha256 ?? "n/a"}\`.`,
@@ -293,7 +294,7 @@ await writeFile(
     `- Valid-checksum snapshots with corrupt ownership indexes failed before content reads and preserved restored bytes: ${(evidence.semanticOwnershipCorruptionsRejected ?? []).join(", ") || "not reached"} / ${evidence.semanticCorruptionPreservedRestoredBytes ?? false}.`,
     "- Production/AppStorage/user data touched: none.",
     "- Production initialization gate: malformed/partial PocketDimension metadata and hybrid ownership indexes, plus PDIM read failures, now fail explicitly without writes; only authoritative null reads create an empty store.",
-    `- Focused test command: \`${report.recoveryGate.focusedTestCommand}\` (${report.recoveryGate.focusedTestsPassed} passed).`,
+    `- Focused test command: \`${report.recoveryGate.focusedTestCommand}\`.`,
     ...(failure ? ["", "## Failure", "", `\`${failure.replaceAll("`", "'")}\``] : []),
     "",
     "## Honest limitations",

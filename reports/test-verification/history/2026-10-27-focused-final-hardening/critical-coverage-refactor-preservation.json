@@ -1,0 +1,25 @@
+{
+  "scope": "Refactor verification; the assertion calls and literal leaf labels are preserved, while test registration/subject loading differs by adapter",
+  "pairs": [
+    {
+      "before": "/tmp/hybrid-storage-postgres-before-coverage.mjs",
+      "after": "tests/contracts/helpers-hybrid-storage-contracts.mjs",
+      "assertionCallsBefore": 36,
+      "assertionCallsAfter": 36,
+      "assertionCallsPreserved": true,
+      "leafLiteralLabelsPreserved": true,
+      "beforeSha256": "9d1455806be56c3ec9b54caf8dfef65dcbeb21d34ef2f5976524137fb9f0b7fe",
+      "afterSha256": "6c681341c04be7bff2515844ed3d7b472ae42df9342a6c629b2542037e840e5d"
+    },
+    {
+      "before": "/tmp/social-media-jobs-postgres-before-coverage.mjs",
+      "after": "tests/contracts/helpers-social-media-job-contracts.mjs",
+      "assertionCallsBefore": 54,
+      "assertionCallsAfter": 54,
+      "assertionCallsPreserved": true,
+      "leafLiteralLabelsPreserved": true,
+      "beforeSha256": "e4f5b186da1f9f48e08edaecc3717b4ce8020511d4d25ee47d88e42bd20836e2",
+      "afterSha256": "05de81b69855741392297b4fd84f300c60e0afd60199d284463c01b2173425a4"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="subscription authority validates provider state before real SQL admission" time="0.768200" disabled="0" errors="0" tests="16" failures="0" skipped="0" hostname="2fc971e77ddd">
+		<testcase name="discovers existing monthly/yearly catalog prices using actual amount, currency and interval policy" time="0.001436" classname="test"/>
+		<testcase name="monthly catalog identity overrides stale event and contradictory provider metadata" time="0.007344" classname="test"/>
+		<testcase name="yearly catalog identity overrides stale event and contradictory provider metadata" time="0.003589" classname="test"/>
+		<testcase name="valid legacy inline monthly/yearly metadata remains supported" time="0.005501" classname="test"/>
+		<testcase name="a delayed older event cannot supersede the current newer subscription" time="0.002708" classname="test"/>
+		<testcase name="a newer inactive subscription cannot replace an existing paid subscription" time="0.002301" classname="test"/>
+		<testcase name="a validated newer active subscription atomically advances only the observed pointer" time="0.002373" classname="test"/>
+		<testcase name="lifetime entitlement is never downgraded by a recurring event" time="0.003684" classname="test"/>
+		<testcase name="unknown and ambiguously linked customers fail without changing SQL" time="0.004166" classname="test"/>
+		<testcase name="provider retrieval failure for sub_incoming preserves pointer and entitlement" time="0.002422" classname="test"/>
+		<testcase name="provider retrieval failure for sub_current preserves pointer and entitlement" time="0.002876" classname="test"/>
+		<testcase name="invalid newer recurring plan unsupported is rejected before pointer mutation" time="0.002192" classname="test"/>
+		<testcase name="invalid newer recurring plan lifetime is rejected before pointer mutation" time="0.002041" classname="test"/>
+		<testcase name="mismatched provider subscription or customer identity is rejected before SQL mutation" time="0.003188" classname="test"/>
+		<testcase name="concurrent newer pointer during provider refresh wins over a stale admission" time="0.006407" classname="test"/>
+		<testcase name="concurrent lifetime upgrade during provider refresh wins over a stale admission" time="0.006690" classname="test"/>
+	</testsuite>
+	<!-- tests 17 -->
+	<!-- suites 0 -->
+	<!-- pass 17 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 847.334609 -->
+</testsuites>

@@ -84,6 +84,7 @@ class FMOperator {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.phase = 0;
     this.lastOutput = 0;
   }
@@ -172,6 +173,7 @@ export class DX7BellSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -258,6 +260,7 @@ export class DX7BassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -373,6 +376,8 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.tineEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.tineOperators.forEach((op) => op?.reset());
     this.tremoloLFO.reset();
@@ -476,6 +481,8 @@ export class DX7BrassSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lfo.reset();
     this.lpFilter.clear();
@@ -591,6 +598,8 @@ export class DX7PadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lfo1.reset();
     this.lfo2.reset();
@@ -694,6 +703,8 @@ export class DX7LeadSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.vibratoLFO.reset();
     this.lpFilter.clear();
@@ -795,6 +806,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.rotaryLFO.reset();
     this.lpFilter.clear();
@@ -883,6 +895,7 @@ export class DX7PercSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lpFilter.clear();
     this.hpFilter.clear();
@@ -1018,6 +1031,8 @@ export class FM8Synth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lfo1.reset();
     this.lfo2.reset();
@@ -1151,6 +1166,8 @@ export class ModularFMSynth implements SynthesizerEngine {
   }
 
   reset(): void {
+    this.envelope.reset();
+    this.filterEnvelope.reset();
     this.operators.forEach((op) => op?.reset());
     this.lfo1.reset();
     this.lfo2.reset();

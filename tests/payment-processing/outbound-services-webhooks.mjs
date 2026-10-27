@@ -194,11 +194,11 @@ test("actual webhook signature middleware preserves raw-byte signature boundary 
     "server/safety/stripeWebhookSecurity.ts",
     {
       stripe: `export default class Stripe {
-        constructor(){return {webhooks:{constructEvent(raw,signature,secret){
+        static webhooks={constructEvent(raw,signature,secret){
           if(!Buffer.isBuffer(raw)||!raw.equals(Buffer.from(${JSON.stringify(expectedRaw.toString())}))) throw new Error("wrong raw bytes");
           if(secret!=="whsec_isolated_marker"||signature!=="t=1,v1=valid") throw new Error("signature mismatch");
           return globalThis.__outboundWebhookEvent;
-        }}};}
+        }};
       }`,
       "../logger.js": "export const logger={info(){},warn(){},error(){}};",
       "../db": "export const pool={query:async()=>({rows:[]})};",
@@ -288,10 +288,10 @@ test("webhook receipt transaction retries failed settlement and ignores a succes
     "server/safety/stripeWebhookSecurity.ts",
     {
       stripe: `export default class Stripe {
-        constructor(){return {webhooks:{constructEvent(_raw,signature){
+        static webhooks={constructEvent(_raw,signature){
           if(signature!=="valid") throw new Error("invalid");
           return globalThis.__outboundWebhookIncoming;
-        }}};}
+        }};
       }`,
       "../logger.js": "export const logger={info(){},warn(){},error(){}};",
       "../db": "export const pool=globalThis.__outboundWebhookPool;",

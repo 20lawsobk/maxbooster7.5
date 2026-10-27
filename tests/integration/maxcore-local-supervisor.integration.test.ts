@@ -5,17 +5,42 @@
  * clean shutdown. Requires the nested workspace to be installed (the
  * supervisor bootstraps it automatically on a clean checkout).
  */
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createServer } from "node:net";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-const PORT = 8091;
-const MODEL_PORT = 9891;
+async function unusedPort() {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const port = (server.address() as { port: number }).port;
+  await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  return port;
+}
+const PORT = await unusedPort();
+const MODEL_PORT = await unusedPort();
+const privateState = mkdtempSync(join(tmpdir(), "maxcore-supervisor-fixture-"));
 
 process.env.MAXCORE_LOCAL = "1";
 process.env.MAXCORE_LOCAL_PORT = String(PORT);
 process.env.MODEL_API_PORT = String(MODEL_PORT);
+process.env.MODEL_API_HEALTH_PORT = String(await unusedPort());
+process.env.LOCAL_PDIM_PORT = String(await unusedPort());
+process.env.LOCAL_PDIM_STORE_FILE = join(privateState, "pdim.json");
+process.env.MAXCORE_PRIVATE_STATE_DIR = privateState;
+process.env.MAXCORE_MODEL_STATE_DIR = join(privateState, "models");
 process.env.SESSION_SECRET =
   process.env.SESSION_SECRET || "integration-test-secret-0123456789abcdef";
 
+// Use the same configuration reconciliation as production before importing
+// clients. This process owns its PDIM instance and token; it never borrows the
+// separately running application's storage credentials or files.
+await import("../../server/lib/pdimEnvFix.js");
+const pdim = await import("../../server/lib/localPdimServer.js");
 const supervisor = await import(
   "../../server/services/maxcoreLocalSupervisor.js"
 );
@@ -44,12 +69,17 @@ async function waitForHealthy(deadlineMs: number): Promise<boolean> {
 }
 
 describe("MaxCore local subsystem (real spawn)", () => {
-  afterAll(() => {
+  beforeAll(async () => {
+    await pdim.startLocalPdimServer();
+  });
+  afterAll(async () => {
     supervisor.stopMaxcoreLocal();
+    await pdim.stopLocalPdimServer();
+    rmSync(privateState, { recursive: true, force: true });
   });
 
   it(
-    "launches, becomes healthy (Python-backed), and reports ready",
+    "launches real Python and storage while keeping an absent inference candidate unready",
     { timeout: 240_000 },
     async () => {
       await supervisor.startMaxcoreLocal();
@@ -60,9 +90,22 @@ describe("MaxCore local subsystem (real spawn)", () => {
       expect(status.running).toBe(true);
       expect(status.pid).toBeGreaterThan(0);
 
-      // Cold start includes Python model warm-up.
+      // An empty private model directory is deliberate. Process health is
+      // executable evidence; generation admission remains false without a
+      // candidate. This is not a production-generation acceptance test.
       expect(await waitForHealthy(210_000)).toBe(true);
-      expect(await supervisor.checkMaxcoreLocalReady()).toBe(true);
+      const health = await fetch(`http://127.0.0.1:${PORT}/api/health`, {
+        headers: getMaxcoreGenerationHeaders(), signal: AbortSignal.timeout(5_000),
+      });
+      expect(health.status).toBe(200);
+      expect(await health.json()).toMatchObject({ status: "healthy", model_loaded: false });
+      expect(await supervisor.checkMaxcoreLocalReady()).toBe(false);
+      const storage = await fetch(process.env.STORAGE_HTTP_URL!, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.PDIM_LOCAL_CHANNEL_TOKEN}` },
+        body: JSON.stringify({ cmd: "PING", args: [] }), signal: AbortSignal.timeout(5_000),
+      });
+      expect(storage.status).toBe(200);
+      expect(await storage.json()).toBe("PONG");
     },
   );
 

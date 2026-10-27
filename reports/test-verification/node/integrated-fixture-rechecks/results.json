@@ -1,0 +1,92 @@
+{
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "scripts/test-data-runtime.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T22:34:27.869411+00:00",
+      "durationSeconds": 0.216,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/integrated-fixture-rechecks/scripts__test-data-runtime.mjs.txt",
+      "logSha256": "242711c28769d54367a6457805412ab84368c7803b4899a07f42fa8e7b7d9d55",
+      "file": "scripts/test-data-runtime.mjs",
+      "counts": {},
+      "countScope": "assertion script; no case count reported"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/dependency-security-paths.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T22:34:28.087654+00:00",
+      "durationSeconds": 2.23,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/integrated-fixture-rechecks/tests__dependency-security-paths.test.mjs.txt",
+      "logSha256": "b724e5cb8a86d32763f75ec026dae9b1f3c2eb2bf85c3a78803345905d8d3ea5",
+      "file": "tests/dependency-security-paths.test.mjs",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    },
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/publishing-cache-isolation.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-25T22:34:30.320498+00:00",
+      "durationSeconds": 0.215,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/node/integrated-fixture-rechecks/tests__publishing-cache-isolation.test.mjs.txt",
+      "logSha256": "6521ce71c270076e00ce69fc5e28c1148268b5ea70131bd5335c79f0ca447bdf",
+      "file": "tests/publishing-cache-isolation.test.mjs",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 3,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

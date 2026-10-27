@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "f571666292938651db15f56ffa3d7d4ab75b4305",
-  "startedAt": "2026-10-25T15:27:26.250076+00:00",
+  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "startedAt": "2026-10-26T23:40:48.019991+00:00",
   "nodeVersion": "v22.23.3",
   "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
   "commands": [
@@ -19,9 +19,9 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 5.62,
+      "durationSeconds": 19.504,
       "counts": {
-        "tests": 9,
+        "tests": 10,
         "failures": 0,
         "errors": 0,
         "skipped": 0
@@ -43,7 +43,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.264,
+      "durationSeconds": 1.274,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -78,6 +78,30 @@
       "junit": "business-integrity.test.xml"
     },
     {
+      "id": "compensation-races-postgres.test",
+      "path": "tests/payment-processing/compensation-races-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/compensation-races-postgres.test.xml",
+        "tests/payment-processing/compensation-races-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 11.073,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "compensation-races-postgres.test.txt",
+      "junit": "compensation-races-postgres.test.xml"
+    },
+    {
       "id": "database-commerce.test",
       "path": "tests/payment-processing/database-commerce.test.mjs",
       "command": [
@@ -91,7 +115,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.152,
+      "durationSeconds": 1.214,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -115,7 +139,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.199,
+      "durationSeconds": 0.188,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -139,7 +163,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.204,
+      "durationSeconds": 0.241,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -163,7 +187,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.244,
+      "durationSeconds": 0.269,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -187,7 +211,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.182,
+      "durationSeconds": 0.227,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -211,7 +235,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.629,
+      "durationSeconds": 0.78,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -235,7 +259,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.16,
+      "durationSeconds": 0.177,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -259,7 +283,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.162,
+      "durationSeconds": 0.209,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -283,7 +307,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.176,
+      "durationSeconds": 0.234,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -307,7 +331,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.264,
+      "durationSeconds": 0.371,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -331,7 +355,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.082,
+      "durationSeconds": 0.11,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -355,7 +379,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.161,
+      "durationSeconds": 0.183,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -379,7 +403,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.096,
+      "durationSeconds": 0.112,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -390,6 +414,78 @@
       "junit": "outbound-topup-journal.xml"
     },
     {
+      "id": "provider-only-preferences.test",
+      "path": "tests/payment-processing/provider-only-preferences.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/provider-only-preferences.test.xml",
+        "tests/payment-processing/provider-only-preferences.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.26,
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "provider-only-preferences.test.txt",
+      "junit": "provider-only-preferences.test.xml"
+    },
+    {
+      "id": "settlement-dispute-hold-postgres.test",
+      "path": "tests/payment-processing/settlement-dispute-hold-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/settlement-dispute-hold-postgres.test.xml",
+        "tests/payment-processing/settlement-dispute-hold-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 1.306,
+      "counts": {
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "settlement-dispute-hold-postgres.test.txt",
+      "junit": "settlement-dispute-hold-postgres.test.xml"
+    },
+    {
+      "id": "subscription-authority-postgres.test",
+      "path": "tests/payment-processing/subscription-authority-postgres.test.mjs",
+      "command": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=junit",
+        "--test-reporter-destination=/workspace/maxbooster7.5/reports/test-verification/commerce/subscription-authority-postgres.test.xml",
+        "tests/payment-processing/subscription-authority-postgres.test.mjs"
+      ],
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 0.89,
+      "counts": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "log": "subscription-authority-postgres.test.txt",
+      "junit": "subscription-authority-postgres.test.xml"
+    },
+    {
       "id": "legacy-beat",
       "path": "tests/unit/beat-sale-money-loop.test.ts",
       "command": [
@@ -398,7 +494,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.226,
+      "durationSeconds": 4.796,
       "counts": {
         "tests": 14,
         "failures": 0,
@@ -417,7 +513,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.104,
+      "durationSeconds": 0.118,
       "counts": null,
       "log": "provider-report-summary.txt",
       "junit": null,
@@ -428,28 +524,32 @@
     {
       "path": "tests/payment-processing/real-stripe-api.mjs",
       "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
       "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
     },
     {
       "path": "tests/payment-processing/inbound-real-stripe.mjs",
       "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
       "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
     },
     {
       "path": "tests/payment-processing/real-stripe-topup.mjs",
       "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
       "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
     },
     {
       "path": "tests/payment-processing/browser-fixture.mjs",
       "status": "not_run",
+      "mode": "remote-provider execution (not the offline report self-check)",
       "reason": "Requires an explicitly selected isolated Stripe TEST account and creates remote test objects; provider mutations excluded from this credential-free rerun"
     }
   ],
   "selection": null,
-  "finishedAt": "2026-10-25T15:27:41.339109+00:00",
+  "finishedAt": "2026-10-26T23:41:32.722896+00:00",
   "summary": {
-    "passed": 18,
+    "passed": 22,
     "failed": 0,
     "timeout": 0,
     "remoteNotRun": 4
