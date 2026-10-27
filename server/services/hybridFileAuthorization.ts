@@ -66,10 +66,23 @@ export function authorizedDirectFallback(
  * service still independently enforces the authenticated reader's identity.
  */
 export function trackedHybridReadDenial(
-  tracked: { userId: string; deletedAt: Date | null } | null,
-  metadata: { userId: string } | null,
+  tracked: { userId: string; deletedAt: Date | null; isPublic?: boolean | null } | null,
+  metadata: { userId: string; isPublic?: boolean } | null,
 ): 403 | 404 | null {
   if (tracked?.deletedAt != null) return 404;
   if (hasConflictingStorageOwnership(tracked?.userId ?? null, metadata)) return 403;
+  if (hasConflictingStorageVisibility(tracked, metadata)) return 403;
   return null;
+}
+
+/**
+ * SQL tracking can mark a key private while a stale hybrid index marks it
+ * public. Never let the more permissive hybrid flag override a tracked
+ * private file. Untracked hybrid-only uploads keep their existing policy.
+ */
+export function hasConflictingStorageVisibility(
+  tracked: { isPublic?: boolean | null } | null,
+  metadata: { isPublic?: boolean } | null,
+): boolean {
+  return tracked !== null && metadata?.isPublic === true && tracked.isPublic !== true;
 }
