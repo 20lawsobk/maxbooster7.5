@@ -181,7 +181,18 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = req.params.fileKey as string;
+      // Express has already decoded the route parameter. Preserve key identity
+      // and reject unsafe keys before any metadata or signed-URL access.
+      if (
+        !fileKey ||
+        fileKey.startsWith("/") ||
+        fileKey.includes("..") ||
+        fileKey.includes("\\") ||
+        fileKey.includes("\0")
+      ) {
+        return res.status(400).json({ error: "Invalid file key" });
+      }
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -192,6 +203,7 @@ router.get(
         return res.status(403).json({ error: "Access denied" });
       }
 
+      res.setHeader("Cache-Control", "private, no-store");
       res.json({ metadata });
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Metadata error:");
@@ -303,7 +315,18 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      const fileKey = req.params.fileKey as string;
+      // Express has already decoded the route parameter. Preserve key identity
+      // and reject unsafe keys before any metadata or signed-URL access.
+      if (
+        !fileKey ||
+        fileKey.startsWith("/") ||
+        fileKey.includes("..") ||
+        fileKey.includes("\\") ||
+        fileKey.includes("\0")
+      ) {
+        return res.status(400).json({ error: "Invalid file key" });
+      }
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -316,6 +339,7 @@ router.get(
 
       const url = await hybridStorageService?.getDownloadUrl(userId, fileKey);
 
+      res.setHeader("Cache-Control", "private, no-store");
       res.json({ url });
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Get URL error:");
