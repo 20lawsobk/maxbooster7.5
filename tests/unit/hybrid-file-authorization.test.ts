@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedDirectFallback, authorizedHybridReadPrincipal } from "../../server/services/hybridFileAuthorization.js";
+import { authorizedDirectFallback, authorizedHybridReadPrincipal, hasConflictingStorageOwnership } from "../../server/services/hybridFileAuthorization.js";
 
 describe("authenticated hybrid-file read principal", () => {
   const privateFile = { userId: "owner", isPublic: false };
@@ -61,5 +61,15 @@ describe("direct-storage fallback must fail closed", () => {
 
   it("rejects unauthenticated fallback even with public or paid metadata", () => {
     expect(authorizedDirectFallback("", "owner", { userId: "owner", isPublic: true }, true)).toBe(false);
+  });
+
+  it("denies contradictory SQL and hybrid owners even for public files or paid stems", () => {
+    const contradictory = { userId: "hybrid-owner", isPublic: false };
+    expect(hasConflictingStorageOwnership("sql-owner", contradictory)).toBe(true);
+    expect(hasConflictingStorageOwnership("sql-owner", { userId: "sql-owner" })).toBe(false);
+    expect(hasConflictingStorageOwnership(null, contradictory)).toBe(false);
+    expect(authorizedDirectFallback("buyer", "sql-owner", contradictory, true)).toBe(false);
+    expect(authorizedDirectFallback("buyer", "sql-owner", { ...contradictory, isPublic: true }, null)).toBe(false);
+    expect(authorizedDirectFallback("buyer", "sql-owner", { userId: "sql-owner" }, true)).toBe(true);
   });
 });
