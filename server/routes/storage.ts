@@ -1061,6 +1061,8 @@ router.get(
       return res.status(400).json({ error: "Invalid file key" });
     }
       const userId = req.user!.id;
+      // Private hybrid bytes must never survive an entitlement or ownership change in caches.
+      res.setHeader("Cache-Control", "private, no-store");
 
       const buffer = await hybridStorageService?.read(userId, key);
       const metadata = hybridStorageService?.getMetadata(key);
