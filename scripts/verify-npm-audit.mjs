@@ -36,8 +36,19 @@ export function assessAuditReport(source) {
   return { counts, highPlus, passed: highPlus === 0 };
 }
 
-export function verifyAuditReport(source) {
+export function parseAuditExitStatus(source) {
+  const value = typeof source === "string" ? source.trim() : "";
+  if (!/^(0|[1-9][0-9]{0,2})$/.test(value) || Number(value) > 255) {
+    throw new Error("npm audit CLI exit status is missing or invalid");
+  }
+  return Number(value);
+}
+
+export function verifyAuditReport(source, exitStatus = 0) {
   const result = assessAuditReport(source);
+  if (exitStatus !== 0) {
+    throw new Error("npm audit CLI returned a nonzero exit status");
+  }
   console.log("== npm audit summary ==");
   for (const [severity, count] of Object.entries(result.counts)) {
     if (count > 0) console.log(`  ${severity}: ${count}`);
@@ -50,7 +61,10 @@ export function verifyAuditReport(source) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    verifyAuditReport(readFileSync(resolve(process.argv[2] ?? "audit-report.json"), "utf8"));
+    verifyAuditReport(
+      readFileSync(resolve(process.argv[2] ?? "audit-report.json"), "utf8"),
+      parseAuditExitStatus(readFileSync(resolve(process.argv[3] ?? "audit-exit-code.txt"), "utf8")),
+    );
   } catch {
     // Deliberately do not print raw npm audit error contents or credentials.
     console.error("npm audit release gate failed (malformed/unavailable audit or high/critical findings)");
