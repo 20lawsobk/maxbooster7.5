@@ -24,16 +24,15 @@ const legacyRead = routeBody(
 );
 
 function requireDenyBeforeRead(body, keyName) {
-  assert.match(
-    body,
-    new RegExp('eq\\(userStorageFiles\\.fileKey, ' + keyName +
-      '\\), isNotNull\\(userStorageFiles\\.deletedAt\\)'),
+  assert.ok(
+    body.includes('eq(userStorageFiles.fileKey, ' + keyName +
+      '), isNotNull(userStorageFiles.deletedAt)'),
     "Must query durable soft-delete tombstones by the exact requested key",
   );
   const denied = body.indexOf("if (deletedTracking)");
   const byteRead = body.indexOf("hybridStorageService?.read(");
   assert.ok(denied >= 0 && byteRead > denied, "Tombstone denial must precede byte fetch");
-  assert.match(body.slice(denied, byteRead), /status\\(404\\)/, "Deleted object must be 404");
+  assert.ok(body.slice(denied, byteRead).includes("status(404)"), "Deleted object must be 404");
   assert.match(body, /Cache-Control", "private, no-store"/, "Private bytes must not be cached");
 }
 
