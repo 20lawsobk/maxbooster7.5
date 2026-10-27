@@ -25,6 +25,7 @@ import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as _ReplitObjectStorageClient } from "@replit/object-storage";
 import { assertSafeHybridDeletion, requireConfirmedHybridPhysicalDeletion } from "./hybridDeletionSafety.js";
 import { persistHybridIndex } from "./hybridIndexPersistence.js";
+import { assertHybridIndexReferenceIntegrity } from "./hybridIndexReferenceIntegrity.js";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -268,6 +269,10 @@ export class HybridStorageService {
         }
         nextPublic.set(hash, key);
       }
+
+      // Fail closed before publishing a corrupt ownership/deduplication index.
+      // A key in the wrong hash bucket can resolve to unrelated stored bytes.
+      assertHybridIndexReferenceIntegrity(nextFiles, nextHashes, nextPublic);
 
       this.fileIndex = nextFiles;
       this.contentHashIndex = nextHashes;
