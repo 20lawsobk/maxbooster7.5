@@ -14,6 +14,7 @@ import {
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
+import { normalizeHybridCleanupDays } from "../services/hybridCleanupPolicy.js";
 
 const router = Router();
 const upload = createHardenedUpload({
@@ -268,14 +269,15 @@ router.post("/optimize", requireAuth, async (req: Request, res: Response) => {
 router.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { olderThanDays } = req.body;
+    const olderThanDays = normalizeHybridCleanupDays(req.body?.olderThanDays);
 
-    const result = await hybridStorageService?.cleanup(userId, {
-      olderThanDays: olderThanDays ? parseInt(olderThanDays, 10) : undefined,
-    });
+    const result = await hybridStorageService?.cleanup(userId, { olderThanDays });
 
     res.json({ success: true, ...result });
   } catch (error) {
+    if (error instanceof RangeError) {
+      return res.status(400).json({ error: "Invalid olderThanDays" });
+    }
     logger.warn({ err: error }, "[HybridStorage] Cleanup error:");
     res.status(500).json({ error: "Cleanup failed" });
   }

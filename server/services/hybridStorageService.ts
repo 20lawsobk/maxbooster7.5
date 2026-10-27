@@ -28,6 +28,7 @@ import { persistHybridIndex } from "./hybridIndexPersistence.js";
 import { assertHybridIndexReferenceIntegrity } from "./hybridIndexReferenceIntegrity.js";
 import { generateHybridFileKey } from "./hybridFileKey.js";
 import { selectHybridTieringKeys } from "./hybridOptimizationSafety.js";
+import { normalizeHybridCleanupDays } from "./hybridCleanupPolicy.js";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -1049,7 +1050,7 @@ export class HybridStorageService {
   ): Promise<{ deletedCount: number; freedBytes: number }> {
     await this.initialize();
 
-    const thresholdDays = options?.olderThanDays || 90;
+    const thresholdDays = normalizeHybridCleanupDays(options?.olderThanDays);
     const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
     const now = Date?.now();
 
