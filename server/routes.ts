@@ -1599,6 +1599,7 @@ export async function registerRoutes(
 
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
+      let trackedOwnerId: string | null = null;
       {
         const { userStorageFiles } = await import("../shared/schema.js");
         const { eq, sql: dsql } = await import("drizzle-orm");
@@ -1608,6 +1609,7 @@ export async function registerRoutes(
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
+        trackedOwnerId = row?.userId ?? null;
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
@@ -1626,6 +1628,11 @@ export async function registerRoutes(
 
       const hybridMeta = hybridStorageService.getMetadata(key);
       if (hybridMeta) {
+        // If two private ownership records disagree, neither can authorize
+        // a read. Do not let stale hybrid metadata override the SQL owner.
+        if (trackedOwnerId && trackedOwnerId !== req.user.id && stemAccess !== true && hybridMeta.isPublic !== true) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         const { authorizedHybridReadPrincipal } = await import(
           "./services/hybridFileAuthorization.js"
         );
@@ -1649,6 +1656,14 @@ export async function registerRoutes(
       }
 
       if (!fileBuffer) {
+        // The direct backend has no tenant-aware read API. An absent hybrid
+        // metadata record must never turn an unknown key into a public file.
+        const { authorizedDirectFallback } = await import(
+          "./services/hybridFileAuthorization.js"
+        );
+        if (!authorizedDirectFallback(req.user.id, trackedOwnerId, hybridMeta, stemAccess)) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         try {
           fileBuffer = await storageService.downloadFile(key);
           storageTier = "replit-direct";
@@ -1694,7 +1709,8 @@ export async function registerRoutes(
       // "private" (not "public") — this endpoint now requires auth and gates
       // users/* keys by owner, so a shared/CDN cache must never store a
       // response that was only authorized for one specific requester.
-      res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "private, max-age=31536000, immutable");
+      // Never cache account-bound bytes across logout/login or ownership changes.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);

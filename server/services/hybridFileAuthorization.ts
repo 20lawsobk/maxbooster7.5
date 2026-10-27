@@ -21,3 +21,32 @@ export function authorizedHybridReadPrincipal(
   }
   return null;
 }
+
+
+/**
+ * A direct-storage read has no built-in per-user authorization. It must only
+ * be attempted when an independent ownership/visibility record authorizes it.
+ * Missing hybrid metadata and a missing tracking row are NOT public access.
+ */
+export function authorizedDirectFallback(
+  requesterId: string,
+  trackedOwnerId: string | null,
+  metadata: { userId: string; isPublic?: boolean } | null,
+  verifiedStemAccess: boolean | null,
+): boolean {
+  if (!requesterId) return false;
+  if (verifiedStemAccess === true) return true;
+  // Conflicting private records are denied, not resolved by choosing the more
+  // permissive record. A public hybrid object is the explicit exception.
+  if (metadata && metadata.userId !== requesterId && metadata.isPublic !== true) {
+    return false;
+  }
+  if (trackedOwnerId && trackedOwnerId !== requesterId && metadata?.isPublic !== true) {
+    return false;
+  }
+  return (
+    trackedOwnerId === requesterId ||
+    metadata?.userId === requesterId ||
+    metadata?.isPublic === true
+  );
+}
