@@ -225,39 +225,37 @@ router.post(
           }
         }
         if (!storageRow) throw new Error("Upload owner storage record is unavailable");
-        {
-          await db
-            .insert(userStorageFiles)
-            .values({
-              userId,
-              storageId: storageRow.id,
-              fileName: safeFileName,
-              fileKey: key,
-              mimeType: req.file.mimetype,
-              sizeBytes: req.file.size,
-              folder: category,
-              metadata: { category, uploadedVia: "storage/upload" },
-            })
-            .onConflictDoNothing();
-          // onConflictDoNothing and lost DB acknowledgements must not turn an
-          // untracked or foreign-owned PDIM object into a successful upload.
-          const [tracked] = await db
-            .select({
-              userId: userStorageFiles.userId,
-              fileKey: userStorageFiles.fileKey,
-              deletedAt: userStorageFiles.deletedAt,
-              sizeBytes: userStorageFiles.sizeBytes,
-              mimeType: userStorageFiles.mimeType,
-              fileName: userStorageFiles.fileName,
-            })
-            .from(userStorageFiles)
-            .where(eq(userStorageFiles.fileKey, key))
-            .limit(1);
-          assertTrackedUpload(tracked, {
-            userId, fileKey: key, sizeBytes: req.file.size,
-            mimeType: req.file.mimetype, fileName: safeFileName,
-          });
-        }
+        await db
+          .insert(userStorageFiles)
+          .values({
+            userId,
+            storageId: storageRow.id,
+            fileName: safeFileName,
+            fileKey: key,
+            mimeType: req.file.mimetype,
+            sizeBytes: req.file.size,
+            folder: category,
+            metadata: { category, uploadedVia: "storage/upload" },
+          })
+          .onConflictDoNothing();
+        // onConflictDoNothing and lost DB acknowledgements must not turn an
+        // untracked or foreign-owned PDIM object into a successful upload.
+        const [tracked] = await db
+          .select({
+            userId: userStorageFiles.userId,
+            fileKey: userStorageFiles.fileKey,
+            deletedAt: userStorageFiles.deletedAt,
+            sizeBytes: userStorageFiles.sizeBytes,
+            mimeType: userStorageFiles.mimeType,
+            fileName: userStorageFiles.fileName,
+          })
+          .from(userStorageFiles)
+          .where(eq(userStorageFiles.fileKey, key))
+          .limit(1);
+        assertTrackedUpload(tracked, {
+          userId, fileKey: key, sizeBytes: req.file.size,
+          mimeType: req.file.mimetype, fileName: safeFileName,
+        });
       } catch (trackErr) {
         logger.error({ err: trackErr }, "[Storage] Upload tracking could not be verified:");
         try {
