@@ -59,3 +59,17 @@ export function authorizedDirectFallback(
     metadata?.isPublic === true
   );
 }
+
+/**
+ * Guard the alternate /hybrid/file route against SQL soft deletes and
+ * contradictory SQL/hybrid owners before fetching any bytes. The hybrid
+ * service still independently enforces the authenticated reader's identity.
+ */
+export function trackedHybridReadDenial(
+  tracked: { userId: string; deletedAt: Date | null } | null,
+  metadata: { userId: string } | null,
+): 403 | 404 | null {
+  if (tracked?.deletedAt != null) return 404;
+  if (hasConflictingStorageOwnership(tracked?.userId ?? null, metadata)) return 403;
+  return null;
+}

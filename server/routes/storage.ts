@@ -1062,8 +1062,24 @@ router.get(
     }
       const userId = req.user!.id;
 
-      const buffer = await hybridStorageService?.read(userId, key);
-      const metadata = hybridStorageService?.getMetadata(key);
+      // The direct file route honors SQL soft deletes; this alternate hybrid
+      // route must not expose retained restore-window bytes or mismatched owners.
+      const [tracked] = await db
+        .select({ userId: userStorageFiles.userId, deletedAt: userStorageFiles.deletedAt })
+        .from(userStorageFiles)
+        .where(eq(userStorageFiles.fileKey, key))
+        .limit(1);
+      // read() initializes lazily; initialize before inspecting metadata so a
+      // cold-start index cannot bypass the SQL/hybrid ownership comparison.
+      await hybridStorageService.initialize();
+      const metadata = hybridStorageService.getMetadata(key) ?? null;
+      const { trackedHybridReadDenial } = await import("../services/hybridFileAuthorization.js");
+      const denial = trackedHybridReadDenial(tracked ?? null, metadata);
+      if (denial !== null) {
+        return res.status(denial).json({ error: denial === 404 ? "File not found" : "Access denied" });
+      }
+      res.setHeader("Cache-Control", "private, no-store");
+      const buffer = await hybridStorageService.read(userId, key);
 
       const ext = path?.extname(key).toLowerCase();
       const mimeTypes: Record<string, string> = {
