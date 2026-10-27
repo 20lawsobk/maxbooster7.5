@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertSafeHybridDeletion,
   HybridStorageReferenceConflictError,
+  requireConfirmedHybridPhysicalDeletion,
 } from "../../server/services/hybridDeletionSafety.js";
 
 describe("hybrid deletion must preserve live deduplicated bytes", () => {
@@ -36,5 +37,27 @@ describe("hybrid deletion must preserve live deduplicated bytes", () => {
   it("does not mistake an empty index for permission to delete", () => {
     expect(() => assertSafeHybridDeletion("primary", false, []))
       .toThrow(HybridStorageReferenceConflictError);
+  });
+});
+
+describe("physical PDIM deletion acknowledgement", () => {
+  it("accepts only a confirmed true deletion", async () => {
+    let calls = 0;
+    await expect(requireConfirmedHybridPhysicalDeletion(async () => {
+      calls += 1;
+      return true;
+    })).resolves.toBeUndefined();
+    expect(calls).toBe(1);
+  });
+
+  it("rejects a false deletion result instead of returning success", async () => {
+    await expect(requireConfirmedHybridPhysicalDeletion(async () => false))
+      .rejects.toThrow("physical deletion was not confirmed");
+  });
+
+  it("propagates PDIM failures instead of suppressing them", async () => {
+    await expect(requireConfirmedHybridPhysicalDeletion(async () => {
+      throw new Error("PDIM unavailable");
+    })).rejects.toThrow("PDIM unavailable");
   });
 });
