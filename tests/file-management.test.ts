@@ -206,10 +206,10 @@ describe("File Management (Storage Round-Trip)", () => {
   it("5b. never serves the owner's uploaded bytes to a second authenticated account", async () => {
     // This is an integration test, not proof of the worker-backed byte layer.
     // A successful upload is a required prerequisite to exercise the real route.
-    if (!uploadedFileKey) {
-      console.warn("[FileTest] No uploaded key; cross-account isolation remains UNVERIFIED");
-      return;
-    }
+    expect(
+      uploadedFileKey,
+      "Cross-account isolation requires a successful real upload; an unavailable storage backend cannot pass this test",
+    ).toBeTruthy();
 
     const ownerCookies = authCookies;
     const ownerCsrf = csrfToken;
