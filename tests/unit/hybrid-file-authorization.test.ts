@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedDirectFallback, authorizedHybridReadPrincipal, hasConflictingStorageOwnership } from "../../server/services/hybridFileAuthorization.js";
+import { authorizedDirectFallback, authorizedHybridReadPrincipal, hasConflictingStorageOwnership, trackedHybridReadDenial } from "../../server/services/hybridFileAuthorization.js";
 
 describe("authenticated hybrid-file read principal", () => {
   const privateFile = { userId: "owner", isPublic: false };
@@ -71,5 +71,30 @@ describe("direct-storage fallback must fail closed", () => {
     expect(authorizedDirectFallback("buyer", "sql-owner", contradictory, true)).toBe(false);
     expect(authorizedDirectFallback("buyer", "sql-owner", { ...contradictory, isPublic: true }, null)).toBe(false);
     expect(authorizedDirectFallback("buyer", "sql-owner", { userId: "sql-owner" }, true)).toBe(true);
+  });
+});
+
+
+describe("alternate hybrid-file route SQL tombstone guard", () => {
+  const metadata = { userId: "owner", isPublic: false };
+
+  it("denies retained private bytes after SQL soft delete", () => {
+    expect(trackedHybridReadDenial({ userId: "owner", deletedAt: new Date("2026-10-26") }, metadata)).toBe(404);
+  });
+
+  it("denies retained public bytes after SQL soft delete", () => {
+    expect(trackedHybridReadDenial({ userId: "owner", deletedAt: new Date("2026-10-26") }, { ...metadata, isPublic: true })).toBe(404);
+  });
+
+  it("denies SQL/hybrid owner conflicts even for public metadata", () => {
+    expect(trackedHybridReadDenial({ userId: "sql-owner", deletedAt: null }, { userId: "hybrid-owner", isPublic: true })).toBe(403);
+  });
+
+  it("preserves consistent active owner access for downstream hybrid authorization", () => {
+    expect(trackedHybridReadDenial({ userId: "owner", deletedAt: null }, metadata)).toBeNull();
+  });
+
+  it("leaves untracked metadata to the hybrid service's caller-based authorization", () => {
+    expect(trackedHybridReadDenial(null, metadata)).toBeNull();
   });
 });
