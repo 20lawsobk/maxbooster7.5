@@ -254,7 +254,16 @@ describe("File Management (Storage Round-Trip)", () => {
       `/api/storage/file/${encodeURIComponent(uploadedFileKey)}`,
     );
     expect(ownerDownload.status).toBe(200);
+    expect(ownerDownload.headers.get("cache-control")).toBe("private, no-store");
     expect(Buffer.from(await ownerDownload.arrayBuffer())).toEqual(uploadPayload);
+  });
+
+  it("5c. rejects untracked non-user-prefixed direct-storage keys", async () => {
+    // The direct backend must not be probed for arbitrary legacy/private keys
+    // merely because neither SQL tracking nor hybrid metadata recognizes them.
+    const unknownKey = `legacy-private/${Date.now()}-${Math.random().toString(16).slice(2)}.wav`;
+    const res = await api("GET", `/api/storage/file/${encodeURIComponent(unknownKey)}`);
+    expect(res.status).toBe(403);
   });
 
   it("6. deletes the uploaded file and returns success", async () => {
