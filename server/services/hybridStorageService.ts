@@ -23,7 +23,7 @@ import { createHash } from "crypto";
 import { logger } from "../logger.js";
 import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as _ReplitObjectStorageClient } from "@replit/object-storage";
-import { assertSafeHybridDeletion } from "./hybridDeletionSafety.js";
+import { assertSafeHybridDeletion, requireConfirmedHybridPhysicalDeletion } from "./hybridDeletionSafety.js";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
 const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
@@ -624,35 +624,23 @@ export class HybridStorageService {
     }
 
     const hashKeys = this.contentHashIndex.get(entry?.contentHash);
-    // This must precede every in-memory index mutation and PDIM byte delete.
     assertSafeHybridDeletion(key, entry.isDeduplicated, hashKeys);
-    if (hashKeys) {
-      const idx = hashKeys?.indexOf(key);
-      if (idx > -1) hashKeys?.splice(idx, 1);
-      if (hashKeys?.length === 0) {
-        this.contentHashIndex.delete(entry?.contentHash);
-        this.publicContentHashes.delete(entry?.contentHash);
-      }
+
+    // Only a physical primary owns PDIM bytes. Require an acknowledged
+    // deletion before changing metadata; never report success on false/reject.
+    // Shared primaries are already rejected by assertSafeHybridDeletion.
+    if (!entry.isDeduplicated) {
+      await requireConfirmedHybridPhysicalDeletion(() =>
+        this.coldPocket!.delete(`storage/${key}`),
+      );
     }
 
-    if (!entry?.isDeduplicated) {
-      const otherRefs = hashKeys && hashKeys?.length > 0;
-
-      if (!otherRefs) {
-        // PDIM-only: always delete from cold pocket.
-        await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
-      } else if (hashKeys && hashKeys?.length > 0) {
-        const newPrimary = hashKeys[0];
-        const newPrimaryEntry = this.fileIndex.get(newPrimary);
-        if (newPrimaryEntry) {
-          newPrimaryEntry.isDeduplicated = false;
-          newPrimaryEntry.deduplicationRef = undefined;
-        }
-
-        if (entry?.isPublic) {
-          this.publicContentHashes.set(entry?.contentHash, newPrimary);
-        }
-      }
+    // The safety assertion established unique membership in this hash index.
+    const idx = hashKeys!.indexOf(key);
+    hashKeys!.splice(idx, 1);
+    if (hashKeys!.length === 0) {
+      this.contentHashIndex.delete(entry.contentHash);
+      this.publicContentHashes.delete(entry.contentHash);
     }
 
     this.fileIndex.delete(key);
