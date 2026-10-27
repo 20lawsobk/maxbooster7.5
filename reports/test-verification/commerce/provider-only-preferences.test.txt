@@ -2,61 +2,61 @@ TAP version 13
 # Subtest: registered generic preference routes reject bank writes and redact historical credentials
 ok 1 - registered generic preference routes reject bank writes and redact historical credentials
   ---
-  duration_ms: 557.09767
+  duration_ms: 408.529218
   type: 'test'
   ...
 # Subtest: legacy payout routes fail closed and historical bank records are never treated as verified
 ok 2 - legacy payout routes fail closed and historical bank records are never treated as verified
   ---
-  duration_ms: 88.852685
+  duration_ms: 85.432767
   type: 'test'
   ...
 # Subtest: paid and administrator dashboard account responses redact banking and verification secrets
 ok 3 - paid and administrator dashboard account responses redact banking and verification secrets
   ---
-  duration_ms: 17.371061
+  duration_ms: 16.0088
   type: 'test'
   ...
 # Subtest: generic preference privacy preserves settings without exposing historical banking fields
 ok 4 - generic preference privacy preserves settings without exposing historical banking fields
   ---
-  duration_ms: 0.739676
+  duration_ms: 0.726487
   type: 'test'
   ...
 # Subtest: payment preferences reject bank credentials before persistence and preserve provider settings
 ok 5 - payment preferences reject bank credentials before persistence and preserve provider settings
   ---
-  duration_ms: 33.220851
+  duration_ms: 33.071848
   type: 'test'
   ...
 # Subtest: royalty split acceptance rejects bank credentials without storage writes and preserves provider identity
 ok 6 - royalty split acceptance rejects bank credentials without storage writes and preserves provider identity
   ---
-  duration_ms: 36.376076
+  duration_ms: 23.536367
   type: 'test'
   ...
 # Subtest: generic preference guard rejects common bank credential key spellings
 ok 7 - generic preference guard rejects common bank credential key spellings
   ---
-  duration_ms: 0.494175
+  duration_ms: 0.375877
   type: 'test'
   ...
 # Subtest: routine preference responses redact key variants without mutating stored JSON
 ok 8 - routine preference responses redact key variants without mutating stored JSON
   ---
-  duration_ms: 0.32468
+  duration_ms: 0.39106
   type: 'test'
   ...
 # Subtest: authenticated user preference routes reject nested banking fields and redact historical values
 ok 9 - authenticated user preference routes reject nested banking fields and redact historical values
   ---
-  duration_ms: 12.636649
+  duration_ms: 8.734181
   type: 'test'
   ...
 # Subtest: security alert preference responses redact legacy banking fields on reads and updates
 ok 10 - security alert preference responses redact legacy banking fields on reads and updates
   ---
-  duration_ms: 9.745488
+  duration_ms: 11.869834
   type: 'test'
   ...
 1..10
@@ -67,4 +67,4 @@ ok 10 - security alert preference responses redact legacy banking fields on read
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1219.139126
+# duration_ms 994.825268

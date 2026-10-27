@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
-  "platformSourceDigest": "489c8798927ad56347de7e76e230ab02b5add37540ea6cae0aee11394079b7c6",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "platformSourceDigest": "2bb27001dc2ae1ebf738f2443a57031547a58d9a984d1a30bfab06b192a2cd29",
   "sourceInputsSha256": {
     ".agents/agent_assets_metadata.toml": "0988ead97441c301950f24bdba9f8f5bee66b529be4e2045c2fbce333e0f974b",
     ".agents/scripts/render_pages.py": "b1d78d36b4ff3bcec061a3d4b932704f4d0905698479b7db95e0d0287d860aec",
@@ -997,7 +997,7 @@
     "client/src/components/studio/StudioDock.tsx": "20afb6523f2ab7fedd7cd79c497feb570f137b5c35949cbbd55bbcc41f807f4e",
     "client/src/components/studio/StudioDrawer.tsx": "c951b8f1d648d5a06b740bad9945d1617292e83658c9b78cf50d5a49d641c421",
     "client/src/components/studio/StudioInspector.tsx": "bfeba6e45225a9fdeba1e4047a685fa4c69599dbc24f27ef7ae9276c6f8613ed",
-    "client/src/components/studio/StudioLoader.tsx": "4d02e8154ee30879c198eb203a64466a44de26afdfa36d525cfdefca2e6c3b19",
+    "client/src/components/studio/StudioLoader.tsx": "a1d42a95b4a86c403d7fea8f0a737c5c09d6f7e4ceee2db4c043d31960ef4f12",
     "client/src/components/studio/StudioOneBrowser.tsx": "dd9c46e58d9552ef0400b2df429c626268ef24bf385546b57e59d007e1a817f0",
     "client/src/components/studio/StudioOneChannelStrip.tsx": "01df7007d929d0e6c04af075567bf5b7e510bfcaae1dc85c0b0423fa9dd312ca",
     "client/src/components/studio/StudioOneConsole.tsx": "c5457764654b40a969073aea654754ee841d1b4d29983375eaa26cd04e4b9ae9",
@@ -1623,7 +1623,7 @@
     "external/maxcore/artifacts/ai-training-server/ai_model/awareness/__init__.py": "80eab5e2f9c15e3fa0a240d9bbf2d9083551e027fd44b221dcbcf2b6c281865a",
     "external/maxcore/artifacts/ai-training-server/ai_model/awareness/engine.py": "ebdb3164c24b07aa823b48c4c99a356fde9ce2f8007e56b8a50bbe785b855d49",
     "external/maxcore/artifacts/ai-training-server/ai_model/awareness/lease.py": "7686781c67fdd8687bb259cbffa058555fce452e755700aac5423690a36b9ebd",
-    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "2505b803ac378b5acdb3b916e3baf9e0a64ac842a0a4a0a006bb29d3a0f289dd",
+    "external/maxcore/artifacts/ai-training-server/ai_model/awareness/sources.py": "50ef05704a303fe4e844986ddd0d37d6ad10b90f1984a2194745b5f849dcdba7",
     "external/maxcore/artifacts/ai-training-server/ai_model/boostsheets/__init__.py": "7f00c8849a5057e3eebdedef1deefb98cd157072751b0e1bb8a72a1f57287611",
     "external/maxcore/artifacts/ai-training-server/ai_model/boostsheets/boostsheet.py": "648c48f75aa51279d03570fd0853bd3d9c50a6bb4604392261032dd29b4a41bc",
     "external/maxcore/artifacts/ai-training-server/ai_model/boostsheets/lifecycle.py": "28df549afc1021d47569f10c5e0c6923e2a081cced4c128f92abdf7fdb472909",
@@ -2391,7 +2391,7 @@
     "script/lib/deploymentExecution.ts": "c2d8fd91334965f0c33e5d691b5321bd48b9e14e9f9be2de126d461ac33c2666",
     "script/lib/deploymentPackRecovery.mjs": "e996290a6cd6be48a4e078e49ef8880c0e9840bda216901ed570c3d50bf83f6f",
     "script/lib/deploymentPreflight.ts": "b323d1bf4b4e823d6ee784c84da8404d3b1b4891a49c2e3fd07d95ca7f9bbd48",
-    "script/lib/dockerignoreScan.ts": "b402bad54a418c1563524e75147dc8bf8ec86cf514dd5c5e8715b8a7fe9e2489",
+    "script/lib/dockerignoreScan.ts": "51107cd15863735a5cc05474764c8d3e5bc0a3847d6077bb7d94b5e047166dd5",
     "script/lib/modelRelease.ts": "084f3f13a8c9a2495b8d8b16e3828d81856d2937b9f19f29fe63b118384ed002",
     "script/lib/portableNode.ts": "04464dd3605044239d9d6481898892847bc9bfc3b81a35b41a44d70edeec796c",
     "script/lib/portableNodePolicy.mjs": "e8a87b3011f498b157a354c0b5163ea6e96080675d23844ab51bf99eb5944de3",
@@ -2478,7 +2478,7 @@
     "scripts/lib/fixture-command-input.mjs": "43afd63edef4acfacc45f09beea8710306ce44646c3c69dd8e3bd7b27637cd1e",
     "scripts/lib/isolated-acceptance-readiness.mjs": "45ca9b377e3104635c665509c2f94e85f9792cc2db2ccdec0117cf1740f85f03",
     "scripts/lib/isolated-codec-process.mjs": "dfd08c5b7a411506e3a9e5dafd03e8756c3e2936955bed32e82104a6f4a419e4",
-    "scripts/lib/production-simulation-copy.mjs": "e8f88dc81202158c607e344ac6c84d66d5b8b85516528d61f350ae7220c8255d",
+    "scripts/lib/production-simulation-copy.mjs": "400e127c91bb4c6cb90d3dbf0fbc16aeb0e23fffbb0e97b04b82cabcd841b297",
     "scripts/lib/production-simulation-resume.mjs": "226e22a7d89ce597277c8b4d95867def62c85b6692365a70a14ac6c236f0e0a6",
     "scripts/lib/productionSimulationPolicy.mjs": "f545633995fdb69d4debbd11d25a661117b3ac13544b128b399c248fc12f7cf5",
     "scripts/lib/route-call-source.mjs": "10e39d3f988d9965e7b2bab4b3557a0fb297b5f97917d0a554eece32fe47d337",
@@ -2719,16 +2719,17 @@
     "server/pocket-dimension/fabric/compression/types.ts": "f6791c98a867a4d7e09599068d75a69a216c5971ffa184cdcea12efe4f0d8727",
     "server/pocket-dimension/fabric/control/AutoClusterManager.ts": "18ec96fe63f104d8f51335f785a2a5ecca81fb7730a0164a2fbe1ce9c421ae5b",
     "server/pocket-dimension/fabric/control/PlacementStrategy.ts": "f77d6e993d7c308a0dba4bb35a4a64adae2a7107ccf6807bbe4edbb92e5c59f7",
-    "server/pocket-dimension/fabric/control/Rebalancer.ts": "01942a88184da2413a1277a7e2f1a803d1370c836310a093485a690a25ca06e8",
+    "server/pocket-dimension/fabric/control/Rebalancer.ts": "27a7dd3852ff182b56e7a9fc374c9f2dae8342772fab135fe9025c5d427b927a",
     "server/pocket-dimension/fabric/index.ts": "79461c7f25fbf6bf64fb28f0fc8f430a536af6111bcde13646534f9ef27703e6",
     "server/pocket-dimension/fabric/infra/ChunkIndex.ts": "afb37f632341f29f4a8ab705fdaf6395f2cd8372bea84a0873aec329fa006d78",
     "server/pocket-dimension/fabric/infra/DeletionOutbox.ts": "e29b30be933ccb4fac8566ee664928881b86cc63f46f1766d2fd4a9751c6aeed",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
     "server/pocket-dimension/fabric/infra/NodeRegistry.ts": "040209e518c24dc212a11b80b9631c3f630c1d084f62374fb9b91bff49b810bd",
     "server/pocket-dimension/fabric/infra/ObjectIndex.ts": "8cec75541a3313c9bce82fef8bec94991f9bdbf4b7478379526efafb7a6d5899",
     "server/pocket-dimension/fabric/infra/PocketRegistry.ts": "07324171a334416655aa8eebc7683c8edc75f5d54dad3a1aef2e5c902ebcde60",
     "server/pocket-dimension/fabric/infra/VolumeRegistry.ts": "51f2fbe1d56afafae0301278bbf8cd28ea1b35f5957c067030a5dfb31d45a0ad",
     "server/pocket-dimension/fabric/storage/ChunkStore.ts": "b2705501e10ec147a58782a91ec9f399b2c47b0da04839232b3fd087ed71c97b",
-    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "c038d7178723cb7b4af74a581a1f2244a89aa6c4a58b18e79abd540eca733e9d",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
     "server/pocket-dimension/fabric/types.ts": "84cc0338ed024548a0443d6673de324072a2eb9b319831bfcfbc58837268dd02",
     "server/pocket-dimension/index.ts": "4ca3b3097bea62046baf5598748b4b2091b676bb59b5c06e44abf343a056fa31",
     "server/pocket-dimension/platform-capsule.ts": "b111ac35b87429a90d02d0f3353636050ed058c451b82ac82d1ddf54e6c0e165",
@@ -3309,7 +3310,7 @@
     "server/services/securityContainment.ts": "aab69be7d4e83d001a45ec5fcd803b0360717a96e311e8bedfbfb2e8184dfae7",
     "server/services/securityMonitoringService.ts": "134a54d0fba6d7473a1f4d1ae8730a0d4c72f25a80186ca459b504897413b085",
     "server/services/securityService.ts": "644987ca394612c9d56a3e28a5682b2fbc85bd7e2249b0daf8d1ea99c4427c39",
-    "server/services/selfHealingSecurityEngine.ts": "43421bd20f1ee76359e8d8de4430b77d55e9723c532d22628e346a80b0cb3d86",
+    "server/services/selfHealingSecurityEngine.ts": "40c2d580c5693c4c7e5d2ac7bcd5e43aca0c372e665ac9e1f2f48c7cfaea42eb",
     "server/services/sessionAuthority.ts": "7115e0a6a3d85d7a05e46152baf20c625aef85a60d993a344e5bd610eca7f952",
     "server/services/sessionTrackingService.ts": "c8f5135a1455b13e786fb3ae69c75478c27405b3d8749722d2208cf2e53fb6da",
     "server/services/sharpImageService.ts": "6e208570cdf2197c147c89b5150c61610fe571336d4aeebd867a42b516f8ef71",
@@ -3470,7 +3471,7 @@
     "shared/passwordPolicy.ts": "b281b8d97d6e85243220aa829723c0fd71bb2aec40e15b941ea2bdcc55c1a633",
     "shared/readiness-schema.ts": "9b89b0ab7a721afa60746b2c78953ff6794c85c5108383408ce6bd1646c07e7f",
     "shared/registration-consent-schema.ts": "6634a02a74e460abf0a30447c90ec0f40711c305bfc1affac7aafdf56ed2312a",
-    "shared/schema.ts": "47221d87ca7a6956b755198c7630eeb2257b434dfd83eee299db38cd18621aab",
+    "shared/schema.ts": "ce79392f833de48cc9bf3fe1ab6f158558b64824ccdcecce03ba277713bb1411",
     "shared/social-platform-optimization.json": "c2de89e78f8248263b9f8bf52c9cce9f68ab8ab605d666d06367fad61eeb4256",
     "shared/supportTicketValidation.ts": "8d88ea55cbc7c0fbd1d9c1cc2063b882176a65077a495054d9647dfe850c06ff",
     "shared/types/contentAnalysis.ts": "b4cd0bca699a55bbc4dc47a056fcd9f9f6d5105ac492e7c3cac7a1af2bb2e069",
@@ -3540,23 +3541,23 @@
     "vite.config.ts": "280fdd2aae9ac2da8b3f195c8c25bfee4da0501d1b2bd6641571dc11470f1998",
     "vitest.additional.config.ts": "9439970348b70c0b10f79632430fd1051f52e6be9d2ace55666b1b9528e8b44f",
     "vitest.beat-loop.config.ts": "b0845cd81cbc43beb3fad1605078e2859850276b26f1083e24c5da2e6a1d2529",
-    "vitest.config.ts": "7a81637a04bfbd87620db2dda1145ed6771384292a923caf70ac6a8ae9c07ccb",
+    "vitest.config.ts": "70a05b445fc97945d94580970864ffc302f17f41b6c8fc75dfdb203aa7cc8647",
     "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",
-    "vitest.platform.config.ts": "87d482e96c41db7d1ad2e1e576bbc2dc9fa43ce4e0c385a612f6cf1158b69a1c"
+    "vitest.platform.config.ts": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438"
   },
   "inputArtifactsSha256": {
-    "reports/endpoint-audit.json": "29e013d0a78ded7dae060671956f8dc0cf22c8fa2b59cb2ac1bcc9910187af21",
-    "reports/test-verification/test-inventory.json": "5ee1572ea504c36f166fdef529a709e0df39445ccbb8c74ee8c35bea0d2fa3a1",
-    "reports/test-verification/file-status.json": "0dea45052ed37b190348c1835e3cf49a0ada726a73bfb126242a98dbd5db8a3e",
-    "reports/test-verification/case-results.json": "87606818e51f0756ddd0287a7ac3af8fe6fe5e1f139a921ab40e6a1a54f4b894"
+    "reports/endpoint-audit.json": "94fc885179a3acdfdcff8f83799ad3f4deaa97cb4afb3253e35e921183ee5fbb",
+    "reports/test-verification/test-inventory.json": "006b146d8a7fe1c48111694d13caef6eee39cb4e40cb3596d9d99c3aa973abea",
+    "reports/test-verification/file-status.json": "57fd8dba87c3cfd10f1dafe2534dd3f39c4594bc4adda8ae3909ecaf2bb43837",
+    "reports/test-verification/case-results.json": "4a6756fc72d1656bc3f532b12cf5ee214f0a1c2e33ef848a8505c27ec7fc71c3"
   },
   "summary": {
     "routedPageDeclarations": 80,
     "uiInteractionDeclarations": 8374,
     "backendRegistrations": 2901,
     "frontendApiContracts": 932,
-    "scannedTypeScriptJavaScriptFiles": 3384,
-    "actualCoverageFiles": 2649,
+    "scannedTypeScriptJavaScriptFiles": 3390,
+    "actualCoverageFiles": 2651,
     "requiredChecks": 33504,
     "unverifiedChecks": 33504,
     "unknownMappings": 127,
@@ -6642,7 +6643,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -22638,6 +22639,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/testing/test_platform_plan.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/maxcore-media-proxy.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -24433,6 +24439,11 @@
           "executionStatus": "not_run"
         },
         {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/api-guards.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -24470,7 +24481,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/direct-upload.test.ts",
@@ -24544,6 +24555,11 @@
         },
         {
           "path": "tests/unit/onboarding-completion-refresh.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/selfHealingSecurityEngine.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
@@ -32713,7 +32729,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -33578,7 +33594,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -38237,7 +38253,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -39507,7 +39523,13 @@
           "Add tests/integration/analytics-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
         ]
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-b4004e3f3744517c",
@@ -39565,7 +39587,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -39675,7 +39697,13 @@
           "Add tests/integration/analytics-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
         ]
       },
-      "testCandidates": []
+      "testCandidates": [
+        {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        }
+      ]
     },
     {
       "id": "api-0976086a6292de9b",
@@ -52706,7 +52734,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -52876,7 +52904,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/p0-verification.ts",
@@ -53031,7 +53059,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -54221,7 +54249,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -54470,7 +54498,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-revenue-merch.test.ts",
@@ -54675,7 +54703,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -54750,7 +54778,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -56426,7 +56454,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -57978,7 +58006,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/e2e/content-generation-http.ts",
@@ -62900,7 +62928,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-marketplace-distribution.test.ts",
@@ -63025,7 +63053,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-marketplace-distribution.test.ts",
@@ -63990,7 +64018,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-marketplace-distribution.test.ts",
@@ -64350,7 +64378,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-marketplace-distribution.test.ts",
@@ -64445,7 +64473,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/feature-marketplace-distribution.test.ts",
@@ -71390,7 +71418,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -99415,7 +99443,7 @@
         {
           "path": "tests/unit/beat-audio-generation-owner.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -106590,7 +106618,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -132836,7 +132864,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -132851,7 +132879,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -132946,7 +132974,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133041,7 +133069,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133051,7 +133079,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -133146,7 +133174,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133241,7 +133269,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133331,7 +133359,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133341,7 +133369,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -133431,7 +133459,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133526,7 +133554,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133621,7 +133649,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133721,7 +133749,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133816,7 +133844,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -133916,7 +133944,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134016,7 +134044,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134106,7 +134134,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134196,7 +134224,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134286,7 +134314,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134376,7 +134404,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134476,7 +134504,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134566,7 +134594,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134656,7 +134684,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134666,7 +134694,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -134756,7 +134784,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134846,7 +134874,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -134936,7 +134964,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135026,7 +135054,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135121,7 +135149,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135221,7 +135249,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135311,7 +135339,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135401,7 +135429,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135491,7 +135519,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135581,7 +135609,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135671,7 +135699,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135681,7 +135709,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -135776,7 +135804,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135866,7 +135894,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -135961,7 +135989,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136056,7 +136084,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136151,7 +136179,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136246,7 +136274,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136341,7 +136369,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136436,7 +136464,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136531,7 +136559,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136626,7 +136654,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136716,7 +136744,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136811,7 +136839,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136911,7 +136939,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137001,7 +137029,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137091,7 +137119,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137186,7 +137214,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137276,7 +137304,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137366,7 +137394,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137456,7 +137484,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137556,7 +137584,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137656,7 +137684,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137666,7 +137694,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -137766,7 +137794,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137861,7 +137889,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -137956,7 +137984,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138056,7 +138084,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138156,7 +138184,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138251,7 +138279,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138346,7 +138374,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138441,7 +138469,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138536,7 +138564,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138626,7 +138654,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138716,7 +138744,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138806,7 +138834,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138896,7 +138924,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -138991,7 +139019,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139086,7 +139114,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139176,7 +139204,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139271,7 +139299,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139366,7 +139394,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139461,7 +139489,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139561,7 +139589,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139656,7 +139684,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139761,7 +139789,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139861,7 +139889,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -139951,7 +139979,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140046,7 +140074,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140141,7 +140169,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140241,7 +140269,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140336,7 +140364,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140436,7 +140464,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140536,7 +140564,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -140631,7 +140659,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -149319,10 +149347,15 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         }
@@ -149394,10 +149427,15 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         }
@@ -149659,7 +149697,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -153885,6 +153923,11 @@
           "path": "tests/unit/project-backend-mutations.test.ts",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
         }
       ]
     },
@@ -154139,7 +154182,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -154214,7 +154257,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -171329,6 +171372,11 @@
           "executionStatus": "not_run"
         },
         {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/api-test.sh",
           "association": "exact-route-literal-only",
           "executionStatus": "not_run"
@@ -171351,7 +171399,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/e2e/content-generation-http.ts",
@@ -171569,6 +171617,11 @@
           "executionStatus": "not_run"
         },
         {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/api-guards.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -171606,7 +171659,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/direct-upload.test.ts",
@@ -171675,6 +171728,11 @@
         },
         {
           "path": "tests/unit/onboarding-completion-refresh.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/selfHealingSecurityEngine.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
@@ -171851,7 +171909,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/auth-2fa.test.ts",
@@ -171876,7 +171934,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/direct-upload.test.ts",
@@ -172109,11 +172167,6 @@
           "executionStatus": "not_run"
         },
         {
-          "path": "tests/ai-analytics-integration.test.ts",
-          "association": "exact-route-literal-only",
-          "executionStatus": "failed"
-        },
-        {
           "path": "tests/auth-2fa.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -172136,7 +172189,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/direct-upload.test.ts",
@@ -172371,7 +172424,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -172532,6 +172585,11 @@
           "path": "tests/unit/social-oauth-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
         }
       ]
     },
@@ -172686,6 +172744,11 @@
         {
           "path": "tests/unit/social-oauth-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/selfHealingSecurityEngine.test.ts",
+          "association": "exact-route-literal-only",
           "executionStatus": "executed"
         }
       ]
@@ -173004,6 +173067,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/dashboard-projects-page-regressions.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -173171,7 +173239,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -173346,7 +173414,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -173511,7 +173579,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -173686,7 +173754,7 @@
         {
           "path": "tests/critical-paths.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/paid-user-e2e.test.ts",
@@ -176049,6 +176117,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/auth-2fa.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -176211,6 +176284,11 @@
         {
           "path": "tests/unit/social-oauth-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
         {
@@ -183077,6 +183155,11 @@
           "path": "tests/unit/projectsPageContracts.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
         }
       ]
     },
@@ -183260,6 +183343,11 @@
         },
         {
           "path": "tests/unit/projectsPageContracts.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         }
@@ -184337,6 +184425,11 @@
           "path": "tests/unit/social-oauth-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
           "executionStatus": "executed"
+        },
+        {
+          "path": "tests/ai-analytics-integration.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
         }
       ]
     },
@@ -184491,7 +184584,7 @@
         {
           "path": "tests/ai-analytics-integration.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/api-test.sh",
@@ -195534,6 +195627,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/testing/test_platform_plan.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/maxcore-media-proxy.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -198532,7 +198630,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -198601,7 +198699,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -198787,7 +198885,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -198851,7 +198949,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -198975,13 +199073,7 @@
           "Add tests/integration/video-templates-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
         ]
       },
-      "testCandidates": [
-        {
-          "path": "tests/unit/social-url-maxcore-contract.test.ts",
-          "association": "exact-route-literal-only",
-          "executionStatus": "failed"
-        }
-      ]
+      "testCandidates": []
     },
     {
       "id": "api-ea34d185b41ab95b",
@@ -200145,7 +200237,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -200209,7 +200301,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -200384,6 +200476,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/testing/test_platform_plan.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/maxcore-media-proxy.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -200509,6 +200606,11 @@
         },
         {
           "path": "tests/health.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_platform_plan.py",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
@@ -209628,7 +209730,7 @@
         {
           "path": "tests/unit/beat-audio-generation-owner.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -211764,7 +211866,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -216261,6 +216363,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/testing/test_platform_plan.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/maxcore-media-proxy.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -218218,7 +218325,7 @@
         {
           "path": "tests/unit/beat-audio-generation-owner.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -219069,6 +219176,11 @@
         },
         {
           "path": "tests/health.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_platform_plan.py",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
@@ -225558,7 +225670,7 @@
         {
           "path": "tests/unit/beat-audio-generation-owner.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -227712,6 +227824,11 @@
           "executionStatus": "executed"
         },
         {
+          "path": "tests/testing/test_platform_plan.py",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
           "path": "tests/unit/maxcore-media-proxy.test.ts",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
@@ -228057,7 +228174,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "exact-route-literal-only",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ]
     },
@@ -229085,6 +229202,11 @@
         },
         {
           "path": "tests/health.test.ts",
+          "association": "exact-route-literal-only",
+          "executionStatus": "executed"
+        },
+        {
+          "path": "tests/testing/test_platform_plan.py",
           "association": "exact-route-literal-only",
           "executionStatus": "executed"
         },
@@ -277224,7 +277346,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277276,7 +277398,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277332,7 +277454,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277388,7 +277510,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277444,7 +277566,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277500,7 +277622,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277556,7 +277678,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277612,7 +277734,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277668,7 +277790,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277724,7 +277846,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277780,7 +277902,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277836,7 +277958,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277894,7 +278016,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -277950,7 +278072,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278006,7 +278128,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278062,7 +278184,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278120,7 +278242,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278176,7 +278298,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278232,7 +278354,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278288,7 +278410,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278346,7 +278468,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278402,7 +278524,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278458,7 +278580,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278514,7 +278636,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278570,7 +278692,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278620,7 +278742,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278676,7 +278798,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278732,7 +278854,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278788,7 +278910,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278838,7 +278960,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278894,7 +279016,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278944,7 +279066,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -278994,7 +279116,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279044,7 +279166,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279094,7 +279216,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279144,7 +279266,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279200,7 +279322,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279256,7 +279378,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279308,7 +279430,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -279364,7 +279486,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         },
         {
           "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -459759,10 +459881,10 @@
       "reachableFromRoutedPageImports": false
     },
     {
-      "id": "ui-512ff5ca54f87eaf",
+      "id": "ui-e39846627dc194a1",
       "source": {
         "file": "client/src/components/studio/StudioLoader.tsx",
-        "line": 310,
+        "line": 311,
         "column": 17
       },
       "tag": "Button",
@@ -459775,15 +459897,21 @@
         }
       ],
       "spreadAttributeLines": [],
-      "testCandidates": [],
+      "testCandidates": [
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        }
+      ],
       "requiredChecks": [
         {
-          "id": "ui-512ff5ca54f87eaf/control-behavior",
+          "id": "ui-e39846627dc194a1/control-behavior",
           "template": "control-behavior",
           "status": "UNVERIFIED"
         },
         {
-          "id": "ui-512ff5ca54f87eaf/control-failure",
+          "id": "ui-e39846627dc194a1/control-failure",
           "template": "control-failure",
           "status": "UNVERIFIED"
         }
@@ -459799,10 +459927,10 @@
       "reachableFromRoutedPageImports": false
     },
     {
-      "id": "ui-05607e287dace88f",
+      "id": "ui-acbf994e7657c82c",
       "source": {
         "file": "client/src/components/studio/StudioLoader.tsx",
-        "line": 318,
+        "line": 319,
         "column": 19
       },
       "tag": "Button",
@@ -459815,15 +459943,21 @@
         }
       ],
       "spreadAttributeLines": [],
-      "testCandidates": [],
+      "testCandidates": [
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        }
+      ],
       "requiredChecks": [
         {
-          "id": "ui-05607e287dace88f/control-behavior",
+          "id": "ui-acbf994e7657c82c/control-behavior",
           "template": "control-behavior",
           "status": "UNVERIFIED"
         },
         {
-          "id": "ui-05607e287dace88f/control-failure",
+          "id": "ui-acbf994e7657c82c/control-failure",
           "template": "control-failure",
           "status": "UNVERIFIED"
         }
@@ -459839,10 +459973,10 @@
       "reachableFromRoutedPageImports": false
     },
     {
-      "id": "ui-ace1618ffc8e43aa",
+      "id": "ui-dd27168e7c076ecb",
       "source": {
         "file": "client/src/components/studio/StudioLoader.tsx",
-        "line": 330,
+        "line": 331,
         "column": 21
       },
       "tag": "Button",
@@ -459855,15 +459989,21 @@
         }
       ],
       "spreadAttributeLines": [],
-      "testCandidates": [],
+      "testCandidates": [
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        }
+      ],
       "requiredChecks": [
         {
-          "id": "ui-ace1618ffc8e43aa/control-behavior",
+          "id": "ui-dd27168e7c076ecb/control-behavior",
           "template": "control-behavior",
           "status": "UNVERIFIED"
         },
         {
-          "id": "ui-ace1618ffc8e43aa/control-failure",
+          "id": "ui-dd27168e7c076ecb/control-failure",
           "template": "control-failure",
           "status": "UNVERIFIED"
         }
@@ -459879,10 +460019,10 @@
       "reachableFromRoutedPageImports": false
     },
     {
-      "id": "ui-9966eaccbac04c41",
+      "id": "ui-c31cd432003904a9",
       "source": {
         "file": "client/src/components/studio/StudioLoader.tsx",
-        "line": 342,
+        "line": 343,
         "column": 15
       },
       "tag": "Button",
@@ -459895,15 +460035,21 @@
         }
       ],
       "spreadAttributeLines": [],
-      "testCandidates": [],
+      "testCandidates": [
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        }
+      ],
       "requiredChecks": [
         {
-          "id": "ui-9966eaccbac04c41/control-behavior",
+          "id": "ui-c31cd432003904a9/control-behavior",
           "template": "control-behavior",
           "status": "UNVERIFIED"
         },
         {
-          "id": "ui-9966eaccbac04c41/control-failure",
+          "id": "ui-c31cd432003904a9/control-failure",
           "template": "control-failure",
           "status": "UNVERIFIED"
         }
@@ -459919,10 +460065,10 @@
       "reachableFromRoutedPageImports": false
     },
     {
-      "id": "ui-b358c36dfafa3e8f",
+      "id": "ui-04d0ceb95c66e18f",
       "source": {
         "file": "client/src/components/studio/StudioLoader.tsx",
-        "line": 373,
+        "line": 374,
         "column": 15
       },
       "tag": "Button",
@@ -459935,15 +460081,21 @@
         }
       ],
       "spreadAttributeLines": [],
-      "testCandidates": [],
+      "testCandidates": [
+        {
+          "path": "tests/unit/studio-loader-browser.test.ts",
+          "association": "static-import-or-literal-source-reference",
+          "executionStatus": "executed"
+        }
+      ],
       "requiredChecks": [
         {
-          "id": "ui-b358c36dfafa3e8f/control-behavior",
+          "id": "ui-04d0ceb95c66e18f/control-behavior",
           "template": "control-behavior",
           "status": "UNVERIFIED"
         },
         {
-          "id": "ui-b358c36dfafa3e8f/control-failure",
+          "id": "ui-04d0ceb95c66e18f/control-failure",
           "template": "control-failure",
           "status": "UNVERIFIED"
         }
@@ -586638,7 +586790,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -586714,7 +586866,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -586792,7 +586944,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -586868,7 +587020,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -586944,7 +587096,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587022,7 +587174,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587100,7 +587252,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587176,7 +587328,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587246,7 +587398,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587316,7 +587468,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587386,7 +587538,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587456,7 +587608,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587526,7 +587678,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587602,7 +587754,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587672,7 +587824,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587742,7 +587894,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587812,7 +587964,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587882,7 +588034,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -587958,7 +588110,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588028,7 +588180,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588098,7 +588250,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588168,7 +588320,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588238,7 +588390,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588314,7 +588466,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588384,7 +588536,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588454,7 +588606,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588524,7 +588676,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588600,7 +588752,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588670,7 +588822,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588740,7 +588892,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588810,7 +588962,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588891,7 +589043,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -588969,7 +589121,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589047,7 +589199,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589123,7 +589275,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589201,7 +589353,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589279,7 +589431,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589358,7 +589510,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589437,7 +589589,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589516,7 +589668,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589594,7 +589746,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589672,7 +589824,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589748,7 +589900,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589824,7 +589976,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589900,7 +590052,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -589970,7 +590122,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590042,7 +590194,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590112,7 +590264,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590184,7 +590336,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590260,7 +590412,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590330,7 +590482,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590408,7 +590560,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590486,7 +590638,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590562,7 +590714,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590632,7 +590784,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590702,7 +590854,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590772,7 +590924,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590842,7 +590994,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590912,7 +591064,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -590988,7 +591140,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591058,7 +591210,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591128,7 +591280,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591198,7 +591350,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591268,7 +591420,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591344,7 +591496,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591414,7 +591566,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591484,7 +591636,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591554,7 +591706,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591624,7 +591776,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591700,7 +591852,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591770,7 +591922,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591840,7 +591992,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591910,7 +592062,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -591986,7 +592138,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592056,7 +592208,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592126,7 +592278,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592196,7 +592348,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592274,7 +592426,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592352,7 +592504,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592430,7 +592582,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592508,7 +592660,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592586,7 +592738,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592664,7 +592816,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592740,7 +592892,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592810,7 +592962,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592882,7 +593034,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -592952,7 +593104,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593024,7 +593176,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593105,7 +593257,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593201,7 +593353,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593277,7 +593429,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593358,7 +593510,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593454,7 +593606,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593535,7 +593687,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593613,7 +593765,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593691,7 +593843,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593769,7 +593921,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593847,7 +593999,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -593925,7 +594077,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594001,7 +594153,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594079,7 +594231,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594155,7 +594307,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594231,7 +594383,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594307,7 +594459,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594383,7 +594535,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594459,7 +594611,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594532,7 +594684,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594605,7 +594757,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594678,7 +594830,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594751,7 +594903,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594830,7 +594982,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594908,7 +595060,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -594982,7 +595134,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595056,7 +595208,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595129,7 +595281,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595201,7 +595353,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595273,7 +595425,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595345,7 +595497,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595417,7 +595569,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595493,7 +595645,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595565,7 +595717,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595641,7 +595793,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595717,7 +595869,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595787,7 +595939,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595863,7 +596015,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -595939,7 +596091,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596015,7 +596167,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596085,7 +596237,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596163,7 +596315,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596239,7 +596391,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596315,7 +596467,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596391,7 +596543,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596467,7 +596619,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596543,7 +596695,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596615,7 +596767,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596691,7 +596843,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596761,7 +596913,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596837,7 +596989,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596907,7 +597059,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -596983,7 +597135,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597059,7 +597211,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597129,7 +597281,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597205,7 +597357,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597281,7 +597433,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597357,7 +597509,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597433,7 +597585,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597509,7 +597661,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -597585,7 +597737,7 @@
         {
           "path": "tests/unit/social-url-maxcore-contract.test.ts",
           "association": "static-import-or-literal-source-reference",
-          "executionStatus": "failed"
+          "executionStatus": "executed"
         }
       ],
       "requiredChecks": [
@@ -714196,6 +714348,201 @@
         194,
         207,
         236
+      ],
+      "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+    },
+    {
+      "file": "client/src/components/studio/StudioLoader.tsx",
+      "statements": {
+        "covered": 0,
+        "total": 90
+      },
+      "functions": {
+        "covered": 0,
+        "total": 23
+      },
+      "branches": {
+        "covered": 0,
+        "total": 70
+      },
+      "uncoveredFunctions": [
+        {
+          "name": "StudioLoader",
+          "line": 42
+        },
+        {
+          "name": "(anonymous_1)",
+          "line": 63
+        },
+        {
+          "name": "(anonymous_2)",
+          "line": 64
+        },
+        {
+          "name": "(anonymous_3)",
+          "line": 79
+        },
+        {
+          "name": "(anonymous_4)",
+          "line": 92
+        },
+        {
+          "name": "(anonymous_5)",
+          "line": 98
+        },
+        {
+          "name": "(anonymous_6)",
+          "line": 99
+        },
+        {
+          "name": "(anonymous_7)",
+          "line": 106
+        },
+        {
+          "name": "(anonymous_8)",
+          "line": 113
+        },
+        {
+          "name": "(anonymous_9)",
+          "line": 115
+        },
+        {
+          "name": "(anonymous_10)",
+          "line": 120
+        },
+        {
+          "name": "(anonymous_11)",
+          "line": 122
+        },
+        {
+          "name": "(anonymous_12)",
+          "line": 130
+        },
+        {
+          "name": "(anonymous_13)",
+          "line": 131
+        },
+        {
+          "name": "(anonymous_14)",
+          "line": 141
+        },
+        {
+          "name": "(anonymous_15)",
+          "line": 168
+        },
+        {
+          "name": "(anonymous_16)",
+          "line": 216
+        },
+        {
+          "name": "(anonymous_17)",
+          "line": 312
+        },
+        {
+          "name": "(anonymous_18)",
+          "line": 344
+        },
+        {
+          "name": "(anonymous_19)",
+          "line": 361
+        },
+        {
+          "name": "(anonymous_20)",
+          "line": 362
+        },
+        {
+          "name": "withStudioLoader",
+          "line": 406
+        },
+        {
+          "name": "(anonymous_22)",
+          "line": 409
+        }
+      ],
+      "uncoveredStatementLines": [
+        43,
+        44,
+        45,
+        47,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        63,
+        64,
+        65,
+        66,
+        76,
+        79,
+        89,
+        92,
+        98,
+        99,
+        100,
+        106,
+        107,
+        108,
+        113,
+        114,
+        115,
+        116,
+        120,
+        121,
+        122,
+        125,
+        126,
+        127,
+        130,
+        131,
+        132,
+        133,
+        134,
+        136,
+        141,
+        144,
+        147,
+        148,
+        150,
+        151,
+        152,
+        153,
+        158,
+        159,
+        168,
+        169,
+        170,
+        172,
+        178,
+        181,
+        184,
+        187,
+        189,
+        195,
+        197,
+        202,
+        211,
+        215,
+        216,
+        219,
+        220,
+        235,
+        239,
+        241,
+        243,
+        245,
+        248,
+        312,
+        344,
+        359,
+        360,
+        361,
+        362,
+        364,
+        390,
+        409,
+        410
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -832511,7 +832858,7 @@
     {
       "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
       "statements": {
-        "covered": 1379,
+        "covered": 1374,
         "total": 3004
       },
       "functions": {
@@ -832519,7 +832866,7 @@
         "total": 339
       },
       "branches": {
-        "covered": 894,
+        "covered": 892,
         "total": 2264
       },
       "uncoveredFunctions": [
@@ -833398,7 +833745,12 @@
         1100,
         1101,
         1118,
+        1123,
         1132,
+        1152,
+        1153,
+        1154,
+        1155,
         1181,
         1215,
         1216,
@@ -868253,101 +868605,143 @@
     {
       "file": "server/pocket-dimension/fabric/control/Rebalancer.ts",
       "statements": {
-        "covered": 39,
-        "total": 100
+        "covered": 23,
+        "total": 108
       },
       "functions": {
-        "covered": 8,
-        "total": 15
+        "covered": 6,
+        "total": 20
       },
       "branches": {
-        "covered": 12,
-        "total": 46
+        "covered": 3,
+        "total": 39
       },
       "uncoveredFunctions": [
         {
           "name": "start",
-          "line": 27
-        },
-        {
-          "name": "(anonymous_2)",
           "line": 30
         },
         {
+          "name": "(anonymous_2)",
+          "line": 33
+        },
+        {
+          "name": "(anonymous_3)",
+          "line": 33
+        },
+        {
+          "name": "(anonymous_4)",
+          "line": 37
+        },
+        {
           "name": "stop",
-          "line": 34
+          "line": 41
         },
         {
           "name": "rebalance",
-          "line": 43
+          "line": 51
         },
         {
-          "name": "(anonymous_5)",
-          "line": 62
+          "name": "(anonymous_7)",
+          "line": 71
         },
         {
-          "name": "(anonymous_6)",
-          "line": 68
+          "name": "(anonymous_8)",
+          "line": 77
+        },
+        {
+          "name": "migrateChunk",
+          "line": 106
+        },
+        {
+          "name": "(anonymous_10)",
+          "line": 111
+        },
+        {
+          "name": "(anonymous_11)",
+          "line": 111
         },
         {
           "name": "(anonymous_12)",
-          "line": 130
+          "line": 112
+        },
+        {
+          "name": "migrateChunkOnce",
+          "line": 116
+        },
+        {
+          "name": "(anonymous_19)",
+          "line": 149
         }
       ],
       "uncoveredStatementLines": [
-        28,
-        29,
-        30,
         31,
+        32,
+        33,
+        34,
         35,
         36,
         37,
         38,
-        40,
+        42,
+        43,
         44,
         45,
         46,
         48,
-        49,
+        52,
         53,
         54,
-        55,
+        56,
+        57,
         58,
-        59,
-        61,
         62,
+        63,
         64,
-        66,
         67,
         68,
-        69,
+        70,
         71,
+        73,
         75,
         76,
         77,
         78,
-        79,
         80,
-        81,
-        82,
-        83,
+        84,
+        85,
+        86,
         87,
         88,
+        89,
+        90,
         91,
-        94,
-        117,
-        120,
+        92,
+        96,
+        97,
+        100,
+        103,
+        111,
+        112,
+        113,
+        121,
+        122,
+        123,
+        124,
+        126,
+        127,
         128,
-        129,
-        130,
-        133,
-        134,
-        135,
-        138,
-        139,
-        140,
+        144,
+        146,
+        147,
+        148,
+        149,
+        152,
+        153,
         154,
-        156
+        156,
+        157,
+        160
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -868622,7 +869016,7 @@
     {
       "file": "server/pocket-dimension/fabric/infra/DeletionOutbox.ts",
       "statements": {
-        "covered": 0,
+        "covered": 4,
         "total": 43
       },
       "functions": {
@@ -868700,8 +869094,6 @@
         }
       ],
       "uncoveredStatementLines": [
-        7,
-        8,
         11,
         12,
         13,
@@ -868710,7 +869102,6 @@
         19,
         20,
         21,
-        24,
         25,
         32,
         33,
@@ -868735,6 +869126,143 @@
         74,
         75,
         76
+      ],
+      "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+    },
+    {
+      "file": "server/pocket-dimension/fabric/infra/MigrationOutbox.ts",
+      "statements": {
+        "covered": 1,
+        "total": 83
+      },
+      "functions": {
+        "covered": 1,
+        "total": 14
+      },
+      "branches": {
+        "covered": 0,
+        "total": 80
+      },
+      "uncoveredFunctions": [
+        {
+          "name": "pending",
+          "line": 18
+        },
+        {
+          "name": "(anonymous_2)",
+          "line": 19
+        },
+        {
+          "name": "begin",
+          "line": 23
+        },
+        {
+          "name": "(anonymous_4)",
+          "line": 24
+        },
+        {
+          "name": "resume",
+          "line": 41
+        },
+        {
+          "name": "(anonymous_6)",
+          "line": 43
+        },
+        {
+          "name": "(anonymous_7)",
+          "line": 68
+        },
+        {
+          "name": "(anonymous_8)",
+          "line": 75
+        },
+        {
+          "name": "(anonymous_9)",
+          "line": 83
+        },
+        {
+          "name": "rotateTarget",
+          "line": 107
+        },
+        {
+          "name": "(anonymous_11)",
+          "line": 108
+        },
+        {
+          "name": "discard",
+          "line": 119
+        },
+        {
+          "name": "(anonymous_13)",
+          "line": 120
+        }
+      ],
+      "uncoveredStatementLines": [
+        19,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        33,
+        34,
+        42,
+        43,
+        45,
+        49,
+        50,
+        52,
+        53,
+        54,
+        56,
+        57,
+        58,
+        59,
+        63,
+        64,
+        66,
+        68,
+        69,
+        70,
+        71,
+        72,
+        74,
+        75,
+        76,
+        77,
+        78,
+        80,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        90,
+        92,
+        94,
+        95,
+        96,
+        99,
+        100,
+        102,
+        103,
+        108,
+        109,
+        110,
+        114,
+        115,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        127,
+        128
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -869010,7 +869538,7 @@
       "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
       "statements": {
         "covered": 0,
-        "total": 54
+        "total": 64
       },
       "functions": {
         "covered": 0,
@@ -869018,98 +869546,108 @@
       },
       "branches": {
         "covered": 0,
-        "total": 21
+        "total": 29
       },
       "uncoveredFunctions": [
         {
           "name": "constructor",
-          "line": 14
+          "line": 24
         },
         {
           "name": "(anonymous_1)",
-          "line": 14
+          "line": 24
         },
         {
           "name": "immutableKey",
-          "line": 16
+          "line": 26
         },
         {
           "name": "ensureOpen",
-          "line": 21
+          "line": 31
         },
         {
           "name": "(anonymous_4)",
-          "line": 25
+          "line": 35
         },
         {
           "name": "(anonymous_5)",
-          "line": 37
+          "line": 47
         },
         {
           "name": "chunkKey",
-          "line": 45
+          "line": 55
         },
         {
           "name": "putChunk",
-          "line": 49
+          "line": 59
         },
         {
           "name": "getChunk",
-          "line": 57
+          "line": 73
         },
         {
           "name": "deleteChunk",
-          "line": 74
+          "line": 92
         },
         {
           "name": "hasChunk",
-          "line": 82
+          "line": 107
         }
       ],
       "uncoveredStatementLines": [
         8,
-        11,
-        12,
-        14,
-        17,
-        18,
+        9,
+        15,
+        21,
         22,
-        23,
-        25,
-        26,
+        24,
         27,
         28,
-        34,
+        32,
+        33,
+        35,
+        36,
+        37,
         38,
-        39,
-        42,
-        46,
-        50,
-        51,
+        44,
+        48,
+        49,
         52,
-        53,
-        54,
-        58,
-        59,
+        56,
         60,
         61,
         62,
+        63,
         64,
         65,
         66,
-        67,
         68,
-        71,
+        69,
+        70,
+        74,
         75,
-        76,
-        77,
         78,
         79,
+        80,
+        82,
         83,
         84,
         85,
         86,
-        87
+        89,
+        93,
+        94,
+        98,
+        99,
+        100,
+        102,
+        103,
+        104,
+        108,
+        109,
+        110,
+        111,
+        112
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -913735,89 +914273,19 @@
     {
       "file": "server/routes/socialMediaJobHandlers.ts",
       "statements": {
-        "covered": 0,
+        "covered": 53,
         "total": 53
       },
       "functions": {
-        "covered": 0,
+        "covered": 7,
         "total": 7
       },
       "branches": {
-        "covered": 0,
+        "covered": 52,
         "total": 52
       },
-      "uncoveredFunctions": [
-        {
-          "name": "rejectInvalidMusicVideoSceneRequest",
-          "line": 8
-        },
-        {
-          "name": "(anonymous_1)",
-          "line": 14
-        },
-        {
-          "name": "(anonymous_2)",
-          "line": 16
-        },
-        {
-          "name": "createVideoJobPollHandler",
-          "line": 30
-        },
-        {
-          "name": "(anonymous_4)",
-          "line": 31
-        },
-        {
-          "name": "createMusicVideoJobPollHandler",
-          "line": 52
-        },
-        {
-          "name": "(anonymous_6)",
-          "line": 53
-        }
-      ],
-      "uncoveredStatementLines": [
-        10,
-        11,
-        12,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        23,
-        24,
-        25,
-        26,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        44,
-        45,
-        47,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        65
-      ],
+      "uncoveredFunctions": [],
+      "uncoveredStatementLines": [],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
     {
@@ -971363,261 +971831,56 @@
     {
       "file": "server/services/hybridImmutableByteStore.ts",
       "statements": {
-        "covered": 4,
+        "covered": 71,
         "total": 72
       },
       "functions": {
-        "covered": 1,
+        "covered": 8,
         "total": 8
       },
       "branches": {
-        "covered": 0,
+        "covered": 53,
         "total": 56
       },
-      "uncoveredFunctions": [
-        {
-          "name": "(anonymous_0)",
-          "line": 20
-        },
-        {
-          "name": "validateKey",
-          "line": 28
-        },
-        {
-          "name": "manifest",
-          "line": 32
-        },
-        {
-          "name": "(anonymous_4)",
-          "line": 42
-        },
-        {
-          "name": "write",
-          "line": 49
-        },
-        {
-          "name": "read",
-          "line": 81
-        },
-        {
-          "name": "delete",
-          "line": 101
-        }
-      ],
+      "uncoveredFunctions": [],
       "uncoveredStatementLines": [
-        20,
-        29,
-        33,
-        34,
-        35,
-        36,
-        37,
-        42,
-        44,
-        46,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        67,
-        68,
-        69,
-        70,
-        74,
-        75,
-        76,
-        77,
-        78,
-        82,
-        83,
-        84,
-        85,
-        86,
-        87,
-        88,
-        89,
-        90,
-        91,
-        92,
-        93,
-        94,
-        96,
-        97,
-        98,
-        102,
-        103,
-        104,
-        105,
-        106
+        51
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
     {
       "file": "server/services/hybridStorageRepository.ts",
       "statements": {
-        "covered": 0,
+        "covered": 64,
         "total": 64
       },
       "functions": {
-        "covered": 0,
+        "covered": 14,
         "total": 14
       },
       "branches": {
-        "covered": 0,
+        "covered": 30,
         "total": 30
       },
-      "uncoveredFunctions": [
-        {
-          "name": "decode",
-          "line": 18
-        },
-        {
-          "name": "constructor",
-          "line": 28
-        },
-        {
-          "name": "importLegacy",
-          "line": 30
-        },
-        {
-          "name": "(anonymous_3)",
-          "line": 45
-        },
-        {
-          "name": "beginUpload",
-          "line": 50
-        },
-        {
-          "name": "(anonymous_5)",
-          "line": 69
-        },
-        {
-          "name": "activate",
-          "line": 74
-        },
-        {
-          "name": "get",
-          "line": 81
-        },
-        {
-          "name": "list",
-          "line": 87
-        },
-        {
-          "name": "touch",
-          "line": 94
-        },
-        {
-          "name": "markCold",
-          "line": 100
-        },
-        {
-          "name": "beginDelete",
-          "line": 111
-        },
-        {
-          "name": "(anonymous_12)",
-          "line": 132
-        },
-        {
-          "name": "finishDelete",
-          "line": 137
-        }
-      ],
-      "uncoveredStatementLines": [
-        19,
-        28,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        41,
-        43,
-        45,
-        46,
-        47,
-        51,
-        52,
-        53,
-        54,
-        57,
-        60,
-        62,
-        63,
-        66,
-        67,
-        69,
-        70,
-        71,
-        75,
-        78,
-        82,
-        84,
-        88,
-        91,
-        95,
-        101,
-        105,
-        112,
-        113,
-        114,
-        115,
-        116,
-        117,
-        118,
-        120,
-        121,
-        122,
-        123,
-        124,
-        125,
-        126,
-        128,
-        129,
-        130,
-        132,
-        133,
-        134,
-        138
-      ],
+      "uncoveredFunctions": [],
+      "uncoveredStatementLines": [],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
     {
       "file": "server/services/hybridStorageService.ts",
       "statements": {
-        "covered": 43,
+        "covered": 196,
         "total": 200
       },
       "functions": {
-        "covered": 10,
+        "covered": 42,
         "total": 46
       },
       "branches": {
-        "covered": 34,
+        "covered": 164,
         "total": 167
       },
       "uncoveredFunctions": [
-        {
-          "name": "(anonymous_2)",
-          "line": 130
-        },
-        {
-          "name": "(anonymous_4)",
-          "line": 144
-        },
         {
           "name": "(anonymous_6)",
           "line": 171
@@ -971633,254 +971896,13 @@
         {
           "name": "(anonymous_9)",
           "line": 174
-        },
-        {
-          "name": "upload",
-          "line": 211
-        },
-        {
-          "name": "read",
-          "line": 247
-        },
-        {
-          "name": "delete",
-          "line": 260
-        },
-        {
-          "name": "recoverPendingUpload",
-          "line": 273
-        },
-        {
-          "name": "storeFor",
-          "line": 288
-        },
-        {
-          "name": "(anonymous_21)",
-          "line": 296
-        },
-        {
-          "name": "(anonymous_22)",
-          "line": 297
-        },
-        {
-          "name": "(anonymous_23)",
-          "line": 300
-        },
-        {
-          "name": "getMetadata",
-          "line": 303
-        },
-        {
-          "name": "exists",
-          "line": 308
-        },
-        {
-          "name": "getDownloadUrl",
-          "line": 310
-        },
-        {
-          "name": "tierDown",
-          "line": 317
-        },
-        {
-          "name": "runAutoTiering",
-          "line": 323
-        },
-        {
-          "name": "getAnalytics",
-          "line": 333
-        },
-        {
-          "name": "(anonymous_30)",
-          "line": 336
-        },
-        {
-          "name": "(anonymous_31)",
-          "line": 337
-        },
-        {
-          "name": "(anonymous_32)",
-          "line": 348
-        },
-        {
-          "name": "(anonymous_33)",
-          "line": 349
-        },
-        {
-          "name": "(anonymous_34)",
-          "line": 357
-        },
-        {
-          "name": "(anonymous_35)",
-          "line": 358
-        },
-        {
-          "name": "(anonymous_36)",
-          "line": 362
-        },
-        {
-          "name": "(anonymous_37)",
-          "line": 363
-        },
-        {
-          "name": "(anonymous_38)",
-          "line": 365
-        },
-        {
-          "name": "(anonymous_39)",
-          "line": 370
-        },
-        {
-          "name": "(anonymous_40)",
-          "line": 375
-        },
-        {
-          "name": "getTierBreakdown",
-          "line": 379
-        },
-        {
-          "name": "getDeduplicationStats",
-          "line": 380
-        },
-        {
-          "name": "migrateFile",
-          "line": 382
-        },
-        {
-          "name": "optimizeStorage",
-          "line": 390
-        },
-        {
-          "name": "cleanup",
-          "line": 394
         }
       ],
       "uncoveredStatementLines": [
-        130,
-        134,
-        141,
-        142,
-        144,
-        145,
-        146,
-        147,
-        148,
-        149,
-        150,
-        151,
-        152,
-        154,
-        156,
         171,
         172,
         173,
-        174,
-        215,
-        216,
-        217,
-        218,
-        219,
-        220,
-        221,
-        227,
-        230,
-        231,
-        232,
-        233,
-        234,
-        235,
-        239,
-        240,
-        241,
-        242,
-        248,
-        249,
-        250,
-        251,
-        252,
-        253,
-        254,
-        256,
-        257,
-        261,
-        262,
-        263,
-        264,
-        265,
-        266,
-        268,
-        274,
-        275,
-        276,
-        277,
-        278,
-        279,
-        280,
-        281,
-        283,
-        284,
-        285,
-        289,
-        296,
-        297,
-        300,
-        304,
-        305,
-        308,
-        311,
-        312,
-        313,
-        314,
-        318,
-        319,
-        320,
-        324,
-        325,
-        326,
-        327,
-        328,
-        330,
-        334,
-        335,
-        336,
-        337,
-        338,
-        342,
-        343,
-        344,
-        345,
-        347,
-        348,
-        349,
-        350,
-        351,
-        352,
-        353,
-        354,
-        355,
-        357,
-        358,
-        359,
-        362,
-        363,
-        365,
-        366,
-        370,
-        375,
-        379,
-        380,
-        383,
-        384,
-        385,
-        387,
-        391,
-        395,
-        396,
-        397,
-        398,
-        399,
-        400,
-        403
+        174
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -980158,50 +980180,19 @@
     {
       "file": "server/services/mediaUploadCleanup.ts",
       "statements": {
-        "covered": 0,
+        "covered": 7,
         "total": 7
       },
       "functions": {
-        "covered": 0,
+        "covered": 6,
         "total": 6
       },
       "branches": {
-        "covered": 0,
+        "covered": 6,
         "total": 6
       },
-      "uncoveredFunctions": [
-        {
-          "name": "cleanupMediaUploadFiles",
-          "line": 5
-        },
-        {
-          "name": "(anonymous_1)",
-          "line": 10
-        },
-        {
-          "name": "(anonymous_2)",
-          "line": 11
-        },
-        {
-          "name": "(anonymous_3)",
-          "line": 12
-        },
-        {
-          "name": "(anonymous_4)",
-          "line": 12
-        },
-        {
-          "name": "(anonymous_5)",
-          "line": 12
-        }
-      ],
-      "uncoveredStatementLines": [
-        6,
-        9,
-        10,
-        11,
-        12
-      ],
+      "uncoveredFunctions": [],
+      "uncoveredStatementLines": [],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
     {
@@ -998670,67 +998661,27 @@
     {
       "file": "server/services/selfHealingSecurityEngine.ts",
       "statements": {
-        "covered": 359,
-        "total": 391
+        "covered": 392,
+        "total": 400
       },
       "functions": {
-        "covered": 49,
-        "total": 53
+        "covered": 54,
+        "total": 54
       },
       "branches": {
-        "covered": 202,
-        "total": 259
+        "covered": 236,
+        "total": 265
       },
-      "uncoveredFunctions": [
-        {
-          "name": "ready",
-          "line": 297
-        },
-        {
-          "name": "(anonymous_8)",
-          "line": 377
-        },
-        {
-          "name": "(anonymous_12)",
-          "line": 400
-        },
-        {
-          "name": "(anonymous_34)",
-          "line": 942
-        }
-      ],
+      "uncoveredFunctions": [],
       "uncoveredStatementLines": [
-        298,
-        372,
-        373,
-        377,
-        378,
-        401,
-        441,
-        479,
-        579,
-        580,
-        621,
-        622,
-        623,
-        687,
         688,
-        779,
-        784,
-        820,
-        821,
-        825,
-        942,
-        955,
-        961,
-        966,
-        976,
-        980,
-        984,
-        988,
-        996,
-        1099,
-        1100
+        689,
+        785,
+        823,
+        824,
+        828,
+        981,
+        1011
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
@@ -1001816,105 +1001767,19 @@
     {
       "file": "server/services/socialMediaJobRepository.ts",
       "statements": {
-        "covered": 0,
+        "covered": 50,
         "total": 50
       },
       "functions": {
-        "covered": 0,
+        "covered": 12,
         "total": 12
       },
       "branches": {
-        "covered": 0,
+        "covered": 52,
         "total": 52
       },
-      "uncoveredFunctions": [
-        {
-          "name": "mediaJobAssetUrl",
-          "line": 20
-        },
-        {
-          "name": "constructor",
-          "line": 37
-        },
-        {
-          "name": "create",
-          "line": 39
-        },
-        {
-          "name": "heartbeat",
-          "line": 53
-        },
-        {
-          "name": "finish",
-          "line": 62
-        },
-        {
-          "name": "get",
-          "line": 78
-        },
-        {
-          "name": "keepMediaJobAlive",
-          "line": 98
-        },
-        {
-          "name": "(anonymous_7)",
-          "line": 102
-        },
-        {
-          "name": "(anonymous_8)",
-          "line": 105
-        },
-        {
-          "name": "(anonymous_9)",
-          "line": 107
-        },
-        {
-          "name": "(anonymous_10)",
-          "line": 109
-        },
-        {
-          "name": "(anonymous_11)",
-          "line": 112
-        }
-      ],
-      "uncoveredStatementLines": [
-        21,
-        22,
-        23,
-        26,
-        27,
-        28,
-        29,
-        37,
-        40,
-        41,
-        50,
-        54,
-        59,
-        63,
-        64,
-        65,
-        67,
-        68,
-        69,
-        75,
-        81,
-        86,
-        88,
-        89,
-        90,
-        100,
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        108,
-        109,
-        111,
-        112
-      ],
+      "uncoveredFunctions": [],
+      "uncoveredStatementLines": [],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },
     {
@@ -1034268,7 +1034133,7 @@
     {
       "file": "shared/ml/nlp/ContentGenerator.ts",
       "statements": {
-        "covered": 351,
+        "covered": 354,
         "total": 542
       },
       "functions": {
@@ -1034276,7 +1034141,7 @@
         "total": 82
       },
       "branches": {
-        "covered": 235,
+        "covered": 238,
         "total": 448
       },
       "uncoveredFunctions": [
@@ -1034435,8 +1034300,6 @@
         975,
         999,
         1015,
-        1024,
-        1025,
         1119,
         1122,
         1135,
@@ -1034456,7 +1034319,6 @@
         1282,
         1284,
         1290,
-        1305,
         1328,
         1330,
         1331,
@@ -1036161,12 +1036023,12 @@
     {
       "file": "shared/schema.ts",
       "statements": {
-        "covered": 614,
-        "total": 636
+        "covered": 616,
+        "total": 638
       },
       "functions": {
-        "covered": 132,
-        "total": 154
+        "covered": 133,
+        "total": 155
       },
       "branches": {
         "covered": 0,
@@ -1036175,116 +1036037,116 @@
       "uncoveredFunctions": [
         {
           "name": "(anonymous_1)",
-          "line": 100
+          "line": 101
         },
         {
           "name": "(anonymous_5)",
-          "line": 179
+          "line": 180
         },
         {
           "name": "(anonymous_12)",
-          "line": 402
+          "line": 403
         },
         {
           "name": "(anonymous_24)",
-          "line": 891
+          "line": 892
         },
         {
           "name": "(anonymous_76)",
-          "line": 2811
+          "line": 2812
         },
         {
           "name": "(anonymous_96)",
-          "line": 6397
+          "line": 6398
         },
         {
           "name": "(anonymous_98)",
-          "line": 6699
+          "line": 6700
         },
         {
           "name": "(anonymous_99)",
-          "line": 7010
+          "line": 7011
         },
         {
           "name": "(anonymous_100)",
-          "line": 7038
+          "line": 7039
         },
         {
           "name": "(anonymous_101)",
-          "line": 7069
-        },
-        {
-          "name": "(anonymous_102)",
           "line": 7070
         },
         {
-          "name": "(anonymous_115)",
-          "line": 7429
+          "name": "(anonymous_102)",
+          "line": 7071
         },
         {
-          "name": "(anonymous_135)",
-          "line": 8223
+          "name": "(anonymous_116)",
+          "line": 7449
         },
         {
           "name": "(anonymous_136)",
-          "line": 8224
+          "line": 8243
         },
         {
           "name": "(anonymous_137)",
-          "line": 8271
+          "line": 8244
         },
         {
           "name": "(anonymous_138)",
-          "line": 8308
+          "line": 8291
         },
         {
-          "name": "(anonymous_141)",
-          "line": 8409
+          "name": "(anonymous_139)",
+          "line": 8328
         },
         {
-          "name": "(anonymous_143)",
-          "line": 8441
+          "name": "(anonymous_142)",
+          "line": 8429
         },
         {
-          "name": "(anonymous_145)",
-          "line": 8470
+          "name": "(anonymous_144)",
+          "line": 8461
         },
         {
           "name": "(anonymous_146)",
-          "line": 8504
+          "line": 8490
         },
         {
-          "name": "(anonymous_148)",
-          "line": 8538
+          "name": "(anonymous_147)",
+          "line": 8524
         },
         {
-          "name": "(anonymous_152)",
-          "line": 8632
+          "name": "(anonymous_149)",
+          "line": 8558
+        },
+        {
+          "name": "(anonymous_153)",
+          "line": 8652
         }
       ],
       "uncoveredStatementLines": [
-        100,
-        179,
-        402,
-        891,
-        2811,
-        6397,
-        6699,
-        7010,
-        7038,
-        7069,
+        101,
+        180,
+        403,
+        892,
+        2812,
+        6398,
+        6700,
+        7011,
+        7039,
         7070,
-        7429,
-        8223,
-        8224,
-        8271,
-        8308,
-        8409,
-        8441,
-        8470,
-        8504,
-        8538,
-        8632
+        7071,
+        7449,
+        8243,
+        8244,
+        8291,
+        8328,
+        8429,
+        8461,
+        8490,
+        8524,
+        8558,
+        8652
       ],
       "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
     },

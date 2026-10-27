@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: restore column fingerprint preserves logical order across a dropped physical column
 ok 1 - restore column fingerprint preserves logical order across a dropped physical column
   ---
-  duration_ms: 736.827669
+  duration_ms: 639.039899
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - restore column fingerprint preserves logical order across a dropped physi
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 849.890868
+# duration_ms 748.36262

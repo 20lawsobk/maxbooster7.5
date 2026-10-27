@@ -124,6 +124,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/testing/test_platform_plan.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/maxcore-media-proxy.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -2014,6 +2019,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "not_run"
     },
     {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/api-guards.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -2051,7 +2061,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/direct-upload.test.ts",
@@ -2125,6 +2135,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/unit/onboarding-completion-refresh.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/selfHealingSecurityEngine.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -10859,7 +10874,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -11784,7 +11799,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -16798,7 +16813,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -18168,7 +18183,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/analytics-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -18231,7 +18252,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -18351,7 +18372,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/analytics-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -32502,7 +32529,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -32682,7 +32709,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/p0-verification.ts",
@@ -32847,7 +32874,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -34122,7 +34149,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -34391,7 +34418,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-revenue-merch.test.ts",
@@ -34611,7 +34638,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -34691,7 +34718,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -36507,7 +36534,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -38189,7 +38216,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/e2e/content-generation-http.ts",
@@ -43476,7 +43503,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
@@ -43606,7 +43633,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
@@ -44626,7 +44653,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
@@ -45006,7 +45033,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
@@ -45106,7 +45133,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/feature-marketplace-distribution.test.ts",
@@ -52471,7 +52498,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -82626,7 +82653,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/beat-audio-generation-owner.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -90281,7 +90308,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -118702,7 +118729,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -118717,7 +118744,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -118817,7 +118844,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -118917,7 +118944,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -118927,7 +118954,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -119027,7 +119054,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119127,7 +119154,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119222,7 +119249,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119232,7 +119259,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -119327,7 +119354,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119427,7 +119454,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119527,7 +119554,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119632,7 +119659,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119732,7 +119759,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119837,7 +119864,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -119942,7 +119969,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120037,7 +120064,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120132,7 +120159,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120227,7 +120254,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120322,7 +120349,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120427,7 +120454,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120522,7 +120549,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120617,7 +120644,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120627,7 +120654,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -120722,7 +120749,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120817,7 +120844,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -120912,7 +120939,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121007,7 +121034,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121107,7 +121134,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121212,7 +121239,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121307,7 +121334,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121402,7 +121429,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121497,7 +121524,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121592,7 +121619,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121687,7 +121714,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121697,7 +121724,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -121797,7 +121824,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121892,7 +121919,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -121992,7 +122019,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122092,7 +122119,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122192,7 +122219,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122292,7 +122319,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122392,7 +122419,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122492,7 +122519,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122592,7 +122619,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122692,7 +122719,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122787,7 +122814,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122887,7 +122914,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -122992,7 +123019,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123087,7 +123114,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123182,7 +123209,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123282,7 +123309,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123377,7 +123404,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123472,7 +123499,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123567,7 +123594,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123672,7 +123699,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123777,7 +123804,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123787,7 +123814,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -123892,7 +123919,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -123992,7 +124019,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124092,7 +124119,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124197,7 +124224,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124302,7 +124329,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124402,7 +124429,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124502,7 +124529,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124602,7 +124629,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124702,7 +124729,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124797,7 +124824,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124892,7 +124919,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -124987,7 +125014,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125082,7 +125109,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125182,7 +125209,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125282,7 +125309,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125377,7 +125404,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125477,7 +125504,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125577,7 +125604,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125677,7 +125704,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125782,7 +125809,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125882,7 +125909,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -125992,7 +126019,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126097,7 +126124,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126192,7 +126219,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126292,7 +126319,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126392,7 +126419,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126497,7 +126524,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126597,7 +126624,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126702,7 +126729,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126807,7 +126834,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -126907,7 +126934,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/social-video-proxy-credentials.test.ts",
@@ -136210,10 +136237,15 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
@@ -136290,10 +136322,15 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
@@ -136575,7 +136612,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -141131,6 +141168,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/project-backend-mutations.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
@@ -141405,7 +141447,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -141485,7 +141527,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -159970,6 +160012,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "not_run"
     },
     {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/api-test.sh",
       "association": "exact-route-literal-only",
       "executionStatus": "not_run"
@@ -159992,7 +160039,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/e2e/content-generation-http.ts",
@@ -160215,6 +160262,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "not_run"
     },
     {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/api-guards.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -160252,7 +160304,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/direct-upload.test.ts",
@@ -160321,6 +160373,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/unit/onboarding-completion-refresh.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/selfHealingSecurityEngine.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -160502,7 +160559,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/auth-2fa.test.ts",
@@ -160527,7 +160584,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/direct-upload.test.ts",
@@ -160765,11 +160822,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "not_run"
     },
     {
-      "path": "tests/ai-analytics-integration.test.ts",
-      "association": "exact-route-literal-only",
-      "executionStatus": "failed"
-    },
-    {
       "path": "tests/auth-2fa.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -160792,7 +160844,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/direct-upload.test.ts",
@@ -161032,7 +161084,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -161198,6 +161250,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/social-oauth-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/selfHealingSecurityEngine.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
@@ -161357,6 +161414,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-oauth-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/selfHealingSecurityEngine.test.ts",
+      "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
   ]
@@ -161685,6 +161747,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/dashboard-projects-page-regressions.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -161857,7 +161924,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -162037,7 +162104,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -162207,7 +162274,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -162387,7 +162454,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/critical-paths.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/paid-user-e2e.test.ts",
@@ -164825,6 +164892,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/auth-2fa.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -164992,6 +165064,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-oauth-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
     {
@@ -172078,6 +172155,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/projectsPageContracts.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
@@ -172266,6 +172348,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/unit/projectsPageContracts.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
@@ -173378,6 +173465,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/social-oauth-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
@@ -173537,7 +173629,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/ai-analytics-integration.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/api-test.sh",
@@ -184935,6 +185027,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/testing/test_platform_plan.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/maxcore-media-proxy.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -188188,7 +188285,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -188262,7 +188359,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -188463,7 +188560,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -188532,7 +188629,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -188666,13 +188763,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/video-templates-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": [
-    {
-      "path": "tests/unit/social-url-maxcore-contract.test.ts",
-      "association": "exact-route-literal-only",
-      "executionStatus": "failed"
-    }
-  ]
+  "testCandidates": []
 }
 ```
 
@@ -189936,7 +190027,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -190005,7 +190096,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -190190,6 +190281,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/testing/test_platform_plan.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/maxcore-media-proxy.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -190320,6 +190416,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -200004,7 +200105,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/beat-audio-generation-owner.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -202270,7 +202371,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -207172,6 +207273,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/testing/test_platform_plan.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/maxcore-media-proxy.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -209284,7 +209390,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/beat-audio-generation-owner.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -210195,6 +210301,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -217194,7 +217305,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/beat-audio-generation-owner.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/local-media-renderer-contract.test.ts",
@@ -219508,6 +219619,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/testing/test_platform_plan.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/maxcore-media-proxy.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -219878,7 +219994,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "exact-route-literal-only",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ]
 }
@@ -220991,6 +221107,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },

@@ -1,9 +1,12 @@
 # Max Booster completion execution plan
 
 Recorded October 26, 2026; updated October 27. This ledger governs the remaining work; it is not a
-launch certificate. Repository baseline: `work` at
-`4c72114a55a9425d4af743a72a71e4c58a532d2f`. Changes after that commit are currently
-uncommitted. The scope is the existing Replit web/API application, its local
+launch certificate. Source checkpoint:
+`b369d68e34bef0e30c96fbd5b72fa7339e6425f2` on the pushed review branch
+`sophia/platform-production-hardening-2026-10-27`. The complete repaired master
+ran against that checkpoint with unchanged source/configuration/test inputs.
+Its current evidence and documentation are committed separately from source.
+The scope is the existing Replit web/API application, its local
 imported MaxCore/PDIM services, Neon, enabled provider journeys and 80 declared
 pages. The owner's latest instruction extends the completion plan to the entire
 platform: every page section and its backend, shared and unrouted code, desktop
@@ -43,8 +46,12 @@ prepared. The three stale unit contracts and five HTTP failures have focused
 passing rechecks; security-alert delivery now targets real administrator rows,
 and public social ingestion omits empty observations. Real PostgreSQL storage
 and media-job assertions also execute directly under coverage instrumentation.
-These changes still need one integrated stable-source run. A passing subset
-cannot substitute for the missing launch evidence.
+The repaired October 27 integrated run completed in 21m17s: ordinary executable
+groups, build/types/lint, HTTP, page observations and bounded load pass; coverage
+and strict feature-evidence gates remain open. Its dependency audit also newly
+reports a moderate `qs` advisory despite passing the configured high-severity
+gate. Preserve that full source-bound result before the dependency correction.
+A passing subset cannot substitute for the missing launch evidence.
 
 The frozen October 27 portable release passed preparation, copied-payload cold
 startup and verification before/after startup. Its credential-free, egress-denied
@@ -120,16 +127,16 @@ The resumed execution order minimizes stale work:
 | 0 | Read actual branch/SHA/status, current runtime readiness, existing receipts and active agents. Identify source ownership and reserve migration IDs. Retain proxy/CA and never print credentials. | Complete |
 | 1A | Authentication: retain atomic Redis/PDIM rate admission, production private-IP enforcement and degraded bounds. Separate attack-probe identities in the isolated HTTP fixture so intentional IP blocks cannot invalidate unrelated user-flow assertions. Require actual 429/Retry-After and decrementing authenticated billing counters. | Focused rate, paid/billing and corrected HTTP fixtures pass; integrated rerun pending |
 | 1B | Hybrid storage: replace whole-index snapshots with fresh, owner-scoped per-file PostgreSQL metadata. Commit verified bytes before metadata; prevent dedup aliases from deleting another file's bytes. Import legacy metadata once without resurrecting deletions. Prove concurrent two-instance insert/read/delete and failure propagation on disposable PostgreSQL. Migration 0097. | Source complete; SQL/codec/unit/type checks and all 15 owner-isolation/file-lifecycle HTTP cases pass |
-| 1C | Media jobs: persist owner/family/status/results in PostgreSQL before accepting work; use worker leases, heartbeat and conditional completion. A different worker must poll the same result; an expired worker must expose interruption and cannot overwrite a successor. Preserve real renderer contracts. Migration 0098. | Complete source;16 focused leaf cases pass |
-| 1D | Fabric migration: retain both physical keys and durable progress across target copying, verified publication, source deletion and capacity accounting. Prove restart, stale-owner rejection, duplicate retry and failed I/O with real disposable SQL. Migration 0099. | Confirmed orphan/accounting defect reproduced; durable repair and interruption tests active |
+| 1C | Media jobs: persist owner/family/status/results in PostgreSQL before accepting work; use worker leases, heartbeat and conditional completion. A different worker must poll the same result; an expired worker must expose interruption and cannot overwrite a successor. Preserve real renderer contracts. Migration 0098. | Source complete; 21 shared media-job cases pass through Node and direct TS instrumentation, with all four metrics at 100% for the three scoped media files |
+| 1D | Fabric migration: retain both physical keys and durable progress across target copying, verified publication, source deletion and capacity accounting. Prove restart, stale-owner rejection, duplicate retry and failed I/O with real disposable SQL. Migration 0099. | Durable repair complete; actual SQL/filesystem/PDIM restart, stale-writer, key-rotation, target-loss and schema contracts pass 25 focused leaf cases |
 | 2 | Review each patch and focused receipt independently. Run applicable types and focused Node/Vitest/HTTP checks. Reconcile schema-generated fixture SQL, check migrations on disposable databases and record backward-compatibility/rollback limits. No actual Neon migration during this step. | Initial repairs and unit/HTTP corrections pass focused checks; final narrow coverage/measurement/packaging/runtime batch under review |
 | 3 | Preserve before/after provenance and ten-repeat load evidence in portable repository reports. Refresh source/test inventory, add new canonical tests to discovery, fix stale instructions and record exact tool/runtime selectors. | Source inventory refreshed; targeted and completed-master histories preserved; final instruction reconciliation pending step 9 |
-| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; all 21 HTTP suites; 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. Preserve real exit codes, source hashes, logs and cleanup status. | October 26 run completed with failures; repaired-source rerun queued after freeze; 100% coverage is not reached |
+| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; all 21 HTTP suites; 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. Preserve real exit codes, source hashes, logs and cleanup status. | October 27 repaired-source run complete with unchanged inputs; executable groups pass, coverage/evidence gates fail honestly |
 | 5 | Triage integrated failures by root cause. Repair confirmed reachable defects first, then inaccurate fixtures/reporting. Follow the 100% coverage sequence below, adding behavior assertions rather than excluding untested code. Re-run the affected group; re-run integrated checks when changes affect shared startup/auth/schema/runtime. | Active C1 safety coverage and demonstrated integrity/runtime corrections; broad measured coverage gap remains |
-| 6 | Prepare the actual configured release in a disposable publishing copy. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Compare prepared source hashes with final source; rebuild stale capsules. | October 27 cold payload scope passed, production readiness false; scratch-policy and subsequent source corrections require fresh versioned preparation/cold verification |
+| 6 | Prepare the actual configured release in a disposable publishing copy. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Compare prepared source hashes with final source; rebuild stale capsules. | Final pushed-source portable cold scope passed all four commands and 16 audit checks; no scratch entries, 40 descendants cleaned; production readiness false in offline awareness scope |
 | 7 | Verify deployed Replit identity, actual published HTTPS origin, required schema, enabled provider callbacks/webhooks and real application journeys. Perform controlled migration/deploy only after a concrete reviewed package and required production-change authorization. Do not guess an app origin from the editor URL. | External gates remain |
 | 8 | Capacity gate: run the bounded source HTTP profile and report measured concurrency/latency/errors. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | Bounded 10/20 worker profile passed 150 requests; global capacity unverified |
-| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Evidence/docs preparation active; final verdict and commit await earlier gates |
+| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Source checkpoint pushed on review branch; repaired master and live public-awareness proof complete; final evidence reconciliation active; main readiness condition unmet |
 
 ## Detailed gate checks
 
@@ -149,6 +156,20 @@ lines/functions/branches, adds successful and adverse behavior assertions, then
 rechecks the affected scope. A failed assertion is fixed before expanding the
 batch. There is no automatic exclusion, fabricated hit, threshold reduction or
 blanket pass for code that has not run.
+
+The repaired October 27 unit coverage producer executed 2,712 passing assertions
+without transform exclusions and measured 13.11% lines, 13.01% statements, 8.67%
+functions and 8.79% branches across 2,651 files. The 112 passing Node files,
+application HTTP processes and Chromium execution have separate collectors or
+no compatible global collector. To avoid duplicating their existing assertions,
+execute the initial C5 provenance/comparator and single-producer batch directly
+after C1, before expanding the API/UI batches. Then carry compatible collection
+through C2–C4 and complete C5 reconciliation. This changes measurement order,
+not the all-platform scope or acceptance target. The
+[coverage-producer implementation plan](coverage-producer-implementation-plan.md)
+names every affected runner, isolation boundary and rejection test. Keep
+incompatible profiles separate: the validated Studio browser and unit statement
+maps currently differ, even though their function/branch maps match.
 
 | Batch | Work and smallest reviewable unit | Evidence required before moving on |
 | --- | --- | --- |

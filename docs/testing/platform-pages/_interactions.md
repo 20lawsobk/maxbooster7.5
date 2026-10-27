@@ -37191,7 +37191,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37248,7 +37248,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37309,7 +37309,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37370,7 +37370,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37431,7 +37431,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37492,7 +37492,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37553,7 +37553,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37614,7 +37614,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37675,7 +37675,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37736,7 +37736,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37797,7 +37797,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37858,7 +37858,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37921,7 +37921,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -37982,7 +37982,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38043,7 +38043,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38104,7 +38104,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38167,7 +38167,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38228,7 +38228,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38289,7 +38289,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38350,7 +38350,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38413,7 +38413,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38474,7 +38474,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38535,7 +38535,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38596,7 +38596,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38657,7 +38657,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38712,7 +38712,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38773,7 +38773,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38834,7 +38834,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38895,7 +38895,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -38950,7 +38950,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39011,7 +39011,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39066,7 +39066,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39121,7 +39121,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39176,7 +39176,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39231,7 +39231,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39286,7 +39286,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39347,7 +39347,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39408,7 +39408,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39465,7 +39465,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -39526,7 +39526,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/studio-generator-component-contracts.test.ts",
@@ -241142,14 +241142,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-512ff5ca54f87eaf
+## ui-e39846627dc194a1
 
 ```json
 {
-  "id": "ui-512ff5ca54f87eaf",
+  "id": "ui-e39846627dc194a1",
   "source": {
     "file": "client/src/components/studio/StudioLoader.tsx",
-    "line": 310,
+    "line": 311,
     "column": 17
   },
   "tag": "Button",
@@ -241162,15 +241162,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "spreadAttributeLines": [],
-  "testCandidates": [],
+  "testCandidates": [
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ],
   "requiredChecks": [
     {
-      "id": "ui-512ff5ca54f87eaf/control-behavior",
+      "id": "ui-e39846627dc194a1/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-512ff5ca54f87eaf/control-failure",
+      "id": "ui-e39846627dc194a1/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -241187,14 +241193,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-05607e287dace88f
+## ui-acbf994e7657c82c
 
 ```json
 {
-  "id": "ui-05607e287dace88f",
+  "id": "ui-acbf994e7657c82c",
   "source": {
     "file": "client/src/components/studio/StudioLoader.tsx",
-    "line": 318,
+    "line": 319,
     "column": 19
   },
   "tag": "Button",
@@ -241207,15 +241213,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "spreadAttributeLines": [],
-  "testCandidates": [],
+  "testCandidates": [
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ],
   "requiredChecks": [
     {
-      "id": "ui-05607e287dace88f/control-behavior",
+      "id": "ui-acbf994e7657c82c/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-05607e287dace88f/control-failure",
+      "id": "ui-acbf994e7657c82c/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -241232,14 +241244,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-ace1618ffc8e43aa
+## ui-dd27168e7c076ecb
 
 ```json
 {
-  "id": "ui-ace1618ffc8e43aa",
+  "id": "ui-dd27168e7c076ecb",
   "source": {
     "file": "client/src/components/studio/StudioLoader.tsx",
-    "line": 330,
+    "line": 331,
     "column": 21
   },
   "tag": "Button",
@@ -241252,15 +241264,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "spreadAttributeLines": [],
-  "testCandidates": [],
+  "testCandidates": [
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ],
   "requiredChecks": [
     {
-      "id": "ui-ace1618ffc8e43aa/control-behavior",
+      "id": "ui-dd27168e7c076ecb/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-ace1618ffc8e43aa/control-failure",
+      "id": "ui-dd27168e7c076ecb/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -241277,14 +241295,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-9966eaccbac04c41
+## ui-c31cd432003904a9
 
 ```json
 {
-  "id": "ui-9966eaccbac04c41",
+  "id": "ui-c31cd432003904a9",
   "source": {
     "file": "client/src/components/studio/StudioLoader.tsx",
-    "line": 342,
+    "line": 343,
     "column": 15
   },
   "tag": "Button",
@@ -241297,15 +241315,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "spreadAttributeLines": [],
-  "testCandidates": [],
+  "testCandidates": [
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ],
   "requiredChecks": [
     {
-      "id": "ui-9966eaccbac04c41/control-behavior",
+      "id": "ui-c31cd432003904a9/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-9966eaccbac04c41/control-failure",
+      "id": "ui-c31cd432003904a9/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -241322,14 +241346,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-b358c36dfafa3e8f
+## ui-04d0ceb95c66e18f
 
 ```json
 {
-  "id": "ui-b358c36dfafa3e8f",
+  "id": "ui-04d0ceb95c66e18f",
   "source": {
     "file": "client/src/components/studio/StudioLoader.tsx",
-    "line": 373,
+    "line": 374,
     "column": 15
   },
   "tag": "Button",
@@ -241342,15 +241366,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "spreadAttributeLines": [],
-  "testCandidates": [],
+  "testCandidates": [
+    {
+      "path": "tests/unit/studio-loader-browser.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ],
   "requiredChecks": [
     {
-      "id": "ui-b358c36dfafa3e8f/control-behavior",
+      "id": "ui-04d0ceb95c66e18f/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-b358c36dfafa3e8f/control-failure",
+      "id": "ui-04d0ceb95c66e18f/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -381780,7 +381810,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -381861,7 +381891,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -381944,7 +381974,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382025,7 +382055,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382106,7 +382136,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382189,7 +382219,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382272,7 +382302,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382353,7 +382383,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382428,7 +382458,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382503,7 +382533,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382578,7 +382608,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382653,7 +382683,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382728,7 +382758,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382809,7 +382839,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382884,7 +382914,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -382959,7 +382989,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383034,7 +383064,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383109,7 +383139,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383190,7 +383220,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383265,7 +383295,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383340,7 +383370,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383415,7 +383445,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383490,7 +383520,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383571,7 +383601,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383646,7 +383676,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383721,7 +383751,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383796,7 +383826,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383877,7 +383907,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -383952,7 +383982,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384027,7 +384057,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384102,7 +384132,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384188,7 +384218,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384271,7 +384301,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384354,7 +384384,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384435,7 +384465,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384518,7 +384548,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384601,7 +384631,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384685,7 +384715,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384769,7 +384799,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384853,7 +384883,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -384936,7 +384966,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385019,7 +385049,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385100,7 +385130,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385181,7 +385211,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385262,7 +385292,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385337,7 +385367,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385414,7 +385444,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385489,7 +385519,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385566,7 +385596,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385647,7 +385677,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385722,7 +385752,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385805,7 +385835,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385888,7 +385918,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -385969,7 +385999,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386044,7 +386074,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386119,7 +386149,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386194,7 +386224,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386269,7 +386299,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386344,7 +386374,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386425,7 +386455,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386500,7 +386530,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386575,7 +386605,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386650,7 +386680,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386725,7 +386755,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386806,7 +386836,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386881,7 +386911,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -386956,7 +386986,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387031,7 +387061,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387106,7 +387136,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387187,7 +387217,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387262,7 +387292,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387337,7 +387367,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387412,7 +387442,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387493,7 +387523,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387568,7 +387598,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387643,7 +387673,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387718,7 +387748,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387801,7 +387831,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387884,7 +387914,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -387967,7 +387997,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388050,7 +388080,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388133,7 +388163,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388216,7 +388246,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388297,7 +388327,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388372,7 +388402,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388449,7 +388479,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388524,7 +388554,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388601,7 +388631,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388687,7 +388717,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388788,7 +388818,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388869,7 +388899,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -388955,7 +388985,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389056,7 +389086,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389142,7 +389172,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389225,7 +389255,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389308,7 +389338,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389391,7 +389421,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389474,7 +389504,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389557,7 +389587,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389638,7 +389668,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389721,7 +389751,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389802,7 +389832,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389883,7 +389913,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -389964,7 +389994,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390045,7 +390075,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390126,7 +390156,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390204,7 +390234,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390282,7 +390312,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390360,7 +390390,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390438,7 +390468,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390522,7 +390552,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390605,7 +390635,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390684,7 +390714,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390763,7 +390793,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390841,7 +390871,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390918,7 +390948,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -390995,7 +391025,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391072,7 +391102,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391149,7 +391179,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391230,7 +391260,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391307,7 +391337,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391388,7 +391418,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391469,7 +391499,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391544,7 +391574,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391625,7 +391655,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391706,7 +391736,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391787,7 +391817,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391862,7 +391892,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -391945,7 +391975,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392026,7 +392056,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392107,7 +392137,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392188,7 +392218,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392269,7 +392299,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392350,7 +392380,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392427,7 +392457,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392508,7 +392538,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392583,7 +392613,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392664,7 +392694,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392739,7 +392769,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392820,7 +392850,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392901,7 +392931,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -392976,7 +393006,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393057,7 +393087,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393138,7 +393168,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393219,7 +393249,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393300,7 +393330,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393381,7 +393411,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [
@@ -393462,7 +393492,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "path": "tests/unit/social-url-maxcore-contract.test.ts",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     }
   ],
   "requiredChecks": [

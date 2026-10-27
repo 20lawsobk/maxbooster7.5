@@ -36,6 +36,11 @@ result. The [coverage batches](completion-execution-plan.md) order meaningful
 business, failure and recovery checks; do not lower the target or remove
 uncovered source to obtain a passing report. Python/native execution and actual
 provider/deployment journeys remain separately measured requirements.
+The [producer implementation plan](coverage-producer-implementation-plan.md)
+documents compatible instrumentation for existing Node, application HTTP and
+browser execution. Source identity and map compatibility must be verified
+before merging; adding percentages or copying counters between different maps
+is not valid combined coverage.
 The platform coverage configuration also runs `tests/coverage/*.test.ts` with
 real disposable PostgreSQL. These reuse the Node suites' business assertions
 while importing production TypeScript directly for instrumentation. Shared
@@ -125,6 +130,20 @@ npm run test:all -- --group http --python "$PWD/.local/test-venv/bin/python"
 npm run test:all -- --output "$PWD/.local/test-results"
 npm run test:master -- --stripe-test-api --python "$PWD/.local/test-venv/bin/python"
 ```
+
+The master refreshes the exhaustive platform plan after producing its current
+platform register. To regenerate or verify that plan separately:
+
+```sh
+python3 scripts/testing/generate-platform-plan.py --require-page-work
+python3 scripts/testing/generate-platform-plan.py --require-page-work --check
+```
+
+Both page-work supplements are required for all 80 declarations. The producer
+checks IDs, references, every business section and named instruction dimension,
+and inspected source hashes. Its successful exit validates plan completeness,
+not feature completion. After a relevant source change, refresh the affected
+source analysis rather than changing recorded hashes to silence a mismatch.
 
 Optional `--rust-toolchain /path/to/rust`, `--go-path /path/to/gopath` and
 `--go-cache /path/to/cache` select prepared native toolchains/caches. Refer to

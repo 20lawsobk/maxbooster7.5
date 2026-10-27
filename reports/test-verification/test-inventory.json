@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
-  "workingTreeInputDigest": "c55f606e107bd9cdf4cce75eb6b7a28faa03c72757b0f2667a1bb929431a5060",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "workingTreeInputDigest": "5e0e5bed1a844928deb4a2cfc4e182073da948cf880080b138f8865a0d5fb7b6",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
@@ -6704,7 +6704,7 @@
     },
     {
       "path": "tests/fabric-migration-outbox-postgres.test.mjs",
-      "sha256": "131ec89457c694263b6b94dc067f65a668f00c30a54d7e71e89e18523cc058f6",
+      "sha256": "a5fa879468e24aa154cfe55b4a7cdaea1e67ea6b9c57a6a1a2a02eaaa33f72c0",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -6716,9 +6716,11 @@
       ],
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
-      "purpose": "fabric migration journals recover physical I/O and accounting across process restarts; discard after lost SQL owner atomically denies delayed old PDIM publication",
+      "purpose": "fabric migration journals recover physical I/O and accounting across process restarts; restart retains healthy source when published replacement bytes are missing",
       "caseTitles": [
         "fabric migration journals recover physical I/O and accounting across process restarts",
+        "restart retains healthy source when published replacement bytes are missing",
+        "restart retains healthy source when published replacement bytes are corrupt",
         "discard after lost SQL owner atomically denies delayed old PDIM publication",
         "two independent processes serialize migration without duplicate capacity charges"
       ],

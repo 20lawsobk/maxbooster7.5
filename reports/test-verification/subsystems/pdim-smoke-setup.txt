@@ -1,4 +1,4 @@
-Reading config file '/tmp/pdim-smoke-isolated-NCYSOP/drizzle.json'
+Reading config file '/tmp/pdim-smoke-isolated-g1WJiZ/drizzle.json'
 13 tables
 dataset_downloads 10 columns 0 indexes 0 fks
 user_storage 12 columns 0 indexes 0 fks
@@ -14,4 +14,4 @@ fabric_volumes 5 columns 0 indexes 0 fks
 redis_instances 9 columns 0 indexes 0 fks
 user_storage_files 14 columns 0 indexes 0 fks
 
-[✓] Your SQL migration file ➜ /tmp/pdim-smoke-isolated-NCYSOP/schema/0000_outstanding_reavers.sql 🚀
+[✓] Your SQL migration file ➜ /tmp/pdim-smoke-isolated-g1WJiZ/schema/0000_dark_tyrannus.sql 🚀

@@ -1835,8 +1835,8 @@
     "group": "root-unit",
     "file": "tests/unit/beat-audio-generation-owner.test.ts",
     "name": "Beat Money Loop private audio identity > binds the existing admin to generation, polling and durable download without starting a cycle",
-    "status": "failed",
-    "message": "expected 'Parametric instrumental synthesis wit\u2026' to contain '128 BPM'",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
   },
   {
@@ -7202,7 +7202,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.$(touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591) using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.$(touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6) using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7210,7 +7210,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.`touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591` using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.`touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6` using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7218,7 +7218,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.\"; touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591; # using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.\"; touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6; # using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7266,7 +7266,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.$(touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591) using real FFmpeg",
+    "name": "video: safely transcodes filename beat.$(touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6) using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7274,7 +7274,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.`touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591` using real FFmpeg",
+    "name": "video: safely transcodes filename beat.`touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6` using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7282,7 +7282,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.\"; touch fabric-injection-proof-1f4509e3-b0c7-49f4-9e20-26d2432fa591; # using real FFmpeg",
+    "name": "video: safely transcodes filename beat.\"; touch fabric-injection-proof-7aee4471-6bb2-48c5-adbc-539f91b612e6; # using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -12378,7 +12378,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/pdim-canonical-owner.test.ts",
-    "name": "PocketFabric consumer wiring > does not retire or remove a source when drain verification fails",
+    "name": "PocketFabric consumer wiring > does not retire or remove a source while durable migration recovery fails",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -13203,6 +13203,14 @@
     "group": "root-unit",
     "file": "tests/unit/production-simulation-copy.test.ts",
     "name": "production simulation filtered copy > filters sensitive/generated paths before copying and retains runtime source",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/production-simulation-copy.test.ts",
+    "name": "production simulation filtered copy > ignores changing restore/test scratch in release identity while binding runtime changes",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -16898,6 +16906,70 @@
   {
     "group": "root-unit",
     "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > handles partial events and exempts only browser session-maintenance paths",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > retains all indicators and SQL precedence for a mixed injection",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > bounds metrics history while retaining lifetime threat counters",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > expires a completed request-rate window before admitting a new observation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > accumulates suspicious repeat history without losing the original XSS classification",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > immediately inspects subsequent requests from an IP with established high threat history",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > reports slow acknowledged containment as an SLO breach",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "real self-healing engine detect/respond/recover > records failed session containment when the attacker has no authenticated user",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
     "name": "real self-healing engine detect/respond/recover > blocks SQLi once and deduplicates persistence and recovery",
     "status": "passed",
     "message": null,
@@ -16987,6 +17059,86 @@
     "group": "root-unit",
     "file": "tests/unit/selfHealingSecurityEngine.test.ts",
     "name": "real self-healing engine detect/respond/recover > detects request flooding only after the DDoS window threshold",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > contains an unexpectedly rejected scheduled refresh and keeps the engine running",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > contains a throwing queued-threat observer and continues draining requests",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > initializes once through concurrent start calls and exposes ready/stop state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > retries a transient initial policy query with bounded backoff",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > recovers unknown initial policy through the scheduled resynchronization",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > filters expired, malformed and incomplete persisted block records",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > keeps the last finite policy when a refresh fails",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > does not discard active blocks when bulk durable deletion fails",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > records an undelivered inbox alert when no administrator exists",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/selfHealingSecurityEngine.test.ts",
+    "name": "persistence, recovery, and database failure policy > redacts non-Error administrator lookup failures without undoing containment",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -17995,8 +18147,8 @@
     "group": "root-unit",
     "file": "tests/unit/social-url-maxcore-contract.test.ts",
     "name": "authenticated async video generation contract > keeps async video errors private and polling bound to the session owner",
-    "status": "failed",
-    "message": "expected '\"/video-job/:jobId\",\\n  requireAuthOn\u2026' to contain 'ffmpegJob.userId !== req.user?.id'",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
   },
   {
@@ -18011,8 +18163,8 @@
     "group": "root-unit",
     "file": "tests/unit/social-url-maxcore-contract.test.ts",
     "name": "explicit social generation inputs and private failures > requires explicit direction in music-video studio and redacts its failures",
-    "status": "failed",
-    "message": "expected '\"/generate-music-video\",\\n  requireAu\u2026' to contain 'hasExplicitDirection'",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
   },
   {
@@ -18859,6 +19011,14 @@
     "group": "root-unit",
     "file": "tests/unit/studio-hub-failure-render.test.ts",
     "name": "Studio project query failure > renders recovery instead of dereferencing absent project data",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "tests/unit/studio-loader-browser.test.ts",
+    "name": "StudioLoader with the installed Query client > reacts to actual query completion, failure, retry and authentication outcomes",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -20097,214 +20257,6 @@
   },
   {
     "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > does not report a fake untrained state when MaxCore status is unavailable",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > uses the user-scoped MaxCore autopilot contract for recommendations",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > preserves MaxCore's explicit unavailable status for engagement prediction",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > starts storage-backed global training through MaxCore and requires admin middleware",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > returns the existing training state without claiming a new job started",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > rejects a malformed MaxCore training response instead of claiming it started",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > does not start MaxCore training with invalid or identity-bearing input",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > does not let public caller identities authorize private artifact commits",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/generate/campaign",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/video/extend",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/optimize/ad",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/mastering-recommendation",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/mixing-recommendation",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/models/social/state",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/train/feedback",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/training/status",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/audio/:jobId/stems",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/upload",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > forwards authenticated identity and preserves the MaxCore response",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > returns an explicit error when MaxCore is unavailable",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
-    "name": "organic generation without an optional prediction dependency > returns every MaxCore variant in order without calling a separate scorer",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
-    "name": "organic generation without an optional prediction dependency > preserves explicit upstream generation unavailability",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/studioGenerationMidi.test.ts",
-    "name": "studio MaxCore MIDI serialization > converts a genuine standard MIDI note to the legacy DTO",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > maps current MaxCore status fields to the dashboard contract",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > derives legacy dashboard dataset totals from current MaxCore datasets",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > preserves curriculum phases while adding authoritative live state",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
     "file": "server/services/__tests__/accessControl.test.ts",
     "name": "object and account authorization > checks ownership and deletion for URL, absolute URL, and bare storage keys",
     "status": "passed",
@@ -20993,6 +20945,214 @@
   },
   {
     "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > does not report a fake untrained state when MaxCore status is unavailable",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > uses the user-scoped MaxCore autopilot contract for recommendations",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > preserves MaxCore's explicit unavailable status for engagement prediction",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > starts storage-backed global training through MaxCore and requires admin middleware",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > returns the existing training state without claiming a new job started",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > rejects a malformed MaxCore training response instead of claiming it started",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > does not start MaxCore training with invalid or identity-bearing input",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > does not let public caller identities authorize private artifact commits",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/generate/campaign",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/video/extend",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/optimize/ad",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/mastering-recommendation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/mixing-recommendation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/models/social/state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/train/feedback",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/training/status",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/audio/:jobId/stems",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/upload",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > forwards authenticated identity and preserves the MaxCore response",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > returns an explicit error when MaxCore is unavailable",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+    "name": "organic generation without an optional prediction dependency > returns every MaxCore variant in order without calling a separate scorer",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+    "name": "organic generation without an optional prediction dependency > preserves explicit upstream generation unavailability",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/studioGenerationMidi.test.ts",
+    "name": "studio MaxCore MIDI serialization > converts a genuine standard MIDI note to the legacy DTO",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > maps current MaxCore status fields to the dashboard contract",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > derives legacy dashboard dataset totals from current MaxCore datasets",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > preserves curriculum phases while adding authoritative live state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
     "file": "server/services/backup/__tests__/databaseDump.test.ts",
     "name": "uncommitted database dump generation > uses the selected tool and returns explicitly uncommitted source evidence",
     "status": "passed",
@@ -21334,6 +21494,350 @@
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/additional.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > concurrent writes, fresh reads, unique same-name keys and ownership",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > public bytes have independent ownership records",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > concurrent final deletion and dedup admission preserve every successful upload",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > independent immutable handles reject missing/corrupt bytes and replacement",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > metadata publication failures retain invisible recoverable intents and never ACK",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > physical delete failure remains durable and retryable from another worker",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > empty analytics, missing objects and download authority have explicit outcomes",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > invalid uploads never create an intent and zero-byte files remain readable",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > folder and tier filters preserve owner boundaries and stable download URLs",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > physical analytics count shared bytes once and scope logical ownership",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > cleanup recommendations and deletion honor age, access and owner",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > legacy hot-tier decisions only migrate old, infrequently used physical entries",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > SQL publication and duplicate-key failures reject without partial committed rows",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > invalid byte receipts and corrupted pending data never become visible",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > deduplicated and active reads verify full content before acknowledgement",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > immutable publication needs a confirmed manifest and rejects corrupt metadata",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > legacy parser rejects public-map corruption and cyclic or unresolved ownership",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > verified containers reject inconsistent headers and decoded lengths",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > rollback transport failures preserve the original error and release SQL clients",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > a deletion waiting on the content lock observes a completed concurrent deletion",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > legacy aliases retain the original blob after primary deletion and cannot resurrect",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "name": "hybrid metadata is shared across independent services without lost updates > unknown legacy references abort the entire import and retain the source",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > a second worker polls a real committed video result with the same public response contract",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > music-video status survives a new repository instance and handlers isolate owner/family/auth",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > foreign polls cannot expire another owner's row; owned polls persist an explicit interruption",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > lease expiry fences a stalled writer even before another worker polls",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > forged tokens and duplicate terminal writes cannot overwrite acknowledged results",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > concurrent terminal writers acknowledge exactly one immutable outcome",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > completed jobs require actual asset references and cannot persist an oversized result",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > polling never reports corrupt persisted URL values as completed media",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > real heartbeat extends ownership and the timer stops after shutdown",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > new admissions bound stale metadata cleanup without pruning healthy rendering jobs",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > database outage returns an explicit retryable polling error",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > terminal validation rejects malformed URLs and accepts explicit HTTP assets without weakening ownership",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > legacy incomplete rows have explicit private polling failures and fallback metadata",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > lost leases and database failures stop heartbeat renewal exactly once",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "social media jobs share PostgreSQL status and fence interrupted render workers > queued heartbeat callbacks cannot renew or notify after cancellation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > missing direction",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > URL direction",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > unsupported platform",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > missing audio",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > valid and non-scene requests retain their staged files for the real renderer",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
+  },
+  {
+    "group": "coverage-contracts",
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "name": "scene validation releases actual owned staged uploads on every early 400 branch > cleanup handles single, array and absent multipart paths including missing files",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/coverage-unit.junit.xml"
   },
   {
     "group": "python",
@@ -21938,6 +22442,14 @@
   {
     "group": "python",
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
+    "name": "test_mastodon_context_omits_empty_unsafe_or_unresolvable_observations",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml"
+  },
+  {
+    "group": "python",
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
     "name": "test_mastodon_only_public_recent_complete_measured_posts_are_peak",
     "status": "passed",
     "message": null,
@@ -21947,6 +22459,14 @@
     "group": "python",
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
     "name": "test_mastodon_peak_combines_actual_trending_and_topic_counters_deduplicated",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml"
+  },
+  {
+    "group": "python",
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
+    "name": "test_mastodon_short_zero_counter_context_is_canonical_not_a_peak_example",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/python/external__maxcore__artifacts__ai-training-server__ai_model__awareness__test_sources.xml"
@@ -30065,6 +30585,62 @@
   },
   {
     "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_preserves_all_details_aliases_unrouted_entities_and_original_statuses",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_missing_reference_or_template_and_page_deduplication_fail_closed",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_emitted_work_validator_detects_lost_details_and_missing_tasks",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_business_sections_bind_exact_pages_and_reject_invented_references",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_all_page_sections_and_exact_work_dimensions_become_distinct_actions",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_plan.py",
+    "name": "test_both_supplement_source_inventory_schemas_detect_stale_analysis",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_plan.xml"
+  },
+  {
+    "group": "python",
     "file": "tests/testing/test_remediation.py",
     "name": "test_empty_or_malformed_evidence_cannot_produce_a_closed_strict_run",
     "status": "passed",
@@ -30139,6 +30715,22 @@
     "group": "python",
     "file": "tests/testing/test_summary_results.py",
     "name": "test_source_identity_detects_new_code_changes_and_excludes_generated_private_state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_summary_results.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_summary_results.py",
+    "name": "test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_summary_results.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_summary_results.py",
+    "name": "test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/python/tests__testing__test_summary_results.xml"
@@ -31330,7 +31922,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > POST /api/ai/analytics/predict \u2192 200 with predictions array",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > POST /api/ai/analytics/predict reports its missing generation contract explicitly",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31338,7 +31930,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > POST /api/ai/analytics/predict \u2192 400 or 401 for invalid metric",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > POST /api/ai/analytics/predict rejects an invalid metric before generation",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31354,7 +31946,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?period=7d \u2192 200 or 401",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?timeRange=7d \u2192 authenticated 200",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31362,7 +31954,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?period=90d \u2192 200 or 401",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?timeRange=90d \u2192 authenticated 200",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31370,7 +31962,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/advertising \u2192 200 or 401 depending on auth state",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/advertising/campaigns \u2192 authenticated owned campaign array",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31378,15 +31970,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/anomalies \u2192 200 with anomalies array",
-    "status": "failed",
-    "message": "expected [ 200, 401, 404 ] to include 403",
-    "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
-  },
-  {
-    "group": "http",
-    "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/release-strategy \u2192 200 with strategy shape",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/anomalies requires an authenticated administrator",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31394,7 +31978,7 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/milestones \u2192 200 with milestones array",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > an administrator with a real verified factor reads only owned persisted anomalies",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -31402,7 +31986,23 @@
   {
     "group": "http",
     "file": "tests/ai-analytics-integration.test.ts",
-    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?limit=1000 \u2192 does not crash (pagination cap)",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/music/release-strategy \u2192 200 with missing history explicit",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/ai-analytics-integration.test.ts",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/music/milestones \u2192 200 with owned persisted progress",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
+  },
+  {
+    "group": "http",
+    "file": "tests/ai-analytics-integration.test.ts",
+    "name": "AI Analytics & Fanbase Insights \u2014 Real Data Endpoints > GET /api/analytics/dashboard?limit=1000 preserves the authorized response",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
@@ -32555,32 +33155,32 @@
     "group": "http",
     "file": "tests/critical-paths.test.ts",
     "name": "Critical Path Tests - Production Readiness > 11. Security > should return 404 for non-existent API routes",
-    "status": "failed",
-    "message": "expected 403 to be 404 // Object.is equality",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
   },
   {
     "group": "http",
     "file": "tests/critical-paths.test.ts",
     "name": "Critical Path Tests - Production Readiness > 12. OAuth Connection Graceful Failures > should return error for unsupported platform",
-    "status": "failed",
-    "message": "expected 403 to be 400 // Object.is equality",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
   },
   {
     "group": "http",
     "file": "tests/critical-paths.test.ts",
     "name": "Critical Path Tests - Production Readiness > 13. Logout > should logout successfully",
-    "status": "failed",
-    "message": "expected 403 to be 200 // Object.is equality",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
   },
   {
     "group": "http",
     "file": "tests/critical-paths.test.ts",
     "name": "Critical Path Tests - Production Readiness > 13. Logout > should not access protected routes after logout",
-    "status": "failed",
-    "message": "expected 403 to be 401 // Object.is equality",
+    "status": "passed",
+    "message": null,
     "junit": "reports/test-verification/integration-browser/http/integration.junit.xml"
   },
   {

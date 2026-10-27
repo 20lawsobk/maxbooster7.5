@@ -1,0 +1,47 @@
+{
+  "observedAt": "2026-10-27T21:55:33.385673+00:00",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "status": "blocked_before_execution",
+  "productionReady": false,
+  "scope": "Read-only GitHub run/job/check annotation observations; no native build step executed and no account settings changed",
+  "runs": [
+    {
+      "workflow": "Build Desktop Apps",
+      "runUrl": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087208",
+      "jobName": "build-windows",
+      "status": "completed",
+      "conclusion": "failure",
+      "title": null,
+      "summary": null,
+      "annotations": [
+        {
+          "annotation_level": "failure",
+          "message": "The job was not started because your account is locked due to a billing issue.",
+          "title": ""
+        }
+      ]
+    },
+    {
+      "workflow": "Build Mobile Apps",
+      "runUrl": "https://github.com/20lawsobk/maxbooster7.5/actions/runs/40590087686",
+      "jobName": "build-android",
+      "status": "completed",
+      "conclusion": "failure",
+      "title": null,
+      "summary": null,
+      "annotations": [
+        {
+          "annotation_level": "failure",
+          "message": "The job was not started because your account is locked due to a billing issue.",
+          "title": ""
+        },
+        {
+          "annotation_level": "notice",
+          "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+          "title": ""
+        }
+      ]
+    }
+  ],
+  "requiredNextStep": "Resolve the GitHub-reported account billing lock, then execute and inspect all configured native OS/device build jobs. A blocked runner is not a successful build or a demonstrated application-code failure."
+}

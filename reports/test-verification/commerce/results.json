@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
-  "startedAt": "2026-10-26T23:40:48.019991+00:00",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "startedAt": "2026-10-27T22:00:50.656575+00:00",
   "nodeVersion": "v22.23.3",
   "boundary": "No inherited application keys, DB URL, NODE_OPTIONS or provider credentials; disposable local SQL only",
   "commands": [
@@ -19,7 +19,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 19.504,
+      "durationSeconds": 17.907,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -43,7 +43,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.274,
+      "durationSeconds": 1.34,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -67,7 +67,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.151,
+      "durationSeconds": 0.185,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -91,7 +91,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 11.073,
+      "durationSeconds": 10.993,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -115,7 +115,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.214,
+      "durationSeconds": 1.091,
       "counts": {
         "tests": 13,
         "failures": 0,
@@ -139,7 +139,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.188,
+      "durationSeconds": 0.17,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -163,7 +163,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.241,
+      "durationSeconds": 0.21,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -187,7 +187,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.269,
+      "durationSeconds": 0.247,
       "counts": {
         "tests": 5,
         "failures": 0,
@@ -211,7 +211,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.227,
+      "durationSeconds": 0.192,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -235,7 +235,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.78,
+      "durationSeconds": 0.701,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -259,7 +259,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.177,
+      "durationSeconds": 0.172,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -283,7 +283,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.209,
+      "durationSeconds": 0.175,
       "counts": {
         "tests": 7,
         "failures": 0,
@@ -307,7 +307,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.234,
+      "durationSeconds": 0.2,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -331,7 +331,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.371,
+      "durationSeconds": 0.249,
       "counts": {
         "tests": 8,
         "failures": 0,
@@ -355,7 +355,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.11,
+      "durationSeconds": 0.109,
       "counts": {
         "tests": 1,
         "failures": 0,
@@ -379,7 +379,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.183,
+      "durationSeconds": 0.173,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -403,7 +403,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.112,
+      "durationSeconds": 0.093,
       "counts": {
         "tests": 3,
         "failures": 0,
@@ -427,7 +427,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.26,
+      "durationSeconds": 1.031,
       "counts": {
         "tests": 10,
         "failures": 0,
@@ -451,7 +451,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 1.306,
+      "durationSeconds": 1.125,
       "counts": {
         "tests": 21,
         "failures": 0,
@@ -475,7 +475,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.89,
+      "durationSeconds": 0.859,
       "counts": {
         "tests": 16,
         "failures": 0,
@@ -494,7 +494,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 4.796,
+      "durationSeconds": 3.958,
       "counts": {
         "tests": 14,
         "failures": 0,
@@ -513,7 +513,7 @@
       ],
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 0.118,
+      "durationSeconds": 0.104,
       "counts": null,
       "log": "provider-report-summary.txt",
       "junit": null,
@@ -547,7 +547,7 @@
     }
   ],
   "selection": null,
-  "finishedAt": "2026-10-26T23:41:32.722896+00:00",
+  "finishedAt": "2026-10-27T22:01:31.956716+00:00",
   "summary": {
     "passed": 22,
     "failed": 0,

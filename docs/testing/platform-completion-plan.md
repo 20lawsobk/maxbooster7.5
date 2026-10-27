@@ -116,11 +116,11 @@ Generated from the complete source register and page business-section analyses. 
     "controls": 8374,
     "backendRegistrations": 2901,
     "frontendContracts": 932,
-    "sourceCoverageFiles": 2649,
+    "sourceCoverageFiles": 2651,
     "unknownMappings": 127,
     "repositoryFiles": 5501,
     "sharedSubsystems": 20,
-    "workItems": 52884,
+    "workItems": 52892,
     "businessSectionPages": 80,
     "businessSectionTasks": 2161,
     "businessDimensionSteps": 12966
@@ -158,8 +158,8 @@ Generated from the complete source register and page business-section analyses. 
         "setEquality": true
       },
       "sourceCoverage": {
-        "expected": 2649,
-        "planned": 2649,
+        "expected": 2651,
+        "planned": 2651,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true

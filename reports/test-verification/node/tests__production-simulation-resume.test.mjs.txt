@@ -2,133 +2,133 @@ TAP version 13
 # Subtest: copy-complete resume checks the copy sentinel and recorded raw inputs
 ok 1 - copy-complete resume checks the copy sentinel and recorded raw inputs
   ---
-  duration_ms: 6.800819
+  duration_ms: 4.970659
   type: 'test'
   ...
 # Subtest: reject missing app without recreating it
 ok 2 - reject missing app without recreating it
   ---
-  duration_ms: 1.916471
+  duration_ms: 1.328685
   type: 'test'
   ...
 # Subtest: reject dangling app without recreating it
 ok 3 - reject dangling app without recreating it
   ---
-  duration_ms: 1.634225
+  duration_ms: 1.113881
   type: 'test'
   ...
 # Subtest: reject outside app without recreating it
 ok 4 - reject outside app without recreating it
   ---
-  duration_ms: 1.707696
+  duration_ms: 1.693134
   type: 'test'
   ...
 # Subtest: reject missing logs without recreating it
 ok 5 - reject missing logs without recreating it
   ---
-  duration_ms: 2.55904
+  duration_ms: 1.15337
   type: 'test'
   ...
 # Subtest: reject dangling logs without recreating it
 ok 6 - reject dangling logs without recreating it
   ---
-  duration_ms: 1.469417
+  duration_ms: 1.171778
   type: 'test'
   ...
 # Subtest: reject outside logs without recreating it
 ok 7 - reject outside logs without recreating it
   ---
-  duration_ms: 1.339691
+  duration_ms: 1.087731
   type: 'test'
   ...
 # Subtest: packed build/size select capsules and bootstrap, not consumed copy inputs or restore markers
 ok 8 - packed build/size select capsules and bootstrap, not consumed copy inputs or restore markers
   ---
-  duration_ms: 5.619117
+  duration_ms: 3.292587
   type: 'test'
   ...
 # Subtest: bounded post-pack recovery uses packed artifacts even before build stage persists
 ok 9 - bounded post-pack recovery uses packed artifacts even before build stage persists
   ---
-  duration_ms: 4.746992
+  duration_ms: 3.011504
   type: 'test'
   ...
 # Subtest: completed build rejects lost node_modules capsule
 ok 10 - completed build rejects lost node_modules capsule
   ---
-  duration_ms: 2.499731
+  duration_ms: 1.917332
   type: 'test'
   ...
 # Subtest: completed build rejects lost app_remainder capsule
 ok 11 - completed build rejects lost app_remainder capsule
   ---
-  duration_ms: 2.226269
+  duration_ms: 1.945525
   type: 'test'
   ...
 # Subtest: completed build rejects lost python_runtime capsule
 ok 12 - completed build rejects lost python_runtime capsule
   ---
-  duration_ms: 2.254221
+  duration_ms: 1.406112
   type: 'test'
   ...
 # Subtest: completed build rejects lost external_maxcore capsule
 ok 13 - completed build rejects lost external_maxcore capsule
   ---
-  duration_ms: 2.129802
+  duration_ms: 1.654877
   type: 'test'
   ...
 # Subtest: completed build rejects lost external_pdim capsule
 ok 14 - completed build rejects lost external_pdim capsule
   ---
-  duration_ms: 3.233238
+  duration_ms: 2.358388
   type: 'test'
   ...
 # Subtest: completed build rejects malformed capsule manifest
 ok 15 - completed build rejects malformed capsule manifest
   ---
-  duration_ms: 2.362153
+  duration_ms: 1.515497
   type: 'test'
   ...
 # Subtest: completed restore/startup require real payload plus current manifest-linked sentinels
 ok 16 - completed restore/startup require real payload plus current manifest-linked sentinels
   ---
-  duration_ms: 9.915046
+  duration_ms: 6.471423
   type: 'test'
   ...
 # Subtest: interrupted destructive restore does not demand not-yet-completed restoration
 ok 17 - interrupted destructive restore does not demand not-yet-completed restoration
   ---
-  duration_ms: 4.145934
+  duration_ms: 2.436596
   type: 'test'
   ...
 # Subtest: cleanup ignores lost payload, but rejects arbitrary state workspace paths
 ok 18 - cleanup ignores lost payload, but rejects arbitrary state workspace paths
   ---
-  duration_ms: 1.694506
+  duration_ms: 1.026939
   type: 'test'
   ...
 # Subtest: cleanup of an escaping workspace symlink only removes the link, never its target
 ok 19 - cleanup of an escaping workspace symlink only removes the link, never its target
   ---
-  duration_ms: 1.234933
+  duration_ms: 0.826307
   type: 'test'
   ...
 # Subtest: state/report disagreement cannot skip stages
 ok 20 - state/report disagreement cannot skip stages
   ---
-  duration_ms: 1.461615
+  duration_ms: 1.004025
   type: 'test'
   ...
 # Subtest: isolated runner fails before mkdir or report/state writes, even with --force
 ok 21 - isolated runner fails before mkdir or report/state writes, even with --force
   ---
-  duration_ms: 87.332103
+  duration_ms: 75.632598
   type: 'test'
   ...
 # Subtest: isolated runner --cleanup exits without running stages or rewriting historical reports
 ok 22 - isolated runner --cleanup exits without running stages or rewriting historical reports
   ---
-  duration_ms: 61.969437
+  duration_ms: 66.1102
   type: 'test'
   ...
 1..22
@@ -139,4 +139,4 @@ ok 22 - isolated runner --cleanup exits without running stages or rewriting hist
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 363.796483
+# duration_ms 303.715636

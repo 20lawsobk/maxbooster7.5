@@ -1,0 +1,1 @@
+{"scope": "Four actual public adapters -> actual canonical disposable PDIM publication -> fresh follower/context; no generation/provider/deployment proof", "status": "failed", "exitCode": 1, "phase": "actual_public_scan_and_canonical_publication", "ownerStopped": true, "scratchRemoved": true}

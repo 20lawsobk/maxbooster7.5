@@ -10,8 +10,8 @@ This source register and the machine JSON distinguish declarations, static assoc
 | uiInteractionDeclarations | 8374 |
 | backendRegistrations | 2901 |
 | frontendApiContracts | 932 |
-| scannedTypeScriptJavaScriptFiles | 3384 |
-| actualCoverageFiles | 2649 |
+| scannedTypeScriptJavaScriptFiles | 3390 |
+| actualCoverageFiles | 2651 |
 | requiredChecks | 33504 |
 | unverifiedChecks | 33504 |
 | unknownMappings | 127 |
@@ -495,7 +495,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `server/lib/pdimClient.ts` | 529/954 | 92/278 | 186 |
 | `shared/ml/models/AdOptimizationEngine.ts` | 0/902 | 0/163 | 163 |
 | `client/src/components/marketplace/StorefrontBuilder.tsx` | 86/493 | 3/158 | 155 |
-| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1379/3004 | 185/339 | 154 |
+| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1374/3004 | 185/339 | 154 |
 | `client/src/pages/Advertisement.tsx` | 0/388 | 0/151 | 151 |
 | `client/src/components/marketplace/StorefrontDnsZoneManager.tsx` | 8/338 | 0/147 | 147 |
 | `server/services/hyperLearningEngine.ts` | 0/1004 | 0/145 | 145 |
@@ -530,7 +530,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `client/src/components/social/UnifiedCalendar.tsx` | 0/227 | 0/91 | 91 |
 | `external/pdim/artifacts/api-server/src/pocket-dimension/fabric/PocketStorageService.ts` | 12/460 | 3/93 | 90 |
 
-The table shows at most 50 files with the largest uncovered surfaces. All 2649 measured files, exact function names and uncovered statement lines remain in the machine register.
+The table shows at most 50 files with the largest uncovered surfaces. All 2651 measured files, exact function names and uncovered statement lines remain in the machine register.
 
 ## Limits
 

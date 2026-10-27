@@ -8,9 +8,9 @@ Artifact label: **sealed non-ML authenticated HTTP load; not full-stack or packe
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/testing/page80-acceptance.mjs`
 
-Run started: 2026-10-26T23:47:35.311Z
+Run started: 2026-10-27T22:07:22.124Z
 
-Report generated: 2026-10-26T23:48:20.698Z
+Report generated: 2026-10-27T22:08:08.260Z
 
 ## Safety boundary
 
@@ -27,19 +27,19 @@ Report generated: 2026-10-26T23:48:20.698Z
 {
   "capacityAdmission": {
     "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-    "hostMemAvailableBytes": 33639997440,
+    "hostMemAvailableBytes": 33826271232,
     "cgroup": {
-      "currentBytes": 8959901696,
+      "currentBytes": 5495836672,
       "maximumBytes": 34359738368,
-      "headroomBytes": 25399836672,
-      "anonymousBytes": 564908032,
-      "filePageCacheBytes": 7322853376,
-      "inactiveFileBytes": 2938273792,
-      "activeFileBytes": 4170731520,
-      "kernelBytes": 1070710784,
-      "reclaimableKernelSlabBytes": 1030627704
+      "headroomBytes": 28863901696,
+      "anonymousBytes": 565456896,
+      "filePageCacheBytes": 4308811776,
+      "inactiveFileBytes": 513384448,
+      "activeFileBytes": 3705925632,
+      "kernelBytes": 620363776,
+      "reclaimableKernelSlabBytes": 593629712
     },
-    "effectiveAvailableBytes": 25399836672,
+    "effectiveAvailableBytes": 28863901696,
     "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
     "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
     "minimumAvailableBytes": 1610612736
@@ -102,19 +102,19 @@ Report generated: 2026-10-26T23:48:20.698Z
     "label": "source application HTTP simulation; not packed application acceptance",
     "admission": {
       "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-      "hostMemAvailableBytes": 33639997440,
+      "hostMemAvailableBytes": 33826271232,
       "cgroup": {
-        "currentBytes": 8959901696,
+        "currentBytes": 5495836672,
         "maximumBytes": 34359738368,
-        "headroomBytes": 25399836672,
-        "anonymousBytes": 564908032,
-        "filePageCacheBytes": 7322853376,
-        "inactiveFileBytes": 2938273792,
-        "activeFileBytes": 4170731520,
-        "kernelBytes": 1070710784,
-        "reclaimableKernelSlabBytes": 1030627704
+        "headroomBytes": 28863901696,
+        "anonymousBytes": 565456896,
+        "filePageCacheBytes": 4308811776,
+        "inactiveFileBytes": 513384448,
+        "activeFileBytes": 3705925632,
+        "kernelBytes": 620363776,
+        "reclaimableKernelSlabBytes": 593629712
       },
-      "effectiveAvailableBytes": 25399836672,
+      "effectiveAvailableBytes": 28863901696,
       "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
       "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
       "minimumAvailableBytes": 1610612736
@@ -189,8 +189,8 @@ Report generated: 2026-10-26T23:48:20.698Z
         "successful": 70,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 158.997698,
-        "p99Ms": 174.107492,
+        "p95Ms": 175.198104,
+        "p99Ms": 197.95125,
         "durationDefinition": "all completed request durations, including failed requests"
       },
       {
@@ -201,8 +201,8 @@ Report generated: 2026-10-26T23:48:20.698Z
         "successful": 80,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 331.204144,
-        "p99Ms": 357.579929,
+        "p95Ms": 252.327331,
+        "p99Ms": 261.776291,
         "durationDefinition": "all completed request durations, including failed requests"
       }
     ],

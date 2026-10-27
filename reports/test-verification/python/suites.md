@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `4c72114a55a9425d4af743a72a71e4c58a532d2f`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 106, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1225; failures: 0; errors: 0; skipped: 12.
+- Source baseline: `b369d68e34bef0e30c96fbd5b72fa7339e6425f2`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 107, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1245; failures: 0; errors: 0; skipped: 12.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -246,7 +246,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 29}.
 
 <details>
 <summary>What each case checks</summary>
@@ -268,6 +268,8 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 18}.
 - `PeakSourceTests.test_old_future_irrelevant_short_instructions_and_oversized_posts_excluded`: old future irrelevant short instructions and oversized posts excluded
 - `PeakSourceTests.test_flagged_and_noncanonical_public_record_addresses_excluded`: flagged and noncanonical public record addresses excluded
 - `PeakSourceTests.test_mastodon_only_public_recent_complete_measured_posts_are_peak`: mastodon only public recent complete measured posts are peak
+- `PeakSourceTests.test_mastodon_context_omits_empty_unsafe_or_unresolvable_observations`: mastodon context omits empty unsafe or unresolvable observations
+- `PeakSourceTests.test_mastodon_short_zero_counter_context_is_canonical_not_a_peak_example`: mastodon short zero counter context is canonical not a peak example
 - `PeakSourceTests.test_mastodon_peak_combines_actual_trending_and_topic_counters_deduplicated`: mastodon peak combines actual trending and topic counters deduplicated
 
 </details>
@@ -3213,6 +3215,31 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 
 </details>
 
+### `tests/testing/test_platform_plan.py`
+
+Exhaustive ledger preserves aliases, unresolved work and exact evidence states.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_plan.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_preserves_all_details_aliases_unrouted_entities_and_original_statuses`: preserves all details aliases unrouted entities and original statuses
+- `test_missing_reference_or_template_and_page_deduplication_fail_closed`: missing reference or template and page deduplication fail closed
+- `test_emitted_work_validator_detects_lost_details_and_missing_tasks`: emitted work validator detects lost details and missing tasks
+- `test_business_sections_bind_exact_pages_and_reject_invented_references`: business sections bind exact pages and reject invented references
+- `test_human_output_contains_all_aliases_controls_contracts_and_global_unknowns`: human output contains all aliases controls contracts and global unknowns
+- `test_all_page_sections_and_exact_work_dimensions_become_distinct_actions`: all page sections and exact work dimensions become distinct actions
+- `test_both_supplement_source_inventory_schemas_detect_stale_analysis`: both supplement source inventory schemas detect stale analysis
+
+</details>
+
 ### `tests/testing/test_remediation.py`
 
 Pure-data contracts for the master verification's repair guide.
@@ -3247,7 +3274,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_summary_results.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 6}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3256,6 +3283,8 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 4}.
 - `test_suite_names_and_explicit_file_survive_without_default_file`: suite names and explicit file survive without default file
 - `test_master_plan_keeps_sandbox_mutations_opt_in_and_builds_before_http_load`: master plan keeps sandbox mutations opt in and builds before http load
 - `test_source_identity_detects_new_code_changes_and_excludes_generated_private_state`: source identity detects new code changes and excludes generated private state
+- `test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage`: provider parse exclusions cannot be mistaken for complete coverage
+- `test_coverage_only_database_cases_are_retained_without_repeating_ordinary_units`: coverage only database cases are retained without repeating ordinary units
 
 </details>
 

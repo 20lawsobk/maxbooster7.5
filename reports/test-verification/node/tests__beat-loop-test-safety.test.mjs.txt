@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: beat integration suite fails without an explicit disposable DB
 ok 1 - beat integration suite fails without an explicit disposable DB
   ---
-  duration_ms: 789.386041
+  duration_ms: 649.604514
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - beat integration suite fails without an explicit disposable DB
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 915.696113
+# duration_ms 753.651356

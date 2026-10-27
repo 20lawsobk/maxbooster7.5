@@ -2,49 +2,49 @@ TAP version 13
 # Subtest: authority rejects legacy epochs without I/O and propagates unavailable authority
 ok 1 - authority rejects legacy epochs without I/O and propagates unavailable authority
   ---
-  duration_ms: 1.719534
+  duration_ms: 1.307492
   type: 'test'
   ...
 # Subtest: generation revoke is durable, monotonic, parameterized, and distinguishes new login
 ok 2 - generation revoke is durable, monotonic, parameterized, and distinguishes new login
   ---
-  duration_ms: 0.35142
+  duration_ms: 0.287413
   type: 'test'
   ...
 # Subtest: webhook policy excludes internal, reserved, mapped and transition addresses
 ok 3 - webhook policy excludes internal, reserved, mapped and transition addresses
   ---
-  duration_ms: 5.517634
+  duration_ms: 4.960372
   type: 'test'
   ...
 # Subtest: MFA cannot borrow assurance from other identity or bearer request
 ok 4 - MFA cannot borrow assurance from other identity or bearer request
   ---
-  duration_ms: 0.313483
+  duration_ms: 0.191498
   type: 'test'
   ...
 # Subtest: real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch
 ok 5 - real TOTP challenge promotes only valid proof, rotates session, preserves revoked epoch
   ---
-  duration_ms: 4.411195
+  duration_ms: 4.408379
   type: 'test'
   ...
 # Subtest: erasure request atomically queues with revocation and reports pending, not erased
 ok 6 - erasure request atomically queues with revocation and reports pending, not erased
   ---
-  duration_ms: 1.123494
+  duration_ms: 0.976063
   type: 'test'
   ...
 # Subtest: factor promotion compares the proved active factor and bumps epoch in one statement
 ok 7 - factor promotion compares the proved active factor and bumps epoch in one statement
   ---
-  duration_ms: 0.863793
+  duration_ms: 0.561867
   type: 'test'
   ...
 # Subtest: real TOTP proof is consumed once across concurrent consumers and entrypoints
 ok 8 - real TOTP proof is consumed once across concurrent consumers and entrypoints
   ---
-  duration_ms: 2.189262
+  duration_ms: 3.051572
   type: 'test'
   ...
 1..8
@@ -55,4 +55,4 @@ ok 8 - real TOTP proof is consumed once across concurrent consumers and entrypoi
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 261.594033
+# duration_ms 237.658843

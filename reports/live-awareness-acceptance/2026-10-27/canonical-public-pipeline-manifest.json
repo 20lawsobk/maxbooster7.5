@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-10-27T22:07:49.005819+00:00",
+  "scope": "All canonical public pipeline attempt drivers, actual receipts and logs; excludes unrelated ingestion-only evidence",
+  "files": {
+    "canonical-public-pipeline.py": {
+      "bytes": 19815,
+      "sha256": "3a88e12f0601db02d6e380056a93e818e9437f1e9030856eeeb89bf17e2c3c6a"
+    },
+    "canonical-public-pipeline-attempt-1.py": {
+      "bytes": 15780,
+      "sha256": "fd965ee4a3a5966c6721aa48f582a09675028c79d98ff0d8445bdf1a7fb5fdf3"
+    },
+    "canonical-public-pipeline-attempt-2.py": {
+      "bytes": 19809,
+      "sha256": "72db09e2fe887a525a3c3c58e55900c381388754be39cd7ca52147b380346fc8"
+    },
+    "canonical-pdim-owner.mjs": {
+      "bytes": 1214,
+      "sha256": "f0ba3a4fe2675cb2828b80f05af521d8d11cad7cdc302de35c8116ccdee95ca1"
+    },
+    "canonical-public-pipeline-README.md": {
+      "bytes": 4783,
+      "sha256": "c94184f499f4026856a3c4f0d21ba711a62e1e388142ff70ae0c03085b84a187"
+    },
+    "canonical-public-pipeline-local-preflight.txt": {
+      "bytes": 235,
+      "sha256": "a7fc5a19c6cfa8fa9c5c2322339c3579c98b9472a16486242d6b6dc2535ded07"
+    },
+    "canonical-public-pipeline-run.txt": {
+      "bytes": 294,
+      "sha256": "dd0384bde9111baad025401e9c5c3c79abdd61d48106a7c4a9f4cf09c4c03214"
+    },
+    "canonical-public-pipeline-production-transport-run.txt": {
+      "bytes": 294,
+      "sha256": "dd0384bde9111baad025401e9c5c3c79abdd61d48106a7c4a9f4cf09c4c03214"
+    },
+    "canonical-public-pipeline-final-run.txt": {
+      "bytes": 258,
+      "sha256": "234992858c19af39be72b218e42c4e9f1df66ea396b603786023693a783d4f41"
+    },
+    "canonical-public-pipeline/canonical-pdim.log": {
+      "bytes": 114,
+      "sha256": "f0ca5df9643cbac3f2329c4bbb19c1c988e3b0e92b8d91e7ba42b76fd936d3ec"
+    },
+    "canonical-public-pipeline/receipt.json": {
+      "bytes": 6906,
+      "sha256": "fd6bcbf33fd2080d382d3784888a4c86144329877292410d8e1edb4c9a1aab37"
+    },
+    "canonical-public-pipeline-production-transport/canonical-pdim.log": {
+      "bytes": 114,
+      "sha256": "cc9cde43a67a47aca65004d7297913e87c1411264b03863733897d54cd4008da"
+    },
+    "canonical-public-pipeline-production-transport/receipt.json": {
+      "bytes": 9085,
+      "sha256": "3faaa76a1770777f6d16b1e3b72b1f32d688ee8f7cacbdbbcce56eb786836cc0"
+    },
+    "canonical-public-pipeline-final/canonical-pdim.log": {
+      "bytes": 114,
+      "sha256": "149521875f38b61ed467809c7cb9d5939be088cd02fbdd79d59c29c6c8a8e64f"
+    },
+    "canonical-public-pipeline-final/receipt.json": {
+      "bytes": 18033,
+      "sha256": "9aa3f597dbb56fd4d8f80960dc3eb7e4f8cf24868a4eb3344fa33bfe3a944d6c"
+    }
+  },
+  "verified": {
+    "historicalDriverHashesMatchReceipts": true,
+    "allCanonicalLogHashesMatch": true,
+    "finalActualCanonicalAcceptancePassed": true,
+    "sourceUnchanged": true,
+    "activeOwnedProcessesRemaining": 0,
+    "scratchRemoved": true
+  }
+}

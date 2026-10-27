@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: explicit subsystem synchronization uses offline frozen installs in their own directories
 ok 1 - explicit subsystem synchronization uses offline frozen installs in their own directories
   ---
-  duration_ms: 52.717096
+  duration_ms: 49.5627
   type: 'test'
   ...
 # Subtest: a failed frozen install prevents packaging and cannot be treated as success
 ok 2 - a failed frozen install prevents packaging and cannot be treated as success
   ---
-  duration_ms: 13.687158
+  duration_ms: 16.966913
   type: 'test'
   ...
 # Subtest: missing corrected lock input aborts instead of retaining a stale installed tree
 ok 3 - missing corrected lock input aborts instead of retaining a stale installed tree
   ---
-  duration_ms: 5.021896
+  duration_ms: 7.50505
   type: 'test'
   ...
 # Subtest: historical fast build and compiling build refresh subsystem dependencies before packaging
 ok 4 - historical fast build and compiling build refresh subsystem dependencies before packaging
   ---
-  duration_ms: 0.360474
+  duration_ms: 0.500525
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - historical fast build and compiling build refresh subsystem dependencies 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 187.375842
+# duration_ms 185.5389

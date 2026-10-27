@@ -1,6 +1,6 @@
 {
   "scope": "Git-visible code/config inputs; generated dist, reports, documentation and ignored state excluded",
-  "sha256": "b250db2d50dedf927cde5280527e0defc59391edd8b2ce833d0d501c92024c04",
+  "sha256": "1bffd19f52e0e03535fefca06a40e4b712fd235491423f4525862acea730fbc4",
   "files": {
     ".agents/agent_assets_metadata.toml": "0988ead97441c301950f24bdba9f8f5bee66b529be4e2045c2fbce333e0f974b",
     ".agents/scripts/render_pages.py": "b1d78d36b4ff3bcec061a3d4b932704f4d0905698479b7db95e0d0287d860aec",
@@ -2867,7 +2867,7 @@
     "server/pocket-dimension/fabric/index.ts": "79461c7f25fbf6bf64fb28f0fc8f430a536af6111bcde13646534f9ef27703e6",
     "server/pocket-dimension/fabric/infra/ChunkIndex.ts": "afb37f632341f29f4a8ab705fdaf6395f2cd8372bea84a0873aec329fa006d78",
     "server/pocket-dimension/fabric/infra/DeletionOutbox.ts": "e29b30be933ccb4fac8566ee664928881b86cc63f46f1766d2fd4a9751c6aeed",
-    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "9c4c66d80ee0e4369eaae76adbf73752be58b78e90a3c87156be4530a741842e",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
     "server/pocket-dimension/fabric/infra/NodeRegistry.ts": "040209e518c24dc212a11b80b9631c3f630c1d084f62374fb9b91bff49b810bd",
     "server/pocket-dimension/fabric/infra/ObjectIndex.ts": "8cec75541a3313c9bce82fef8bec94991f9bdbf4b7478379526efafb7a6d5899",
     "server/pocket-dimension/fabric/infra/PocketRegistry.ts": "07324171a334416655aa8eebc7683c8edc75f5d54dad3a1aef2e5c902ebcde60",
@@ -3724,7 +3724,7 @@
     "tests/e2e/multimodal-url-gen.mjs": "f73ef94f226a1405740330009dc8142152a35df7e0a57b4cab29c4ae8ad224aa",
     "tests/fabric-deletion-postgres.test.mjs": "bc33a720dd7302beca565ae348841a99ef4a8076f527afe39a7b91eeb347078c",
     "tests/fabric-imported-reconcile-postgres.test.mjs": "029db4db6ae2b4b777eb51ece7d044a039e994fbb5e3b492e57325849e8adfec",
-    "tests/fabric-migration-outbox-postgres.test.mjs": "131ec89457c694263b6b94dc067f65a668f00c30a54d7e71e89e18523cc058f6",
+    "tests/fabric-migration-outbox-postgres.test.mjs": "a5fa879468e24aa154cfe55b4a7cdaea1e67ea6b9c57a6a1a2a02eaaa33f72c0",
     "tests/fabric-object-lineage.test.mjs": "06946ff7f79fd908ad5e86be90df31f2a07799e2627a69a1bf231f4001a4cb23",
     "tests/fabric-replica-generation.test.mjs": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
     "tests/fabric-root-storage-postgres.test.mjs": "cf6f225292aaf7b8aea84436599c16ec01d7fdbd7b3edeaf43a393f2174e25cc",

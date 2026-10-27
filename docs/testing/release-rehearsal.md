@@ -7,49 +7,55 @@ It neither publishes to Replit nor establishes a multi-instance capacity claim.
 
 ## Current evidence
 
-The October 26 preflight rejected the old `.prepared-release` with
-`Production source changed`. The installed deployment-dependency gate passed.
-The subsequent preparation built and round-trip verified native outputs,
-JavaScript dependencies, imported services and the genuine portable Python
-runtime, then correctly rejected the package because application source had
-changed during preparation. The privacy correction that reopened the source
-freeze must be included in a fresh package.
+The October 27 preparation bound to commit
+`b369d68e34bef0e30c96fbd5b72fa7339e6425f2` passed all four release commands.
+The [recorded result](../../reports/release-rehearsal/2026-10-27-published-guard-final/summary.json)
+includes the published-target revalidation guard, migration journal and scratch
+filter corrections. Its source identity remained current after the cold check.
 
-That failed attempt and its true exit status remain in
-[`reports/release-rehearsal/2026-10-26/summary.json`](../../reports/release-rehearsal/2026-10-26/summary.json).
-Its capsule cache is reusable only through the builder's existing checksum and
-identity validation. A second attempt rebuilt the changed MaxCore capsule and
-reused the other verified capsules, then rejected concurrent test-configuration
-and script changes through the same source guard. That attempt remains in
-[`2026-10-27/summary.json`](../../reports/release-rehearsal/2026-10-27/summary.json).
-The frozen follow-up in
-[`2026-10-27-final/summary.json`](../../reports/release-rehearsal/2026-10-27-final/summary.json)
-passed preparation (110.444 seconds), verification (2.529 seconds), copied-payload
-cold startup (36.627 seconds) and verification after startup (2.544 seconds).
-Every command exited zero. Independent review matched all four command-log
-hashes, the execution-driver hash and the release-source inventory digest.
-The payload contained 37 inventory entries totaling 804,564,548 bytes; all 37
-tracked descendant processes were cleaned up.
+| Command | Actual seconds | Exit |
+| --- | --- | --- |
+| `npm run release:prepare` | 173.102 | 0 |
+| `npm run release:verify` | 3.150 | 0 |
+| `node scripts/readiness-packed-acceptance.mjs …` | 37.155 | 0 |
+| `npm run release:verify` after cold startup | 2.182 | 0 |
 
-That successful result is **cold payload scope only**. Frontend delivery,
-protected API denial, PostgreSQL, Redis, routes and local child liveness passed.
-The isolated run deliberately denied public-source egress and supplied an empty
-private public-state directory. MaxCore and application readiness therefore
-returned 503 for unavailable awareness/generation capability; the receipt keeps
-`productionReady: false`. It does not prove a deployed Replit Nix image, live
-generation readiness, provider delivery or global capacity.
+The [independent read-only audit](../../reports/release-rehearsal/2026-10-27-published-guard-final/hygiene-audit.json)
+matched all four log hashes, the execution driver, the recorded code-input and
+release-source digests, the actual current source and the complete prepared
+payload inventory. All 16 audit checks passed. The source inventory has 4,554
+entries; the publishing payload has 37 entries totaling 804,554,617 bytes.
+Inspection of the actual application archive found 1,891 members, including the
+runtime social-platform registry and `0099_fabric_migration_journal.sql`.
+Neither the source inventory nor the application archive admitted
+`.pdim-scratch-*` or `.pdim-cluster-test-*` entries. All 40 tracked descendant
+processes were cleaned up.
 
-The subsequent review found a separate packaging-hygiene defect: the application
-capsule admitted an old `.pdim-cluster-test-*` bundle, while the source inventory
-also bound unrelated `.pdim-scratch-*` restore trees. The shared scratch policy
-now excludes both directory families from source copies, release identity and
-application member selection. Regressions verify omission, preservation of the
-original scratch trees, and continued identity binding for runtime changes.
-This correction and the current measurement/runtime repairs invalidate the
-prepared source identity. Preserve the successful receipt above; a fresh
-versioned preparation and cold check are required after the new source freeze.
-Inspect the resulting application archive and source inventory to confirm that
-neither scratch family is admitted before calling that replacement current.
+This is **cold payload scope only**. Frontend and health returned 200, the
+protected API returned 401, and the imported Node/Python children were live.
+PostgreSQL, Redis and route checks passed. The isolated run deliberately denied
+public-source egress and supplied an empty private public-state directory.
+MaxCore and application readiness therefore correctly returned 503 for
+unavailable live awareness/generation capability. The receipt retains
+`productionReady: false`; it does not prove an actual Replit Nix/publishing image,
+deployed HTTPS identity, operational generation, provider delivery or global
+capacity. A subsequent admitted source, dependency or build-setting change
+requires preparation and verification again.
+
+Earlier attempts remain intact rather than being overwritten by this result:
+
+| Receipt | Recorded outcome and limitation |
+| --- | --- |
+| [October 26](../../reports/release-rehearsal/2026-10-26/summary.json) | Capsules were built and round-trip verified; the source guard rejected concurrent application changes. |
+| [October 27 retry](../../reports/release-rehearsal/2026-10-27/summary.json) | Verified capsules were reused and changed MaxCore rebuilt; the source guard rejected concurrent configuration/script changes. |
+| [Earlier cold check](../../reports/release-rehearsal/2026-10-27-final/summary.json) | Cold scope passed, but later archive review found an old cluster-test bundle and source-identity scratch noise. |
+| [Platform cold check](../../reports/release-rehearsal/2026-10-27-platform-final/summary.json) | Cold scope passed and scratch hygiene was corrected; the [audit](../../reports/release-rehearsal/2026-10-27-platform-final/hygiene-audit.json) recorded that the subsequent published-target guard made its source stale. |
+
+The shared scratch policy excludes both directory families from source copies,
+release identity and application member selection. Regressions prove omission
+without deleting the original scratch trees and retain identity binding for real
+runtime changes. Cached capsules are reused only through their existing checksum
+and source/policy identity validation.
 
 ## Preparation sequence
 

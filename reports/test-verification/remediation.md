@@ -1,15 +1,15 @@
 # Actionable test and feature repair guide
 
-Generated: `2026-10-26T23:51:02.841386+00:00`. Status: **needs_work**. Unresolved tasks: **3421**.
+Generated: `2026-10-27T22:10:15.293617+00:00`. Status: **needs_work**. Unresolved tasks: **3409**.
 
 Observations come from the linked reports. A likely diagnosis is not a confirmed application bug. Run the reproduction command in the prepared isolated environment, complete the listed actions, and retain fresh proof. Generating this guide does not change a test result.
 
 | Task kind | Unresolved |
 | --- | ---: |
-| assertion_failure | 9 |
+| assertion_failure | 1 |
 | blocked_check | 20 |
-| command_failure | 3 |
-| coverage_gap | 2494 |
+| command_failure | 1 |
+| coverage_gap | 2492 |
 | feature_acceptance_gap | 832 |
 | mapping_gap | 14 |
 | missing_execution | 29 |
@@ -19,23 +19,22 @@ Observations come from the linked reports. A likely diagnosis is not a confirmed
 
 | Observed boundary / diagnosis | Tasks |
 | --- | ---: |
-| Source-defined behavior lacks the required execution/feature evidence. | 3322 |
+| Source-defined behavior lacks the required execution/feature evidence. | 3320 |
 | This check was not executed under its required conditions. | 69 |
 | The source inventory cannot resolve the actual target of a dynamic registration or interaction. | 14 |
-| Authorization/session setup and application behavior must be distinguished before changing this expectation. | 5 |
-| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 5 |
 | A required capability/readiness condition was not established. | 3 |
-| The deletion test imports a source module that is absent from this checkout. | 3 |
+| The deletion test imports a source module that is absent from this checkout. | 2 |
+| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 1 |
 
 Machine details, exact uncovered source locations and platform acceptance IDs are in `remediation.json`. The platform register provides every page/API/control requirement; these tasks link to it without copying the entire register.
 
-This Markdown shows the first 100 prioritized tasks of 3421. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
+This Markdown shows the first 100 prioritized tasks of 3409. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
 
 ## `repair-e9ca68ef654083c1` — coverage
 
 Source: `scripts/testing/run-all.py`. Group: `coverage`. Kind: `command_failure`. Priority: **P1**.
 
-Observed: Failed to parse file://./client/src/components/studio/StudioLoader.tsx. Excluding it from coverage.  Error [RollupError]: Expression expected     at getRollupError (file://./node_modules/rollup/dist/es/shared/parseAst.js:317:41)     at convertProgram (file://./node_modules/rollup/dist/es/shared/parseAst.js:1132:26)     at parseAstAsync (file://./node_modules/rollup/dist/es/shared/parseAst.js:2122:106)     at V8CoverageProvider.remapCoverage (file://./node_modules/@vitest/coverage-v8/dist/provider.js:133:10)     at file://./node_modules/@vitest/coverage-v8/dist/provider.js:119:23     at async Promise.all (index 2)     at V8CoverageProvider.getCoverageMapForUncoveredFiles (file://./node_modules/@vitest/coverage-v8/dist/provider.js:109:4)     at V8CoverageProvider.generateCoverage (file://./node_modules/@vitest/coverage-v8/dist/provider.js:56:29)
+Observed: [21:54:51.510] INFO (18084): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [21:54:53.472] WARN (18539): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [21:54:53.495] WARN (18539): Push unsubscribe error:     err: {
 
 Diagnosis (**needs_verification**): A required capability/readiness condition was not established.
 
@@ -52,170 +51,6 @@ Required changes:
 1. Capture the disposable service readiness details and identify the exact unavailable component or candidate-quality gate.
 2. Implement or configure the required operational capability and verify actual text/media output, quality and durable delivery with the same public-signal conditioning.
 3. Keep separate unconfigured-state 503 tests and configured-state success tests. Do not forge a certificate, report model_loaded=true without proof, or turn a failing readiness gate into a blanket 200.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-7a7070bc901258d0` — http
-
-Source: `scripts/testing/run-all.py`. Group: `http`. Kind: `command_failure`. Priority: **P1**.
-
-Observed: e4efa912942c9b9b3e328fc5b9fa7a4a046f056b994b4066fd",     "tests/feature-storefront-dns.test.ts": "2831eb5748f4a2de2098c06881fabaa37c24d09f0078b6aa630cf83d992b645c",     "vitest.integration.config.ts": "b13108817eae6a92fef7f1ea9c4a34e1502582d3f1f77a366c7f074b6a2ffca5",     "scripts/testing/integration-browser.mjs": "9fa027334d8682fec28ba9a950b240fb0a7d660b523fb8c953c107a4deb8f84f"   },   "ephemeralDatabase": "pass",   "applicationRoutes": "pass",   "workerWorkingDirectory": "temporary fixture; source root used only for module/test resolution",   "trustedProxy": "Exact loopback fixture origin receives TLS forwarding and stable TEST-NET identities per file/client; hostile probes use distinct clients, production blocking and rate limits retained",   "exitCode": 1,   "signal": null,   "testProcessCleanup": {     "tracked": 28,     "remaining": []   },   "appProcessCleanup": {     "tracked": 3,     "remaining": []   },   "postgresCleanup": "pass",   "finishedAt": "2026-10-26T23:45:02.313Z" }
-
-Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
-
-Evidence: `reports/test-verification/orchestration/http.txt`.
-
-Reproduce from the documented working directory:
-
-```sh
-node scripts/testing/integration-browser.mjs
-```
-
-Required changes:
-
-1. Reproduce the exact named case in scripts/testing/run-all.py using the command below and inspect its first expected/actual difference.
-2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
-3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
-4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-4d327e61442a4e66` — AI Analytics & Fanbase Insights — Real Data Endpoints > GET /api/analytics/anomalies → 200 with anomalies array
-
-Source: `tests/ai-analytics-integration.test.ts`. Group: `http`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected [ 200, 401, 404 ] to include 403
-
-Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
-
-Evidence: `reports/test-verification/integration-browser/http/integration.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C MAXBOOSTER_PYTHON="${MAXBOOSTER_PYTHON:-python3}" node scripts/testing/integration-browser.mjs tests/ai-analytics-integration.test.ts
-```
-
-Required changes:
-
-1. Reproduce the exact named case in tests/ai-analytics-integration.test.ts using the command below and inspect its first expected/actual difference.
-2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
-3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
-4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-b41c7432b1939abc` — Critical Path Tests - Production Readiness > 11. Security > should return 404 for non-existent API routes
-
-Source: `tests/critical-paths.test.ts`. Group: `http`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected 403 to be 404 // Object.is equality
-
-Diagnosis (**needs_verification**): Authorization/session setup and application behavior must be distinguished before changing this expectation.
-
-Evidence: `reports/test-verification/integration-browser/http/integration.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C MAXBOOSTER_PYTHON="${MAXBOOSTER_PYTHON:-python3}" node scripts/testing/integration-browser.mjs tests/critical-paths.test.ts
-```
-
-Required changes:
-
-1. Inspect the isolated registration/login response, required adult birthdate, CSRF token, cookie jar, host/scheme and session persistence before the first failing protected request.
-2. Compare the successful 80-page authentication fixture with this test's request setup. Repair missing valid input or cookie/CSRF propagation in the fixture when proven.
-3. If valid owned credentials still fail, fix the actual session/authorization implementation and add an owner-versus-other-user regression. Do not bypass CSRF, MFA or ownership checks.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-48da66fe020a9673` — Critical Path Tests - Production Readiness > 12. OAuth Connection Graceful Failures > should return error for unsupported platform
-
-Source: `tests/critical-paths.test.ts`. Group: `http`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected 403 to be 400 // Object.is equality
-
-Diagnosis (**needs_verification**): Authorization/session setup and application behavior must be distinguished before changing this expectation.
-
-Evidence: `reports/test-verification/integration-browser/http/integration.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C MAXBOOSTER_PYTHON="${MAXBOOSTER_PYTHON:-python3}" node scripts/testing/integration-browser.mjs tests/critical-paths.test.ts
-```
-
-Required changes:
-
-1. Inspect the isolated registration/login response, required adult birthdate, CSRF token, cookie jar, host/scheme and session persistence before the first failing protected request.
-2. Compare the successful 80-page authentication fixture with this test's request setup. Repair missing valid input or cookie/CSRF propagation in the fixture when proven.
-3. If valid owned credentials still fail, fix the actual session/authorization implementation and add an owner-versus-other-user regression. Do not bypass CSRF, MFA or ownership checks.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-d78967a2639d7eb5` — Critical Path Tests - Production Readiness > 13. Logout > should logout successfully
-
-Source: `tests/critical-paths.test.ts`. Group: `http`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected 403 to be 200 // Object.is equality
-
-Diagnosis (**needs_verification**): Authorization/session setup and application behavior must be distinguished before changing this expectation.
-
-Evidence: `reports/test-verification/integration-browser/http/integration.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C MAXBOOSTER_PYTHON="${MAXBOOSTER_PYTHON:-python3}" node scripts/testing/integration-browser.mjs tests/critical-paths.test.ts
-```
-
-Required changes:
-
-1. Inspect the isolated registration/login response, required adult birthdate, CSRF token, cookie jar, host/scheme and session persistence before the first failing protected request.
-2. Compare the successful 80-page authentication fixture with this test's request setup. Repair missing valid input or cookie/CSRF propagation in the fixture when proven.
-3. If valid owned credentials still fail, fix the actual session/authorization implementation and add an owner-versus-other-user regression. Do not bypass CSRF, MFA or ownership checks.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-dc0798cbd7d2eff0` — Critical Path Tests - Production Readiness > 13. Logout > should not access protected routes after logout
-
-Source: `tests/critical-paths.test.ts`. Group: `http`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected 403 to be 401 // Object.is equality
-
-Diagnosis (**needs_verification**): Authorization/session setup and application behavior must be distinguished before changing this expectation.
-
-Evidence: `reports/test-verification/integration-browser/http/integration.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C MAXBOOSTER_PYTHON="${MAXBOOSTER_PYTHON:-python3}" node scripts/testing/integration-browser.mjs tests/critical-paths.test.ts
-```
-
-Required changes:
-
-1. Inspect the isolated registration/login response, required adult birthdate, CSRF token, cookie jar, host/scheme and session persistence before the first failing protected request.
-2. Compare the successful 80-page authentication fixture with this test's request setup. Repair missing valid input or cookie/CSRF propagation in the fixture when proven.
-3. If valid owned credentials still fail, fix the actual session/authorization implementation and add an owner-versus-other-user regression. Do not bypass CSRF, MFA or ownership checks.
 
 Proof needed:
 
@@ -244,116 +79,6 @@ Required changes:
 2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
 3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
 4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-851671d7715b19c3` — ci
-
-Source: `scripts/testing/run-all.py`. Group: `root`. Kind: `command_failure`. Priority: **P1**.
-
-Observed: e [23:31:58.834] INFO (373954): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [23:32:00.185] INFO (373975): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [23:32:00.209] INFO (373975): 📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend [23:32:00.256] INFO (373975): Sharp module loaded for image processing [23:32:00.645] INFO (373975): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source [23:32:06.228] INFO (374236): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [23:32:09.727] INFO (374442): [MaxCoreAI] Configured — local subsystem: http://[REDACTED]:8090 | MaxCore is the only AI source JUNIT report written to ./test-results.xml
-
-Diagnosis (**confirmed**): The deletion test imports a source module that is absent from this checkout.
-
-Evidence: `reports/test-verification/orchestration/ci.txt`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:ci
-```
-
-Required changes:
-
-1. Trace the current PocketStorageService.deleteNamedObject implementation and the historical DeletionOutbox contract.
-2. Restore the intended durable deletion-outbox implementation if still required, or port this regression to the supported deletion owner while preserving pending-delete, retry/restart and acknowledgement assertions.
-3. Add failure injection proving deleted content cannot reappear after a restart; do not add an empty class merely to satisfy the import.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-50fb67d4f94f4fba` — Beat Money Loop private audio identity > binds the existing admin to generation, polling and durable download without starting a cycle
-
-Source: `tests/unit/beat-audio-generation-owner.test.ts`. Group: `root-unit`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected 'Parametric instrumental synthesis wit…' to contain '128 BPM'
-
-Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
-
-Evidence: `reports/test-verification/root/unit.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/beat-audio-generation-owner.test.ts
-```
-
-Required changes:
-
-1. Reproduce the exact named case in tests/unit/beat-audio-generation-owner.test.ts using the command below and inspect its first expected/actual difference.
-2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
-3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
-4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-8efdf67f1b4046c8` — authenticated async video generation contract > keeps async video errors private and polling bound to the session owner
-
-Source: `tests/unit/social-url-maxcore-contract.test.ts`. Group: `root-unit`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected '"/video-job/:jobId",\n  requireAuthOn…' to contain 'ffmpegJob.userId !== req.user?.id'
-
-Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
-
-Evidence: `reports/test-verification/root/unit.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/social-url-maxcore-contract.test.ts
-```
-
-Required changes:
-
-1. Reproduce the exact named case in tests/unit/social-url-maxcore-contract.test.ts using the command below and inspect its first expected/actual difference.
-2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
-3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
-4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-2922102765606008` — explicit social generation inputs and private failures > requires explicit direction in music-video studio and redacts its failures
-
-Source: `tests/unit/social-url-maxcore-contract.test.ts`. Group: `root-unit`. Kind: `assertion_failure`. Priority: **P1**.
-
-Observed: expected '"/generate-music-video",\n  requireAu…' to contain 'hasExplicitDirection'
-
-Diagnosis (**needs_verification**): Authorization/session setup and application behavior must be distinguished before changing this expectation.
-
-Evidence: `reports/test-verification/root/unit.junit.xml`.
-
-Reproduce from the documented working directory:
-
-```sh
-env -i PATH="$PATH" LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/social-url-maxcore-contract.test.ts
-```
-
-Required changes:
-
-1. Inspect the isolated registration/login response, required adult birthdate, CSRF token, cookie jar, host/scheme and session persistence before the first failing protected request.
-2. Compare the successful 80-page authentication fixture with this test's request setup. Repair missing valid input or cookie/CSRF propagation in the fixture when proven.
-3. If valid owned credentials still fail, fix the actual session/authorization implementation and add an owner-versus-other-user regression. Do not bypass CSRF, MFA or ownership checks.
 
 Proof needed:
 
@@ -2815,6 +2540,286 @@ npm run test:all -- --plan
 Required changes:
 
 1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-deesser.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-fa87eaff38eed73d` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-analog.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-analog.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-d9c376c2bb03ec07` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-dub.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-dub.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-b368e4bda68acca9` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-grain.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-grain.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-f2bf31304bfb68e7` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-mod.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-mod.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-1698a976b35b9840` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-multi.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-multi.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-b3633d80b81ff8fa` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-pingpong.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-pingpong.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-9253a58e8812bc9f` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-reverse.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-reverse.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-b3b03fc7a6eba8b2` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-slapback.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-slapback.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-e351da1b59a2c2dc` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-stereo.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-stereo.ts. Follow its actual caller, route/owner and persistence boundary.
+2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
+3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
+4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-4eed3d57375e9e0f` — Unexecuted source branches/functions
+
+Source: `built-in plugins dsp/mb-delay-tape.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
+
+Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
+
+Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
+
+Evidence: `reports/test-verification/coverage/coverage-final.json`.
+
+Reproduce from the documented working directory:
+
+```sh
+npm run test:all -- --plan
+```
+
+Required changes:
+
+1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-tape.ts. Follow its actual caller, route/owner and persistence boundary.
 2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
 3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
 4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.

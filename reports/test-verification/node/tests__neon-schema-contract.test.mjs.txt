@@ -2,39 +2,45 @@ TAP version 13
 # Subtest: schema gate distinguishes a missing table from missing columns
 ok 1 - schema gate distinguishes a missing table from missing columns
   ---
-  duration_ms: 1.375394
+  duration_ms: 1.27302
   type: 'test'
   ...
 # Subtest: same-named tables in another schema cannot satisfy the contract
 ok 2 - same-named tables in another schema cannot satisfy the contract
   ---
-  duration_ms: 0.229997
+  duration_ms: 0.130838
   type: 'test'
   ...
 # Subtest: additional historical columns are preserved, not reported as removals
 ok 3 - additional historical columns are preserved, not reported as removals
   ---
-  duration_ms: 0.120982
+  duration_ms: 0.187923
   type: 'test'
   ...
 # Subtest: missing Neon configuration fails instead of targeting the managed DB
 ok 4 - missing Neon configuration fails instead of targeting the managed DB
   ---
-  duration_ms: 0.547886
+  duration_ms: 0.488557
   type: 'test'
   ...
 # Subtest: prelaunch checks the selected app database schema, not just SELECT 1
 ok 5 - prelaunch checks the selected app database schema, not just SELECT 1
   ---
-  duration_ms: 0.415627
+  duration_ms: 0.389287
   type: 'test'
   ...
-1..5
-# tests 5
+# Subtest: the required schema includes the complete durable replica-migration journal
+ok 6 - the required schema includes the complete durable replica-migration journal
+  ---
+  duration_ms: 268.952072
+  type: 'test'
+  ...
+1..6
+# tests 6
 # suites 0
-# pass 5
+# pass 6
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 151.780057
+# duration_ms 759.981909

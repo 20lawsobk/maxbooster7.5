@@ -191,7 +191,7 @@
     "file": "external/maxcore/artifacts/ai-training-server/ai_model/awareness/test_sources.py",
     "group": "python",
     "status": "executed",
-    "sourceSha256": "4f9419b4a6e1d4bc1ffed90bdcc26b5eb113cf2f5061891d60de6b10a1febdf0",
+    "sourceSha256": "0ae884972b2c7f1368818caa171110f699dbfc14ee80eebeeae2670c00d53e03",
     "evidence": [
       {
         "status": "passed",
@@ -1706,7 +1706,7 @@
     "file": "scripts/testing/common.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "8cb2ccbbedff2a4102df1f85e9ea76af46141ca29839795792b36eb807c3d814",
+    "sourceSha256": "29b1af5de5defcbb4c82853dced9275db8260a9dd74a9c17ff6765b80a9d13bb",
     "evidence": [],
     "prerequisites": []
   },
@@ -1714,7 +1714,15 @@
     "file": "scripts/testing/generate-catalog.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "2492e0abd43f9c89039e8882af8c1a6c9add779f1d5d0550b4ed36bfbbd99bcc",
+    "sourceSha256": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "scripts/testing/generate-platform-plan.py",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "92322ef9dd196e67e135dab63766f4d7edca0e20fd72a0a1ecf0bac9d8896e23",
     "evidence": [],
     "prerequisites": []
   },
@@ -1768,7 +1776,7 @@
     "file": "scripts/testing/run-all.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "ed1f68d72e142323b7013ab2ec38d05774423f7a2241188ae805dc707d83646d",
+    "sourceSha256": "f40f9eaf6ab65cb6871493a0a5ce51ace1339fae8cb45d5d195b49de0aca9d2e",
     "evidence": [],
     "prerequisites": []
   },
@@ -1832,7 +1840,7 @@
     "file": "scripts/testing/summarize-results.py",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "34cf6a35e6af4f9a25d68a5c6d52125acbe15a0543ea60d0ceb4e226c0b8a767",
+    "sourceSha256": "a9e5d062edf1f292b5d26212e430e320db6820c3717272e8226ab6a0ed1a9b30",
     "evidence": [],
     "prerequisites": []
   },
@@ -2944,8 +2952,8 @@
   {
     "file": "tests/ai-analytics-integration.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "dd9932419c8c625bfe9a59d0812b15839025a926ae39adbd203899b51a47e859",
+    "status": "executed",
+    "sourceSha256": "9cfcbc14247c7b2a5bc358105069192d6c6421df1e6b589e7b7f1727fe7e8ded",
     "evidence": [
       {
         "status": "passed",
@@ -2984,7 +2992,11 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
+        "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
+      },
+      {
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
@@ -3653,6 +3665,30 @@
     "prerequisites": []
   },
   {
+    "file": "tests/contracts/helpers-contract-hooks.mjs",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "48eb4c6078fe81ce53bd87ce5c76f08bd50edc0193011da73a62a00ac67a1cba",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/contracts/helpers-hybrid-storage-contracts.mjs",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "0ebb230bf69f7100f0d2e868314a628a7351d31ef2820217e02a895a6d19e73c",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/contracts/helpers-social-media-job-contracts.mjs",
+    "group": "runner-support",
+    "status": "support",
+    "sourceSha256": "b9bddd752e56fc4e9927edea1b4b8248a15844a6689d13c5a36fd99d573df56f",
+    "evidence": [],
+    "prerequisites": []
+  },
+  {
     "file": "tests/coverage-gaps.config.ts",
     "group": "runner-support",
     "status": "support",
@@ -3661,10 +3697,200 @@
     "prerequisites": []
   },
   {
+    "file": "tests/coverage/hybrid-storage-live-repository.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "899ce3cecc593a36e214c2dd06767a4c859ecc19881087b687a80547cb627ebe",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/coverage/social-media-jobs-live-repository.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "2f08d278b548dfc49e78214c77691db4005e0edeafc6aab343b41ba8e35b52ed",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/coverage-unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/critical-paths.test.ts",
     "group": "integration-browser",
-    "status": "failed",
-    "sourceSha256": "1828910efd69e9dff34cdd4c7c70e3705ca32d644b1a0735234ff90ccab162fd",
+    "status": "executed",
+    "sourceSha256": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815",
     "evidence": [
       {
         "status": "passed",
@@ -3851,19 +4077,19 @@
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/integration-browser/http/integration.junit.xml"
       }
     ],
@@ -4055,7 +4281,7 @@
     "file": "tests/deployment-remainder-contract.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "d5a981b451ff0492af134fad69f9dc03f1eac39b6de5f936559867d1b7e2331a",
+    "sourceSha256": "3d065e31199fa0d870c22f1e05b62624a3a6aca84e5ce223e34ae42d544de53f",
     "evidence": [
       {
         "status": "passed",
@@ -4207,6 +4433,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/fabric-migration-outbox-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "a5fa879468e24aa154cfe55b4a7cdaea1e67ea6b9c57a6a1a2a02eaaa33f72c0",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__fabric-migration-outbox-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/fabric-object-lineage.test.mjs",
     "group": "root-node",
     "status": "executed",
@@ -4223,7 +4462,7 @@
     "file": "tests/fabric-replica-generation.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "9cb6ee9d2a12a6d88be04f17c28d44555dca1ce6902f81c4208ad32319575649",
+    "sourceSha256": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
     "evidence": [
       {
         "status": "passed",
@@ -5360,7 +5599,7 @@
     "file": "tests/hybrid-storage-postgres.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "9d1455806be56c3ec9b54caf8dfef65dcbeb21d34ef2f5976524137fb9f0b7fe",
+    "sourceSha256": "1d14534e3b0f4c301ba31dc841886a058f624429cf118d7d41790825cf96c47c",
     "evidence": [
       {
         "status": "passed",
@@ -5570,7 +5809,7 @@
     "file": "tests/neon-schema-contract.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "9abe180c806608133897cfca7a0a7fc4a728021796a50e9ff69da9d0aefd56bc",
+    "sourceSha256": "d2364bfe95f0f149a2bffcd7e020121d2f1e51b4799abd5f6ae47546eff8ae6a",
     "evidence": [
       {
         "status": "passed",
@@ -6762,6 +7001,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/security-alert-recipients-postgres.test.mjs",
+    "group": "root-node",
+    "status": "executed",
+    "sourceSha256": "e70b71cba793d47cc87bc0d58e5f4eb088c3c1ddc772ecd2b5fb4129ef7913d6",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/node/tests__security-alert-recipients-postgres.test.mjs.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/security-hardening.test.ts",
     "group": "integration-browser",
     "status": "executed",
@@ -6915,7 +7167,7 @@
     "file": "tests/social-media-jobs-postgres.test.mjs",
     "group": "root-node",
     "status": "executed",
-    "sourceSha256": "e4f5b186da1f9f48e08edaecc3717b4ce8020511d4d25ee47d88e42bd20836e2",
+    "sourceSha256": "5fe08b3e9e165912015390eea710837033a8225e4e218f104eb73593fe578086",
     "evidence": [
       {
         "status": "passed",
@@ -7133,6 +7385,19 @@
     "prerequisites": []
   },
   {
+    "file": "tests/testing/test_platform_plan.py",
+    "group": "python",
+    "status": "executed",
+    "sourceSha256": "5ee9f4e7f872cc4c20aa69a71ff444e0eedc6d5e80e01c61ae4838f43589a637",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/python/tests__testing__test_platform_plan.txt"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
     "file": "tests/testing/test_remediation.py",
     "group": "python",
     "status": "executed",
@@ -7149,7 +7414,7 @@
     "file": "tests/testing/test_summary_results.py",
     "group": "python",
     "status": "executed",
-    "sourceSha256": "278d820406ba97c9fb3d29fc7aeaa9ce9980ab0daa9708706229b3237f19befe",
+    "sourceSha256": "fb5b6359a39d2c46f1bf7f2132f1371bfd246a43dcea1182215aed1c64097bd7",
     "evidence": [
       {
         "status": "passed",
@@ -8337,11 +8602,11 @@
   {
     "file": "tests/unit/beat-audio-generation-owner.test.ts",
     "group": "root-unit",
-    "status": "failed",
-    "sourceSha256": "a6add4a541f025528ada7d785ec2a5e9e8c3c08740dfa128ac1edcdc0437135d",
+    "status": "executed",
+    "sourceSha256": "0fa647507c6838269eb0269b0366db6a65bb2a1e5f213477c6b0024266673f71",
     "evidence": [
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
@@ -14922,7 +15187,7 @@
     "file": "tests/unit/pdim-canonical-owner.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "42ddfffd07f4d405b316e097db9e09fa50f062bfe50d57e89c3d3047042ee47b",
+    "sourceSha256": "fa9b9ca45054ded762c34a836afd6ddab3ac4bdcdda2e84e8f6a6e45278026f3",
     "evidence": [
       {
         "status": "passed",
@@ -15502,8 +15767,12 @@
     "file": "tests/unit/production-simulation-copy.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "74ba2a45fa4f3a69845146b43be3ae44eef8b1c430fbd723e3e62a600241d0b3",
+    "sourceSha256": "f1a1f6c1f569b9075779864e6e99ca685175e315e1fed7c9a5d6457e76afdbfd",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -17670,8 +17939,80 @@
     "file": "tests/unit/selfHealingSecurityEngine.test.ts",
     "group": "root-unit",
     "status": "executed",
-    "sourceSha256": "a64dcc8dc8b9e9bed66828eee28b4b2099bd3c5509bb03ccc83f6ab36832befe",
+    "sourceSha256": "736e61bc439911c6079da4e0ee2c5bc1653e72b1143374ab2c2c92ff3891408b",
     "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      },
       {
         "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
@@ -18318,8 +18659,8 @@
   {
     "file": "tests/unit/social-url-maxcore-contract.test.ts",
     "group": "root-unit",
-    "status": "failed",
-    "sourceSha256": "5465d557205149cd8d6ea3bc0e059481435daa9cdfc794700182e2e82638b3c6",
+    "status": "executed",
+    "sourceSha256": "4473f1da2b61774cd8a577e69a592be366b044f16b7c77621a75cd868a3e8ab4",
     "evidence": [
       {
         "status": "passed",
@@ -18346,7 +18687,7 @@
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
@@ -18354,7 +18695,7 @@
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
-        "status": "failed",
+        "status": "passed",
         "evidence": "reports/test-verification/root/unit.junit.xml"
       },
       {
@@ -18929,6 +19270,19 @@
     "group": "root-unit",
     "status": "executed",
     "sourceSha256": "306b27923adb54f3254a45d92c2f73300f86f6258655add6ba208094472c2d4b",
+    "evidence": [
+      {
+        "status": "passed",
+        "evidence": "reports/test-verification/root/unit.junit.xml"
+      }
+    ],
+    "prerequisites": []
+  },
+  {
+    "file": "tests/unit/studio-loader-browser.test.ts",
+    "group": "root-unit",
+    "status": "executed",
+    "sourceSha256": "af63e70a0b3657caf24f149da4a71ebba0b6b8d87baf80bbe437d7b7c4c2bf73",
     "evidence": [
       {
         "status": "passed",
@@ -19792,7 +20146,7 @@
     "file": "vitest.config.ts",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "7a81637a04bfbd87620db2dda1145ed6771384292a923caf70ac6a8ae9c07ccb",
+    "sourceSha256": "70a05b445fc97945d94580970864ffc302f17f41b6c8fc75dfdb203aa7cc8647",
     "evidence": [],
     "prerequisites": []
   },
@@ -19808,7 +20162,7 @@
     "file": "vitest.platform.config.ts",
     "group": "runner-support",
     "status": "support",
-    "sourceSha256": "87d482e96c41db7d1ad2e1e576bbc2dc9fa43ce4e0c385a612f6cf1158b69a1c",
+    "sourceSha256": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
     "evidence": [],
     "prerequisites": []
   }

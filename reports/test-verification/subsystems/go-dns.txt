@@ -1,13 +1,13 @@
-{"Time":"2026-10-26T23:41:33.310253769Z","Action":"start","Package":"github.com/maxbooster/dns-authoritative"}
-{"Time":"2026-10-26T23:41:33.314419902Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting"}
-{"Time":"2026-10-26T23:41:33.314465Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"=== RUN   TestPatchedPGXParsesConfigWithoutConnecting\n"}
-{"Time":"2026-10-26T23:41:33.314573324Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"--- PASS: TestPatchedPGXParsesConfigWithoutConnecting (0.00s)\n"}
-{"Time":"2026-10-26T23:41:33.314579142Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Elapsed":0}
-{"Time":"2026-10-26T23:41:33.314601706Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip"}
-{"Time":"2026-10-26T23:41:33.314605332Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"=== RUN   TestRecordConstructionAndWireRoundtrip\n"}
-{"Time":"2026-10-26T23:41:33.314646634Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"[zonestore] buildRR error (A example.invalid.): dns: bad A A: \"not-an-address\" at line: 1:40\n"}
-{"Time":"2026-10-26T23:41:33.314682068Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"--- PASS: TestRecordConstructionAndWireRoundtrip (0.00s)\n"}
-{"Time":"2026-10-26T23:41:33.314687025Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Elapsed":0}
-{"Time":"2026-10-26T23:41:33.314689018Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"PASS\n"}
-{"Time":"2026-10-26T23:41:33.315032746Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"ok  \tgithub.com/maxbooster/dns-authoritative\t0.004s\n"}
-{"Time":"2026-10-26T23:41:33.315060318Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Elapsed":0.005}
+{"Time":"2026-10-27T22:01:33.093057888Z","Action":"start","Package":"github.com/maxbooster/dns-authoritative"}
+{"Time":"2026-10-27T22:01:33.095972146Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting"}
+{"Time":"2026-10-27T22:01:33.096084686Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"=== RUN   TestPatchedPGXParsesConfigWithoutConnecting\n"}
+{"Time":"2026-10-27T22:01:33.096109794Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Output":"--- PASS: TestPatchedPGXParsesConfigWithoutConnecting (0.00s)\n"}
+{"Time":"2026-10-27T22:01:33.096131677Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestPatchedPGXParsesConfigWithoutConnecting","Elapsed":0}
+{"Time":"2026-10-27T22:01:33.096154912Z","Action":"run","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip"}
+{"Time":"2026-10-27T22:01:33.096157776Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"=== RUN   TestRecordConstructionAndWireRoundtrip\n"}
+{"Time":"2026-10-27T22:01:33.096222664Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"[zonestore] buildRR error (A example.invalid.): dns: bad A A: \"not-an-address\" at line: 1:40\n"}
+{"Time":"2026-10-27T22:01:33.096229725Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Output":"--- PASS: TestRecordConstructionAndWireRoundtrip (0.00s)\n"}
+{"Time":"2026-10-27T22:01:33.096231928Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Test":"TestRecordConstructionAndWireRoundtrip","Elapsed":0}
+{"Time":"2026-10-27T22:01:33.096234161Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"PASS\n"}
+{"Time":"2026-10-27T22:01:33.096656269Z","Action":"output","Package":"github.com/maxbooster/dns-authoritative","Output":"ok  \tgithub.com/maxbooster/dns-authoritative\t0.003s\n"}
+{"Time":"2026-10-27T22:01:33.096689779Z","Action":"pass","Package":"github.com/maxbooster/dns-authoritative","Elapsed":0.004}

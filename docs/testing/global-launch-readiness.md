@@ -1,7 +1,10 @@
 # Launch readiness and remaining evidence
 
 This is the October 27, 2026 hardening checkpoint, based on baseline
-`4c72114a55a9425d4af743a72a71e4c58a532d2f` plus working-tree fixes.
+`b369d68e34bef0e30c96fbd5b72fa7339e6425f2` on
+`sophia/platform-production-hardening-2026-10-27`. The source, tests, focused
+evidence and exhaustive platform plan are pushed on that review branch. Main
+promotion remains conditional on the actual requested readiness gates.
 **Global launch readiness is not established.** The
 [targeted evidence snapshot](../../reports/test-verification/history/2026-10-26-targeted-hardening/README.md)
 preserves what has actually run, including a failing paid/billing HTTP recheck
@@ -10,7 +13,9 @@ followed by a passing recheck of the same focused scope. The later run records
 The [completed October 26 master](../../reports/test-verification/history/2026-10-26-integrated-before-rechecks/README.md)
 also preserves a full run with unchanged source inputs. It passed most isolated
 groups but retained three unit failures, five HTTP failures and failed
-coverage/evidence gates. Repairs and the final rerun are in progress. The
+coverage/evidence gates. The repaired October 27 master now completed from
+unchanged pushed source: all executable groups and ordinary checks pass;
+coverage and strict feature-evidence gates remain open. The
 [master results](results.md) must be read with their execution timestamp and
 source digests; later edits do not retroactively turn an earlier failure into
 a pass.
@@ -37,17 +42,19 @@ several healthy instances independently responding to `PING`.
 
 | Gate | Evidence required to close it | Current checkpoint |
 | --- | --- | --- |
-| Source integration | Integrate the repaired auth/billing HTTP flow and bounded cross-worker hybrid metadata/media-job repairs; run their real database/concurrency/owner tests. | SQL/codec/media-job tests and the private-file owner-isolation regression pass. Three unit assertions and five HTTP failures from the completed master are being repaired and rechecked. |
-| Complete master | Build; unit/additional/Node/Python/commerce/native suites; real browser and HTTP journeys; page observations; bounded load; recovery/operational checks; types, lint and production audit. Preserve actual exit codes and skipped/blocked cases. | The October 26 run completed with `sourceInputsUnchanged=true`: Node, Python, commerce, native, browser, scoped pages, bounded load, operations, build, types, lint and production audit passed. Root unit, HTTP, coverage and strict evidence gates failed. A final repaired-source run is pending. |
-| Coverage and contract evidence | Reach the owner's requested 100% for lines, statements, functions and branches, resolve live route mappings, and link passing exact assertions to the affected source contracts. Measure other languages separately. | The completed October 26 profile measured 12.97% lines, 12.85% statements, 8.51% functions and 8.58% branches. The owner subsequently raised the target from 20% to 100%; changing the configured gate does not close that gap. The earlier profile also excluded one dormant StudioLoader file after a transform failure. Generated unlinked requirements are verification tasks, not a count of confirmed implementation bugs. |
-| Database release | Drain old storage writers/controllers, take the normal recoverable backup, apply the reviewed ordered migrations, verify schema and existing object/reference invariants, then start compatible writers. | Read-only configured Neon metadata found existing fabric tables but no deletion journal/reference-count additions required by `0096`. No production migration was executed. New persistence changes require their own ordered migrations. |
+| Source integration | Integrate the repaired auth/billing HTTP flow and bounded cross-worker hybrid metadata/media-job repairs; run their real database/concurrency/owner tests. | The repaired master passes 2,669 unit cases, 43 instrumented real-database contracts, 112 Node files and 484 HTTP cases with 9 explicit HTTP skips. The original three unit and five HTTP failures are closed. Fabric migration recovery, immutable replica fencing and schema contracts also pass their focused 25-leaf scope. Counts overlap and are not summed. |
+| Entire platform work inventory | Retain all 80 declarations and every page section, control, frontend contract, backend process, source/configuration/asset file and shared client/operational lane, with exact required acceptance work. | Inventory validation passes: 80 pages, 2,161 business sections, 12,966 detailed steps, 8,374 control declarations, 2,901 backend registrations, 932 frontend contracts and 20 shared lanes. This closes planning completeness only; execution acceptance remains separate. |
+| Complete master | Build; unit/additional/Node/Python/commerce/native suites; real browser and HTTP journeys; page observations; bounded load; recovery/operational checks; types, lint and production audit. Preserve actual exit codes and skipped/blocked cases. | The October 27 run completed in 21m17s with unchanged source inputs. Build, unit/additional/Node/Python/commerce/native/browser/HTTP/page/load/operations/types/lint checks pass. The overall command exits 1 for the 100% coverage target and strict evidence/remediation gates. The audit's configured high-severity gate passes but reports one newly observed moderate `qs` advisory requiring a separate repair. |
+| Coverage and contract evidence | Reach the owner's requested 100% for lines, statements, functions and branches, resolve live route mappings, and link passing exact assertions to the affected source contracts. Measure other languages separately. | The repaired profile measures 13.11% lines, 13.01% statements, 8.67% functions and 8.79% branches across 2,651 files, with 2,712 passing assertions and no transform exclusions. The 100% target is enforced and unmet. All 33,504 source-derived behavior checks still require exact acceptance links; these are verification tasks, not a count of confirmed product bugs. |
+| Database release | Drain old storage writers/controllers, take the normal recoverable backup, apply the reviewed ordered migrations, verify schema and existing object/reference invariants, then start compatible writers. | Read-only configured Neon metadata found existing fabric tables but no deletion journal/reference-count additions required by `0096`. No production migration was executed. The reviewed sequence now includes `0096` through `0099`; the migration journal is also bound to the ORM and prelaunch schema check. |
 | Legacy storage | Verify actual stored container headers before marking existing dependencies indexed; retain shared references and retryable deletion receipts. | Unknown legacy dependencies deliberately retain potential bases with `409`. Changing flags without header evidence cannot close this boundary. |
-| Cold release/startup | Produce a current-source release in a disposable Publishing/build copy; verify capsule manifests/hashes, restore without editor state, start private children, assert honest readiness and shutdown/restart/recovery. | Fresh dependency/native/Python capsule verification completed, then preparation correctly rejected changed application source. A current prepared release and cold startup remain pending. `build.sh` must not run in the source/editor checkout. |
+| Cold release/startup | Produce a current-source release in a disposable Publishing/build copy; verify capsule manifests/hashes, restore without editor state, start private children, assert honest readiness and shutdown/restart/recovery. | The final pushed-source portable payload passed all four commands and a 16-check independent audit. Actual source and payload match, scratch entries are absent and all 40 tracked descendants shut down. This closes portable cold-start scope only; isolated awareness/generation readiness remains false. Actual Replit Nix image/deployment proof remains separate. |
 | Public Replit deployment | Establish actual published HTTPS origin, deployed source/release identity, production health/readiness and enabled browser journeys after deployment. | Only the project URL is established. Two guessed host probes returned generic 404; their identity is unverified. |
 | External providers | Verify enabled OAuth callbacks/permissions, payment confirmation and signed webhook processing, email/distribution/social delivery and durable retry/receipt behavior in the selected environment. | Dedicated Stripe TEST API acceptance is partial and API-only. Production provider readiness remains unverified rather than inferred from secret configuration. |
 | Generation delivery | Verify each advertised mode from its real page through Node, live awareness and the selected MaxCore renderer/engine; fetch, decode and verify owner-controlled output bytes and persisted receipts. | Specific model-free modes and the beat rendering/listing loop have targeted proof. General semantic generation and every consuming page are not established by those checks. |
 | Capacity and operations | Measure the deployed topology under bounded representative traffic, including generation admission, queueing, latency/error thresholds, restart/recovery and resource/connection limits. | The source fixture passed 150 paced requests across 10/20 worker phases with 100% success and p95 below 332 ms. Existing 90M figures project smaller measurements; no 90M simultaneous-client or global multi-region execution is recorded. |
 | Native Linux VST3 | Restore original JUCE/C++ source, build for Linux, and verify actual host/plugin processing if that native capability is advertised at launch. | Uploaded Windows binaries/build outputs do not supply the missing source. Browser Studio DSP has separate passing tests. |
+| Desktop, mobile and offline clients | Build and exercise each configured Electron/OS installer, mobile/PWA target, installation/update path and offline synchronization/account-isolation journey; keep device/hardware prerequisites explicit. | These are included in the entire-platform plan. The pushed checkpoint triggered both native workflows; GitHub reports that jobs could not start because the account is locked due to a billing issue. No build steps executed. Focused local runtime/transport policies do not certify the OS/device builds or full offline journeys. |
 
 The coverage target is now 100% for all four JS/TS metrics. The
 [ordered coverage batches](completion-execution-plan.md#execution-sequence-toward-100-coverage)
@@ -57,6 +64,16 @@ maps and retain separate Python/native measurement. Neither raising the gate
 nor removing untested source from a report is evidence that this work is done.
 Even valid 100% execution coverage would still need the deployment, provider,
 recovery, output-quality and capacity checks in this table.
+
+The [complete platform ledger](platform-completion-plan.md) and
+[all-page execution schedule](platform-work-schedule.md) retain every section
+and backend dependency, including aliases, unmounted process declarations and
+unrouted controls. Their completeness checks do not upgrade any unverified
+business behavior. The scoped media repository/handler/cleanup and hybrid SQL
+repository profiles reached 100% for all four metrics; these are individual
+files, not the platform-wide percentage. StudioLoader's separately source-mapped
+browser profile reached 100% lines/statements/functions and 98.57% branches;
+its counters are explicitly unmerged into the global unit-run profile.
 
 The migration package must identify the exact files included in the release,
 backup and recovery steps, writer-drain boundary, post-migration invariants and
@@ -73,6 +90,14 @@ publication and fresh snapshot provenance. Read
 `GET /api/health/awareness/ready` separately from aggregate application readiness.
 An expired snapshot or failed live source must remain a bounded unavailable
 response.
+
+The October 27 [canonical public acceptance](../../reports/live-awareness-acceptance/2026-10-27/canonical-public-pipeline-README.md)
+used four real public adapters and six validated GET hops. It published 105
+observations to the actual isolated PDIM owner, verified pointer/blob and source
+ledger hashes, and loaded the same fresh snapshot into a separate engine with
+matching context across all four domains. Expiration rejection and owned-process
+cleanup passed. This closes that live ingestion/publication/follower scope;
+it does not certify main Node generation, deployed readiness or output quality.
 
 The current model-free modes have specific meanings:
 

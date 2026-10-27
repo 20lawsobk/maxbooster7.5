@@ -3,37 +3,37 @@ TAP version 13
     # Subtest: owned immediate admission advances the due time without claiming provider success
     ok 1 - owned immediate admission advances the due time without claiming provider success
       ---
-      duration_ms: 9.39937
+      duration_ms: 8.67966
       type: 'test'
       ...
     # Subtest: worker claim winning the row lock rejects both subsequent admission paths
     ok 2 - worker claim winning the row lock rejects both subsequent admission paths
       ---
-      duration_ms: 8.145057
+      duration_ms: 8.061796
       type: 'test'
       ...
     # Subtest: only one SQL dispatcher claims after duplicate immediate admissions
     ok 3 - only one SQL dispatcher claims after duplicate immediate admissions
       ---
-      duration_ms: 12.536982
+      duration_ms: 13.808981
       type: 'test'
       ...
     # Subtest: all receipt representations and terminal states remain fenced
     ok 4 - all receipt representations and terminal states remain fenced
       ---
-      duration_ms: 21.678532
+      duration_ms: 15.224287
       type: 'test'
       ...
     # Subtest: schedule updates require the observed status and retain owned normalized content
     ok 5 - schedule updates require the observed status and retain owned normalized content
       ---
-      duration_ms: 7.802581
+      duration_ms: 3.517188
       type: 'test'
       ...
     1..5
 ok 1 - publish-now and schedule edits never reset a real racing worker claim or uncertain delivery
   ---
-  duration_ms: 1014.692717
+  duration_ms: 924.577514
   type: 'test'
   ...
 1..1
@@ -44,4 +44,4 @@ ok 1 - publish-now and schedule edits never reset a real racing worker claim or 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1515.717311
+# duration_ms 1397.998667

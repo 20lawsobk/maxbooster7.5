@@ -1,34 +1,33 @@
 {
-  "generatedAt": "2026-10-26T23:51:06.037615+00:00",
-  "sourceBaseline": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "generatedAt": "2026-10-27T22:10:28.909829+00:00",
+  "sourceBaseline": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
   "scope": "Final canonical evidence only; initial failures retained separately; no invented aggregate case total",
   "status": "failed",
   "productionReady": false,
   "inventory": {
-    "canonicalTestFiles": 610,
-    "supportSourceFiles": 64,
+    "canonicalTestFiles": 616,
+    "supportSourceFiles": 68,
     "retainedSnapshotFiles": 71,
     "nonExecutableSupportFiles": 10,
     "byGroup": {
       "commerce": 21,
       "integration-browser": 26,
       "manual-destructive-provider": 37,
-      "python": 119,
-      "root-node": 110,
-      "root-unit": 292,
-      "runner-support": 64,
+      "python": 120,
+      "root-node": 112,
+      "root-unit": 295,
+      "runner-support": 68,
       "subsystems": 5
     }
   },
   "groups": [
     {
       "group": "root-unit",
-      "status": "failed",
+      "status": "passed",
       "counts": {
-        "passed": 2646,
-        "failed": 3
+        "passed": 2669
       },
-      "total": 2649,
+      "total": 2669,
       "countScope": "JUnit cases"
     },
     {
@@ -41,14 +40,23 @@
       "countScope": "JUnit cases"
     },
     {
+      "group": "coverage-contracts",
+      "status": "passed",
+      "counts": {
+        "passed": 43
+      },
+      "total": 43,
+      "countScope": "Real database contracts instrumented in-process; assertions also run through Node entrypoints"
+    },
+    {
       "group": "node",
       "status": "passed",
       "fileCounts": {
-        "files": 110,
+        "files": 112,
         "failedFiles": 0,
         "counts": {
-          "tests": 507,
-          "pass": 505,
+          "tests": 547,
+          "pass": 545,
           "fail": 0,
           "skipped": 2,
           "cancelled": 0
@@ -60,7 +68,7 @@
       "group": "python",
       "status": "passed",
       "files": {
-        "passed": 106,
+        "passed": 107,
         "failed": 0,
         "timeout": 0,
         "skipped": 1,
@@ -68,7 +76,7 @@
         "empty": 0
       },
       "counts": {
-        "tests": 1225,
+        "tests": 1245,
         "failures": 0,
         "errors": 0,
         "skipped": 12
@@ -318,7 +326,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Projects\nYour Projects\n\n1 project total\n\nNew Project\nMy Projects\nSongwriting\nReview sync conflicts\nPage80 studio fixture\n\n10/26/2026\n\nSETUP\n10% Complete\n\nDisposable owned project\n\nPlay\nContinue",
+              "textSample": "Projects\nYour Projects\n\n1 project total\n\nNew Project\nMy Projects\nSongwriting\nReview sync conflicts\nPage80 studio fixture\n\n10/27/2026\n\nSETUP\n10% Complete\n\nDisposable owned project\n\nPlay\nContinue",
               "requestedPath": "/projects",
               "expectedPath": "/projects",
               "finalPath": "/projects",
@@ -431,9 +439,9 @@
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
               "textSample": "P.In\nP.Out\nLoop Rec\nTIME\n00:00.000\nBARS\n1.1.000\nBPM\nSIG\n4/4\nMASTER\n80\nPlugins\nAI Co-Producer\nGenerate\nPage80 studio fixture\nVersions\nSimple\nTRACKS\nFILES\nPLUGINS\nPRESETS\nAdd Track\n\nNo tracks yet.\n\nI/O\nKeys\nTimeline\nMixer\nFlow\n100%\nTrack\nAuto\nEditor\nLyrics\nAI\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n42\n43\n44\n45\n46\n47\n48\n49\n50\n51\n52\n53\n54\n55\n56\n57\n58\n59\n60\n\nStart Your Session\n\nAdd your first track to begin composing\n\nAudio\nInstrument\nMIDI\nBus\nINSPECTOR\n\nSelect a track to inspect its properties and plugin chain.",
-              "requestedPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-              "expectedPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-              "finalPath": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+              "requestedPath": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+              "expectedPath": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+              "finalPath": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": true,
@@ -444,7 +452,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "A\naccept_596e77c97e4dcf45\nPro\n1\nSongs\n0\nProjects\n0\nShows\nCREATE NEW\nSong\nMulti-track recording & arrangement\nProject\nAlbum mastering & production\nShow\nLive performance setlist\nDOCUMENTS\nRecent\n1\nSongs\n1\nProjects\n0\nShows\n0\nHelp & Tutorials\nRecent Documents\n\nPick up where you left off\n\nPage80 studio fixture\n0 tracks\nTemplates\nView All\nAll Templates\nRecording\nProduction\nMastering\nMy Templates\nEmpty Song\n0\nBuilt-in\nHip Hop Beat\n8 tracks\nBuilt-in\nPop Production\n10 tracks\nBuilt-in\nElectronic/EDM\n12 tracks\nBuilt-in\nR&B Soul\n8 tracks\nBuilt-in\nPodcast/Voice Recording\n4 tracks\nBuilt-in\nMastering Session",
+              "textSample": "A\naccept_e8e3e139080ee085\nPro\n1\nSongs\n0\nProjects\n0\nShows\nCREATE NEW\nSong\nMulti-track recording & arrangement\nProject\nAlbum mastering & production\nShow\nLive performance setlist\nDOCUMENTS\nRecent\n1\nSongs\n1\nProjects\n0\nShows\n0\nHelp & Tutorials\nRecent Documents\n\nPick up where you left off\n\nPage80 studio fixture\n0 tracks\nTemplates\nView All\nAll Templates\nRecording\nProduction\nMastering\nMy Templates\nEmpty Song\n0\nBuilt-in\nHip Hop Beat\n8 tracks\nBuilt-in\nPop Production\n10 tracks\nBuilt-in\nElectronic/EDM\n12 tracks\nBuilt-in\nR&B Soul\n8 tracks\nBuilt-in\nPodcast/Voice Recording\n4 tracks\nBuilt-in\nMastering Session",
               "requestedPath": "/studio",
               "expectedPath": "/studio",
               "finalPath": "/studio",
@@ -501,9 +509,9 @@
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
               "textSample": "Support\nTickets\nDetails\nPage80 owned support ticket\n\nStatus: open\n\nDisposable local support fixture\n\nSend reply",
-              "requestedPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-              "expectedPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-              "finalPath": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+              "requestedPath": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+              "expectedPath": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+              "finalPath": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": false,
@@ -584,7 +592,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Workspaces\nWorkspaces\n\nCollaborate with your team, label, or management\n\nCreate Workspace\nYour Workspaces\n\nAcceptance workspace 59512ef5\n\nmembers\n\nMember\nSelect a workspace\n\nChoose a workspace from the list to view details",
+              "textSample": "Workspaces\nWorkspaces\n\nCollaborate with your team, label, or management\n\nCreate Workspace\nYour Workspaces\n\nAcceptance workspace d174d9dc\n\nmembers\n\nMember\nSelect a workspace\n\nChoose a workspace from the list to view details",
               "requestedPath": "/workspaces",
               "expectedPath": "/workspaces",
               "finalPath": "/workspaces",
@@ -626,7 +634,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Assistant\nMax\nIn-House AI\n\nFull history saved across sessions\n\nHey accept_596e77c97e4dcf45! I'm Max \u2014 your in-house AI assistant, built by the B-Lawz Music team. I remember our full conversation history across every session. Ask me anything about Max Booster \u2014 Studio, distribution, royalties, marketplace, social media, advertising, analytics, and more. What can I help you with today?\nHow do I use the DAW studio?\nHow does music distribution work?\nTell me about the AI autopilot system\nHow do I monetize my music?\nWhat can Max Booster do for my career?\nHow does the beat marketplace work?",
+              "textSample": "Assistant\nMax\nIn-House AI\n\nFull history saved across sessions\n\nHey accept_e8e3e139080ee085! I'm Max \u2014 your in-house AI assistant, built by the B-Lawz Music team. I remember our full conversation history across every session. Ask me anything about Max Booster \u2014 Studio, distribution, royalties, marketplace, social media, advertising, analytics, and more. What can I help you with today?\nHow do I use the DAW studio?\nHow does music distribution work?\nTell me about the AI autopilot system\nHow do I monetize my music?\nWhat can Max Booster do for my career?\nHow does the beat marketplace work?",
               "requestedPath": "/assistant",
               "expectedPath": "/assistant",
               "finalPath": "/assistant",
@@ -682,10 +690,10 @@
               "scenario": "owned-record-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
-              "textSample": "Notifications\nDetails\nNotification\nSystem & Platform\nRead\nPage80 owned notification\n\n10/26/2026, 11:45:20 PM\n\nDisposable local notification\n\nDelete",
-              "requestedPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-              "expectedPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-              "finalPath": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+              "textSample": "Notifications\nDetails\nNotification\nSystem & Platform\nRead\nPage80 owned notification\n\n10/27/2026, 10:05:09 PM\n\nDisposable local notification\n\nDelete",
+              "requestedPath": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+              "expectedPath": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+              "finalPath": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": false,
@@ -696,7 +704,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Notifications\nNotifications\n\n2 unread\n\nMark all read\nClear all\nAll (3)\nUnread\n2\nSecurity & Account\n2\nDistribution\nSocial Scheduling\nDirect Interactions\nPlatform Suggestions\nContent Updates\nEngagement Summaries\nLocation & Local\nMarketplace\nRoyalties & Payments\nCollaboration\nAchievements\nSystem & Platform\nPlatform Admin\n\nPage80 owned notification\n\nDisposable local notification\n\nless than a minute ago\n\nNew Login Detected\n\nYour account was accessed from a new session (IP: 127.0.0.1). If this wasn't you, change your password immediately.\n\n1 minute ago\n\nNew Login Detected\n\nYour account was accessed ",
+              "textSample": "Notifications\nNotifications\n\n2 unread\n\nMark all read\nClear all\nAll (3)\nUnread\n2\nSecurity & Account\n2\nDistribution\nSocial Scheduling\nDirect Interactions\nPlatform Suggestions\nContent Updates\nEngagement Summaries\nLocation & Local\nMarketplace\nRoyalties & Payments\nCollaboration\nAchievements\nSystem & Platform\nPlatform Admin\n\nPage80 owned notification\n\nDisposable local notification\n\nless than a minute ago\n\nNew Login Detected\n\nYour account was accessed from a new session (IP: 127.0.0.1). If this wasn't you, change your password immediately.\n\nless than a minute ago\n\nNew Login Detected\n\nYour account was",
               "requestedPath": "/notifications",
               "expectedPath": "/notifications",
               "finalPath": "/notifications",
@@ -808,7 +816,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Press Kit\nPress Kit (EPK)\n\nBuild and manage your professional Electronic Press Kit.\n\nPreview EPK\nView Live\nDownload PDF\nCopy EPK Link\nGeneral\nMedia\nLinks\nPerformance\nArtist Information\nEssential details about your musical project.\nArtist/Band Name\nGenres (comma separated)\nShort Pitch (One sentence)\nFull Biography\nContact Information\nGeneral Contact Email\nBooking Email\nOfficial Website URL\n\nPublic Visibility\n\nWhen on, your EPK is viewable via a public link.\n\nCustom URL Slug\nhttp://localhost:35753/epk/\n\nLowercase letters, numbers and hyphens only. Will be applied when you save.\n\nhttp://localhost",
+              "textSample": "Press Kit\nPress Kit (EPK)\n\nBuild and manage your professional Electronic Press Kit.\n\nPreview EPK\nView Live\nDownload PDF\nCopy EPK Link\nGeneral\nMedia\nLinks\nPerformance\nArtist Information\nEssential details about your musical project.\nArtist/Band Name\nGenres (comma separated)\nShort Pitch (One sentence)\nFull Biography\nContact Information\nGeneral Contact Email\nBooking Email\nOfficial Website URL\n\nPublic Visibility\n\nWhen on, your EPK is viewable via a public link.\n\nCustom URL Slug\nhttp://localhost:34467/epk/\n\nLowercase letters, numbers and hyphens only. Will be applied when you save.\n\nhttp://localhost",
               "requestedPath": "/press-kit",
               "expectedPath": "/press-kit",
               "finalPath": "/press-kit",
@@ -909,9 +917,9 @@
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
               "textSample": "Admin\nSupport\nTickets\nDetails\nBack to tickets\nPage80 owned support ticket\nOpen\nMEDIUM\nDisposable local support fixture\nAdd\nConversation\n\nNo replies yet.\n\nSend reply",
-              "requestedPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-              "expectedPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-              "finalPath": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+              "requestedPath": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+              "expectedPath": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+              "finalPath": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": true,
@@ -922,7 +930,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Admin\nSupport\nOpen Tickets\n1\nIn Progress\n0\nAvg Response Time\n0h\nSatisfaction\n0%\nSupport Tickets\nView and manage customer support requests\nAll Status\nAll Priority\nSubject\tStatus\tPriority\tCategory\tCreated\tActions\nPage80 owned support ticket\tOPEN\tMEDIUM\tGeneral\t10/26/2026\t\nStart\nView",
+              "textSample": "Admin\nSupport\nOpen Tickets\n1\nIn Progress\n0\nAvg Response Time\n0h\nSatisfaction\n0%\nSupport Tickets\nView and manage customer support requests\nAll Status\nAll Priority\nSubject\tStatus\tPriority\tCategory\tCreated\tActions\nPage80 owned support ticket\tOPEN\tMEDIUM\tGeneral\t10/27/2026\t\nStart\nView",
               "requestedPath": "/admin/support",
               "expectedPath": "/admin/support",
               "finalPath": "/admin/support",
@@ -978,7 +986,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Admin\nDashboard\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n60%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nSystem Metrics\nCPU Usage\n1%\nMemory Usage\n69%\nDisk Usage\n68%\nNetwork I/O\nUnavailable\nUser Analytics\n\n3\n\nNew Users Today\n\n0\n\nTotal Revenue\n\nMonthly Growth\n+100%\nTop Countries\n\nNo data available\n\nRecent Activity\n\nNew user registered: workspace-56644ee6cb42df03@example.invalid\n\n",
+              "textSample": "Admin\nDashboard\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n54%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nSystem Metrics\nCPU Usage\n4%\nMemory Usage\n67%\nDisk Usage\n63%\nNetwork I/O\nUnavailable\nUser Analytics\n\n3\n\nNew Users Today\n\n0\n\nTotal Revenue\n\nMonthly Growth\n+100%\nTop Countries\n\nNo data available\n\nRecent Activity\n\nNew user registered: workspace-f9be4dd650311de8@example.invalid\n\n",
               "requestedPath": "/admin/dashboard",
               "expectedPath": "/admin/dashboard",
               "finalPath": "/admin/dashboard",
@@ -992,7 +1000,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Admin\nBeat Money Loop\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n60%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nBeat Money Loop\nPAUSED\nEnable\nRun cycle now\nAutonomous: scan trending music context \u2192 generate beat \u2192 list on the marketplace at a competitive price \u2192 optional organic promotion (MaxCore/PDIM, no paid spend) \u2192 wait for a completed marketplace order before marking the c",
+              "textSample": "Admin\nBeat Money Loop\nSystem Overview\n\nMonitor system health, security, and performance\n\nRefresh\n\nAudit Score\n\n92/100\n\nSecurity & Compliance\n\nTest Score\n\n/100\n\nQuality Assurance\n\nSystem Uptime\n\n54%\n\nAvailability\n\nActive Users\n\n0\n\nCurrently Online\n\nOverview\nBeat Loop\nAudit\nTesting\nPerformance\nUsers\nCompliance\nTokens\nWebhooks\nLogs\nBeat Money Loop\nPAUSED\nEnable\nRun cycle now\nAutonomous: scan trending music context \u2192 generate beat \u2192 list on the marketplace at a competitive price \u2192 optional organic promotion (MaxCore/PDIM, no paid spend) \u2192 wait for a completed marketplace order before marking the c",
               "requestedPath": "/admin/beat-money-loop",
               "expectedPath": "/admin/beat-money-loop",
               "finalPath": "/admin/beat-money-loop",
@@ -1006,7 +1014,7 @@
               "scenario": "normal-route-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": null,
-              "textSample": "Skip to main content\n(Alt+1)\nAdmin Panel\n\nMax Booster Control Center\n\nOverview\nUser Management\nContent Moderation\nSystem Health\nPlatform Analytics\nFinancial Config\nKill Switch\nPayment Bypass\nSettings\n\nTotal Users\n\n0\n\n+0 this month\n\nTotal Revenue\n\n$0\n\n+0% growth\n\nTotal Projects\n\n0\n\n+0% growth\n\nSystem Uptime\n\nN/A\n\nChecking...\n\nQuick System Status\nDatabase\nUnknown\nCPU Usage\n0%\nMemory Usage\n0%\nError Rate (24h)\n0%\nModeration Queue\nPending Reports\n0\nReviewed Today\n0\nView All Reports",
+              "textSample": "Skip to main content\n(Alt+1)\nAdmin Panel\n\nMax Booster Control Center\n\nOverview\nUser Management\nContent Moderation\nSystem Health\nPlatform Analytics\nFinancial Config\nKill Switch\nPayment Bypass\nSettings\n\nTotal Users\n\n3\n\n+3 this month\n\nTotal Revenue\n\n$0\n\n+0% growth\n\nTotal Projects\n\n1\n\n+0% growth\n\nSystem Uptime\n\n0m\n\nSince last restart\n\nQuick System Status\nDatabase\nconnected\nCPU Usage\n4%\nMemory Usage\n71%\nError Rate (24h)\n0.00%\nModeration Queue\nPending Reports\n0\nReviewed Today\n0\nView All Reports",
               "requestedPath": "/admin",
               "expectedPath": "/admin",
               "finalPath": "/admin",
@@ -1359,9 +1367,9 @@
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
               "textSample": "Skip to main content\n(Alt+1)\nPage80 public storefront\nFollow\nviews\n0\nlikes\n0\nfollowers\n0\nproducts\n0\nmembership tiers\nProducts\n\nNo products available yet",
-              "requestedPath": "/storefront/page80-store-1510a0c1b097",
-              "expectedPath": "/storefront/page80-store-1510a0c1b097",
-              "finalPath": "/storefront/page80-store-1510a0c1b097",
+              "requestedPath": "/storefront/page80-store-be6c9a0d0c56",
+              "expectedPath": "/storefront/page80-store-be6c9a0d0c56",
+              "finalPath": "/storefront/page80-store-be6c9a0d0c56",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": true,
@@ -1373,9 +1381,9 @@
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
               "textSample": "Skip to main content\n(Alt+1)\nPage80 public storefront\nFollow\nviews\n0\nlikes\n0\nfollowers\n0\nproducts\n0\nmembership tiers\nProducts\n\nNo products available yet",
-              "requestedPath": "/store/page80-store-1510a0c1b097",
-              "expectedPath": "/store/page80-store-1510a0c1b097",
-              "finalPath": "/store/page80-store-1510a0c1b097",
+              "requestedPath": "/store/page80-store-be6c9a0d0c56",
+              "expectedPath": "/store/page80-store-be6c9a0d0c56",
+              "finalPath": "/store/page80-store-be6c9a0d0c56",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": true,
@@ -1400,10 +1408,10 @@
               "scenario": "published-record-render",
               "businessJourney": "NOT_PROVEN_BY_ROUTE_RENDER",
               "expectedFixtureContentRendered": true,
-              "textSample": "Skip to main content\n(Alt+1)\n\nELECTRONIC PRESS KIT\n\nAcceptance artist f6566f98\nElectronic\n\nA saved browser press kit\n\nBiography\n\nDisposable artist biography saved through the actual browser form. Updated after the anonymous cache was populated.\n\nContact & Booking\n\nGENERAL\n\nartist@example.test\n\nBOOKING\n\nbooking@example.test\n\nWEBSITE\n\nexample.test\n\nPress kit powered by\n\nMax Booster",
-              "requestedPath": "/epk/acceptance-10228fc6eaf52524",
-              "expectedPath": "/epk/acceptance-10228fc6eaf52524",
-              "finalPath": "/epk/acceptance-10228fc6eaf52524",
+              "textSample": "Skip to main content\n(Alt+1)\n\nELECTRONIC PRESS KIT\n\nAcceptance artist 946deea4\nElectronic\n\nA saved browser press kit\n\nBiography\n\nDisposable artist biography saved through the actual browser form. Updated after the anonymous cache was populated.\n\nContact & Booking\n\nGENERAL\n\nartist@example.test\n\nBOOKING\n\nbooking@example.test\n\nWEBSITE\n\nexample.test\n\nPress kit powered by\n\nMax Booster",
+              "requestedPath": "/epk/acceptance-fabc833b86207fba",
+              "expectedPath": "/epk/acceptance-fabc833b86207fba",
+              "finalPath": "/epk/acceptance-fabc833b86207fba",
               "hydrated": true,
               "crashed": false,
               "permissionOrEmptyState": false,
@@ -1444,11 +1452,6 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/me",
-            "status": 200
-          },
-          {
-            "route": "/login",
             "path": "/api/health",
             "status": 200
           },
@@ -1474,6 +1477,11 @@
           },
           {
             "route": "/login",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/login",
             "path": "/api/version",
             "status": 200
           },
@@ -1484,12 +1492,17 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/login",
             "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -1499,12 +1512,17 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/login",
-            "path": "/api/auth/me",
+            "path": "/api/user/preferences",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/user/preferences",
             "status": 200
           },
           {
@@ -1514,8 +1532,8 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/workspace/create",
+            "status": 201
           },
           {
             "route": "/login",
@@ -1544,17 +1562,12 @@
           },
           {
             "route": "/login",
-            "path": "/api/user/preferences",
-            "status": 200
-          },
-          {
-            "route": "/login",
             "path": "/api/studio/projects",
             "status": 200
           },
           {
             "route": "/login",
-            "path": "/api/analytics/dashboard",
+            "path": "/api/workspace/0d1d3765-124b-4fd4-a1bb-170dc3de027b",
             "status": 200
           },
           {
@@ -1564,22 +1577,12 @@
           },
           {
             "route": "/login",
-            "path": "/api/user/preferences",
+            "path": "/api/analytics/dashboard",
             "status": 200
           },
           {
             "route": "/login",
-            "path": "/api/workspace/create",
-            "status": 201
-          },
-          {
-            "route": "/login",
-            "path": "/api/workspace/f710fab4-1eda-4f11-ba97-a91b41638089",
-            "status": 200
-          },
-          {
-            "route": "/login",
-            "path": "/api/workspace/f710fab4-1eda-4f11-ba97-a91b41638089/members",
+            "path": "/api/workspace/0d1d3765-124b-4fd4-a1bb-170dc3de027b/members",
             "status": 200
           },
           {
@@ -1589,18 +1592,18 @@
           },
           {
             "route": "/login",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/login",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/login",
             "path": "/api/auth/me",
             "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/login",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/login",
@@ -1639,17 +1642,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/login",
             "path": "/api/notifications",
-            "status": 200
-          },
-          {
-            "route": "/login",
-            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -1659,6 +1652,16 @@
           },
           {
             "route": "/login",
+            "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/login",
             "path": "/api/version",
             "status": 200
           },
@@ -1679,12 +1682,12 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/login",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -1694,7 +1697,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -1710,6 +1713,16 @@
           {
             "route": "/login",
             "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -1729,6 +1742,16 @@
           },
           {
             "route": "/login",
+            "path": "/api/press-kit",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/press-kit",
+            "status": 200
+          },
+          {
+            "route": "/login",
             "path": "/api/version",
             "status": 200
           },
@@ -1754,17 +1777,12 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/login",
             "path": "/api/version",
             "status": 200
           },
           {
             "route": "/login",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -1774,7 +1792,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -1785,6 +1803,11 @@
           {
             "route": "/login",
             "path": "/api/notifications",
+            "status": 200
+          },
+          {
+            "route": "/login",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -1809,7 +1832,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
+            "path": "/api/press-kit/public/acceptance-fabc833b86207fba",
             "status": 200
           },
           {
@@ -1819,7 +1842,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
+            "path": "/api/press-kit/public/acceptance-fabc833b86207fba",
             "status": 200
           },
           {
@@ -1829,7 +1852,7 @@
           },
           {
             "route": "/login",
-            "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
+            "path": "/api/press-kit/public/acceptance-fabc833b86207fba",
             "status": 404
           },
           {
@@ -1869,7 +1892,7 @@
           },
           {
             "route": "/dashboard",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -1879,7 +1902,7 @@
           },
           {
             "route": "/dashboard",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -1904,12 +1927,12 @@
           },
           {
             "route": "/dashboard",
-            "path": "/api/dashboard/comprehensive",
+            "path": "/api/projects",
             "status": 200
           },
           {
             "route": "/dashboard",
-            "path": "/api/projects",
+            "path": "/api/dashboard/comprehensive",
             "status": 200
           },
           {
@@ -1924,17 +1947,17 @@
           },
           {
             "route": "/dashboard",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/dashboard",
             "path": "/api/projects",
             "status": 200
           },
           {
             "route": "/dashboard",
             "path": "/api/analytics/dashboard",
+            "status": 200
+          },
+          {
+            "route": "/dashboard",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -2000,6 +2023,11 @@
           {
             "route": "/simplified-dashboard",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/simplified-dashboard",
+            "path": "/api/dashboard/comprehensive",
             "status": 200
           },
           {
@@ -2013,14 +2041,14 @@
             "status": 200
           },
           {
-            "route": "/simplified-dashboard",
-            "path": "/api/dashboard/comprehensive",
+            "route": "/projects",
+            "path": "/api/version",
             "status": 200
           },
           {
             "route": "/projects",
-            "path": "/api/version",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/projects",
@@ -2034,12 +2062,7 @@
           },
           {
             "route": "/projects",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/projects",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -2049,12 +2072,12 @@
           },
           {
             "route": "/projects",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/projects",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -2074,17 +2097,17 @@
           },
           {
             "route": "/projects",
-            "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/projects",
             "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/projects",
-            "path": "/api/health",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/projects",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -2099,12 +2122,12 @@
           },
           {
             "route": "/projects",
-            "path": "/api/auth/me",
+            "path": "/api/projects",
             "status": 200
           },
           {
             "route": "/projects",
-            "path": "/api/projects",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -2119,7 +2142,22 @@
           },
           {
             "route": "/analytics/ai",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/analytics/ai",
             "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/analytics/ai",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/analytics/ai",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -2130,16 +2168,6 @@
           {
             "route": "/analytics/ai",
             "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/analytics/ai",
-            "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/analytics/ai",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -2159,17 +2187,12 @@
           },
           {
             "route": "/analytics/ai",
-            "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/analytics/ai",
             "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/analytics/ai",
-            "path": "/api/health",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -2184,12 +2207,12 @@
           },
           {
             "route": "/analytics/ai",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/projects",
+            "status": 200
           },
           {
             "route": "/analytics/ai",
-            "path": "/api/projects",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -2206,6 +2229,11 @@
             "route": "/analytics",
             "path": "/api/auth/me",
             "status": 200
+          },
+          {
+            "route": "/analytics",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/analytics",
@@ -2229,12 +2257,12 @@
           },
           {
             "route": "/analytics",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/analytics",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -2264,17 +2292,12 @@
           },
           {
             "route": "/analytics",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/analytics",
             "path": "/api/analytics/anomalies/summary",
             "status": 403
           },
           {
             "route": "/analytics",
-            "path": "/api/auth/me",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -2284,18 +2307,23 @@
           },
           {
             "route": "/analytics",
-            "path": "/api/projects",
+            "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/analytics",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/projects",
+            "status": 200
           },
           {
             "route": "/developer-api",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/developer-api",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/developer-api",
@@ -2309,17 +2337,7 @@
           },
           {
             "route": "/developer-api",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/developer-api",
             "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/developer-api",
-            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -2329,7 +2347,7 @@
           },
           {
             "route": "/developer-api",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -2345,6 +2363,11 @@
           {
             "route": "/developer-api",
             "path": "/api/bootstrap",
+            "status": 200
+          },
+          {
+            "route": "/developer-api",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -2394,11 +2417,6 @@
           },
           {
             "route": "/social-media",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/social-media",
             "path": "/api/version",
             "status": 200
           },
@@ -2424,6 +2442,11 @@
           },
           {
             "route": "/social-media",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/social-media",
             "path": "/api/notifications",
             "status": 200
           },
@@ -2435,11 +2458,6 @@
           {
             "route": "/social-media",
             "path": "/api/social/platform-status",
-            "status": 200
-          },
-          {
-            "route": "/social-media",
-            "path": "/api/onboarding/progress",
             "status": 200
           },
           {
@@ -2459,7 +2477,17 @@
           },
           {
             "route": "/social-media",
+            "path": "/api/onboarding/progress",
+            "status": 200
+          },
+          {
+            "route": "/social-media",
             "path": "/api/social/activity",
+            "status": 200
+          },
+          {
+            "route": "/social-media",
+            "path": "/api/auth/me",
             "status": 200
           },
           {
@@ -2475,11 +2503,6 @@
           {
             "route": "/social-media",
             "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/social-media",
-            "path": "/api/auth/me",
             "status": 200
           },
           {
@@ -2514,13 +2537,13 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/advertising",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/advertising",
@@ -2549,12 +2572,12 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/advertising",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
@@ -2564,17 +2587,12 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/advertising",
             "path": "/api/social/promotable-content",
             "status": 200
           },
           {
             "route": "/advertising",
-            "path": "/api/advertising/audience-segments",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -2584,7 +2602,7 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/advertising/lookalike-audiences",
+            "path": "/api/advertising/audience-segments",
             "status": 200
           },
           {
@@ -2599,12 +2617,7 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/organic/metrics",
-            "status": 200
-          },
-          {
-            "route": "/advertising",
-            "path": "/api/organic/recommendations",
+            "path": "/api/advertising/lookalike-audiences",
             "status": 200
           },
           {
@@ -2619,12 +2632,22 @@
           },
           {
             "route": "/advertising",
-            "path": "/api/advertising/ai-insights",
+            "path": "/api/organic/metrics",
+            "status": 200
+          },
+          {
+            "route": "/advertising",
+            "path": "/api/organic/recommendations",
             "status": 200
           },
           {
             "route": "/advertising",
             "path": "/api/advertising/campaigns",
+            "status": 200
+          },
+          {
+            "route": "/advertising",
+            "path": "/api/advertising/ai-insights",
             "status": 200
           },
           {
@@ -2644,17 +2667,22 @@
           },
           {
             "route": "/marketplace",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/marketplace",
             "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/marketplace",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/marketplace",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -2704,22 +2732,12 @@
           },
           {
             "route": "/marketplace",
-            "path": "/api/marketplace/sales-analytics",
-            "status": 200
-          },
-          {
-            "route": "/marketplace",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/marketplace",
             "path": "/api/marketplace/purchases",
             "status": 200
           },
           {
             "route": "/marketplace",
-            "path": "/api/auth/me",
+            "path": "/api/marketplace/sales-analytics",
             "status": 200
           },
           {
@@ -2729,28 +2747,28 @@
           },
           {
             "route": "/marketplace",
-            "path": "/api/studio/projects",
+            "path": "/api/projects",
             "status": 200
           },
           {
             "route": "/marketplace",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/marketplace",
-            "path": "/api/projects",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/marketplace",
+            "path": "/api/studio/projects",
             "status": 200
           },
           {
             "route": "/royalties",
             "path": "/api/version",
             "status": 200
-          },
-          {
-            "route": "/royalties",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/royalties",
@@ -2764,12 +2782,12 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/auth/heartbeat",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/royalties",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -2779,6 +2797,11 @@
           },
           {
             "route": "/royalties",
+            "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/royalties",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
@@ -2789,12 +2812,12 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/royalties",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
@@ -2814,7 +2837,7 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/royalties/payment-methods",
+            "path": "/api/royalties/platform-breakdown",
             "status": 200
           },
           {
@@ -2824,12 +2847,7 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/royalties/platform-breakdown",
-            "status": 200
-          },
-          {
-            "route": "/royalties",
-            "path": "/api/royalties/splits",
+            "path": "/api/royalties/payment-methods",
             "status": 200
           },
           {
@@ -2839,17 +2857,12 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/publishing",
+            "path": "/api/royalties/splits",
             "status": 200
           },
           {
             "route": "/royalties",
-            "path": "/api/publishing/stats",
-            "status": 200
-          },
-          {
-            "route": "/royalties",
-            "path": "/api/health",
+            "path": "/api/payouts/history",
             "status": 200
           },
           {
@@ -2859,7 +2872,17 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/payouts/disputes",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/royalties",
+            "path": "/api/publishing/stats",
+            "status": 200
+          },
+          {
+            "route": "/royalties",
+            "path": "/api/publishing",
             "status": 200
           },
           {
@@ -2869,106 +2892,106 @@
           },
           {
             "route": "/royalties",
-            "path": "/api/payouts/history",
+            "path": "/api/payouts/disputes",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-            "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504/daw-state",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+            "path": "/api/studio/projects/9d3f734e-774f-4057-83d8-7bba967d40e6/daw-state",
+            "status": 200
+          },
+          {
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/notifications",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/notifications/preferences",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/projects",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/projects",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-            "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+            "path": "/api/studio/projects/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
-            "path": "/api/studio/projects/7b74774d-179a-423d-b2f9-a91f5bef2504/tracks",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
+            "path": "/api/studio/projects/9d3f734e-774f-4057-83d8-7bba967d40e6/tracks",
             "status": 200
           },
           {
-            "route": "/studio/7b74774d-179a-423d-b2f9-a91f5bef2504",
+            "route": "/studio/9d3f734e-774f-4057-83d8-7bba967d40e6",
             "path": "/api/health",
             "status": 200
           },
@@ -2984,17 +3007,17 @@
           },
           {
             "route": "/studio",
-            "path": "/api/auth/me",
-            "status": 200
-          },
-          {
-            "route": "/studio",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
             "route": "/studio",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/studio",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3004,22 +3027,22 @@
           },
           {
             "route": "/studio",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/studio",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
             "route": "/studio",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/studio",
             "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/studio",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3035,11 +3058,6 @@
           {
             "route": "/studio",
             "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/studio",
-            "path": "/api/projects",
             "status": 200
           },
           {
@@ -3059,6 +3077,11 @@
           },
           {
             "route": "/studio",
+            "path": "/api/projects",
+            "status": 200
+          },
+          {
+            "route": "/studio",
             "path": "/api/health",
             "status": 200
           },
@@ -3084,12 +3107,12 @@
           },
           {
             "route": "/show",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
             "route": "/show",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3115,16 +3138,6 @@
           {
             "route": "/show",
             "path": "/api/bootstrap",
-            "status": 200
-          },
-          {
-            "route": "/show",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/show",
-            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -3138,6 +3151,11 @@
             "status": 200
           },
           {
+            "route": "/show",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
             "route": "/distribution",
             "path": "/api/version",
             "status": 200
@@ -3159,12 +3177,7 @@
           },
           {
             "route": "/distribution",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/distribution",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3174,17 +3187,7 @@
           },
           {
             "route": "/distribution",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/distribution",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/distribution",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -3194,12 +3197,22 @@
           },
           {
             "route": "/distribution",
-            "path": "/api/notifications",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/distribution",
-            "path": "/api/notifications/preferences",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/distribution",
+            "path": "/api/bootstrap",
+            "status": 200
+          },
+          {
+            "route": "/distribution",
+            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -3209,12 +3222,12 @@
           },
           {
             "route": "/distribution",
-            "path": "/api/distribution/releases",
+            "path": "/api/distribution/hyperfollow/analytics",
             "status": 200
           },
           {
             "route": "/distribution",
-            "path": "/api/health",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -3224,13 +3237,18 @@
           },
           {
             "route": "/distribution",
-            "path": "/api/distribution/hyperfollow/analytics",
+            "path": "/api/distribution/releases",
             "status": 200
           },
           {
             "route": "/distribution",
             "path": "/api/distribution/platforms",
             "status": 409
+          },
+          {
+            "route": "/distribution",
+            "path": "/api/health",
+            "status": 200
           },
           {
             "route": "/distribution",
@@ -3249,17 +3267,12 @@
           },
           {
             "route": "/subscribe/monthly",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/subscribe/monthly",
             "path": "/api/auth/me",
-            "status": 200
-          },
-          {
-            "route": "/subscribe/monthly",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/subscribe/monthly",
-            "path": "/api/version",
             "status": 200
           },
           {
@@ -3274,6 +3287,21 @@
           },
           {
             "route": "/subscribe/monthly",
+            "path": "/api/version",
+            "status": 200
+          },
+          {
+            "route": "/subscribe/monthly",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/subscribe/monthly",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/subscribe/monthly",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
@@ -3281,16 +3309,6 @@
             "route": "/subscribe/monthly",
             "path": "/api/bootstrap",
             "status": 200
-          },
-          {
-            "route": "/subscribe/monthly",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/subscribe/monthly",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/subscribe/monthly",
@@ -3298,77 +3316,77 @@
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/support/my/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/support/my/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/notifications/preferences",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/notifications",
             "status": 200
           },
           {
-            "route": "/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/health",
             "status": 200
           },
@@ -3384,17 +3402,17 @@
           },
           {
             "route": "/settings",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/settings",
             "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/settings",
             "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/settings",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3409,17 +3427,22 @@
           },
           {
             "route": "/settings",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/settings",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/settings",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/settings",
             "path": "/api/bootstrap",
+            "status": 200
+          },
+          {
+            "route": "/settings",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3430,6 +3453,11 @@
           {
             "route": "/settings",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/settings",
+            "path": "/api/auth/notifications",
             "status": 200
           },
           {
@@ -3440,11 +3468,6 @@
           {
             "route": "/settings",
             "path": "/api/onboarding/progress",
-            "status": 200
-          },
-          {
-            "route": "/settings",
-            "path": "/api/auth/notifications",
             "status": 200
           },
           {
@@ -3464,11 +3487,6 @@
           },
           {
             "route": "/settings",
-            "path": "/api/auth/sessions",
-            "status": 200
-          },
-          {
-            "route": "/settings",
             "path": "/api/auth/me",
             "status": 200
           },
@@ -3479,16 +3497,16 @@
           },
           {
             "route": "/settings",
+            "path": "/api/auth/sessions",
+            "status": 200
+          },
+          {
+            "route": "/settings",
             "path": "/api/billing/history",
             "status": 200
           },
           {
             "route": "/settings",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/settings",
             "path": "/api/auth/update-onboarding",
             "status": 200
           },
@@ -3509,17 +3527,12 @@
           },
           {
             "route": "/onboarding",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/onboarding",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/onboarding",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3529,7 +3542,7 @@
           },
           {
             "route": "/onboarding",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -3556,6 +3569,11 @@
             "route": "/onboarding",
             "path": "/api/notifications/preferences",
             "status": 200
+          },
+          {
+            "route": "/onboarding",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/onboarding",
@@ -3589,7 +3607,7 @@
           },
           {
             "route": "/storefront",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3599,7 +3617,12 @@
           },
           {
             "route": "/storefront",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/storefront",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3615,11 +3638,6 @@
           {
             "route": "/storefront",
             "path": "/api/bootstrap",
-            "status": 200
-          },
-          {
-            "route": "/storefront",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3644,8 +3662,8 @@
           },
           {
             "route": "/verification",
-            "path": "/api/auth/heartbeat",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/verification",
@@ -3654,7 +3672,7 @@
           },
           {
             "route": "/verification",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3664,12 +3682,12 @@
           },
           {
             "route": "/verification",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/verification",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3679,7 +3697,7 @@
           },
           {
             "route": "/verification",
-            "path": "/api/notifications/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3689,12 +3707,7 @@
           },
           {
             "route": "/verification",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/verification",
-            "path": "/api/health",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -3703,6 +3716,11 @@
             "status": 200
           },
           {
+            "route": "/verification",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
             "route": "/contracts",
             "path": "/api/version",
             "status": 200
@@ -3724,12 +3742,12 @@
           },
           {
             "route": "/contracts",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/contracts",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -3739,22 +3757,22 @@
           },
           {
             "route": "/contracts",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/contracts",
             "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/contracts",
-            "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/contracts",
             "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/contracts",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
@@ -3765,6 +3783,11 @@
           {
             "route": "/contracts",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/contracts",
+            "path": "/api/contracts/templates",
             "status": 200
           },
           {
@@ -3779,11 +3802,6 @@
           },
           {
             "route": "/contracts",
-            "path": "/api/contracts/templates",
-            "status": 200
-          },
-          {
-            "route": "/contracts",
             "path": "/api/health",
             "status": 200
           },
@@ -3799,17 +3817,17 @@
           },
           {
             "route": "/workspaces",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/workspaces",
             "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/workspaces",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/workspaces",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3819,12 +3837,12 @@
           },
           {
             "route": "/workspaces",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
             "route": "/workspaces",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3840,16 +3858,6 @@
           {
             "route": "/workspaces",
             "path": "/api/bootstrap",
-            "status": 200
-          },
-          {
-            "route": "/workspaces",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/workspaces",
-            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -3859,13 +3867,28 @@
           },
           {
             "route": "/workspaces",
+            "path": "/api/notifications",
+            "status": 200
+          },
+          {
+            "route": "/workspaces",
             "path": "/api/workspace/user/workspaces",
+            "status": 200
+          },
+          {
+            "route": "/workspaces",
+            "path": "/api/health",
             "status": 200
           },
           {
             "route": "/collaborations",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/collaborations",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/collaborations",
@@ -3904,12 +3927,12 @@
           },
           {
             "route": "/collaborations",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/collaborations",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -3934,18 +3957,13 @@
           },
           {
             "route": "/collaborations",
-            "path": "/api/collaborations/suggestions",
-            "status": 200
-          },
-          {
-            "route": "/collaborations",
             "path": "/api/collaborations/projects",
             "status": 200
           },
           {
             "route": "/collaborations",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/collaborations/suggestions",
+            "status": 200
           },
           {
             "route": "/collaborations",
@@ -3974,7 +3992,12 @@
           },
           {
             "route": "/career-coach",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/career-coach",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -3984,16 +4007,6 @@
           },
           {
             "route": "/career-coach",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/career-coach",
-            "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/career-coach",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
@@ -4004,7 +4017,17 @@
           },
           {
             "route": "/career-coach",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/career-coach",
             "path": "/api/bootstrap",
+            "status": 200
+          },
+          {
+            "route": "/career-coach",
+            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -4014,12 +4037,17 @@
           },
           {
             "route": "/career-coach",
-            "path": "/api/notifications",
+            "path": "/api/assistant/history",
             "status": 200
           },
           {
             "route": "/career-coach",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/career-coach",
+            "path": "/api/career-coach/insights",
             "status": 200
           },
           {
@@ -4029,17 +4057,7 @@
           },
           {
             "route": "/career-coach",
-            "path": "/api/career-coach/insights",
-            "status": 200
-          },
-          {
-            "route": "/career-coach",
             "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/career-coach",
-            "path": "/api/assistant/history",
             "status": 200
           },
           {
@@ -4064,6 +4082,11 @@
           },
           {
             "route": "/assistant",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/assistant",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
@@ -4075,11 +4098,6 @@
           {
             "route": "/assistant",
             "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/assistant",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -4139,11 +4157,6 @@
           },
           {
             "route": "/release-countdown",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/release-countdown",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
@@ -4159,12 +4172,12 @@
           },
           {
             "route": "/release-countdown",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/release-countdown",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -4174,7 +4187,7 @@
           },
           {
             "route": "/release-countdown",
-            "path": "/api/health",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -4193,9 +4206,19 @@
             "status": 200
           },
           {
+            "route": "/release-countdown",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
             "route": "/invoices",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/invoices",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/invoices",
@@ -4209,7 +4232,7 @@
           },
           {
             "route": "/invoices",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -4219,12 +4242,12 @@
           },
           {
             "route": "/invoices",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
             "route": "/invoices",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -4250,11 +4273,6 @@
           {
             "route": "/invoices",
             "path": "/api/notifications",
-            "status": 200
-          },
-          {
-            "route": "/invoices",
-            "path": "/api/health",
             "status": 200
           },
           {
@@ -4264,8 +4282,8 @@
           },
           {
             "route": "/invoices",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/health",
+            "status": 200
           },
           {
             "route": "/handle-link",
@@ -4284,8 +4302,8 @@
           },
           {
             "route": "/handle-link",
-            "path": "/api/auth/heartbeat",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/handle-link",
@@ -4294,12 +4312,17 @@
           },
           {
             "route": "/handle-link",
-            "path": "/api/version",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/handle-link",
             "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/handle-link",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -4319,102 +4342,97 @@
           },
           {
             "route": "/handle-link",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/handle-link",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/version",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/health",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/notifications",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/notifications/preferences",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1/read",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "path": "/api/notifications",
             "status": 200
           },
           {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96/read",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/notifications",
-            "status": 200
-          },
-          {
-            "route": "/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
-            "path": "/api/notifications/0a46a90a-e0e4-4b06-a6ea-4e8eb4ccbc96",
+            "route": "/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
+            "path": "/api/notifications/7dbd5c4b-22a6-4817-ad86-0484bb5ad6a1",
             "status": 200
           },
           {
@@ -4444,7 +4462,7 @@
           },
           {
             "route": "/notifications",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -4454,12 +4472,7 @@
           },
           {
             "route": "/notifications",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/notifications",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -4469,12 +4482,12 @@
           },
           {
             "route": "/notifications",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/notifications",
-            "path": "/api/notifications",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
@@ -4484,6 +4497,11 @@
           },
           {
             "route": "/notifications",
+            "path": "/api/notifications",
+            "status": 200
+          },
+          {
+            "route": "/notifications",
             "path": "/api/health",
             "status": 200
           },
@@ -4514,17 +4532,12 @@
           },
           {
             "route": "/workflow-automations",
-            "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/workflow-automations",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/workflow-automations",
             "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/workflow-automations",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -4539,17 +4552,22 @@
           },
           {
             "route": "/workflow-automations",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/workflow-automations",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/workflow-automations",
-            "path": "/api/notifications/preferences",
+            "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/workflow-automations",
-            "path": "/api/notifications",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -4589,6 +4607,11 @@
           },
           {
             "route": "/shows",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/shows",
             "path": "/api/auth/preferences",
             "status": 200
           },
@@ -4600,11 +4623,6 @@
           {
             "route": "/shows",
             "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/shows",
-            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -4629,17 +4647,17 @@
           },
           {
             "route": "/shows",
+            "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/shows",
             "path": "/api/shows",
             "status": 200
           },
           {
             "route": "/shows",
             "path": "/api/shows/stats",
-            "status": 200
-          },
-          {
-            "route": "/shows",
-            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -4664,12 +4682,17 @@
           },
           {
             "route": "/fan-hub",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/fan-hub",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
             "route": "/fan-hub",
-            "path": "/api/auth/me",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -4680,11 +4703,6 @@
           {
             "route": "/fan-hub",
             "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/fan-hub",
-            "path": "/api/version",
             "status": 200
           },
           {
@@ -4709,22 +4727,17 @@
           },
           {
             "route": "/fan-hub",
-            "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/fan-hub",
             "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/fan-hub",
-            "path": "/api/fan-hub/subscribers",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
             "route": "/fan-hub",
-            "path": "/api/health",
+            "path": "/api/fan-hub/subscribers",
             "status": 200
           },
           {
@@ -4738,6 +4751,11 @@
             "status": 200
           },
           {
+            "route": "/fan-hub",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
             "route": "/fan-memberships",
             "path": "/api/version",
             "status": 200
@@ -4764,17 +4782,17 @@
           },
           {
             "route": "/fan-memberships",
-            "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/fan-memberships",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
             "route": "/fan-memberships",
             "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/fan-memberships",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -4804,12 +4822,12 @@
           },
           {
             "route": "/fan-memberships",
-            "path": "/api/fan-memberships/tiers",
+            "path": "/api/fan-memberships/members",
             "status": 200
           },
           {
             "route": "/fan-memberships",
-            "path": "/api/health",
+            "path": "/api/fan-memberships/tiers",
             "status": 200
           },
           {
@@ -4824,12 +4842,12 @@
           },
           {
             "route": "/fan-memberships",
-            "path": "/api/fan-memberships/members",
+            "path": "/api/fan-memberships/wallet-leaderboard",
             "status": 200
           },
           {
             "route": "/fan-memberships",
-            "path": "/api/fan-memberships/wallet-leaderboard",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -4846,6 +4864,11 @@
             "route": "/ar-intelligence",
             "path": "/api/auth/me",
             "status": 200
+          },
+          {
+            "route": "/ar-intelligence",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/ar-intelligence",
@@ -4884,12 +4907,12 @@
           },
           {
             "route": "/ar-intelligence",
-            "path": "/api/notifications/preferences",
+            "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/ar-intelligence",
-            "path": "/api/notifications",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -4913,11 +4936,6 @@
             "status": 200
           },
           {
-            "route": "/ar-intelligence",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
             "route": "/outreach",
             "path": "/api/version",
             "status": 200
@@ -4944,7 +4962,7 @@
           },
           {
             "route": "/outreach",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -4954,7 +4972,7 @@
           },
           {
             "route": "/outreach",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -4964,22 +4982,17 @@
           },
           {
             "route": "/outreach",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/outreach",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/outreach",
-            "path": "/api/notifications",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/outreach",
-            "path": "/api/health",
+            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -4998,6 +5011,11 @@
             "status": 200
           },
           {
+            "route": "/outreach",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
             "route": "/merch",
             "path": "/api/version",
             "status": 200
@@ -5009,12 +5027,17 @@
           },
           {
             "route": "/merch",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/merch",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
             "route": "/merch",
-            "path": "/api/auth/me",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5030,11 +5053,6 @@
           {
             "route": "/merch",
             "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/merch",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5094,13 +5112,13 @@
           },
           {
             "route": "/press-kit",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/press-kit",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/press-kit",
@@ -5110,11 +5128,6 @@
           {
             "route": "/press-kit",
             "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/press-kit",
-            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5129,7 +5142,7 @@
           },
           {
             "route": "/press-kit",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5139,12 +5152,17 @@
           },
           {
             "route": "/press-kit",
-            "path": "/api/notifications/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/press-kit",
             "path": "/api/notifications",
+            "status": 200
+          },
+          {
+            "route": "/press-kit",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -5169,17 +5187,7 @@
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/playlist-pitching",
             "path": "/api/auth/me",
-            "status": 200
-          },
-          {
-            "route": "/playlist-pitching",
-            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5189,7 +5197,7 @@
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5199,12 +5207,12 @@
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5214,17 +5222,27 @@
           },
           {
             "route": "/playlist-pitching",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/playlist-pitching",
             "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/notifications/preferences",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/playlist-pitching",
             "path": "/api/playlist-pitching",
+            "status": 200
+          },
+          {
+            "route": "/playlist-pitching",
+            "path": "/api/notifications/preferences",
             "status": 200
           },
           {
@@ -5234,18 +5252,23 @@
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/health",
+            "path": "/api/playlist-pitching/stats",
             "status": 200
           },
           {
             "route": "/playlist-pitching",
-            "path": "/api/playlist-pitching/stats",
+            "path": "/api/health",
             "status": 200
           },
           {
             "route": "/publishing",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/publishing",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/publishing",
@@ -5290,6 +5313,11 @@
           {
             "route": "/publishing",
             "path": "/api/bootstrap",
+            "status": 200
+          },
+          {
+            "route": "/publishing",
+            "path": "/api/notifications",
             "status": 200
           },
           {
@@ -5299,7 +5327,7 @@
           },
           {
             "route": "/publishing",
-            "path": "/api/notifications",
+            "path": "/api/publishing",
             "status": 200
           },
           {
@@ -5309,28 +5337,13 @@
           },
           {
             "route": "/publishing",
-            "path": "/api/publishing",
-            "status": 200
-          },
-          {
-            "route": "/publishing",
             "path": "/api/health",
             "status": 200
-          },
-          {
-            "route": "/publishing",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/sync-licensing",
             "path": "/api/version",
             "status": 200
-          },
-          {
-            "route": "/sync-licensing",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/sync-licensing",
@@ -5344,17 +5357,17 @@
           },
           {
             "route": "/sync-licensing",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/sync-licensing",
-            "path": "/api/auth/heartbeat",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/sync-licensing",
             "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/sync-licensing",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5374,17 +5387,17 @@
           },
           {
             "route": "/sync-licensing",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/sync-licensing",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/sync-licensing",
             "path": "/api/notifications",
-            "status": 200
-          },
-          {
-            "route": "/sync-licensing",
-            "path": "/api/sync-licensing/stats",
             "status": 200
           },
           {
@@ -5399,6 +5412,11 @@
           },
           {
             "route": "/sync-licensing",
+            "path": "/api/sync-licensing/stats",
+            "status": 200
+          },
+          {
+            "route": "/sync-licensing",
             "path": "/api/health",
             "status": 200
           },
@@ -5406,6 +5424,11 @@
             "route": "/page80-unmatched",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/page80-unmatched",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/page80-unmatched",
@@ -5424,6 +5447,16 @@
           },
           {
             "route": "/page80-unmatched",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/page80-unmatched",
+            "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/page80-unmatched",
             "path": "/api/version",
             "status": 200
           },
@@ -5434,28 +5467,13 @@
           },
           {
             "route": "/page80-unmatched",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/page80-unmatched",
-            "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/page80-unmatched",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/page80-unmatched",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/page80-unmatched",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/refresh-token",
+            "status": 200
           },
           {
             "route": "/page80-unmatched",
@@ -5504,7 +5522,7 @@
           },
           {
             "route": "/admin/security",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5514,17 +5532,12 @@
           },
           {
             "route": "/admin/security",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/admin/security",
             "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/admin/security",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/admin/security",
-            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5539,6 +5552,11 @@
           },
           {
             "route": "/admin/security",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/admin/security",
             "path": "/api/notifications",
             "status": 200
           },
@@ -5549,12 +5567,7 @@
           },
           {
             "route": "/admin/security",
-            "path": "/api/security/metrics",
-            "status": 200
-          },
-          {
-            "route": "/admin/security",
-            "path": "/api/health",
+            "path": "/api/security/behavioral-alerts",
             "status": 200
           },
           {
@@ -5564,12 +5577,17 @@
           },
           {
             "route": "/admin/security",
-            "path": "/api/security/behavioral-alerts",
+            "path": "/api/security/metrics",
             "status": 200
           },
           {
             "route": "/admin/security",
             "path": "/api/security/anomaly-detection",
+            "status": 200
+          },
+          {
+            "route": "/admin/security",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -5599,12 +5617,12 @@
           },
           {
             "route": "/admin/audit-log",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/version",
             "status": 200
           },
           {
             "route": "/admin/audit-log",
-            "path": "/api/version",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5614,12 +5632,12 @@
           },
           {
             "route": "/admin/audit-log",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/admin/audit-log",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5635,11 +5653,6 @@
           {
             "route": "/admin/audit-log",
             "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/admin/audit-log",
-            "path": "/api/admin/audit-log",
             "status": 200
           },
           {
@@ -5649,81 +5662,86 @@
           },
           {
             "route": "/admin/audit-log",
+            "path": "/api/admin/audit-log",
+            "status": 200
+          },
+          {
+            "route": "/admin/audit-log",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/preferences",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "path": "/api/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
+            "status": 200
+          },
+          {
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/bootstrap",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/notifications/preferences",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/notifications",
             "status": 200
           },
           {
-            "route": "/admin/support/tickets/f5751486-64ba-4218-98f1-7dbd14213962",
+            "route": "/admin/support/tickets/bf4002d9-12d0-461f-a3be-964145055b18",
             "path": "/api/health",
             "status": 200
           },
@@ -5739,7 +5757,17 @@
           },
           {
             "route": "/admin/support",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/admin/support",
             "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/admin/support",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5754,17 +5782,22 @@
           },
           {
             "route": "/admin/support",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/admin/support",
             "path": "/api/version",
             "status": 200
           },
           {
             "route": "/admin/support",
             "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/admin/support",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/admin/support",
+            "path": "/api/support/tickets/all",
             "status": 200
           },
           {
@@ -5779,23 +5812,8 @@
           },
           {
             "route": "/admin/support",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/notifications",
             "status": 200
-          },
-          {
-            "route": "/admin/support",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/admin/support",
-            "path": "/api/support/tickets/all",
-            "status": 200
-          },
-          {
-            "route": "/admin/support",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/admin/support",
@@ -5804,13 +5822,18 @@
           },
           {
             "route": "/admin/support",
-            "path": "/api/notifications",
+            "path": "/api/health",
             "status": 200
           },
           {
             "route": "/admin/kyc",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/admin/kyc",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/admin/kyc",
@@ -5829,7 +5852,7 @@
           },
           {
             "route": "/admin/kyc",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/version",
             "status": 200
           },
           {
@@ -5839,7 +5862,7 @@
           },
           {
             "route": "/admin/kyc",
-            "path": "/api/version",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
@@ -5856,11 +5879,6 @@
             "route": "/admin/kyc",
             "path": "/api/auth/refresh-token",
             "status": 200
-          },
-          {
-            "route": "/admin/kyc",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/admin/kyc",
@@ -5889,12 +5907,17 @@
           },
           {
             "route": "/admin/training",
-            "path": "/api/auth/preferences",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/admin/training",
             "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/admin/training",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -5914,12 +5937,12 @@
           },
           {
             "route": "/admin/training",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
             "route": "/admin/training",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -5929,18 +5952,8 @@
           },
           {
             "route": "/admin/training",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/admin/training",
             "path": "/api/training/status",
             "status": 503
-          },
-          {
-            "route": "/admin/training",
-            "path": "/api/notifications/preferences",
-            "status": 200
           },
           {
             "route": "/admin/training",
@@ -5954,8 +5967,13 @@
           },
           {
             "route": "/admin/training",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/admin/training",
+            "path": "/api/health",
+            "status": 200
           },
           {
             "route": "/admin/content-sampler",
@@ -5974,27 +5992,17 @@
           },
           {
             "route": "/admin/content-sampler",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/admin/content-sampler",
-            "path": "/api/auth/refresh-token",
-            "status": 200
-          },
-          {
-            "route": "/admin/content-sampler",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/admin/content-sampler",
-            "path": "/api/auth/preferences",
+            "path": "/api/version",
             "status": 200
           },
           {
             "route": "/admin/content-sampler",
-            "path": "/api/version",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -6014,12 +6022,27 @@
           },
           {
             "route": "/admin/content-sampler",
+            "path": "/api/auth/refresh-token",
+            "status": 200
+          },
+          {
+            "route": "/admin/content-sampler",
             "path": "/api/notifications",
             "status": 200
           },
           {
             "route": "/admin/content-sampler",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/admin/content-sampler",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/admin/content-sampler",
+            "path": "/api/admin/content-sampler/summary",
             "status": 200
           },
           {
@@ -6028,11 +6051,6 @@
             "status": 200
           },
           {
-            "route": "/admin/content-sampler",
-            "path": "/api/admin/content-sampler/summary",
-            "status": 200
-          },
-          {
             "route": "/admin/dashboard",
             "path": "/api/version",
             "status": 200
@@ -6049,6 +6067,16 @@
           },
           {
             "route": "/admin/dashboard",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/admin/dashboard",
+            "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/admin/dashboard",
             "path": "/api/version",
             "status": 200
           },
@@ -6064,22 +6092,17 @@
           },
           {
             "route": "/admin/dashboard",
-            "path": "/api/auth/preferences",
-            "status": 200
-          },
-          {
-            "route": "/admin/dashboard",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/admin/dashboard",
-            "path": "/api/bootstrap",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/admin/dashboard",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/bootstrap",
             "status": 200
           },
           {
@@ -6090,16 +6113,6 @@
           {
             "route": "/admin/dashboard",
             "path": "/api/notifications/preferences",
-            "status": 200
-          },
-          {
-            "route": "/admin/dashboard",
-            "path": "/api/admin/analytics",
-            "status": 200
-          },
-          {
-            "route": "/admin/dashboard",
-            "path": "/api/admin/metrics",
             "status": 200
           },
           {
@@ -6114,7 +6127,12 @@
           },
           {
             "route": "/admin/dashboard",
-            "path": "/api/health",
+            "path": "/api/admin/metrics",
+            "status": 200
+          },
+          {
+            "route": "/admin/dashboard",
+            "path": "/api/admin/analytics",
             "status": 200
           },
           {
@@ -6124,13 +6142,8 @@
           },
           {
             "route": "/admin/dashboard",
-            "path": "/api/admin/users",
+            "path": "/api/health",
             "status": 200
-          },
-          {
-            "route": "/admin/dashboard",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
           },
           {
             "route": "/admin/dashboard",
@@ -6138,9 +6151,19 @@
             "status": 200
           },
           {
+            "route": "/admin/dashboard",
+            "path": "/api/admin/users",
+            "status": 200
+          },
+          {
             "route": "/admin/beat-money-loop",
             "path": "/api/version",
             "status": 200
+          },
+          {
+            "route": "/admin/beat-money-loop",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/admin/beat-money-loop",
@@ -6154,17 +6177,17 @@
           },
           {
             "route": "/admin/beat-money-loop",
+            "path": "/api/auth/preferences",
+            "status": 200
+          },
+          {
+            "route": "/admin/beat-money-loop",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/admin/beat-money-loop",
             "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/admin/beat-money-loop",
-            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -6195,6 +6218,11 @@
           {
             "route": "/admin/beat-money-loop",
             "path": "/api/notifications/preferences",
+            "status": 200
+          },
+          {
+            "route": "/admin/beat-money-loop",
+            "path": "/api/admin/metrics",
             "status": 200
           },
           {
@@ -6204,22 +6232,12 @@
           },
           {
             "route": "/admin/beat-money-loop",
-            "path": "/api/admin/metrics",
-            "status": 200
-          },
-          {
-            "route": "/admin/beat-money-loop",
-            "path": "/api/testing/results",
-            "status": 200
-          },
-          {
-            "route": "/admin/beat-money-loop",
             "path": "/api/audit/results",
             "status": 200
           },
           {
             "route": "/admin/beat-money-loop",
-            "path": "/api/health",
+            "path": "/api/testing/results",
             "status": 200
           },
           {
@@ -6234,17 +6252,17 @@
           },
           {
             "route": "/admin/beat-money-loop",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/admin/beat-money-loop",
             "path": "/api/admin/system-health",
             "status": 200
           },
           {
             "route": "/admin/beat-money-loop",
             "path": "/api/admin/users",
+            "status": 200
+          },
+          {
+            "route": "/admin/beat-money-loop",
+            "path": "/api/health",
             "status": 200
           },
           {
@@ -6264,6 +6282,11 @@
           },
           {
             "route": "/admin",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/admin",
             "path": "/api/auth/heartbeat",
             "status": 200
           },
@@ -6274,7 +6297,7 @@
           },
           {
             "route": "/admin",
-            "path": "/api/auth/preferences",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -6284,7 +6307,7 @@
           },
           {
             "route": "/admin",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/preferences",
             "status": 200
           },
           {
@@ -6299,50 +6322,38 @@
           },
           {
             "route": "/admin",
-            "path": "/api/admin/analytics",
-            "status": 429,
-            "retryAfter": "60"
-          },
-          {
-            "route": "/admin",
-            "path": "/api/admin/system-health",
-            "status": 429,
-            "retryAfter": "60"
-          },
-          {
-            "route": "/admin",
-            "path": "/api/dns/resolver/status",
-            "status": 429,
-            "retryAfter": "60"
-          },
-          {
-            "route": "/admin",
-            "path": "/api/admin/moderation/reports",
-            "status": 429,
-            "retryAfter": "60"
-          },
-          {
-            "route": "/admin",
-            "path": "/api/admin/settings",
-            "status": 429,
-            "retryAfter": "60"
-          },
-          {
-            "route": "/admin",
             "path": "/api/admin/users",
             "status": 200
           },
           {
             "route": "/admin",
-            "path": "/api/admin/payment-bypass/status",
-            "status": 429,
-            "retryAfter": "60"
+            "path": "/api/dns/resolver/status",
+            "status": 200
           },
           {
             "route": "/admin",
-            "path": "/api/metrics/web-vitals",
-            "status": 429,
-            "retryAfter": "60"
+            "path": "/api/admin/analytics",
+            "status": 200
+          },
+          {
+            "route": "/admin",
+            "path": "/api/admin/system-health",
+            "status": 200
+          },
+          {
+            "route": "/admin",
+            "path": "/api/admin/moderation/reports",
+            "status": 200
+          },
+          {
+            "route": "/admin",
+            "path": "/api/admin/settings",
+            "status": 200
+          },
+          {
+            "route": "/admin",
+            "path": "/api/admin/payment-bypass/status",
+            "status": 200
           },
           {
             "route": "/admin",
@@ -6362,13 +6373,12 @@
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/auth/me",
-            "status": 429,
-            "retryAfter": "60"
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/metrics/web-vitals",
+            "path": "/api/auth/me",
             "status": 429,
             "retryAfter": "60"
           },
@@ -6411,17 +6421,17 @@
           },
           {
             "route": "/admin/autonomy",
+            "path": "/api/auth/heartbeat",
+            "status": 200
+          },
+          {
+            "route": "/admin/autonomy",
             "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/auth/heartbeat",
-            "status": 200
-          },
-          {
-            "route": "/admin/autonomy",
-            "path": "/api/auth/heartbeat",
+            "path": "/api/auth/refresh-token",
             "status": 200
           },
           {
@@ -6431,17 +6441,12 @@
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/auth/refresh-token",
+            "path": "/api/auth/heartbeat",
             "status": 200
           },
           {
             "route": "/admin/autonomy",
             "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/admin/autonomy",
-            "path": "/api/dashboard/comprehensive",
             "status": 200
           },
           {
@@ -6452,6 +6457,11 @@
           {
             "route": "/admin/autonomy",
             "path": "/api/projects",
+            "status": 200
+          },
+          {
+            "route": "/admin/autonomy",
+            "path": "/api/dashboard/comprehensive",
             "status": 200
           },
           {
@@ -6471,12 +6481,12 @@
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/analytics/dashboard",
+            "path": "/api/projects",
             "status": 200
           },
           {
             "route": "/admin/autonomy",
-            "path": "/api/projects",
+            "path": "/api/analytics/dashboard",
             "status": 200
           },
           {
@@ -6586,16 +6596,16 @@
           },
           {
             "route": "/reset-password",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/reset-password",
             "path": "/api/auth/me",
             "status": 200
           },
           {
             "route": "/reset-password",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/reset-password",
             "path": "/api/health",
             "status": 200
           },
@@ -6611,13 +6621,13 @@
           },
           {
             "route": "/register",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/register",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/register",
@@ -6671,13 +6681,13 @@
           },
           {
             "route": "/register/success",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/register/success",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/register/success",
@@ -6701,13 +6711,13 @@
           },
           {
             "route": "/desktop-app",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/desktop-app",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/desktop-app",
@@ -6742,6 +6752,11 @@
           {
             "route": "/marketplace/beat/page80-missing",
             "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/marketplace/beat/page80-missing",
+            "path": "/api/marketplace/producers",
             "status": 200
           },
           {
@@ -6756,11 +6771,6 @@
           },
           {
             "route": "/marketplace/beat/page80-missing",
-            "path": "/api/marketplace/producers",
-            "status": 200
-          },
-          {
-            "route": "/marketplace/beat/page80-missing",
             "path": "/api/auth/me",
             "status": 200
           },
@@ -6776,13 +6786,13 @@
           },
           {
             "route": "/marketplace/producer/page80-missing",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/marketplace/producer/page80-missing",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/marketplace/producer/page80-missing",
@@ -6821,6 +6831,11 @@
           },
           {
             "route": "/pricing",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/pricing",
             "path": "/api/auth/me",
             "status": 200
           },
@@ -6830,11 +6845,6 @@
             "status": 200
           },
           {
-            "route": "/pricing",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
             "route": "/features",
             "path": "/api/version",
             "status": 200
@@ -6846,13 +6856,13 @@
           },
           {
             "route": "/features",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/features",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/features",
@@ -6871,13 +6881,13 @@
           },
           {
             "route": "/documentation",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/documentation",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/documentation",
@@ -6921,13 +6931,13 @@
           },
           {
             "route": "/blog",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/blog",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/blog",
@@ -6971,13 +6981,13 @@
           },
           {
             "route": "/solo-founder-story",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/solo-founder-story",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/solo-founder-story",
@@ -7026,13 +7036,13 @@
           },
           {
             "route": "/dmca",
-            "path": "/api/health",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/dmca",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/health",
+            "status": 200
           },
           {
             "route": "/terms",
@@ -7046,13 +7056,13 @@
           },
           {
             "route": "/terms",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/terms",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/terms",
@@ -7071,13 +7081,13 @@
           },
           {
             "route": "/privacy",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
+            "path": "/api/auth/me",
+            "status": 200
           },
           {
             "route": "/privacy",
-            "path": "/api/auth/me",
-            "status": 200
+            "path": "/api/metrics/web-vitals",
+            "status": 204
           },
           {
             "route": "/privacy",
@@ -7110,103 +7120,103 @@
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
-            "path": "/api/storefront/public/page80-store-1510a0c1b097",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/public/page80-store-be6c9a0d0c56",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/membership-tiers/public",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/listings",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/listings",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/membership-tiers/public",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/social",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/social",
             "status": 200
           },
           {
-            "route": "/storefront/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/bogo-promotions",
+            "route": "/storefront/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/bogo-promotions",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
+            "route": "/store/page80-store-be6c9a0d0c56",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
+            "route": "/store/page80-store-be6c9a0d0c56",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/store/page80-store-1510a0c1b097",
+            "route": "/store/page80-store-be6c9a0d0c56",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/store/page80-store-be6c9a0d0c56",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/storefront/public/page80-store-1510a0c1b097",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/public/page80-store-be6c9a0d0c56",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/membership-tiers/public",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/membership-tiers/public",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/bogo-promotions",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/listings",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/listings",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/bogo-promotions",
             "status": 200
           },
           {
-            "route": "/store/page80-store-1510a0c1b097",
-            "path": "/api/storefront/36f99619-68dc-47f1-8853-e604a07db139/social",
+            "route": "/store/page80-store-be6c9a0d0c56",
+            "path": "/api/storefront/496a6c2b-c06d-4d03-bca9-462093670275/social",
             "status": 200
           },
           {
@@ -7218,16 +7228,6 @@
             "route": "/s/page80-missing",
             "path": "/api/metrics/web-vitals",
             "status": 204
-          },
-          {
-            "route": "/s/page80-missing",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/s/page80-missing",
-            "path": "/api/auth/me",
-            "status": 200
           },
           {
             "route": "/s/page80-missing",
@@ -7236,66 +7236,76 @@
           },
           {
             "route": "/s/page80-missing",
-            "path": "/api/health",
-            "status": 200
-          },
-          {
-            "route": "/epk/acceptance-10228fc6eaf52524",
-            "path": "/api/version",
-            "status": 200
-          },
-          {
-            "route": "/epk/acceptance-10228fc6eaf52524",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/s/page80-missing",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/s/page80-missing",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
-            "path": "/api/press-kit/public/acceptance-10228fc6eaf52524",
-            "status": 200
-          },
-          {
-            "route": "/epk/acceptance-10228fc6eaf52524",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/epk/acceptance-fabc833b86207fba",
             "path": "/api/version",
             "status": 200
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
-            "path": "/api/metrics/web-vitals",
-            "status": 204
-          },
-          {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/epk/acceptance-fabc833b86207fba",
             "path": "/api/auth/me",
             "status": 200
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/epk/acceptance-fabc833b86207fba",
             "path": "/api/metrics/web-vitals",
             "status": 204
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/epk/acceptance-fabc833b86207fba",
             "path": "/api/health",
             "status": 200
           },
           {
-            "route": "/epk/acceptance-10228fc6eaf52524",
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/press-kit/public/acceptance-fabc833b86207fba",
+            "status": 200
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/version",
+            "status": 200
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/metrics/web-vitals",
+            "status": 204
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/auth/me",
+            "status": 200
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
+            "path": "/api/health",
+            "status": 200
+          },
+          {
+            "route": "/epk/acceptance-fabc833b86207fba",
             "path": "/api/auth/me",
             "status": 200
           }
@@ -7344,14 +7354,13 @@
     },
     {
       "group": "http",
-      "status": "failed",
+      "status": "passed",
       "counts": {
-        "passed": 478,
-        "failed": 5,
+        "passed": 484,
         "skipped": 9
       },
-      "total": 492,
-      "exitCode": 1,
+      "total": 493,
+      "exitCode": 0,
       "countScope": "21 files; JUnit cases; dual-config cache tests also appear in root unit run"
     },
     {
@@ -7363,19 +7372,19 @@
         "label": "source application HTTP simulation; not packed application acceptance",
         "admission": {
           "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-          "hostMemAvailableBytes": 33639997440,
+          "hostMemAvailableBytes": 33826271232,
           "cgroup": {
-            "currentBytes": 8959901696,
+            "currentBytes": 5495836672,
             "maximumBytes": 34359738368,
-            "headroomBytes": 25399836672,
-            "anonymousBytes": 564908032,
-            "filePageCacheBytes": 7322853376,
-            "inactiveFileBytes": 2938273792,
-            "activeFileBytes": 4170731520,
-            "kernelBytes": 1070710784,
-            "reclaimableKernelSlabBytes": 1030627704
+            "headroomBytes": 28863901696,
+            "anonymousBytes": 565456896,
+            "filePageCacheBytes": 4308811776,
+            "inactiveFileBytes": 513384448,
+            "activeFileBytes": 3705925632,
+            "kernelBytes": 620363776,
+            "reclaimableKernelSlabBytes": 593629712
           },
-          "effectiveAvailableBytes": 25399836672,
+          "effectiveAvailableBytes": 28863901696,
           "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
           "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
           "minimumAvailableBytes": 1610612736
@@ -7450,8 +7459,8 @@
             "successful": 70,
             "failed": 0,
             "successPercent": 100,
-            "p95Ms": 158.997698,
-            "p99Ms": 174.107492,
+            "p95Ms": 175.198104,
+            "p99Ms": 197.95125,
             "durationDefinition": "all completed request durations, including failed requests"
           },
           {
@@ -7462,8 +7471,8 @@
             "successful": 80,
             "failed": 0,
             "successPercent": 100,
-            "p95Ms": 331.204144,
-            "p99Ms": 357.579929,
+            "p95Ms": 252.327331,
+            "p99Ms": 261.776291,
             "durationDefinition": "all completed request durations, including failed requests"
           }
         ],
@@ -7483,13 +7492,13 @@
             "build"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:29:16.584163+00:00",
-          "durationSeconds": 20.909,
+          "startedAt": "2026-10-27T21:49:14.797009+00:00",
+          "durationSeconds": 21.592,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/build.txt",
-          "logSha256": "042dbd4e9286dd4025ee4206d8a53d48b28b58daad5ae774f3db2bbf0b56f9af",
+          "logSha256": "35213937616de738d040c2e68bda5fc20ec7d187e75426367982ef41a5f55349",
           "group": "checks",
           "id": "build"
         },
@@ -7500,8 +7509,8 @@
             "check"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:45.841729+00:00",
-          "durationSeconds": 70.939,
+          "startedAt": "2026-10-27T22:08:33.104103+00:00",
+          "durationSeconds": 38.549,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7517,8 +7526,8 @@
             "lint"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:49:56.781672+00:00",
-          "durationSeconds": 46.155,
+          "startedAt": "2026-10-27T22:09:11.653080+00:00",
+          "durationSeconds": 43.028,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7536,13 +7545,13 @@
             "--json"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:50:42.936919+00:00",
-          "durationSeconds": 0.97,
+          "startedAt": "2026-10-27T22:09:54.681696+00:00",
+          "durationSeconds": 1.123,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/orchestration/audit.txt",
-          "logSha256": "c8b23610c1ace8b5735ec36c7d4752a3d39f5a15588dc25bc6be613f1caf2e7a",
+          "logSha256": "06ea807069c8bd47482767bd0df8701d5645cee32e5c406b2c76c9524e472abc",
           "group": "checks",
           "id": "audit"
         }
@@ -7556,10 +7565,10 @@
         "vulnerabilities": {
           "info": 0,
           "low": 0,
-          "moderate": 0,
+          "moderate": 1,
           "high": 0,
           "critical": 0,
-          "total": 0
+          "total": 1
         },
         "dependencies": {
           "prod": 1032,
@@ -7583,7 +7592,7 @@
             "--self-test"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:25.557388+00:00",
+          "startedAt": "2026-10-27T22:08:13.084964+00:00",
           "durationSeconds": 0.266,
           "exitCode": 0,
           "timedOut": false,
@@ -7602,8 +7611,8 @@
             "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:25.825224+00:00",
-          "durationSeconds": 0.315,
+          "startedAt": "2026-10-27T22:08:13.352899+00:00",
+          "durationSeconds": 0.365,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7619,8 +7628,8 @@
             "evaluations/maxcore-quality/verify_types.py"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:26.142526+00:00",
-          "durationSeconds": 0.064,
+          "startedAt": "2026-10-27T22:08:13.720242+00:00",
+          "durationSeconds": 0.065,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7634,8 +7643,8 @@
             "evaluations/maxcore-quality/verify_evidence.py"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:26.208988+00:00",
-          "durationSeconds": 0.032,
+          "startedAt": "2026-10-27T22:08:13.787136+00:00",
+          "durationSeconds": 0.064,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7649,8 +7658,8 @@
             "scripts/maxcore-isolated-recovery-acceptance.py"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:26.243458+00:00",
-          "durationSeconds": 5.913,
+          "startedAt": "2026-10-27T22:08:13.853620+00:00",
+          "durationSeconds": 5.851,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
@@ -7664,13 +7673,13 @@
             "tests/payment-processing/run.mjs"
           ],
           "cwd": ".",
-          "startedAt": "2026-10-26T23:48:32.159216+00:00",
-          "durationSeconds": 13.626,
+          "startedAt": "2026-10-27T22:08:19.706930+00:00",
+          "durationSeconds": 13.367,
           "exitCode": 0,
           "timedOut": false,
           "status": "passed",
           "log": "reports/test-verification/operations/run.mjs.txt",
-          "logSha256": "8fa65ed72d0210f00f3526fce64117b79d4cfea87a4c4c385c57d1d67c3dac95",
+          "logSha256": "cd578586a97b14fd328221195c5035a08331503bd7ed7cfdb35c712177ad55bf",
           "file": "tests/payment-processing/run.mjs"
         }
       ]
@@ -7680,28 +7689,28 @@
       "status": "failed",
       "totals": {
         "lines": {
-          "total": 223737,
-          "covered": 29025,
+          "total": 223905,
+          "covered": 29355,
           "skipped": 0,
-          "pct": 12.97
+          "pct": 13.11
         },
         "statements": {
-          "total": 240013,
-          "covered": 30844,
+          "total": 240215,
+          "covered": 31260,
           "skipped": 0,
-          "pct": 12.85
+          "pct": 13.01
         },
         "functions": {
-          "total": 47789,
-          "covered": 4067,
+          "total": 47833,
+          "covered": 4150,
           "skipped": 0,
-          "pct": 8.51
+          "pct": 8.67
         },
         "branches": {
-          "total": 158182,
-          "covered": 13573,
+          "total": 158339,
+          "covered": 13922,
           "skipped": 0,
-          "pct": 8.58
+          "pct": 8.79
         },
         "branchesTrue": {
           "total": 0,
@@ -7710,7 +7719,8 @@
           "pct": 100
         }
       },
-      "files": 2649,
+      "files": 2651,
+      "parseExclusions": [],
       "scope": "Instrumented JavaScript/TypeScript statements, branches and functions; not full business-flow proof"
     },
     {
@@ -7726,8 +7736,8 @@
         {
           "group": "root",
           "id": "ci",
-          "exitCode": 1,
-          "status": "failed",
+          "exitCode": 0,
+          "status": "passed",
           "unitReportFresh": true
         },
         {
@@ -7740,7 +7750,8 @@
           "group": "coverage",
           "id": "coverage",
           "exitCode": 1,
-          "status": "failed"
+          "status": "failed",
+          "coverageParseExclusions": []
         },
         {
           "group": "node",
@@ -7781,8 +7792,8 @@
         {
           "group": "http",
           "id": "http",
-          "exitCode": 1,
-          "status": "failed"
+          "exitCode": 0,
+          "status": "passed"
         },
         {
           "group": "pages",
@@ -7823,6 +7834,13 @@
       ]
     },
     {
+      "group": "source-integrity",
+      "status": "passed",
+      "sha256": "1bffd19f52e0e03535fefca06a40e4b712fd235491423f4525862acea730fbc4",
+      "changedFiles": [],
+      "scope": "Git-visible code/configuration inputs remained unchanged throughout execution"
+    },
+    {
       "group": "evidence-gates",
       "status": "failed",
       "commands": [
@@ -7835,16 +7853,20 @@
           "id": "remediation",
           "exitCode": 1,
           "status": "failed"
+        },
+        {
+          "id": "completion-plan",
+          "exitCode": 0,
+          "status": "passed"
         }
       ]
     }
   ],
   "fileStatusCounts": {
-    "executed": 561,
+    "executed": 571,
     "not_run": 29,
-    "support": 64,
-    "blocked_or_skipped": 16,
-    "failed": 4
+    "support": 68,
+    "blocked_or_skipped": 16
   },
   "limits": [
     "Group counts overlap; Node parent tests differ from JUnit leaf cases",
@@ -7856,8 +7878,8 @@
     "uiInteractionDeclarations": 8374,
     "backendRegistrations": 2901,
     "frontendApiContracts": 932,
-    "scannedTypeScriptJavaScriptFiles": 3384,
-    "actualCoverageFiles": 2649,
+    "scannedTypeScriptJavaScriptFiles": 3390,
+    "actualCoverageFiles": 2651,
     "requiredChecks": 33504,
     "unverifiedChecks": 33504,
     "unknownMappings": 127,
@@ -7866,11 +7888,11 @@
   "remediation": {
     "status": "needs_work",
     "countsByKind": {
-      "command_failure": 3,
-      "assertion_failure": 9,
+      "command_failure": 1,
+      "assertion_failure": 1,
       "blocked_check": 20,
       "skipped_case": 20,
-      "coverage_gap": 2494,
+      "coverage_gap": 2492,
       "missing_execution": 29,
       "feature_acceptance_gap": 832,
       "mapping_gap": 14

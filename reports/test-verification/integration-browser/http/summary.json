@@ -1,9 +1,9 @@
 {
-  "startedAt": "2026-10-26T23:42:24.042Z",
+  "startedAt": "2026-10-27T22:02:21.622Z",
   "scope": "Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied",
-  "sourceRevision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
   "requestedFiles": [],
-  "status": "failed",
+  "status": "passed",
   "productionReady": false,
   "testSourceSha256": {
     "tests/integration/maxcore-local-supervisor.integration.test.ts": "081722358385e5d0429e83f6039d5efdb10e6ea729f8593c02b9f267ad6adc7a",
@@ -12,10 +12,10 @@
     "tests/auth-flows.test.ts": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
     "tests/security-hardening.test.ts": "7ec70cba3a3a46fd2c0aabd25fc95d4b70ac4c88f662a682c837789928319ffb",
     "tests/webhook-security.test.ts": "3a7ee49bc10878f8ee9a6be9dc63d7b3eecceac81a84c4a43e30299a529bf570",
-    "tests/critical-paths.test.ts": "1828910efd69e9dff34cdd4c7c70e3705ca32d644b1a0735234ff90ccab162fd",
+    "tests/critical-paths.test.ts": "822daa3fe77125760fafe4c470f2a8e77c85c5cd7207db3576bb6b04ef436815",
     "tests/audit-persistence.test.ts": "47bf5e847deac86a43af68d9b014eb41141176394aee03370fa4fc4402f7edde",
     "tests/paid-user-e2e.test.ts": "26578fd010a861800fdf1ba6844308f27250a66430699df9029e5468f7bea118",
-    "tests/ai-analytics-integration.test.ts": "dd9932419c8c625bfe9a59d0812b15839025a926ae39adbd203899b51a47e859",
+    "tests/ai-analytics-integration.test.ts": "9cfcbc14247c7b2a5bc358105069192d6c6421df1e6b589e7b7f1727fe7e8ded",
     "tests/cache-invalidation.test.ts": "9ee9d9102c7ffc09430c4866815acb87326fe4601d8cd0cf50434e643f142998",
     "tests/unit/cache-cross-pod.test.ts": "c28df33e28a574afc6a48f1505267a3f50f743962096fb6cf22acf59e66ad246",
     "tests/file-management.test.ts": "65e4c00bd698becb27406b4fa804cedfc9b92d3d023b13c80f72bd7ad8cb04dc",
@@ -34,16 +34,16 @@
   "applicationRoutes": "pass",
   "workerWorkingDirectory": "temporary fixture; source root used only for module/test resolution",
   "trustedProxy": "Exact loopback fixture origin receives TLS forwarding and stable TEST-NET identities per file/client; hostile probes use distinct clients, production blocking and rate limits retained",
-  "exitCode": 1,
+  "exitCode": 0,
   "signal": null,
   "testProcessCleanup": {
     "tracked": 28,
     "remaining": []
   },
   "appProcessCleanup": {
-    "tracked": 3,
+    "tracked": 7,
     "remaining": []
   },
   "postgresCleanup": "pass",
-  "finishedAt": "2026-10-26T23:45:02.313Z"
+  "finishedAt": "2026-10-27T22:04:55.246Z"
 }

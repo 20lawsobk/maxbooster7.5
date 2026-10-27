@@ -104875,6 +104875,206 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
+## coverage-1a762f4c2248a75e
+
+```json
+{
+  "file": "client/src/components/studio/StudioLoader.tsx",
+  "statements": {
+    "covered": 0,
+    "total": 90
+  },
+  "functions": {
+    "covered": 0,
+    "total": 23
+  },
+  "branches": {
+    "covered": 0,
+    "total": 70
+  },
+  "uncoveredFunctions": [
+    {
+      "name": "StudioLoader",
+      "line": 42
+    },
+    {
+      "name": "(anonymous_1)",
+      "line": 63
+    },
+    {
+      "name": "(anonymous_2)",
+      "line": 64
+    },
+    {
+      "name": "(anonymous_3)",
+      "line": 79
+    },
+    {
+      "name": "(anonymous_4)",
+      "line": 92
+    },
+    {
+      "name": "(anonymous_5)",
+      "line": 98
+    },
+    {
+      "name": "(anonymous_6)",
+      "line": 99
+    },
+    {
+      "name": "(anonymous_7)",
+      "line": 106
+    },
+    {
+      "name": "(anonymous_8)",
+      "line": 113
+    },
+    {
+      "name": "(anonymous_9)",
+      "line": 115
+    },
+    {
+      "name": "(anonymous_10)",
+      "line": 120
+    },
+    {
+      "name": "(anonymous_11)",
+      "line": 122
+    },
+    {
+      "name": "(anonymous_12)",
+      "line": 130
+    },
+    {
+      "name": "(anonymous_13)",
+      "line": 131
+    },
+    {
+      "name": "(anonymous_14)",
+      "line": 141
+    },
+    {
+      "name": "(anonymous_15)",
+      "line": 168
+    },
+    {
+      "name": "(anonymous_16)",
+      "line": 216
+    },
+    {
+      "name": "(anonymous_17)",
+      "line": 312
+    },
+    {
+      "name": "(anonymous_18)",
+      "line": 344
+    },
+    {
+      "name": "(anonymous_19)",
+      "line": 361
+    },
+    {
+      "name": "(anonymous_20)",
+      "line": 362
+    },
+    {
+      "name": "withStudioLoader",
+      "line": 406
+    },
+    {
+      "name": "(anonymous_22)",
+      "line": 409
+    }
+  ],
+  "uncoveredStatementLines": [
+    43,
+    44,
+    45,
+    47,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    63,
+    64,
+    65,
+    66,
+    76,
+    79,
+    89,
+    92,
+    98,
+    99,
+    100,
+    106,
+    107,
+    108,
+    113,
+    114,
+    115,
+    116,
+    120,
+    121,
+    122,
+    125,
+    126,
+    127,
+    130,
+    131,
+    132,
+    133,
+    134,
+    136,
+    141,
+    144,
+    147,
+    148,
+    150,
+    151,
+    152,
+    153,
+    158,
+    159,
+    168,
+    169,
+    170,
+    172,
+    178,
+    181,
+    184,
+    187,
+    189,
+    195,
+    197,
+    202,
+    211,
+    215,
+    216,
+    219,
+    220,
+    235,
+    239,
+    241,
+    243,
+    245,
+    248,
+    312,
+    344,
+    359,
+    360,
+    361,
+    362,
+    364,
+    390,
+    409,
+    410
+  ],
+  "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+}
+```
+
 ## coverage-8ca463bf18dfdc66
 
 ```json
@@ -226625,7 +226825,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
   "statements": {
-    "covered": 1379,
+    "covered": 1374,
     "total": 3004
   },
   "functions": {
@@ -226633,7 +226833,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 339
   },
   "branches": {
-    "covered": 894,
+    "covered": 892,
     "total": 2264
   },
   "uncoveredFunctions": [
@@ -227512,7 +227712,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1100,
     1101,
     1118,
+    1123,
     1132,
+    1152,
+    1153,
+    1154,
+    1155,
     1181,
     1215,
     1216,
@@ -264027,101 +264232,143 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/pocket-dimension/fabric/control/Rebalancer.ts",
   "statements": {
-    "covered": 39,
-    "total": 100
+    "covered": 23,
+    "total": 108
   },
   "functions": {
-    "covered": 8,
-    "total": 15
+    "covered": 6,
+    "total": 20
   },
   "branches": {
-    "covered": 12,
-    "total": 46
+    "covered": 3,
+    "total": 39
   },
   "uncoveredFunctions": [
     {
       "name": "start",
-      "line": 27
-    },
-    {
-      "name": "(anonymous_2)",
       "line": 30
     },
     {
+      "name": "(anonymous_2)",
+      "line": 33
+    },
+    {
+      "name": "(anonymous_3)",
+      "line": 33
+    },
+    {
+      "name": "(anonymous_4)",
+      "line": 37
+    },
+    {
       "name": "stop",
-      "line": 34
+      "line": 41
     },
     {
       "name": "rebalance",
-      "line": 43
+      "line": 51
     },
     {
-      "name": "(anonymous_5)",
-      "line": 62
+      "name": "(anonymous_7)",
+      "line": 71
     },
     {
-      "name": "(anonymous_6)",
-      "line": 68
+      "name": "(anonymous_8)",
+      "line": 77
+    },
+    {
+      "name": "migrateChunk",
+      "line": 106
+    },
+    {
+      "name": "(anonymous_10)",
+      "line": 111
+    },
+    {
+      "name": "(anonymous_11)",
+      "line": 111
     },
     {
       "name": "(anonymous_12)",
-      "line": 130
+      "line": 112
+    },
+    {
+      "name": "migrateChunkOnce",
+      "line": 116
+    },
+    {
+      "name": "(anonymous_19)",
+      "line": 149
     }
   ],
   "uncoveredStatementLines": [
-    28,
-    29,
-    30,
     31,
+    32,
+    33,
+    34,
     35,
     36,
     37,
     38,
-    40,
+    42,
+    43,
     44,
     45,
     46,
     48,
-    49,
+    52,
     53,
     54,
-    55,
+    56,
+    57,
     58,
-    59,
-    61,
     62,
+    63,
     64,
-    66,
     67,
     68,
-    69,
+    70,
     71,
+    73,
     75,
     76,
     77,
     78,
-    79,
     80,
-    81,
-    82,
-    83,
+    84,
+    85,
+    86,
     87,
     88,
+    89,
+    90,
     91,
-    94,
-    117,
-    120,
+    92,
+    96,
+    97,
+    100,
+    103,
+    111,
+    112,
+    113,
+    121,
+    122,
+    123,
+    124,
+    126,
+    127,
     128,
-    129,
-    130,
-    133,
-    134,
-    135,
-    138,
-    139,
-    140,
+    144,
+    146,
+    147,
+    148,
+    149,
+    152,
+    153,
     154,
-    156
+    156,
+    157,
+    160
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -264411,7 +264658,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/pocket-dimension/fabric/infra/DeletionOutbox.ts",
   "statements": {
-    "covered": 0,
+    "covered": 4,
     "total": 43
   },
   "functions": {
@@ -264489,8 +264736,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     }
   ],
   "uncoveredStatementLines": [
-    7,
-    8,
     11,
     12,
     13,
@@ -264499,7 +264744,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     19,
     20,
     21,
-    24,
     25,
     32,
     33,
@@ -264524,6 +264768,148 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     74,
     75,
     76
+  ],
+  "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+}
+```
+
+## coverage-2a37e1ae38e563bc
+
+```json
+{
+  "file": "server/pocket-dimension/fabric/infra/MigrationOutbox.ts",
+  "statements": {
+    "covered": 1,
+    "total": 83
+  },
+  "functions": {
+    "covered": 1,
+    "total": 14
+  },
+  "branches": {
+    "covered": 0,
+    "total": 80
+  },
+  "uncoveredFunctions": [
+    {
+      "name": "pending",
+      "line": 18
+    },
+    {
+      "name": "(anonymous_2)",
+      "line": 19
+    },
+    {
+      "name": "begin",
+      "line": 23
+    },
+    {
+      "name": "(anonymous_4)",
+      "line": 24
+    },
+    {
+      "name": "resume",
+      "line": 41
+    },
+    {
+      "name": "(anonymous_6)",
+      "line": 43
+    },
+    {
+      "name": "(anonymous_7)",
+      "line": 68
+    },
+    {
+      "name": "(anonymous_8)",
+      "line": 75
+    },
+    {
+      "name": "(anonymous_9)",
+      "line": 83
+    },
+    {
+      "name": "rotateTarget",
+      "line": 107
+    },
+    {
+      "name": "(anonymous_11)",
+      "line": 108
+    },
+    {
+      "name": "discard",
+      "line": 119
+    },
+    {
+      "name": "(anonymous_13)",
+      "line": 120
+    }
+  ],
+  "uncoveredStatementLines": [
+    19,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    32,
+    33,
+    34,
+    42,
+    43,
+    45,
+    49,
+    50,
+    52,
+    53,
+    54,
+    56,
+    57,
+    58,
+    59,
+    63,
+    64,
+    66,
+    68,
+    69,
+    70,
+    71,
+    72,
+    74,
+    75,
+    76,
+    77,
+    78,
+    80,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    90,
+    92,
+    94,
+    95,
+    96,
+    99,
+    100,
+    102,
+    103,
+    108,
+    109,
+    110,
+    114,
+    115,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    127,
+    128
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -264829,7 +265215,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
   "statements": {
     "covered": 0,
-    "total": 54
+    "total": 64
   },
   "functions": {
     "covered": 0,
@@ -264837,98 +265223,108 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 0,
-    "total": 21
+    "total": 29
   },
   "uncoveredFunctions": [
     {
       "name": "constructor",
-      "line": 14
+      "line": 24
     },
     {
       "name": "(anonymous_1)",
-      "line": 14
+      "line": 24
     },
     {
       "name": "immutableKey",
-      "line": 16
+      "line": 26
     },
     {
       "name": "ensureOpen",
-      "line": 21
+      "line": 31
     },
     {
       "name": "(anonymous_4)",
-      "line": 25
+      "line": 35
     },
     {
       "name": "(anonymous_5)",
-      "line": 37
+      "line": 47
     },
     {
       "name": "chunkKey",
-      "line": 45
+      "line": 55
     },
     {
       "name": "putChunk",
-      "line": 49
+      "line": 59
     },
     {
       "name": "getChunk",
-      "line": 57
+      "line": 73
     },
     {
       "name": "deleteChunk",
-      "line": 74
+      "line": 92
     },
     {
       "name": "hasChunk",
-      "line": 82
+      "line": 107
     }
   ],
   "uncoveredStatementLines": [
     8,
-    11,
-    12,
-    14,
-    17,
-    18,
+    9,
+    15,
+    21,
     22,
-    23,
-    25,
-    26,
+    24,
     27,
     28,
-    34,
+    32,
+    33,
+    35,
+    36,
+    37,
     38,
-    39,
-    42,
-    46,
-    50,
-    51,
+    44,
+    48,
+    49,
     52,
-    53,
-    54,
-    58,
-    59,
+    56,
     60,
     61,
     62,
+    63,
     64,
     65,
     66,
-    67,
     68,
-    71,
+    69,
+    70,
+    74,
     75,
-    76,
-    77,
     78,
     79,
+    80,
+    82,
     83,
     84,
     85,
     86,
-    87
+    89,
+    93,
+    94,
+    98,
+    99,
+    100,
+    102,
+    103,
+    104,
+    108,
+    109,
+    110,
+    111,
+    112
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -310244,89 +310640,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/routes/socialMediaJobHandlers.ts",
   "statements": {
-    "covered": 0,
+    "covered": 53,
     "total": 53
   },
   "functions": {
-    "covered": 0,
+    "covered": 7,
     "total": 7
   },
   "branches": {
-    "covered": 0,
+    "covered": 52,
     "total": 52
   },
-  "uncoveredFunctions": [
-    {
-      "name": "rejectInvalidMusicVideoSceneRequest",
-      "line": 8
-    },
-    {
-      "name": "(anonymous_1)",
-      "line": 14
-    },
-    {
-      "name": "(anonymous_2)",
-      "line": 16
-    },
-    {
-      "name": "createVideoJobPollHandler",
-      "line": 30
-    },
-    {
-      "name": "(anonymous_4)",
-      "line": 31
-    },
-    {
-      "name": "createMusicVideoJobPollHandler",
-      "line": 52
-    },
-    {
-      "name": "(anonymous_6)",
-      "line": 53
-    }
-  ],
-  "uncoveredStatementLines": [
-    10,
-    11,
-    12,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21,
-    23,
-    24,
-    25,
-    26,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-    37,
-    38,
-    39,
-    40,
-    41,
-    44,
-    45,
-    47,
-    53,
-    54,
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    65
-  ],
+  "uncoveredFunctions": [],
+  "uncoveredStatementLines": [],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
 ```
@@ -369187,101 +369513,20 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/hybridImmutableByteStore.ts",
   "statements": {
-    "covered": 4,
+    "covered": 71,
     "total": 72
   },
   "functions": {
-    "covered": 1,
+    "covered": 8,
     "total": 8
   },
   "branches": {
-    "covered": 0,
+    "covered": 53,
     "total": 56
   },
-  "uncoveredFunctions": [
-    {
-      "name": "(anonymous_0)",
-      "line": 20
-    },
-    {
-      "name": "validateKey",
-      "line": 28
-    },
-    {
-      "name": "manifest",
-      "line": 32
-    },
-    {
-      "name": "(anonymous_4)",
-      "line": 42
-    },
-    {
-      "name": "write",
-      "line": 49
-    },
-    {
-      "name": "read",
-      "line": 81
-    },
-    {
-      "name": "delete",
-      "line": 101
-    }
-  ],
+  "uncoveredFunctions": [],
   "uncoveredStatementLines": [
-    20,
-    29,
-    33,
-    34,
-    35,
-    36,
-    37,
-    42,
-    44,
-    46,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    67,
-    68,
-    69,
-    70,
-    74,
-    75,
-    76,
-    77,
-    78,
-    82,
-    83,
-    84,
-    85,
-    86,
-    87,
-    88,
-    89,
-    90,
-    91,
-    92,
-    93,
-    94,
-    96,
-    97,
-    98,
-    102,
-    103,
-    104,
-    105,
-    106
+    51
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -369293,135 +369538,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/hybridStorageRepository.ts",
   "statements": {
-    "covered": 0,
+    "covered": 64,
     "total": 64
   },
   "functions": {
-    "covered": 0,
+    "covered": 14,
     "total": 14
   },
   "branches": {
-    "covered": 0,
+    "covered": 30,
     "total": 30
   },
-  "uncoveredFunctions": [
-    {
-      "name": "decode",
-      "line": 18
-    },
-    {
-      "name": "constructor",
-      "line": 28
-    },
-    {
-      "name": "importLegacy",
-      "line": 30
-    },
-    {
-      "name": "(anonymous_3)",
-      "line": 45
-    },
-    {
-      "name": "beginUpload",
-      "line": 50
-    },
-    {
-      "name": "(anonymous_5)",
-      "line": 69
-    },
-    {
-      "name": "activate",
-      "line": 74
-    },
-    {
-      "name": "get",
-      "line": 81
-    },
-    {
-      "name": "list",
-      "line": 87
-    },
-    {
-      "name": "touch",
-      "line": 94
-    },
-    {
-      "name": "markCold",
-      "line": 100
-    },
-    {
-      "name": "beginDelete",
-      "line": 111
-    },
-    {
-      "name": "(anonymous_12)",
-      "line": 132
-    },
-    {
-      "name": "finishDelete",
-      "line": 137
-    }
-  ],
-  "uncoveredStatementLines": [
-    19,
-    28,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-    37,
-    38,
-    41,
-    43,
-    45,
-    46,
-    47,
-    51,
-    52,
-    53,
-    54,
-    57,
-    60,
-    62,
-    63,
-    66,
-    67,
-    69,
-    70,
-    71,
-    75,
-    78,
-    82,
-    84,
-    88,
-    91,
-    95,
-    101,
-    105,
-    112,
-    113,
-    114,
-    115,
-    116,
-    117,
-    118,
-    120,
-    121,
-    122,
-    123,
-    124,
-    125,
-    126,
-    128,
-    129,
-    130,
-    132,
-    133,
-    134,
-    138
-  ],
+  "uncoveredFunctions": [],
+  "uncoveredStatementLines": [],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
 ```
@@ -369432,26 +369561,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/hybridStorageService.ts",
   "statements": {
-    "covered": 43,
+    "covered": 196,
     "total": 200
   },
   "functions": {
-    "covered": 10,
+    "covered": 42,
     "total": 46
   },
   "branches": {
-    "covered": 34,
+    "covered": 164,
     "total": 167
   },
   "uncoveredFunctions": [
-    {
-      "name": "(anonymous_2)",
-      "line": 130
-    },
-    {
-      "name": "(anonymous_4)",
-      "line": 144
-    },
     {
       "name": "(anonymous_6)",
       "line": 171
@@ -369467,254 +369588,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "name": "(anonymous_9)",
       "line": 174
-    },
-    {
-      "name": "upload",
-      "line": 211
-    },
-    {
-      "name": "read",
-      "line": 247
-    },
-    {
-      "name": "delete",
-      "line": 260
-    },
-    {
-      "name": "recoverPendingUpload",
-      "line": 273
-    },
-    {
-      "name": "storeFor",
-      "line": 288
-    },
-    {
-      "name": "(anonymous_21)",
-      "line": 296
-    },
-    {
-      "name": "(anonymous_22)",
-      "line": 297
-    },
-    {
-      "name": "(anonymous_23)",
-      "line": 300
-    },
-    {
-      "name": "getMetadata",
-      "line": 303
-    },
-    {
-      "name": "exists",
-      "line": 308
-    },
-    {
-      "name": "getDownloadUrl",
-      "line": 310
-    },
-    {
-      "name": "tierDown",
-      "line": 317
-    },
-    {
-      "name": "runAutoTiering",
-      "line": 323
-    },
-    {
-      "name": "getAnalytics",
-      "line": 333
-    },
-    {
-      "name": "(anonymous_30)",
-      "line": 336
-    },
-    {
-      "name": "(anonymous_31)",
-      "line": 337
-    },
-    {
-      "name": "(anonymous_32)",
-      "line": 348
-    },
-    {
-      "name": "(anonymous_33)",
-      "line": 349
-    },
-    {
-      "name": "(anonymous_34)",
-      "line": 357
-    },
-    {
-      "name": "(anonymous_35)",
-      "line": 358
-    },
-    {
-      "name": "(anonymous_36)",
-      "line": 362
-    },
-    {
-      "name": "(anonymous_37)",
-      "line": 363
-    },
-    {
-      "name": "(anonymous_38)",
-      "line": 365
-    },
-    {
-      "name": "(anonymous_39)",
-      "line": 370
-    },
-    {
-      "name": "(anonymous_40)",
-      "line": 375
-    },
-    {
-      "name": "getTierBreakdown",
-      "line": 379
-    },
-    {
-      "name": "getDeduplicationStats",
-      "line": 380
-    },
-    {
-      "name": "migrateFile",
-      "line": 382
-    },
-    {
-      "name": "optimizeStorage",
-      "line": 390
-    },
-    {
-      "name": "cleanup",
-      "line": 394
     }
   ],
   "uncoveredStatementLines": [
-    130,
-    134,
-    141,
-    142,
-    144,
-    145,
-    146,
-    147,
-    148,
-    149,
-    150,
-    151,
-    152,
-    154,
-    156,
     171,
     172,
     173,
-    174,
-    215,
-    216,
-    217,
-    218,
-    219,
-    220,
-    221,
-    227,
-    230,
-    231,
-    232,
-    233,
-    234,
-    235,
-    239,
-    240,
-    241,
-    242,
-    248,
-    249,
-    250,
-    251,
-    252,
-    253,
-    254,
-    256,
-    257,
-    261,
-    262,
-    263,
-    264,
-    265,
-    266,
-    268,
-    274,
-    275,
-    276,
-    277,
-    278,
-    279,
-    280,
-    281,
-    283,
-    284,
-    285,
-    289,
-    296,
-    297,
-    300,
-    304,
-    305,
-    308,
-    311,
-    312,
-    313,
-    314,
-    318,
-    319,
-    320,
-    324,
-    325,
-    326,
-    327,
-    328,
-    330,
-    334,
-    335,
-    336,
-    337,
-    338,
-    342,
-    343,
-    344,
-    345,
-    347,
-    348,
-    349,
-    350,
-    351,
-    352,
-    353,
-    354,
-    355,
-    357,
-    358,
-    359,
-    362,
-    363,
-    365,
-    366,
-    370,
-    375,
-    379,
-    380,
-    383,
-    384,
-    385,
-    387,
-    391,
-    395,
-    396,
-    397,
-    398,
-    399,
-    400,
-    403
+    174
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -378182,50 +378062,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/mediaUploadCleanup.ts",
   "statements": {
-    "covered": 0,
+    "covered": 7,
     "total": 7
   },
   "functions": {
-    "covered": 0,
+    "covered": 6,
     "total": 6
   },
   "branches": {
-    "covered": 0,
+    "covered": 6,
     "total": 6
   },
-  "uncoveredFunctions": [
-    {
-      "name": "cleanupMediaUploadFiles",
-      "line": 5
-    },
-    {
-      "name": "(anonymous_1)",
-      "line": 10
-    },
-    {
-      "name": "(anonymous_2)",
-      "line": 11
-    },
-    {
-      "name": "(anonymous_3)",
-      "line": 12
-    },
-    {
-      "name": "(anonymous_4)",
-      "line": 12
-    },
-    {
-      "name": "(anonymous_5)",
-      "line": 12
-    }
-  ],
-  "uncoveredStatementLines": [
-    6,
-    9,
-    10,
-    11,
-    12
-  ],
+  "uncoveredFunctions": [],
+  "uncoveredStatementLines": [],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
 ```
@@ -397149,67 +396998,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/selfHealingSecurityEngine.ts",
   "statements": {
-    "covered": 359,
-    "total": 391
+    "covered": 392,
+    "total": 400
   },
   "functions": {
-    "covered": 49,
-    "total": 53
+    "covered": 54,
+    "total": 54
   },
   "branches": {
-    "covered": 202,
-    "total": 259
+    "covered": 236,
+    "total": 265
   },
-  "uncoveredFunctions": [
-    {
-      "name": "ready",
-      "line": 297
-    },
-    {
-      "name": "(anonymous_8)",
-      "line": 377
-    },
-    {
-      "name": "(anonymous_12)",
-      "line": 400
-    },
-    {
-      "name": "(anonymous_34)",
-      "line": 942
-    }
-  ],
+  "uncoveredFunctions": [],
   "uncoveredStatementLines": [
-    298,
-    372,
-    373,
-    377,
-    378,
-    401,
-    441,
-    479,
-    579,
-    580,
-    621,
-    622,
-    623,
-    687,
     688,
-    779,
-    784,
-    820,
-    821,
-    825,
-    942,
-    955,
-    961,
-    966,
-    976,
-    980,
-    984,
-    988,
-    996,
-    1099,
-    1100
+    689,
+    785,
+    823,
+    824,
+    828,
+    981,
+    1011
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -400375,105 +400184,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/socialMediaJobRepository.ts",
   "statements": {
-    "covered": 0,
+    "covered": 50,
     "total": 50
   },
   "functions": {
-    "covered": 0,
+    "covered": 12,
     "total": 12
   },
   "branches": {
-    "covered": 0,
+    "covered": 52,
     "total": 52
   },
-  "uncoveredFunctions": [
-    {
-      "name": "mediaJobAssetUrl",
-      "line": 20
-    },
-    {
-      "name": "constructor",
-      "line": 37
-    },
-    {
-      "name": "create",
-      "line": 39
-    },
-    {
-      "name": "heartbeat",
-      "line": 53
-    },
-    {
-      "name": "finish",
-      "line": 62
-    },
-    {
-      "name": "get",
-      "line": 78
-    },
-    {
-      "name": "keepMediaJobAlive",
-      "line": 98
-    },
-    {
-      "name": "(anonymous_7)",
-      "line": 102
-    },
-    {
-      "name": "(anonymous_8)",
-      "line": 105
-    },
-    {
-      "name": "(anonymous_9)",
-      "line": 107
-    },
-    {
-      "name": "(anonymous_10)",
-      "line": 109
-    },
-    {
-      "name": "(anonymous_11)",
-      "line": 112
-    }
-  ],
-  "uncoveredStatementLines": [
-    21,
-    22,
-    23,
-    26,
-    27,
-    28,
-    29,
-    37,
-    40,
-    41,
-    50,
-    54,
-    59,
-    63,
-    64,
-    65,
-    67,
-    68,
-    69,
-    75,
-    81,
-    86,
-    88,
-    89,
-    90,
-    100,
-    101,
-    102,
-    103,
-    104,
-    105,
-    106,
-    108,
-    109,
-    111,
-    112
-  ],
+  "uncoveredFunctions": [],
+  "uncoveredStatementLines": [],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
 ```
@@ -433467,7 +433190,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "shared/ml/nlp/ContentGenerator.ts",
   "statements": {
-    "covered": 351,
+    "covered": 354,
     "total": 542
   },
   "functions": {
@@ -433475,7 +433198,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 82
   },
   "branches": {
-    "covered": 235,
+    "covered": 238,
     "total": 448
   },
   "uncoveredFunctions": [
@@ -433634,8 +433357,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     975,
     999,
     1015,
-    1024,
-    1025,
     1119,
     1122,
     1135,
@@ -433655,7 +433376,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1282,
     1284,
     1290,
-    1305,
     1328,
     1330,
     1331,
@@ -435420,12 +435140,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "shared/schema.ts",
   "statements": {
-    "covered": 614,
-    "total": 636
+    "covered": 616,
+    "total": 638
   },
   "functions": {
-    "covered": 132,
-    "total": 154
+    "covered": 133,
+    "total": 155
   },
   "branches": {
     "covered": 0,
@@ -435434,116 +435154,116 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "uncoveredFunctions": [
     {
       "name": "(anonymous_1)",
-      "line": 100
+      "line": 101
     },
     {
       "name": "(anonymous_5)",
-      "line": 179
+      "line": 180
     },
     {
       "name": "(anonymous_12)",
-      "line": 402
+      "line": 403
     },
     {
       "name": "(anonymous_24)",
-      "line": 891
+      "line": 892
     },
     {
       "name": "(anonymous_76)",
-      "line": 2811
+      "line": 2812
     },
     {
       "name": "(anonymous_96)",
-      "line": 6397
+      "line": 6398
     },
     {
       "name": "(anonymous_98)",
-      "line": 6699
+      "line": 6700
     },
     {
       "name": "(anonymous_99)",
-      "line": 7010
+      "line": 7011
     },
     {
       "name": "(anonymous_100)",
-      "line": 7038
+      "line": 7039
     },
     {
       "name": "(anonymous_101)",
-      "line": 7069
-    },
-    {
-      "name": "(anonymous_102)",
       "line": 7070
     },
     {
-      "name": "(anonymous_115)",
-      "line": 7429
+      "name": "(anonymous_102)",
+      "line": 7071
     },
     {
-      "name": "(anonymous_135)",
-      "line": 8223
+      "name": "(anonymous_116)",
+      "line": 7449
     },
     {
       "name": "(anonymous_136)",
-      "line": 8224
+      "line": 8243
     },
     {
       "name": "(anonymous_137)",
-      "line": 8271
+      "line": 8244
     },
     {
       "name": "(anonymous_138)",
-      "line": 8308
+      "line": 8291
     },
     {
-      "name": "(anonymous_141)",
-      "line": 8409
+      "name": "(anonymous_139)",
+      "line": 8328
     },
     {
-      "name": "(anonymous_143)",
-      "line": 8441
+      "name": "(anonymous_142)",
+      "line": 8429
     },
     {
-      "name": "(anonymous_145)",
-      "line": 8470
+      "name": "(anonymous_144)",
+      "line": 8461
     },
     {
       "name": "(anonymous_146)",
-      "line": 8504
+      "line": 8490
     },
     {
-      "name": "(anonymous_148)",
-      "line": 8538
+      "name": "(anonymous_147)",
+      "line": 8524
     },
     {
-      "name": "(anonymous_152)",
-      "line": 8632
+      "name": "(anonymous_149)",
+      "line": 8558
+    },
+    {
+      "name": "(anonymous_153)",
+      "line": 8652
     }
   ],
   "uncoveredStatementLines": [
-    100,
-    179,
-    402,
-    891,
-    2811,
-    6397,
-    6699,
-    7010,
-    7038,
-    7069,
+    101,
+    180,
+    403,
+    892,
+    2812,
+    6398,
+    6700,
+    7011,
+    7039,
     7070,
-    7429,
-    8223,
-    8224,
-    8271,
-    8308,
-    8409,
-    8441,
-    8470,
-    8504,
-    8538,
-    8632
+    7071,
+    7449,
+    8243,
+    8244,
+    8291,
+    8328,
+    8429,
+    8461,
+    8490,
+    8524,
+    8558,
+    8652
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }

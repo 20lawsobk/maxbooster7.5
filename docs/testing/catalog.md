@@ -8058,7 +8058,7 @@ Requirements: Node.js >=22.12; npm ci.
 
 ### [tests/fabric-migration-outbox-postgres.test.mjs](../../tests/fabric-migration-outbox-postgres.test.mjs)
 
-fabric migration journals recover physical I/O and accounting across process restarts; discard after lost SQL owner atomically denies delayed old PDIM publication
+fabric migration journals recover physical I/O and accounting across process restarts; restart retains healthy source when published replacement bytes are missing
 
 Runner: `node:test`. Working directory: `.`.
 
@@ -8068,9 +8068,11 @@ python3 scripts/testing/run-node-suites.py --file tests/fabric-migration-outbox-
 
 Requirements: Node.js >=22.12; npm ci.
 
-<details><summary>Source case labels (3; runtime expansion may differ)</summary>
+<details><summary>Source case labels (5; runtime expansion may differ)</summary>
 
 - fabric migration journals recover physical I/O and accounting across process restarts
+- restart retains healthy source when published replacement bytes are missing
+- restart retains healthy source when published replacement bytes are corrupt
 - discard after lost SQL owner atomically denies delayed old PDIM publication
 - two independent processes serialize migration without duplicate capacity charges
 

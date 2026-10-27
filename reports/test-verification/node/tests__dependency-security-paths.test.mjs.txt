@@ -2,19 +2,19 @@ TAP version 13
 # Subtest: Electron download native transport preserves redirects, agent, progress and failure cleanup
 ok 1 - Electron download native transport preserves redirects, agent, progress and failure cleanup
   ---
-  duration_ms: 32.566488
+  duration_ms: 27.715725
   type: 'test'
   ...
 # Subtest: artifact timeouts and cancellation bound stalled headers and stalled bodies
 ok 2 - artifact timeouts and cancellation bound stalled headers and stalled bodies
   ---
-  duration_ms: 108.428646
+  duration_ms: 109.983301
   type: 'test'
   ...
 # Subtest: cross-origin artifact redirects cannot forward credentials
 ok 3 - cross-origin artifact redirects cannot forward credentials
   ---
-  duration_ms: 6.505123
+  duration_ms: 5.791466
   type: 'test'
   ...
 #   • 
@@ -23,19 +23,19 @@ ok 3 - cross-origin artifact redirects cannot forward credentials
 # Subtest: real Electron packager verifies checksum, downloads via patched transport, then reuses artifact cache
 ok 4 - real Electron packager verifies checksum, downloads via patched transport, then reuses artifact cache
   ---
-  duration_ms: 275.125413
+  duration_ms: 248.677273
   type: 'test'
   ...
 # Subtest: installed code generators compile each real OpenAPI spec into isolated React-query and Zod outputs
 ok 5 - installed code generators compile each real OpenAPI spec into isolated React-query and Zod outputs
   ---
-  duration_ms: 1707.289776
+  duration_ms: 1483.51197
   type: 'test'
   ...
 # Subtest: PDIM's installed upload middleware parses multipart bytes and enforces size limits
 ok 6 - PDIM's installed upload middleware parses multipart bytes and enforces size limits
   ---
-  duration_ms: 138.003251
+  duration_ms: 154.578474
   type: 'test'
   ...
 1..6
@@ -46,4 +46,4 @@ ok 6 - PDIM's installed upload middleware parses multipart bytes and enforces si
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2412.533367
+# duration_ms 2168.570311

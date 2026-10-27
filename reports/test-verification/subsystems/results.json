@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-26T23:42:15.926258+00:00",
-  "revision": "4c72114a55a9425d4af743a72a71e4c58a532d2f",
+  "generatedAt": "2026-10-27T22:02:14.630727+00:00",
+  "revision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
   "scope": "Canonical native/imported subsystem checks; no production database or provider credentials",
   "settings": {
     "includeRustConcurrency": true,
@@ -14,7 +14,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.115,
+      "seconds": 0.274,
       "command": [
         "cargo",
         "test",
@@ -38,7 +38,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.469,
+      "seconds": 0.83,
       "command": [
         "go",
         "test",
@@ -62,7 +62,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.171,
+      "seconds": 0.165,
       "command": [
         "node",
         "--import",
@@ -84,7 +84,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.115,
+      "seconds": 0.064,
       "command": [
         "node",
         "scripts/check-js-security-versions.js"
@@ -103,7 +103,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 37.767,
+      "seconds": 36.448,
       "command": [
         "node",
         "--test",
@@ -124,7 +124,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 4.499,
+      "seconds": 4.804,
       "command": [
         "node",
         "scripts/testing/run-pdim-smoke.mjs",
