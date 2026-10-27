@@ -21,3 +21,32 @@ export function authorizedHybridReadPrincipal(
   }
   return null;
 }
+
+
+/**
+ * The direct PDIM fallback has no owner enforcement of its own. It must only
+ * be reached with an independently established ownership/public/entitlement
+ * signal. An untracked key is not evidence that the bytes are public.
+ */
+export function authorizedDirectStorageRead(
+  requesterId: string,
+  trackedOwnerId: string | null,
+  metadata: { userId: string; isPublic?: boolean } | null,
+  verifiedStemAccess: boolean | null,
+): boolean {
+  if (!requesterId) return false;
+  if (
+    trackedOwnerId &&
+    trackedOwnerId !== requesterId &&
+    metadata?.isPublic !== true &&
+    verifiedStemAccess !== true
+  ) {
+    return false;
+  }
+  return (
+    trackedOwnerId === requesterId ||
+    metadata?.userId === requesterId ||
+    metadata?.isPublic === true ||
+    verifiedStemAccess === true
+  );
+}

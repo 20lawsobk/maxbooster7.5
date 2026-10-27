@@ -1597,6 +1597,9 @@ export async function registerRoutes(
         "./services/hybridStorageService.js"
       );
 
+      // Keep the durable owner available to the direct-byte fallback. An
+      // untracked key must not become public merely because metadata is absent.
+      let trackedOwnerId: string | null = null;
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
       {
@@ -1618,6 +1621,7 @@ export async function registerRoutes(
           );
           return res.status(404).json({ message: "File not found" });
         }
+        trackedOwnerId = row?.userId ?? null;
       }
 
       let fileBuffer: Buffer | null = null;
@@ -1649,6 +1653,12 @@ export async function registerRoutes(
       }
 
       if (!fileBuffer) {
+        const { authorizedDirectStorageRead } = await import(
+          "./services/hybridFileAuthorization.js"
+        );
+        if (!authorizedDirectStorageRead(req.user.id, trackedOwnerId, hybridMeta, stemAccess)) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         try {
           fileBuffer = await storageService.downloadFile(key);
           storageTier = "replit-direct";
@@ -1694,7 +1704,9 @@ export async function registerRoutes(
       // "private" (not "public") — this endpoint now requires auth and gates
       // users/* keys by owner, so a shared/CDN cache must never store a
       // response that was only authorized for one specific requester.
-      res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "private, max-age=31536000, immutable");
+      // Ownership, entitlements and deletion state can change: never persist
+      // previously authorized private bytes in a browser or intermediary cache.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);
