@@ -765,6 +765,7 @@ export class HybridStorageService {
       }
     }
 
+    const updatedPublicKey = this.publicContentHashes.get(entry.contentHash);
     try {
       await this.saveIndex();
     } catch (error) {
@@ -781,10 +782,13 @@ export class HybridStorageService {
             this.contentHashIndex.set(entry.contentHash, restoredKeys);
           }
         }
-        if (originalPublicKey !== undefined) {
-          this.publicContentHashes.set(entry.contentHash, originalPublicKey);
-        } else {
-          this.publicContentHashes.delete(entry.contentHash);
+        // Do not overwrite a public pointer changed by another operation.
+        if (this.publicContentHashes.get(entry.contentHash) === updatedPublicKey) {
+          if (originalPublicKey !== undefined) {
+            this.publicContentHashes.set(entry.contentHash, originalPublicKey);
+          } else {
+            this.publicContentHashes.delete(entry.contentHash);
+          }
         }
       }
       throw error;
