@@ -481,6 +481,11 @@ export class HybridStorageService {
 
     const contentHash = this.computeContentHash(data);
     const key = this.generateFileKey(userId, fileName, options?.folder);
+    // Check before any physical write: commitUploadIndex rejects collisions only
+    // after a primary byte write, which could overwrite an existing object.
+    if (this.fileIndex.has(key)) {
+      throw new Error(`Hybrid storage file key collision: ${key}`);
+    }
     const isPublic = options?.isPublic || false;
 
     const existingKeys = this.contentHashIndex.get(contentHash);
