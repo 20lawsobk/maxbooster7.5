@@ -1097,39 +1097,19 @@ export class HybridStorageService {
   }
 
   async optimizeStorage(
-    userId: string,
+    _userId: string,
   ): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
     await this.initialize();
 
     const result = await this.runAutoTiering();
-    let deduplicated = 0;
-
-    const userFiles = this.listFiles(userId);
-    const hashGroups = new Map<string, HybridFileMetadata[]>();
-
-    for (const file of userFiles) {
-      if (file?.isDeduplicated) continue;
-      const group = hashGroups?.get(file?.contentHash) || [];
-      group?.push(file);
-      hashGroups?.set(file?.contentHash, group);
-    }
-
-    for (const [, group] of hashGroups) {
-      if (group?.length <= 1) continue;
-      const primary = group[0];
-      for (let i = 1; i < group?.length; i++) {
-        const dup = group[i];
-        dup.isDeduplicated = true;
-        dup.deduplicationRef = primary?.key;
-        deduplicated++;
-      }
-    }
-
-    if (deduplicated > 0) {
-      await this.saveIndex();
-    }
-
-    return { ...result, deduplicated };
+    // Do not turn existing primary records into references in place.
+    // A primary may already back cross-user deduplicated records: changing
+    // it into a reference would create a chain rejected by read/loadIndex.
+    // This also leaves its original physical bytes orphaned, so reporting
+    // a storage saving would be misleading. Upload-time deduplication
+    // remains enabled; retrospective compaction requires a durable,
+    // fenced immutable-byte/reference migration before it can be safe.
+    return { ...result, deduplicated: 0 };
   }
 
   async cleanup(
