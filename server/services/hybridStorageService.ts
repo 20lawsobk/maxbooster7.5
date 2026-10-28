@@ -151,6 +151,31 @@ export function normalizeHybridUploadFolder(value: unknown): string | undefined 
   return value;
 }
 
+
+/**
+ * External API responses must never reveal the physical primary key behind
+ * an alias. Cross-account deduplication can otherwise disclose another
+ * tenant's private storage key through an otherwise authorized metadata read.
+ * Keep the internal index unchanged for read/delete/recovery.
+ */
+export function toPublicHybridFileMetadata(entry: HybridFileMetadata): HybridFileMetadata {
+  const safe = { ...entry };
+  delete safe.deduplicationRef;
+  return safe;
+}
+
+/** Apply the same tenant boundary to analytics' nested metadata records. */
+export function toPublicHybridStorageAnalytics(analytics: StorageAnalytics): StorageAnalytics {
+  return {
+    ...analytics,
+    accessPatterns: {
+      mostAccessed: analytics.accessPatterns.mostAccessed.map(toPublicHybridFileMetadata),
+      leastAccessed: analytics.accessPatterns.leastAccessed.map(toPublicHybridFileMetadata),
+      recentlyAccessed: analytics.accessPatterns.recentlyAccessed.map(toPublicHybridFileMetadata),
+    },
+  };
+}
+
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
