@@ -558,7 +558,7 @@ export class HybridStorageService {
       // new alias at another alias: read() rejects chained references.
       // A hash collision with another tenant's private primary is not an
       // authorization grant. Preserve valid same-hash primaries as separate
-      // physical objects rather than revealing their existence to uploaders.
+      // logical primaries rather than revealing their existence to uploaders.
       const hasPrimary = existingKeys.some((candidateKey) => {
         const candidate = this.fileIndex.get(candidateKey);
         return candidate && !candidate.isDeduplicated && candidate.contentHash === contentHash;
@@ -607,7 +607,7 @@ export class HybridStorageService {
       }
     }
 
-    // No eligible primary: write independent bytes. Do not fall back to a
+    // No eligible primary: write under a separate logical key. Do not fall back to a
     // public-hash pointer that could still reference a private primary.
 
     const tier =
