@@ -8,6 +8,7 @@
 import { Router, Request, Response } from "express";
 import {
   hybridStorageService,
+  normalizeHybridCleanupDays,
   StorageTier,
   StorageLocation,
 } from "../services/hybridStorageService.js";
@@ -303,11 +304,14 @@ router.post("/optimize", requireAuth, async (req: Request, res: Response) => {
 router.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { olderThanDays } = req.body;
+    let olderThanDays: number;
+    try {
+      olderThanDays = normalizeHybridCleanupDays(req.body?.olderThanDays);
+    } catch {
+      return res.status(400).json({ error: "Invalid cleanup retention window" });
+    }
 
-    const result = await hybridStorageService?.cleanup(userId, {
-      olderThanDays: olderThanDays ? parseInt(olderThanDays, 10) : undefined,
-    });
+    const result = await hybridStorageService?.cleanup(userId, { olderThanDays });
 
     res.json({ success: true, ...result });
   } catch (error) {
