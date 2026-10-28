@@ -1629,7 +1629,7 @@ export async function registerRoutes(
       let hybridReadError: unknown;
 
       const hybridMeta = hybridStorageService.getMetadata(key);
-      const { canReadStoredFile } = await import("./services/hybridFileAuthorization.js");
+      const { canReadStoredFile, canFallbackToDirectStorage } = await import("./services/hybridFileAuthorization.js");
       // Do not let a missing hybrid metadata entry turn a known or unknown
       // private object into an authenticated-but-unowned direct PDIM read.
       // Durable tracking ownership wins over a conflicting hybrid owner.
@@ -1668,6 +1668,18 @@ export async function registerRoutes(
       }
 
       if (!fileBuffer) {
+        // An indexed hybrid object's read failure may be an authorization
+        // denial or concurrent metadata change. Never bypass it by fetching
+        // the same key directly from PDIM without the hybrid access check.
+        // The legacy direct path is only for objects without hybrid metadata,
+        // after the durable ownership check above has already passed.
+        if (!canFallbackToDirectStorage(Boolean(hybridMeta))) {
+          logger.warn(
+            { hadHybridMeta: true, hybridReadFailed: Boolean(hybridReadError) },
+            "Hybrid storage read unavailable; direct fallback denied",
+          );
+          return res.status(503).json({ message: "Hybrid storage file unavailable" });
+        }
         try {
           fileBuffer = await storageService.downloadFile(key);
           storageTier = "replit-direct";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedHybridReadPrincipal, canReadStoredFile } from "../../server/services/hybridFileAuthorization.js";
+import { authorizedHybridReadPrincipal, canReadStoredFile, canFallbackToDirectStorage } from "../../server/services/hybridFileAuthorization.js";
 
 describe("authenticated hybrid-file read principal", () => {
   const privateFile = { userId: "owner", isPublic: false };
@@ -64,5 +64,21 @@ describe("durable public visibility overrides stale hybrid metadata", () => {
   ];
   it.each(cases)("%s", (_label, requester, tracked, hybrid, hybridPublic, stem, trackedPublic, expected) => {
     expect(canReadStoredFile(requester, key, tracked, hybrid, hybridPublic, stem, trackedPublic)).toBe(expected);
+  });
+});
+
+// This decision is checked after the independent ownership gate and before
+// direct PDIM byte access; it must not depend on the reason a hybrid read failed.
+describe("hybrid storage read failure cannot bypass metadata authorization", () => {
+  it("denies direct fallback for a hybrid-indexed private object", () => {
+    expect(canFallbackToDirectStorage(true)).toBe(false);
+  });
+
+  it("denies direct fallback for a hybrid-indexed public object whose visibility changed", () => {
+    expect(canFallbackToDirectStorage(true)).toBe(false);
+  });
+
+  it("preserves the legacy direct fallback only when no hybrid metadata exists", () => {
+    expect(canFallbackToDirectStorage(false)).toBe(true);
   });
 });
