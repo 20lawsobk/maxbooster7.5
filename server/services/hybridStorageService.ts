@@ -266,11 +266,31 @@ export class HybridStorageService {
         });
       }
 
+      // A deduplicated record must resolve directly to a real primary with
+      // identical content. Reject dangling, chained or cross-content pointers
+      // before accepting the restored ownership index.
+      for (const [key, entry] of nextFiles) {
+        if (!entry.isDeduplicated) continue;
+        const primary = entry.deduplicationRef
+          ? nextFiles.get(entry.deduplicationRef)
+          : undefined;
+        if (!primary || primary.isDeduplicated || primary.contentHash !== entry.contentHash || primary.key === key) {
+          throw new Error(`invalid hybrid deduplication reference ${JSON.stringify(key)}`);
+        }
+      }
+
       const nextHashes = new Map<string, string[]>();
+      const seenHashKeys = new Set<string>();
       for (const [hash, keys] of Object.entries((index as any).contentHashes)) {
         if (
           !Array.isArray(keys) ||
-          !keys.every((key) => typeof key === "string" && nextFiles.has(key))
+          !keys.every((key) => {
+            if (typeof key !== "string" || seenHashKeys.has(key)) return false;
+            const file = nextFiles.get(key);
+            if (!file || file.contentHash !== hash) return false;
+            seenHashKeys.add(key);
+            return true;
+          })
         ) {
           throw new Error(`invalid hybrid content-hash entry ${JSON.stringify(hash)}`);
         }
@@ -278,7 +298,11 @@ export class HybridStorageService {
       }
       const nextPublic = new Map<string, string>();
       for (const [hash, key] of Object.entries((index as any).publicHashes)) {
-        if (typeof key !== "string" || !nextFiles.has(key)) {
+        if (
+          typeof key !== "string" ||
+          !nextFiles.has(key) ||
+          nextFiles.get(key)!.contentHash !== hash
+        ) {
           throw new Error(`invalid hybrid public-hash entry ${JSON.stringify(hash)}`);
         }
         nextPublic.set(hash, key);
