@@ -18,7 +18,7 @@ const fns = names.map((name) => {
 const js = ts.transpileModule(fns.join('\n') + '\nglobalThis.exported = {toPublicHybridFileMetadata,toPublicHybridStorageAnalytics};', {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
 }).outputText;
-const context = vm.createContext({});
+const context = vm.createContext({ exports: {} });
 vm.runInContext(js, context);
 const { toPublicHybridFileMetadata: redact, toPublicHybridStorageAnalytics: redactAnalytics } = context.exported;
 const own = { key: 'bob/asset', userId: 'bob', contentHash: 'hash', isDeduplicated: true,
