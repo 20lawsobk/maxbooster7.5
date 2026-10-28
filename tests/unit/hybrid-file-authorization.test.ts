@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedHybridReadPrincipal } from "../../server/services/hybridFileAuthorization.js";
+import { authorizedHybridReadPrincipal, canReadStoredFile } from "../../server/services/hybridFileAuthorization.js";
 
 describe("authenticated hybrid-file read principal", () => {
   const privateFile = { userId: "owner", isPublic: false };
@@ -24,5 +24,28 @@ describe("authenticated hybrid-file read principal", () => {
 
   it("never permits an absent authenticated principal", () => {
     expect(authorizedHybridReadPrincipal("", privateFile, true)).toBeNull();
+  });
+});
+
+describe("direct and hybrid file byte-fetch authorization", () => {
+  const unscoped = "opaque-asset/private.wav";
+  const cases: Array<[string, string, string, string | null, string | null, boolean, boolean | null, boolean]> = [
+    ["reject absent requester even for public metadata", "", unscoped, "owner", "owner", true, null, false],
+    ["reject absent requester even with paid-stem flag", "", unscoped, "owner", "owner", false, true, false],
+    ["reject unknown untracked unscoped direct key", "other", unscoped, null, null, false, null, false],
+    ["allow legacy owner-namespaced untracked key", "owner", "users/owner/audio/a.wav", null, null, false, null, true],
+    ["reject legacy foreign namespace", "other", "users/owner/audio/a.wav", null, null, false, null, false],
+    ["allow DB-tracked owner with unscoped key", "owner", unscoped, "owner", null, false, null, true],
+    ["reject DB-tracked foreign owner despite caller key prefix", "other", "users/other/audio/a.wav", "owner", null, false, null, false],
+    ["allow untracked hybrid owner with unscoped key", "owner", unscoped, null, "owner", false, null, true],
+    ["reject untracked hybrid foreign owner", "other", unscoped, null, "owner", false, null, false],
+    ["reject conflicting durable foreign owner even if hybrid claims caller", "other", unscoped, "owner", "other", false, null, false],
+    ["allow explicitly public hybrid metadata", "other", unscoped, "owner", "owner", true, null, true],
+    ["allow verified paid marketplace stem", "buyer", unscoped, "owner", "owner", false, true, true],
+    ["reject unverified marketplace stem", "buyer", unscoped, "owner", "owner", false, false, false],
+    ["reject empty object key", "owner", "", "owner", "owner", true, true, false],
+  ];
+  it.each(cases)("%s", (_label, requester, key, tracked, hybrid, publicMeta, stem, expected) => {
+    expect(canReadStoredFile(requester, key, tracked, hybrid, publicMeta, stem)).toBe(expected);
   });
 });

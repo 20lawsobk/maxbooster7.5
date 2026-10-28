@@ -1597,6 +1597,7 @@ export async function registerRoutes(
         "./services/hybridStorageService.js"
       );
 
+      let trackedOwnerId: string | null = null;
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
       {
@@ -1608,6 +1609,7 @@ export async function registerRoutes(
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
+        trackedOwnerId = row?.userId ?? null;
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
@@ -1625,6 +1627,20 @@ export async function registerRoutes(
       let hybridReadError: unknown;
 
       const hybridMeta = hybridStorageService.getMetadata(key);
+      const { canReadStoredFile } = await import("./services/hybridFileAuthorization.js");
+      // Do not let a missing hybrid metadata entry turn a known or unknown
+      // private object into an authenticated-but-unowned direct PDIM read.
+      // Durable tracking ownership wins over a conflicting hybrid owner.
+      if (!canReadStoredFile(
+        req.user.id,
+        key,
+        trackedOwnerId,
+        hybridMeta?.userId ?? null,
+        hybridMeta?.isPublic === true,
+        stemAccess,
+      )) {
+        return res.status(403).json({ message: "Access denied" });
+      }
       if (hybridMeta) {
         const { authorizedHybridReadPrincipal } = await import(
           "./services/hybridFileAuthorization.js"
