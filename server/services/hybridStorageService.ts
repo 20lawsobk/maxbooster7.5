@@ -1070,9 +1070,12 @@ export class HybridStorageService {
       const entry = this.fileIndex.get(key);
       if (!entry) continue;
       try {
-        await this.delete(userId, key);
-        deletedCount++;
-        freedBytes += entry?.sizeBytes;
+        // Shared-primary safety guards may refuse deletion without throwing.
+        // Only acknowledge a deletion that the service actually confirmed.
+        if (await this.delete(userId, key)) {
+          deletedCount++;
+          freedBytes += entry?.sizeBytes;
+        }
       } catch {}
     }
 
