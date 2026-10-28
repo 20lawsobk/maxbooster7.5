@@ -3,9 +3,10 @@
 Reconciled October 28, 2026, America/Detroit. **Global launch readiness is not
 established; no page is granted a complete Green designation.** The verified
 pushed review checkpoint is
-`13c199569e5f6fa29a6002b36169b76c65e26b5f` on
-`sophia/platform-production-hardening-2026-10-27`. It includes a160/cb source
-and the source-bound test, cold-release and audit evidence. Main remains
+`70e2e68f46652ac9a82fb203b1d8d6cb9ceb3c60` on
+`sophia/platform-production-hardening-2026-10-27`. Its remote ref was verified;
+it includes source through 10d and the source-bound full tests, histories,
+current cold-release rehearsal and audit evidence. Main remains
 unchanged. Main promotion remains conditional on the
 owner's actual production-ready requirements, including all 80 pages and all
 required shared, deployed, native and cross-language gates.
@@ -13,7 +14,7 @@ required shared, deployed, native and cross-language gates.
 The latest full master completed October 28, 2026, 09:30:12–09:53:54
 America/Detroit (`13:30:12Z`–`13:53:54Z`), about 23m42s, from
 `10d192675beefcf1b7beef3ce47c271db0cc17cf`. This source and the preceding bca/e512 repairs
-remain local pending a normal review-branch push. Its common source digest
+are preserved in the verified pushed review checkpoint. Its common source digest
 `cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418` stayed unchanged.
 Build, 2,728 unit cases, 18 additional cases, all 124 Node files, Python,
 commerce, native subsystems, focused Chromium, HTTP, all 80 route-render

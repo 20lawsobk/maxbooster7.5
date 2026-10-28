@@ -2,13 +2,13 @@
 
 Recorded October 26, 2026; reconciled October 28, 2026, America/Detroit. This
 ledger governs the remaining work; it is not a launch certificate. The verified
-pushed review checkpoint is `13c199569e5f6fa29a6002b36169b76c65e26b5f` on
+pushed review checkpoint is `70e2e68f46652ac9a82fb203b1d8d6cb9ceb3c60` on
 `sophia/platform-production-hardening-2026-10-27`. It includes source commits
 `a1603b13b6352a978e3877a2f43f1ccd98a98a18` and the fixture-only correction
 `cb783f1f9b34719a214dd7f9203a31dea64c051e`, plus the source-bound reports and
-instructions. Main remains unchanged. Later local source commits bca5f4e1,
-e5124419 and 10d19267 now have a completed unchanged-source full master. They
-remain pending a normal review-branch push at this reconciliation. Prior a160
+instructions. It also contains bca5f4e1, e5124419 and 10d19267 with their completed
+unchanged-source full master, current cold rehearsal and exhaustive gap traces.
+The normal push and remote ref were verified. Main remains unchanged. Prior a160
 and cb receipts retain their own original outcomes.
 The scope is the existing Replit web/API application, its local
 imported MaxCore/PDIM services, Neon, enabled provider journeys and 80 declared
@@ -271,7 +271,7 @@ The resumed execution order minimizes stale work:
 | 6 | After the master finishes, prepare the configured release in a disposable publishing copy with complete admitted before/after inventories. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Rebuild stale/policy-invalidated capsules normally. | The current 10d rehearsal passed all four commands and 37 independent checks at 13:49:17–13:51:58 America/Detroit, with unchanged common source and all 4,527 admitted entries. Payload 37 entries/719,501,006 bytes; all 36 tracked descendants cleaned. Accepted cold-startup-with-ml-unavailable scope retains productionReady:false and does not certify live generation, actual Replit or global launch. The historical cb receipt remains unchanged. |
 | 7 | Verify deployed Replit identity, actual published HTTPS origin, required schema, enabled provider callbacks/webhooks and real application journeys. Perform controlled migration/deploy only after a concrete reviewed package and required production-change authorization. Do not guess an app origin from the editor URL. | External gates remain |
 | 8 | Capacity gate: run the existing bounded source HTTP profile without competing release/native workloads and retain its unchanged latency/error limits. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | The current 10d bounded profile passes 150/150 requests; steady p95 308.680022ms and spike p95 375.381277ms satisfy 500ms. Earlier profiles/failures remain retained; global topology/capacity is unverified. |
-| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Review checkpoint 13c19956 is verified pushed; bca/e512/10d source plus refreshed evidence remain local pending final artifact/link/value/size checks and a normal review-branch push; current-source cold acceptance now passes its bounded startup scope. All 80 pages remain Red and main remains unchanged; no final launch acceptance is granted. |
+| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Review checkpoint 70e2e68f is pushed and its remote ref verified, including bca/e512/10d source, tests, full histories, current cold scope and gap traces. Persistence checks verify 1,355 files, 1,684 archive members and 1,136 file links, with zero configured-value matches or retained ignored files. All 80 pages remain Red and main remains unchanged; continue the critical source work, not launch promotion. |
 
 ## Detailed gate checks
 

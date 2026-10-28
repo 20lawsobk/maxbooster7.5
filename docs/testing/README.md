@@ -7,10 +7,10 @@ failures, skipped cases and work that could not run. A source index is not a
 coverage percentage or evidence of a passing test.
 
 The verified pushed review checkpoint is
-`13c199569e5f6fa29a6002b36169b76c65e26b5f` on
-`sophia/platform-production-hardening-2026-10-27`. The later source commits
-`bca5f4e1`, `e5124419` and `10d192675beefcf1b7beef3ce47c271db0cc17cf` are local at this
-reconciliation; a normal review-branch push is still pending. Main remains
+`70e2e68f46652ac9a82fb203b1d8d6cb9ceb3c60` on
+`sophia/platform-production-hardening-2026-10-27`. The remote ref was verified
+after the normal push. It includes source commits `bca5f4e1`, `e5124419` and
+`10d192675beefcf1b7beef3ce47c271db0cc17cf`, their tests and retained evidence. Main remains
 unchanged and has no launch approval.
 
 The latest full master completed on October 28, 2026, 09:30:12–09:53:54
