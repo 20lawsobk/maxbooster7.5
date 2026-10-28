@@ -1,0 +1,26 @@
+{
+  "command": [
+    "pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts",
+    "--force"
+  ],
+  "cwd": "external/pdim",
+  "startedAt": "2026-10-28T01:32:15.712975+00:00",
+  "durationSeconds": 12.185,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/install-pdim-recreate.txt",
+  "logSha256": "712263ff1a76ebc6a2681b64e54a7b91f7d1dc53f40ed481844537c42b0eda2a",
+  "inputHashesBefore": {
+    "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+    "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4"
+  },
+  "inputHashesAfter": {
+    "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+    "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4"
+  },
+  "inputsUnchanged": true
+}

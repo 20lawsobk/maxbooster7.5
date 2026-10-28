@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "scope": "Real Electron ASAR loader with the actual installed Zod package; not application or provider end-to-end acceptance",
+  "status": "passed",
+  "productionReady": false,
+  "startedAt": "2026-10-28T02:37:25.840Z",
+  "electronBinary": "/artifact/max-booster",
+  "phases": [
+    {
+      "name": "physical-unpacked-entry-before",
+      "args": [
+        "/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar.unpacked/dist/index.mjs"
+      ],
+      "cwd": "/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar.unpacked/dist",
+      "exitCode": 1,
+      "signal": null,
+      "durationMs": 74,
+      "stdout": "",
+      "stderr": "node:internal/modules/package_json_reader:331\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n        ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find package 'zod' imported from /tmp/maxbooster-asar-module-RfUBqc/resources/app.asar.unpacked/dist/index.mjs\n    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:331:9)\n    at packageResolve (node:internal/modules/esm/resolve:797:25)\n    at moduleResolve (node:internal/modules/esm/resolve:886:18)\n    at defaultResolve (node:internal/modules/esm/resolve:1019:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)\n    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)\n    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)\n    at #resolve (node:internal/modules/esm/loader:687:17)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)\n    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33) {\n  code: 'ERR_MODULE_NOT_FOUND'\n}\n\nNode.js v24.22.0\n",
+      "error": null
+    },
+    {
+      "name": "actual-electron-helper-selection",
+      "args": [
+        "-e",
+        "const p = require(\"/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar/electron/runtime-policy.cjs\");\nconst selected = p.resolveDesktopServer({ appDirectory: \"/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar/electron\", resourcesDirectory: \"/tmp/maxbooster-asar-module-RfUBqc/resources\" });\nconsole.log(JSON.stringify({ selected, versions: { node: process.versions.node, electron: process.versions.electron, chrome: process.versions.chrome } }));"
+      ],
+      "cwd": "/tmp/maxbooster-asar-module-RfUBqc/resources",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 47,
+      "stdout": "{\"selected\":{\"entry\":\"/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar/dist/index.mjs\",\"cwd\":\"/tmp/maxbooster-asar-module-RfUBqc/resources\"},\"versions\":{\"node\":\"24.22.0\",\"electron\":\"43.8.3\",\"chrome\":\"150.0.7871.250\"}}\n",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "name": "virtual-asar-entry-after",
+      "args": [
+        "/tmp/maxbooster-asar-module-RfUBqc/resources/app.asar/dist/index.mjs"
+      ],
+      "cwd": "/tmp/maxbooster-asar-module-RfUBqc/resources",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 95,
+      "stdout": "{\"marker\":\"actual-zod-loaded\",\"value\":{\"title\":\"東京 🎹\",\"count\":7},\"cwd\":\"/tmp/maxbooster-asar-module-RfUBqc/resources\",\"entry\":\"file:///tmp/maxbooster-asar-module-RfUBqc/resources/app.asar/dist/index.mjs\"}\n",
+      "stderr": "",
+      "error": null
+    }
+  ],
+  "cleanup": {
+    "ownedFixtureRemoved": true
+  },
+  "actualZodVersion": "4.6.7",
+  "helperSha256": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+  "archiveSha256": "e13e6d7ec4cd00c648dbf2e0c9e6c9e0665a98b137d2dc94226be61eb449cdc6",
+  "runtime": {
+    "node": "24.22.0",
+    "electron": "43.8.3",
+    "chrome": "150.0.7871.250"
+  },
+  "physicalBeforeFailed": true,
+  "realVirtualModuleAfterPassed": true,
+  "physicalWorkingDirectoryVerified": true,
+  "appCredentialsPassedToChild": false
+}

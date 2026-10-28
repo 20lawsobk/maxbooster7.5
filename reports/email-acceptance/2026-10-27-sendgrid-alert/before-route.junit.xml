@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="actual alert service reaches SendGrid, escapes HTML and keeps recipients private" time="0.030551" classname="test" failure="Expected values to be strictly equal:0 !== 1">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:0 !== 1">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+0 !== 1
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:65:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="provider rejection does not consume cooldown; a subsequent accepted attempt does" time="0.014748" classname="test" failure="Expected values to be strictly equal:0 !== 1">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:0 !== 1">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+0 !== 1
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:85:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="an accepted webhook does not suppress retry of a failed email channel" time="0.007901" classname="test" failure="Expected values to be strictly equal:0 !== 1">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:0 !== 1">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+0 !== 1
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:101:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="simultaneous identical alerts share one in-flight admission and later cooldown" time="0.009317" classname="test" failure="Expected values to be strictly equal:0 !== 1">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:0 !== 1">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+0 !== 1
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:113:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="unconfigured alert email makes no provider request" time="0.007338" classname="test"/>
+	<testcase name="invalid addresses, headers, credential and oversized bodies fail before any request" time="0.009449" classname="test"/>
+	<testcase name="only202 means accepted; redirects and provider bodies never appear in diagnostics" time="0.002941" classname="test"/>
+	<testcase name="owned HTTP server verifies serialization, bounded timeout and redirect refusal" time="0.071995" classname="test"/>
+	<testcase name="actual monitoring route reports provider acceptance and cooldown without claiming delivery" time="0.029556" classname="test" failure="Expected values to be strictly equal:200 !== 202">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:200 !== 202">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+200 !== 202
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 202
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:198:44)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 202,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="actual monitoring route reports failed acceptance and permits a later retry" time="0.018344" classname="test" failure="Expected values to be strictly equal:200 !== 503">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:200 !== 503">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+200 !== 503
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 503
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:210:44)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="actual monitoring route reports missing channel configuration and honors fixture admission" time="0.024092" classname="test" failure="Expected values to be strictly equal:200 !== 503">
+		<failure type="testCodeFailure" message="Expected values to be strictly equal:200 !== 503">
+[Error [ERR_TEST_FAILURE]: Expected values to be strictly equal:
+
+200 !== 503
+] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  200 !== 503
+  
+      at TestContext.&lt;anonymous> (/workspace/maxbooster7.5/tests/sendgrid-alert-transport.test.mjs:223:43)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+}
+		</failure>
+	</testcase>
+	<!-- tests 11 -->
+	<!-- suites 0 -->
+	<!-- pass 4 -->
+	<!-- fail 7 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 497.067139 -->
+</testsuites>

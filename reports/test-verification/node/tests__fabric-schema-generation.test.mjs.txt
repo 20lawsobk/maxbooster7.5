@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: real Drizzle generation emits catalog epoch/dependency SQL rather than exiting zero with an empty migration
 ok 1 - real Drizzle generation emits catalog epoch/dependency SQL rather than exiting zero with an empty migration
   ---
-  duration_ms: 895.317208
+  duration_ms: 824.316402
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - real Drizzle generation emits catalog epoch/dependency SQL rather than ex
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1003.398844
+# duration_ms 938.412309

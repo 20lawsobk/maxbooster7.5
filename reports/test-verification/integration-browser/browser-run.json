@@ -1,5 +1,5 @@
 {
-  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
   "files": [
     "tests/auth-session-transient-browser.test.mjs",
     "tests/local-media-renderer-browser.test.mjs",

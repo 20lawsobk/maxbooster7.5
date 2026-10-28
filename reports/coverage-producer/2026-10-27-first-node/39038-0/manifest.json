@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "producerId": "39038-0",
+  "status": "incomplete",
+  "encoding": "utf-8",
+  "offsetEncoding": "utf-16-code-units",
+  "collectedAt": "2026-10-27T22:22:08.061Z",
+  "runtime": {
+    "node": "22.23.3",
+    "v8": "12.4.254.21-node.57"
+  },
+  "snapshotSemantics": "single-final-resetting-inspector-snapshot",
+  "scripts": [],
+  "failures": [
+    "Coverage evidence rejected: missing original source content"
+  ],
+  "rawSha256": "5d7a5884e1687989b807d67fd14a1d00c03a549e5621e7d4a1370e59d857885b"
+}

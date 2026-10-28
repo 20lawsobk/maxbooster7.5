@@ -3,103 +3,103 @@ TAP version 13
     # Subtest: verified target and original replica retain exact bytes with balanced accounting
     ok 1 - verified target and original replica retain exact bytes with balanced accounting
       ---
-      duration_ms: 922.629156
+      duration_ms: 926.261874
       type: 'test'
       ...
     # Subtest: restart after reservation before physical write resumes the same target key
     ok 2 - restart after reservation before physical write resumes the same target key
       ---
-      duration_ms: 868.707438
+      duration_ms: 881.45082
       type: 'test'
       ...
     # Subtest: ambiguous completed target write remains journaled and is resumed without double charge
     ok 3 - ambiguous completed target write remains journaled and is resumed without double charge
       ---
-      duration_ms: 826.659811
+      duration_ms: 980.271618
       type: 'test'
       ...
     # Subtest: actual corrupted PDIM target is retired and a new immutable key recovers after process restart
     ok 4 - actual corrupted PDIM target is retired and a new immutable key recovers after process restart
       ---
-      duration_ms: 868.670117
+      duration_ms: 924.68976
       type: 'test'
       ...
     # Subtest: SQL rollback after target retirement safely rotates the retained tombstoned key on retry
     ok 5 - SQL rollback after target retirement safely rotates the retained tombstoned key on retry
       ---
-      duration_ms: 916.507932
+      duration_ms: 929.465672
       type: 'test'
       ...
     # Subtest: failed target verification retains the source and reserved target until successful retry
     ok 6 - failed target verification retains the source and reserved target until successful retry
       ---
-      duration_ms: 842.468842
+      duration_ms: 897.473675
       type: 'test'
       ...
     # Subtest: SQL publication failure preserves original catalog and recovers after restart
     ok 7 - SQL publication failure preserves original catalog and recovers after restart
       ---
-      duration_ms: 870.314959
+      duration_ms: 858.677717
       type: 'test'
       ...
     # Subtest: source deletion outage retains published target and durable cleanup receipt
     ok 8 - source deletion outage retains published target and durable cleanup receipt
       ---
-      duration_ms: 847.557995
+      duration_ms: 905.360942
       type: 'test'
       ...
     # Subtest: SQL failure after physical deletion retries cleanup without double subtraction
     ok 9 - SQL failure after physical deletion retries cleanup without double subtraction
       ---
-      duration_ms: 852.64122
+      duration_ms: 871.944659
       type: 'test'
       ...
     # Subtest: a removed source reclaims an interrupted unpublished target and refunds its reservation
     ok 10 - a removed source reclaims an interrupted unpublished target and refunds its reservation
       ---
-      duration_ms: 812.334824
+      duration_ms: 927.021066
       type: 'test'
       ...
     # Subtest: insufficient target capacity denies admission before physical I/O or journal publication
     ok 11 - insufficient target capacity denies admission before physical I/O or journal publication
       ---
-      duration_ms: 785.324735
+      duration_ms: 861.975932
       type: 'test'
       ...
     # Subtest: terminated catalog owner cannot republish or double-account after successor migration recovery
     ok 12 - terminated catalog owner cannot republish or double-account after successor migration recovery
       ---
-      duration_ms: 804.154474
+      duration_ms: 874.150552
       type: 'test'
       ...
     # Subtest: restart retains healthy source when published replacement bytes are missing
     ok 13 - restart retains healthy source when published replacement bytes are missing
       ---
-      duration_ms: 1307.746168
+      duration_ms: 1255.226246
       type: 'test'
       ...
     # Subtest: restart retains healthy source when published replacement bytes are corrupt
     ok 14 - restart retains healthy source when published replacement bytes are corrupt
       ---
-      duration_ms: 1220.553543
+      duration_ms: 1232.141558
       type: 'test'
       ...
     # Subtest: discard after lost SQL owner atomically denies delayed old PDIM publication
     ok 15 - discard after lost SQL owner atomically denies delayed old PDIM publication
       ---
-      duration_ms: 861.439272
+      duration_ms: 896.284473
       type: 'test'
       ...
     # Subtest: two independent processes serialize migration without duplicate capacity charges
     ok 16 - two independent processes serialize migration without duplicate capacity charges
       ---
-      duration_ms: 1279.215783
+      duration_ms: 1339.79572
       type: 'test'
       ...
     1..16
 ok 1 - fabric migration journals recover physical I/O and accounting across process restarts
   ---
-  duration_ms: 15641.3318
+  duration_ms: 16316.493321
   type: 'test'
   ...
 1..1
@@ -110,4 +110,4 @@ ok 1 - fabric migration journals recover physical I/O and accounting across proc
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 15778.409423
+# duration_ms 16446.499387

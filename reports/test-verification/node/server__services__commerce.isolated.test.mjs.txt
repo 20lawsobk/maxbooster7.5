@@ -2,61 +2,61 @@ TAP version 13
 # Subtest: simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals
 ok 1 - simulated beta: reports include new withdrawals by currency and keep legacy evidence outside totals
   ---
-  duration_ms: 30.772536
+  duration_ms: 34.277468
   type: 'test'
   ...
 # Subtest: simulated beta: frozen checkout allocations survive later split changes; missing terms require review
 ok 2 - simulated beta: frozen checkout allocations survive later split changes; missing terms require review
   ---
-  duration_ms: 11.571395
+  duration_ms: 15.772518
   type: 'test'
   ...
 # Subtest: simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing
 ok 3 - simulated beta: payout UI wires exact cents, stable retry command and truthful standard timing
   ---
-  duration_ms: 3.023991
+  duration_ms: 4.099532
   type: 'test'
   ...
 # Subtest: simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order
 ok 4 - simulated beta: actual purchase producer -> registered webhook -> settlement replay uses one frozen order
   ---
-  duration_ms: 68.370838
+  duration_ms: 83.751549
   type: 'test'
   ...
 # Subtest: simulated beta: payout command survives lost response/reload and fences account switches
 ok 5 - simulated beta: payout command survives lost response/reload and fences account switches
   ---
-  duration_ms: 8.361983
+  duration_ms: 11.471612
   type: 'test'
   ...
 # Subtest: actual StripeService rejects another buyer and invalid refund values before money or writes
 ok 6 - actual StripeService rejects another buyer and invalid refund values before money or writes
   ---
-  duration_ms: 26.982515
+  duration_ms: 34.92575
   type: 'test'
   ...
 # Subtest: actual receipt repository commits only successful handlers and releases on failure
 ok 7 - actual receipt repository commits only successful handlers and releases on failure
   ---
-  duration_ms: 6.974039
+  duration_ms: 8.728285
   type: 'test'
   ...
 # Subtest: plan policy accepts real legacy producers, rejects invented/default tiers
 ok 8 - plan policy accepts real legacy producers, rejects invented/default tiers
   ---
-  duration_ms: 4.1107
+  duration_ms: 6.00021
   type: 'test'
   ...
 # Subtest: actual marketplace service rejects a succeeded payment belonging to a different order
 ok 9 - actual marketplace service rejects a succeeded payment belonging to a different order
   ---
-  duration_ms: 25.005007
+  duration_ms: 42.322712
   type: 'test'
   ...
 # Subtest: actual payment verification books provider fees and only succeeded refund totals
 ok 10 - actual payment verification books provider fees and only succeeded refund totals
   ---
-  duration_ms: 6.773282
+  duration_ms: 7.983941
   type: 'test'
   ...
 1..10
@@ -67,4 +67,4 @@ ok 10 - actual payment verification books provider fees and only succeeded refun
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 314.723226
+# duration_ms 392.290828

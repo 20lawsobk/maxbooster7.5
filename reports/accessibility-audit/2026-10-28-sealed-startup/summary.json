@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T12:11:58.924438+00:00",
+  "status": "passed_exact_master_nested_fixture_scope",
+  "productionReady": false,
+  "rootCause": "Chromium SingletonSocket Unix-domain path exceeds the platform limit after master, Node-runner and test nesting; the test incorrectly reused its nested profile as Chromium TMPDIR.",
+  "productCodeChanged": false,
+  "beforeTestSha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+  "currentSources": {
+    "tests/layout-navigation-accessibility-browser.test.mjs": "b2f8d571ff7b8e1ebf95ff9f379aa40338d7f48cefaba14cd366bebd225ac147",
+    "client/src/components/layout/TopBar.tsx": "901166b719f70315848436ec770d490c35c04abd5e304afc8d9c99e5c0adbb2f",
+    "client/src/components/layout/AppLayout.tsx": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563",
+    "client/src/components/layout/Sidebar.tsx": "8006ac3b3030c495a0364af6c87fe2f67eb1129fca5f08bef112a88297cef0d4",
+    "scripts/testing/common.py": "29b1af5de5defcbb4c82853dced9275db8260a9dd74a9c17ff6765b80a9d13bb",
+    "scripts/testing/run-node-suites.py": "bdae9321758f45e4eb1c857918bbc000e50565c6b2b7acb50ba9ab7fa778998e"
+  },
+  "originalMaster": {
+    "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+    "sourceInputsSha256": "e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69",
+    "result": "failed_before_any_navigation_assertion",
+    "reason": "Chromium startup timeout"
+  },
+  "directCanonicalBefore": {
+    "exitCode": 0,
+    "navigationLeafPass": 9,
+    "meaning": "One-level runner did not reproduce the master nesting; its pass was not used to erase the full-master failure."
+  },
+  "exactNestedBefore": {
+    "exitCode": 1,
+    "seconds": 10.804,
+    "navigationLeavesExecuted": 0,
+    "chromeExitCode": -6,
+    "fatalDiagnostic": "Socket path too long"
+  },
+  "exactNestedAfter": {
+    "exitCode": 0,
+    "seconds": 2.287,
+    "navigationLeafPass": 9,
+    "startupHarnessPass": 2,
+    "tapTotalIncludingParent": 12,
+    "fail": 0,
+    "skip": 0
+  },
+  "unchangedRequirements": {
+    "startupDeadlineMs": 10000,
+    "navigationTestDeadlineMs": 45000,
+    "retryAdded": false,
+    "originalNineBehaviorAssertionsRetained": true,
+    "childApplicationCredentials": false
+  },
+  "validation": {
+    "fileEslintExitCode": 0,
+    "diffWhitespaceExitCode": 0
+  },
+  "limits": [
+    "Focused fixture correction only; the original full master remains a source-bound failing result.",
+    "Nine navigation assertions do not establish full WCAG conformance or all80page behavior.",
+    "No provider, deployed Replit, native-client or global load acceptance is inferred."
+  ],
+  "unchangedFromFrozenA160": {
+    "client/src/components/layout/TopBar.tsx": true,
+    "client/src/components/layout/AppLayout.tsx": true,
+    "client/src/components/layout/Sidebar.tsx": true,
+    "scripts/testing/common.py": true,
+    "scripts/testing/run-node-suites.py": true
+  }
+}

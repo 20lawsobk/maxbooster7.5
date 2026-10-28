@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/README.md",
+      "bytes": 7928,
+      "sha256": "3ebb3a3944b3729343f8a5e1a4a5d3398054c49476437aa7d6a1eb4c5969b695"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/actual-canonical-bcrypt.json",
+      "bytes": 1935,
+      "sha256": "69ade7058b5ac6fb3b7576506dc26e794b6a05ddccee3d1ad51a847efbe571ec"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/actual-canonical-bcrypt.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/actual-canonical-bcrypt.stdout.txt",
+      "bytes": 210,
+      "sha256": "4358c438eef97e796817138cf7f4adf259fde989ed88dc9f3c7a2d8d4d97f32e"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/actual-runtime-isolation.json",
+      "bytes": 882,
+      "sha256": "3170c3445d723448422adae23f789403a78b8756d37cebf80de1e158d869440f"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/artifact-inspection.json",
+      "bytes": 11701,
+      "sha256": "2b2139548090f37f297856c486d7a237d6599fba98f80dfcd7103a1ed49d9813"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/artifact-inspection.txt",
+      "bytes": 108,
+      "sha256": "7462e58f612f4338888db536d269f1f94472a79bf9a94dfab99bc6b99dba4895"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/build-driver.py",
+      "bytes": 5803,
+      "sha256": "670ac6db67f6fc30e9aa4a73ede7aae7e95973ae2c51c778845d86a1ed548440"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/build-driver.txt",
+      "bytes": 80,
+      "sha256": "0bff33602ea452e2bdb3c3fd64b213b2236904bee3db5b23f285e1bee59ad3e7"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/canonical-prebuilt-elf.txt",
+      "bytes": 3761,
+      "sha256": "1b36d7a325295c41acfda1ce8130c4d22014d3559e90d5189441ac9796aafbaa"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/configured-linux-dir-build.json",
+      "bytes": 746,
+      "sha256": "5dd4a683dba8fb13528d9d1e580898d06f48029ab208fb7610c1070cd85bd0b2"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/configured-linux-dir-build.txt",
+      "bytes": 18633,
+      "sha256": "1eb24dedd409298fa13c21ec8e505520df02888374e69787c3d323c0a37da162"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/copied-build-validation.json",
+      "bytes": 572,
+      "sha256": "f9c4339d2ffc045019fd2f7593da3ecbd0e49b69abccc379c1c8ad088da4de08"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/copied-build-validation.txt",
+      "bytes": 542,
+      "sha256": "4e5b4a47cc5e4ecdf34cd21539d1112f28769343f9c185642278b9b83968f02e"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/copied-inputs.json",
+      "bytes": 1505,
+      "sha256": "f18d9914b15103342c4f9eb1b58d1f31ca4ac9ebcd95fbd2399b530c9fbe9ac6"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/existing-dist-validation-preflight.json",
+      "bytes": 464,
+      "sha256": "dc9a735b4e12de749c57a1d335d76c58455524e413e0ccbc48340433462455c4"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/inspect-artifact.mjs",
+      "bytes": 3479,
+      "sha256": "e48d304631a65df8979f536d688a376f60ceeb71d8fb1dc41769872540980feb"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-driver.py",
+      "bytes": 3282,
+      "sha256": "a0fe90f40ed7b583f358eec1fcd210ff0ea4bd3778b939db86456ebb368b461d"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-driver.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-probe.cjs",
+      "bytes": 7950,
+      "sha256": "b4d5db97bf71c699e6228802b7e4000e4820c5a637c85652567988e1674e602b"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-runtime.json",
+      "bytes": 437,
+      "sha256": "6b1d7bc692857d78906b9e366e5192f63cdcf117708b44d116bf84cc3c82c86e"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/offline-runtime.txt",
+      "bytes": 5967,
+      "sha256": "8cfaa2c5e80f199c2ba121ca310bd0bb164109659f5c173964959567180e4281"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/original-integrity-after.json",
+      "bytes": 1538,
+      "sha256": "d5932b12b0cd68d1f6bf5db6467b736c2a2626d30a20590b0679a13e2fc715c9"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/owned-production-build.json",
+      "bytes": 468,
+      "sha256": "171f51e587a427578ef2fad8aa1354c85db075ad76ddb7b49507ca6026d69aa4"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/owned-production-build.txt",
+      "bytes": 23869,
+      "sha256": "61056991a8f15a5f956abc566ba0ee266ebe36a66e9086e9bcf26a49a0eb7de5"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/owned-rebuilt-elf.txt",
+      "bytes": 3705,
+      "sha256": "f78d5f9a25c9a2bc88d0f81dc06390e5d50f10d8c04bca137578f871a1b2ce7e"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/policy-and-legacy-after.xml",
+      "bytes": 2596,
+      "sha256": "0bceb5bbef3fd0b8d76c470f1c950a2259c1a01300e95467ff117631af0174db"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/policy-before-final-test.xml",
+      "bytes": 4989,
+      "sha256": "50d8b7989b687a3f8fba7ee904309be6c4025ddbc1d3f44834426da0bbd3368d"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/policy-before.xml",
+      "bytes": 4989,
+      "sha256": "4dafdd4d5daeb82b73db1555fa59aae05cd01f9f3c89870f418df7cf8877afb2"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-asar-module-acceptance.json",
+      "bytes": 598,
+      "sha256": "e5e35c62b437d131452bfbdf0f8fa2d26a73ddf605a0b84ec94bddd7facf35b8"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-asar-module-acceptance.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-asar-module-acceptance.stdout.txt",
+      "bytes": 3867,
+      "sha256": "0d53db808e28b47ecc9b831944ff2d9758652cab49643e44f7abcef422b89b12"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-default-bcrypt-operation.json",
+      "bytes": 1472,
+      "sha256": "cf6258e63fb53ef0decf14f8901276561a8784500f17c94815f3b76d8e2959b4"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-default-bcrypt-operation.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-default-bcrypt-operation.stdout.txt",
+      "bytes": 227,
+      "sha256": "bec90ec12d4c6204c95adda1554d57dadf9301fed8ec4401c1e11215987fbace"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-sharp-png.json",
+      "bytes": 907,
+      "sha256": "28f14c30faa378a7b01f6002b6333b10f0919029d2989a705444ee256ece4d6d"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-sharp-png.stderr.txt",
+      "bytes": 4557,
+      "sha256": "b5000d23346688387b81dec3071f8e9fc324c4028b27cec5c0128e6a4e71a357"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-sharp-png.stdout.txt",
+      "bytes": 60,
+      "sha256": "6efa7da8966f69bf731df5da82071e4a99dab2d41ceb347ab1de8009bf6728ab"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-tfjs-operation.json",
+      "bytes": 865,
+      "sha256": "851bfa2eeb280b6ab7244af8129182f089f8d90477efe88361699ee0aa827123"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-tfjs-operation.stderr.txt",
+      "bytes": 240,
+      "sha256": "5dbe8fddd81d992abe7378ddffe04c1d62854e1ccdbe5d612358c283004743d1"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/actual-tfjs-operation.stdout.txt",
+      "bytes": 28,
+      "sha256": "e0be0ac390e2fe501588232b883ff3d412b3946a2936f6c8925bf98adaea3738"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/asar-module-acceptance.json",
+      "bytes": 3867,
+      "sha256": "0d53db808e28b47ecc9b831944ff2d9758652cab49643e44f7abcef422b89b12"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/binary-linked-libraries.json",
+      "bytes": 426,
+      "sha256": "873d33d14ad6ed6d245b54556a390c822035ee31c4dc1ec6868fc80bc8893176"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/binary-linked-libraries.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/binary-linked-libraries.stdout.txt",
+      "bytes": 7823,
+      "sha256": "c944552e694e013cc816ca25ba15e7d18ba80f1501617bc7b81dff90f4505fa2"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/diagnostic-no-sandbox-startup.json",
+      "bytes": 546,
+      "sha256": "bb923812983534732c45f745e8ea02f84023ebb0113177924af6782ca7d3c7a7"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/diagnostic-no-sandbox-startup.stderr.txt",
+      "bytes": 2378,
+      "sha256": "26109a8ea516ceb612e8b6cc955dcc9d221b35a198df1c2d20ecc787e9fda0ca"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/diagnostic-no-sandbox-startup.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/embedded-node-version.json",
+      "bytes": 421,
+      "sha256": "8553a42e1c6ea8640709b04ae5065fd93bb5d1a2960341aa707cc5c133b9de02"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/embedded-node-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/embedded-node-version.stdout.txt",
+      "bytes": 9,
+      "sha256": "2b796b748c85883d00cfea9775eaa143435f0dc06c69311b444cf0dfc98214bc"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/exact-bundled-server-child.json",
+      "bytes": 472,
+      "sha256": "699b8830949fd9f7ddbcfbf97d3c06a6a890d84117bfdcfa6e5fc576a549ac95"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/exact-bundled-server-child.stderr.txt",
+      "bytes": 984,
+      "sha256": "199e13abff78ec3c4b7b9d31145c38759f7480c6a8b24c97cb0c0dab95f6c3a8"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/exact-bundled-server-child.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/normal-sandbox-startup.json",
+      "bytes": 521,
+      "sha256": "9a7e4e68bbe13f5768fb1bc84cfed23cd9d7d08c29459bd4489759f8f3f6a9df"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/normal-sandbox-startup.stderr.txt",
+      "bytes": 390,
+      "sha256": "11066d005c82d3e09173c11bccbcc6da4551c7d8019bb25044d7ec9cfe6ed070"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/normal-sandbox-startup.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/probe-scope.json",
+      "bytes": 433,
+      "sha256": "05e287b65af596a2bc469319bf03e2f8a746fbefc532150c9b02aa61df7610b9"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/runner-packages.json",
+      "bytes": 484,
+      "sha256": "aed90140e9567878bfc2c30a7bdefc0cca212c911086d3be75bcd28ef6e74097"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/runner-packages.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/runner-packages.stdout.txt",
+      "bytes": 152,
+      "sha256": "d87835eda1a8f06de4234f8c42980a0220aafda0bdf2e89867716de0e51fcf85"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime/xvfb.stderr.txt",
+      "bytes": 81,
+      "sha256": "e2861dbf17c9cb74d57668ceaa0ec8111c014cd26d10d2d0dffdf37188dac690"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime-cleanup.json",
+      "bytes": 432,
+      "sha256": "b03f0d7dd17aa0169c9bfa8d558ef1b3ab67d5f6bd3cc731915c6a868cf2b7c4"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime-cleanup.txt",
+      "bytes": 41,
+      "sha256": "2791c113c9ca693f690db88d7c25b40dabe84d261922462c3476042d33989bde"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime-create.json",
+      "bytes": 1336,
+      "sha256": "f4bc07f7714cb8259cc45be1b4cb9cc954b63ffe305bd019de8ad790f41e2dab"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime-create.txt",
+      "bytes": 65,
+      "sha256": "37759aafcd739de9c3de83bfb8c7aee8bfd167c9cb52c92a639b1bd61016c405"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/runtime-final-state.json",
+      "bytes": 69,
+      "sha256": "1954500abbee5f2427d191ad34285648ce74c54256d9881592c8b713c02c0f52"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/source-hashes.json",
+      "bytes": 628,
+      "sha256": "739565c2b396978c6a9036a61d422d2c96b7d8abc5b0b106ed1f361ae3a77c85"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/source-inputs-before.json",
+      "bytes": 517643,
+      "sha256": "05f02abce2552990e0629a596daacd1ea6632e394d152cf4b629230390565703"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/summary.json",
+      "bytes": 1500,
+      "sha256": "d1b79413e12c38abbc2a7da90345b101e713152d9304facac953e5c77f8498aa"
+    }
+  ]
+}

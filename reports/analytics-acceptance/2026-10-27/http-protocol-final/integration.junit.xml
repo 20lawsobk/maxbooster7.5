@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="19" failures="0" errors="0" time="2.438343794">
+    <testsuite name="tests/ai-analytics-integration.test.ts" timestamp="2026-10-28T01:37:23.910Z" hostname="af966a6fd55d" tests="19" failures="0" errors="0" skipped="0" time="2.438343794">
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 401 when unauthenticated" time="0.049304702">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 200 with correct shape" time="0.047362342">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → returns array-safe topPlatforms when available" time="0.038321836">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict reports missing account history without requiring a trained model" time="0.101424937">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; capability and personal summaries use the dedicated authenticated MaxCore statistics contract" time="0.147246604">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insight and capability routes require the real authenticated session" time="0.083904803">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insights validate the period and engagement does not reinterpret lifetime counters as daily activity" time="0.126415899">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; known owned daily values produce exact forecasts and summaries while body identity and foreign rows are ignored" time="0.158541367">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; a controlled MaxCore outage remains a retryable503 rather than an invented local prediction" time="0.324984412">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict rejects an invalid metric before generation" time="0.077349205">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard → 200 with expected overview fields" time="0.0735998">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=7d → authenticated 200" time="0.052124966">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=90d → authenticated 200" time="0.050550702">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/advertising/campaigns → authenticated owned campaign array" time="0.034960546">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/anomalies requires an authenticated administrator" time="0.053305642">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; an administrator with a real verified factor reads only owned persisted anomalies" time="0.339778623">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/release-strategy → 200 with missing history explicit" time="0.032909011">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/milestones → 200 with owned persisted progress" time="0.034315127">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?limit=1000 preserves the authorized response" time="0.032122569">
+        </testcase>
+    </testsuite>
+</testsuites>

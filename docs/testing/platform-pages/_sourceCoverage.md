@@ -45099,7 +45099,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "client/src/components/layout/AppLayout.tsx",
   "statements": {
     "covered": 0,
-    "total": 21
+    "total": 22
   },
   "functions": {
     "covered": 0,
@@ -45124,23 +45124,23 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "name": "(anonymous_3)",
-      "line": 80
+      "line": 72
     },
     {
       "name": "(anonymous_4)",
-      "line": 85
+      "line": 81
     },
     {
       "name": "(anonymous_5)",
-      "line": 102
+      "line": 86
     },
     {
       "name": "(anonymous_6)",
-      "line": 110
+      "line": 111
     },
     {
       "name": "(anonymous_7)",
-      "line": 140
+      "line": 142
     }
   ],
   "uncoveredStatementLines": [
@@ -45152,18 +45152,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     52,
     71,
     72,
-    74,
+    73,
     75,
-    77,
-    80,
+    76,
+    78,
     81,
     82,
-    85,
+    83,
     86,
-    89,
-    102,
-    110,
-    140
+    87,
+    90,
+    111,
+    142
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -45639,7 +45639,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "client/src/components/layout/Sidebar.tsx",
   "statements": {
     "covered": 0,
-    "total": 41
+    "total": 46
   },
   "functions": {
     "covered": 0,
@@ -45647,7 +45647,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 0,
-    "total": 47
+    "total": 57
   },
   "uncoveredFunctions": [
     {
@@ -45660,51 +45660,51 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "name": "(anonymous_2)",
-      "line": 199
+      "line": 200
     },
     {
       "name": "(anonymous_3)",
-      "line": 201
+      "line": 202
     },
     {
       "name": "(anonymous_4)",
-      "line": 203
+      "line": 204
     },
     {
       "name": "(anonymous_5)",
-      "line": 206
+      "line": 207
     },
     {
       "name": "(anonymous_6)",
-      "line": 212
+      "line": 217
     },
     {
       "name": "(anonymous_7)",
-      "line": 220
+      "line": 225
     },
     {
       "name": "(anonymous_8)",
-      "line": 232
+      "line": 242
     },
     {
       "name": "(anonymous_9)",
-      "line": 232
+      "line": 242
     },
     {
       "name": "(anonymous_10)",
-      "line": 243
+      "line": 253
     },
     {
       "name": "(anonymous_11)",
-      "line": 246
+      "line": 256
     },
     {
       "name": "(anonymous_12)",
-      "line": 314
+      "line": 328
     },
     {
       "name": "(anonymous_13)",
-      "line": 330
+      "line": 344
     }
   ],
   "uncoveredStatementLines": [
@@ -45713,35 +45713,40 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     195,
     196,
     197,
-    199,
+    198,
     200,
     201,
     202,
     203,
-    206,
+    204,
     207,
-    209,
+    208,
     210,
-    212,
-    213,
+    211,
     214,
+    215,
+    217,
     218,
-    220,
-    221,
-    222,
+    219,
+    223,
+    225,
     226,
     227,
     230,
     231,
-    232,
     236,
-    244,
-    247,
-    248,
-    315,
-    317,
-    319,
-    331
+    237,
+    240,
+    241,
+    242,
+    246,
+    254,
+    257,
+    258,
+    329,
+    331,
+    333,
+    345
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -45762,31 +45767,31 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 0,
-    "total": 11
+    "total": 14
   },
   "uncoveredFunctions": [
     {
       "name": "TopBar",
-      "line": 16
+      "line": 17
     },
     {
       "name": "(anonymous_1)",
-      "line": 21
+      "line": 22
     }
   ],
   "uncoveredStatementLines": [
-    17,
     18,
     19,
-    21,
+    20,
     22,
     23,
     24,
     25,
-    27,
-    29,
+    26,
+    28,
     30,
-    34
+    31,
+    35
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -203968,48 +203973,56 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "client/src/pages/analytics/AIDashboard.tsx",
   "statements": {
     "covered": 0,
-    "total": 15
+    "total": 21
   },
   "functions": {
     "covered": 0,
-    "total": 4
+    "total": 5
   },
   "branches": {
     "covered": 0,
-    "total": 22
+    "total": 47
   },
   "uncoveredFunctions": [
     {
-      "name": "generateAnalyticsInsight",
-      "line": 20
+      "name": "isAnalyticsInsight",
+      "line": 23
     },
     {
-      "name": "(anonymous_1)",
-      "line": 31
+      "name": "generateAnalyticsInsight",
+      "line": 36
+    },
+    {
+      "name": "(anonymous_2)",
+      "line": 47
     },
     {
       "name": "AIDashboard",
-      "line": 40
+      "line": 57
     },
     {
-      "name": "(anonymous_3)",
-      "line": 83
+      "name": "(anonymous_4)",
+      "line": 100
     }
   ],
   "uncoveredStatementLines": [
-    21,
-    22,
-    31,
-    32,
-    33,
+    24,
+    25,
+    26,
     37,
-    41,
+    38,
     47,
+    48,
+    49,
+    53,
     54,
-    55,
-    65,
-    67,
-    83
+    58,
+    64,
+    71,
+    72,
+    82,
+    84,
+    100
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -214401,16 +214414,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "statements": {
-    "covered": 401,
-    "total": 727
+    "covered": 408,
+    "total": 734
   },
   "functions": {
-    "covered": 36,
-    "total": 158
+    "covered": 39,
+    "total": 161
   },
   "branches": {
-    "covered": 143,
-    "total": 363
+    "covered": 147,
+    "total": 367
   },
   "uncoveredFunctions": [
     {
@@ -214447,291 +214460,279 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "name": "(anonymous_24)",
-      "line": 685
+      "line": 686
     },
     {
       "name": "(anonymous_25)",
-      "line": 689
+      "line": 690
     },
     {
       "name": "(anonymous_26)",
-      "line": 693
+      "line": 694
     },
     {
       "name": "(anonymous_27)",
-      "line": 697
+      "line": 698
     },
     {
       "name": "(anonymous_28)",
-      "line": 701
+      "line": 702
     },
     {
       "name": "(anonymous_29)",
-      "line": 705
+      "line": 706
     },
     {
       "name": "(anonymous_30)",
-      "line": 709
+      "line": 710
     },
     {
       "name": "(anonymous_31)",
-      "line": 713
+      "line": 714
     },
     {
       "name": "(anonymous_32)",
-      "line": 717
+      "line": 718
     },
     {
       "name": "(anonymous_33)",
-      "line": 721
+      "line": 722
     },
     {
       "name": "(anonymous_34)",
-      "line": 725
+      "line": 726
     },
     {
       "name": "(anonymous_36)",
-      "line": 748
+      "line": 749
     },
     {
       "name": "(anonymous_37)",
-      "line": 752
+      "line": 753
     },
     {
       "name": "(anonymous_38)",
-      "line": 760
+      "line": 761
     },
     {
       "name": "(anonymous_39)",
-      "line": 764
+      "line": 765
     },
     {
       "name": "(anonymous_40)",
-      "line": 768
+      "line": 769
     },
     {
       "name": "(anonymous_41)",
-      "line": 774
+      "line": 775
     },
     {
       "name": "(anonymous_42)",
-      "line": 778
+      "line": 779
     },
     {
       "name": "(anonymous_43)",
-      "line": 782
+      "line": 783
     },
     {
       "name": "(anonymous_44)",
-      "line": 786
+      "line": 787
     },
     {
       "name": "(anonymous_45)",
-      "line": 792
+      "line": 793
     },
     {
       "name": "(anonymous_46)",
-      "line": 796
+      "line": 797
     },
     {
       "name": "(anonymous_47)",
-      "line": 800
+      "line": 801
     },
     {
       "name": "(anonymous_48)",
-      "line": 804
+      "line": 805
     },
     {
       "name": "(anonymous_49)",
-      "line": 812
+      "line": 813
     },
     {
       "name": "(anonymous_50)",
-      "line": 816
+      "line": 817
     },
     {
       "name": "(anonymous_51)",
-      "line": 820
+      "line": 821
     },
     {
       "name": "(anonymous_52)",
-      "line": 834
+      "line": 835
     },
     {
       "name": "(anonymous_53)",
-      "line": 840
+      "line": 841
     },
     {
       "name": "(anonymous_54)",
-      "line": 849
+      "line": 850
     },
     {
       "name": "(anonymous_55)",
-      "line": 863
+      "line": 864
     },
     {
       "name": "(anonymous_56)",
-      "line": 867
+      "line": 868
     },
     {
       "name": "(anonymous_57)",
-      "line": 871
+      "line": 872
     },
     {
       "name": "(anonymous_58)",
-      "line": 875
+      "line": 876
     },
     {
       "name": "(anonymous_59)",
-      "line": 879
+      "line": 880
     },
     {
       "name": "(anonymous_60)",
-      "line": 883
+      "line": 884
     },
     {
       "name": "(anonymous_61)",
-      "line": 887
+      "line": 888
     },
     {
       "name": "(anonymous_62)",
-      "line": 891
+      "line": 892
     },
     {
       "name": "(anonymous_63)",
-      "line": 895
+      "line": 896
     },
     {
       "name": "(anonymous_64)",
-      "line": 899
+      "line": 900
     },
     {
       "name": "(anonymous_65)",
-      "line": 903
+      "line": 904
     },
     {
       "name": "(anonymous_66)",
-      "line": 907
+      "line": 908
     },
     {
       "name": "(anonymous_67)",
-      "line": 911
+      "line": 912
     },
     {
       "name": "(anonymous_68)",
-      "line": 915
+      "line": 916
     },
     {
       "name": "(anonymous_69)",
-      "line": 919
+      "line": 920
     },
     {
       "name": "(anonymous_70)",
-      "line": 927
+      "line": 928
     },
     {
       "name": "(anonymous_71)",
-      "line": 935
+      "line": 936
     },
     {
       "name": "(anonymous_72)",
-      "line": 943
+      "line": 944
     },
     {
       "name": "(anonymous_73)",
-      "line": 949
+      "line": 950
     },
     {
       "name": "(anonymous_74)",
-      "line": 962
+      "line": 963
     },
     {
       "name": "(anonymous_75)",
-      "line": 973
+      "line": 974
     },
     {
       "name": "(anonymous_76)",
-      "line": 986
+      "line": 987
     },
     {
       "name": "(anonymous_77)",
-      "line": 1005
+      "line": 1006
     },
     {
       "name": "(anonymous_78)",
-      "line": 1009
+      "line": 1010
     },
     {
       "name": "(anonymous_79)",
-      "line": 1015
+      "line": 1016
     },
     {
       "name": "(anonymous_80)",
-      "line": 1029
+      "line": 1030
     },
     {
       "name": "(anonymous_81)",
-      "line": 1049
+      "line": 1050
     },
     {
       "name": "(anonymous_82)",
-      "line": 1060
+      "line": 1061
     },
     {
       "name": "(anonymous_83)",
-      "line": 1080
+      "line": 1081
     },
     {
       "name": "(anonymous_84)",
-      "line": 1089
+      "line": 1090
     },
     {
       "name": "(anonymous_85)",
-      "line": 1095
+      "line": 1096
     },
     {
       "name": "(anonymous_86)",
-      "line": 1099
+      "line": 1100
     },
     {
       "name": "(anonymous_87)",
-      "line": 1106
+      "line": 1107
     },
     {
       "name": "(anonymous_88)",
-      "line": 1113
+      "line": 1114
     },
     {
       "name": "(anonymous_89)",
-      "line": 1120
+      "line": 1121
     },
     {
       "name": "(anonymous_90)",
-      "line": 1126
+      "line": 1127
     },
     {
       "name": "(anonymous_91)",
-      "line": 1130
+      "line": 1131
     },
     {
       "name": "(anonymous_92)",
-      "line": 1134
+      "line": 1135
     },
     {
       "name": "(anonymous_93)",
-      "line": 1142
-    },
-    {
-      "name": "(anonymous_96)",
-      "line": 1153
-    },
-    {
-      "name": "(anonymous_97)",
-      "line": 1158
-    },
-    {
-      "name": "(anonymous_98)",
-      "line": 1163
+      "line": 1143
     },
     {
       "name": "(anonymous_99)",
@@ -214747,159 +214748,171 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "name": "(anonymous_102)",
-      "line": 1183
+      "line": 1179
     },
     {
       "name": "(anonymous_103)",
-      "line": 1188
+      "line": 1184
+    },
+    {
+      "name": "(anonymous_104)",
+      "line": 1189
+    },
+    {
+      "name": "(anonymous_105)",
+      "line": 1196
     },
     {
       "name": "(anonymous_106)",
-      "line": 1225
-    },
-    {
-      "name": "(anonymous_108)",
-      "line": 1318
+      "line": 1201
     },
     {
       "name": "(anonymous_109)",
-      "line": 1338
-    },
-    {
-      "name": "(anonymous_110)",
-      "line": 1352
+      "line": 1238
     },
     {
       "name": "(anonymous_111)",
-      "line": 1356
+      "line": 1331
     },
     {
       "name": "(anonymous_112)",
-      "line": 1361
+      "line": 1351
+    },
+    {
+      "name": "(anonymous_113)",
+      "line": 1365
+    },
+    {
+      "name": "(anonymous_114)",
+      "line": 1369
     },
     {
       "name": "(anonymous_115)",
-      "line": 1381
-    },
-    {
-      "name": "(anonymous_116)",
-      "line": 1390
-    },
-    {
-      "name": "(anonymous_117)",
-      "line": 1394
+      "line": 1374
     },
     {
       "name": "(anonymous_118)",
-      "line": 1398
+      "line": 1394
     },
     {
       "name": "(anonymous_119)",
-      "line": 1405
+      "line": 1403
     },
     {
       "name": "(anonymous_120)",
-      "line": 1416
+      "line": 1407
     },
     {
       "name": "(anonymous_121)",
-      "line": 1427
+      "line": 1411
     },
     {
       "name": "(anonymous_122)",
-      "line": 1435
+      "line": 1418
     },
     {
       "name": "(anonymous_123)",
-      "line": 1445
+      "line": 1429
     },
     {
       "name": "(anonymous_124)",
-      "line": 1463
+      "line": 1440
     },
     {
       "name": "(anonymous_125)",
-      "line": 1467
+      "line": 1448
     },
     {
       "name": "(anonymous_126)",
-      "line": 1479
+      "line": 1458
     },
     {
       "name": "(anonymous_127)",
-      "line": 1483
+      "line": 1476
     },
     {
-      "name": "(anonymous_132)",
-      "line": 1506
+      "name": "(anonymous_128)",
+      "line": 1480
     },
     {
-      "name": "(anonymous_133)",
-      "line": 1511
+      "name": "(anonymous_129)",
+      "line": 1492
     },
     {
-      "name": "(anonymous_134)",
-      "line": 1517
+      "name": "(anonymous_130)",
+      "line": 1496
     },
     {
       "name": "(anonymous_135)",
-      "line": 1521
+      "line": 1519
     },
     {
       "name": "(anonymous_136)",
-      "line": 1525
+      "line": 1524
+    },
+    {
+      "name": "(anonymous_137)",
+      "line": 1530
+    },
+    {
+      "name": "(anonymous_138)",
+      "line": 1534
     },
     {
       "name": "(anonymous_139)",
-      "line": 1550
-    },
-    {
-      "name": "(anonymous_140)",
-      "line": 1558
-    },
-    {
-      "name": "(anonymous_141)",
-      "line": 1566
+      "line": 1538
     },
     {
       "name": "(anonymous_142)",
-      "line": 1572
+      "line": 1563
     },
     {
       "name": "(anonymous_143)",
-      "line": 1576
+      "line": 1571
     },
     {
       "name": "(anonymous_144)",
-      "line": 1580
+      "line": 1579
     },
     {
       "name": "(anonymous_145)",
-      "line": 1584
+      "line": 1585
     },
     {
       "name": "(anonymous_146)",
-      "line": 1588
+      "line": 1589
     },
     {
       "name": "(anonymous_147)",
-      "line": 1594
+      "line": 1593
     },
     {
-      "name": "(anonymous_154)",
-      "line": 1788
+      "name": "(anonymous_148)",
+      "line": 1597
     },
     {
-      "name": "(anonymous_155)",
-      "line": 1792
+      "name": "(anonymous_149)",
+      "line": 1601
     },
     {
-      "name": "(anonymous_156)",
-      "line": 1799
+      "name": "(anonymous_150)",
+      "line": 1607
     },
     {
       "name": "(anonymous_157)",
-      "line": 1810
+      "line": 1801
+    },
+    {
+      "name": "(anonymous_158)",
+      "line": 1805
+    },
+    {
+      "name": "(anonymous_159)",
+      "line": 1812
+    },
+    {
+      "name": "(anonymous_160)",
+      "line": 1823
     }
   ],
   "uncoveredStatementLines": [
@@ -214947,274 +214960,274 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     295,
     298,
     301,
-    341,
-    375,
+    342,
     376,
-    380,
-    389,
+    377,
+    381,
     390,
-    394,
+    391,
     395,
-    400,
+    396,
     401,
-    408,
+    402,
     409,
-    428,
-    444,
-    446,
-    461,
+    410,
+    429,
+    445,
+    447,
     462,
-    478,
-    488,
+    463,
+    479,
     489,
-    493,
+    490,
     494,
-    500,
+    495,
     501,
-    507,
+    502,
     508,
-    511,
+    509,
     512,
-    533,
-    554,
+    513,
+    534,
     555,
     556,
     557,
     558,
-    567,
+    559,
     568,
-    570,
-    573,
-    575,
+    569,
+    571,
+    574,
     576,
     577,
-    579,
-    581,
-    585,
-    590,
-    592,
-    594,
-    615,
+    578,
+    580,
+    582,
+    586,
+    591,
+    593,
+    595,
     616,
     617,
     618,
     619,
-    628,
+    620,
     629,
-    631,
-    634,
+    630,
+    632,
     635,
     636,
     637,
-    639,
-    641,
-    645,
-    649,
+    638,
+    640,
+    642,
+    646,
     650,
     651,
     652,
     653,
-    655,
+    654,
     656,
     657,
-    660,
-    662,
-    664,
-    686,
-    690,
-    694,
-    698,
-    702,
-    706,
-    710,
-    714,
-    718,
-    722,
-    726,
-    744,
-    749,
-    753,
-    761,
-    765,
-    769,
-    775,
-    779,
-    783,
-    787,
-    793,
-    797,
-    801,
-    805,
-    813,
-    817,
-    823,
+    658,
+    661,
+    663,
+    665,
+    687,
+    691,
+    695,
+    699,
+    703,
+    707,
+    711,
+    715,
+    719,
+    723,
+    727,
+    745,
+    750,
+    754,
+    762,
+    766,
+    770,
+    776,
+    780,
+    784,
+    788,
+    794,
+    798,
+    802,
+    806,
+    814,
+    818,
     824,
-    831,
-    835,
-    841,
+    825,
+    832,
+    836,
     842,
     843,
     844,
-    846,
-    850,
+    845,
+    847,
     851,
     852,
     853,
-    855,
+    854,
     856,
-    864,
-    868,
-    872,
-    876,
-    880,
-    884,
-    888,
-    892,
-    896,
-    900,
-    904,
-    908,
-    912,
-    916,
-    920,
-    928,
-    936,
-    944,
-    951,
+    857,
+    865,
+    869,
+    873,
+    877,
+    881,
+    885,
+    889,
+    893,
+    897,
+    901,
+    905,
+    909,
+    913,
+    917,
+    921,
+    929,
+    937,
+    945,
     952,
-    959,
-    965,
+    953,
+    960,
     966,
-    970,
-    975,
+    967,
+    971,
     976,
-    983,
-    988,
+    977,
+    984,
     989,
-    1002,
-    1006,
-    1010,
-    1017,
+    990,
+    1003,
+    1007,
+    1011,
     1018,
-    1026,
-    1031,
+    1019,
+    1027,
     1032,
-    1046,
-    1052,
+    1033,
+    1047,
     1053,
-    1057,
-    1062,
+    1054,
+    1058,
     1063,
-    1077,
-    1081,
+    1064,
+    1078,
     1082,
-    1090,
-    1096,
-    1100,
-    1107,
-    1114,
-    1121,
-    1127,
-    1131,
-    1135,
-    1143,
-    1154,
-    1159,
-    1164,
+    1083,
+    1091,
+    1097,
+    1101,
+    1108,
+    1115,
+    1122,
+    1128,
+    1132,
+    1136,
+    1144,
     1167,
     1172,
     1177,
-    1184,
-    1189,
-    1217,
-    1225,
-    1258,
-    1321,
-    1322,
-    1323,
-    1324,
-    1328,
-    1329,
-    1330,
-    1331,
-    1333,
+    1180,
+    1185,
+    1190,
+    1197,
+    1202,
+    1230,
+    1238,
+    1271,
     1334,
     1335,
-    1339,
-    1340,
+    1336,
+    1337,
     1341,
+    1342,
     1343,
+    1344,
+    1346,
+    1347,
+    1348,
+    1352,
     1353,
-    1357,
-    1358,
-    1362,
-    1382,
-    1391,
+    1354,
+    1356,
+    1366,
+    1370,
+    1371,
+    1375,
     1395,
-    1399,
-    1402,
-    1406,
-    1409,
-    1417,
-    1420,
-    1428,
-    1436,
-    1448,
+    1404,
+    1408,
+    1412,
+    1415,
+    1419,
+    1422,
+    1430,
+    1433,
+    1441,
     1449,
-    1460,
-    1464,
-    1470,
-    1474,
-    1480,
-    1484,
-    1507,
-    1512,
-    1518,
-    1522,
-    1526,
-    1551,
-    1559,
-    1567,
-    1573,
-    1577,
-    1581,
-    1585,
-    1589,
-    1595,
-    1670,
-    1671,
-    1672,
-    1674,
-    1675,
-    1676,
-    1678,
-    1682,
+    1461,
+    1462,
+    1473,
+    1477,
+    1483,
+    1487,
+    1493,
+    1497,
+    1520,
+    1525,
+    1531,
+    1535,
+    1539,
+    1564,
+    1572,
+    1580,
+    1586,
+    1590,
+    1594,
+    1598,
+    1602,
+    1608,
     1683,
     1684,
+    1685,
     1687,
     1688,
     1689,
-    1693,
-    1707,
-    1709,
-    1721,
-    1725,
-    1765,
-    1766,
-    1767,
-    1768,
+    1691,
+    1695,
+    1696,
+    1697,
+    1700,
+    1701,
+    1702,
+    1706,
+    1720,
+    1722,
+    1734,
+    1738,
     1778,
     1779,
-    1789,
-    1793,
-    1800,
-    1811,
-    1812,
+    1780,
+    1781,
+    1791,
+    1792,
+    1802,
+    1806,
     1813,
-    1815,
-    1818,
-    1827,
-    1828
+    1824,
+    1825,
+    1826,
+    1828,
+    1831,
+    1840,
+    1841
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -226825,7 +226838,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
   "statements": {
-    "covered": 1374,
+    "covered": 1379,
     "total": 3004
   },
   "functions": {
@@ -226833,7 +226846,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 339
   },
   "branches": {
-    "covered": 892,
+    "covered": 894,
     "total": 2264
   },
   "uncoveredFunctions": [
@@ -227712,12 +227725,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1100,
     1101,
     1118,
-    1123,
     1132,
-    1152,
-    1153,
-    1154,
-    1155,
     1181,
     1215,
     1216,
@@ -251436,29 +251444,36 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/lib/aiCapabilityContracts.ts",
   "statements": {
     "covered": 1,
-    "total": 3
+    "total": 9
   },
   "functions": {
     "covered": 0,
-    "total": 2
+    "total": 3
   },
   "branches": {
     "covered": 0,
-    "total": 2
+    "total": 14
   },
   "uncoveredFunctions": [
     {
-      "name": "isUnsupportedAICapabilityRequest",
-      "line": 11
+      "name": "isAccountAnalyticsCapability",
+      "line": 15
     },
     {
-      "name": "unsupportedAICapabilityPayload",
-      "line": 18
+      "name": "(anonymous_1)",
+      "line": 20
+    },
+    {
+      "name": "(anonymous_2)",
+      "line": 21
     }
   ],
   "uncoveredStatementLines": [
-    15,
-    19
+    16,
+    17,
+    18,
+    20,
+    21
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -256150,6 +256165,60 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     261,
     264,
     268
+  ],
+  "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+}
+```
+
+## coverage-a8265c893aee5c28
+
+```json
+{
+  "file": "server/lib/sendgridAlertTransport.ts",
+  "statements": {
+    "covered": 0,
+    "total": 18
+  },
+  "functions": {
+    "covered": 0,
+    "total": 3
+  },
+  "branches": {
+    "covered": 0,
+    "total": 45
+  },
+  "uncoveredFunctions": [
+    {
+      "name": "address",
+      "line": 12
+    },
+    {
+      "name": "sendSendGridAlert",
+      "line": 17
+    },
+    {
+      "name": "(anonymous_2)",
+      "line": 33
+    }
+  ],
+  "uncoveredStatementLines": [
+    13,
+    22,
+    23,
+    29,
+    31,
+    33,
+    38,
+    39,
+    41,
+    42,
+    50,
+    51,
+    52,
+    54,
+    55,
+    57,
+    58
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -261532,117 +261601,164 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/monitoring/alertingService.ts",
   "statements": {
     "covered": 0,
-    "total": 60
+    "total": 90
   },
   "functions": {
     "covered": 0,
-    "total": 10
+    "total": 15
   },
   "branches": {
     "covered": 0,
-    "total": 76
+    "total": 97
   },
   "uncoveredFunctions": [
     {
+      "name": "(anonymous_0)",
+      "line": 5
+    },
+    {
+      "name": "(anonymous_1)",
+      "line": 7
+    },
+    {
       "name": "constructor",
-      "line": 33
+      "line": 46
+    },
+    {
+      "name": "(anonymous_3)",
+      "line": 50
     },
     {
       "name": "shouldSendAlert",
-      "line": 65
+      "line": 78
     },
     {
       "name": "markAlertSent",
-      "line": 75
+      "line": 88
     },
     {
       "name": "sendAlert",
-      "line": 79
+      "line": 92
+    },
+    {
+      "name": "(anonymous_7)",
+      "line": 124
+    },
+    {
+      "name": "(anonymous_8)",
+      "line": 126
     },
     {
       "name": "sendWebhookAlert",
-      "line": 104
+      "line": 140
     },
     {
       "name": "sendEmailAlert",
-      "line": 134
+      "line": 172
     },
     {
       "name": "checkQueueMetrics",
-      "line": 214
+      "line": 256
     },
     {
       "name": "checkAICacheMetrics",
-      "line": 260
+      "line": 302
     },
     {
       "name": "checkMemoryUsage",
-      "line": 293
+      "line": 335
     },
     {
       "name": "getConfig",
-      "line": 305
+      "line": 347
     }
   ],
   "uncoveredStatementLines": [
-    30,
-    31,
-    34,
-    66,
-    67,
-    69,
-    70,
-    72,
-    76,
+    5,
+    7,
+    42,
+    43,
+    44,
+    47,
+    50,
+    79,
     80,
     82,
     83,
-    84,
-    87,
-    88,
-    90,
-    92,
+    85,
+    89,
     93,
+    95,
     96,
     97,
+    98,
+    99,
     100,
     101,
-    105,
-    107,
-    108,
-    117,
+    102,
+    103,
+    109,
+    110,
+    112,
+    113,
+    115,
+    116,
+    119,
+    120,
+    123,
     124,
     125,
+    126,
+    127,
     128,
+    129,
     130,
-    135,
+    131,
+    133,
+    134,
     136,
-    137,
-    138,
-    140,
-    142,
-    148,
-    205,
-    206,
-    210,
-    215,
-    221,
-    222,
-    234,
-    235,
-    244,
-    247,
-    261,
-    265,
-    268,
-    272,
-    273,
-    282,
-    283,
-    294,
-    295,
-    306,
-    310
+    141,
+    143,
+    144,
+    153,
+    160,
+    161,
+    164,
+    165,
+    167,
+    168,
+    173,
+    174,
+    175,
+    176,
+    179,
+    185,
+    186,
+    187,
+    188,
+    245,
+    246,
+    249,
+    251,
+    252,
+    257,
+    263,
+    264,
+    276,
+    277,
+    286,
+    289,
+    303,
+    307,
+    310,
+    314,
+    315,
+    324,
+    325,
+    336,
+    337,
+    348,
+    352
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -261724,40 +261840,40 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "uncoveredFunctions": [
     {
       "name": "logEmail",
-      "line": 22
+      "line": 27
     },
     {
       "name": "updateMetrics",
-      "line": 48
+      "line": 53
     },
     {
       "name": "getDeliveryRate",
-      "line": 54
+      "line": 59
     },
     {
       "name": "getStats",
-      "line": 60
+      "line": 65
     },
     {
       "name": "getRecentFailures",
-      "line": 68
+      "line": 73
     },
     {
       "name": "(anonymous_6)",
-      "line": 69
+      "line": 74
     }
   ],
   "uncoveredStatementLines": [
-    28,
-    40,
-    41,
-    43,
-    49,
-    50,
-    51,
+    33,
+    45,
+    46,
+    48,
+    54,
     55,
-    61,
-    69
+    56,
+    60,
+    66,
+    74
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -276305,7 +276421,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/routes/ai.ts",
   "statements": {
     "covered": 47,
-    "total": 338
+    "total": 349
   },
   "functions": {
     "covered": 1,
@@ -276313,7 +276429,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 7,
-    "total": 246
+    "total": 271
   },
   "uncoveredFunctions": [
     {
@@ -276398,63 +276514,63 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "name": "(anonymous_21)",
-      "line": 822
+      "line": 810
     },
     {
       "name": "(anonymous_22)",
-      "line": 828
+      "line": 824
     },
     {
       "name": "(anonymous_23)",
-      "line": 832
+      "line": 840
     },
     {
       "name": "(anonymous_24)",
-      "line": 849
+      "line": 857
     },
     {
       "name": "(anonymous_25)",
-      "line": 869
+      "line": 877
     },
     {
       "name": "(anonymous_26)",
-      "line": 890
+      "line": 898
     },
     {
       "name": "(anonymous_27)",
-      "line": 920
+      "line": 928
     },
     {
       "name": "(anonymous_28)",
-      "line": 958
+      "line": 966
     },
     {
       "name": "(anonymous_29)",
-      "line": 973
+      "line": 981
     },
     {
       "name": "(anonymous_30)",
-      "line": 979
+      "line": 987
     },
     {
       "name": "(anonymous_31)",
-      "line": 1002
+      "line": 1010
     },
     {
       "name": "(anonymous_32)",
-      "line": 1042
+      "line": 1050
     },
     {
       "name": "(anonymous_33)",
-      "line": 1071
+      "line": 1079
     },
     {
       "name": "(anonymous_34)",
-      "line": 1098
+      "line": 1106
     },
     {
       "name": "(anonymous_35)",
-      "line": 1122
+      "line": 1130
     }
   ],
   "uncoveredStatementLines": [
@@ -276654,100 +276770,110 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     793,
     795,
     796,
-    822,
-    829,
-    833,
+    798,
+    799,
+    811,
+    813,
+    815,
+    825,
+    826,
+    828,
+    830,
+    831,
     834,
-    836,
+    835,
     841,
     842,
     844,
-    845,
+    849,
     850,
-    851,
+    852,
     853,
     858,
     859,
     861,
-    862,
+    866,
+    867,
+    869,
     870,
-    871,
-    873,
     878,
     879,
     881,
-    882,
-    891,
-    892,
-    894,
-    898,
-    903,
-    904,
+    886,
+    887,
+    889,
+    890,
+    899,
+    900,
+    902,
     906,
-    907,
-    921,
-    922,
-    924,
-    925,
+    911,
+    912,
+    914,
+    915,
+    929,
     930,
-    931,
-    934,
-    940,
-    946,
-    947,
-    949,
-    950,
-    959,
-    960,
-    962,
-    963,
+    932,
+    933,
+    938,
+    939,
+    942,
+    948,
+    954,
+    955,
+    957,
+    958,
+    967,
     968,
-    973,
-    979,
-    984,
-    990,
-    991,
-    993,
-    994,
-    1003,
-    1004,
-    1006,
-    1007,
+    970,
+    971,
+    976,
+    981,
+    987,
+    992,
+    998,
+    999,
+    1001,
+    1002,
+    1011,
     1012,
-    1013,
-    1018,
-    1024,
-    1030,
-    1031,
-    1033,
-    1034,
-    1043,
-    1045,
-    1047,
+    1014,
+    1015,
+    1020,
+    1021,
+    1026,
+    1032,
+    1038,
+    1039,
+    1041,
+    1042,
+    1051,
     1053,
-    1054,
-    1056,
-    1057,
-    1072,
-    1073,
-    1076,
-    1077,
+    1055,
+    1061,
+    1062,
+    1064,
+    1065,
+    1080,
     1081,
-    1082,
     1084,
-    1099,
-    1100,
-    1103,
-    1104,
+    1085,
+    1089,
+    1090,
+    1092,
+    1107,
     1108,
-    1109,
     1111,
-    1123,
-    1124,
-    1127,
-    1128,
+    1112,
+    1116,
+    1117,
+    1119,
+    1131,
     1132,
-    1135
+    1135,
+    1136,
+    1140,
+    1143
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -298888,7 +299014,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/routes/monitoring.ts",
   "statements": {
     "covered": 0,
-    "total": 93
+    "total": 95
   },
   "functions": {
     "covered": 0,
@@ -298896,7 +299022,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 0,
-    "total": 24
+    "total": 34
   },
   "uncoveredFunctions": [
     {
@@ -299048,8 +299174,10 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     299,
     300,
     308,
-    313,
-    314
+    309,
+    310,
+    316,
+    317
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -326389,6 +326517,177 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
+## coverage-18f1b3d5915dcd76
+
+```json
+{
+  "file": "server/services/accountAnalyticsService.ts",
+  "statements": {
+    "covered": 6,
+    "total": 84
+  },
+  "functions": {
+    "covered": 1,
+    "total": 20
+  },
+  "branches": {
+    "covered": 0,
+    "total": 114
+  },
+  "uncoveredFunctions": [
+    {
+      "name": "(anonymous_0)",
+      "line": 14
+    },
+    {
+      "name": "rows",
+      "line": 17
+    },
+    {
+      "name": "checkedValue",
+      "line": 23
+    },
+    {
+      "name": "windowFor",
+      "line": 31
+    },
+    {
+      "name": "requireUser",
+      "line": 43
+    },
+    {
+      "name": "observedTotal",
+      "line": 50
+    },
+    {
+      "name": "validateResponse",
+      "line": 59
+    },
+    {
+      "name": "(anonymous_7)",
+      "line": 76
+    },
+    {
+      "name": "(anonymous_8)",
+      "line": 89
+    },
+    {
+      "name": "(anonymous_9)",
+      "line": 91
+    },
+    {
+      "name": "remote",
+      "line": 104
+    },
+    {
+      "name": "dailyMetric",
+      "line": 109
+    },
+    {
+      "name": "(anonymous_13)",
+      "line": 116
+    },
+    {
+      "name": "dailyAccount",
+      "line": 122
+    },
+    {
+      "name": "(anonymous_15)",
+      "line": 131
+    },
+    {
+      "name": "capability",
+      "line": 139
+    },
+    {
+      "name": "predict",
+      "line": 146
+    },
+    {
+      "name": "insights",
+      "line": 166
+    },
+    {
+      "name": "(anonymous_19)",
+      "line": 177
+    }
+  ],
+  "uncoveredStatementLines": [
+    15,
+    18,
+    19,
+    20,
+    24,
+    25,
+    26,
+    28,
+    32,
+    33,
+    35,
+    36,
+    37,
+    38,
+    39,
+    44,
+    45,
+    51,
+    52,
+    53,
+    54,
+    55,
+    57,
+    60,
+    61,
+    62,
+    63,
+    70,
+    72,
+    73,
+    74,
+    77,
+    78,
+    79,
+    80,
+    83,
+    85,
+    89,
+    91,
+    93,
+    95,
+    105,
+    106,
+    110,
+    111,
+    117,
+    118,
+    123,
+    132,
+    133,
+    140,
+    141,
+    142,
+    144,
+    147,
+    148,
+    149,
+    151,
+    154,
+    156,
+    158,
+    159,
+    160,
+    162,
+    167,
+    168,
+    169,
+    170,
+    172,
+    177
+  ],
+  "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
+}
+```
+
 ## coverage-4441dfde3d38039d
 
 ```json
@@ -331791,520 +332090,444 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/services/aiAnalyticsService.ts",
   "statements": {
     "covered": 2,
-    "total": 340
+    "total": 292
   },
   "functions": {
     "covered": 0,
-    "total": 48
+    "total": 39
   },
   "branches": {
     "covered": 0,
-    "total": 221
+    "total": 193
   },
   "uncoveredFunctions": [
     {
       "name": "missingMaxCoreAnalyticsContract",
-      "line": 7
+      "line": 8
     },
     {
       "name": "linearRegression",
-      "line": 68
+      "line": 69
     },
     {
       "name": "(anonymous_2)",
-      "line": 77
-    },
-    {
-      "name": "(anonymous_3)",
       "line": 78
     },
     {
-      "name": "(anonymous_4)",
+      "name": "(anonymous_3)",
       "line": 79
     },
     {
-      "name": "(anonymous_5)",
+      "name": "(anonymous_4)",
       "line": 80
     },
     {
+      "name": "(anonymous_5)",
+      "line": 81
+    },
+    {
       "name": "calculateStandardDeviation",
-      "line": 88
+      "line": 89
     },
     {
       "name": "(anonymous_7)",
-      "line": 90
+      "line": 91
     },
     {
       "name": "(anonymous_8)",
-      "line": 92
+      "line": 93
     },
     {
       "name": "predictMetric",
-      "line": 98
-    },
-    {
-      "name": "(anonymous_10)",
-      "line": 121
-    },
-    {
-      "name": "(anonymous_11)",
-      "line": 139
-    },
-    {
-      "name": "(anonymous_12)",
-      "line": 140
-    },
-    {
-      "name": "(anonymous_13)",
-      "line": 155
-    },
-    {
-      "name": "(anonymous_14)",
-      "line": 169
-    },
-    {
-      "name": "(anonymous_15)",
-      "line": 189
-    },
-    {
-      "name": "(anonymous_16)",
-      "line": 191
-    },
-    {
-      "name": "(anonymous_17)",
-      "line": 207
-    },
-    {
-      "name": "(anonymous_18)",
-      "line": 209
+      "line": 99
     },
     {
       "name": "predictChurn",
-      "line": 233
+      "line": 119
     },
     {
-      "name": "(anonymous_20)",
-      "line": 311
+      "name": "(anonymous_11)",
+      "line": 197
     },
     {
       "name": "forecastRevenue",
-      "line": 322
+      "line": 208
     },
     {
       "name": "detectAnomalies",
-      "line": 396
+      "line": 282
     },
     {
-      "name": "(anonymous_23)",
-      "line": 420
+      "name": "(anonymous_14)",
+      "line": 306
     },
     {
-      "name": "(anonymous_24)",
-      "line": 421
+      "name": "(anonymous_15)",
+      "line": 307
     },
     {
-      "name": "(anonymous_25)",
-      "line": 424
+      "name": "(anonymous_16)",
+      "line": 310
     },
     {
-      "name": "(anonymous_26)",
-      "line": 430
+      "name": "(anonymous_17)",
+      "line": 316
     },
     {
-      "name": "(anonymous_27)",
-      "line": 433
+      "name": "(anonymous_18)",
+      "line": 319
     },
     {
-      "name": "(anonymous_28)",
-      "line": 459
+      "name": "(anonymous_19)",
+      "line": 345
     },
     {
       "name": "generateInsights",
-      "line": 466
+      "line": 352
     },
     {
       "name": "predictCareerGrowth",
-      "line": 661
+      "line": 547
     },
     {
-      "name": "(anonymous_31)",
-      "line": 684
+      "name": "(anonymous_22)",
+      "line": 570
     },
     {
-      "name": "(anonymous_32)",
-      "line": 699
+      "name": "(anonymous_23)",
+      "line": 585
     },
     {
-      "name": "(anonymous_33)",
-      "line": 714
+      "name": "(anonymous_24)",
+      "line": 600
     },
     {
-      "name": "(anonymous_34)",
-      "line": 720
+      "name": "(anonymous_25)",
+      "line": 606
     },
     {
-      "name": "(anonymous_35)",
-      "line": 743
+      "name": "(anonymous_26)",
+      "line": 629
     },
     {
-      "name": "(anonymous_36)",
-      "line": 745
+      "name": "(anonymous_27)",
+      "line": 631
     },
     {
       "name": "getCareerMilestones",
-      "line": 796
+      "line": 682
     },
     {
-      "name": "(anonymous_38)",
-      "line": 821
+      "name": "(anonymous_29)",
+      "line": 707
     },
     {
-      "name": "(anonymous_39)",
-      "line": 841
+      "name": "(anonymous_30)",
+      "line": 727
     },
     {
       "name": "getFanbaseInsights",
-      "line": 873
+      "line": 759
     },
     {
-      "name": "(anonymous_41)",
-      "line": 915
+      "name": "(anonymous_32)",
+      "line": 801
     },
     {
-      "name": "(anonymous_42)",
-      "line": 921
+      "name": "(anonymous_33)",
+      "line": 807
     },
     {
-      "name": "(anonymous_43)",
-      "line": 925
+      "name": "(anonymous_34)",
+      "line": 811
     },
     {
-      "name": "(anonymous_44)",
-      "line": 981
+      "name": "(anonymous_35)",
+      "line": 867
     },
     {
-      "name": "(anonymous_45)",
-      "line": 1007
+      "name": "(anonymous_36)",
+      "line": 893
     },
     {
-      "name": "(anonymous_46)",
-      "line": 1009
+      "name": "(anonymous_37)",
+      "line": 895
     },
     {
       "name": "getReleaseStrategy",
-      "line": 1056
+      "line": 942
     }
   ],
   "uncoveredStatementLines": [
-    8,
-    72,
+    9,
     73,
-    76,
+    74,
     77,
     78,
     79,
     80,
-    82,
+    81,
     83,
-    85,
-    89,
+    84,
+    86,
     90,
-    92,
-    94,
-    101,
-    102,
-    104,
-    105,
-    106,
-    108,
-    110,
-    111,
+    91,
+    93,
+    95,
+    103,
+    120,
     121,
+    122,
     125,
     126,
-    138,
-    139,
-    140,
-    144,
-    145,
+    127,
+    131,
+    151,
+    153,
+    154,
     155,
+    157,
+    158,
+    159,
+    160,
     161,
-    162,
-    169,
+    164,
+    165,
+    167,
+    168,
+    170,
+    171,
+    172,
+    173,
     174,
+    175,
     176,
+    180,
     181,
-    183,
     184,
     185,
-    186,
-    187,
-    189,
-    190,
-    191,
-    193,
     195,
+    197,
     202,
     203,
-    204,
-    207,
-    208,
-    209,
+    205,
     211,
+    212,
     213,
-    234,
+    215,
+    220,
+    222,
+    223,
+    225,
+    230,
     235,
     236,
-    239,
+    238,
     240,
-    241,
-    245,
-    265,
-    267,
-    268,
-    269,
-    271,
+    242,
+    248,
+    249,
+    251,
+    252,
+    253,
+    255,
+    256,
+    257,
+    262,
+    264,
     272,
-    273,
     274,
-    275,
-    278,
-    279,
-    281,
-    282,
+    283,
     284,
     285,
-    286,
     287,
-    288,
-    289,
-    290,
-    294,
-    295,
-    298,
     299,
-    309,
-    311,
+    300,
+    303,
+    305,
+    306,
+    307,
+    310,
+    314,
     316,
     317,
     319,
+    320,
+    321,
+    323,
+    324,
     325,
     326,
-    327,
+    328,
     329,
-    334,
-    336,
-    337,
-    339,
+    331,
     344,
-    349,
-    350,
-    352,
+    346,
+    347,
+    353,
     354,
+    355,
     356,
-    362,
-    363,
-    365,
-    366,
-    367,
-    369,
-    370,
-    371,
-    376,
+    357,
+    359,
+    364,
+    374,
+    375,
+    377,
     378,
-    386,
-    388,
-    397,
-    398,
-    399,
-    401,
-    413,
-    414,
+    381,
+    382,
+    390,
+    391,
+    402,
+    407,
     417,
-    419,
+    418,
     420,
     421,
-    424,
-    428,
-    430,
-    431,
-    433,
+    425,
+    426,
     434,
     435,
-    437,
-    438,
-    439,
-    440,
-    442,
-    443,
-    445,
-    458,
-    460,
-    461,
+    446,
+    456,
+    466,
     467,
-    468,
     469,
     470,
-    471,
-    473,
-    478,
-    488,
+    472,
+    482,
+    487,
     489,
-    491,
+    490,
     492,
+    493,
     495,
     496,
     504,
     505,
     516,
-    521,
-    531,
-    532,
-    534,
-    535,
-    539,
-    540,
-    548,
-    549,
+    517,
+    528,
+    550,
+    551,
+    553,
+    554,
+    555,
+    557,
+    559,
     560,
     570,
-    580,
-    581,
-    583,
-    584,
-    586,
-    596,
-    601,
-    603,
-    604,
+    574,
+    575,
+    585,
+    590,
+    600,
     606,
-    607,
-    609,
-    610,
+    611,
+    614,
     618,
     619,
+    625,
+    629,
     630,
     631,
-    642,
-    664,
+    632,
+    637,
+    639,
+    640,
+    643,
+    646,
+    647,
+    650,
+    654,
+    657,
+    660,
     665,
-    667,
-    668,
-    669,
-    671,
-    673,
-    674,
-    684,
-    688,
+    685,
+    686,
+    687,
     689,
     699,
-    704,
+    700,
+    702,
+    705,
+    707,
+    708,
+    710,
     714,
-    720,
     725,
+    727,
     728,
-    732,
-    733,
-    739,
-    743,
+    730,
+    734,
     744,
-    745,
-    746,
-    751,
-    753,
-    754,
-    757,
     760,
     761,
+    762,
     764,
-    768,
-    771,
-    774,
-    779,
-    799,
+    775,
+    776,
+    777,
+    780,
+    783,
     800,
     801,
-    803,
+    806,
+    807,
+    811,
+    812,
     813,
     814,
     816,
-    819,
-    821,
-    822,
-    824,
-    828,
+    826,
     839,
-    841,
-    842,
-    844,
-    848,
-    858,
-    874,
-    875,
-    876,
+    866,
+    867,
+    871,
     878,
-    889,
-    890,
+    879,
+    880,
+    882,
+    887,
+    888,
     891,
-    894,
-    897,
+    893,
+    895,
+    898,
+    901,
+    903,
+    904,
+    909,
+    910,
+    913,
     914,
-    915,
-    920,
-    921,
-    925,
+    919,
+    922,
     926,
-    927,
-    928,
-    930,
-    940,
-    953,
-    980,
-    981,
+    945,
+    946,
+    947,
+    950,
+    962,
+    971,
+    972,
+    974,
+    975,
+    976,
+    977,
+    978,
+    983,
     985,
-    992,
+    987,
+    990,
     993,
-    994,
     996,
-    1001,
-    1002,
-    1005,
-    1007,
-    1009,
-    1012,
-    1015,
-    1017,
-    1018,
-    1023,
-    1024,
-    1027,
-    1028,
-    1033,
-    1036,
-    1040,
-    1059,
-    1060,
-    1061,
-    1064,
-    1076,
-    1085,
-    1086,
-    1088,
-    1089,
-    1090,
-    1091,
-    1092,
-    1097,
-    1099,
-    1101,
-    1104,
-    1107,
-    1110,
-    1113,
-    1117,
-    1118,
-    1122,
-    1127
+    999,
+    1003,
+    1004,
+    1008,
+    1013
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -364109,7 +364332,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 46
   },
   "branches": {
-    "covered": 157,
+    "covered": 158,
     "total": 176
   },
   "uncoveredFunctions": [
@@ -368144,8 +368367,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/generationAwareness.ts",
   "statements": {
-    "covered": 10,
-    "total": 10
+    "covered": 12,
+    "total": 12
   },
   "functions": {
     "covered": 2,
@@ -376761,7 +376984,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/maxcoreControlTransport.ts",
   "statements": {
-    "covered": 21,
+    "covered": 23,
     "total": 24
   },
   "functions": {
@@ -376769,14 +376992,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 3
   },
   "branches": {
-    "covered": 34,
+    "covered": 35,
     "total": 41
   },
   "uncoveredFunctions": [],
   "uncoveredStatementLines": [
-    53,
-    78,
-    92
+    53
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -419208,7 +419429,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/workers/index.ts",
   "statements": {
     "covered": 0,
-    "total": 172
+    "total": 168
   },
   "functions": {
     "covered": 0,
@@ -419216,250 +419437,251 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "branches": {
     "covered": 0,
-    "total": 73
+    "total": 71
   },
   "uncoveredFunctions": [
     {
       "name": "checkMemoryUsage",
-      "line": 32
+      "line": 23
     },
     {
       "name": "workerOpts",
-      "line": 49
+      "line": 40
     },
     {
       "name": "startWorkerSafe",
-      "line": 88
+      "line": 79
     },
     {
       "name": "(anonymous_3)",
-      "line": 89
+      "line": 80
     },
     {
       "name": "(anonymous_4)",
-      "line": 90
+      "line": 81
     },
     {
       "name": "createAudioWorker",
-      "line": 101
+      "line": 92
     },
     {
       "name": "(anonymous_6)",
-      "line": 104
+      "line": 95
     },
     {
       "name": "(anonymous_7)",
-      "line": 124
+      "line": 115
     },
     {
       "name": "(anonymous_8)",
-      "line": 125
+      "line": 116
     },
     {
       "name": "createCsvWorker",
-      "line": 131
+      "line": 122
     },
     {
       "name": "(anonymous_10)",
-      "line": 134
+      "line": 125
     },
     {
       "name": "(anonymous_11)",
-      "line": 141
+      "line": 132
     },
     {
       "name": "(anonymous_12)",
-      "line": 142
+      "line": 133
     },
     {
       "name": "createAnalyticsWorker",
-      "line": 148
+      "line": 139
     },
     {
       "name": "(anonymous_14)",
-      "line": 151
+      "line": 142
     },
     {
       "name": "(anonymous_15)",
-      "line": 165
+      "line": 156
     },
     {
       "name": "(anonymous_16)",
-      "line": 168
+      "line": 159
     },
     {
       "name": "createEmailWorker",
-      "line": 174
+      "line": 165
     },
     {
       "name": "(anonymous_18)",
-      "line": 177
+      "line": 168
     },
     {
       "name": "(anonymous_19)",
-      "line": 203
+      "line": 194
     },
     {
       "name": "(anonymous_20)",
-      "line": 204
+      "line": 195
     },
     {
       "name": "gracefulShutdown",
-      "line": 210
+      "line": 201
     },
     {
       "name": "(anonymous_22)",
-      "line": 221
+      "line": 212
     },
     {
       "name": "(anonymous_23)",
-      "line": 222
+      "line": 213
     },
     {
       "name": "(anonymous_24)",
-      "line": 242
+      "line": 233
     },
     {
       "name": "(anonymous_25)",
-      "line": 244
+      "line": 235
     },
     {
       "name": "(anonymous_26)",
-      "line": 245
+      "line": 236
     },
     {
       "name": "(anonymous_27)",
-      "line": 251
+      "line": 242
     },
     {
       "name": "(anonymous_28)",
-      "line": 267
+      "line": 258
     },
     {
       "name": "waitForPdimReady",
-      "line": 299
+      "line": 290
     },
     {
       "name": "(anonymous_30)",
-      "line": 360
+      "line": 351
     },
     {
       "name": "initializeWorkers",
-      "line": 368
+      "line": 359
     },
     {
       "name": "(anonymous_32)",
-      "line": 420
+      "line": 411
     },
     {
       "name": "(anonymous_33)",
-      "line": 422
+      "line": 413
     },
     {
       "name": "(anonymous_34)",
-      "line": 425
+      "line": 416
     },
     {
       "name": "shutdownWorkers",
-      "line": 430
+      "line": 421
     }
   ],
   "uncoveredStatementLines": [
+    14,
     15,
     16,
-    17,
     19,
     20,
     21,
-    23,
+    24,
+    25,
+    26,
+    27,
     28,
     29,
     30,
+    31,
+    32,
     33,
-    34,
     35,
     36,
-    37,
-    38,
-    39,
-    40,
-    41,
-    42,
     44,
     45,
-    53,
-    54,
-    56,
-    57,
-    71,
-    72,
+    47,
+    48,
+    62,
+    63,
+    80,
+    81,
+    82,
+    87,
+    88,
     89,
     90,
-    91,
+    93,
     96,
     97,
     98,
-    99,
-    102,
-    105,
+    100,
+    104,
     106,
-    107,
-    109,
-    113,
+    110,
     115,
+    116,
+    117,
     119,
-    124,
-    125,
+    123,
     126,
+    127,
     128,
     132,
-    135,
+    133,
+    134,
     136,
-    137,
-    141,
-    142,
+    140,
     143,
+    144,
     145,
-    149,
-    152,
-    153,
-    154,
+    147,
+    151,
     156,
+    157,
+    159,
     160,
-    165,
+    162,
     166,
-    168,
     169,
+    170,
     171,
-    175,
-    178,
-    179,
+    173,
     180,
-    182,
-    189,
+    181,
+    187,
+    188,
     190,
+    194,
+    195,
     196,
-    197,
-    199,
+    198,
+    202,
     203,
     204,
-    205,
-    207,
-    211,
     212,
-    213,
-    221,
-    223,
-    229,
+    214,
+    220,
+    224,
+    225,
+    231,
+    232,
     233,
     234,
-    240,
-    241,
+    235,
+    236,
     242,
-    243,
     244,
     245,
-    251,
+    246,
+    249,
+    250,
     253,
     254,
     255,
@@ -419467,66 +419689,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     259,
     262,
     263,
-    264,
-    267,
     268,
-    271,
-    272,
-    277,
-    283,
-    285,
-    305,
+    274,
+    276,
+    296,
+    297,
+    298,
+    299,
+    302,
+    303,
+    304,
     306,
     307,
     308,
+    310,
     311,
     312,
     313,
-    315,
-    316,
-    317,
-    319,
-    320,
-    321,
     322,
+    330,
     331,
-    339,
+    332,
+    333,
+    336,
+    338,
     340,
     341,
-    342,
-    345,
+    346,
     347,
-    349,
-    350,
-    355,
-    356,
+    351,
+    354,
     360,
-    363,
+    366,
+    367,
+    368,
     369,
-    375,
-    376,
+    371,
+    374,
     377,
     378,
-    380,
-    383,
+    381,
+    385,
     386,
-    387,
-    390,
-    394,
-    395,
-    398,
-    400,
+    389,
+    391,
+    403,
+    409,
+    410,
+    411,
     412,
+    413,
+    416,
     418,
-    419,
-    420,
-    421,
     422,
     425,
-    427,
-    431,
-    434,
-    435
+    426
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -433190,15 +433407,15 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "shared/ml/nlp/ContentGenerator.ts",
   "statements": {
-    "covered": 354,
+    "covered": 322,
     "total": 542
   },
   "functions": {
-    "covered": 49,
+    "covered": 45,
     "total": 82
   },
   "branches": {
-    "covered": 238,
+    "covered": 225,
     "total": 448
   },
   "uncoveredFunctions": [
@@ -433213,6 +433430,22 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "name": "(anonymous_16)",
       "line": 616
+    },
+    {
+      "name": "generateMarkovBody",
+      "line": 971
+    },
+    {
+      "name": "(anonymous_29)",
+      "line": 993
+    },
+    {
+      "name": "(anonymous_30)",
+      "line": 994
+    },
+    {
+      "name": "weightedRandomChoice",
+      "line": 1447
     },
     {
       "name": "(anonymous_44)",
@@ -433355,8 +433588,29 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     951,
     965,
     975,
+    977,
+    993,
+    994,
+    995,
+    998,
     999,
+    1003,
+    1004,
+    1005,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
     1015,
+    1016,
+    1017,
+    1018,
+    1019,
+    1020,
+    1023,
+    1024,
+    1025,
     1119,
     1122,
     1135,
@@ -433376,12 +433630,17 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1282,
     1284,
     1290,
+    1305,
     1328,
     1330,
     1331,
     1338,
     1340,
     1342,
+    1451,
+    1452,
+    1453,
+    1454,
     1456,
     1575,
     1589,

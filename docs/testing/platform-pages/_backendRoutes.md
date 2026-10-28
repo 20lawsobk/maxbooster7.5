@@ -124,6 +124,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/qs-security-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -16819,16 +16824,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4af376b17020d39f
+## api-a34da58ad7326021
 
 ```json
 {
-  "id": "api-4af376b17020d39f",
+  "id": "api-a34da58ad7326021",
   "method": "GET",
   "path": "/api/ai/analytics/insights/capability",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 819
+    "line": 807
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -16838,27 +16843,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-4af376b17020d39f/response-contract",
+      "id": "api-a34da58ad7326021/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4af376b17020d39f/access-policy",
+      "id": "api-a34da58ad7326021/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4af376b17020d39f/input-boundaries",
+      "id": "api-a34da58ad7326021/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4af376b17020d39f/tenant-boundary",
+      "id": "api-a34da58ad7326021/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4af376b17020d39f/dependency-failure",
+      "id": "api-a34da58ad7326021/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -16884,21 +16889,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/dashboardPageContracts.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-e6eff8cae111ad3d
+## api-c78a8e66ec4e4573
 
 ```json
 {
-  "id": "api-e6eff8cae111ad3d",
+  "id": "api-c78a8e66ec4e4573",
   "method": "POST",
   "path": "/api/ai/analytics/insights",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 825
+    "line": 821
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -16908,32 +16918,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-e6eff8cae111ad3d/response-contract",
+      "id": "api-c78a8e66ec4e4573/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6eff8cae111ad3d/access-policy",
+      "id": "api-c78a8e66ec4e4573/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6eff8cae111ad3d/input-boundaries",
+      "id": "api-c78a8e66ec4e4573/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6eff8cae111ad3d/tenant-boundary",
+      "id": "api-c78a8e66ec4e4573/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6eff8cae111ad3d/dependency-failure",
+      "id": "api-c78a8e66ec4e4573/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6eff8cae111ad3d/mutation-durability",
+      "id": "api-c78a8e66ec4e4573/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -16959,21 +16969,31 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/dashboardPageContracts.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/ai-analytics-integration.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-9e98ff2b7ad8dc23
+## api-eba2a2b70ee6cbd7
 
 ```json
 {
-  "id": "api-9e98ff2b7ad8dc23",
+  "id": "api-eba2a2b70ee6cbd7",
   "method": "GET",
   "path": "/api/ai/insights",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 832
+    "line": 840
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -16983,27 +17003,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-9e98ff2b7ad8dc23/response-contract",
+      "id": "api-eba2a2b70ee6cbd7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e98ff2b7ad8dc23/access-policy",
+      "id": "api-eba2a2b70ee6cbd7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e98ff2b7ad8dc23/input-boundaries",
+      "id": "api-eba2a2b70ee6cbd7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e98ff2b7ad8dc23/tenant-boundary",
+      "id": "api-eba2a2b70ee6cbd7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e98ff2b7ad8dc23/dependency-failure",
+      "id": "api-eba2a2b70ee6cbd7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -17034,16 +17054,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d264a27acc5b2e1c
+## api-973f5005f8dc92db
 
 ```json
 {
-  "id": "api-d264a27acc5b2e1c",
+  "id": "api-973f5005f8dc92db",
   "method": "GET",
   "path": "/api/ai/anomalies",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 849
+    "line": 857
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17053,27 +17073,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-d264a27acc5b2e1c/response-contract",
+      "id": "api-973f5005f8dc92db/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d264a27acc5b2e1c/access-policy",
+      "id": "api-973f5005f8dc92db/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d264a27acc5b2e1c/input-boundaries",
+      "id": "api-973f5005f8dc92db/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d264a27acc5b2e1c/tenant-boundary",
+      "id": "api-973f5005f8dc92db/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d264a27acc5b2e1c/dependency-failure",
+      "id": "api-973f5005f8dc92db/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -17104,16 +17124,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e80b6fb9d98a70bf
+## api-5df87416ad330773
 
 ```json
 {
-  "id": "api-e80b6fb9d98a70bf",
+  "id": "api-5df87416ad330773",
   "method": "POST",
   "path": "/api/ai/churn/predict",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 866
+    "line": 874
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17123,32 +17143,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-e80b6fb9d98a70bf/response-contract",
+      "id": "api-5df87416ad330773/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e80b6fb9d98a70bf/access-policy",
+      "id": "api-5df87416ad330773/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e80b6fb9d98a70bf/input-boundaries",
+      "id": "api-5df87416ad330773/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e80b6fb9d98a70bf/tenant-boundary",
+      "id": "api-5df87416ad330773/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e80b6fb9d98a70bf/dependency-failure",
+      "id": "api-5df87416ad330773/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e80b6fb9d98a70bf/mutation-durability",
+      "id": "api-5df87416ad330773/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -17179,16 +17199,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ec3ae185eceb7f5c
+## api-b21fa0c78bcb1f10
 
 ```json
 {
-  "id": "api-ec3ae185eceb7f5c",
+  "id": "api-b21fa0c78bcb1f10",
   "method": "POST",
   "path": "/api/ai/revenue/forecast",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 887
+    "line": 895
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17198,32 +17218,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-ec3ae185eceb7f5c/response-contract",
+      "id": "api-b21fa0c78bcb1f10/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ec3ae185eceb7f5c/access-policy",
+      "id": "api-b21fa0c78bcb1f10/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ec3ae185eceb7f5c/input-boundaries",
+      "id": "api-b21fa0c78bcb1f10/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ec3ae185eceb7f5c/tenant-boundary",
+      "id": "api-b21fa0c78bcb1f10/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ec3ae185eceb7f5c/dependency-failure",
+      "id": "api-b21fa0c78bcb1f10/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ec3ae185eceb7f5c/mutation-durability",
+      "id": "api-b21fa0c78bcb1f10/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -17254,16 +17274,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3067173b92db07d2
+## api-a3955994363f2f96
 
 ```json
 {
-  "id": "api-3067173b92db07d2",
+  "id": "api-a3955994363f2f96",
   "method": "POST",
   "path": "/api/ai/organic/optimize",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 917
+    "line": 925
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17273,32 +17293,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-3067173b92db07d2/response-contract",
+      "id": "api-a3955994363f2f96/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3067173b92db07d2/access-policy",
+      "id": "api-a3955994363f2f96/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3067173b92db07d2/input-boundaries",
+      "id": "api-a3955994363f2f96/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3067173b92db07d2/tenant-boundary",
+      "id": "api-a3955994363f2f96/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3067173b92db07d2/dependency-failure",
+      "id": "api-a3955994363f2f96/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3067173b92db07d2/mutation-durability",
+      "id": "api-a3955994363f2f96/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -17329,16 +17349,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a051620fabb3e075
+## api-c2759ac4cad65582
 
 ```json
 {
-  "id": "api-a051620fabb3e075",
+  "id": "api-c2759ac4cad65582",
   "method": "POST",
   "path": "/api/ai/organic/roi",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 955
+    "line": 963
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17348,32 +17368,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-a051620fabb3e075/response-contract",
+      "id": "api-c2759ac4cad65582/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a051620fabb3e075/access-policy",
+      "id": "api-c2759ac4cad65582/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a051620fabb3e075/input-boundaries",
+      "id": "api-c2759ac4cad65582/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a051620fabb3e075/tenant-boundary",
+      "id": "api-c2759ac4cad65582/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a051620fabb3e075/dependency-failure",
+      "id": "api-c2759ac4cad65582/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a051620fabb3e075/mutation-durability",
+      "id": "api-c2759ac4cad65582/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -17404,16 +17424,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6a37f804f5d356da
+## api-c9f801403c71bf2f
 
 ```json
 {
-  "id": "api-6a37f804f5d356da",
+  "id": "api-c9f801403c71bf2f",
   "method": "POST",
   "path": "/api/ai/organic/schedule",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 999
+    "line": 1007
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17423,32 +17443,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-6a37f804f5d356da/response-contract",
+      "id": "api-c9f801403c71bf2f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a37f804f5d356da/access-policy",
+      "id": "api-c9f801403c71bf2f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a37f804f5d356da/input-boundaries",
+      "id": "api-c9f801403c71bf2f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a37f804f5d356da/tenant-boundary",
+      "id": "api-c9f801403c71bf2f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a37f804f5d356da/dependency-failure",
+      "id": "api-c9f801403c71bf2f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a37f804f5d356da/mutation-durability",
+      "id": "api-c9f801403c71bf2f/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -17479,16 +17499,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-57ec85136f6b89c7
+## api-3d6433e754631f52
 
 ```json
 {
-  "id": "api-57ec85136f6b89c7",
+  "id": "api-3d6433e754631f52",
   "method": "GET",
   "path": "/api/ai/organic/network-analysis",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 1039
+    "line": 1047
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17498,27 +17518,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-57ec85136f6b89c7/response-contract",
+      "id": "api-3d6433e754631f52/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-57ec85136f6b89c7/access-policy",
+      "id": "api-3d6433e754631f52/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-57ec85136f6b89c7/input-boundaries",
+      "id": "api-3d6433e754631f52/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-57ec85136f6b89c7/tenant-boundary",
+      "id": "api-3d6433e754631f52/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-57ec85136f6b89c7/dependency-failure",
+      "id": "api-3d6433e754631f52/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -17549,16 +17569,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-82e552bb726df3c5
+## api-18888b20c69a26a3
 
 ```json
 {
-  "id": "api-82e552bb726df3c5",
+  "id": "api-18888b20c69a26a3",
   "method": "GET",
   "path": "/api/ai/diffusion/status",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 1068
+    "line": 1076
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17568,27 +17588,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-82e552bb726df3c5/response-contract",
+      "id": "api-18888b20c69a26a3/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-82e552bb726df3c5/access-policy",
+      "id": "api-18888b20c69a26a3/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-82e552bb726df3c5/input-boundaries",
+      "id": "api-18888b20c69a26a3/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-82e552bb726df3c5/tenant-boundary",
+      "id": "api-18888b20c69a26a3/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-82e552bb726df3c5/dependency-failure",
+      "id": "api-18888b20c69a26a3/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -17619,16 +17639,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d35740068146cccf
+## api-1170f864e643c9c7
 
 ```json
 {
-  "id": "api-d35740068146cccf",
+  "id": "api-1170f864e643c9c7",
   "method": "GET",
   "path": "/api/ai/simulator/status",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 1095
+    "line": 1103
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17638,27 +17658,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-d35740068146cccf/response-contract",
+      "id": "api-1170f864e643c9c7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d35740068146cccf/access-policy",
+      "id": "api-1170f864e643c9c7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d35740068146cccf/input-boundaries",
+      "id": "api-1170f864e643c9c7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d35740068146cccf/tenant-boundary",
+      "id": "api-1170f864e643c9c7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d35740068146cccf/dependency-failure",
+      "id": "api-1170f864e643c9c7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -17689,16 +17709,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-326aacda18ab80c5
+## api-348d410d88b555bd
 
 ```json
 {
-  "id": "api-326aacda18ab80c5",
+  "id": "api-348d410d88b555bd",
   "method": "GET",
   "path": "/api/ai/diffusion/ready",
   "source": {
     "file": "server/routes/ai.ts",
-    "line": 1122
+    "line": 1130
   },
   "processScope": "main-app",
   "confidence": "high",
@@ -17708,32 +17728,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/ai",
   "requiredChecks": [
     {
-      "id": "api-326aacda18ab80c5/response-contract",
+      "id": "api-348d410d88b555bd/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-326aacda18ab80c5/access-policy",
+      "id": "api-348d410d88b555bd/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-326aacda18ab80c5/input-boundaries",
+      "id": "api-348d410d88b555bd/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-326aacda18ab80c5/tenant-boundary",
+      "id": "api-348d410d88b555bd/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-326aacda18ab80c5/dependency-failure",
+      "id": "api-348d410d88b555bd/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-326aacda18ab80c5/readiness-truth",
+      "id": "api-348d410d88b555bd/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -81707,6 +81727,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     }
@@ -160121,7 +160146,30 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-ef05357bba6ab833/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "cases": [
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/auth-flows.test.ts",
+            "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+            "caseName": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+            "group": "http"
+          },
+          {
+            "testFile": "tests/api-guards.test.ts",
+            "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+            "caseName": "Unauthenticated route guards > GET /api/auth/me → 200 (public, returns null)",
+            "group": "http"
+          }
+        ],
+        "mode": "all-cases-required"
+      }
     },
     {
       "id": "api-ef05357bba6ab833/input-boundaries",
@@ -183101,7 +183149,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-7f174c69ff83279c/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "testFile": "tests/health.test.ts",
+        "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+        "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+        "group": "http"
+      }
     },
     {
       "id": "api-7f174c69ff83279c/input-boundaries",
@@ -184836,7 +184890,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-50167c08abd2dfe2/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "testFile": "tests/health.test.ts",
+        "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+        "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+        "group": "http"
+      }
     },
     {
       "id": "api-50167c08abd2dfe2/input-boundaries",
@@ -184926,7 +184986,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-2153be5bc8e5692b/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "testFile": "tests/health.test.ts",
+        "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+        "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
+        "group": "http"
+      }
     },
     {
       "id": "api-2153be5bc8e5692b/input-boundaries",
@@ -185023,6 +185089,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/qs-security-contract.test.mjs",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -185371,7 +185442,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-059a423751b44e6c/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "testFile": "tests/health.test.ts",
+        "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+        "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+        "group": "http"
+      }
     },
     {
       "id": "api-059a423751b44e6c/input-boundaries",
@@ -185491,7 +185568,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "id": "api-ebf54287f664010e/access-policy",
       "template": "access-policy",
-      "status": "UNVERIFIED"
+      "status": "PASS",
+      "evidence": {
+        "testFile": "tests/health.test.ts",
+        "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+        "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+        "group": "http"
+      }
     },
     {
       "id": "api-ebf54287f664010e/input-boundaries",
@@ -190281,6 +190364,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/qs-security-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -190416,6 +190504,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/qs-security-contract.test.mjs",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -190831,6 +190924,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -190854,16 +190952,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0f6393577e949faf
+## api-579de55e35fba3eb
 
 ```json
 {
-  "id": "api-0f6393577e949faf",
+  "id": "api-579de55e35fba3eb",
   "method": "POST",
   "path": "/api/analysis/upload",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 673
+    "line": 674
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -190872,32 +190970,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/analysis",
   "requiredChecks": [
     {
-      "id": "api-0f6393577e949faf/response-contract",
+      "id": "api-579de55e35fba3eb/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0f6393577e949faf/access-policy",
+      "id": "api-579de55e35fba3eb/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0f6393577e949faf/input-boundaries",
+      "id": "api-579de55e35fba3eb/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0f6393577e949faf/tenant-boundary",
+      "id": "api-579de55e35fba3eb/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0f6393577e949faf/dependency-failure",
+      "id": "api-579de55e35fba3eb/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0f6393577e949faf/mutation-durability",
+      "id": "api-579de55e35fba3eb/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -190912,6 +191010,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -190935,16 +191038,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-cbd17e31150c4180
+## api-3aebde554a300f6b
 
 ```json
 {
-  "id": "api-cbd17e31150c4180",
+  "id": "api-3aebde554a300f6b",
   "method": "POST",
   "path": null,
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 675
+    "line": 676
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "unresolved-path",
@@ -190953,32 +191056,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/<computed>",
   "requiredChecks": [
     {
-      "id": "api-cbd17e31150c4180/response-contract",
+      "id": "api-3aebde554a300f6b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbd17e31150c4180/access-policy",
+      "id": "api-3aebde554a300f6b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbd17e31150c4180/input-boundaries",
+      "id": "api-3aebde554a300f6b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbd17e31150c4180/tenant-boundary",
+      "id": "api-3aebde554a300f6b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbd17e31150c4180/dependency-failure",
+      "id": "api-3aebde554a300f6b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbd17e31150c4180/mutation-durability",
+      "id": "api-3aebde554a300f6b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -190993,6 +191096,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -191016,16 +191124,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-526dc3f320e28307
+## api-f961fda3ecd8f111
 
 ```json
 {
-  "id": "api-526dc3f320e28307",
+  "id": "api-f961fda3ecd8f111",
   "method": "GET",
   "path": "/api/health",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 680
+    "line": 681
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191034,32 +191142,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/health",
   "requiredChecks": [
     {
-      "id": "api-526dc3f320e28307/response-contract",
+      "id": "api-f961fda3ecd8f111/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-526dc3f320e28307/access-policy",
+      "id": "api-f961fda3ecd8f111/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-526dc3f320e28307/input-boundaries",
+      "id": "api-f961fda3ecd8f111/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-526dc3f320e28307/tenant-boundary",
+      "id": "api-f961fda3ecd8f111/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-526dc3f320e28307/dependency-failure",
+      "id": "api-f961fda3ecd8f111/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-526dc3f320e28307/readiness-truth",
+      "id": "api-f961fda3ecd8f111/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -191073,6 +191181,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191187,16 +191300,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-777cbfb8a9cb87f1
+## api-14cd7542f0651ffe
 
 ```json
 {
-  "id": "api-777cbfb8a9cb87f1",
+  "id": "api-14cd7542f0651ffe",
   "method": "GET",
   "path": "/api/api/health",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 685
+    "line": 686
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191205,32 +191318,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/health",
   "requiredChecks": [
     {
-      "id": "api-777cbfb8a9cb87f1/response-contract",
+      "id": "api-14cd7542f0651ffe/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-777cbfb8a9cb87f1/access-policy",
+      "id": "api-14cd7542f0651ffe/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-777cbfb8a9cb87f1/input-boundaries",
+      "id": "api-14cd7542f0651ffe/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-777cbfb8a9cb87f1/tenant-boundary",
+      "id": "api-14cd7542f0651ffe/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-777cbfb8a9cb87f1/dependency-failure",
+      "id": "api-14cd7542f0651ffe/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-777cbfb8a9cb87f1/readiness-truth",
+      "id": "api-14cd7542f0651ffe/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -191245,6 +191358,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -191268,16 +191386,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a18dfe10fca8d4f0
+## api-a6d76509cf8f6213
 
 ```json
 {
-  "id": "api-a18dfe10fca8d4f0",
+  "id": "api-a6d76509cf8f6213",
   "method": "GET",
   "path": "/api/api-keys",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 689
+    "line": 690
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191286,27 +191404,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-a18dfe10fca8d4f0/response-contract",
+      "id": "api-a6d76509cf8f6213/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a18dfe10fca8d4f0/access-policy",
+      "id": "api-a6d76509cf8f6213/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a18dfe10fca8d4f0/input-boundaries",
+      "id": "api-a6d76509cf8f6213/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a18dfe10fca8d4f0/tenant-boundary",
+      "id": "api-a6d76509cf8f6213/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a18dfe10fca8d4f0/dependency-failure",
+      "id": "api-a6d76509cf8f6213/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191320,6 +191438,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191344,16 +191467,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c2a023dbe31b4f9a
+## api-07dfbbe239912595
 
 ```json
 {
-  "id": "api-c2a023dbe31b4f9a",
+  "id": "api-07dfbbe239912595",
   "method": "POST",
   "path": "/api/api-keys",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 693
+    "line": 694
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191362,32 +191485,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-c2a023dbe31b4f9a/response-contract",
+      "id": "api-07dfbbe239912595/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2a023dbe31b4f9a/access-policy",
+      "id": "api-07dfbbe239912595/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2a023dbe31b4f9a/input-boundaries",
+      "id": "api-07dfbbe239912595/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2a023dbe31b4f9a/tenant-boundary",
+      "id": "api-07dfbbe239912595/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2a023dbe31b4f9a/dependency-failure",
+      "id": "api-07dfbbe239912595/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2a023dbe31b4f9a/mutation-durability",
+      "id": "api-07dfbbe239912595/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -191401,6 +191524,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191425,16 +191553,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fd914fb4bbfc2e14
+## api-ab7d372c2ebff2f5
 
 ```json
 {
-  "id": "api-fd914fb4bbfc2e14",
+  "id": "api-ab7d372c2ebff2f5",
   "method": "DELETE",
   "path": "/api/api-keys/:keyId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 697
+    "line": 698
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191443,37 +191571,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-fd914fb4bbfc2e14/response-contract",
+      "id": "api-ab7d372c2ebff2f5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/access-policy",
+      "id": "api-ab7d372c2ebff2f5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/input-boundaries",
+      "id": "api-ab7d372c2ebff2f5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/tenant-boundary",
+      "id": "api-ab7d372c2ebff2f5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/dependency-failure",
+      "id": "api-ab7d372c2ebff2f5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/mutation-durability",
+      "id": "api-ab7d372c2ebff2f5/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd914fb4bbfc2e14/deletion-durability",
+      "id": "api-ab7d372c2ebff2f5/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     }
@@ -191488,6 +191616,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -191511,16 +191644,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e716d20763f6e2d2
+## api-9e1b6d06f876714c
 
 ```json
 {
-  "id": "api-e716d20763f6e2d2",
+  "id": "api-9e1b6d06f876714c",
   "method": "POST",
   "path": "/api/api-keys/:keyId/rotate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 701
+    "line": 702
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191529,32 +191662,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-e716d20763f6e2d2/response-contract",
+      "id": "api-9e1b6d06f876714c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e716d20763f6e2d2/access-policy",
+      "id": "api-9e1b6d06f876714c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e716d20763f6e2d2/input-boundaries",
+      "id": "api-9e1b6d06f876714c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e716d20763f6e2d2/tenant-boundary",
+      "id": "api-9e1b6d06f876714c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e716d20763f6e2d2/dependency-failure",
+      "id": "api-9e1b6d06f876714c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e716d20763f6e2d2/mutation-durability",
+      "id": "api-9e1b6d06f876714c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -191569,6 +191702,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -191592,16 +191730,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3abd5f6c6e5cd555
+## api-e7676225bf93678e
 
 ```json
 {
-  "id": "api-3abd5f6c6e5cd555",
+  "id": "api-e7676225bf93678e",
   "method": "GET",
   "path": "/api/model/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 705
+    "line": 706
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191610,27 +191748,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/model",
   "requiredChecks": [
     {
-      "id": "api-3abd5f6c6e5cd555/response-contract",
+      "id": "api-e7676225bf93678e/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3abd5f6c6e5cd555/access-policy",
+      "id": "api-e7676225bf93678e/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3abd5f6c6e5cd555/input-boundaries",
+      "id": "api-e7676225bf93678e/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3abd5f6c6e5cd555/tenant-boundary",
+      "id": "api-e7676225bf93678e/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3abd5f6c6e5cd555/dependency-failure",
+      "id": "api-e7676225bf93678e/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191645,6 +191783,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -191673,16 +191816,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7d929ebe8174b76b
+## api-9d6fa4da0c315850
 
 ```json
 {
-  "id": "api-7d929ebe8174b76b",
+  "id": "api-9d6fa4da0c315850",
   "method": "GET",
   "path": "/api/gpu/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 709
+    "line": 710
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191691,27 +191834,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-7d929ebe8174b76b/response-contract",
+      "id": "api-9d6fa4da0c315850/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d929ebe8174b76b/access-policy",
+      "id": "api-9d6fa4da0c315850/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d929ebe8174b76b/input-boundaries",
+      "id": "api-9d6fa4da0c315850/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d929ebe8174b76b/tenant-boundary",
+      "id": "api-9d6fa4da0c315850/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d929ebe8174b76b/dependency-failure",
+      "id": "api-9d6fa4da0c315850/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191725,6 +191868,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191754,16 +191902,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-dc9f2774ca652028
+## api-9a40bfc9b761f373
 
 ```json
 {
-  "id": "api-dc9f2774ca652028",
+  "id": "api-9a40bfc9b761f373",
   "method": "GET",
   "path": "/api/gpu/hyper/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 713
+    "line": 714
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191772,27 +191920,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-dc9f2774ca652028/response-contract",
+      "id": "api-9a40bfc9b761f373/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc9f2774ca652028/access-policy",
+      "id": "api-9a40bfc9b761f373/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc9f2774ca652028/input-boundaries",
+      "id": "api-9a40bfc9b761f373/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc9f2774ca652028/tenant-boundary",
+      "id": "api-9a40bfc9b761f373/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc9f2774ca652028/dependency-failure",
+      "id": "api-9a40bfc9b761f373/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191806,6 +191954,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191835,16 +191988,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1b69ff05168c64a2
+## api-044e53c2792a7b85
 
 ```json
 {
-  "id": "api-1b69ff05168c64a2",
+  "id": "api-044e53c2792a7b85",
   "method": "GET",
   "path": "/api/gpu/silicon/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 717
+    "line": 718
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191853,27 +192006,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-1b69ff05168c64a2/response-contract",
+      "id": "api-044e53c2792a7b85/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1b69ff05168c64a2/access-policy",
+      "id": "api-044e53c2792a7b85/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1b69ff05168c64a2/input-boundaries",
+      "id": "api-044e53c2792a7b85/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1b69ff05168c64a2/tenant-boundary",
+      "id": "api-044e53c2792a7b85/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1b69ff05168c64a2/dependency-failure",
+      "id": "api-044e53c2792a7b85/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191887,6 +192040,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191911,16 +192069,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-b223c8d8990e14d3
+## api-b21ba7549bf1d4ee
 
 ```json
 {
-  "id": "api-b223c8d8990e14d3",
+  "id": "api-b21ba7549bf1d4ee",
   "method": "GET",
   "path": "/api/gpu/capabilities",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 721
+    "line": 722
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -191929,27 +192087,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-b223c8d8990e14d3/response-contract",
+      "id": "api-b21ba7549bf1d4ee/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b223c8d8990e14d3/access-policy",
+      "id": "api-b21ba7549bf1d4ee/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b223c8d8990e14d3/input-boundaries",
+      "id": "api-b21ba7549bf1d4ee/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b223c8d8990e14d3/tenant-boundary",
+      "id": "api-b21ba7549bf1d4ee/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b223c8d8990e14d3/dependency-failure",
+      "id": "api-b21ba7549bf1d4ee/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -191963,6 +192121,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -191992,16 +192155,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-19116dee5495704d
+## api-768597787d9073d6
 
 ```json
 {
-  "id": "api-19116dee5495704d",
+  "id": "api-768597787d9073d6",
   "method": "GET",
   "path": "/api/training/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 725
+    "line": 726
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192010,27 +192173,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-19116dee5495704d/response-contract",
+      "id": "api-768597787d9073d6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-19116dee5495704d/access-policy",
+      "id": "api-768597787d9073d6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-19116dee5495704d/input-boundaries",
+      "id": "api-768597787d9073d6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-19116dee5495704d/tenant-boundary",
+      "id": "api-768597787d9073d6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-19116dee5495704d/dependency-failure",
+      "id": "api-768597787d9073d6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192044,6 +192207,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192078,16 +192246,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-679bcf5db703f76c
+## api-6a7fa8bb417757b2
 
 ```json
 {
-  "id": "api-679bcf5db703f76c",
+  "id": "api-6a7fa8bb417757b2",
   "method": "GET",
   "path": "/api/training/live/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 731
+    "line": 732
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192096,27 +192264,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-679bcf5db703f76c/response-contract",
+      "id": "api-6a7fa8bb417757b2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-679bcf5db703f76c/access-policy",
+      "id": "api-6a7fa8bb417757b2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-679bcf5db703f76c/input-boundaries",
+      "id": "api-6a7fa8bb417757b2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-679bcf5db703f76c/tenant-boundary",
+      "id": "api-6a7fa8bb417757b2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-679bcf5db703f76c/dependency-failure",
+      "id": "api-6a7fa8bb417757b2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192130,6 +192298,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192154,16 +192327,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a70054246cc7b180
+## api-20eb62d3bd101130
 
 ```json
 {
-  "id": "api-a70054246cc7b180",
+  "id": "api-20eb62d3bd101130",
   "method": "POST",
   "path": "/api/training/start",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 748
+    "line": 749
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192172,32 +192345,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-a70054246cc7b180/response-contract",
+      "id": "api-20eb62d3bd101130/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a70054246cc7b180/access-policy",
+      "id": "api-20eb62d3bd101130/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a70054246cc7b180/input-boundaries",
+      "id": "api-20eb62d3bd101130/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a70054246cc7b180/tenant-boundary",
+      "id": "api-20eb62d3bd101130/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a70054246cc7b180/dependency-failure",
+      "id": "api-20eb62d3bd101130/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a70054246cc7b180/mutation-durability",
+      "id": "api-20eb62d3bd101130/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -192211,6 +192384,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192240,16 +192418,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2459672672fd9531
+## api-50178249ed1f53e6
 
 ```json
 {
-  "id": "api-2459672672fd9531",
+  "id": "api-50178249ed1f53e6",
   "method": "GET",
   "path": "/api/training/logs",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 752
+    "line": 753
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192258,27 +192436,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-2459672672fd9531/response-contract",
+      "id": "api-50178249ed1f53e6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2459672672fd9531/access-policy",
+      "id": "api-50178249ed1f53e6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2459672672fd9531/input-boundaries",
+      "id": "api-50178249ed1f53e6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2459672672fd9531/tenant-boundary",
+      "id": "api-50178249ed1f53e6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2459672672fd9531/dependency-failure",
+      "id": "api-50178249ed1f53e6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192292,6 +192470,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192321,16 +192504,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4b73113fbb6928b6
+## api-d447877ba99ba391
 
 ```json
 {
-  "id": "api-4b73113fbb6928b6",
+  "id": "api-d447877ba99ba391",
   "method": "POST",
   "path": "/api/training/stop",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 760
+    "line": 761
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192339,32 +192522,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-4b73113fbb6928b6/response-contract",
+      "id": "api-d447877ba99ba391/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4b73113fbb6928b6/access-policy",
+      "id": "api-d447877ba99ba391/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4b73113fbb6928b6/input-boundaries",
+      "id": "api-d447877ba99ba391/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4b73113fbb6928b6/tenant-boundary",
+      "id": "api-d447877ba99ba391/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4b73113fbb6928b6/dependency-failure",
+      "id": "api-d447877ba99ba391/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4b73113fbb6928b6/mutation-durability",
+      "id": "api-d447877ba99ba391/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -192378,6 +192561,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192402,16 +192590,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7670a433a247207e
+## api-1a18fed0343683ff
 
 ```json
 {
-  "id": "api-7670a433a247207e",
+  "id": "api-1a18fed0343683ff",
   "method": "GET",
   "path": "/api/training/datasets",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 764
+    "line": 765
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192420,27 +192608,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-7670a433a247207e/response-contract",
+      "id": "api-1a18fed0343683ff/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7670a433a247207e/access-policy",
+      "id": "api-1a18fed0343683ff/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7670a433a247207e/input-boundaries",
+      "id": "api-1a18fed0343683ff/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7670a433a247207e/tenant-boundary",
+      "id": "api-1a18fed0343683ff/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7670a433a247207e/dependency-failure",
+      "id": "api-1a18fed0343683ff/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192454,6 +192642,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192478,16 +192671,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4acc364688ad9e3f
+## api-5e4ddb8b1676c8ae
 
 ```json
 {
-  "id": "api-4acc364688ad9e3f",
+  "id": "api-5e4ddb8b1676c8ae",
   "method": "POST",
   "path": "/api/training/schedule",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 768
+    "line": 769
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192496,32 +192689,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-4acc364688ad9e3f/response-contract",
+      "id": "api-5e4ddb8b1676c8ae/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4acc364688ad9e3f/access-policy",
+      "id": "api-5e4ddb8b1676c8ae/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4acc364688ad9e3f/input-boundaries",
+      "id": "api-5e4ddb8b1676c8ae/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4acc364688ad9e3f/tenant-boundary",
+      "id": "api-5e4ddb8b1676c8ae/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4acc364688ad9e3f/dependency-failure",
+      "id": "api-5e4ddb8b1676c8ae/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4acc364688ad9e3f/mutation-durability",
+      "id": "api-5e4ddb8b1676c8ae/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -192535,6 +192728,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192559,16 +192757,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-457cbf35452116ed
+## api-2ff0f72530993ff5
 
 ```json
 {
-  "id": "api-457cbf35452116ed",
+  "id": "api-2ff0f72530993ff5",
   "method": "GET",
   "path": "/api/training/continuous/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 774
+    "line": 775
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192577,27 +192775,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-457cbf35452116ed/response-contract",
+      "id": "api-2ff0f72530993ff5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-457cbf35452116ed/access-policy",
+      "id": "api-2ff0f72530993ff5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-457cbf35452116ed/input-boundaries",
+      "id": "api-2ff0f72530993ff5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-457cbf35452116ed/tenant-boundary",
+      "id": "api-2ff0f72530993ff5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-457cbf35452116ed/dependency-failure",
+      "id": "api-2ff0f72530993ff5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192611,6 +192809,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192640,16 +192843,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2e2ecd41813100aa
+## api-2d51d0082b6226f5
 
 ```json
 {
-  "id": "api-2e2ecd41813100aa",
+  "id": "api-2d51d0082b6226f5",
   "method": "POST",
   "path": "/api/training/continuous/start",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 778
+    "line": 779
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192658,32 +192861,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-2e2ecd41813100aa/response-contract",
+      "id": "api-2d51d0082b6226f5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2ecd41813100aa/access-policy",
+      "id": "api-2d51d0082b6226f5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2ecd41813100aa/input-boundaries",
+      "id": "api-2d51d0082b6226f5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2ecd41813100aa/tenant-boundary",
+      "id": "api-2d51d0082b6226f5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2ecd41813100aa/dependency-failure",
+      "id": "api-2d51d0082b6226f5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2ecd41813100aa/mutation-durability",
+      "id": "api-2d51d0082b6226f5/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -192697,6 +192900,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192721,16 +192929,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e1c85491b3363051
+## api-a482d2e22fffde02
 
 ```json
 {
-  "id": "api-e1c85491b3363051",
+  "id": "api-a482d2e22fffde02",
   "method": "POST",
   "path": "/api/training/continuous/stop",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 782
+    "line": 783
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192739,32 +192947,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-e1c85491b3363051/response-contract",
+      "id": "api-a482d2e22fffde02/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e1c85491b3363051/access-policy",
+      "id": "api-a482d2e22fffde02/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e1c85491b3363051/input-boundaries",
+      "id": "api-a482d2e22fffde02/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e1c85491b3363051/tenant-boundary",
+      "id": "api-a482d2e22fffde02/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e1c85491b3363051/dependency-failure",
+      "id": "api-a482d2e22fffde02/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e1c85491b3363051/mutation-durability",
+      "id": "api-a482d2e22fffde02/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -192778,6 +192986,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192802,16 +193015,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-761ed9b574611d0e
+## api-65fd126ce141f5d9
 
 ```json
 {
-  "id": "api-761ed9b574611d0e",
+  "id": "api-65fd126ce141f5d9",
   "method": "GET",
   "path": "/api/training/continuous/history",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 786
+    "line": 787
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192820,27 +193033,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-761ed9b574611d0e/response-contract",
+      "id": "api-65fd126ce141f5d9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-761ed9b574611d0e/access-policy",
+      "id": "api-65fd126ce141f5d9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-761ed9b574611d0e/input-boundaries",
+      "id": "api-65fd126ce141f5d9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-761ed9b574611d0e/tenant-boundary",
+      "id": "api-65fd126ce141f5d9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-761ed9b574611d0e/dependency-failure",
+      "id": "api-65fd126ce141f5d9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192854,6 +193067,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192883,16 +193101,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-cbe8a1d0708edae2
+## api-565b3cc13cc216d4
 
 ```json
 {
-  "id": "api-cbe8a1d0708edae2",
+  "id": "api-565b3cc13cc216d4",
   "method": "GET",
   "path": "/api/training/puller/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 792
+    "line": 793
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192901,27 +193119,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-cbe8a1d0708edae2/response-contract",
+      "id": "api-565b3cc13cc216d4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbe8a1d0708edae2/access-policy",
+      "id": "api-565b3cc13cc216d4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbe8a1d0708edae2/input-boundaries",
+      "id": "api-565b3cc13cc216d4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbe8a1d0708edae2/tenant-boundary",
+      "id": "api-565b3cc13cc216d4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbe8a1d0708edae2/dependency-failure",
+      "id": "api-565b3cc13cc216d4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -192935,6 +193153,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -192964,16 +193187,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-dc3a5ab00463a96c
+## api-a6fcdddbb814b388
 
 ```json
 {
-  "id": "api-dc3a5ab00463a96c",
+  "id": "api-a6fcdddbb814b388",
   "method": "GET",
   "path": "/api/training/puller/sources",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 796
+    "line": 797
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -192982,27 +193205,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-dc3a5ab00463a96c/response-contract",
+      "id": "api-a6fcdddbb814b388/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc3a5ab00463a96c/access-policy",
+      "id": "api-a6fcdddbb814b388/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc3a5ab00463a96c/input-boundaries",
+      "id": "api-a6fcdddbb814b388/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc3a5ab00463a96c/tenant-boundary",
+      "id": "api-a6fcdddbb814b388/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dc3a5ab00463a96c/dependency-failure",
+      "id": "api-a6fcdddbb814b388/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193016,6 +193239,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193045,16 +193273,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e6d5de91fb732317
+## api-613c2160c313df4b
 
 ```json
 {
-  "id": "api-e6d5de91fb732317",
+  "id": "api-613c2160c313df4b",
   "method": "POST",
   "path": "/api/training/puller/pull",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 800
+    "line": 801
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193063,32 +193291,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-e6d5de91fb732317/response-contract",
+      "id": "api-613c2160c313df4b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6d5de91fb732317/access-policy",
+      "id": "api-613c2160c313df4b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6d5de91fb732317/input-boundaries",
+      "id": "api-613c2160c313df4b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6d5de91fb732317/tenant-boundary",
+      "id": "api-613c2160c313df4b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6d5de91fb732317/dependency-failure",
+      "id": "api-613c2160c313df4b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e6d5de91fb732317/mutation-durability",
+      "id": "api-613c2160c313df4b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -193102,6 +193330,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193126,16 +193359,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-99f99539de1c8d0a
+## api-eff5da6b6095a969
 
 ```json
 {
-  "id": "api-99f99539de1c8d0a",
+  "id": "api-eff5da6b6095a969",
   "method": "POST",
   "path": "/api/training/puller/start",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 804
+    "line": 805
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193144,32 +193377,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-99f99539de1c8d0a/response-contract",
+      "id": "api-eff5da6b6095a969/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-99f99539de1c8d0a/access-policy",
+      "id": "api-eff5da6b6095a969/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-99f99539de1c8d0a/input-boundaries",
+      "id": "api-eff5da6b6095a969/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-99f99539de1c8d0a/tenant-boundary",
+      "id": "api-eff5da6b6095a969/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-99f99539de1c8d0a/dependency-failure",
+      "id": "api-eff5da6b6095a969/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-99f99539de1c8d0a/mutation-durability",
+      "id": "api-eff5da6b6095a969/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -193183,6 +193416,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193207,16 +193445,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2480dfc532cc2eb6
+## api-84e289a8d61d5719
 
 ```json
 {
-  "id": "api-2480dfc532cc2eb6",
+  "id": "api-84e289a8d61d5719",
   "method": "POST",
   "path": "/api/training/puller/stop",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 812
+    "line": 813
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193225,32 +193463,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-2480dfc532cc2eb6/response-contract",
+      "id": "api-84e289a8d61d5719/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2480dfc532cc2eb6/access-policy",
+      "id": "api-84e289a8d61d5719/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2480dfc532cc2eb6/input-boundaries",
+      "id": "api-84e289a8d61d5719/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2480dfc532cc2eb6/tenant-boundary",
+      "id": "api-84e289a8d61d5719/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2480dfc532cc2eb6/dependency-failure",
+      "id": "api-84e289a8d61d5719/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2480dfc532cc2eb6/mutation-durability",
+      "id": "api-84e289a8d61d5719/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -193265,6 +193503,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -193288,16 +193531,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8df974f776684c47
+## api-03a34da2d7498340
 
 ```json
 {
-  "id": "api-8df974f776684c47",
+  "id": "api-03a34da2d7498340",
   "method": "GET",
   "path": "/api/platform/video/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 816
+    "line": 817
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193306,32 +193549,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-8df974f776684c47/response-contract",
+      "id": "api-03a34da2d7498340/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8df974f776684c47/access-policy",
+      "id": "api-03a34da2d7498340/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8df974f776684c47/input-boundaries",
+      "id": "api-03a34da2d7498340/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8df974f776684c47/tenant-boundary",
+      "id": "api-03a34da2d7498340/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8df974f776684c47/dependency-failure",
+      "id": "api-03a34da2d7498340/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8df974f776684c47/artifact-integrity",
+      "id": "api-03a34da2d7498340/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -193345,6 +193588,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193374,16 +193622,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-16ce6929c5dc0fe4
+## api-8434a783565dd27c
 
 ```json
 {
-  "id": "api-16ce6929c5dc0fe4",
+  "id": "api-8434a783565dd27c",
   "method": "POST",
   "path": "/api/platform/video/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 820
+    "line": 821
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193392,37 +193640,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-16ce6929c5dc0fe4/response-contract",
+      "id": "api-8434a783565dd27c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/access-policy",
+      "id": "api-8434a783565dd27c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/input-boundaries",
+      "id": "api-8434a783565dd27c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/tenant-boundary",
+      "id": "api-8434a783565dd27c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/dependency-failure",
+      "id": "api-8434a783565dd27c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/mutation-durability",
+      "id": "api-8434a783565dd27c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-16ce6929c5dc0fe4/artifact-integrity",
+      "id": "api-8434a783565dd27c/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -193436,6 +193684,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193465,16 +193718,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4ed5425224e0231e
+## api-f4b6cc6276d732a3
 
 ```json
 {
-  "id": "api-4ed5425224e0231e",
+  "id": "api-f4b6cc6276d732a3",
   "method": "POST",
   "path": "/api/content/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 834
+    "line": 835
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193483,37 +193736,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/content",
   "requiredChecks": [
     {
-      "id": "api-4ed5425224e0231e/response-contract",
+      "id": "api-f4b6cc6276d732a3/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/access-policy",
+      "id": "api-f4b6cc6276d732a3/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/input-boundaries",
+      "id": "api-f4b6cc6276d732a3/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/tenant-boundary",
+      "id": "api-f4b6cc6276d732a3/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/dependency-failure",
+      "id": "api-f4b6cc6276d732a3/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/mutation-durability",
+      "id": "api-f4b6cc6276d732a3/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ed5425224e0231e/artifact-integrity",
+      "id": "api-f4b6cc6276d732a3/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -193528,6 +193781,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -193556,16 +193814,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c6489ff892708c7a
+## api-e64f13daee75c6b4
 
 ```json
 {
-  "id": "api-c6489ff892708c7a",
+  "id": "api-e64f13daee75c6b4",
   "method": "GET",
   "path": "/api/url-parser/inspect",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 840
+    "line": 841
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193574,27 +193832,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/url-parser",
   "requiredChecks": [
     {
-      "id": "api-c6489ff892708c7a/response-contract",
+      "id": "api-e64f13daee75c6b4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c6489ff892708c7a/access-policy",
+      "id": "api-e64f13daee75c6b4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c6489ff892708c7a/input-boundaries",
+      "id": "api-e64f13daee75c6b4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c6489ff892708c7a/tenant-boundary",
+      "id": "api-e64f13daee75c6b4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c6489ff892708c7a/dependency-failure",
+      "id": "api-e64f13daee75c6b4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193608,6 +193866,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193632,16 +193895,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9e33d39e9133e71b
+## api-a5a2f910c80ca928
 
 ```json
 {
-  "id": "api-9e33d39e9133e71b",
+  "id": "api-a5a2f910c80ca928",
   "method": "GET",
   "path": "/api/url-parser/content",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 849
+    "line": 850
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193650,27 +193913,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/url-parser",
   "requiredChecks": [
     {
-      "id": "api-9e33d39e9133e71b/response-contract",
+      "id": "api-a5a2f910c80ca928/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e33d39e9133e71b/access-policy",
+      "id": "api-a5a2f910c80ca928/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e33d39e9133e71b/input-boundaries",
+      "id": "api-a5a2f910c80ca928/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e33d39e9133e71b/tenant-boundary",
+      "id": "api-a5a2f910c80ca928/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9e33d39e9133e71b/dependency-failure",
+      "id": "api-a5a2f910c80ca928/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193684,6 +193947,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193708,16 +193976,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9a10147c2e7c18e5
+## api-437e92d008079828
 
 ```json
 {
-  "id": "api-9a10147c2e7c18e5",
+  "id": "api-437e92d008079828",
   "method": "GET",
   "path": "/api/boostsheets",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 863
+    "line": 864
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193726,27 +193994,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/boostsheets",
   "requiredChecks": [
     {
-      "id": "api-9a10147c2e7c18e5/response-contract",
+      "id": "api-437e92d008079828/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9a10147c2e7c18e5/access-policy",
+      "id": "api-437e92d008079828/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9a10147c2e7c18e5/input-boundaries",
+      "id": "api-437e92d008079828/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9a10147c2e7c18e5/tenant-boundary",
+      "id": "api-437e92d008079828/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9a10147c2e7c18e5/dependency-failure",
+      "id": "api-437e92d008079828/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193761,6 +194029,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -193789,16 +194062,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4c41665de2cb1376
+## api-c428bac0807fb393
 
 ```json
 {
-  "id": "api-4c41665de2cb1376",
+  "id": "api-c428bac0807fb393",
   "method": "GET",
   "path": "/api/dashboard/stats",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 867
+    "line": 868
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193807,27 +194080,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/dashboard",
   "requiredChecks": [
     {
-      "id": "api-4c41665de2cb1376/response-contract",
+      "id": "api-c428bac0807fb393/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c41665de2cb1376/access-policy",
+      "id": "api-c428bac0807fb393/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c41665de2cb1376/input-boundaries",
+      "id": "api-c428bac0807fb393/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c41665de2cb1376/tenant-boundary",
+      "id": "api-c428bac0807fb393/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c41665de2cb1376/dependency-failure",
+      "id": "api-c428bac0807fb393/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193842,6 +194115,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -193870,16 +194148,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-036a271f28515c21
+## api-9db4d098dfdc653a
 
 ```json
 {
-  "id": "api-036a271f28515c21",
+  "id": "api-9db4d098dfdc653a",
   "method": "GET",
   "path": "/api/storage/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 871
+    "line": 872
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193888,27 +194166,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-036a271f28515c21/response-contract",
+      "id": "api-9db4d098dfdc653a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-036a271f28515c21/access-policy",
+      "id": "api-9db4d098dfdc653a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-036a271f28515c21/input-boundaries",
+      "id": "api-9db4d098dfdc653a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-036a271f28515c21/tenant-boundary",
+      "id": "api-9db4d098dfdc653a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-036a271f28515c21/dependency-failure",
+      "id": "api-9db4d098dfdc653a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -193922,6 +194200,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -193951,16 +194234,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-65f6c109a8b0dcf6
+## api-3361df9cae2d3dc2
 
 ```json
 {
-  "id": "api-65f6c109a8b0dcf6",
+  "id": "api-3361df9cae2d3dc2",
   "method": "POST",
   "path": "/api/storage/feedback",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 875
+    "line": 876
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -193969,32 +194252,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-65f6c109a8b0dcf6/response-contract",
+      "id": "api-3361df9cae2d3dc2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-65f6c109a8b0dcf6/access-policy",
+      "id": "api-3361df9cae2d3dc2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-65f6c109a8b0dcf6/input-boundaries",
+      "id": "api-3361df9cae2d3dc2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-65f6c109a8b0dcf6/tenant-boundary",
+      "id": "api-3361df9cae2d3dc2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-65f6c109a8b0dcf6/dependency-failure",
+      "id": "api-3361df9cae2d3dc2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-65f6c109a8b0dcf6/mutation-durability",
+      "id": "api-3361df9cae2d3dc2/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -194008,6 +194291,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194037,16 +194325,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-29830d5ce8bc45ae
+## api-e63f73942febec1c
 
 ```json
 {
-  "id": "api-29830d5ce8bc45ae",
+  "id": "api-e63f73942febec1c",
   "method": "GET",
   "path": "/api/storage/curriculum/:userId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 879
+    "line": 880
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194055,27 +194343,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-29830d5ce8bc45ae/response-contract",
+      "id": "api-e63f73942febec1c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-29830d5ce8bc45ae/access-policy",
+      "id": "api-e63f73942febec1c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-29830d5ce8bc45ae/input-boundaries",
+      "id": "api-e63f73942febec1c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-29830d5ce8bc45ae/tenant-boundary",
+      "id": "api-e63f73942febec1c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-29830d5ce8bc45ae/dependency-failure",
+      "id": "api-e63f73942febec1c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194089,6 +194377,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194113,16 +194406,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-79443117b48e4a2b
+## api-cb19615a8d2b18b7
 
 ```json
 {
-  "id": "api-79443117b48e4a2b",
+  "id": "api-cb19615a8d2b18b7",
   "method": "GET",
   "path": "/api/storage/datasets",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 883
+    "line": 884
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194131,27 +194424,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-79443117b48e4a2b/response-contract",
+      "id": "api-cb19615a8d2b18b7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-79443117b48e4a2b/access-policy",
+      "id": "api-cb19615a8d2b18b7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-79443117b48e4a2b/input-boundaries",
+      "id": "api-cb19615a8d2b18b7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-79443117b48e4a2b/tenant-boundary",
+      "id": "api-cb19615a8d2b18b7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-79443117b48e4a2b/dependency-failure",
+      "id": "api-cb19615a8d2b18b7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194165,6 +194458,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194194,16 +194492,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-44deb4022694ed2d
+## api-ee7f674fb70cac92
 
 ```json
 {
-  "id": "api-44deb4022694ed2d",
+  "id": "api-ee7f674fb70cac92",
   "method": "POST",
   "path": "/api/storage/datasets/register",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 887
+    "line": 888
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194212,32 +194510,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-44deb4022694ed2d/response-contract",
+      "id": "api-ee7f674fb70cac92/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-44deb4022694ed2d/access-policy",
+      "id": "api-ee7f674fb70cac92/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-44deb4022694ed2d/input-boundaries",
+      "id": "api-ee7f674fb70cac92/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-44deb4022694ed2d/tenant-boundary",
+      "id": "api-ee7f674fb70cac92/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-44deb4022694ed2d/dependency-failure",
+      "id": "api-ee7f674fb70cac92/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-44deb4022694ed2d/mutation-durability",
+      "id": "api-ee7f674fb70cac92/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -194251,6 +194549,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194275,16 +194578,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-f7d7b1bc3d5f0d44
+## api-be5396a99073465f
 
 ```json
 {
-  "id": "api-f7d7b1bc3d5f0d44",
+  "id": "api-be5396a99073465f",
   "method": "GET",
   "path": "/api/storage/datasets/audio/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 891
+    "line": 892
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194293,32 +194596,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-f7d7b1bc3d5f0d44/response-contract",
+      "id": "api-be5396a99073465f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f7d7b1bc3d5f0d44/access-policy",
+      "id": "api-be5396a99073465f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f7d7b1bc3d5f0d44/input-boundaries",
+      "id": "api-be5396a99073465f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f7d7b1bc3d5f0d44/tenant-boundary",
+      "id": "api-be5396a99073465f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f7d7b1bc3d5f0d44/dependency-failure",
+      "id": "api-be5396a99073465f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f7d7b1bc3d5f0d44/artifact-integrity",
+      "id": "api-be5396a99073465f/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -194332,6 +194635,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194356,16 +194664,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3025db88b137d664
+## api-b5fd4d5b60d572db
 
 ```json
 {
-  "id": "api-3025db88b137d664",
+  "id": "api-b5fd4d5b60d572db",
   "method": "POST",
   "path": "/api/storage/datasets/audio/seed",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 895
+    "line": 896
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194374,37 +194682,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-3025db88b137d664/response-contract",
+      "id": "api-b5fd4d5b60d572db/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/access-policy",
+      "id": "api-b5fd4d5b60d572db/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/input-boundaries",
+      "id": "api-b5fd4d5b60d572db/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/tenant-boundary",
+      "id": "api-b5fd4d5b60d572db/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/dependency-failure",
+      "id": "api-b5fd4d5b60d572db/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/mutation-durability",
+      "id": "api-b5fd4d5b60d572db/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3025db88b137d664/artifact-integrity",
+      "id": "api-b5fd4d5b60d572db/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -194419,6 +194727,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -194442,16 +194755,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6caaede32273290b
+## api-da927887683a3095
 
 ```json
 {
-  "id": "api-6caaede32273290b",
+  "id": "api-da927887683a3095",
   "method": "GET",
   "path": "/api/storage/checkpoints",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 899
+    "line": 900
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194460,27 +194773,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-6caaede32273290b/response-contract",
+      "id": "api-da927887683a3095/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6caaede32273290b/access-policy",
+      "id": "api-da927887683a3095/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6caaede32273290b/input-boundaries",
+      "id": "api-da927887683a3095/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6caaede32273290b/tenant-boundary",
+      "id": "api-da927887683a3095/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6caaede32273290b/dependency-failure",
+      "id": "api-da927887683a3095/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194494,6 +194807,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194523,16 +194841,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d09f0294232b1367
+## api-741ebb4fba4e4752
 
 ```json
 {
-  "id": "api-d09f0294232b1367",
+  "id": "api-741ebb4fba4e4752",
   "method": "POST",
   "path": "/api/storage/checkpoint/save",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 903
+    "line": 904
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194541,32 +194859,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-d09f0294232b1367/response-contract",
+      "id": "api-741ebb4fba4e4752/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d09f0294232b1367/access-policy",
+      "id": "api-741ebb4fba4e4752/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d09f0294232b1367/input-boundaries",
+      "id": "api-741ebb4fba4e4752/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d09f0294232b1367/tenant-boundary",
+      "id": "api-741ebb4fba4e4752/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d09f0294232b1367/dependency-failure",
+      "id": "api-741ebb4fba4e4752/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d09f0294232b1367/mutation-durability",
+      "id": "api-741ebb4fba4e4752/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -194580,6 +194898,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194604,16 +194927,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c7ff9e1af20cb6a9
+## api-b2d71a0abb031821
 
 ```json
 {
-  "id": "api-c7ff9e1af20cb6a9",
+  "id": "api-b2d71a0abb031821",
   "method": "GET",
   "path": "/api/storage/checkpoint/:modelId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 907
+    "line": 908
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194622,27 +194945,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-c7ff9e1af20cb6a9/response-contract",
+      "id": "api-b2d71a0abb031821/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c7ff9e1af20cb6a9/access-policy",
+      "id": "api-b2d71a0abb031821/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c7ff9e1af20cb6a9/input-boundaries",
+      "id": "api-b2d71a0abb031821/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c7ff9e1af20cb6a9/tenant-boundary",
+      "id": "api-b2d71a0abb031821/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c7ff9e1af20cb6a9/dependency-failure",
+      "id": "api-b2d71a0abb031821/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194656,6 +194979,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194680,16 +195008,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-64cb9223f5c0ac37
+## api-4d0354b2c2455f6b
 
 ```json
 {
-  "id": "api-64cb9223f5c0ac37",
+  "id": "api-4d0354b2c2455f6b",
   "method": "GET",
   "path": "/api/storage/session",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 911
+    "line": 912
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194698,27 +195026,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-64cb9223f5c0ac37/response-contract",
+      "id": "api-4d0354b2c2455f6b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-64cb9223f5c0ac37/access-policy",
+      "id": "api-4d0354b2c2455f6b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-64cb9223f5c0ac37/input-boundaries",
+      "id": "api-4d0354b2c2455f6b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-64cb9223f5c0ac37/tenant-boundary",
+      "id": "api-4d0354b2c2455f6b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-64cb9223f5c0ac37/dependency-failure",
+      "id": "api-4d0354b2c2455f6b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194732,6 +195060,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194761,16 +195094,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ed31f883c02439d2
+## api-b5be3a53ded539a3
 
 ```json
 {
-  "id": "api-ed31f883c02439d2",
+  "id": "api-b5be3a53ded539a3",
   "method": "GET",
   "path": "/api/storage/pipeline/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 915
+    "line": 916
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194779,27 +195112,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-ed31f883c02439d2/response-contract",
+      "id": "api-b5be3a53ded539a3/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ed31f883c02439d2/access-policy",
+      "id": "api-b5be3a53ded539a3/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ed31f883c02439d2/input-boundaries",
+      "id": "api-b5be3a53ded539a3/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ed31f883c02439d2/tenant-boundary",
+      "id": "api-b5be3a53ded539a3/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ed31f883c02439d2/dependency-failure",
+      "id": "api-b5be3a53ded539a3/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194813,6 +195146,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194842,16 +195180,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-623c5fa860b16b8e
+## api-08318c0bb97ca51c
 
 ```json
 {
-  "id": "api-623c5fa860b16b8e",
+  "id": "api-08318c0bb97ca51c",
   "method": "GET",
   "path": "/api/storage/artist/:profileId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 919
+    "line": 920
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194860,27 +195198,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-623c5fa860b16b8e/response-contract",
+      "id": "api-08318c0bb97ca51c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-623c5fa860b16b8e/access-policy",
+      "id": "api-08318c0bb97ca51c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-623c5fa860b16b8e/input-boundaries",
+      "id": "api-08318c0bb97ca51c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-623c5fa860b16b8e/tenant-boundary",
+      "id": "api-08318c0bb97ca51c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-623c5fa860b16b8e/dependency-failure",
+      "id": "api-08318c0bb97ca51c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -194894,6 +195232,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194918,16 +195261,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-885dbf64684a45ce
+## api-eecd4ca0a7e3e2a6
 
 ```json
 {
-  "id": "api-885dbf64684a45ce",
+  "id": "api-eecd4ca0a7e3e2a6",
   "method": "POST",
   "path": "/api/storage/artist/:profileId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 927
+    "line": 928
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -194936,32 +195279,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-885dbf64684a45ce/response-contract",
+      "id": "api-eecd4ca0a7e3e2a6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-885dbf64684a45ce/access-policy",
+      "id": "api-eecd4ca0a7e3e2a6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-885dbf64684a45ce/input-boundaries",
+      "id": "api-eecd4ca0a7e3e2a6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-885dbf64684a45ce/tenant-boundary",
+      "id": "api-eecd4ca0a7e3e2a6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-885dbf64684a45ce/dependency-failure",
+      "id": "api-eecd4ca0a7e3e2a6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-885dbf64684a45ce/mutation-durability",
+      "id": "api-eecd4ca0a7e3e2a6/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -194975,6 +195318,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -194999,16 +195347,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1ecc47754fef4c53
+## api-2d9f815f7f2117dc
 
 ```json
 {
-  "id": "api-1ecc47754fef4c53",
+  "id": "api-2d9f815f7f2117dc",
   "method": "POST",
   "path": "/api/storage/artist/:profileId/releases",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 935
+    "line": 936
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195017,32 +195365,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-1ecc47754fef4c53/response-contract",
+      "id": "api-2d9f815f7f2117dc/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1ecc47754fef4c53/access-policy",
+      "id": "api-2d9f815f7f2117dc/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1ecc47754fef4c53/input-boundaries",
+      "id": "api-2d9f815f7f2117dc/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1ecc47754fef4c53/tenant-boundary",
+      "id": "api-2d9f815f7f2117dc/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1ecc47754fef4c53/dependency-failure",
+      "id": "api-2d9f815f7f2117dc/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1ecc47754fef4c53/mutation-durability",
+      "id": "api-2d9f815f7f2117dc/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195056,6 +195404,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195080,16 +195433,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1c56052c9f101cb0
+## api-5430de4e0bfc5ed9
 
 ```json
 {
-  "id": "api-1c56052c9f101cb0",
+  "id": "api-5430de4e0bfc5ed9",
   "method": "POST",
   "path": "/api/training/start-from-storage",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 943
+    "line": 944
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195098,32 +195451,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/training",
   "requiredChecks": [
     {
-      "id": "api-1c56052c9f101cb0/response-contract",
+      "id": "api-5430de4e0bfc5ed9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c56052c9f101cb0/access-policy",
+      "id": "api-5430de4e0bfc5ed9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c56052c9f101cb0/input-boundaries",
+      "id": "api-5430de4e0bfc5ed9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c56052c9f101cb0/tenant-boundary",
+      "id": "api-5430de4e0bfc5ed9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c56052c9f101cb0/dependency-failure",
+      "id": "api-5430de4e0bfc5ed9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c56052c9f101cb0/mutation-durability",
+      "id": "api-5430de4e0bfc5ed9/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195138,6 +195491,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -195161,16 +195519,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-21d412ef9108a99c
+## api-85fd6510a2e7d5f7
 
 ```json
 {
-  "id": "api-21d412ef9108a99c",
+  "id": "api-85fd6510a2e7d5f7",
   "method": "POST",
   "path": "/api/platform/social/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 949
+    "line": 950
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195179,37 +195537,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-21d412ef9108a99c/response-contract",
+      "id": "api-85fd6510a2e7d5f7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/access-policy",
+      "id": "api-85fd6510a2e7d5f7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/input-boundaries",
+      "id": "api-85fd6510a2e7d5f7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/tenant-boundary",
+      "id": "api-85fd6510a2e7d5f7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/dependency-failure",
+      "id": "api-85fd6510a2e7d5f7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/mutation-durability",
+      "id": "api-85fd6510a2e7d5f7/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-21d412ef9108a99c/artifact-integrity",
+      "id": "api-85fd6510a2e7d5f7/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -195223,6 +195581,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195272,16 +195635,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-61bff0591f34db19
+## api-effc2ec36677b776
 
 ```json
 {
-  "id": "api-61bff0591f34db19",
+  "id": "api-effc2ec36677b776",
   "method": "POST",
   "path": "/api/platform/social/autopilot",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 962
+    "line": 963
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195290,32 +195653,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-61bff0591f34db19/response-contract",
+      "id": "api-effc2ec36677b776/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61bff0591f34db19/access-policy",
+      "id": "api-effc2ec36677b776/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61bff0591f34db19/input-boundaries",
+      "id": "api-effc2ec36677b776/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61bff0591f34db19/tenant-boundary",
+      "id": "api-effc2ec36677b776/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61bff0591f34db19/dependency-failure",
+      "id": "api-effc2ec36677b776/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61bff0591f34db19/mutation-durability",
+      "id": "api-effc2ec36677b776/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195329,6 +195692,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195353,16 +195721,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0ad7d762ae04446f
+## api-19cd8e5a4fb8feb9
 
 ```json
 {
-  "id": "api-0ad7d762ae04446f",
+  "id": "api-19cd8e5a4fb8feb9",
   "method": "POST",
   "path": "/api/platform/daw/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 973
+    "line": 974
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195371,37 +195739,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-0ad7d762ae04446f/response-contract",
+      "id": "api-19cd8e5a4fb8feb9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/access-policy",
+      "id": "api-19cd8e5a4fb8feb9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/input-boundaries",
+      "id": "api-19cd8e5a4fb8feb9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/tenant-boundary",
+      "id": "api-19cd8e5a4fb8feb9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/dependency-failure",
+      "id": "api-19cd8e5a4fb8feb9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/mutation-durability",
+      "id": "api-19cd8e5a4fb8feb9/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ad7d762ae04446f/artifact-integrity",
+      "id": "api-19cd8e5a4fb8feb9/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -195415,6 +195783,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195449,16 +195822,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-bf772d63241e724e
+## api-8870313949b91cf8
 
 ```json
 {
-  "id": "api-bf772d63241e724e",
+  "id": "api-8870313949b91cf8",
   "method": "POST",
   "path": "/api/platform/distribution/plan",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 986
+    "line": 987
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195467,32 +195840,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-bf772d63241e724e/response-contract",
+      "id": "api-8870313949b91cf8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf772d63241e724e/access-policy",
+      "id": "api-8870313949b91cf8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf772d63241e724e/input-boundaries",
+      "id": "api-8870313949b91cf8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf772d63241e724e/tenant-boundary",
+      "id": "api-8870313949b91cf8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf772d63241e724e/dependency-failure",
+      "id": "api-8870313949b91cf8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf772d63241e724e/mutation-durability",
+      "id": "api-8870313949b91cf8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195506,6 +195879,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195535,16 +195913,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c008b77f1dc0ba6a
+## api-e2b42ffc40082ac2
 
 ```json
 {
-  "id": "api-c008b77f1dc0ba6a",
+  "id": "api-e2b42ffc40082ac2",
   "method": "GET",
   "path": "/api/platform/model/info",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1005
+    "line": 1006
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195553,27 +195931,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-c008b77f1dc0ba6a/response-contract",
+      "id": "api-e2b42ffc40082ac2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c008b77f1dc0ba6a/access-policy",
+      "id": "api-e2b42ffc40082ac2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c008b77f1dc0ba6a/input-boundaries",
+      "id": "api-e2b42ffc40082ac2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c008b77f1dc0ba6a/tenant-boundary",
+      "id": "api-e2b42ffc40082ac2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c008b77f1dc0ba6a/dependency-failure",
+      "id": "api-e2b42ffc40082ac2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -195587,6 +195965,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195621,16 +196004,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6421a27de1b3491a
+## api-74b61c4373f2003a
 
 ```json
 {
-  "id": "api-6421a27de1b3491a",
+  "id": "api-74b61c4373f2003a",
   "method": "POST",
   "path": "/api/platform/model/reload",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1009
+    "line": 1010
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195639,32 +196022,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-6421a27de1b3491a/response-contract",
+      "id": "api-74b61c4373f2003a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6421a27de1b3491a/access-policy",
+      "id": "api-74b61c4373f2003a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6421a27de1b3491a/input-boundaries",
+      "id": "api-74b61c4373f2003a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6421a27de1b3491a/tenant-boundary",
+      "id": "api-74b61c4373f2003a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6421a27de1b3491a/dependency-failure",
+      "id": "api-74b61c4373f2003a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6421a27de1b3491a/mutation-durability",
+      "id": "api-74b61c4373f2003a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195678,6 +196061,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195702,16 +196090,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-f5e44e7c945dd13c
+## api-7487f5cb9a4c8989
 
 ```json
 {
-  "id": "api-f5e44e7c945dd13c",
+  "id": "api-7487f5cb9a4c8989",
   "method": "POST",
   "path": "/api/platform/ads/record",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1015
+    "line": 1016
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195720,32 +196108,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-f5e44e7c945dd13c/response-contract",
+      "id": "api-7487f5cb9a4c8989/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f5e44e7c945dd13c/access-policy",
+      "id": "api-7487f5cb9a4c8989/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f5e44e7c945dd13c/input-boundaries",
+      "id": "api-7487f5cb9a4c8989/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f5e44e7c945dd13c/tenant-boundary",
+      "id": "api-7487f5cb9a4c8989/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f5e44e7c945dd13c/dependency-failure",
+      "id": "api-7487f5cb9a4c8989/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f5e44e7c945dd13c/mutation-durability",
+      "id": "api-7487f5cb9a4c8989/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195759,6 +196147,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195783,16 +196176,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a7ab42b4bed29c6c
+## api-69d42968c2d92438
 
 ```json
 {
-  "id": "api-a7ab42b4bed29c6c",
+  "id": "api-69d42968c2d92438",
   "method": "POST",
   "path": "/api/platform/ads/generate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1029
+    "line": 1030
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195801,37 +196194,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-a7ab42b4bed29c6c/response-contract",
+      "id": "api-69d42968c2d92438/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/access-policy",
+      "id": "api-69d42968c2d92438/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/input-boundaries",
+      "id": "api-69d42968c2d92438/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/tenant-boundary",
+      "id": "api-69d42968c2d92438/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/dependency-failure",
+      "id": "api-69d42968c2d92438/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/mutation-durability",
+      "id": "api-69d42968c2d92438/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a7ab42b4bed29c6c/artifact-integrity",
+      "id": "api-69d42968c2d92438/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -195845,6 +196238,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195884,16 +196282,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ef65bd86e98632fb
+## api-ba9f131cfb474064
 
 ```json
 {
-  "id": "api-ef65bd86e98632fb",
+  "id": "api-ba9f131cfb474064",
   "method": "POST",
   "path": "/api/platform/ads/autopilot",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1049
+    "line": 1050
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195902,32 +196300,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-ef65bd86e98632fb/response-contract",
+      "id": "api-ba9f131cfb474064/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef65bd86e98632fb/access-policy",
+      "id": "api-ba9f131cfb474064/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef65bd86e98632fb/input-boundaries",
+      "id": "api-ba9f131cfb474064/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef65bd86e98632fb/tenant-boundary",
+      "id": "api-ba9f131cfb474064/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef65bd86e98632fb/dependency-failure",
+      "id": "api-ba9f131cfb474064/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef65bd86e98632fb/mutation-durability",
+      "id": "api-ba9f131cfb474064/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -195941,6 +196339,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -195965,16 +196368,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-96c570f5d2032397
+## api-8e07e3a1d3ab1513
 
 ```json
 {
-  "id": "api-96c570f5d2032397",
+  "id": "api-8e07e3a1d3ab1513",
   "method": "POST",
   "path": "/api/platform/ads/audience",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1060
+    "line": 1061
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -195983,32 +196386,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-96c570f5d2032397/response-contract",
+      "id": "api-8e07e3a1d3ab1513/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96c570f5d2032397/access-policy",
+      "id": "api-8e07e3a1d3ab1513/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96c570f5d2032397/input-boundaries",
+      "id": "api-8e07e3a1d3ab1513/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96c570f5d2032397/tenant-boundary",
+      "id": "api-8e07e3a1d3ab1513/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96c570f5d2032397/dependency-failure",
+      "id": "api-8e07e3a1d3ab1513/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96c570f5d2032397/mutation-durability",
+      "id": "api-8e07e3a1d3ab1513/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -196022,6 +196425,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196051,16 +196459,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e3789850063eea7b
+## api-29da1edfe0c13f16
 
 ```json
 {
-  "id": "api-e3789850063eea7b",
+  "id": "api-29da1edfe0c13f16",
   "method": "GET",
   "path": "/api/platform/ads/performance/:userId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1080
+    "line": 1081
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196069,27 +196477,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-e3789850063eea7b/response-contract",
+      "id": "api-29da1edfe0c13f16/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e3789850063eea7b/access-policy",
+      "id": "api-29da1edfe0c13f16/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e3789850063eea7b/input-boundaries",
+      "id": "api-29da1edfe0c13f16/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e3789850063eea7b/tenant-boundary",
+      "id": "api-29da1edfe0c13f16/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e3789850063eea7b/dependency-failure",
+      "id": "api-29da1edfe0c13f16/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -196103,6 +196511,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196127,16 +196540,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9b524f1b4913960f
+## api-086e9534ffcc8758
 
 ```json
 {
-  "id": "api-9b524f1b4913960f",
+  "id": "api-086e9534ffcc8758",
   "method": "POST",
   "path": "/api/platform/ads/optimize",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1089
+    "line": 1090
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196145,32 +196558,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-9b524f1b4913960f/response-contract",
+      "id": "api-086e9534ffcc8758/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9b524f1b4913960f/access-policy",
+      "id": "api-086e9534ffcc8758/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9b524f1b4913960f/input-boundaries",
+      "id": "api-086e9534ffcc8758/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9b524f1b4913960f/tenant-boundary",
+      "id": "api-086e9534ffcc8758/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9b524f1b4913960f/dependency-failure",
+      "id": "api-086e9534ffcc8758/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9b524f1b4913960f/mutation-durability",
+      "id": "api-086e9534ffcc8758/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -196184,6 +196597,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196213,16 +196631,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a2a0cf1819a69d0f
+## api-00731a2079211cdb
 
 ```json
 {
-  "id": "api-a2a0cf1819a69d0f",
+  "id": "api-00731a2079211cdb",
   "method": "POST",
   "path": "/api/safety/screen",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1095
+    "line": 1096
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196231,32 +196649,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/safety",
   "requiredChecks": [
     {
-      "id": "api-a2a0cf1819a69d0f/response-contract",
+      "id": "api-00731a2079211cdb/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2a0cf1819a69d0f/access-policy",
+      "id": "api-00731a2079211cdb/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2a0cf1819a69d0f/input-boundaries",
+      "id": "api-00731a2079211cdb/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2a0cf1819a69d0f/tenant-boundary",
+      "id": "api-00731a2079211cdb/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2a0cf1819a69d0f/dependency-failure",
+      "id": "api-00731a2079211cdb/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2a0cf1819a69d0f/mutation-durability",
+      "id": "api-00731a2079211cdb/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -196271,6 +196689,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -196304,16 +196727,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-aede0bf1f3a97a31
+## api-d1bce61547705e73
 
 ```json
 {
-  "id": "api-aede0bf1f3a97a31",
+  "id": "api-d1bce61547705e73",
   "method": "POST",
   "path": "/api/infer/viral-score",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1099
+    "line": 1100
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196322,32 +196745,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/infer",
   "requiredChecks": [
     {
-      "id": "api-aede0bf1f3a97a31/response-contract",
+      "id": "api-d1bce61547705e73/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-aede0bf1f3a97a31/access-policy",
+      "id": "api-d1bce61547705e73/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-aede0bf1f3a97a31/input-boundaries",
+      "id": "api-d1bce61547705e73/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-aede0bf1f3a97a31/tenant-boundary",
+      "id": "api-d1bce61547705e73/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-aede0bf1f3a97a31/dependency-failure",
+      "id": "api-d1bce61547705e73/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-aede0bf1f3a97a31/mutation-durability",
+      "id": "api-d1bce61547705e73/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -196362,6 +196785,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -196395,16 +196823,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-beaa07ede97376cf
+## api-9796ddec1322c273
 
 ```json
 {
-  "id": "api-beaa07ede97376cf",
+  "id": "api-9796ddec1322c273",
   "method": "POST",
   "path": "/api/audio/upload",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1105
+    "line": 1106
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196413,37 +196841,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-beaa07ede97376cf/response-contract",
+      "id": "api-9796ddec1322c273/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/access-policy",
+      "id": "api-9796ddec1322c273/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/input-boundaries",
+      "id": "api-9796ddec1322c273/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/tenant-boundary",
+      "id": "api-9796ddec1322c273/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/dependency-failure",
+      "id": "api-9796ddec1322c273/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/mutation-durability",
+      "id": "api-9796ddec1322c273/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-beaa07ede97376cf/artifact-integrity",
+      "id": "api-9796ddec1322c273/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -196457,6 +196885,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196491,16 +196924,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-17f5bf0886f4b19f
+## api-688ad595b6e0920b
 
 ```json
 {
-  "id": "api-17f5bf0886f4b19f",
+  "id": "api-688ad595b6e0920b",
   "method": "POST",
   "path": "/api/audio/analyze",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1106
+    "line": 1107
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196509,37 +196942,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-17f5bf0886f4b19f/response-contract",
+      "id": "api-688ad595b6e0920b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/access-policy",
+      "id": "api-688ad595b6e0920b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/input-boundaries",
+      "id": "api-688ad595b6e0920b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/tenant-boundary",
+      "id": "api-688ad595b6e0920b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/dependency-failure",
+      "id": "api-688ad595b6e0920b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/mutation-durability",
+      "id": "api-688ad595b6e0920b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17f5bf0886f4b19f/artifact-integrity",
+      "id": "api-688ad595b6e0920b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -196553,6 +196986,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196592,16 +197030,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3cc654d64bac4387
+## api-71b2d4224dd3c20b
 
 ```json
 {
-  "id": "api-3cc654d64bac4387",
+  "id": "api-71b2d4224dd3c20b",
   "method": "POST",
   "path": "/api/audio/mastering-recommendation",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1113
+    "line": 1114
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196610,37 +197048,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-3cc654d64bac4387/response-contract",
+      "id": "api-71b2d4224dd3c20b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/access-policy",
+      "id": "api-71b2d4224dd3c20b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/input-boundaries",
+      "id": "api-71b2d4224dd3c20b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/tenant-boundary",
+      "id": "api-71b2d4224dd3c20b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/dependency-failure",
+      "id": "api-71b2d4224dd3c20b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/mutation-durability",
+      "id": "api-71b2d4224dd3c20b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cc654d64bac4387/artifact-integrity",
+      "id": "api-71b2d4224dd3c20b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -196654,6 +197092,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196683,16 +197126,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-17079c892ac53979
+## api-0f24f0ce4a4c5c42
 
 ```json
 {
-  "id": "api-17079c892ac53979",
+  "id": "api-0f24f0ce4a4c5c42",
   "method": "POST",
   "path": "/api/audio/mixing-recommendation",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1120
+    "line": 1121
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196701,37 +197144,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-17079c892ac53979/response-contract",
+      "id": "api-0f24f0ce4a4c5c42/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/access-policy",
+      "id": "api-0f24f0ce4a4c5c42/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/input-boundaries",
+      "id": "api-0f24f0ce4a4c5c42/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/tenant-boundary",
+      "id": "api-0f24f0ce4a4c5c42/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/dependency-failure",
+      "id": "api-0f24f0ce4a4c5c42/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/mutation-durability",
+      "id": "api-0f24f0ce4a4c5c42/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17079c892ac53979/artifact-integrity",
+      "id": "api-0f24f0ce4a4c5c42/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -196745,6 +197188,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196774,16 +197222,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c034865ce7e9a73d
+## api-6d233dadec2d9058
 
 ```json
 {
-  "id": "api-c034865ce7e9a73d",
+  "id": "api-6d233dadec2d9058",
   "method": "GET",
   "path": "/api/rta/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1126
+    "line": 1127
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196792,27 +197240,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/rta",
   "requiredChecks": [
     {
-      "id": "api-c034865ce7e9a73d/response-contract",
+      "id": "api-6d233dadec2d9058/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c034865ce7e9a73d/access-policy",
+      "id": "api-6d233dadec2d9058/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c034865ce7e9a73d/input-boundaries",
+      "id": "api-6d233dadec2d9058/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c034865ce7e9a73d/tenant-boundary",
+      "id": "api-6d233dadec2d9058/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c034865ce7e9a73d/dependency-failure",
+      "id": "api-6d233dadec2d9058/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -196826,6 +197274,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196855,16 +197308,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-605b8240a30866b0
+## api-c3b5b8faba1e8449
 
 ```json
 {
-  "id": "api-605b8240a30866b0",
+  "id": "api-c3b5b8faba1e8449",
   "method": "GET",
   "path": "/api/concurrency/stats",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1130
+    "line": 1131
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196873,27 +197326,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/concurrency",
   "requiredChecks": [
     {
-      "id": "api-605b8240a30866b0/response-contract",
+      "id": "api-c3b5b8faba1e8449/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-605b8240a30866b0/access-policy",
+      "id": "api-c3b5b8faba1e8449/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-605b8240a30866b0/input-boundaries",
+      "id": "api-c3b5b8faba1e8449/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-605b8240a30866b0/tenant-boundary",
+      "id": "api-c3b5b8faba1e8449/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-605b8240a30866b0/dependency-failure",
+      "id": "api-c3b5b8faba1e8449/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -196907,6 +197360,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -196941,16 +197399,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0401d68a5ac2eac4
+## api-4ffd4c2bcd1adcca
 
 ```json
 {
-  "id": "api-0401d68a5ac2eac4",
+  "id": "api-4ffd4c2bcd1adcca",
   "method": "GET",
   "path": "/api/awareness/quality/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1134
+    "line": 1135
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -196959,27 +197417,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-0401d68a5ac2eac4/response-contract",
+      "id": "api-4ffd4c2bcd1adcca/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0401d68a5ac2eac4/access-policy",
+      "id": "api-4ffd4c2bcd1adcca/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0401d68a5ac2eac4/input-boundaries",
+      "id": "api-4ffd4c2bcd1adcca/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0401d68a5ac2eac4/tenant-boundary",
+      "id": "api-4ffd4c2bcd1adcca/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0401d68a5ac2eac4/dependency-failure",
+      "id": "api-4ffd4c2bcd1adcca/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -196993,6 +197451,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197027,16 +197490,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-267c30a16e675acd
+## api-417953b54ac89974
 
 ```json
 {
-  "id": "api-267c30a16e675acd",
+  "id": "api-417953b54ac89974",
   "method": "GET",
   "path": "/api/awareness/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1142
+    "line": 1143
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197045,27 +197508,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-267c30a16e675acd/response-contract",
+      "id": "api-417953b54ac89974/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-267c30a16e675acd/access-policy",
+      "id": "api-417953b54ac89974/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-267c30a16e675acd/input-boundaries",
+      "id": "api-417953b54ac89974/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-267c30a16e675acd/tenant-boundary",
+      "id": "api-417953b54ac89974/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-267c30a16e675acd/dependency-failure",
+      "id": "api-417953b54ac89974/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197079,6 +197542,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197103,16 +197571,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0ed120f581f9f31a
+## api-099914c29d7de05b
 
 ```json
 {
-  "id": "api-0ed120f581f9f31a",
+  "id": "api-099914c29d7de05b",
   "method": "GET",
   "path": "/api/awareness/unified/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1145
+    "line": 1146
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197121,27 +197589,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-0ed120f581f9f31a/response-contract",
+      "id": "api-099914c29d7de05b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ed120f581f9f31a/access-policy",
+      "id": "api-099914c29d7de05b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ed120f581f9f31a/input-boundaries",
+      "id": "api-099914c29d7de05b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ed120f581f9f31a/tenant-boundary",
+      "id": "api-099914c29d7de05b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ed120f581f9f31a/dependency-failure",
+      "id": "api-099914c29d7de05b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197155,6 +197623,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197184,16 +197657,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c2b792a5cd3435f7
+## api-a657ae69c130340f
 
 ```json
 {
-  "id": "api-c2b792a5cd3435f7",
+  "id": "api-a657ae69c130340f",
   "method": "POST",
   "path": "/api/awareness/unified/context",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1148
+    "line": 1149
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197202,32 +197675,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-c2b792a5cd3435f7/response-contract",
+      "id": "api-a657ae69c130340f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2b792a5cd3435f7/access-policy",
+      "id": "api-a657ae69c130340f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2b792a5cd3435f7/input-boundaries",
+      "id": "api-a657ae69c130340f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2b792a5cd3435f7/tenant-boundary",
+      "id": "api-a657ae69c130340f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2b792a5cd3435f7/dependency-failure",
+      "id": "api-a657ae69c130340f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2b792a5cd3435f7/mutation-durability",
+      "id": "api-a657ae69c130340f/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -197241,6 +197714,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197290,21 +197768,314 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/maxcore-proxy-contract.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-a85d0859bf5fe59c
+## api-ddd8707785639a2c
 
 ```json
 {
-  "id": "api-a85d0859bf5fe59c",
+  "id": "api-ddd8707785639a2c",
+  "method": "GET",
+  "path": "/api/analytics/capability",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1155
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/analytics",
+  "requiredChecks": [
+    {
+      "id": "api-ddd8707785639a2c/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-ddd8707785639a2c/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-ddd8707785639a2c/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-ddd8707785639a2c/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-ddd8707785639a2c/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/analytics-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/analytics-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-63666c46ffc2976c
+
+```json
+{
+  "id": "api-63666c46ffc2976c",
+  "method": "POST",
+  "path": "/api/analytics/predict",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1158
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/analytics",
+  "requiredChecks": [
+    {
+      "id": "api-63666c46ffc2976c/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-63666c46ffc2976c/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-63666c46ffc2976c/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-63666c46ffc2976c/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-63666c46ffc2976c/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-63666c46ffc2976c/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/analytics-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/analytics-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-4b8b19fd8db86d3d
+
+```json
+{
+  "id": "api-4b8b19fd8db86d3d",
+  "method": "POST",
+  "path": "/api/analytics/insights",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1161
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/analytics",
+  "requiredChecks": [
+    {
+      "id": "api-4b8b19fd8db86d3d/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4b8b19fd8db86d3d/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4b8b19fd8db86d3d/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4b8b19fd8db86d3d/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4b8b19fd8db86d3d/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4b8b19fd8db86d3d/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/analytics-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/analytics-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-2e55ed113bd1b234
+
+```json
+{
+  "id": "api-2e55ed113bd1b234",
   "method": "GET",
   "path": "/api/maxcore/pocket-accelerator/stats",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1153
+    "line": 1166
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197313,27 +198084,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/maxcore",
   "requiredChecks": [
     {
-      "id": "api-a85d0859bf5fe59c/response-contract",
+      "id": "api-2e55ed113bd1b234/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a85d0859bf5fe59c/access-policy",
+      "id": "api-2e55ed113bd1b234/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a85d0859bf5fe59c/input-boundaries",
+      "id": "api-2e55ed113bd1b234/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a85d0859bf5fe59c/tenant-boundary",
+      "id": "api-2e55ed113bd1b234/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a85d0859bf5fe59c/dependency-failure",
+      "id": "api-2e55ed113bd1b234/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197347,6 +198118,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197381,246 +198157,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-b6e51ff842825ba4
+## api-78afefbb12c49503
 
 ```json
 {
-  "id": "api-b6e51ff842825ba4",
+  "id": "api-78afefbb12c49503",
   "method": "GET",
   "path": "/api/gpu/gen-cache/stats",
-  "source": {
-    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1158
-  },
-  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "confidence": "router-declaration",
-  "mountResolved": true,
-  "origin": "typescript-router-ast",
-  "domain": "typescript-router-ast/gpu",
-  "requiredChecks": [
-    {
-      "id": "api-b6e51ff842825ba4/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-b6e51ff842825ba4/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-b6e51ff842825ba4/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-b6e51ff842825ba4/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-b6e51ff842825ba4/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
-    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "imported-api-loopback"
-  },
-  "testCandidates": [
-    {
-      "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-live-status.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-node-routes.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    }
-  ]
-}
-```
-
-## api-0aa16999e97481d7
-
-```json
-{
-  "id": "api-0aa16999e97481d7",
-  "method": "GET",
-  "path": "/api/gpu/replica-pool/stats",
-  "source": {
-    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1163
-  },
-  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "confidence": "router-declaration",
-  "mountResolved": true,
-  "origin": "typescript-router-ast",
-  "domain": "typescript-router-ast/gpu",
-  "requiredChecks": [
-    {
-      "id": "api-0aa16999e97481d7/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-0aa16999e97481d7/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-0aa16999e97481d7/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-0aa16999e97481d7/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-0aa16999e97481d7/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
-    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "imported-api-loopback"
-  },
-  "testCandidates": [
-    {
-      "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-live-status.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-node-routes.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    }
-  ]
-}
-```
-
-## api-9044cf53f3d90f91
-
-```json
-{
-  "id": "api-9044cf53f3d90f91",
-  "method": "POST",
-  "path": "/api/gpu/replica-pool/grow",
-  "source": {
-    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1166
-  },
-  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "confidence": "router-declaration",
-  "mountResolved": true,
-  "origin": "typescript-router-ast",
-  "domain": "typescript-router-ast/gpu",
-  "requiredChecks": [
-    {
-      "id": "api-9044cf53f3d90f91/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-9044cf53f3d90f91/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-9044cf53f3d90f91/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-9044cf53f3d90f91/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-9044cf53f3d90f91/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-9044cf53f3d90f91/mutation-durability",
-      "template": "mutation-durability",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
-    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "imported-api-loopback"
-  },
-  "testCandidates": [
-    {
-      "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-live-status.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-node-routes.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    }
-  ]
-}
-```
-
-## api-cbafaa9fec611a65
-
-```json
-{
-  "id": "api-cbafaa9fec611a65",
-  "method": "GET",
-  "path": "/api/gpu/prefix-kv/stats",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
     "line": 1171
@@ -197632,27 +198175,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-cbafaa9fec611a65/response-contract",
+      "id": "api-78afefbb12c49503/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbafaa9fec611a65/access-policy",
+      "id": "api-78afefbb12c49503/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbafaa9fec611a65/input-boundaries",
+      "id": "api-78afefbb12c49503/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbafaa9fec611a65/tenant-boundary",
+      "id": "api-78afefbb12c49503/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cbafaa9fec611a65/dependency-failure",
+      "id": "api-78afefbb12c49503/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197666,6 +198209,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197690,13 +198238,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6405d9c551590ce8
+## api-50a608c19b19b0d1
 
 ```json
 {
-  "id": "api-6405d9c551590ce8",
+  "id": "api-50a608c19b19b0d1",
   "method": "GET",
-  "path": "/api/gpu/digest-cache/stats",
+  "path": "/api/gpu/replica-pool/stats",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
     "line": 1176
@@ -197708,27 +198256,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-6405d9c551590ce8/response-contract",
+      "id": "api-50a608c19b19b0d1/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6405d9c551590ce8/access-policy",
+      "id": "api-50a608c19b19b0d1/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6405d9c551590ce8/input-boundaries",
+      "id": "api-50a608c19b19b0d1/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6405d9c551590ce8/tenant-boundary",
+      "id": "api-50a608c19b19b0d1/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6405d9c551590ce8/dependency-failure",
+      "id": "api-50a608c19b19b0d1/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197742,6 +198290,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -197766,16 +198319,264 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1a53a035611130a9
+## api-b3545b16374e8ebd
 
 ```json
 {
-  "id": "api-1a53a035611130a9",
+  "id": "api-b3545b16374e8ebd",
+  "method": "POST",
+  "path": "/api/gpu/replica-pool/grow",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1179
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/gpu",
+  "requiredChecks": [
+    {
+      "id": "api-b3545b16374e8ebd/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b3545b16374e8ebd/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b3545b16374e8ebd/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b3545b16374e8ebd/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b3545b16374e8ebd/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b3545b16374e8ebd/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-0ab9a0da1eac546d
+
+```json
+{
+  "id": "api-0ab9a0da1eac546d",
+  "method": "GET",
+  "path": "/api/gpu/prefix-kv/stats",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1184
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/gpu",
+  "requiredChecks": [
+    {
+      "id": "api-0ab9a0da1eac546d/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-0ab9a0da1eac546d/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-0ab9a0da1eac546d/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-0ab9a0da1eac546d/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-0ab9a0da1eac546d/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-c2fd54af5f20d20c
+
+```json
+{
+  "id": "api-c2fd54af5f20d20c",
+  "method": "GET",
+  "path": "/api/gpu/digest-cache/stats",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1189
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/gpu",
+  "requiredChecks": [
+    {
+      "id": "api-c2fd54af5f20d20c/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-c2fd54af5f20d20c/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-c2fd54af5f20d20c/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-c2fd54af5f20d20c/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-c2fd54af5f20d20c/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/gpu-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/gpu-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-5a3aeae72816d55a
+
+```json
+{
+  "id": "api-5a3aeae72816d55a",
   "method": "POST",
   "path": "/api/warm",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1183
+    "line": 1196
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197784,32 +198585,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/warm",
   "requiredChecks": [
     {
-      "id": "api-1a53a035611130a9/response-contract",
+      "id": "api-5a3aeae72816d55a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1a53a035611130a9/access-policy",
+      "id": "api-5a3aeae72816d55a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1a53a035611130a9/input-boundaries",
+      "id": "api-5a3aeae72816d55a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1a53a035611130a9/tenant-boundary",
+      "id": "api-5a3aeae72816d55a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1a53a035611130a9/dependency-failure",
+      "id": "api-5a3aeae72816d55a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1a53a035611130a9/mutation-durability",
+      "id": "api-5a3aeae72816d55a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -197824,6 +198625,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -197847,16 +198653,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9c15bcd61da68c2d
+## api-63bab10da46a71b0
 
 ```json
 {
-  "id": "api-9c15bcd61da68c2d",
+  "id": "api-63bab10da46a71b0",
   "method": "GET",
   "path": "/api/warm/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1188
+    "line": 1201
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197865,27 +198671,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/warm",
   "requiredChecks": [
     {
-      "id": "api-9c15bcd61da68c2d/response-contract",
+      "id": "api-63bab10da46a71b0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9c15bcd61da68c2d/access-policy",
+      "id": "api-63bab10da46a71b0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9c15bcd61da68c2d/input-boundaries",
+      "id": "api-63bab10da46a71b0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9c15bcd61da68c2d/tenant-boundary",
+      "id": "api-63bab10da46a71b0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9c15bcd61da68c2d/dependency-failure",
+      "id": "api-63bab10da46a71b0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -197900,6 +198706,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -197923,16 +198734,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-45ab150fe34af978
+## api-2d753dc681949410
 
 ```json
 {
-  "id": "api-45ab150fe34af978",
+  "id": "api-2d753dc681949410",
   "method": "GET",
   "path": "/api/system/readiness",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1196
+    "line": 1209
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -197941,32 +198752,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/system",
   "requiredChecks": [
     {
-      "id": "api-45ab150fe34af978/response-contract",
+      "id": "api-2d753dc681949410/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-45ab150fe34af978/access-policy",
+      "id": "api-2d753dc681949410/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-45ab150fe34af978/input-boundaries",
+      "id": "api-2d753dc681949410/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-45ab150fe34af978/tenant-boundary",
+      "id": "api-2d753dc681949410/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-45ab150fe34af978/dependency-failure",
+      "id": "api-2d753dc681949410/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-45ab150fe34af978/readiness-truth",
+      "id": "api-2d753dc681949410/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -197980,6 +198791,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198019,16 +198835,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ab4e8a92837e7443
+## api-a5f3abcffdb9b74b
 
 ```json
 {
-  "id": "api-ab4e8a92837e7443",
+  "id": "api-a5f3abcffdb9b74b",
   "method": "POST",
   "path": "/api/activate",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1318
+    "line": 1331
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198037,32 +198853,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/activate",
   "requiredChecks": [
     {
-      "id": "api-ab4e8a92837e7443/response-contract",
+      "id": "api-a5f3abcffdb9b74b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab4e8a92837e7443/access-policy",
+      "id": "api-a5f3abcffdb9b74b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab4e8a92837e7443/input-boundaries",
+      "id": "api-a5f3abcffdb9b74b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab4e8a92837e7443/tenant-boundary",
+      "id": "api-a5f3abcffdb9b74b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab4e8a92837e7443/dependency-failure",
+      "id": "api-a5f3abcffdb9b74b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab4e8a92837e7443/mutation-durability",
+      "id": "api-a5f3abcffdb9b74b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -198077,6 +198893,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -198100,16 +198921,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-72e2890fd9a82f59
+## api-cbfad4dfbb1e56fd
 
 ```json
 {
-  "id": "api-72e2890fd9a82f59",
+  "id": "api-cbfad4dfbb1e56fd",
   "method": "GET",
   "path": "/api/keepalive/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1338
+    "line": 1351
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198118,27 +198939,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/keepalive",
   "requiredChecks": [
     {
-      "id": "api-72e2890fd9a82f59/response-contract",
+      "id": "api-cbfad4dfbb1e56fd/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72e2890fd9a82f59/access-policy",
+      "id": "api-cbfad4dfbb1e56fd/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72e2890fd9a82f59/input-boundaries",
+      "id": "api-cbfad4dfbb1e56fd/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72e2890fd9a82f59/tenant-boundary",
+      "id": "api-cbfad4dfbb1e56fd/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72e2890fd9a82f59/dependency-failure",
+      "id": "api-cbfad4dfbb1e56fd/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -198153,6 +198974,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -198176,16 +199002,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a15c7364f8c94978
+## api-163fc56b4b43c07a
 
 ```json
 {
-  "id": "api-a15c7364f8c94978",
+  "id": "api-163fc56b4b43c07a",
   "method": "GET",
   "path": "/api/watchdog/status",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1352
+    "line": 1365
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198194,27 +199020,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/watchdog",
   "requiredChecks": [
     {
-      "id": "api-a15c7364f8c94978/response-contract",
+      "id": "api-163fc56b4b43c07a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a15c7364f8c94978/access-policy",
+      "id": "api-163fc56b4b43c07a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a15c7364f8c94978/input-boundaries",
+      "id": "api-163fc56b4b43c07a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a15c7364f8c94978/tenant-boundary",
+      "id": "api-163fc56b4b43c07a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a15c7364f8c94978/dependency-failure",
+      "id": "api-163fc56b4b43c07a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -198228,6 +199054,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198257,16 +199088,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-cdcc0c77ea222956
+## api-1f31fbd99bc0330b
 
 ```json
 {
-  "id": "api-cdcc0c77ea222956",
+  "id": "api-1f31fbd99bc0330b",
   "method": "GET",
   "path": "/api/watchdog/log",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1356
+    "line": 1369
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198275,27 +199106,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/watchdog",
   "requiredChecks": [
     {
-      "id": "api-cdcc0c77ea222956/response-contract",
+      "id": "api-1f31fbd99bc0330b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdcc0c77ea222956/access-policy",
+      "id": "api-1f31fbd99bc0330b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdcc0c77ea222956/input-boundaries",
+      "id": "api-1f31fbd99bc0330b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdcc0c77ea222956/tenant-boundary",
+      "id": "api-1f31fbd99bc0330b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdcc0c77ea222956/dependency-failure",
+      "id": "api-1f31fbd99bc0330b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -198309,6 +199140,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198338,16 +199174,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-b8dab9e84db57719
+## api-b7bb82f4e659af20
 
 ```json
 {
-  "id": "api-b8dab9e84db57719",
+  "id": "api-b7bb82f4e659af20",
   "method": "POST",
   "path": "/api/watchdog/reset",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1361
+    "line": 1374
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198356,32 +199192,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/watchdog",
   "requiredChecks": [
     {
-      "id": "api-b8dab9e84db57719/response-contract",
+      "id": "api-b7bb82f4e659af20/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b8dab9e84db57719/access-policy",
+      "id": "api-b7bb82f4e659af20/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b8dab9e84db57719/input-boundaries",
+      "id": "api-b7bb82f4e659af20/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b8dab9e84db57719/tenant-boundary",
+      "id": "api-b7bb82f4e659af20/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b8dab9e84db57719/dependency-failure",
+      "id": "api-b7bb82f4e659af20/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b8dab9e84db57719/mutation-durability",
+      "id": "api-b7bb82f4e659af20/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -198396,6 +199232,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -198424,16 +199265,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-69e954e39adb7687
+## api-4ba769cb728af576
 
 ```json
 {
-  "id": "api-69e954e39adb7687",
+  "id": "api-4ba769cb728af576",
   "method": "POST",
   "path": "/api/generate/content",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1367
+    "line": 1380
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198442,37 +199283,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-69e954e39adb7687/response-contract",
+      "id": "api-4ba769cb728af576/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/access-policy",
+      "id": "api-4ba769cb728af576/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/input-boundaries",
+      "id": "api-4ba769cb728af576/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/tenant-boundary",
+      "id": "api-4ba769cb728af576/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/dependency-failure",
+      "id": "api-4ba769cb728af576/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/mutation-durability",
+      "id": "api-4ba769cb728af576/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-69e954e39adb7687/artifact-integrity",
+      "id": "api-4ba769cb728af576/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -198486,6 +199327,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198550,16 +199396,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-360ee86944c0634c
+## api-d8a2ea3ac279705a
 
 ```json
 {
-  "id": "api-360ee86944c0634c",
+  "id": "api-d8a2ea3ac279705a",
   "method": "POST",
   "path": "/api/generate/text",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1371
+    "line": 1384
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198568,37 +199414,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-360ee86944c0634c/response-contract",
+      "id": "api-d8a2ea3ac279705a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/access-policy",
+      "id": "api-d8a2ea3ac279705a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/input-boundaries",
+      "id": "api-d8a2ea3ac279705a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/tenant-boundary",
+      "id": "api-d8a2ea3ac279705a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/dependency-failure",
+      "id": "api-d8a2ea3ac279705a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/mutation-durability",
+      "id": "api-d8a2ea3ac279705a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-360ee86944c0634c/artifact-integrity",
+      "id": "api-d8a2ea3ac279705a/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -198612,6 +199458,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198666,16 +199517,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-81e8d25b64f6be9a
+## api-bfa7f22fde149d07
 
 ```json
 {
-  "id": "api-81e8d25b64f6be9a",
+  "id": "api-bfa7f22fde149d07",
   "method": "POST",
   "path": "/api/content/score",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1381
+    "line": 1394
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198684,32 +199535,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/content",
   "requiredChecks": [
     {
-      "id": "api-81e8d25b64f6be9a/response-contract",
+      "id": "api-bfa7f22fde149d07/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-81e8d25b64f6be9a/access-policy",
+      "id": "api-bfa7f22fde149d07/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-81e8d25b64f6be9a/input-boundaries",
+      "id": "api-bfa7f22fde149d07/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-81e8d25b64f6be9a/tenant-boundary",
+      "id": "api-bfa7f22fde149d07/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-81e8d25b64f6be9a/dependency-failure",
+      "id": "api-bfa7f22fde149d07/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-81e8d25b64f6be9a/mutation-durability",
+      "id": "api-bfa7f22fde149d07/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -198724,6 +199575,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -198757,16 +199613,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3fb1305139192b05
+## api-7c1d587787421308
 
 ```json
 {
-  "id": "api-3fb1305139192b05",
+  "id": "api-7c1d587787421308",
   "method": "POST",
   "path": "/api/generate/campaign",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1390
+    "line": 1403
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198775,37 +199631,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-3fb1305139192b05/response-contract",
+      "id": "api-7c1d587787421308/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/access-policy",
+      "id": "api-7c1d587787421308/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/input-boundaries",
+      "id": "api-7c1d587787421308/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/tenant-boundary",
+      "id": "api-7c1d587787421308/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/dependency-failure",
+      "id": "api-7c1d587787421308/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/mutation-durability",
+      "id": "api-7c1d587787421308/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3fb1305139192b05/artifact-integrity",
+      "id": "api-7c1d587787421308/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -198820,6 +199676,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -198858,16 +199719,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d9597ab3012593b2
+## api-d567181901bb459b
 
 ```json
 {
-  "id": "api-d9597ab3012593b2",
+  "id": "api-d567181901bb459b",
   "method": "POST",
   "path": "/api/campaigns",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1394
+    "line": 1407
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198876,32 +199737,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-d9597ab3012593b2/response-contract",
+      "id": "api-d567181901bb459b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d9597ab3012593b2/access-policy",
+      "id": "api-d567181901bb459b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d9597ab3012593b2/input-boundaries",
+      "id": "api-d567181901bb459b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d9597ab3012593b2/tenant-boundary",
+      "id": "api-d567181901bb459b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d9597ab3012593b2/dependency-failure",
+      "id": "api-d567181901bb459b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d9597ab3012593b2/mutation-durability",
+      "id": "api-d567181901bb459b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -198915,6 +199776,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -198944,16 +199810,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-503eaf1014355eae
+## api-59c37170109af4f4
 
 ```json
 {
-  "id": "api-503eaf1014355eae",
+  "id": "api-59c37170109af4f4",
   "method": "GET",
   "path": "/api/campaigns",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1398
+    "line": 1411
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -198962,27 +199828,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-503eaf1014355eae/response-contract",
+      "id": "api-59c37170109af4f4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-503eaf1014355eae/access-policy",
+      "id": "api-59c37170109af4f4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-503eaf1014355eae/input-boundaries",
+      "id": "api-59c37170109af4f4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-503eaf1014355eae/tenant-boundary",
+      "id": "api-59c37170109af4f4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-503eaf1014355eae/dependency-failure",
+      "id": "api-59c37170109af4f4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -198996,6 +199862,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199025,16 +199896,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8adcb1ad049dff7a
+## api-77921a0e63d8e339
 
 ```json
 {
-  "id": "api-8adcb1ad049dff7a",
+  "id": "api-77921a0e63d8e339",
   "method": "GET",
   "path": "/api/campaigns/:id",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1405
+    "line": 1418
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199043,27 +199914,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-8adcb1ad049dff7a/response-contract",
+      "id": "api-77921a0e63d8e339/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8adcb1ad049dff7a/access-policy",
+      "id": "api-77921a0e63d8e339/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8adcb1ad049dff7a/input-boundaries",
+      "id": "api-77921a0e63d8e339/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8adcb1ad049dff7a/tenant-boundary",
+      "id": "api-77921a0e63d8e339/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8adcb1ad049dff7a/dependency-failure",
+      "id": "api-77921a0e63d8e339/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -199077,6 +199948,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199101,16 +199977,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-018cc883428bd934
+## api-20d38303cf8df9c0
 
 ```json
 {
-  "id": "api-018cc883428bd934",
+  "id": "api-20d38303cf8df9c0",
   "method": "DELETE",
   "path": "/api/campaigns/:id",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1416
+    "line": 1429
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199119,37 +199995,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-018cc883428bd934/response-contract",
+      "id": "api-20d38303cf8df9c0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/access-policy",
+      "id": "api-20d38303cf8df9c0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/input-boundaries",
+      "id": "api-20d38303cf8df9c0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/tenant-boundary",
+      "id": "api-20d38303cf8df9c0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/dependency-failure",
+      "id": "api-20d38303cf8df9c0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/mutation-durability",
+      "id": "api-20d38303cf8df9c0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-018cc883428bd934/deletion-durability",
+      "id": "api-20d38303cf8df9c0/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     }
@@ -199164,6 +200040,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -199187,16 +200068,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-27d00580f63a9dd5
+## api-b09b905ee58eafe0
 
 ```json
 {
-  "id": "api-27d00580f63a9dd5",
+  "id": "api-b09b905ee58eafe0",
   "method": "PATCH",
   "path": "/api/campaigns/:id/posts/:postId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1427
+    "line": 1440
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199205,32 +200086,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-27d00580f63a9dd5/response-contract",
+      "id": "api-b09b905ee58eafe0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27d00580f63a9dd5/access-policy",
+      "id": "api-b09b905ee58eafe0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27d00580f63a9dd5/input-boundaries",
+      "id": "api-b09b905ee58eafe0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27d00580f63a9dd5/tenant-boundary",
+      "id": "api-b09b905ee58eafe0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27d00580f63a9dd5/dependency-failure",
+      "id": "api-b09b905ee58eafe0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27d00580f63a9dd5/mutation-durability",
+      "id": "api-b09b905ee58eafe0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199244,6 +200125,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199268,16 +200154,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-5e76a4dff6f33fbf
+## api-05ebf686aeeee17a
 
 ```json
 {
-  "id": "api-5e76a4dff6f33fbf",
+  "id": "api-05ebf686aeeee17a",
   "method": "POST",
   "path": "/api/campaigns/:id/schedule",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1435
+    "line": 1448
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199286,32 +200172,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-5e76a4dff6f33fbf/response-contract",
+      "id": "api-05ebf686aeeee17a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5e76a4dff6f33fbf/access-policy",
+      "id": "api-05ebf686aeeee17a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5e76a4dff6f33fbf/input-boundaries",
+      "id": "api-05ebf686aeeee17a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5e76a4dff6f33fbf/tenant-boundary",
+      "id": "api-05ebf686aeeee17a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5e76a4dff6f33fbf/dependency-failure",
+      "id": "api-05ebf686aeeee17a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5e76a4dff6f33fbf/mutation-durability",
+      "id": "api-05ebf686aeeee17a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199325,6 +200211,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199349,16 +200240,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7d999adff512ca11
+## api-54f1a99ccf714ea2
 
 ```json
 {
-  "id": "api-7d999adff512ca11",
+  "id": "api-54f1a99ccf714ea2",
   "method": "POST",
   "path": "/api/analyze",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1445
+    "line": 1458
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199367,32 +200258,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-7d999adff512ca11/response-contract",
+      "id": "api-54f1a99ccf714ea2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d999adff512ca11/access-policy",
+      "id": "api-54f1a99ccf714ea2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d999adff512ca11/input-boundaries",
+      "id": "api-54f1a99ccf714ea2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d999adff512ca11/tenant-boundary",
+      "id": "api-54f1a99ccf714ea2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d999adff512ca11/dependency-failure",
+      "id": "api-54f1a99ccf714ea2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7d999adff512ca11/mutation-durability",
+      "id": "api-54f1a99ccf714ea2/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199406,6 +200297,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199435,16 +200331,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2b848a2fc8976f38
+## api-40dd1c77223b02b0
 
 ```json
 {
-  "id": "api-2b848a2fc8976f38",
+  "id": "api-40dd1c77223b02b0",
   "method": "POST",
   "path": "/api/analyze/sentiment",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1463
+    "line": 1476
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199453,32 +200349,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-2b848a2fc8976f38/response-contract",
+      "id": "api-40dd1c77223b02b0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2b848a2fc8976f38/access-policy",
+      "id": "api-40dd1c77223b02b0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2b848a2fc8976f38/input-boundaries",
+      "id": "api-40dd1c77223b02b0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2b848a2fc8976f38/tenant-boundary",
+      "id": "api-40dd1c77223b02b0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2b848a2fc8976f38/dependency-failure",
+      "id": "api-40dd1c77223b02b0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2b848a2fc8976f38/mutation-durability",
+      "id": "api-40dd1c77223b02b0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199492,6 +200388,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199526,16 +200427,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-473f4dd10acba2bb
+## api-fe6f69929f010b95
 
 ```json
 {
-  "id": "api-473f4dd10acba2bb",
+  "id": "api-fe6f69929f010b95",
   "method": "POST",
   "path": "/api/analyze/audio",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1467
+    "line": 1480
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199544,37 +200445,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-473f4dd10acba2bb/response-contract",
+      "id": "api-fe6f69929f010b95/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/access-policy",
+      "id": "api-fe6f69929f010b95/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/input-boundaries",
+      "id": "api-fe6f69929f010b95/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/tenant-boundary",
+      "id": "api-fe6f69929f010b95/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/dependency-failure",
+      "id": "api-fe6f69929f010b95/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/mutation-durability",
+      "id": "api-fe6f69929f010b95/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-473f4dd10acba2bb/artifact-integrity",
+      "id": "api-fe6f69929f010b95/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -199588,6 +200489,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199617,16 +200523,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1e6c216c5079776a
+## api-f1f55615c7d3765b
 
 ```json
 {
-  "id": "api-1e6c216c5079776a",
+  "id": "api-f1f55615c7d3765b",
   "method": "POST",
   "path": "/api/optimize/ad",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1479
+    "line": 1492
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199635,32 +200541,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/optimize",
   "requiredChecks": [
     {
-      "id": "api-1e6c216c5079776a/response-contract",
+      "id": "api-f1f55615c7d3765b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1e6c216c5079776a/access-policy",
+      "id": "api-f1f55615c7d3765b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1e6c216c5079776a/input-boundaries",
+      "id": "api-f1f55615c7d3765b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1e6c216c5079776a/tenant-boundary",
+      "id": "api-f1f55615c7d3765b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1e6c216c5079776a/dependency-failure",
+      "id": "api-f1f55615c7d3765b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1e6c216c5079776a/mutation-durability",
+      "id": "api-f1f55615c7d3765b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199674,6 +200580,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199713,16 +200624,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8faad8a0e343fe9c
+## api-9fc02fcf5a981e32
 
 ```json
 {
-  "id": "api-8faad8a0e343fe9c",
+  "id": "api-9fc02fcf5a981e32",
   "method": "POST",
   "path": "/api/predict/engagement",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1483
+    "line": 1496
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199731,32 +200642,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/predict",
   "requiredChecks": [
     {
-      "id": "api-8faad8a0e343fe9c/response-contract",
+      "id": "api-9fc02fcf5a981e32/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8faad8a0e343fe9c/access-policy",
+      "id": "api-9fc02fcf5a981e32/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8faad8a0e343fe9c/input-boundaries",
+      "id": "api-9fc02fcf5a981e32/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8faad8a0e343fe9c/tenant-boundary",
+      "id": "api-9fc02fcf5a981e32/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8faad8a0e343fe9c/dependency-failure",
+      "id": "api-9fc02fcf5a981e32/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8faad8a0e343fe9c/mutation-durability",
+      "id": "api-9fc02fcf5a981e32/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -199770,6 +200681,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199819,16 +200735,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-170cad016a36fba4
+## api-c44a099b7a655f1f
 
 ```json
 {
-  "id": "api-170cad016a36fba4",
+  "id": "api-c44a099b7a655f1f",
   "method": "POST",
   "path": "/api/generate/image",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1489
+    "line": 1502
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199837,37 +200753,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-170cad016a36fba4/response-contract",
+      "id": "api-c44a099b7a655f1f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/access-policy",
+      "id": "api-c44a099b7a655f1f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/input-boundaries",
+      "id": "api-c44a099b7a655f1f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/tenant-boundary",
+      "id": "api-c44a099b7a655f1f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/dependency-failure",
+      "id": "api-c44a099b7a655f1f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/mutation-durability",
+      "id": "api-c44a099b7a655f1f/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-170cad016a36fba4/artifact-integrity",
+      "id": "api-c44a099b7a655f1f/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -199881,6 +200797,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -199960,16 +200881,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-36dd72cf6b61b6f4
+## api-43a7d408e23de5ae
 
 ```json
 {
-  "id": "api-36dd72cf6b61b6f4",
+  "id": "api-43a7d408e23de5ae",
   "method": "POST",
   "path": "/api/generate/audio",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1493
+    "line": 1506
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -199978,37 +200899,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-36dd72cf6b61b6f4/response-contract",
+      "id": "api-43a7d408e23de5ae/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/access-policy",
+      "id": "api-43a7d408e23de5ae/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/input-boundaries",
+      "id": "api-43a7d408e23de5ae/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/tenant-boundary",
+      "id": "api-43a7d408e23de5ae/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/dependency-failure",
+      "id": "api-43a7d408e23de5ae/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/mutation-durability",
+      "id": "api-43a7d408e23de5ae/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-36dd72cf6b61b6f4/artifact-integrity",
+      "id": "api-43a7d408e23de5ae/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200022,6 +200943,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200126,16 +201052,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-786b5c2792266f83
+## api-5612707e73771361
 
 ```json
 {
-  "id": "api-786b5c2792266f83",
+  "id": "api-5612707e73771361",
   "method": "POST",
   "path": "/api/generate-video",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1497
+    "line": 1510
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200144,37 +201070,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate-video",
   "requiredChecks": [
     {
-      "id": "api-786b5c2792266f83/response-contract",
+      "id": "api-5612707e73771361/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/access-policy",
+      "id": "api-5612707e73771361/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/input-boundaries",
+      "id": "api-5612707e73771361/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/tenant-boundary",
+      "id": "api-5612707e73771361/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/dependency-failure",
+      "id": "api-5612707e73771361/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/mutation-durability",
+      "id": "api-5612707e73771361/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-786b5c2792266f83/artifact-integrity",
+      "id": "api-5612707e73771361/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200188,6 +201114,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200252,16 +201183,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-754ec923567d67ac
+## api-21d7c08eecfce4dc
 
 ```json
 {
-  "id": "api-754ec923567d67ac",
+  "id": "api-21d7c08eecfce4dc",
   "method": "POST",
   "path": "/api/generate/video",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1502
+    "line": 1515
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200270,37 +201201,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-754ec923567d67ac/response-contract",
+      "id": "api-21d7c08eecfce4dc/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/access-policy",
+      "id": "api-21d7c08eecfce4dc/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/input-boundaries",
+      "id": "api-21d7c08eecfce4dc/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/tenant-boundary",
+      "id": "api-21d7c08eecfce4dc/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/dependency-failure",
+      "id": "api-21d7c08eecfce4dc/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/mutation-durability",
+      "id": "api-21d7c08eecfce4dc/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-754ec923567d67ac/artifact-integrity",
+      "id": "api-21d7c08eecfce4dc/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200314,6 +201245,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200348,16 +201284,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-334cf117bf69c662
+## api-3f46dc3874523b29
 
 ```json
 {
-  "id": "api-334cf117bf69c662",
+  "id": "api-3f46dc3874523b29",
   "method": "POST",
   "path": "/api/video/generate-ai",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1506
+    "line": 1519
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200366,37 +201302,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video",
   "requiredChecks": [
     {
-      "id": "api-334cf117bf69c662/response-contract",
+      "id": "api-3f46dc3874523b29/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/access-policy",
+      "id": "api-3f46dc3874523b29/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/input-boundaries",
+      "id": "api-3f46dc3874523b29/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/tenant-boundary",
+      "id": "api-3f46dc3874523b29/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/dependency-failure",
+      "id": "api-3f46dc3874523b29/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/mutation-durability",
+      "id": "api-3f46dc3874523b29/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-334cf117bf69c662/artifact-integrity",
+      "id": "api-3f46dc3874523b29/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200410,6 +201346,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200464,16 +201405,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-727a083b0189417f
+## api-18094bf6f262a0c7
 
 ```json
 {
-  "id": "api-727a083b0189417f",
+  "id": "api-18094bf6f262a0c7",
   "method": "POST",
   "path": "/api/video/extend",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1511
+    "line": 1524
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200482,37 +201423,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video",
   "requiredChecks": [
     {
-      "id": "api-727a083b0189417f/response-contract",
+      "id": "api-18094bf6f262a0c7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/access-policy",
+      "id": "api-18094bf6f262a0c7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/input-boundaries",
+      "id": "api-18094bf6f262a0c7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/tenant-boundary",
+      "id": "api-18094bf6f262a0c7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/dependency-failure",
+      "id": "api-18094bf6f262a0c7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/mutation-durability",
+      "id": "api-18094bf6f262a0c7/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-727a083b0189417f/artifact-integrity",
+      "id": "api-18094bf6f262a0c7/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200526,6 +201467,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200565,16 +201511,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-dffc0647bfa5990f
+## api-de90bb96bb2229da
 
 ```json
 {
-  "id": "api-dffc0647bfa5990f",
+  "id": "api-de90bb96bb2229da",
   "method": "GET",
   "path": "/api/video-jobs",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1517
+    "line": 1530
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200583,32 +201529,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-jobs",
   "requiredChecks": [
     {
-      "id": "api-dffc0647bfa5990f/response-contract",
+      "id": "api-de90bb96bb2229da/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dffc0647bfa5990f/access-policy",
+      "id": "api-de90bb96bb2229da/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dffc0647bfa5990f/input-boundaries",
+      "id": "api-de90bb96bb2229da/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dffc0647bfa5990f/tenant-boundary",
+      "id": "api-de90bb96bb2229da/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dffc0647bfa5990f/dependency-failure",
+      "id": "api-de90bb96bb2229da/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dffc0647bfa5990f/artifact-integrity",
+      "id": "api-de90bb96bb2229da/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200622,6 +201568,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200656,16 +201607,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4aedd81afae78132
+## api-2481ce7a64efe187
 
 ```json
 {
-  "id": "api-4aedd81afae78132",
+  "id": "api-2481ce7a64efe187",
   "method": "GET",
   "path": "/api/video-job/:jobId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1521
+    "line": 1534
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200674,32 +201625,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-4aedd81afae78132/response-contract",
+      "id": "api-2481ce7a64efe187/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4aedd81afae78132/access-policy",
+      "id": "api-2481ce7a64efe187/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4aedd81afae78132/input-boundaries",
+      "id": "api-2481ce7a64efe187/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4aedd81afae78132/tenant-boundary",
+      "id": "api-2481ce7a64efe187/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4aedd81afae78132/dependency-failure",
+      "id": "api-2481ce7a64efe187/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4aedd81afae78132/artifact-integrity",
+      "id": "api-2481ce7a64efe187/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200713,6 +201664,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200737,16 +201693,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2dfbc55087985e97
+## api-37f48101278be2fa
 
 ```json
 {
-  "id": "api-2dfbc55087985e97",
+  "id": "api-37f48101278be2fa",
   "method": "DELETE",
   "path": "/api/video-job/:jobId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1525
+    "line": 1538
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -200755,42 +201711,42 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-2dfbc55087985e97/response-contract",
+      "id": "api-37f48101278be2fa/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/access-policy",
+      "id": "api-37f48101278be2fa/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/input-boundaries",
+      "id": "api-37f48101278be2fa/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/tenant-boundary",
+      "id": "api-37f48101278be2fa/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/dependency-failure",
+      "id": "api-37f48101278be2fa/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/mutation-durability",
+      "id": "api-37f48101278be2fa/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/deletion-durability",
+      "id": "api-37f48101278be2fa/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2dfbc55087985e97/artifact-integrity",
+      "id": "api-37f48101278be2fa/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200804,6 +201760,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200828,94 +201789,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8b52453002c6cbc4
+## api-fa2fe103e331ecb4
 
 ```json
 {
-  "id": "api-8b52453002c6cbc4",
+  "id": "api-fa2fe103e331ecb4",
   "method": "GET",
   "path": "/api/video-job/:jobId/preview/:sceneIdx",
-  "source": {
-    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1529
-  },
-  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "confidence": "router-declaration",
-  "mountResolved": true,
-  "origin": "typescript-router-ast",
-  "domain": "typescript-router-ast/video-job",
-  "requiredChecks": [
-    {
-      "id": "api-8b52453002c6cbc4/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-8b52453002c6cbc4/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-8b52453002c6cbc4/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-8b52453002c6cbc4/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-8b52453002c6cbc4/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-8b52453002c6cbc4/artifact-integrity",
-      "template": "artifact-integrity",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "tests/video-job-imported-api-acceptance.test.mjs",
-    "command": "node --import tsx --test tests/video-job-imported-api-acceptance.test.mjs",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "imported-api-loopback"
-  },
-  "testCandidates": [
-    {
-      "path": "tests/unit/awareness-proxy-independence.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-live-status.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-node-routes.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    },
-    {
-      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
-      "association": "static-import-or-literal-source-reference",
-      "executionStatus": "executed"
-    }
-  ]
-}
-```
-
-## api-7b360cf50105f76d
-
-```json
-{
-  "id": "api-7b360cf50105f76d",
-  "method": "GET",
-  "path": "/api/video-job/:jobId/download",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
     "line": 1542
@@ -200927,32 +201807,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-7b360cf50105f76d/response-contract",
+      "id": "api-fa2fe103e331ecb4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7b360cf50105f76d/access-policy",
+      "id": "api-fa2fe103e331ecb4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7b360cf50105f76d/input-boundaries",
+      "id": "api-fa2fe103e331ecb4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7b360cf50105f76d/tenant-boundary",
+      "id": "api-fa2fe103e331ecb4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7b360cf50105f76d/dependency-failure",
+      "id": "api-fa2fe103e331ecb4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7b360cf50105f76d/artifact-integrity",
+      "id": "api-fa2fe103e331ecb4/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -200966,6 +201846,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -200990,16 +201875,102 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9bbf4a7bf5e0e501
+## api-1c0ed91e7eb8fd2d
 
 ```json
 {
-  "id": "api-9bbf4a7bf5e0e501",
+  "id": "api-1c0ed91e7eb8fd2d",
+  "method": "GET",
+  "path": "/api/video-job/:jobId/download",
+  "source": {
+    "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+    "line": 1555
+  },
+  "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+  "confidence": "router-declaration",
+  "mountResolved": true,
+  "origin": "typescript-router-ast",
+  "domain": "typescript-router-ast/video-job",
+  "requiredChecks": [
+    {
+      "id": "api-1c0ed91e7eb8fd2d/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1c0ed91e7eb8fd2d/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1c0ed91e7eb8fd2d/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1c0ed91e7eb8fd2d/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1c0ed91e7eb8fd2d/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1c0ed91e7eb8fd2d/artifact-integrity",
+      "template": "artifact-integrity",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/video-job-imported-api-acceptance.test.mjs",
+    "command": "node --import tsx --test tests/video-job-imported-api-acceptance.test.mjs",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "imported-api-loopback"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/awareness-proxy-independence.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-live-status.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-node-routes.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/maxcore-proxy-lifecycle.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-14ab44362319e868
+
+```json
+{
+  "id": "api-14ab44362319e868",
   "method": "GET",
   "path": "/api/video-job/:jobId/file",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1550
+    "line": 1563
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201008,32 +201979,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-9bbf4a7bf5e0e501/response-contract",
+      "id": "api-14ab44362319e868/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9bbf4a7bf5e0e501/access-policy",
+      "id": "api-14ab44362319e868/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9bbf4a7bf5e0e501/input-boundaries",
+      "id": "api-14ab44362319e868/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9bbf4a7bf5e0e501/tenant-boundary",
+      "id": "api-14ab44362319e868/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9bbf4a7bf5e0e501/dependency-failure",
+      "id": "api-14ab44362319e868/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9bbf4a7bf5e0e501/artifact-integrity",
+      "id": "api-14ab44362319e868/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -201047,6 +202018,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201071,16 +202047,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-15b1b60df5d858c6
+## api-d241b452be540fd5
 
 ```json
 {
-  "id": "api-15b1b60df5d858c6",
+  "id": "api-d241b452be540fd5",
   "method": "GET",
   "path": "/api/video-job/:jobId/video",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1558
+    "line": 1571
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201089,32 +202065,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-15b1b60df5d858c6/response-contract",
+      "id": "api-d241b452be540fd5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-15b1b60df5d858c6/access-policy",
+      "id": "api-d241b452be540fd5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-15b1b60df5d858c6/input-boundaries",
+      "id": "api-d241b452be540fd5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-15b1b60df5d858c6/tenant-boundary",
+      "id": "api-d241b452be540fd5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-15b1b60df5d858c6/dependency-failure",
+      "id": "api-d241b452be540fd5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-15b1b60df5d858c6/artifact-integrity",
+      "id": "api-d241b452be540fd5/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -201128,6 +202104,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201152,16 +202133,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a2b79aeb14c0afc9
+## api-35e00b8a96e9a955
 
 ```json
 {
-  "id": "api-a2b79aeb14c0afc9",
+  "id": "api-35e00b8a96e9a955",
   "method": "GET",
   "path": "/api/audio-job/:jobId",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1566
+    "line": 1579
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201170,32 +202151,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio-job",
   "requiredChecks": [
     {
-      "id": "api-a2b79aeb14c0afc9/response-contract",
+      "id": "api-35e00b8a96e9a955/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2b79aeb14c0afc9/access-policy",
+      "id": "api-35e00b8a96e9a955/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2b79aeb14c0afc9/input-boundaries",
+      "id": "api-35e00b8a96e9a955/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2b79aeb14c0afc9/tenant-boundary",
+      "id": "api-35e00b8a96e9a955/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2b79aeb14c0afc9/dependency-failure",
+      "id": "api-35e00b8a96e9a955/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a2b79aeb14c0afc9/artifact-integrity",
+      "id": "api-35e00b8a96e9a955/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -201210,6 +202191,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -201233,16 +202219,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fa014968a6e9de0c
+## api-b66048e43fdb42e2
 
 ```json
 {
-  "id": "api-fa014968a6e9de0c",
+  "id": "api-b66048e43fdb42e2",
   "method": "GET",
   "path": "/api/models/social/state",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1572
+    "line": 1585
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201251,27 +202237,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/models",
   "requiredChecks": [
     {
-      "id": "api-fa014968a6e9de0c/response-contract",
+      "id": "api-b66048e43fdb42e2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa014968a6e9de0c/access-policy",
+      "id": "api-b66048e43fdb42e2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa014968a6e9de0c/input-boundaries",
+      "id": "api-b66048e43fdb42e2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa014968a6e9de0c/tenant-boundary",
+      "id": "api-b66048e43fdb42e2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa014968a6e9de0c/dependency-failure",
+      "id": "api-b66048e43fdb42e2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -201285,6 +202271,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201319,16 +202310,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9ceff75199e23e9b
+## api-21c2702b877c1d1a
 
 ```json
 {
-  "id": "api-9ceff75199e23e9b",
+  "id": "api-21c2702b877c1d1a",
   "method": "GET",
   "path": "/api/models/advertising/state",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1576
+    "line": 1589
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201337,27 +202328,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/models",
   "requiredChecks": [
     {
-      "id": "api-9ceff75199e23e9b/response-contract",
+      "id": "api-21c2702b877c1d1a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceff75199e23e9b/access-policy",
+      "id": "api-21c2702b877c1d1a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceff75199e23e9b/input-boundaries",
+      "id": "api-21c2702b877c1d1a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceff75199e23e9b/tenant-boundary",
+      "id": "api-21c2702b877c1d1a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceff75199e23e9b/dependency-failure",
+      "id": "api-21c2702b877c1d1a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -201371,6 +202362,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201400,16 +202396,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-17e7c8616b94cdbf
+## api-ceb24a95d10fe4a7
 
 ```json
 {
-  "id": "api-17e7c8616b94cdbf",
+  "id": "api-ceb24a95d10fe4a7",
   "method": "GET",
   "path": "/api/generation/capabilities",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1580
+    "line": 1593
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201418,32 +202414,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/generation",
   "requiredChecks": [
     {
-      "id": "api-17e7c8616b94cdbf/response-contract",
+      "id": "api-ceb24a95d10fe4a7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17e7c8616b94cdbf/access-policy",
+      "id": "api-ceb24a95d10fe4a7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17e7c8616b94cdbf/input-boundaries",
+      "id": "api-ceb24a95d10fe4a7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17e7c8616b94cdbf/tenant-boundary",
+      "id": "api-ceb24a95d10fe4a7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17e7c8616b94cdbf/dependency-failure",
+      "id": "api-ceb24a95d10fe4a7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17e7c8616b94cdbf/artifact-integrity",
+      "id": "api-ceb24a95d10fe4a7/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -201457,6 +202453,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201486,16 +202487,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8e10d7b83ff47824
+## api-261c8e549a2a0a3d
 
 ```json
 {
-  "id": "api-8e10d7b83ff47824",
+  "id": "api-261c8e549a2a0a3d",
   "method": "GET",
   "path": "/api/models/content/state",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1584
+    "line": 1597
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201504,27 +202505,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/models",
   "requiredChecks": [
     {
-      "id": "api-8e10d7b83ff47824/response-contract",
+      "id": "api-261c8e549a2a0a3d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e10d7b83ff47824/access-policy",
+      "id": "api-261c8e549a2a0a3d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e10d7b83ff47824/input-boundaries",
+      "id": "api-261c8e549a2a0a3d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e10d7b83ff47824/tenant-boundary",
+      "id": "api-261c8e549a2a0a3d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e10d7b83ff47824/dependency-failure",
+      "id": "api-261c8e549a2a0a3d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -201538,6 +202539,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201567,16 +202573,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8d9ab7e339b6c66f
+## api-1940479641b86549
 
 ```json
 {
-  "id": "api-8d9ab7e339b6c66f",
+  "id": "api-1940479641b86549",
   "method": "GET",
   "path": "/api/models/engagement/state",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1588
+    "line": 1601
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201585,27 +202591,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/models",
   "requiredChecks": [
     {
-      "id": "api-8d9ab7e339b6c66f/response-contract",
+      "id": "api-1940479641b86549/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8d9ab7e339b6c66f/access-policy",
+      "id": "api-1940479641b86549/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8d9ab7e339b6c66f/input-boundaries",
+      "id": "api-1940479641b86549/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8d9ab7e339b6c66f/tenant-boundary",
+      "id": "api-1940479641b86549/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8d9ab7e339b6c66f/dependency-failure",
+      "id": "api-1940479641b86549/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -201619,6 +202625,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201648,16 +202659,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-acd5f3b8635da9aa
+## api-d771c192ed95cb62
 
 ```json
 {
-  "id": "api-acd5f3b8635da9aa",
+  "id": "api-d771c192ed95cb62",
   "method": "POST",
   "path": "/api/train/feedback",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1594
+    "line": 1607
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201666,32 +202677,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/train",
   "requiredChecks": [
     {
-      "id": "api-acd5f3b8635da9aa/response-contract",
+      "id": "api-d771c192ed95cb62/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-acd5f3b8635da9aa/access-policy",
+      "id": "api-d771c192ed95cb62/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-acd5f3b8635da9aa/input-boundaries",
+      "id": "api-d771c192ed95cb62/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-acd5f3b8635da9aa/tenant-boundary",
+      "id": "api-d771c192ed95cb62/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-acd5f3b8635da9aa/dependency-failure",
+      "id": "api-d771c192ed95cb62/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-acd5f3b8635da9aa/mutation-durability",
+      "id": "api-d771c192ed95cb62/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -201706,6 +202717,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -201739,16 +202755,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9713878dba95317a
+## api-fdd8422f76b8624a
 
 ```json
 {
-  "id": "api-9713878dba95317a",
+  "id": "api-fdd8422f76b8624a",
   "method": "GET",
   "path": "/api/jobs/:jobId/progress",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1603
+    "line": 1616
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201757,27 +202773,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/jobs",
   "requiredChecks": [
     {
-      "id": "api-9713878dba95317a/response-contract",
+      "id": "api-fdd8422f76b8624a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9713878dba95317a/access-policy",
+      "id": "api-fdd8422f76b8624a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9713878dba95317a/input-boundaries",
+      "id": "api-fdd8422f76b8624a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9713878dba95317a/tenant-boundary",
+      "id": "api-fdd8422f76b8624a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9713878dba95317a/dependency-failure",
+      "id": "api-fdd8422f76b8624a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -201791,6 +202807,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201815,16 +202836,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ace286736918ebef
+## api-417323252ac40711
 
 ```json
 {
-  "id": "api-ace286736918ebef",
+  "id": "api-417323252ac40711",
   "method": "POST",
   "path": "/api/jobs/:jobId/cancel",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1739
+    "line": 1752
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201833,32 +202854,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/jobs",
   "requiredChecks": [
     {
-      "id": "api-ace286736918ebef/response-contract",
+      "id": "api-417323252ac40711/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ace286736918ebef/access-policy",
+      "id": "api-417323252ac40711/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ace286736918ebef/input-boundaries",
+      "id": "api-417323252ac40711/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ace286736918ebef/tenant-boundary",
+      "id": "api-417323252ac40711/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ace286736918ebef/dependency-failure",
+      "id": "api-417323252ac40711/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ace286736918ebef/mutation-durability",
+      "id": "api-417323252ac40711/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -201873,6 +202894,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -201896,16 +202922,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-332a3796766a95db
+## api-eb32539e0dfbbefc
 
 ```json
 {
-  "id": "api-332a3796766a95db",
+  "id": "api-eb32539e0dfbbefc",
   "method": "GET",
   "path": "/api/audio/:jobId/stems",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1788
+    "line": 1801
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -201914,32 +202940,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-332a3796766a95db/response-contract",
+      "id": "api-eb32539e0dfbbefc/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-332a3796766a95db/access-policy",
+      "id": "api-eb32539e0dfbbefc/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-332a3796766a95db/input-boundaries",
+      "id": "api-eb32539e0dfbbefc/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-332a3796766a95db/tenant-boundary",
+      "id": "api-eb32539e0dfbbefc/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-332a3796766a95db/dependency-failure",
+      "id": "api-eb32539e0dfbbefc/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-332a3796766a95db/artifact-integrity",
+      "id": "api-eb32539e0dfbbefc/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -201953,6 +202979,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -201982,16 +203013,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-76345b7828ed7e8d
+## api-eb3dde0b1ecf4680
 
 ```json
 {
-  "id": "api-76345b7828ed7e8d",
+  "id": "api-eb3dde0b1ecf4680",
   "method": "GET",
   "path": "/api/audio/:jobId/midi",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1792
+    "line": 1805
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -202000,32 +203031,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-76345b7828ed7e8d/response-contract",
+      "id": "api-eb3dde0b1ecf4680/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-76345b7828ed7e8d/access-policy",
+      "id": "api-eb3dde0b1ecf4680/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-76345b7828ed7e8d/input-boundaries",
+      "id": "api-eb3dde0b1ecf4680/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-76345b7828ed7e8d/tenant-boundary",
+      "id": "api-eb3dde0b1ecf4680/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-76345b7828ed7e8d/dependency-failure",
+      "id": "api-eb3dde0b1ecf4680/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-76345b7828ed7e8d/artifact-integrity",
+      "id": "api-eb3dde0b1ecf4680/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -202040,6 +203071,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -202063,16 +203099,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-af4ea36b357bff47
+## api-12ee06e2e4f83123
 
 ```json
 {
-  "id": "api-af4ea36b357bff47",
+  "id": "api-12ee06e2e4f83123",
   "method": "GET",
   "path": "/api/files/stems/:jobId/:filename",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1799
+    "line": 1812
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -202081,27 +203117,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/files",
   "requiredChecks": [
     {
-      "id": "api-af4ea36b357bff47/response-contract",
+      "id": "api-12ee06e2e4f83123/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-af4ea36b357bff47/access-policy",
+      "id": "api-12ee06e2e4f83123/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-af4ea36b357bff47/input-boundaries",
+      "id": "api-12ee06e2e4f83123/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-af4ea36b357bff47/tenant-boundary",
+      "id": "api-12ee06e2e4f83123/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-af4ea36b357bff47/dependency-failure",
+      "id": "api-12ee06e2e4f83123/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -202116,6 +203152,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -202139,16 +203180,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9d1cd39a14038279
+## api-c2c69cacff748fb1
 
 ```json
 {
-  "id": "api-9d1cd39a14038279",
+  "id": "api-c2c69cacff748fb1",
   "method": "GET",
   "path": "/api/metrics",
   "source": {
     "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-    "line": 1810
+    "line": 1823
   },
   "processScope": "typescript-declared:external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
   "confidence": "router-declaration",
@@ -202157,27 +203198,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "typescript-router-ast/metrics",
   "requiredChecks": [
     {
-      "id": "api-9d1cd39a14038279/response-contract",
+      "id": "api-c2c69cacff748fb1/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9d1cd39a14038279/access-policy",
+      "id": "api-c2c69cacff748fb1/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9d1cd39a14038279/input-boundaries",
+      "id": "api-c2c69cacff748fb1/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9d1cd39a14038279/tenant-boundary",
+      "id": "api-c2c69cacff748fb1/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9d1cd39a14038279/dependency-failure",
+      "id": "api-c2c69cacff748fb1/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -202191,6 +203232,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "fixtureTemplate": "imported-api-loopback"
   },
   "testCandidates": [
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/awareness-proxy-independence.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -205998,6 +207044,187 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
+## api-e8e4a036051eff3f
+
+```json
+{
+  "id": "api-e8e4a036051eff3f",
+  "method": "GET",
+  "path": "/capability",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "line": 255
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": false,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/capability",
+  "requiredChecks": [
+    {
+      "id": "api-e8e4a036051eff3f/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-e8e4a036051eff3f/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-e8e4a036051eff3f/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-e8e4a036051eff3f/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-e8e4a036051eff3f/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_capability_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": []
+}
+```
+
+## api-a1f340f59332d78e
+
+```json
+{
+  "id": "api-a1f340f59332d78e",
+  "method": "POST",
+  "path": "/predict",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "line": 262
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": false,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/predict",
+  "requiredChecks": [
+    {
+      "id": "api-a1f340f59332d78e/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-a1f340f59332d78e/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-a1f340f59332d78e/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-a1f340f59332d78e/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-a1f340f59332d78e/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-a1f340f59332d78e/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_predict_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": []
+}
+```
+
+## api-4f9324aca2b97b4b
+
+```json
+{
+  "id": "api-4f9324aca2b97b4b",
+  "method": "POST",
+  "path": "/insights",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+    "line": 266
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": false,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/insights",
+  "requiredChecks": [
+    {
+      "id": "api-4f9324aca2b97b4b/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4f9324aca2b97b4b/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4f9324aca2b97b4b/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4f9324aca2b97b4b/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4f9324aca2b97b4b/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-4f9324aca2b97b4b/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_insights_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": [
+    {
+      "path": "tests/unit/dashboardPageContracts.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
 ## api-9299cfd1c947a1a4
 
 ```json
@@ -207269,6 +208496,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/qs-security-contract.test.mjs",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -209757,16 +210989,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-05c4adcc2adaefbc
+## api-f4f2c43ec7227a01
 
 ```json
 {
-  "id": "api-05c4adcc2adaefbc",
+  "id": "api-f4f2c43ec7227a01",
   "method": "GET",
   "path": "/api/awareness/unified/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2596
+    "line": 2606
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -209775,27 +211007,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-05c4adcc2adaefbc/response-contract",
+      "id": "api-f4f2c43ec7227a01/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-05c4adcc2adaefbc/access-policy",
+      "id": "api-f4f2c43ec7227a01/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-05c4adcc2adaefbc/input-boundaries",
+      "id": "api-f4f2c43ec7227a01/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-05c4adcc2adaefbc/tenant-boundary",
+      "id": "api-f4f2c43ec7227a01/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-05c4adcc2adaefbc/dependency-failure",
+      "id": "api-f4f2c43ec7227a01/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -209818,16 +211050,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e54563205ebeb9e5
+## api-17b29744ad73ded1
 
 ```json
 {
-  "id": "api-e54563205ebeb9e5",
+  "id": "api-17b29744ad73ded1",
   "method": "GET",
   "path": "/api/training/live/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2609
+    "line": 2619
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -209836,27 +211068,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-e54563205ebeb9e5/response-contract",
+      "id": "api-17b29744ad73ded1/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e54563205ebeb9e5/access-policy",
+      "id": "api-17b29744ad73ded1/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e54563205ebeb9e5/input-boundaries",
+      "id": "api-17b29744ad73ded1/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e54563205ebeb9e5/tenant-boundary",
+      "id": "api-17b29744ad73ded1/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e54563205ebeb9e5/dependency-failure",
+      "id": "api-17b29744ad73ded1/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -209879,16 +211111,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fa8d0906fb69b2bd
+## api-14dac9094878bfc6
 
 ```json
 {
-  "id": "api-fa8d0906fb69b2bd",
+  "id": "api-14dac9094878bfc6",
   "method": "POST",
   "path": "/api/awareness/unified/context",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2620
+    "line": 2630
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -209897,32 +211129,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-fa8d0906fb69b2bd/response-contract",
+      "id": "api-14dac9094878bfc6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa8d0906fb69b2bd/access-policy",
+      "id": "api-14dac9094878bfc6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa8d0906fb69b2bd/input-boundaries",
+      "id": "api-14dac9094878bfc6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa8d0906fb69b2bd/tenant-boundary",
+      "id": "api-14dac9094878bfc6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa8d0906fb69b2bd/dependency-failure",
+      "id": "api-14dac9094878bfc6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fa8d0906fb69b2bd/mutation-durability",
+      "id": "api-14dac9094878bfc6/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -209970,21 +211202,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/maxcore-proxy-contract.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-3cac4241ceed71cb
+## api-2e7e8fc4fbbfec63
 
 ```json
 {
-  "id": "api-3cac4241ceed71cb",
+  "id": "api-2e7e8fc4fbbfec63",
   "method": "GET",
   "path": "/ready",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2635
+    "line": 2645
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -209993,32 +211230,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/ready",
   "requiredChecks": [
     {
-      "id": "api-3cac4241ceed71cb/response-contract",
+      "id": "api-2e7e8fc4fbbfec63/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cac4241ceed71cb/access-policy",
+      "id": "api-2e7e8fc4fbbfec63/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cac4241ceed71cb/input-boundaries",
+      "id": "api-2e7e8fc4fbbfec63/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cac4241ceed71cb/tenant-boundary",
+      "id": "api-2e7e8fc4fbbfec63/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cac4241ceed71cb/dependency-failure",
+      "id": "api-2e7e8fc4fbbfec63/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3cac4241ceed71cb/readiness-truth",
+      "id": "api-2e7e8fc4fbbfec63/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -210081,16 +211318,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4e08c9854a2d0522
+## api-559771087b405a4c
 
 ```json
 {
-  "id": "api-4e08c9854a2d0522",
+  "id": "api-559771087b405a4c",
   "method": "GET",
   "path": "/api/ready",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2636
+    "line": 2646
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210099,32 +211336,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/ready",
   "requiredChecks": [
     {
-      "id": "api-4e08c9854a2d0522/response-contract",
+      "id": "api-559771087b405a4c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4e08c9854a2d0522/access-policy",
+      "id": "api-559771087b405a4c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4e08c9854a2d0522/input-boundaries",
+      "id": "api-559771087b405a4c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4e08c9854a2d0522/tenant-boundary",
+      "id": "api-559771087b405a4c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4e08c9854a2d0522/dependency-failure",
+      "id": "api-559771087b405a4c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4e08c9854a2d0522/readiness-truth",
+      "id": "api-559771087b405a4c/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -210192,16 +211429,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7879fccbdf9d841b
+## api-57d794d7f01b6809
 
 ```json
 {
-  "id": "api-7879fccbdf9d841b",
+  "id": "api-57d794d7f01b6809",
   "method": "GET",
   "path": "/health",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2647
+    "line": 2657
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210210,32 +211447,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/health",
   "requiredChecks": [
     {
-      "id": "api-7879fccbdf9d841b/response-contract",
+      "id": "api-57d794d7f01b6809/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7879fccbdf9d841b/access-policy",
+      "id": "api-57d794d7f01b6809/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7879fccbdf9d841b/input-boundaries",
+      "id": "api-57d794d7f01b6809/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7879fccbdf9d841b/tenant-boundary",
+      "id": "api-57d794d7f01b6809/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7879fccbdf9d841b/dependency-failure",
+      "id": "api-57d794d7f01b6809/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7879fccbdf9d841b/readiness-truth",
+      "id": "api-57d794d7f01b6809/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -210305,6 +211542,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/qs-security-contract.test.mjs",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/testing/test_platform_plan.py",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
@@ -210328,16 +211570,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0a4911c5f5acfede
+## api-18cbb1cedba7cd14
 
 ```json
 {
-  "id": "api-0a4911c5f5acfede",
+  "id": "api-18cbb1cedba7cd14",
   "method": "GET",
   "path": "/api-keys",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2667
+    "line": 2677
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210346,27 +211588,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-0a4911c5f5acfede/response-contract",
+      "id": "api-18cbb1cedba7cd14/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0a4911c5f5acfede/access-policy",
+      "id": "api-18cbb1cedba7cd14/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0a4911c5f5acfede/input-boundaries",
+      "id": "api-18cbb1cedba7cd14/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0a4911c5f5acfede/tenant-boundary",
+      "id": "api-18cbb1cedba7cd14/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0a4911c5f5acfede/dependency-failure",
+      "id": "api-18cbb1cedba7cd14/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210389,16 +211631,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c40a00ed1b9056fa
+## api-98a5a83168c11578
 
 ```json
 {
-  "id": "api-c40a00ed1b9056fa",
+  "id": "api-98a5a83168c11578",
   "method": "POST",
   "path": "/api-keys",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2694
+    "line": 2704
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210407,32 +211649,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-c40a00ed1b9056fa/response-contract",
+      "id": "api-98a5a83168c11578/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c40a00ed1b9056fa/access-policy",
+      "id": "api-98a5a83168c11578/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c40a00ed1b9056fa/input-boundaries",
+      "id": "api-98a5a83168c11578/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c40a00ed1b9056fa/tenant-boundary",
+      "id": "api-98a5a83168c11578/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c40a00ed1b9056fa/dependency-failure",
+      "id": "api-98a5a83168c11578/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c40a00ed1b9056fa/mutation-durability",
+      "id": "api-98a5a83168c11578/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -210455,16 +211697,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-dbb1f25cad0efde0
+## api-7d82522ba4580119
 
 ```json
 {
-  "id": "api-dbb1f25cad0efde0",
+  "id": "api-7d82522ba4580119",
   "method": "DELETE",
   "path": "/api-keys/{key_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2729
+    "line": 2739
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210473,37 +211715,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-dbb1f25cad0efde0/response-contract",
+      "id": "api-7d82522ba4580119/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/access-policy",
+      "id": "api-7d82522ba4580119/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/input-boundaries",
+      "id": "api-7d82522ba4580119/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/tenant-boundary",
+      "id": "api-7d82522ba4580119/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/dependency-failure",
+      "id": "api-7d82522ba4580119/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/mutation-durability",
+      "id": "api-7d82522ba4580119/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-dbb1f25cad0efde0/deletion-durability",
+      "id": "api-7d82522ba4580119/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     }
@@ -210520,16 +211762,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-78aa5f8a170c40ea
+## api-30dbe811f44567b3
 
 ```json
 {
-  "id": "api-78aa5f8a170c40ea",
+  "id": "api-30dbe811f44567b3",
   "method": "POST",
   "path": "/api-keys/{key_id}/rotate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2746
+    "line": 2756
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210538,32 +211780,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/api-keys",
   "requiredChecks": [
     {
-      "id": "api-78aa5f8a170c40ea/response-contract",
+      "id": "api-30dbe811f44567b3/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-78aa5f8a170c40ea/access-policy",
+      "id": "api-30dbe811f44567b3/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-78aa5f8a170c40ea/input-boundaries",
+      "id": "api-30dbe811f44567b3/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-78aa5f8a170c40ea/tenant-boundary",
+      "id": "api-30dbe811f44567b3/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-78aa5f8a170c40ea/dependency-failure",
+      "id": "api-30dbe811f44567b3/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-78aa5f8a170c40ea/mutation-durability",
+      "id": "api-30dbe811f44567b3/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -210580,16 +211822,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2bbbb85e5d4cfc0f
+## api-4af03e2a8378ce2d
 
 ```json
 {
-  "id": "api-2bbbb85e5d4cfc0f",
+  "id": "api-4af03e2a8378ce2d",
   "method": "GET",
   "path": "/model/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2780
+    "line": 2790
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210598,27 +211840,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/model",
   "requiredChecks": [
     {
-      "id": "api-2bbbb85e5d4cfc0f/response-contract",
+      "id": "api-4af03e2a8378ce2d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2bbbb85e5d4cfc0f/access-policy",
+      "id": "api-4af03e2a8378ce2d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2bbbb85e5d4cfc0f/input-boundaries",
+      "id": "api-4af03e2a8378ce2d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2bbbb85e5d4cfc0f/tenant-boundary",
+      "id": "api-4af03e2a8378ce2d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2bbbb85e5d4cfc0f/dependency-failure",
+      "id": "api-4af03e2a8378ce2d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210651,16 +211893,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2e2cef14518ca564
+## api-93daffc9760125ed
 
 ```json
 {
-  "id": "api-2e2cef14518ca564",
+  "id": "api-93daffc9760125ed",
   "method": "GET",
   "path": "/gpu/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2807
+    "line": 2817
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210669,27 +211911,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-2e2cef14518ca564/response-contract",
+      "id": "api-93daffc9760125ed/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2cef14518ca564/access-policy",
+      "id": "api-93daffc9760125ed/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2cef14518ca564/input-boundaries",
+      "id": "api-93daffc9760125ed/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2cef14518ca564/tenant-boundary",
+      "id": "api-93daffc9760125ed/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2e2cef14518ca564/dependency-failure",
+      "id": "api-93daffc9760125ed/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210717,16 +211959,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c8914a77a7805a49
+## api-76cd63a411b78d2d
 
 ```json
 {
-  "id": "api-c8914a77a7805a49",
+  "id": "api-76cd63a411b78d2d",
   "method": "GET",
   "path": "/gpu/hyper/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2838
+    "line": 2848
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210735,27 +211977,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-c8914a77a7805a49/response-contract",
+      "id": "api-76cd63a411b78d2d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c8914a77a7805a49/access-policy",
+      "id": "api-76cd63a411b78d2d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c8914a77a7805a49/input-boundaries",
+      "id": "api-76cd63a411b78d2d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c8914a77a7805a49/tenant-boundary",
+      "id": "api-76cd63a411b78d2d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c8914a77a7805a49/dependency-failure",
+      "id": "api-76cd63a411b78d2d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210793,16 +212035,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e8e2769edb2e73e9
+## api-aaba3e563da4c8a1
 
 ```json
 {
-  "id": "api-e8e2769edb2e73e9",
+  "id": "api-aaba3e563da4c8a1",
   "method": "GET",
   "path": "/gpu/silicon/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2884
+    "line": 2894
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210811,27 +212053,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-e8e2769edb2e73e9/response-contract",
+      "id": "api-aaba3e563da4c8a1/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e8e2769edb2e73e9/access-policy",
+      "id": "api-aaba3e563da4c8a1/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e8e2769edb2e73e9/input-boundaries",
+      "id": "api-aaba3e563da4c8a1/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e8e2769edb2e73e9/tenant-boundary",
+      "id": "api-aaba3e563da4c8a1/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e8e2769edb2e73e9/dependency-failure",
+      "id": "api-aaba3e563da4c8a1/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210848,16 +212090,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ac1e2deb5bcf86bd
+## api-9073b198276b580e
 
 ```json
 {
-  "id": "api-ac1e2deb5bcf86bd",
+  "id": "api-9073b198276b580e",
   "method": "GET",
   "path": "/gpu/capabilities",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2913
+    "line": 2923
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210866,27 +212108,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-ac1e2deb5bcf86bd/response-contract",
+      "id": "api-9073b198276b580e/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ac1e2deb5bcf86bd/access-policy",
+      "id": "api-9073b198276b580e/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ac1e2deb5bcf86bd/input-boundaries",
+      "id": "api-9073b198276b580e/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ac1e2deb5bcf86bd/tenant-boundary",
+      "id": "api-9073b198276b580e/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ac1e2deb5bcf86bd/dependency-failure",
+      "id": "api-9073b198276b580e/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210909,16 +212151,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-27ffddcbaba311f6
+## api-313b382aed53f3d2
 
 ```json
 {
-  "id": "api-27ffddcbaba311f6",
+  "id": "api-313b382aed53f3d2",
   "method": "GET",
   "path": "/training/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2980
+    "line": 2990
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210927,27 +212169,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-27ffddcbaba311f6/response-contract",
+      "id": "api-313b382aed53f3d2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27ffddcbaba311f6/access-policy",
+      "id": "api-313b382aed53f3d2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27ffddcbaba311f6/input-boundaries",
+      "id": "api-313b382aed53f3d2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27ffddcbaba311f6/tenant-boundary",
+      "id": "api-313b382aed53f3d2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-27ffddcbaba311f6/dependency-failure",
+      "id": "api-313b382aed53f3d2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -210975,16 +212217,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a71fb38291c3848b
+## api-98907627517329fd
 
 ```json
 {
-  "id": "api-a71fb38291c3848b",
+  "id": "api-98907627517329fd",
   "method": "POST",
   "path": "/training/start",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 2996
+    "line": 3006
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -210993,32 +212235,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-a71fb38291c3848b/response-contract",
+      "id": "api-98907627517329fd/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71fb38291c3848b/access-policy",
+      "id": "api-98907627517329fd/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71fb38291c3848b/input-boundaries",
+      "id": "api-98907627517329fd/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71fb38291c3848b/tenant-boundary",
+      "id": "api-98907627517329fd/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71fb38291c3848b/dependency-failure",
+      "id": "api-98907627517329fd/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71fb38291c3848b/mutation-durability",
+      "id": "api-98907627517329fd/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211035,16 +212277,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ea50260bddb51f0f
+## api-98dec768d140e6ad
 
 ```json
 {
-  "id": "api-ea50260bddb51f0f",
+  "id": "api-98dec768d140e6ad",
   "method": "POST",
   "path": "/admin/train-bpe-scaleup",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3128
+    "line": 3138
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211053,32 +212295,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/admin",
   "requiredChecks": [
     {
-      "id": "api-ea50260bddb51f0f/response-contract",
+      "id": "api-98dec768d140e6ad/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea50260bddb51f0f/access-policy",
+      "id": "api-98dec768d140e6ad/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea50260bddb51f0f/input-boundaries",
+      "id": "api-98dec768d140e6ad/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea50260bddb51f0f/tenant-boundary",
+      "id": "api-98dec768d140e6ad/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea50260bddb51f0f/dependency-failure",
+      "id": "api-98dec768d140e6ad/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea50260bddb51f0f/mutation-durability",
+      "id": "api-98dec768d140e6ad/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211101,16 +212343,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e7ace9df41301b69
+## api-803f98e8fd413d2f
 
 ```json
 {
-  "id": "api-e7ace9df41301b69",
+  "id": "api-803f98e8fd413d2f",
   "method": "POST",
   "path": "/admin/train-hyper-scaleup",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3324
+    "line": 3334
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211119,32 +212361,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/admin",
   "requiredChecks": [
     {
-      "id": "api-e7ace9df41301b69/response-contract",
+      "id": "api-803f98e8fd413d2f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ace9df41301b69/access-policy",
+      "id": "api-803f98e8fd413d2f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ace9df41301b69/input-boundaries",
+      "id": "api-803f98e8fd413d2f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ace9df41301b69/tenant-boundary",
+      "id": "api-803f98e8fd413d2f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ace9df41301b69/dependency-failure",
+      "id": "api-803f98e8fd413d2f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ace9df41301b69/mutation-durability",
+      "id": "api-803f98e8fd413d2f/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211167,16 +212409,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e4849205808f4d36
+## api-122960aa1d079da8
 
 ```json
 {
-  "id": "api-e4849205808f4d36",
+  "id": "api-122960aa1d079da8",
   "method": "POST",
   "path": "/api/maxcore/pocket-multiply",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3353
+    "line": 3363
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211185,32 +212427,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/maxcore",
   "requiredChecks": [
     {
-      "id": "api-e4849205808f4d36/response-contract",
+      "id": "api-122960aa1d079da8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e4849205808f4d36/access-policy",
+      "id": "api-122960aa1d079da8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e4849205808f4d36/input-boundaries",
+      "id": "api-122960aa1d079da8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e4849205808f4d36/tenant-boundary",
+      "id": "api-122960aa1d079da8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e4849205808f4d36/dependency-failure",
+      "id": "api-122960aa1d079da8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e4849205808f4d36/mutation-durability",
+      "id": "api-122960aa1d079da8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211243,16 +212485,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c137de581b47bdd3
+## api-1f27f1804336ce0c
 
 ```json
 {
-  "id": "api-c137de581b47bdd3",
+  "id": "api-1f27f1804336ce0c",
   "method": "GET",
   "path": "/api/gpu/gen-cache/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3394
+    "line": 3404
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211261,27 +212503,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-c137de581b47bdd3/response-contract",
+      "id": "api-1f27f1804336ce0c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c137de581b47bdd3/access-policy",
+      "id": "api-1f27f1804336ce0c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c137de581b47bdd3/input-boundaries",
+      "id": "api-1f27f1804336ce0c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c137de581b47bdd3/tenant-boundary",
+      "id": "api-1f27f1804336ce0c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c137de581b47bdd3/dependency-failure",
+      "id": "api-1f27f1804336ce0c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211298,68 +212540,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-60115f8f7f65878c
+## api-5d2a02f49fbdd313
 
 ```json
 {
-  "id": "api-60115f8f7f65878c",
+  "id": "api-5d2a02f49fbdd313",
   "method": "GET",
   "path": "/api/gpu/replica-pool/stats",
-  "source": {
-    "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3405
-  },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": true,
-  "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/gpu",
-  "requiredChecks": [
-    {
-      "id": "api-60115f8f7f65878c/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-60115f8f7f65878c/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-60115f8f7f65878c/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-60115f8f7f65878c/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-60115f8f7f65878c/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_gpu_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_gpu_acceptance.py",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "python-loopback-router"
-  },
-  "testCandidates": []
-}
-```
-
-## api-a368ff1b4d98bef9
-
-```json
-{
-  "id": "api-a368ff1b4d98bef9",
-  "method": "POST",
-  "path": "/api/gpu/replica-pool/grow",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
     "line": 3415
@@ -211371,32 +212558,87 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-a368ff1b4d98bef9/response-contract",
+      "id": "api-5d2a02f49fbdd313/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a368ff1b4d98bef9/access-policy",
+      "id": "api-5d2a02f49fbdd313/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a368ff1b4d98bef9/input-boundaries",
+      "id": "api-5d2a02f49fbdd313/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a368ff1b4d98bef9/tenant-boundary",
+      "id": "api-5d2a02f49fbdd313/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a368ff1b4d98bef9/dependency-failure",
+      "id": "api-5d2a02f49fbdd313/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_gpu_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_gpu_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": []
+}
+```
+
+## api-996806ef59af63ab
+
+```json
+{
+  "id": "api-996806ef59af63ab",
+  "method": "POST",
+  "path": "/api/gpu/replica-pool/grow",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 3425
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": true,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/gpu",
+  "requiredChecks": [
+    {
+      "id": "api-996806ef59af63ab/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-996806ef59af63ab/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-996806ef59af63ab/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-996806ef59af63ab/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-996806ef59af63ab/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a368ff1b4d98bef9/mutation-durability",
+      "id": "api-996806ef59af63ab/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211413,16 +212655,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7c5613985473336f
+## api-a4a3279f52ab5103
 
 ```json
 {
-  "id": "api-7c5613985473336f",
+  "id": "api-a4a3279f52ab5103",
   "method": "GET",
   "path": "/api/gpu/prefix-kv/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3424
+    "line": 3434
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211431,27 +212673,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-7c5613985473336f/response-contract",
+      "id": "api-a4a3279f52ab5103/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7c5613985473336f/access-policy",
+      "id": "api-a4a3279f52ab5103/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7c5613985473336f/input-boundaries",
+      "id": "api-a4a3279f52ab5103/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7c5613985473336f/tenant-boundary",
+      "id": "api-a4a3279f52ab5103/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7c5613985473336f/dependency-failure",
+      "id": "api-a4a3279f52ab5103/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211468,16 +212710,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-04fd2bbff9381b5b
+## api-5cb3985f601d2a48
 
 ```json
 {
-  "id": "api-04fd2bbff9381b5b",
+  "id": "api-5cb3985f601d2a48",
   "method": "GET",
   "path": "/api/gpu/digest-cache/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3435
+    "line": 3445
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211486,27 +212728,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/gpu",
   "requiredChecks": [
     {
-      "id": "api-04fd2bbff9381b5b/response-contract",
+      "id": "api-5cb3985f601d2a48/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-04fd2bbff9381b5b/access-policy",
+      "id": "api-5cb3985f601d2a48/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-04fd2bbff9381b5b/input-boundaries",
+      "id": "api-5cb3985f601d2a48/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-04fd2bbff9381b5b/tenant-boundary",
+      "id": "api-5cb3985f601d2a48/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-04fd2bbff9381b5b/dependency-failure",
+      "id": "api-5cb3985f601d2a48/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211523,16 +212765,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9ceeeee824cdf43f
+## api-0feff0bc9710c4aa
 
 ```json
 {
-  "id": "api-9ceeeee824cdf43f",
+  "id": "api-0feff0bc9710c4aa",
   "method": "GET",
   "path": "/api/maxcore/pocket-accelerator/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3446
+    "line": 3456
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211541,27 +212783,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/maxcore",
   "requiredChecks": [
     {
-      "id": "api-9ceeeee824cdf43f/response-contract",
+      "id": "api-0feff0bc9710c4aa/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceeeee824cdf43f/access-policy",
+      "id": "api-0feff0bc9710c4aa/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceeeee824cdf43f/input-boundaries",
+      "id": "api-0feff0bc9710c4aa/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceeeee824cdf43f/tenant-boundary",
+      "id": "api-0feff0bc9710c4aa/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9ceeeee824cdf43f/dependency-failure",
+      "id": "api-0feff0bc9710c4aa/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211589,16 +212831,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6992815d8fa1f7d6
+## api-7274c3fe768e4a2f
 
 ```json
 {
-  "id": "api-6992815d8fa1f7d6",
+  "id": "api-7274c3fe768e4a2f",
   "method": "POST",
   "path": "/api/awareness/quality/harvest",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3457
+    "line": 3467
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211607,32 +212849,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-6992815d8fa1f7d6/response-contract",
+      "id": "api-7274c3fe768e4a2f/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6992815d8fa1f7d6/access-policy",
+      "id": "api-7274c3fe768e4a2f/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6992815d8fa1f7d6/input-boundaries",
+      "id": "api-7274c3fe768e4a2f/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6992815d8fa1f7d6/tenant-boundary",
+      "id": "api-7274c3fe768e4a2f/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6992815d8fa1f7d6/dependency-failure",
+      "id": "api-7274c3fe768e4a2f/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6992815d8fa1f7d6/mutation-durability",
+      "id": "api-7274c3fe768e4a2f/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211655,16 +212897,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4c77eb498ff0fcf8
+## api-c739ce7cdf4b21ef
 
 ```json
 {
-  "id": "api-4c77eb498ff0fcf8",
+  "id": "api-c739ce7cdf4b21ef",
   "method": "GET",
   "path": "/api/awareness/quality/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3471
+    "line": 3481
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211673,27 +212915,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/awareness",
   "requiredChecks": [
     {
-      "id": "api-4c77eb498ff0fcf8/response-contract",
+      "id": "api-c739ce7cdf4b21ef/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c77eb498ff0fcf8/access-policy",
+      "id": "api-c739ce7cdf4b21ef/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c77eb498ff0fcf8/input-boundaries",
+      "id": "api-c739ce7cdf4b21ef/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c77eb498ff0fcf8/tenant-boundary",
+      "id": "api-c739ce7cdf4b21ef/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4c77eb498ff0fcf8/dependency-failure",
+      "id": "api-c739ce7cdf4b21ef/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211721,16 +212963,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-34baa70710f7d2c1
+## api-4a3cf97565b9b8d7
 
 ```json
 {
-  "id": "api-34baa70710f7d2c1",
+  "id": "api-4a3cf97565b9b8d7",
   "method": "GET",
   "path": "/training/logs",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3658
+    "line": 3668
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211739,27 +212981,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-34baa70710f7d2c1/response-contract",
+      "id": "api-4a3cf97565b9b8d7/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34baa70710f7d2c1/access-policy",
+      "id": "api-4a3cf97565b9b8d7/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34baa70710f7d2c1/input-boundaries",
+      "id": "api-4a3cf97565b9b8d7/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34baa70710f7d2c1/tenant-boundary",
+      "id": "api-4a3cf97565b9b8d7/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34baa70710f7d2c1/dependency-failure",
+      "id": "api-4a3cf97565b9b8d7/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211782,16 +213024,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-500da431f1cb3faf
+## api-c1c1d4373d893e1d
 
 ```json
 {
-  "id": "api-500da431f1cb3faf",
+  "id": "api-c1c1d4373d893e1d",
   "method": "POST",
   "path": "/training/stop",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3686
+    "line": 3696
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211800,32 +213042,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-500da431f1cb3faf/response-contract",
+      "id": "api-c1c1d4373d893e1d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-500da431f1cb3faf/access-policy",
+      "id": "api-c1c1d4373d893e1d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-500da431f1cb3faf/input-boundaries",
+      "id": "api-c1c1d4373d893e1d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-500da431f1cb3faf/tenant-boundary",
+      "id": "api-c1c1d4373d893e1d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-500da431f1cb3faf/dependency-failure",
+      "id": "api-c1c1d4373d893e1d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-500da431f1cb3faf/mutation-durability",
+      "id": "api-c1c1d4373d893e1d/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211842,16 +213084,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fb6a69b70c52fd6a
+## api-50c88fc7af1e5874
 
 ```json
 {
-  "id": "api-fb6a69b70c52fd6a",
+  "id": "api-50c88fc7af1e5874",
   "method": "GET",
   "path": "/training/datasets",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3752
+    "line": 3762
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211860,27 +213102,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-fb6a69b70c52fd6a/response-contract",
+      "id": "api-50c88fc7af1e5874/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb6a69b70c52fd6a/access-policy",
+      "id": "api-50c88fc7af1e5874/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb6a69b70c52fd6a/input-boundaries",
+      "id": "api-50c88fc7af1e5874/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb6a69b70c52fd6a/tenant-boundary",
+      "id": "api-50c88fc7af1e5874/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb6a69b70c52fd6a/dependency-failure",
+      "id": "api-50c88fc7af1e5874/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -211903,16 +213145,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6a33825c1c06dbef
+## api-5c604171de6b2176
 
 ```json
 {
-  "id": "api-6a33825c1c06dbef",
+  "id": "api-5c604171de6b2176",
   "method": "POST",
   "path": "/training/schedule",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3778
+    "line": 3788
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211921,32 +213163,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-6a33825c1c06dbef/response-contract",
+      "id": "api-5c604171de6b2176/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a33825c1c06dbef/access-policy",
+      "id": "api-5c604171de6b2176/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a33825c1c06dbef/input-boundaries",
+      "id": "api-5c604171de6b2176/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a33825c1c06dbef/tenant-boundary",
+      "id": "api-5c604171de6b2176/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a33825c1c06dbef/dependency-failure",
+      "id": "api-5c604171de6b2176/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6a33825c1c06dbef/mutation-durability",
+      "id": "api-5c604171de6b2176/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -211963,16 +213205,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-13c9226742fad6fc
+## api-cbcaee67203a5cad
 
 ```json
 {
-  "id": "api-13c9226742fad6fc",
+  "id": "api-cbcaee67203a5cad",
   "method": "GET",
   "path": "/training/continuous/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3928
+    "line": 3938
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -211981,27 +213223,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-13c9226742fad6fc/response-contract",
+      "id": "api-cbcaee67203a5cad/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-13c9226742fad6fc/access-policy",
+      "id": "api-cbcaee67203a5cad/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-13c9226742fad6fc/input-boundaries",
+      "id": "api-cbcaee67203a5cad/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-13c9226742fad6fc/tenant-boundary",
+      "id": "api-cbcaee67203a5cad/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-13c9226742fad6fc/dependency-failure",
+      "id": "api-cbcaee67203a5cad/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212024,16 +213266,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c591eb066237eebb
+## api-ce35b6e6c87b5b02
 
 ```json
 {
-  "id": "api-c591eb066237eebb",
+  "id": "api-ce35b6e6c87b5b02",
   "method": "POST",
   "path": "/training/continuous/start",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3937
+    "line": 3947
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212042,32 +213284,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-c591eb066237eebb/response-contract",
+      "id": "api-ce35b6e6c87b5b02/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c591eb066237eebb/access-policy",
+      "id": "api-ce35b6e6c87b5b02/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c591eb066237eebb/input-boundaries",
+      "id": "api-ce35b6e6c87b5b02/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c591eb066237eebb/tenant-boundary",
+      "id": "api-ce35b6e6c87b5b02/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c591eb066237eebb/dependency-failure",
+      "id": "api-ce35b6e6c87b5b02/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c591eb066237eebb/mutation-durability",
+      "id": "api-ce35b6e6c87b5b02/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -212084,16 +213326,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d0ca0cf6ac05ec99
+## api-46c51800929ac164
 
 ```json
 {
-  "id": "api-d0ca0cf6ac05ec99",
+  "id": "api-46c51800929ac164",
   "method": "POST",
   "path": "/training/continuous/stop",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3955
+    "line": 3965
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212102,32 +213344,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-d0ca0cf6ac05ec99/response-contract",
+      "id": "api-46c51800929ac164/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d0ca0cf6ac05ec99/access-policy",
+      "id": "api-46c51800929ac164/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d0ca0cf6ac05ec99/input-boundaries",
+      "id": "api-46c51800929ac164/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d0ca0cf6ac05ec99/tenant-boundary",
+      "id": "api-46c51800929ac164/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d0ca0cf6ac05ec99/dependency-failure",
+      "id": "api-46c51800929ac164/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d0ca0cf6ac05ec99/mutation-durability",
+      "id": "api-46c51800929ac164/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -212144,16 +213386,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-949043ba39b632a6
+## api-123a29f94f48949d
 
 ```json
 {
-  "id": "api-949043ba39b632a6",
+  "id": "api-123a29f94f48949d",
   "method": "GET",
   "path": "/training/continuous/history",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3967
+    "line": 3977
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212162,27 +213404,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-949043ba39b632a6/response-contract",
+      "id": "api-123a29f94f48949d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-949043ba39b632a6/access-policy",
+      "id": "api-123a29f94f48949d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-949043ba39b632a6/input-boundaries",
+      "id": "api-123a29f94f48949d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-949043ba39b632a6/tenant-boundary",
+      "id": "api-123a29f94f48949d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-949043ba39b632a6/dependency-failure",
+      "id": "api-123a29f94f48949d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212205,16 +213447,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-39c9ad978aaa3aa1
+## api-583dcc274156c208
 
 ```json
 {
-  "id": "api-39c9ad978aaa3aa1",
+  "id": "api-583dcc274156c208",
   "method": "GET",
   "path": "/training/puller/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3975
+    "line": 3985
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212223,27 +213465,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-39c9ad978aaa3aa1/response-contract",
+      "id": "api-583dcc274156c208/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39c9ad978aaa3aa1/access-policy",
+      "id": "api-583dcc274156c208/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39c9ad978aaa3aa1/input-boundaries",
+      "id": "api-583dcc274156c208/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39c9ad978aaa3aa1/tenant-boundary",
+      "id": "api-583dcc274156c208/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39c9ad978aaa3aa1/dependency-failure",
+      "id": "api-583dcc274156c208/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212266,16 +213508,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-80805521c5f726d8
+## api-7ccfe967f5a40556
 
 ```json
 {
-  "id": "api-80805521c5f726d8",
+  "id": "api-7ccfe967f5a40556",
   "method": "GET",
   "path": "/training/puller/sources",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 3988
+    "line": 3998
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212284,27 +213526,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-80805521c5f726d8/response-contract",
+      "id": "api-7ccfe967f5a40556/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-80805521c5f726d8/access-policy",
+      "id": "api-7ccfe967f5a40556/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-80805521c5f726d8/input-boundaries",
+      "id": "api-7ccfe967f5a40556/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-80805521c5f726d8/tenant-boundary",
+      "id": "api-7ccfe967f5a40556/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-80805521c5f726d8/dependency-failure",
+      "id": "api-7ccfe967f5a40556/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212327,79 +213569,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7740aa890fe751e3
+## api-ba3000d1b104d650
 
 ```json
 {
-  "id": "api-7740aa890fe751e3",
+  "id": "api-ba3000d1b104d650",
   "method": "POST",
   "path": "/training/puller/pull",
-  "source": {
-    "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4001
-  },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": true,
-  "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/training",
-  "requiredChecks": [
-    {
-      "id": "api-7740aa890fe751e3/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-7740aa890fe751e3/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-7740aa890fe751e3/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-7740aa890fe751e3/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-7740aa890fe751e3/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-7740aa890fe751e3/mutation-durability",
-      "template": "mutation-durability",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_training_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_training_acceptance.py",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "python-loopback-router"
-  },
-  "testCandidates": [
-    {
-      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
-      "association": "exact-route-literal-only",
-      "executionStatus": "blocked_or_skipped"
-    }
-  ]
-}
-```
-
-## api-1130b9f51fe77d57
-
-```json
-{
-  "id": "api-1130b9f51fe77d57",
-  "method": "POST",
-  "path": "/training/puller/start",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
     "line": 4011
@@ -212411,32 +213587,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-1130b9f51fe77d57/response-contract",
+      "id": "api-ba3000d1b104d650/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1130b9f51fe77d57/access-policy",
+      "id": "api-ba3000d1b104d650/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1130b9f51fe77d57/input-boundaries",
+      "id": "api-ba3000d1b104d650/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1130b9f51fe77d57/tenant-boundary",
+      "id": "api-ba3000d1b104d650/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1130b9f51fe77d57/dependency-failure",
+      "id": "api-ba3000d1b104d650/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1130b9f51fe77d57/mutation-durability",
+      "id": "api-ba3000d1b104d650/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -212449,20 +213625,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "python-loopback-router"
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "blocked_or_skipped"
+    }
+  ]
 }
 ```
 
-## api-101ad1eeea3b0010
+## api-b4b4796554ce19e4
 
 ```json
 {
-  "id": "api-101ad1eeea3b0010",
+  "id": "api-b4b4796554ce19e4",
   "method": "POST",
-  "path": "/training/puller/stop",
+  "path": "/training/puller/start",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4020
+    "line": 4021
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212471,32 +213653,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-101ad1eeea3b0010/response-contract",
+      "id": "api-b4b4796554ce19e4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-101ad1eeea3b0010/access-policy",
+      "id": "api-b4b4796554ce19e4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-101ad1eeea3b0010/input-boundaries",
+      "id": "api-b4b4796554ce19e4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-101ad1eeea3b0010/tenant-boundary",
+      "id": "api-b4b4796554ce19e4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-101ad1eeea3b0010/dependency-failure",
+      "id": "api-b4b4796554ce19e4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-101ad1eeea3b0010/mutation-durability",
+      "id": "api-b4b4796554ce19e4/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -212513,16 +213695,76 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7888edcd40a8f524
+## api-2c86ec5130f1ea50
 
 ```json
 {
-  "id": "api-7888edcd40a8f524",
+  "id": "api-2c86ec5130f1ea50",
+  "method": "POST",
+  "path": "/training/puller/stop",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 4030
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": true,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/training",
+  "requiredChecks": [
+    {
+      "id": "api-2c86ec5130f1ea50/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-2c86ec5130f1ea50/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-2c86ec5130f1ea50/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-2c86ec5130f1ea50/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-2c86ec5130f1ea50/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-2c86ec5130f1ea50/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_training_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_training_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": []
+}
+```
+
+## api-6c3ff3ebfa6b27d2
+
+```json
+{
+  "id": "api-6c3ff3ebfa6b27d2",
   "method": "GET",
   "path": "/watchdog/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4032
+    "line": 4042
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212531,27 +213773,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/watchdog",
   "requiredChecks": [
     {
-      "id": "api-7888edcd40a8f524/response-contract",
+      "id": "api-6c3ff3ebfa6b27d2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7888edcd40a8f524/access-policy",
+      "id": "api-6c3ff3ebfa6b27d2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7888edcd40a8f524/input-boundaries",
+      "id": "api-6c3ff3ebfa6b27d2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7888edcd40a8f524/tenant-boundary",
+      "id": "api-6c3ff3ebfa6b27d2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7888edcd40a8f524/dependency-failure",
+      "id": "api-6c3ff3ebfa6b27d2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212574,74 +213816,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-f2cd63cccde33f84
+## api-da2e724a8e0d168c
 
 ```json
 {
-  "id": "api-f2cd63cccde33f84",
+  "id": "api-da2e724a8e0d168c",
   "method": "GET",
   "path": "/watchdog/log",
-  "source": {
-    "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4041
-  },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": true,
-  "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/watchdog",
-  "requiredChecks": [
-    {
-      "id": "api-f2cd63cccde33f84/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-f2cd63cccde33f84/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-f2cd63cccde33f84/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-f2cd63cccde33f84/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-f2cd63cccde33f84/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_watchdog_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_watchdog_acceptance.py",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "python-loopback-router"
-  },
-  "testCandidates": [
-    {
-      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
-      "association": "exact-route-literal-only",
-      "executionStatus": "blocked_or_skipped"
-    }
-  ]
-}
-```
-
-## api-23197b69c796df15
-
-```json
-{
-  "id": "api-23197b69c796df15",
-  "method": "POST",
-  "path": "/watchdog/reset",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
     "line": 4051
@@ -212653,32 +213834,93 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/watchdog",
   "requiredChecks": [
     {
-      "id": "api-23197b69c796df15/response-contract",
+      "id": "api-da2e724a8e0d168c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-23197b69c796df15/access-policy",
+      "id": "api-da2e724a8e0d168c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-23197b69c796df15/input-boundaries",
+      "id": "api-da2e724a8e0d168c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-23197b69c796df15/tenant-boundary",
+      "id": "api-da2e724a8e0d168c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-23197b69c796df15/dependency-failure",
+      "id": "api-da2e724a8e0d168c/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_watchdog_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_watchdog_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": [
+    {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "blocked_or_skipped"
+    }
+  ]
+}
+```
+
+## api-1457e1c1ea6b5460
+
+```json
+{
+  "id": "api-1457e1c1ea6b5460",
+  "method": "POST",
+  "path": "/watchdog/reset",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 4061
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": true,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/watchdog",
+  "requiredChecks": [
+    {
+      "id": "api-1457e1c1ea6b5460/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1457e1c1ea6b5460/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1457e1c1ea6b5460/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1457e1c1ea6b5460/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-1457e1c1ea6b5460/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-23197b69c796df15/mutation-durability",
+      "id": "api-1457e1c1ea6b5460/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -212701,16 +213943,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-95fbc3e1badc3c6f
+## api-e195feca3d786e65
 
 ```json
 {
-  "id": "api-95fbc3e1badc3c6f",
+  "id": "api-e195feca3d786e65",
   "method": "GET",
   "path": "/coverage/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4063
+    "line": 4073
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212719,27 +213961,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/coverage",
   "requiredChecks": [
     {
-      "id": "api-95fbc3e1badc3c6f/response-contract",
+      "id": "api-e195feca3d786e65/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-95fbc3e1badc3c6f/access-policy",
+      "id": "api-e195feca3d786e65/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-95fbc3e1badc3c6f/input-boundaries",
+      "id": "api-e195feca3d786e65/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-95fbc3e1badc3c6f/tenant-boundary",
+      "id": "api-e195feca3d786e65/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-95fbc3e1badc3c6f/dependency-failure",
+      "id": "api-e195feca3d786e65/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212762,74 +214004,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-52e44e267645d908
+## api-09a26c7503e945ee
 
 ```json
 {
-  "id": "api-52e44e267645d908",
+  "id": "api-09a26c7503e945ee",
   "method": "GET",
   "path": "/coverage/log",
-  "source": {
-    "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4072
-  },
-  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
-  "confidence": "declared-only; mount prefix unverified",
-  "mountResolved": true,
-  "origin": "python-decorator-ast",
-  "domain": "python-decorator-ast/coverage",
-  "requiredChecks": [
-    {
-      "id": "api-52e44e267645d908/response-contract",
-      "template": "response-contract",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-52e44e267645d908/access-policy",
-      "template": "access-policy",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-52e44e267645d908/input-boundaries",
-      "template": "input-boundaries",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-52e44e267645d908/tenant-boundary",
-      "template": "tenant-boundary",
-      "status": "UNVERIFIED"
-    },
-    {
-      "id": "api-52e44e267645d908/dependency-failure",
-      "template": "dependency-failure",
-      "status": "UNVERIFIED"
-    }
-  ],
-  "status": "UNVERIFIED",
-  "addTest": {
-    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_coverage_acceptance.py",
-    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_coverage_acceptance.py",
-    "cwd": ".",
-    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
-    "fixtureTemplate": "python-loopback-router"
-  },
-  "testCandidates": [
-    {
-      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
-      "association": "exact-route-literal-only",
-      "executionStatus": "blocked_or_skipped"
-    }
-  ]
-}
-```
-
-## api-fb902b58265d883b
-
-```json
-{
-  "id": "api-fb902b58265d883b",
-  "method": "GET",
-  "path": "/coverage/report",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
     "line": 4082
@@ -212841,27 +214022,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/coverage",
   "requiredChecks": [
     {
-      "id": "api-fb902b58265d883b/response-contract",
+      "id": "api-09a26c7503e945ee/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb902b58265d883b/access-policy",
+      "id": "api-09a26c7503e945ee/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb902b58265d883b/input-boundaries",
+      "id": "api-09a26c7503e945ee/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb902b58265d883b/tenant-boundary",
+      "id": "api-09a26c7503e945ee/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fb902b58265d883b/dependency-failure",
+      "id": "api-09a26c7503e945ee/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212884,16 +214065,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c15a5729d12c407d
+## api-6f2dbb3bc6c17efa
 
 ```json
 {
-  "id": "api-c15a5729d12c407d",
+  "id": "api-6f2dbb3bc6c17efa",
   "method": "GET",
-  "path": "/coverage/ingestor",
+  "path": "/coverage/report",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4104
+    "line": 4092
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -212902,27 +214083,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/coverage",
   "requiredChecks": [
     {
-      "id": "api-c15a5729d12c407d/response-contract",
+      "id": "api-6f2dbb3bc6c17efa/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c15a5729d12c407d/access-policy",
+      "id": "api-6f2dbb3bc6c17efa/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c15a5729d12c407d/input-boundaries",
+      "id": "api-6f2dbb3bc6c17efa/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c15a5729d12c407d/tenant-boundary",
+      "id": "api-6f2dbb3bc6c17efa/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c15a5729d12c407d/dependency-failure",
+      "id": "api-6f2dbb3bc6c17efa/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -212945,13 +214126,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2f4596c81010c9c4
+## api-267241debdd05240
 
 ```json
 {
-  "id": "api-2f4596c81010c9c4",
-  "method": "POST",
-  "path": "/coverage/reset",
+  "id": "api-267241debdd05240",
+  "method": "GET",
+  "path": "/coverage/ingestor",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
     "line": 4114
@@ -212963,32 +214144,93 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/coverage",
   "requiredChecks": [
     {
-      "id": "api-2f4596c81010c9c4/response-contract",
+      "id": "api-267241debdd05240/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2f4596c81010c9c4/access-policy",
+      "id": "api-267241debdd05240/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2f4596c81010c9c4/input-boundaries",
+      "id": "api-267241debdd05240/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2f4596c81010c9c4/tenant-boundary",
+      "id": "api-267241debdd05240/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2f4596c81010c9c4/dependency-failure",
+      "id": "api-267241debdd05240/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "external/maxcore/artifacts/ai-training-server/tests/test_coverage_acceptance.py",
+    "command": "python3 scripts/testing/run-python-suites.py --file external/maxcore/artifacts/ai-training-server/tests/test_coverage_acceptance.py",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "python-loopback-router"
+  },
+  "testCandidates": [
+    {
+      "path": "external/maxcore/artifacts/ai-training-server/tests/test_all_endpoints.py",
+      "association": "exact-route-literal-only",
+      "executionStatus": "blocked_or_skipped"
+    }
+  ]
+}
+```
+
+## api-8493e260055fab13
+
+```json
+{
+  "id": "api-8493e260055fab13",
+  "method": "POST",
+  "path": "/coverage/reset",
+  "source": {
+    "file": "external/maxcore/artifacts/ai-training-server/server.py",
+    "line": 4124
+  },
+  "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
+  "confidence": "declared-only; mount prefix unverified",
+  "mountResolved": true,
+  "origin": "python-decorator-ast",
+  "domain": "python-decorator-ast/coverage",
+  "requiredChecks": [
+    {
+      "id": "api-8493e260055fab13/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-8493e260055fab13/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-8493e260055fab13/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-8493e260055fab13/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-8493e260055fab13/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2f4596c81010c9c4/mutation-durability",
+      "id": "api-8493e260055fab13/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -213011,16 +214253,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-50296fae89a72711
+## api-e1a5ae6ad3dc8b43
 
 ```json
 {
-  "id": "api-50296fae89a72711",
+  "id": "api-e1a5ae6ad3dc8b43",
   "method": "GET",
   "path": "/api/url-parser/content",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4279
+    "line": 4289
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213029,27 +214271,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/url-parser",
   "requiredChecks": [
     {
-      "id": "api-50296fae89a72711/response-contract",
+      "id": "api-e1a5ae6ad3dc8b43/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-50296fae89a72711/access-policy",
+      "id": "api-e1a5ae6ad3dc8b43/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-50296fae89a72711/input-boundaries",
+      "id": "api-e1a5ae6ad3dc8b43/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-50296fae89a72711/tenant-boundary",
+      "id": "api-e1a5ae6ad3dc8b43/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-50296fae89a72711/dependency-failure",
+      "id": "api-e1a5ae6ad3dc8b43/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213066,16 +214308,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-72cbdcbf0b5b0ab1
+## api-18febb0d3259e4f5
 
 ```json
 {
-  "id": "api-72cbdcbf0b5b0ab1",
+  "id": "api-18febb0d3259e4f5",
   "method": "GET",
   "path": "/api/url-parser/inspect",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4308
+    "line": 4318
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213084,27 +214326,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/url-parser",
   "requiredChecks": [
     {
-      "id": "api-72cbdcbf0b5b0ab1/response-contract",
+      "id": "api-18febb0d3259e4f5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72cbdcbf0b5b0ab1/access-policy",
+      "id": "api-18febb0d3259e4f5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72cbdcbf0b5b0ab1/input-boundaries",
+      "id": "api-18febb0d3259e4f5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72cbdcbf0b5b0ab1/tenant-boundary",
+      "id": "api-18febb0d3259e4f5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-72cbdcbf0b5b0ab1/dependency-failure",
+      "id": "api-18febb0d3259e4f5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213121,16 +214363,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-61467604c7c8bca1
+## api-1486f73f9cdbcf75
 
 ```json
 {
-  "id": "api-61467604c7c8bca1",
+  "id": "api-1486f73f9cdbcf75",
   "method": "GET",
   "path": "/api/generation/capabilities",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4583
+    "line": 4593
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213139,32 +214381,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generation",
   "requiredChecks": [
     {
-      "id": "api-61467604c7c8bca1/response-contract",
+      "id": "api-1486f73f9cdbcf75/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61467604c7c8bca1/access-policy",
+      "id": "api-1486f73f9cdbcf75/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61467604c7c8bca1/input-boundaries",
+      "id": "api-1486f73f9cdbcf75/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61467604c7c8bca1/tenant-boundary",
+      "id": "api-1486f73f9cdbcf75/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61467604c7c8bca1/dependency-failure",
+      "id": "api-1486f73f9cdbcf75/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-61467604c7c8bca1/artifact-integrity",
+      "id": "api-1486f73f9cdbcf75/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -213187,16 +214429,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-630908a8bcad77e9
+## api-93fcb7f4994c71b0
 
 ```json
 {
-  "id": "api-630908a8bcad77e9",
+  "id": "api-93fcb7f4994c71b0",
   "method": "POST",
   "path": "/content/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4592
+    "line": 4602
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213205,37 +214447,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/content",
   "requiredChecks": [
     {
-      "id": "api-630908a8bcad77e9/response-contract",
+      "id": "api-93fcb7f4994c71b0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/access-policy",
+      "id": "api-93fcb7f4994c71b0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/input-boundaries",
+      "id": "api-93fcb7f4994c71b0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/tenant-boundary",
+      "id": "api-93fcb7f4994c71b0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/dependency-failure",
+      "id": "api-93fcb7f4994c71b0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/mutation-durability",
+      "id": "api-93fcb7f4994c71b0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-630908a8bcad77e9/artifact-integrity",
+      "id": "api-93fcb7f4994c71b0/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -213283,16 +214525,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ae2fa09f1df4c67f
+## api-8058c50550dcf816
 
 ```json
 {
-  "id": "api-ae2fa09f1df4c67f",
+  "id": "api-8058c50550dcf816",
   "method": "GET",
   "path": "/boostsheets",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4680
+    "line": 4690
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213301,27 +214543,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/boostsheets",
   "requiredChecks": [
     {
-      "id": "api-ae2fa09f1df4c67f/response-contract",
+      "id": "api-8058c50550dcf816/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ae2fa09f1df4c67f/access-policy",
+      "id": "api-8058c50550dcf816/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ae2fa09f1df4c67f/input-boundaries",
+      "id": "api-8058c50550dcf816/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ae2fa09f1df4c67f/tenant-boundary",
+      "id": "api-8058c50550dcf816/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ae2fa09f1df4c67f/dependency-failure",
+      "id": "api-8058c50550dcf816/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213344,16 +214586,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-b6c5537e8d300fe5
+## api-44ebe42a184da0b2
 
 ```json
 {
-  "id": "api-b6c5537e8d300fe5",
+  "id": "api-44ebe42a184da0b2",
   "method": "GET",
   "path": "/dashboard/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4689
+    "line": 4699
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213362,27 +214604,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/dashboard",
   "requiredChecks": [
     {
-      "id": "api-b6c5537e8d300fe5/response-contract",
+      "id": "api-44ebe42a184da0b2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b6c5537e8d300fe5/access-policy",
+      "id": "api-44ebe42a184da0b2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b6c5537e8d300fe5/input-boundaries",
+      "id": "api-44ebe42a184da0b2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b6c5537e8d300fe5/tenant-boundary",
+      "id": "api-44ebe42a184da0b2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b6c5537e8d300fe5/dependency-failure",
+      "id": "api-44ebe42a184da0b2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213405,16 +214647,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a155bf493b38150c
+## api-3103d6a47efd0772
 
 ```json
 {
-  "id": "api-a155bf493b38150c",
+  "id": "api-3103d6a47efd0772",
   "method": "GET",
   "path": "/storage/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4759
+    "line": 4769
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213423,27 +214665,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-a155bf493b38150c/response-contract",
+      "id": "api-3103d6a47efd0772/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a155bf493b38150c/access-policy",
+      "id": "api-3103d6a47efd0772/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a155bf493b38150c/input-boundaries",
+      "id": "api-3103d6a47efd0772/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a155bf493b38150c/tenant-boundary",
+      "id": "api-3103d6a47efd0772/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a155bf493b38150c/dependency-failure",
+      "id": "api-3103d6a47efd0772/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213466,16 +214708,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-59f674fe39181a8e
+## api-641c973248c30640
 
 ```json
 {
-  "id": "api-59f674fe39181a8e",
+  "id": "api-641c973248c30640",
   "method": "POST",
   "path": "/storage/feedback",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4781
+    "line": 4791
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213484,32 +214726,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-59f674fe39181a8e/response-contract",
+      "id": "api-641c973248c30640/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-59f674fe39181a8e/access-policy",
+      "id": "api-641c973248c30640/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-59f674fe39181a8e/input-boundaries",
+      "id": "api-641c973248c30640/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-59f674fe39181a8e/tenant-boundary",
+      "id": "api-641c973248c30640/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-59f674fe39181a8e/dependency-failure",
+      "id": "api-641c973248c30640/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-59f674fe39181a8e/mutation-durability",
+      "id": "api-641c973248c30640/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -213532,16 +214774,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6895bb328032116e
+## api-e8c58e7fd9544973
 
 ```json
 {
-  "id": "api-6895bb328032116e",
+  "id": "api-e8c58e7fd9544973",
   "method": "GET",
   "path": "/storage/curriculum/{user_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4794
+    "line": 4804
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213550,27 +214792,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-6895bb328032116e/response-contract",
+      "id": "api-e8c58e7fd9544973/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6895bb328032116e/access-policy",
+      "id": "api-e8c58e7fd9544973/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6895bb328032116e/input-boundaries",
+      "id": "api-e8c58e7fd9544973/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6895bb328032116e/tenant-boundary",
+      "id": "api-e8c58e7fd9544973/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6895bb328032116e/dependency-failure",
+      "id": "api-e8c58e7fd9544973/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213587,16 +214829,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9056ef0debc4de77
+## api-ef6d965f5504d67b
 
 ```json
 {
-  "id": "api-9056ef0debc4de77",
+  "id": "api-ef6d965f5504d67b",
   "method": "GET",
   "path": "/storage/artist/{profile_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4833
+    "line": 4843
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213605,27 +214847,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-9056ef0debc4de77/response-contract",
+      "id": "api-ef6d965f5504d67b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9056ef0debc4de77/access-policy",
+      "id": "api-ef6d965f5504d67b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9056ef0debc4de77/input-boundaries",
+      "id": "api-ef6d965f5504d67b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9056ef0debc4de77/tenant-boundary",
+      "id": "api-ef6d965f5504d67b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9056ef0debc4de77/dependency-failure",
+      "id": "api-ef6d965f5504d67b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213642,16 +214884,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-90ff5d7497bc2234
+## api-08e03142191adc2d
 
 ```json
 {
-  "id": "api-90ff5d7497bc2234",
+  "id": "api-08e03142191adc2d",
   "method": "POST",
   "path": "/storage/artist/{profile_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4840
+    "line": 4850
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213660,32 +214902,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-90ff5d7497bc2234/response-contract",
+      "id": "api-08e03142191adc2d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-90ff5d7497bc2234/access-policy",
+      "id": "api-08e03142191adc2d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-90ff5d7497bc2234/input-boundaries",
+      "id": "api-08e03142191adc2d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-90ff5d7497bc2234/tenant-boundary",
+      "id": "api-08e03142191adc2d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-90ff5d7497bc2234/dependency-failure",
+      "id": "api-08e03142191adc2d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-90ff5d7497bc2234/mutation-durability",
+      "id": "api-08e03142191adc2d/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -213702,16 +214944,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a79767b51204c528
+## api-fbfcca71f348aa27
 
 ```json
 {
-  "id": "api-a79767b51204c528",
+  "id": "api-fbfcca71f348aa27",
   "method": "POST",
   "path": "/storage/artist/{profile_id}/releases",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4849
+    "line": 4859
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213720,32 +214962,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-a79767b51204c528/response-contract",
+      "id": "api-fbfcca71f348aa27/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a79767b51204c528/access-policy",
+      "id": "api-fbfcca71f348aa27/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a79767b51204c528/input-boundaries",
+      "id": "api-fbfcca71f348aa27/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a79767b51204c528/tenant-boundary",
+      "id": "api-fbfcca71f348aa27/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a79767b51204c528/dependency-failure",
+      "id": "api-fbfcca71f348aa27/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a79767b51204c528/mutation-durability",
+      "id": "api-fbfcca71f348aa27/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -213762,16 +215004,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-42177511cd56cf49
+## api-318faec9d8917fd0
 
 ```json
 {
-  "id": "api-42177511cd56cf49",
+  "id": "api-318faec9d8917fd0",
   "method": "GET",
   "path": "/storage/datasets",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4858
+    "line": 4868
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213780,27 +215022,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-42177511cd56cf49/response-contract",
+      "id": "api-318faec9d8917fd0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42177511cd56cf49/access-policy",
+      "id": "api-318faec9d8917fd0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42177511cd56cf49/input-boundaries",
+      "id": "api-318faec9d8917fd0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42177511cd56cf49/tenant-boundary",
+      "id": "api-318faec9d8917fd0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42177511cd56cf49/dependency-failure",
+      "id": "api-318faec9d8917fd0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -213823,16 +215065,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fd2adf1ae542d03d
+## api-82305a00e023d573
 
 ```json
 {
-  "id": "api-fd2adf1ae542d03d",
+  "id": "api-82305a00e023d573",
   "method": "POST",
   "path": "/storage/datasets/register",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4864
+    "line": 4874
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213841,32 +215083,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-fd2adf1ae542d03d/response-contract",
+      "id": "api-82305a00e023d573/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd2adf1ae542d03d/access-policy",
+      "id": "api-82305a00e023d573/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd2adf1ae542d03d/input-boundaries",
+      "id": "api-82305a00e023d573/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd2adf1ae542d03d/tenant-boundary",
+      "id": "api-82305a00e023d573/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd2adf1ae542d03d/dependency-failure",
+      "id": "api-82305a00e023d573/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fd2adf1ae542d03d/mutation-durability",
+      "id": "api-82305a00e023d573/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -213889,16 +215131,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-899af8a9c526976d
+## api-94de44fe429cdaa5
 
 ```json
 {
-  "id": "api-899af8a9c526976d",
+  "id": "api-94de44fe429cdaa5",
   "method": "GET",
   "path": "/storage/datasets/audio/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4883
+    "line": 4893
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213907,32 +215149,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-899af8a9c526976d/response-contract",
+      "id": "api-94de44fe429cdaa5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-899af8a9c526976d/access-policy",
+      "id": "api-94de44fe429cdaa5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-899af8a9c526976d/input-boundaries",
+      "id": "api-94de44fe429cdaa5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-899af8a9c526976d/tenant-boundary",
+      "id": "api-94de44fe429cdaa5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-899af8a9c526976d/dependency-failure",
+      "id": "api-94de44fe429cdaa5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-899af8a9c526976d/artifact-integrity",
+      "id": "api-94de44fe429cdaa5/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -213955,16 +215197,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d1021db584decf66
+## api-d83d0fccd1e032b0
 
 ```json
 {
-  "id": "api-d1021db584decf66",
+  "id": "api-d83d0fccd1e032b0",
   "method": "POST",
   "path": "/storage/datasets/audio/seed",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4932
+    "line": 4942
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -213973,37 +215215,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-d1021db584decf66/response-contract",
+      "id": "api-d83d0fccd1e032b0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/access-policy",
+      "id": "api-d83d0fccd1e032b0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/input-boundaries",
+      "id": "api-d83d0fccd1e032b0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/tenant-boundary",
+      "id": "api-d83d0fccd1e032b0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/dependency-failure",
+      "id": "api-d83d0fccd1e032b0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/mutation-durability",
+      "id": "api-d83d0fccd1e032b0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d1021db584decf66/artifact-integrity",
+      "id": "api-d83d0fccd1e032b0/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214020,16 +215262,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3f0f7e0e72cd8542
+## api-f3266cfc5a5aacf8
 
 ```json
 {
-  "id": "api-3f0f7e0e72cd8542",
+  "id": "api-f3266cfc5a5aacf8",
   "method": "POST",
   "path": "/storage/checkpoint/save",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4984
+    "line": 4994
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214038,32 +215280,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-3f0f7e0e72cd8542/response-contract",
+      "id": "api-f3266cfc5a5aacf8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3f0f7e0e72cd8542/access-policy",
+      "id": "api-f3266cfc5a5aacf8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3f0f7e0e72cd8542/input-boundaries",
+      "id": "api-f3266cfc5a5aacf8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3f0f7e0e72cd8542/tenant-boundary",
+      "id": "api-f3266cfc5a5aacf8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3f0f7e0e72cd8542/dependency-failure",
+      "id": "api-f3266cfc5a5aacf8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3f0f7e0e72cd8542/mutation-durability",
+      "id": "api-f3266cfc5a5aacf8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -214080,16 +215322,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-42753a14e1cdf0e6
+## api-f263d1c05ee3bab8
 
 ```json
 {
-  "id": "api-42753a14e1cdf0e6",
+  "id": "api-f263d1c05ee3bab8",
   "method": "GET",
   "path": "/storage/checkpoint/{model_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 4996
+    "line": 5006
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214098,27 +215340,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-42753a14e1cdf0e6/response-contract",
+      "id": "api-f263d1c05ee3bab8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42753a14e1cdf0e6/access-policy",
+      "id": "api-f263d1c05ee3bab8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42753a14e1cdf0e6/input-boundaries",
+      "id": "api-f263d1c05ee3bab8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42753a14e1cdf0e6/tenant-boundary",
+      "id": "api-f263d1c05ee3bab8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-42753a14e1cdf0e6/dependency-failure",
+      "id": "api-f263d1c05ee3bab8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -214135,16 +215377,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-990cc405ab6bc8b2
+## api-59d97ab251e7fbd8
 
 ```json
 {
-  "id": "api-990cc405ab6bc8b2",
+  "id": "api-59d97ab251e7fbd8",
   "method": "GET",
   "path": "/storage/checkpoints",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5006
+    "line": 5016
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214153,27 +215395,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-990cc405ab6bc8b2/response-contract",
+      "id": "api-59d97ab251e7fbd8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-990cc405ab6bc8b2/access-policy",
+      "id": "api-59d97ab251e7fbd8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-990cc405ab6bc8b2/input-boundaries",
+      "id": "api-59d97ab251e7fbd8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-990cc405ab6bc8b2/tenant-boundary",
+      "id": "api-59d97ab251e7fbd8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-990cc405ab6bc8b2/dependency-failure",
+      "id": "api-59d97ab251e7fbd8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -214196,16 +215438,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1f506ff092c602f6
+## api-2103156cb871766d
 
 ```json
 {
-  "id": "api-1f506ff092c602f6",
+  "id": "api-2103156cb871766d",
   "method": "POST",
   "path": "/platform/social/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5122
+    "line": 5132
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214214,37 +215456,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-1f506ff092c602f6/response-contract",
+      "id": "api-2103156cb871766d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/access-policy",
+      "id": "api-2103156cb871766d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/input-boundaries",
+      "id": "api-2103156cb871766d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/tenant-boundary",
+      "id": "api-2103156cb871766d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/dependency-failure",
+      "id": "api-2103156cb871766d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/mutation-durability",
+      "id": "api-2103156cb871766d/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f506ff092c602f6/artifact-integrity",
+      "id": "api-2103156cb871766d/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214282,21 +215524,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/maxcore-client-thin-transport.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-39f5d2cf1e7eb876
+## api-41f6660bd39e71c2
 
 ```json
 {
-  "id": "api-39f5d2cf1e7eb876",
+  "id": "api-41f6660bd39e71c2",
   "method": "POST",
   "path": "/platform/social/autopilot",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5263
+    "line": 5273
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214305,32 +215552,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-39f5d2cf1e7eb876/response-contract",
+      "id": "api-41f6660bd39e71c2/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39f5d2cf1e7eb876/access-policy",
+      "id": "api-41f6660bd39e71c2/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39f5d2cf1e7eb876/input-boundaries",
+      "id": "api-41f6660bd39e71c2/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39f5d2cf1e7eb876/tenant-boundary",
+      "id": "api-41f6660bd39e71c2/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39f5d2cf1e7eb876/dependency-failure",
+      "id": "api-41f6660bd39e71c2/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-39f5d2cf1e7eb876/mutation-durability",
+      "id": "api-41f6660bd39e71c2/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -214363,16 +215610,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a195b1018f982045
+## api-0caf0e4073a30ba8
 
 ```json
 {
-  "id": "api-a195b1018f982045",
+  "id": "api-0caf0e4073a30ba8",
   "method": "POST",
   "path": "/platform/daw/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5350
+    "line": 5360
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214381,37 +215628,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-a195b1018f982045/response-contract",
+      "id": "api-0caf0e4073a30ba8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/access-policy",
+      "id": "api-0caf0e4073a30ba8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/input-boundaries",
+      "id": "api-0caf0e4073a30ba8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/tenant-boundary",
+      "id": "api-0caf0e4073a30ba8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/dependency-failure",
+      "id": "api-0caf0e4073a30ba8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/mutation-durability",
+      "id": "api-0caf0e4073a30ba8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a195b1018f982045/artifact-integrity",
+      "id": "api-0caf0e4073a30ba8/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214449,16 +215696,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1c8315f58c6a80e2
+## api-e9bc433d9bb940d0
 
 ```json
 {
-  "id": "api-1c8315f58c6a80e2",
+  "id": "api-e9bc433d9bb940d0",
   "method": "POST",
   "path": "/platform/distribution/plan",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5435
+    "line": 5445
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214467,32 +215714,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-1c8315f58c6a80e2/response-contract",
+      "id": "api-e9bc433d9bb940d0/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c8315f58c6a80e2/access-policy",
+      "id": "api-e9bc433d9bb940d0/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c8315f58c6a80e2/input-boundaries",
+      "id": "api-e9bc433d9bb940d0/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c8315f58c6a80e2/tenant-boundary",
+      "id": "api-e9bc433d9bb940d0/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c8315f58c6a80e2/dependency-failure",
+      "id": "api-e9bc433d9bb940d0/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1c8315f58c6a80e2/mutation-durability",
+      "id": "api-e9bc433d9bb940d0/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -214525,16 +215772,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6edcdf2f2d9a27fa
+## api-1ce5bc2652a93904
 
 ```json
 {
-  "id": "api-6edcdf2f2d9a27fa",
+  "id": "api-1ce5bc2652a93904",
   "method": "GET",
   "path": "/platform/video/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5490
+    "line": 5500
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214543,32 +215790,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-6edcdf2f2d9a27fa/response-contract",
+      "id": "api-1ce5bc2652a93904/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6edcdf2f2d9a27fa/access-policy",
+      "id": "api-1ce5bc2652a93904/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6edcdf2f2d9a27fa/input-boundaries",
+      "id": "api-1ce5bc2652a93904/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6edcdf2f2d9a27fa/tenant-boundary",
+      "id": "api-1ce5bc2652a93904/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6edcdf2f2d9a27fa/dependency-failure",
+      "id": "api-1ce5bc2652a93904/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6edcdf2f2d9a27fa/artifact-integrity",
+      "id": "api-1ce5bc2652a93904/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214601,16 +215848,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-345356ced17bb867
+## api-a2685cafcffcf845
 
 ```json
 {
-  "id": "api-345356ced17bb867",
+  "id": "api-a2685cafcffcf845",
   "method": "POST",
   "path": "/platform/video/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5533
+    "line": 5543
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214619,37 +215866,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-345356ced17bb867/response-contract",
+      "id": "api-a2685cafcffcf845/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/access-policy",
+      "id": "api-a2685cafcffcf845/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/input-boundaries",
+      "id": "api-a2685cafcffcf845/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/tenant-boundary",
+      "id": "api-a2685cafcffcf845/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/dependency-failure",
+      "id": "api-a2685cafcffcf845/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/mutation-durability",
+      "id": "api-a2685cafcffcf845/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-345356ced17bb867/artifact-integrity",
+      "id": "api-a2685cafcffcf845/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214682,16 +215929,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-f4b7346938d00618
+## api-5e6660910e083957
 
 ```json
 {
-  "id": "api-f4b7346938d00618",
+  "id": "api-5e6660910e083957",
   "method": "GET",
   "path": "/platform/model/info",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5663
+    "line": 5673
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214700,27 +215947,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-f4b7346938d00618/response-contract",
+      "id": "api-5e6660910e083957/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f4b7346938d00618/access-policy",
+      "id": "api-5e6660910e083957/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f4b7346938d00618/input-boundaries",
+      "id": "api-5e6660910e083957/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f4b7346938d00618/tenant-boundary",
+      "id": "api-5e6660910e083957/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f4b7346938d00618/dependency-failure",
+      "id": "api-5e6660910e083957/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -214748,16 +215995,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-337ec700b8054f63
+## api-31402399dc78f011
 
 ```json
 {
-  "id": "api-337ec700b8054f63",
+  "id": "api-31402399dc78f011",
   "method": "POST",
   "path": "/platform/model/reload",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5709
+    "line": 5719
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214766,32 +216013,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-337ec700b8054f63/response-contract",
+      "id": "api-31402399dc78f011/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-337ec700b8054f63/access-policy",
+      "id": "api-31402399dc78f011/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-337ec700b8054f63/input-boundaries",
+      "id": "api-31402399dc78f011/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-337ec700b8054f63/tenant-boundary",
+      "id": "api-31402399dc78f011/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-337ec700b8054f63/dependency-failure",
+      "id": "api-31402399dc78f011/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-337ec700b8054f63/mutation-durability",
+      "id": "api-31402399dc78f011/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -214814,16 +216061,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1bd9d105c590903e
+## api-32049d20a59a33b8
 
 ```json
 {
-  "id": "api-1bd9d105c590903e",
+  "id": "api-32049d20a59a33b8",
   "method": "POST",
   "path": "/analyze",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5769
+    "line": 5779
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214832,32 +216079,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-1bd9d105c590903e/response-contract",
+      "id": "api-32049d20a59a33b8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1bd9d105c590903e/access-policy",
+      "id": "api-32049d20a59a33b8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1bd9d105c590903e/input-boundaries",
+      "id": "api-32049d20a59a33b8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1bd9d105c590903e/tenant-boundary",
+      "id": "api-32049d20a59a33b8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1bd9d105c590903e/dependency-failure",
+      "id": "api-32049d20a59a33b8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1bd9d105c590903e/mutation-durability",
+      "id": "api-32049d20a59a33b8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -214900,16 +216147,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8e75309631b687a9
+## api-6530311cee356fe6
 
 ```json
 {
-  "id": "api-8e75309631b687a9",
+  "id": "api-6530311cee356fe6",
   "method": "POST",
   "path": "/generate/text",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5825
+    "line": 5835
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -214918,37 +216165,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-8e75309631b687a9/response-contract",
+      "id": "api-6530311cee356fe6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/access-policy",
+      "id": "api-6530311cee356fe6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/input-boundaries",
+      "id": "api-6530311cee356fe6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/tenant-boundary",
+      "id": "api-6530311cee356fe6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/dependency-failure",
+      "id": "api-6530311cee356fe6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/mutation-durability",
+      "id": "api-6530311cee356fe6/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e75309631b687a9/artifact-integrity",
+      "id": "api-6530311cee356fe6/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -214991,16 +216238,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8c22922d661c5746
+## api-e7ddf81fbf6f0a87
 
 ```json
 {
-  "id": "api-8c22922d661c5746",
+  "id": "api-e7ddf81fbf6f0a87",
   "method": "POST",
   "path": "/generate/image",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 5972
+    "line": 5982
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215009,37 +216256,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-8c22922d661c5746/response-contract",
+      "id": "api-e7ddf81fbf6f0a87/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/access-policy",
+      "id": "api-e7ddf81fbf6f0a87/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/input-boundaries",
+      "id": "api-e7ddf81fbf6f0a87/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/tenant-boundary",
+      "id": "api-e7ddf81fbf6f0a87/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/dependency-failure",
+      "id": "api-e7ddf81fbf6f0a87/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/mutation-durability",
+      "id": "api-e7ddf81fbf6f0a87/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8c22922d661c5746/artifact-integrity",
+      "id": "api-e7ddf81fbf6f0a87/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -215077,21 +216324,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/multimodal-media-workers.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-9453e85462125952
+## api-aade80ce19ef1468
 
 ```json
 {
-  "id": "api-9453e85462125952",
+  "id": "api-aade80ce19ef1468",
   "method": "POST",
   "path": "/generate/audio",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6036
+    "line": 6046
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215100,37 +216352,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-9453e85462125952/response-contract",
+      "id": "api-aade80ce19ef1468/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/access-policy",
+      "id": "api-aade80ce19ef1468/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/input-boundaries",
+      "id": "api-aade80ce19ef1468/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/tenant-boundary",
+      "id": "api-aade80ce19ef1468/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/dependency-failure",
+      "id": "api-aade80ce19ef1468/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/mutation-durability",
+      "id": "api-aade80ce19ef1468/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9453e85462125952/artifact-integrity",
+      "id": "api-aade80ce19ef1468/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -215173,21 +216425,26 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "path": "tests/unit/multimodal-media-workers.test.ts",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
     }
   ]
 }
 ```
 
-## api-7ffcb6f6180d3078
+## api-2bb4541a077ee3a4
 
 ```json
 {
-  "id": "api-7ffcb6f6180d3078",
+  "id": "api-2bb4541a077ee3a4",
   "method": "POST",
   "path": "/generate/video",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6103
+    "line": 6113
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215196,37 +216453,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-7ffcb6f6180d3078/response-contract",
+      "id": "api-2bb4541a077ee3a4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/access-policy",
+      "id": "api-2bb4541a077ee3a4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/input-boundaries",
+      "id": "api-2bb4541a077ee3a4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/tenant-boundary",
+      "id": "api-2bb4541a077ee3a4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/dependency-failure",
+      "id": "api-2bb4541a077ee3a4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/mutation-durability",
+      "id": "api-2bb4541a077ee3a4/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7ffcb6f6180d3078/artifact-integrity",
+      "id": "api-2bb4541a077ee3a4/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -215264,16 +216521,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7161c6e2bf54a6ce
+## api-87af659a8ee47784
 
 ```json
 {
-  "id": "api-7161c6e2bf54a6ce",
+  "id": "api-87af659a8ee47784",
   "method": "POST",
   "path": "/platform/ads/record",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6547
+    "line": 6557
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215282,32 +216539,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-7161c6e2bf54a6ce/response-contract",
+      "id": "api-87af659a8ee47784/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7161c6e2bf54a6ce/access-policy",
+      "id": "api-87af659a8ee47784/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7161c6e2bf54a6ce/input-boundaries",
+      "id": "api-87af659a8ee47784/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7161c6e2bf54a6ce/tenant-boundary",
+      "id": "api-87af659a8ee47784/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7161c6e2bf54a6ce/dependency-failure",
+      "id": "api-87af659a8ee47784/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7161c6e2bf54a6ce/mutation-durability",
+      "id": "api-87af659a8ee47784/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -215330,16 +216587,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-829afdf440f9df9c
+## api-b3f0f2016a453b0b
 
 ```json
 {
-  "id": "api-829afdf440f9df9c",
+  "id": "api-b3f0f2016a453b0b",
   "method": "POST",
   "path": "/platform/ads/generate",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6569
+    "line": 6579
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215348,37 +216605,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-829afdf440f9df9c/response-contract",
+      "id": "api-b3f0f2016a453b0b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/access-policy",
+      "id": "api-b3f0f2016a453b0b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/input-boundaries",
+      "id": "api-b3f0f2016a453b0b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/tenant-boundary",
+      "id": "api-b3f0f2016a453b0b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/dependency-failure",
+      "id": "api-b3f0f2016a453b0b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/mutation-durability",
+      "id": "api-b3f0f2016a453b0b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-829afdf440f9df9c/artifact-integrity",
+      "id": "api-b3f0f2016a453b0b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -215421,16 +216678,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e7ae0f4e8499423d
+## api-fca2f04716354742
 
 ```json
 {
-  "id": "api-e7ae0f4e8499423d",
+  "id": "api-fca2f04716354742",
   "method": "POST",
   "path": "/platform/ads/autopilot",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6731
+    "line": 6741
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215439,32 +216696,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-e7ae0f4e8499423d/response-contract",
+      "id": "api-fca2f04716354742/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ae0f4e8499423d/access-policy",
+      "id": "api-fca2f04716354742/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ae0f4e8499423d/input-boundaries",
+      "id": "api-fca2f04716354742/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ae0f4e8499423d/tenant-boundary",
+      "id": "api-fca2f04716354742/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ae0f4e8499423d/dependency-failure",
+      "id": "api-fca2f04716354742/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ae0f4e8499423d/mutation-durability",
+      "id": "api-fca2f04716354742/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -215492,16 +216749,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-bf3159203c13c6c9
+## api-4e3640a6efc39995
 
 ```json
 {
-  "id": "api-bf3159203c13c6c9",
+  "id": "api-4e3640a6efc39995",
   "method": "POST",
   "path": "/platform/ads/audience",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6861
+    "line": 6871
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215510,32 +216767,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-bf3159203c13c6c9/response-contract",
+      "id": "api-4e3640a6efc39995/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf3159203c13c6c9/access-policy",
+      "id": "api-4e3640a6efc39995/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf3159203c13c6c9/input-boundaries",
+      "id": "api-4e3640a6efc39995/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf3159203c13c6c9/tenant-boundary",
+      "id": "api-4e3640a6efc39995/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf3159203c13c6c9/dependency-failure",
+      "id": "api-4e3640a6efc39995/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bf3159203c13c6c9/mutation-durability",
+      "id": "api-4e3640a6efc39995/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -215568,16 +216825,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ab03d5a27bcec2ad
+## api-66a02745554fc36d
 
 ```json
 {
-  "id": "api-ab03d5a27bcec2ad",
+  "id": "api-66a02745554fc36d",
   "method": "GET",
   "path": "/platform/ads/performance/{user_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6940
+    "line": 6950
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215586,27 +216843,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-ab03d5a27bcec2ad/response-contract",
+      "id": "api-66a02745554fc36d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab03d5a27bcec2ad/access-policy",
+      "id": "api-66a02745554fc36d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab03d5a27bcec2ad/input-boundaries",
+      "id": "api-66a02745554fc36d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab03d5a27bcec2ad/tenant-boundary",
+      "id": "api-66a02745554fc36d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ab03d5a27bcec2ad/dependency-failure",
+      "id": "api-66a02745554fc36d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -215623,16 +216880,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c270cf503e97b843
+## api-8f10117c1efbd604
 
 ```json
 {
-  "id": "api-c270cf503e97b843",
+  "id": "api-8f10117c1efbd604",
   "method": "POST",
   "path": "/platform/ads/optimize",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 6969
+    "line": 6979
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215641,32 +216898,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/platform",
   "requiredChecks": [
     {
-      "id": "api-c270cf503e97b843/response-contract",
+      "id": "api-8f10117c1efbd604/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c270cf503e97b843/access-policy",
+      "id": "api-8f10117c1efbd604/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c270cf503e97b843/input-boundaries",
+      "id": "api-8f10117c1efbd604/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c270cf503e97b843/tenant-boundary",
+      "id": "api-8f10117c1efbd604/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c270cf503e97b843/dependency-failure",
+      "id": "api-8f10117c1efbd604/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c270cf503e97b843/mutation-durability",
+      "id": "api-8f10117c1efbd604/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -215699,16 +216956,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-5220d3164241d07e
+## api-6c8ce521bce28f55
 
 ```json
 {
-  "id": "api-5220d3164241d07e",
+  "id": "api-6c8ce521bce28f55",
   "method": "GET",
   "path": "/storage/session",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 7066
+    "line": 7076
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215717,27 +216974,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-5220d3164241d07e/response-contract",
+      "id": "api-6c8ce521bce28f55/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5220d3164241d07e/access-policy",
+      "id": "api-6c8ce521bce28f55/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5220d3164241d07e/input-boundaries",
+      "id": "api-6c8ce521bce28f55/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5220d3164241d07e/tenant-boundary",
+      "id": "api-6c8ce521bce28f55/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5220d3164241d07e/dependency-failure",
+      "id": "api-6c8ce521bce28f55/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -215760,16 +217017,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-bb321c080238e5d1
+## api-7d83304235bbaada
 
 ```json
 {
-  "id": "api-bb321c080238e5d1",
+  "id": "api-7d83304235bbaada",
   "method": "GET",
   "path": "/storage/pipeline/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 7082
+    "line": 7092
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215778,27 +217035,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/storage",
   "requiredChecks": [
     {
-      "id": "api-bb321c080238e5d1/response-contract",
+      "id": "api-7d83304235bbaada/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bb321c080238e5d1/access-policy",
+      "id": "api-7d83304235bbaada/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bb321c080238e5d1/input-boundaries",
+      "id": "api-7d83304235bbaada/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bb321c080238e5d1/tenant-boundary",
+      "id": "api-7d83304235bbaada/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-bb321c080238e5d1/dependency-failure",
+      "id": "api-7d83304235bbaada/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -215821,16 +217078,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3eed8810ba6e1d21
+## api-b927d651fa5b7b59
 
 ```json
 {
-  "id": "api-3eed8810ba6e1d21",
+  "id": "api-b927d651fa5b7b59",
   "method": "POST",
   "path": "/training/start-from-storage",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 7222
+    "line": 7232
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215839,32 +217096,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/training",
   "requiredChecks": [
     {
-      "id": "api-3eed8810ba6e1d21/response-contract",
+      "id": "api-b927d651fa5b7b59/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3eed8810ba6e1d21/access-policy",
+      "id": "api-b927d651fa5b7b59/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3eed8810ba6e1d21/input-boundaries",
+      "id": "api-b927d651fa5b7b59/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3eed8810ba6e1d21/tenant-boundary",
+      "id": "api-b927d651fa5b7b59/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3eed8810ba6e1d21/dependency-failure",
+      "id": "api-b927d651fa5b7b59/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3eed8810ba6e1d21/mutation-durability",
+      "id": "api-b927d651fa5b7b59/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -215892,16 +217149,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-7aaec6d8b8bbd706
+## api-2c2bba80ecc60738
 
 ```json
 {
-  "id": "api-7aaec6d8b8bbd706",
+  "id": "api-2c2bba80ecc60738",
   "method": "POST",
   "path": "/api/generate/content",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8166
+    "line": 8176
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -215910,37 +217167,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-7aaec6d8b8bbd706/response-contract",
+      "id": "api-2c2bba80ecc60738/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/access-policy",
+      "id": "api-2c2bba80ecc60738/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/input-boundaries",
+      "id": "api-2c2bba80ecc60738/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/tenant-boundary",
+      "id": "api-2c2bba80ecc60738/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/dependency-failure",
+      "id": "api-2c2bba80ecc60738/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/mutation-durability",
+      "id": "api-2c2bba80ecc60738/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-7aaec6d8b8bbd706/artifact-integrity",
+      "id": "api-2c2bba80ecc60738/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -215998,16 +217255,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-98be79a6c9a59b6d
+## api-4536bd9d277088b9
 
 ```json
 {
-  "id": "api-98be79a6c9a59b6d",
+  "id": "api-4536bd9d277088b9",
   "method": "POST",
   "path": "/api/generate/campaign",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8436
+    "line": 8446
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216016,37 +217273,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-98be79a6c9a59b6d/response-contract",
+      "id": "api-4536bd9d277088b9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/access-policy",
+      "id": "api-4536bd9d277088b9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/input-boundaries",
+      "id": "api-4536bd9d277088b9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/tenant-boundary",
+      "id": "api-4536bd9d277088b9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/dependency-failure",
+      "id": "api-4536bd9d277088b9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/mutation-durability",
+      "id": "api-4536bd9d277088b9/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-98be79a6c9a59b6d/artifact-integrity",
+      "id": "api-4536bd9d277088b9/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -216079,16 +217336,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c175d2335adcea1e
+## api-f2499084f3c9c0ba
 
 ```json
 {
-  "id": "api-c175d2335adcea1e",
+  "id": "api-f2499084f3c9c0ba",
   "method": "POST",
   "path": "/api/campaigns",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8616
+    "line": 8626
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216097,32 +217354,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-c175d2335adcea1e/response-contract",
+      "id": "api-f2499084f3c9c0ba/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c175d2335adcea1e/access-policy",
+      "id": "api-f2499084f3c9c0ba/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c175d2335adcea1e/input-boundaries",
+      "id": "api-f2499084f3c9c0ba/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c175d2335adcea1e/tenant-boundary",
+      "id": "api-f2499084f3c9c0ba/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c175d2335adcea1e/dependency-failure",
+      "id": "api-f2499084f3c9c0ba/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c175d2335adcea1e/mutation-durability",
+      "id": "api-f2499084f3c9c0ba/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216145,16 +217402,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-89040ba038fa5509
+## api-13d4f89ed2f7c72d
 
 ```json
 {
-  "id": "api-89040ba038fa5509",
+  "id": "api-13d4f89ed2f7c72d",
   "method": "GET",
   "path": "/api/campaigns",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8627
+    "line": 8637
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216163,27 +217420,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-89040ba038fa5509/response-contract",
+      "id": "api-13d4f89ed2f7c72d/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89040ba038fa5509/access-policy",
+      "id": "api-13d4f89ed2f7c72d/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89040ba038fa5509/input-boundaries",
+      "id": "api-13d4f89ed2f7c72d/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89040ba038fa5509/tenant-boundary",
+      "id": "api-13d4f89ed2f7c72d/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89040ba038fa5509/dependency-failure",
+      "id": "api-13d4f89ed2f7c72d/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -216206,16 +217463,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-26a0af707810b067
+## api-b2d1b8b507a21d11
 
 ```json
 {
-  "id": "api-26a0af707810b067",
+  "id": "api-b2d1b8b507a21d11",
   "method": "GET",
   "path": "/api/campaigns/{campaign_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8635
+    "line": 8645
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216224,27 +217481,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-26a0af707810b067/response-contract",
+      "id": "api-b2d1b8b507a21d11/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-26a0af707810b067/access-policy",
+      "id": "api-b2d1b8b507a21d11/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-26a0af707810b067/input-boundaries",
+      "id": "api-b2d1b8b507a21d11/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-26a0af707810b067/tenant-boundary",
+      "id": "api-b2d1b8b507a21d11/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-26a0af707810b067/dependency-failure",
+      "id": "api-b2d1b8b507a21d11/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -216261,16 +217518,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c3321d0c0ac6a02d
+## api-0dd1baf35f0494dd
 
 ```json
 {
-  "id": "api-c3321d0c0ac6a02d",
+  "id": "api-0dd1baf35f0494dd",
   "method": "DELETE",
   "path": "/api/campaigns/{campaign_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8646
+    "line": 8656
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216279,37 +217536,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-c3321d0c0ac6a02d/response-contract",
+      "id": "api-0dd1baf35f0494dd/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/access-policy",
+      "id": "api-0dd1baf35f0494dd/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/input-boundaries",
+      "id": "api-0dd1baf35f0494dd/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/tenant-boundary",
+      "id": "api-0dd1baf35f0494dd/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/dependency-failure",
+      "id": "api-0dd1baf35f0494dd/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/mutation-durability",
+      "id": "api-0dd1baf35f0494dd/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c3321d0c0ac6a02d/deletion-durability",
+      "id": "api-0dd1baf35f0494dd/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     }
@@ -216326,16 +217583,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8e77c72e2d128162
+## api-85d49fad4a1b099a
 
 ```json
 {
-  "id": "api-8e77c72e2d128162",
+  "id": "api-85d49fad4a1b099a",
   "method": "PATCH",
   "path": "/api/campaigns/{campaign_id}/posts/{post_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8657
+    "line": 8667
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216344,32 +217601,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-8e77c72e2d128162/response-contract",
+      "id": "api-85d49fad4a1b099a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e77c72e2d128162/access-policy",
+      "id": "api-85d49fad4a1b099a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e77c72e2d128162/input-boundaries",
+      "id": "api-85d49fad4a1b099a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e77c72e2d128162/tenant-boundary",
+      "id": "api-85d49fad4a1b099a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e77c72e2d128162/dependency-failure",
+      "id": "api-85d49fad4a1b099a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8e77c72e2d128162/mutation-durability",
+      "id": "api-85d49fad4a1b099a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216386,16 +217643,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-17ced51d5e8445ed
+## api-629ac6e5f75b0901
 
 ```json
 {
-  "id": "api-17ced51d5e8445ed",
+  "id": "api-629ac6e5f75b0901",
   "method": "POST",
   "path": "/api/campaigns/{campaign_id}/schedule",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8673
+    "line": 8683
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216404,32 +217661,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/campaigns",
   "requiredChecks": [
     {
-      "id": "api-17ced51d5e8445ed/response-contract",
+      "id": "api-629ac6e5f75b0901/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17ced51d5e8445ed/access-policy",
+      "id": "api-629ac6e5f75b0901/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17ced51d5e8445ed/input-boundaries",
+      "id": "api-629ac6e5f75b0901/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17ced51d5e8445ed/tenant-boundary",
+      "id": "api-629ac6e5f75b0901/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17ced51d5e8445ed/dependency-failure",
+      "id": "api-629ac6e5f75b0901/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-17ced51d5e8445ed/mutation-durability",
+      "id": "api-629ac6e5f75b0901/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216446,16 +217703,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-2c8bf426ffa7aa43
+## api-06b45808b20a84b8
 
 ```json
 {
-  "id": "api-2c8bf426ffa7aa43",
+  "id": "api-06b45808b20a84b8",
   "method": "POST",
   "path": "/api/generate/text",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8717
+    "line": 8727
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216464,37 +217721,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-2c8bf426ffa7aa43/response-contract",
+      "id": "api-06b45808b20a84b8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/access-policy",
+      "id": "api-06b45808b20a84b8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/input-boundaries",
+      "id": "api-06b45808b20a84b8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/tenant-boundary",
+      "id": "api-06b45808b20a84b8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/dependency-failure",
+      "id": "api-06b45808b20a84b8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/mutation-durability",
+      "id": "api-06b45808b20a84b8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-2c8bf426ffa7aa43/artifact-integrity",
+      "id": "api-06b45808b20a84b8/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -216542,16 +217799,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-89cde1e6ab2b4da8
+## api-2b0ae400877d4cf4
 
 ```json
 {
-  "id": "api-89cde1e6ab2b4da8",
+  "id": "api-2b0ae400877d4cf4",
   "method": "POST",
   "path": "/api/content/score",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8859
+    "line": 8869
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216560,32 +217817,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/content",
   "requiredChecks": [
     {
-      "id": "api-89cde1e6ab2b4da8/response-contract",
+      "id": "api-2b0ae400877d4cf4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89cde1e6ab2b4da8/access-policy",
+      "id": "api-2b0ae400877d4cf4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89cde1e6ab2b4da8/input-boundaries",
+      "id": "api-2b0ae400877d4cf4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89cde1e6ab2b4da8/tenant-boundary",
+      "id": "api-2b0ae400877d4cf4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89cde1e6ab2b4da8/dependency-failure",
+      "id": "api-2b0ae400877d4cf4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-89cde1e6ab2b4da8/mutation-durability",
+      "id": "api-2b0ae400877d4cf4/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216613,16 +217870,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a490305abb04e2ff
+## api-355fdb35bc67055c
 
 ```json
 {
-  "id": "api-a490305abb04e2ff",
+  "id": "api-355fdb35bc67055c",
   "method": "POST",
   "path": "/api/analyze",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8907
+    "line": 8917
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216631,32 +217888,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-a490305abb04e2ff/response-contract",
+      "id": "api-355fdb35bc67055c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a490305abb04e2ff/access-policy",
+      "id": "api-355fdb35bc67055c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a490305abb04e2ff/input-boundaries",
+      "id": "api-355fdb35bc67055c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a490305abb04e2ff/tenant-boundary",
+      "id": "api-355fdb35bc67055c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a490305abb04e2ff/dependency-failure",
+      "id": "api-355fdb35bc67055c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a490305abb04e2ff/mutation-durability",
+      "id": "api-355fdb35bc67055c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216679,16 +217936,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ef43867b34a396a0
+## api-daec867dbd8e14c9
 
 ```json
 {
-  "id": "api-ef43867b34a396a0",
+  "id": "api-daec867dbd8e14c9",
   "method": "POST",
   "path": "/api/analyze/sentiment",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 8954
+    "line": 8964
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216697,32 +217954,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-ef43867b34a396a0/response-contract",
+      "id": "api-daec867dbd8e14c9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef43867b34a396a0/access-policy",
+      "id": "api-daec867dbd8e14c9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef43867b34a396a0/input-boundaries",
+      "id": "api-daec867dbd8e14c9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef43867b34a396a0/tenant-boundary",
+      "id": "api-daec867dbd8e14c9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef43867b34a396a0/dependency-failure",
+      "id": "api-daec867dbd8e14c9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ef43867b34a396a0/mutation-durability",
+      "id": "api-daec867dbd8e14c9/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216750,16 +218007,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-11fa604dfefaf934
+## api-474577a03733221a
 
 ```json
 {
-  "id": "api-11fa604dfefaf934",
+  "id": "api-474577a03733221a",
   "method": "POST",
   "path": "/api/audio/upload",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 9022
+    "line": 9032
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216768,37 +218025,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-11fa604dfefaf934/response-contract",
+      "id": "api-474577a03733221a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/access-policy",
+      "id": "api-474577a03733221a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/input-boundaries",
+      "id": "api-474577a03733221a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/tenant-boundary",
+      "id": "api-474577a03733221a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/dependency-failure",
+      "id": "api-474577a03733221a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/mutation-durability",
+      "id": "api-474577a03733221a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-11fa604dfefaf934/artifact-integrity",
+      "id": "api-474577a03733221a/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -216826,16 +218083,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3338394fc600c83d
+## api-35d177e4fc9a7f21
 
 ```json
 {
-  "id": "api-3338394fc600c83d",
+  "id": "api-35d177e4fc9a7f21",
   "method": "POST",
   "path": "/api/analyze/audio",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 9153
+    "line": 9163
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216844,37 +218101,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/analyze",
   "requiredChecks": [
     {
-      "id": "api-3338394fc600c83d/response-contract",
+      "id": "api-35d177e4fc9a7f21/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/access-policy",
+      "id": "api-35d177e4fc9a7f21/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/input-boundaries",
+      "id": "api-35d177e4fc9a7f21/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/tenant-boundary",
+      "id": "api-35d177e4fc9a7f21/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/dependency-failure",
+      "id": "api-35d177e4fc9a7f21/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/mutation-durability",
+      "id": "api-35d177e4fc9a7f21/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3338394fc600c83d/artifact-integrity",
+      "id": "api-35d177e4fc9a7f21/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -216897,16 +218154,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c549250c38a98402
+## api-de274d178b0d82c5
 
 ```json
 {
-  "id": "api-c549250c38a98402",
+  "id": "api-de274d178b0d82c5",
   "method": "POST",
   "path": "/api/optimize/ad",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 9161
+    "line": 9171
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216915,32 +218172,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/optimize",
   "requiredChecks": [
     {
-      "id": "api-c549250c38a98402/response-contract",
+      "id": "api-de274d178b0d82c5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c549250c38a98402/access-policy",
+      "id": "api-de274d178b0d82c5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c549250c38a98402/input-boundaries",
+      "id": "api-de274d178b0d82c5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c549250c38a98402/tenant-boundary",
+      "id": "api-de274d178b0d82c5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c549250c38a98402/dependency-failure",
+      "id": "api-de274d178b0d82c5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c549250c38a98402/mutation-durability",
+      "id": "api-de274d178b0d82c5/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -216973,16 +218230,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-cdad816b22ab4171
+## api-3f17d9a109f0e8da
 
 ```json
 {
-  "id": "api-cdad816b22ab4171",
+  "id": "api-3f17d9a109f0e8da",
   "method": "POST",
   "path": "/api/predict/engagement",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 9271
+    "line": 9281
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -216991,32 +218248,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/predict",
   "requiredChecks": [
     {
-      "id": "api-cdad816b22ab4171/response-contract",
+      "id": "api-3f17d9a109f0e8da/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdad816b22ab4171/access-policy",
+      "id": "api-3f17d9a109f0e8da/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdad816b22ab4171/input-boundaries",
+      "id": "api-3f17d9a109f0e8da/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdad816b22ab4171/tenant-boundary",
+      "id": "api-3f17d9a109f0e8da/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdad816b22ab4171/dependency-failure",
+      "id": "api-3f17d9a109f0e8da/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cdad816b22ab4171/mutation-durability",
+      "id": "api-3f17d9a109f0e8da/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -217059,16 +218316,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-f2f98e183b5b5e43
+## api-913a322ec79b42e1
 
 ```json
 {
-  "id": "api-f2f98e183b5b5e43",
+  "id": "api-913a322ec79b42e1",
   "method": "POST",
   "path": "/api/generate/image",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 9409
+    "line": 9419
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217077,37 +218334,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-f2f98e183b5b5e43/response-contract",
+      "id": "api-913a322ec79b42e1/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/access-policy",
+      "id": "api-913a322ec79b42e1/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/input-boundaries",
+      "id": "api-913a322ec79b42e1/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/tenant-boundary",
+      "id": "api-913a322ec79b42e1/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/dependency-failure",
+      "id": "api-913a322ec79b42e1/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/mutation-durability",
+      "id": "api-913a322ec79b42e1/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-f2f98e183b5b5e43/artifact-integrity",
+      "id": "api-913a322ec79b42e1/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217180,16 +218437,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4225961fe3cd5961
+## api-e8a07f6d5dc3913b
 
 ```json
 {
-  "id": "api-4225961fe3cd5961",
+  "id": "api-e8a07f6d5dc3913b",
   "method": "POST",
   "path": "/api/generate/audio",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 10424
+    "line": 10434
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217198,37 +218455,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate",
   "requiredChecks": [
     {
-      "id": "api-4225961fe3cd5961/response-contract",
+      "id": "api-e8a07f6d5dc3913b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/access-policy",
+      "id": "api-e8a07f6d5dc3913b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/input-boundaries",
+      "id": "api-e8a07f6d5dc3913b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/tenant-boundary",
+      "id": "api-e8a07f6d5dc3913b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/dependency-failure",
+      "id": "api-e8a07f6d5dc3913b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/mutation-durability",
+      "id": "api-e8a07f6d5dc3913b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4225961fe3cd5961/artifact-integrity",
+      "id": "api-e8a07f6d5dc3913b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217326,16 +218583,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-3d870926c80bc397
+## api-5861b8c1c6c6574c
 
 ```json
 {
-  "id": "api-3d870926c80bc397",
+  "id": "api-5861b8c1c6c6574c",
   "method": "POST",
   "path": "/api/generate-video",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11295
+    "line": 11305
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217344,37 +218601,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/generate-video",
   "requiredChecks": [
     {
-      "id": "api-3d870926c80bc397/response-contract",
+      "id": "api-5861b8c1c6c6574c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/access-policy",
+      "id": "api-5861b8c1c6c6574c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/input-boundaries",
+      "id": "api-5861b8c1c6c6574c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/tenant-boundary",
+      "id": "api-5861b8c1c6c6574c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/dependency-failure",
+      "id": "api-5861b8c1c6c6574c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/mutation-durability",
+      "id": "api-5861b8c1c6c6574c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-3d870926c80bc397/artifact-integrity",
+      "id": "api-5861b8c1c6c6574c/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217432,16 +218689,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-677a5903cba58a97
+## api-4a93beae378ff51a
 
 ```json
 {
-  "id": "api-677a5903cba58a97",
+  "id": "api-4a93beae378ff51a",
   "method": "POST",
   "path": "/api/video/extend",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11393
+    "line": 11403
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217450,37 +218707,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video",
   "requiredChecks": [
     {
-      "id": "api-677a5903cba58a97/response-contract",
+      "id": "api-4a93beae378ff51a/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/access-policy",
+      "id": "api-4a93beae378ff51a/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/input-boundaries",
+      "id": "api-4a93beae378ff51a/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/tenant-boundary",
+      "id": "api-4a93beae378ff51a/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/dependency-failure",
+      "id": "api-4a93beae378ff51a/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/mutation-durability",
+      "id": "api-4a93beae378ff51a/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-677a5903cba58a97/artifact-integrity",
+      "id": "api-4a93beae378ff51a/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217513,16 +218770,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-28bbf8db6ce699fb
+## api-264e377b8a85a51c
 
 ```json
 {
-  "id": "api-28bbf8db6ce699fb",
+  "id": "api-264e377b8a85a51c",
   "method": "POST",
   "path": "/api/video/generate-ai",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11573
+    "line": 11583
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217531,37 +218788,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video",
   "requiredChecks": [
     {
-      "id": "api-28bbf8db6ce699fb/response-contract",
+      "id": "api-264e377b8a85a51c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/access-policy",
+      "id": "api-264e377b8a85a51c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/input-boundaries",
+      "id": "api-264e377b8a85a51c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/tenant-boundary",
+      "id": "api-264e377b8a85a51c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/dependency-failure",
+      "id": "api-264e377b8a85a51c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/mutation-durability",
+      "id": "api-264e377b8a85a51c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-28bbf8db6ce699fb/artifact-integrity",
+      "id": "api-264e377b8a85a51c/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217609,16 +218866,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-ea1fe85dfe707107
+## api-befb9bf88dc9314b
 
 ```json
 {
-  "id": "api-ea1fe85dfe707107",
+  "id": "api-befb9bf88dc9314b",
   "method": "GET",
   "path": "/api/video-job/{job_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11846
+    "line": 11856
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217627,32 +218884,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-ea1fe85dfe707107/response-contract",
+      "id": "api-befb9bf88dc9314b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea1fe85dfe707107/access-policy",
+      "id": "api-befb9bf88dc9314b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea1fe85dfe707107/input-boundaries",
+      "id": "api-befb9bf88dc9314b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea1fe85dfe707107/tenant-boundary",
+      "id": "api-befb9bf88dc9314b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea1fe85dfe707107/dependency-failure",
+      "id": "api-befb9bf88dc9314b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-ea1fe85dfe707107/artifact-integrity",
+      "id": "api-befb9bf88dc9314b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217669,16 +218926,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8da0068673727793
+## api-150fdf20c3e0c9c6
 
 ```json
 {
-  "id": "api-8da0068673727793",
+  "id": "api-150fdf20c3e0c9c6",
   "method": "DELETE",
   "path": "/api/video-job/{job_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11879
+    "line": 11889
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217687,42 +218944,42 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-8da0068673727793/response-contract",
+      "id": "api-150fdf20c3e0c9c6/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/access-policy",
+      "id": "api-150fdf20c3e0c9c6/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/input-boundaries",
+      "id": "api-150fdf20c3e0c9c6/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/tenant-boundary",
+      "id": "api-150fdf20c3e0c9c6/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/dependency-failure",
+      "id": "api-150fdf20c3e0c9c6/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/mutation-durability",
+      "id": "api-150fdf20c3e0c9c6/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/deletion-durability",
+      "id": "api-150fdf20c3e0c9c6/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8da0068673727793/artifact-integrity",
+      "id": "api-150fdf20c3e0c9c6/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217739,16 +218996,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0ccebaec1625ed75
+## api-197ff0c564ea49fc
 
 ```json
 {
-  "id": "api-0ccebaec1625ed75",
+  "id": "api-197ff0c564ea49fc",
   "method": "GET",
   "path": "/api/concurrency/stats",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11912
+    "line": 11922
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217757,27 +219014,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/concurrency",
   "requiredChecks": [
     {
-      "id": "api-0ccebaec1625ed75/response-contract",
+      "id": "api-197ff0c564ea49fc/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ccebaec1625ed75/access-policy",
+      "id": "api-197ff0c564ea49fc/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ccebaec1625ed75/input-boundaries",
+      "id": "api-197ff0c564ea49fc/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ccebaec1625ed75/tenant-boundary",
+      "id": "api-197ff0c564ea49fc/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0ccebaec1625ed75/dependency-failure",
+      "id": "api-197ff0c564ea49fc/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -217805,16 +219062,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-d846586cfed6c7e5
+## api-37c711205274e43b
 
 ```json
 {
-  "id": "api-d846586cfed6c7e5",
+  "id": "api-37c711205274e43b",
   "method": "GET",
   "path": "/api/video-jobs",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11927
+    "line": 11937
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217823,32 +219080,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-jobs",
   "requiredChecks": [
     {
-      "id": "api-d846586cfed6c7e5/response-contract",
+      "id": "api-37c711205274e43b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d846586cfed6c7e5/access-policy",
+      "id": "api-37c711205274e43b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d846586cfed6c7e5/input-boundaries",
+      "id": "api-37c711205274e43b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d846586cfed6c7e5/tenant-boundary",
+      "id": "api-37c711205274e43b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d846586cfed6c7e5/dependency-failure",
+      "id": "api-37c711205274e43b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-d846586cfed6c7e5/artifact-integrity",
+      "id": "api-37c711205274e43b/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217876,16 +219133,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-a71a391bf806cc41
+## api-334d47869740a016
 
 ```json
 {
-  "id": "api-a71a391bf806cc41",
+  "id": "api-334d47869740a016",
   "method": "GET",
   "path": "/api/video-job/{job_id}/preview/{scene_idx}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 11970
+    "line": 11980
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217894,32 +219151,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-a71a391bf806cc41/response-contract",
+      "id": "api-334d47869740a016/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71a391bf806cc41/access-policy",
+      "id": "api-334d47869740a016/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71a391bf806cc41/input-boundaries",
+      "id": "api-334d47869740a016/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71a391bf806cc41/tenant-boundary",
+      "id": "api-334d47869740a016/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71a391bf806cc41/dependency-failure",
+      "id": "api-334d47869740a016/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a71a391bf806cc41/artifact-integrity",
+      "id": "api-334d47869740a016/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -217936,16 +219193,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-18bc678b71502db7
+## api-bed98779007ae4d8
 
 ```json
 {
-  "id": "api-18bc678b71502db7",
+  "id": "api-bed98779007ae4d8",
   "method": "DELETE",
   "path": "/api/audio-job/{job_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12026
+    "line": 12036
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -217954,42 +219211,42 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio-job",
   "requiredChecks": [
     {
-      "id": "api-18bc678b71502db7/response-contract",
+      "id": "api-bed98779007ae4d8/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/access-policy",
+      "id": "api-bed98779007ae4d8/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/input-boundaries",
+      "id": "api-bed98779007ae4d8/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/tenant-boundary",
+      "id": "api-bed98779007ae4d8/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/dependency-failure",
+      "id": "api-bed98779007ae4d8/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/mutation-durability",
+      "id": "api-bed98779007ae4d8/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/deletion-durability",
+      "id": "api-bed98779007ae4d8/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-18bc678b71502db7/artifact-integrity",
+      "id": "api-bed98779007ae4d8/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -218012,16 +219269,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-34002b67a6283cbf
+## api-31c0c0102154e939
 
 ```json
 {
-  "id": "api-34002b67a6283cbf",
+  "id": "api-31c0c0102154e939",
   "method": "GET",
   "path": "/api/audio-job/{job_id}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12040
+    "line": 12050
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218030,32 +219287,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio-job",
   "requiredChecks": [
     {
-      "id": "api-34002b67a6283cbf/response-contract",
+      "id": "api-31c0c0102154e939/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34002b67a6283cbf/access-policy",
+      "id": "api-31c0c0102154e939/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34002b67a6283cbf/input-boundaries",
+      "id": "api-31c0c0102154e939/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34002b67a6283cbf/tenant-boundary",
+      "id": "api-31c0c0102154e939/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34002b67a6283cbf/dependency-failure",
+      "id": "api-31c0c0102154e939/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34002b67a6283cbf/artifact-integrity",
+      "id": "api-31c0c0102154e939/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -218078,16 +219335,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-0edee1bf3e914be7
+## api-39ab29ed99d51dcc
 
 ```json
 {
-  "id": "api-0edee1bf3e914be7",
+  "id": "api-39ab29ed99d51dcc",
   "method": "GET",
   "path": "/api/audio/{job_id}/stems",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12101
+    "line": 12111
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218096,32 +219353,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-0edee1bf3e914be7/response-contract",
+      "id": "api-39ab29ed99d51dcc/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0edee1bf3e914be7/access-policy",
+      "id": "api-39ab29ed99d51dcc/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0edee1bf3e914be7/input-boundaries",
+      "id": "api-39ab29ed99d51dcc/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0edee1bf3e914be7/tenant-boundary",
+      "id": "api-39ab29ed99d51dcc/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0edee1bf3e914be7/dependency-failure",
+      "id": "api-39ab29ed99d51dcc/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-0edee1bf3e914be7/artifact-integrity",
+      "id": "api-39ab29ed99d51dcc/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -218138,16 +219395,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-8a7c6c1afae53d10
+## api-537f4f5e95878fa3
 
 ```json
 {
-  "id": "api-8a7c6c1afae53d10",
+  "id": "api-537f4f5e95878fa3",
   "method": "GET",
   "path": "/api/files/stems/{job_id}/{filename}",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12155
+    "line": 12165
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218156,27 +219413,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/files",
   "requiredChecks": [
     {
-      "id": "api-8a7c6c1afae53d10/response-contract",
+      "id": "api-537f4f5e95878fa3/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8a7c6c1afae53d10/access-policy",
+      "id": "api-537f4f5e95878fa3/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8a7c6c1afae53d10/input-boundaries",
+      "id": "api-537f4f5e95878fa3/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8a7c6c1afae53d10/tenant-boundary",
+      "id": "api-537f4f5e95878fa3/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-8a7c6c1afae53d10/dependency-failure",
+      "id": "api-537f4f5e95878fa3/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218193,16 +219450,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c2ebc821399eb4a2
+## api-46da00d1aa9bc5d4
 
 ```json
 {
-  "id": "api-c2ebc821399eb4a2",
+  "id": "api-46da00d1aa9bc5d4",
   "method": "GET",
   "path": "/api/audio/{job_id}/midi",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12194
+    "line": 12204
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218211,32 +219468,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-c2ebc821399eb4a2/response-contract",
+      "id": "api-46da00d1aa9bc5d4/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2ebc821399eb4a2/access-policy",
+      "id": "api-46da00d1aa9bc5d4/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2ebc821399eb4a2/input-boundaries",
+      "id": "api-46da00d1aa9bc5d4/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2ebc821399eb4a2/tenant-boundary",
+      "id": "api-46da00d1aa9bc5d4/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2ebc821399eb4a2/dependency-failure",
+      "id": "api-46da00d1aa9bc5d4/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c2ebc821399eb4a2/artifact-integrity",
+      "id": "api-46da00d1aa9bc5d4/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -218253,16 +219510,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fff2df97dd43c80d
+## api-ae8487ec3f954650
 
 ```json
 {
-  "id": "api-fff2df97dd43c80d",
+  "id": "api-ae8487ec3f954650",
   "method": "GET",
   "path": "/api/models/social/state",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12291
+    "line": 12301
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218271,27 +219528,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/models",
   "requiredChecks": [
     {
-      "id": "api-fff2df97dd43c80d/response-contract",
+      "id": "api-ae8487ec3f954650/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fff2df97dd43c80d/access-policy",
+      "id": "api-ae8487ec3f954650/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fff2df97dd43c80d/input-boundaries",
+      "id": "api-ae8487ec3f954650/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fff2df97dd43c80d/tenant-boundary",
+      "id": "api-ae8487ec3f954650/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fff2df97dd43c80d/dependency-failure",
+      "id": "api-ae8487ec3f954650/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218319,16 +219576,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-5be6fb34dbd956db
+## api-e94c88090794e096
 
 ```json
 {
-  "id": "api-5be6fb34dbd956db",
+  "id": "api-e94c88090794e096",
   "method": "GET",
   "path": "/api/models/advertising/state",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12297
+    "line": 12307
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218337,27 +219594,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/models",
   "requiredChecks": [
     {
-      "id": "api-5be6fb34dbd956db/response-contract",
+      "id": "api-e94c88090794e096/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5be6fb34dbd956db/access-policy",
+      "id": "api-e94c88090794e096/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5be6fb34dbd956db/input-boundaries",
+      "id": "api-e94c88090794e096/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5be6fb34dbd956db/tenant-boundary",
+      "id": "api-e94c88090794e096/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5be6fb34dbd956db/dependency-failure",
+      "id": "api-e94c88090794e096/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218380,16 +219637,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-96d1564624a983bb
+## api-47c720857afe4738
 
 ```json
 {
-  "id": "api-96d1564624a983bb",
+  "id": "api-47c720857afe4738",
   "method": "GET",
   "path": "/api/models/content/state",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12303
+    "line": 12313
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218398,27 +219655,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/models",
   "requiredChecks": [
     {
-      "id": "api-96d1564624a983bb/response-contract",
+      "id": "api-47c720857afe4738/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96d1564624a983bb/access-policy",
+      "id": "api-47c720857afe4738/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96d1564624a983bb/input-boundaries",
+      "id": "api-47c720857afe4738/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96d1564624a983bb/tenant-boundary",
+      "id": "api-47c720857afe4738/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-96d1564624a983bb/dependency-failure",
+      "id": "api-47c720857afe4738/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218441,16 +219698,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-b7be3cefa24c3821
+## api-54696c80bfc5099c
 
 ```json
 {
-  "id": "api-b7be3cefa24c3821",
+  "id": "api-54696c80bfc5099c",
   "method": "GET",
   "path": "/api/models/engagement/state",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12309
+    "line": 12319
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218459,27 +219716,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/models",
   "requiredChecks": [
     {
-      "id": "api-b7be3cefa24c3821/response-contract",
+      "id": "api-54696c80bfc5099c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b7be3cefa24c3821/access-policy",
+      "id": "api-54696c80bfc5099c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b7be3cefa24c3821/input-boundaries",
+      "id": "api-54696c80bfc5099c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b7be3cefa24c3821/tenant-boundary",
+      "id": "api-54696c80bfc5099c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-b7be3cefa24c3821/dependency-failure",
+      "id": "api-54696c80bfc5099c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218502,16 +219759,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-1f4b3da614a95758
+## api-06ef35ba5cd53b57
 
 ```json
 {
-  "id": "api-1f4b3da614a95758",
+  "id": "api-06ef35ba5cd53b57",
   "method": "POST",
   "path": "/api/train/feedback",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12320
+    "line": 12330
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218520,32 +219777,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/train",
   "requiredChecks": [
     {
-      "id": "api-1f4b3da614a95758/response-contract",
+      "id": "api-06ef35ba5cd53b57/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f4b3da614a95758/access-policy",
+      "id": "api-06ef35ba5cd53b57/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f4b3da614a95758/input-boundaries",
+      "id": "api-06ef35ba5cd53b57/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f4b3da614a95758/tenant-boundary",
+      "id": "api-06ef35ba5cd53b57/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f4b3da614a95758/dependency-failure",
+      "id": "api-06ef35ba5cd53b57/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-1f4b3da614a95758/mutation-durability",
+      "id": "api-06ef35ba5cd53b57/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -218573,16 +219830,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-47e287e721fb02e4
+## api-987766b511ed7c26
 
 ```json
 {
-  "id": "api-47e287e721fb02e4",
+  "id": "api-987766b511ed7c26",
   "method": "GET",
   "path": "/api/health",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12344
+    "line": 12354
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218591,32 +219848,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/health",
   "requiredChecks": [
     {
-      "id": "api-47e287e721fb02e4/response-contract",
+      "id": "api-987766b511ed7c26/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-47e287e721fb02e4/access-policy",
+      "id": "api-987766b511ed7c26/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-47e287e721fb02e4/input-boundaries",
+      "id": "api-987766b511ed7c26/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-47e287e721fb02e4/tenant-boundary",
+      "id": "api-987766b511ed7c26/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-47e287e721fb02e4/dependency-failure",
+      "id": "api-987766b511ed7c26/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-47e287e721fb02e4/readiness-truth",
+      "id": "api-987766b511ed7c26/readiness-truth",
       "template": "readiness-truth",
       "status": "UNVERIFIED"
     }
@@ -218724,16 +219981,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-5002fd984a026f4f
+## api-af6ce31a9a883001
 
 ```json
 {
-  "id": "api-5002fd984a026f4f",
+  "id": "api-af6ce31a9a883001",
   "method": "POST",
   "path": "/api/warm",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12366
+    "line": 12376
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218742,32 +219999,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/warm",
   "requiredChecks": [
     {
-      "id": "api-5002fd984a026f4f/response-contract",
+      "id": "api-af6ce31a9a883001/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5002fd984a026f4f/access-policy",
+      "id": "api-af6ce31a9a883001/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5002fd984a026f4f/input-boundaries",
+      "id": "api-af6ce31a9a883001/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5002fd984a026f4f/tenant-boundary",
+      "id": "api-af6ce31a9a883001/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5002fd984a026f4f/dependency-failure",
+      "id": "api-af6ce31a9a883001/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-5002fd984a026f4f/mutation-durability",
+      "id": "api-af6ce31a9a883001/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -218784,16 +220041,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-6d1af4df4151c721
+## api-3334d234d8b78811
 
 ```json
 {
-  "id": "api-6d1af4df4151c721",
+  "id": "api-3334d234d8b78811",
   "method": "GET",
   "path": "/api/warm/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12477
+    "line": 12487
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218802,27 +220059,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/warm",
   "requiredChecks": [
     {
-      "id": "api-6d1af4df4151c721/response-contract",
+      "id": "api-3334d234d8b78811/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6d1af4df4151c721/access-policy",
+      "id": "api-3334d234d8b78811/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6d1af4df4151c721/input-boundaries",
+      "id": "api-3334d234d8b78811/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6d1af4df4151c721/tenant-boundary",
+      "id": "api-3334d234d8b78811/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-6d1af4df4151c721/dependency-failure",
+      "id": "api-3334d234d8b78811/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218845,16 +220102,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-afc18b5fc179d871
+## api-2e0faa039f976740
 
 ```json
 {
-  "id": "api-afc18b5fc179d871",
+  "id": "api-2e0faa039f976740",
   "method": "GET",
   "path": "/api/rta/status",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12487
+    "line": 12497
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218863,27 +220120,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/rta",
   "requiredChecks": [
     {
-      "id": "api-afc18b5fc179d871/response-contract",
+      "id": "api-2e0faa039f976740/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-afc18b5fc179d871/access-policy",
+      "id": "api-2e0faa039f976740/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-afc18b5fc179d871/input-boundaries",
+      "id": "api-2e0faa039f976740/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-afc18b5fc179d871/tenant-boundary",
+      "id": "api-2e0faa039f976740/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-afc18b5fc179d871/dependency-failure",
+      "id": "api-2e0faa039f976740/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -218906,16 +220163,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-4ae29e8039d92aa7
+## api-675470076340ad38
 
 ```json
 {
-  "id": "api-4ae29e8039d92aa7",
+  "id": "api-675470076340ad38",
   "method": "POST",
   "path": "/api/safety/screen",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12509
+    "line": 12519
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218924,32 +220181,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/safety",
   "requiredChecks": [
     {
-      "id": "api-4ae29e8039d92aa7/response-contract",
+      "id": "api-675470076340ad38/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ae29e8039d92aa7/access-policy",
+      "id": "api-675470076340ad38/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ae29e8039d92aa7/input-boundaries",
+      "id": "api-675470076340ad38/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ae29e8039d92aa7/tenant-boundary",
+      "id": "api-675470076340ad38/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ae29e8039d92aa7/dependency-failure",
+      "id": "api-675470076340ad38/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-4ae29e8039d92aa7/mutation-durability",
+      "id": "api-675470076340ad38/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -218977,16 +220234,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-9923254989df258e
+## api-1d83de0df0df8f6c
 
 ```json
 {
-  "id": "api-9923254989df258e",
+  "id": "api-1d83de0df0df8f6c",
   "method": "POST",
   "path": "/api/audio/mastering-recommendation",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12524
+    "line": 12534
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -218995,37 +220252,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-9923254989df258e/response-contract",
+      "id": "api-1d83de0df0df8f6c/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/access-policy",
+      "id": "api-1d83de0df0df8f6c/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/input-boundaries",
+      "id": "api-1d83de0df0df8f6c/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/tenant-boundary",
+      "id": "api-1d83de0df0df8f6c/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/dependency-failure",
+      "id": "api-1d83de0df0df8f6c/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/mutation-durability",
+      "id": "api-1d83de0df0df8f6c/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-9923254989df258e/artifact-integrity",
+      "id": "api-1d83de0df0df8f6c/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219048,16 +220305,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-095c088c3556e89c
+## api-27f4cf247f9a00f5
 
 ```json
 {
-  "id": "api-095c088c3556e89c",
+  "id": "api-27f4cf247f9a00f5",
   "method": "POST",
   "path": "/api/audio/mixing-recommendation",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12691
+    "line": 12701
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219066,37 +220323,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-095c088c3556e89c/response-contract",
+      "id": "api-27f4cf247f9a00f5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/access-policy",
+      "id": "api-27f4cf247f9a00f5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/input-boundaries",
+      "id": "api-27f4cf247f9a00f5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/tenant-boundary",
+      "id": "api-27f4cf247f9a00f5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/dependency-failure",
+      "id": "api-27f4cf247f9a00f5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/mutation-durability",
+      "id": "api-27f4cf247f9a00f5/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-095c088c3556e89c/artifact-integrity",
+      "id": "api-27f4cf247f9a00f5/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219119,16 +220376,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-cf0742fbe9100b7d
+## api-4b2a04ec794f66a5
 
 ```json
 {
-  "id": "api-cf0742fbe9100b7d",
+  "id": "api-4b2a04ec794f66a5",
   "method": "POST",
   "path": "/api/audio/analyze",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12802
+    "line": 12812
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219137,37 +220394,37 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/audio",
   "requiredChecks": [
     {
-      "id": "api-cf0742fbe9100b7d/response-contract",
+      "id": "api-4b2a04ec794f66a5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/access-policy",
+      "id": "api-4b2a04ec794f66a5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/input-boundaries",
+      "id": "api-4b2a04ec794f66a5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/tenant-boundary",
+      "id": "api-4b2a04ec794f66a5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/dependency-failure",
+      "id": "api-4b2a04ec794f66a5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/mutation-durability",
+      "id": "api-4b2a04ec794f66a5/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-cf0742fbe9100b7d/artifact-integrity",
+      "id": "api-4b2a04ec794f66a5/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219200,16 +220457,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-c5152686bd080d0f
+## api-f130ec1da418133b
 
 ```json
 {
-  "id": "api-c5152686bd080d0f",
+  "id": "api-f130ec1da418133b",
   "method": "POST",
   "path": "/api/infer/viral-score",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12812
+    "line": 12822
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219218,32 +220475,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/infer",
   "requiredChecks": [
     {
-      "id": "api-c5152686bd080d0f/response-contract",
+      "id": "api-f130ec1da418133b/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c5152686bd080d0f/access-policy",
+      "id": "api-f130ec1da418133b/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c5152686bd080d0f/input-boundaries",
+      "id": "api-f130ec1da418133b/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c5152686bd080d0f/tenant-boundary",
+      "id": "api-f130ec1da418133b/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c5152686bd080d0f/dependency-failure",
+      "id": "api-f130ec1da418133b/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-c5152686bd080d0f/mutation-durability",
+      "id": "api-f130ec1da418133b/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -219271,16 +220528,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-779667703c0929ee
+## api-65d755d425909124
 
 ```json
 {
-  "id": "api-779667703c0929ee",
+  "id": "api-65d755d425909124",
   "method": "GET",
   "path": "/api/video-job/{job_id}/download",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12850
+    "line": 12860
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219289,32 +220546,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-779667703c0929ee/response-contract",
+      "id": "api-65d755d425909124/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-779667703c0929ee/access-policy",
+      "id": "api-65d755d425909124/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-779667703c0929ee/input-boundaries",
+      "id": "api-65d755d425909124/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-779667703c0929ee/tenant-boundary",
+      "id": "api-65d755d425909124/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-779667703c0929ee/dependency-failure",
+      "id": "api-65d755d425909124/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-779667703c0929ee/artifact-integrity",
+      "id": "api-65d755d425909124/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219331,16 +220588,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-fc175a1abb06cf5a
+## api-f1fa94691259e2ae
 
 ```json
 {
-  "id": "api-fc175a1abb06cf5a",
+  "id": "api-f1fa94691259e2ae",
   "method": "GET",
   "path": "/api/video-job/{job_id}/file",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12851
+    "line": 12861
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219349,32 +220606,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-fc175a1abb06cf5a/response-contract",
+      "id": "api-f1fa94691259e2ae/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fc175a1abb06cf5a/access-policy",
+      "id": "api-f1fa94691259e2ae/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fc175a1abb06cf5a/input-boundaries",
+      "id": "api-f1fa94691259e2ae/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fc175a1abb06cf5a/tenant-boundary",
+      "id": "api-f1fa94691259e2ae/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fc175a1abb06cf5a/dependency-failure",
+      "id": "api-f1fa94691259e2ae/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-fc175a1abb06cf5a/artifact-integrity",
+      "id": "api-f1fa94691259e2ae/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219391,16 +220648,16 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-de6ef200605c5e1a
+## api-a52ad27cd7792a57
 
 ```json
 {
-  "id": "api-de6ef200605c5e1a",
+  "id": "api-a52ad27cd7792a57",
   "method": "GET",
   "path": "/api/video-job/{job_id}/video",
   "source": {
     "file": "external/maxcore/artifacts/ai-training-server/server.py",
-    "line": 12852
+    "line": 12862
   },
   "processScope": "python-declared:external/maxcore/artifacts/ai-training-server/server.py",
   "confidence": "declared-only; mount prefix unverified",
@@ -219409,32 +220666,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "python-decorator-ast/video-job",
   "requiredChecks": [
     {
-      "id": "api-de6ef200605c5e1a/response-contract",
+      "id": "api-a52ad27cd7792a57/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-de6ef200605c5e1a/access-policy",
+      "id": "api-a52ad27cd7792a57/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-de6ef200605c5e1a/input-boundaries",
+      "id": "api-a52ad27cd7792a57/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-de6ef200605c5e1a/tenant-boundary",
+      "id": "api-a52ad27cd7792a57/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-de6ef200605c5e1a/dependency-failure",
+      "id": "api-a52ad27cd7792a57/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-de6ef200605c5e1a/artifact-integrity",
+      "id": "api-a52ad27cd7792a57/artifact-integrity",
       "template": "artifact-integrity",
       "status": "UNVERIFIED"
     }
@@ -219615,6 +220872,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/qs-security-contract.test.mjs",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },
@@ -221107,6 +222369,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/health.test.ts",
+      "association": "exact-route-literal-only",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/qs-security-contract.test.mjs",
       "association": "exact-route-literal-only",
       "executionStatus": "executed"
     },

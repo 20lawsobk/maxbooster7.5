@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "scope": "Actual canonical retrieval pytest plus documented module entrypoints; real rendering/retrieval with private temporary upload directories",
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "7397142d3942451de0fc2bd1cfae512d1e40e85423fa43797f49211220fc3025",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "5a960476962079db68d39fcb414cd8a0ae67beba7214fddf8385fd9426595534"
+  },
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--import-mode=importlib",
+        "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+        "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+        "--junitxml=/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-runtime-upload-isolation/python/pytest.xml"
+      ],
+      "startedAt": "2026-10-28T02:17:18.297705+00:00",
+      "finishedAt": "2026-10-28T02:17:36.033903+00:00",
+      "exitCode": 0,
+      "log": "run-1.txt",
+      "logSha256": "34b030c86491cdc6aff7564d4f731e51664762bae1450066601f7e20e5fdf2c6",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_pipeline"
+      ],
+      "startedAt": "2026-10-28T02:17:36.110919+00:00",
+      "finishedAt": "2026-10-28T02:17:50.699336+00:00",
+      "exitCode": 0,
+      "log": "run-2.txt",
+      "logSha256": "82aaf2015c23a8162ac27ce44e682c948449e2ea027a3b76180ef52398f06c13",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_phase4"
+      ],
+      "startedAt": "2026-10-28T02:17:50.780060+00:00",
+      "finishedAt": "2026-10-28T02:17:55.076356+00:00",
+      "exitCode": 0,
+      "log": "run-3.txt",
+      "logSha256": "b12a928eb643df45be3dd7caf8078fc216ce1b8199c152727b4e110a1b7af8a3",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    }
+  ],
+  "sourceUploadFilesBefore": 36,
+  "sourceUploadFilesAfter": 36,
+  "sourceUploadsUnchanged": true,
+  "allRunsPassed": true,
+  "productionReady": false,
+  "beforeLeakEvidence": "../../2026-10-27-analytics-dependencies-final/source-drift-diagnosis.json"
+}

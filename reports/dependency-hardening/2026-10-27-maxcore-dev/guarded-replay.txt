@@ -1,0 +1,21 @@
+{
+  "baseline": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "originalEntries": 36,
+  "fixtureIsolated": true,
+  "status": "passed",
+  "updatedEntries": [
+    "maxbooster7.5/package.json",
+    "maxbooster7.5/package-lock.json",
+    "maxbooster7.5/pnpm-lock.yaml",
+    "maxbooster7.5/pnpm-workspace.yaml",
+    "maxbooster7.5/maxbooster7.5/package.json",
+    "maxbooster7.5/maxbooster7.5/package-lock.json",
+    "maxbooster7.5/maxbooster7.5/pnpm-lock.yaml",
+    "maxbooster7.5/maxbooster7.5/pnpm-workspace.yaml"
+  ],
+  "allCurrentChecksumsVerified": true,
+  "idempotent": true,
+  "customChangesRejectedAndPreserved": true,
+  "unrelatedFilePreserved": true,
+  "fixtureCleaned": true
+}

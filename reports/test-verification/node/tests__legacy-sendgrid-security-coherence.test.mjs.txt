@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: both guarded legacy SDK removals include coherent callers and the actual transport
+ok 1 - both guarded legacy SDK removals include coherent callers and the actual transport
+  ---
+  duration_ms: 708.714405
+  type: 'test'
+  ...
+# Subtest: actual completed legacy bundle replays idempotently and rejects unknown caller history intact
+ok 2 - actual completed legacy bundle replays idempotently and rejects unknown caller history intact
+  ---
+  duration_ms: 51.014678
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 946.444233

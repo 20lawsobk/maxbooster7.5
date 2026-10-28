@@ -1,0 +1,16 @@
+{
+  "testSha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+  "baselineSource": {
+    "client/src/components/layout/TopBar.tsx": "3d510fd250768abc7765de1fcedadb5debc5075cb2b90a010dd20d0421210303",
+    "client/src/components/layout/AppLayout.tsx": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3",
+    "client/src/components/layout/Sidebar.tsx": "3b5ae788a3dae797d5968ba93a7553ce3b6cfc6f0c771fedca34319d71d3b7bb"
+  },
+  "startedAtUnix": 1793177932.701521,
+  "exitCode": 1,
+  "restoredSourceMatches": {
+    "client/src/components/layout/TopBar.tsx": true,
+    "client/src/components/layout/AppLayout.tsx": true,
+    "client/src/components/layout/Sidebar.tsx": true
+  },
+  "finishedAtUnix": 1793177934.1206403
+}

@@ -1,0 +1,22 @@
+{
+  "node": "v22.23.3",
+  "absence": {
+    "@sendgrid/mail": {
+      "absent": true
+    },
+    "@sendgrid/client": {
+      "absent": true
+    },
+    "@sendgrid/helpers": {
+      "absent": true
+    },
+    "deepmerge": {
+      "absent": true
+    }
+  },
+  "gate": {
+    "ready": true,
+    "failures": [],
+    "occurrences": 97
+  }
+}

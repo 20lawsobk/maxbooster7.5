@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="billing checkout retries reuse the durable session for the same command" time="0.051254" classname="test"/>
-	<testcase name="storefront cart retries reuse one session and one set of pending orders" time="0.038203" classname="test"/>
-	<testcase name="beat purchase completion verifies the payment before recording a sale" time="0.009860" classname="test"/>
-	<testcase name="beat purchase completion grants a sale only with the verified charge amount" time="0.009001" classname="test"/>
-	<testcase name="Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents" time="0.024186" classname="test"/>
+	<testcase name="billing checkout retries reuse the durable session for the same command" time="0.047931" classname="test"/>
+	<testcase name="storefront cart retries reuse one session and one set of pending orders" time="0.038087" classname="test"/>
+	<testcase name="beat purchase completion verifies the payment before recording a sale" time="0.009355" classname="test"/>
+	<testcase name="beat purchase completion grants a sale only with the verified charge amount" time="0.009225" classname="test"/>
+	<testcase name="Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents" time="0.023881" classname="test"/>
 	<!-- tests 5 -->
 	<!-- suites 0 -->
 	<!-- pass 5 -->
@@ -12,5 +12,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 211.960481 -->
+	<!-- duration_ms 197.132721 -->
 </testsuites>

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "node",
+    "node_modules/electron-builder/cli.js",
+    "--linux",
+    "dir",
+    "--x64",
+    "--publish",
+    "never",
+    "--config.electronDist=/tmp/maxbooster-linux-u3f69z18/downloads/electron-v43.8.3-linux-x64.zip",
+    "--config.directories.output=/tmp/maxbooster-linux-u3f69z18/out-prototype"
+  ],
+  "cwd": "/tmp/maxbooster-linux-u3f69z18/project",
+  "startedAt": "2026-10-28T02:26:15.844350+00:00",
+  "durationSeconds": 36.031,
+  "ownedProcessGroup": 102139,
+  "exitCode": 0,
+  "timedOut": false,
+  "log": "reports/native-linux-rehearsal/2026-10-27/owned-prototype-dir-build.txt",
+  "logSha256": "5a03c2fd3eb41eee9566c5488ed95a85900dfcf97bfcb66c17238b65e21a59c4",
+  "sourceScope": "Onlyownedprototypecopy, originalproductionnotpatchedyet"
+}

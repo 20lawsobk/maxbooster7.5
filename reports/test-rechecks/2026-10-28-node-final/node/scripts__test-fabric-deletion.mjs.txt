@@ -1,0 +1,1 @@
+PASS D5: durable claim; node failure retains usage/progress; retry accounts once; shared reference preserved

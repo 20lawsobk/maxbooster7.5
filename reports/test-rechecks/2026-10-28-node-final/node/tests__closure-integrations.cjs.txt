@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: catalog follows every track page and retains zero-duration tracks
+ok 1 - catalog follows every track page and retains zero-duration tracks
+  ---
+  duration_ms: 1.330347
+  type: 'test'
+  ...
+# Subtest: catalog rejects missing exhaustion, failed pages, loops and hostile credential cursors
+ok 2 - catalog rejects missing exhaustion, failed pages, loops and hostile credential cursors
+  ---
+  duration_ms: 0.832135
+  type: 'test'
+  ...
+# Subtest: actual Spotify scanner enriches albums beyond ten and preserves authoritative empty/failure
+ok 3 - actual Spotify scanner enriches albums beyond ten and preserves authoritative empty/failure
+  ---
+  duration_ms: 31.307779
+  type: 'test'
+  ...
+# Subtest: submission stops at a lost durable checkpoint without executing the next provider step
+ok 4 - submission stops at a lost durable checkpoint without executing the next provider step
+  ---
+  duration_ms: 22.366032
+  type: 'test'
+  ...
+# Subtest: digest queues independently of in-app and rechecks mute/category preferences
+ok 5 - digest queues independently of in-app and rechecks mute/category preferences
+  ---
+  duration_ms: 21.413556
+  type: 'test'
+  ...
+# Subtest: unknown digest acceptance is durable and never retried
+ok 6 - unknown digest acceptance is durable and never retried
+  ---
+  duration_ms: 16.42965
+  type: 'test'
+  ...
+# Subtest: muted digests are suppressed; quiet hours defer without sending
+ok 7 - muted digests are suppressed; quiet hours defer without sending
+  ---
+  duration_ms: 41.685551
+  type: 'test'
+  ...
+# Subtest: posting claims quarantine unknown receipts; immediate reads use normalized results
+ok 8 - posting claims quarantine unknown receipts; immediate reads use normalized results
+  ---
+  duration_ms: 0.59022
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 802.90909

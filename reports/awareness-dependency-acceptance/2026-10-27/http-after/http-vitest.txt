@@ -1,0 +1,5 @@
+
+[globalSetup] Server ready at http://127.0.0.1:36115 ✅  (0s elapsed)
+JUNIT report written to /workspace/onboarding-results/required-awareness-after-http/integration.junit.xml
+[globalTeardown] Removing 2 test user(s)...
+[globalTeardown] Cleanup complete — removed 2 test user(s)

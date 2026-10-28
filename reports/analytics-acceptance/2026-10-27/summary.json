@@ -1,0 +1,97 @@
+{
+  "status": "PASS_WITH_DECLARED_SOURCE_GAP",
+  "productionReady": false,
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "finalSourceHashes": "source-hashes.json",
+  "sourceHashFiles": 16,
+  "sourceHashesMatch": true,
+  "finalChecks": {
+    "mainHttp": {
+      "passedLeafCases": 19,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "receipt": "http-stable-final/summary.json"
+    },
+    "nodeService": {
+      "passedLeafCases": 12,
+      "parentCaseCounters": 1
+    },
+    "browser": {
+      "passedLeafCases": 1,
+      "actual": "Chromium + React DOM + installed Query v5"
+    },
+    "combinedNodeTap": {
+      "total": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "proxyAndAdjacentRegressions": {
+      "passed": 24,
+      "transportBoundary": "mocked explicitly"
+    },
+    "pythonAsgi": {
+      "passed": 59,
+      "failed": 0
+    },
+    "pythonScopedCoverage": {
+      "scope": "canonical ai_model/analytics.py ONLY; not global",
+      "statements": {
+        "covered": 158,
+        "total": 158
+      },
+      "branches": {
+        "covered": 30,
+        "total": 30
+      },
+      "partialBranches": 0,
+      "excludedLines": 0
+    },
+    "serverClientTypecheck": {
+      "exitCode": 0
+    },
+    "focusedLint": {
+      "exitCode": 0
+    },
+    "diffCheck": {
+      "exitCode": 0
+    }
+  },
+  "privateAccountData": {
+    "ownerScopedSql": true,
+    "transientMaxCoreAnalysis": true,
+    "publicLearningOrTrainingWrites": false,
+    "privatePersistenceOrSharedCache": false
+  },
+  "publicContext": {
+    "separateReadOnlySnapshotReceipt": true,
+    "usedForForecast": false,
+    "missingContextDoesNotFabricateSignal": true
+  },
+  "sourceGap": {
+    "metric": "engagement",
+    "code": "DAILY_ENGAGEMENT_REPORTS_UNAVAILABLE",
+    "requirement": "Authenticated provider-period reports or idempotent timestamped counter deltas; lifetime post counters cannot be reclassified as daily events"
+  },
+  "limits": [
+    "Recorded account data is not necessarily independently verified provider truth",
+    "Observed summaries and conditional OLS baseline are not arbitrary business-data reasoning or calibrated accuracy",
+    "No production Neon migration, deployed Replit acceptance, global capacity, other capability or whole-platform100% proof"
+  ],
+  "httpOwnedProcessCleanup": {
+    "testProcessCleanup": {
+      "tracked": 3,
+      "remaining": []
+    },
+    "appProcessCleanup": {
+      "tracked": 2,
+      "remaining": []
+    },
+    "analyticsProcessCleanup": {
+      "tracked": 1,
+      "remaining": []
+    },
+    "postgresCleanup": "pass"
+  }
+}

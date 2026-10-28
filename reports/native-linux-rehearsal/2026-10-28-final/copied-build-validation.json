@@ -1,0 +1,19 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "node",
+    "--input-type=module",
+    "-e",
+    "import(\"./scripts/start-production.mjs\").then(m=>m.validateBuild(process.cwd()))"
+  ],
+  "cwd": "/tmp/maxbooster-linux-u3f69z18/project",
+  "startedAt": "2026-10-28T08:55:46.814245+00:00",
+  "durationSeconds": 0.069,
+  "ownedProcessGroup": 119332,
+  "exitCode": 1,
+  "timedOut": false,
+  "log": "reports/native-linux-rehearsal/2026-10-28-final/copied-build-validation.txt",
+  "logSha256": "7a9a14585238c48e8f5e1470de08986bd1828c1e4112392ca6a851fc3ec40c70"
+}

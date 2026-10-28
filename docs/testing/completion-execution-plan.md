@@ -1,11 +1,14 @@
 # Max Booster completion execution plan
 
-Recorded October 26, 2026; updated October 27. This ledger governs the remaining work; it is not a
-launch certificate. Source checkpoint:
-`b369d68e34bef0e30c96fbd5b72fa7339e6425f2` on the pushed review branch
-`sophia/platform-production-hardening-2026-10-27`. The complete repaired master
-ran against that checkpoint with unchanged source/configuration/test inputs.
-Its current evidence and documentation are committed separately from source.
+Recorded October 26, 2026; reconciled October 28, 2026, America/Detroit. This
+ledger governs the remaining work; it is not a launch certificate. The pushed
+review checkpoint remains `c06fbecdb32a5c3b76662f631604bfd9abac386b` on
+`sophia/platform-production-hardening-2026-10-27`. Later local commits are
+`a1603b13b6352a978e3877a2f43f1ccd98a98a18` and the fixture-only correction
+`cb783f1f9b34719a214dd7f9203a31dea64c051e`; neither is yet pushed at this
+reconciliation. The full master completed against a160. The later complete
+Node-group recheck has its own cb783f1f source receipt; it does not rewrite the
+full master's original outcome.
 The scope is the existing Replit web/API application, its local
 imported MaxCore/PDIM services, Neon, enabled provider journeys and 80 declared
 pages. The owner's latest instruction extends the completion plan to the entire
@@ -26,6 +29,10 @@ being inventoried or included in this plan.
 The [execution schedule](platform-work-schedule.md) assigns all 80 declarations
 to dependency-ordered work waves. Every named section and its six work
 dimensions must execute; the waves sequence the work without narrowing it.
+The [critical-path roadmap](launch-critical-path.md) supplies the seven-level
+task expansion, dependencies, rollback boundaries and quality checkpoints.
+The reproducible [launch audit](launch-readiness-audit.md) carries the per-page
+matrix, explicit validation criteria and the same exact feature/work-item IDs.
 
 ## Current position
 
@@ -53,14 +60,114 @@ reports a moderate `qs` advisory despite passing the configured high-severity
 gate. Preserve that full source-bound result before the dependency correction.
 A passing subset cannot substitute for the missing launch evidence.
 
+The subsequent source batch fixes the newly published `qs`, Markdown and Zod dependency
+advisories through compatible upstream versions, and replaces the sole broken
+SendGrid alert SDK consumer after a later unpatched `deepmerge` advisory.
+Actual monitoring HTTP responses now distinguish accepted, failed and suppressed
+requests; per-channel cooldown starts only on acceptance. The dedicated MaxCore
+account-statistics contract replaces the earlier analytics 501/missing-contract
+503 paths with owner-scoped recorded summaries and explicit statistical
+forecasts. Insufficient history, missing daily engagement reports and upstream
+outages remain honest states. Private account aggregates are transient and
+never enter public-awareness learning. Its first integrated run is now
+complete; the next paragraph records its actual failures and subsequent fixes.
+
+The latest completed full master ran 05:11:45–05:33:33 on October 28,
+America/Detroit (`09:11:45Z`–`09:33:33Z` in its raw receipts), about 21m48s,
+from a160. Source digest
+`e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69`
+remained unchanged. Build, 2,728 unit cases, 18 additional cases, Python,
+commerce, Rust/Go/imported subsystems, focused Chromium, HTTP, 80-page render
+observations, bounded load, operations, types, lint and production audit pass.
+All 2,771 instrumented assertions pass, but strict 100% thresholds and full
+feature-evidence/remediation gates fail. The source-bound
+[a160 history](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md)
+preserves 562 raw evidence members, their hashes, the full original command
+receipt and counters. Its Node group contains one Chromium startup fixture
+failure before the navigation assertions.
+
+The cb783f1f correction gives Chromium a short private temporary socket path
+inside the nested sealed runner. It retains the original nine navigation
+assertions and startup deadline, and adds two real child-process startup
+diagnostics. The exact master-nested reproduction changes from failure in
+10.804s to pass in 2.287s. The subsequent
+[complete Node recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md)
+passes all 122 files in 126.867s: 644 passing TAP cases, two explicit skips,
+646 total including parents, with unchanged source digest
+`eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07`.
+Production layout code did not change. Those separate results do not make the
+a160 full master pass or prove that its other groups reran against cb783f1f.
+
+The isolated bounded HTTP profile now passes 150/150 requests: steady 70 at
+10 workers with p95 221.834846ms and spike 80 at 20 workers with p95
+280.208732ms, both below the unchanged 500ms limit. The preceding
+[8cad history](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
+retains its 613.903365ms p95 failure under competing compression/native work,
+along with the earlier fixed nested-install and awareness-status failures.
+The new bounded result does not establish global generation capacity or
+90M simultaneous clients.
+
+The refreshed cb register retains all 80 declarations, 8,374 controls, 2,907 backend
+registrations, 932 frontend contracts and 33,538 required feature checks.
+Six exact operational/auth checks passed their eight cases; 33,532 checks and
+130 mapping warnings remain unverified, with zero invalid evidence links.
+The plan retains 2,162 named sections, 12,972 dimension steps and 52,965 work
+items. The refreshed launch matrix remains 80 Red/zero Green; its full-master
+binding correctly remains stale after the fixture-only cb change. These
+inventory counts do not measure implementation completion.
+The [mapping trace](mapping-blocker-trace.md) preserves every one of the 130
+entries and existing work identities, and identifies actual producer topology
+errors without treating dormant or computed declarations as missing features.
+
+The current-format [joint SQL/PDIM recovery rehearsal](current-storage-joint-recovery.md)
+passes nine leaf checks including existing backup-tool regressions. That closes
+the controlled writer-drained fixture scope, not the deployed/offsite recovery
+gate. The [first Node coverage producer](node-coverage-producer.md) now preserves
+actual runtime source/maps and bounds owned process-group cleanup. Its fourteen
+framework cases pass, but incompatible counters remain unmerged. Explicit
+[conjunctive feature links](acceptance-link-review.md) allow multiple exact
+passing cases to establish one full check without weakening its requirements.
+
+
 The frozen October 27 portable release passed preparation, copied-payload cold
 startup and verification before/after startup. Its credential-free, egress-denied
 scope correctly retained `productionReady: false` when fresh public awareness
 was unavailable. Subsequent independent review found that an old cluster-test
 bundle entered the app capsule and unrelated restore scratch affected source
-identity. The narrow scratch-policy correction passes focused regressions; it
-requires a new versioned preparation. The prior passing and failed receipts
-remain available in the [release rehearsal](release-rehearsal.md).
+identity. The narrow scratch-policy correction passed focused regressions and
+was included in the later serialized cb preparation below. The prior passing
+and failed receipts remain available in the [release rehearsal](release-rehearsal.md).
+
+The subsequent preparation failed its final admitted-source guard. The master
+build changed an ignored MaxCore API bundle while a retrieval test wrote a
+new generated image into canonical runtime uploads. The release inventory and
+MaxCore capsule admitted that mutable upload subtree. The minimal policy repair
+now omits only `external/maxcore/artifacts/ai-training-server/uploads`; source,
+first-party assets and adjacent `uploads-fixtures` remain admitted. Real
+packaging/restore checks pass 14 cases. The retrieval suites now use owned
+upload directories and restore imported aliases, and all five log/counter-only
+Python assertion helpers now raise under the actual pytest runner. Their
+[oracle review](test-oracle-review.md) preserves both the false-pass baseline
+and the exact positive/negative proofs. The a160 master and cb Node recheck
+subsequently completed before the new serialized cb release. All four release
+commands and 37 independent audit checks passed; the common digest and all 4,526
+admitted entries stayed unchanged. The payload has 37 entries totaling
+719,499,770 bytes and all 37 tracked descendants were cleaned. Its accepted
+`cold-startup-with-ml-unavailable` scope retains `productionReady: false`.
+Four preparation threads rebuilt invalidated capsules with the existing codec
+and checksum/source/cache guards. A later admitted source or build-setting
+change needs a fresh rehearsal; no compression, source-guard or cache-policy
+bypass is authorized by this plan.
+
+Actual Linux packaging exposed virtual-ASAR module ancestry, TensorFlow.js
+omission, Sharp/libvips placement and a host-built bcrypt binary shadowing the
+published prebuild. Their narrow repairs pass real packaged Zod, tensor, PNG
+and cost-12 password verification in the
+[latest native cohort](../../reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/README.md).
+The full credential-free child reaches its expected SESSION_SECRET guard.
+Configured GUI, normal sandbox, private services, database/provider readiness
+and every supported OS/installer/device remain separate open gates. This
+fixture rejection does not imply that configured Replit keys are missing.
 
 Four distinctions determine the path:
 
@@ -103,11 +210,16 @@ The resumed execution order minimizes stale work:
    before catalog generation. Confirm executable tests under `tests/coverage`
    participate in the master source digest while generated coverage reports do
    not. Resolve discovery or source-map warnings before trusting percentages.
-3. Run the complete master from that snapshot. A fresh release preparation may
-   run concurrently only while its admitted inputs remain unchanged and owned
-   resources fit available capacity. Retain source digests and actual exit codes
-   for both; reject stale evidence rather than editing manifests. The previous
-   master took about 22 minutes, which is an observation, not a timeout promise.
+3. Run the complete master from that snapshot with no concurrent capsule
+   preparation, native packaging or competing capacity test. Preserve its raw
+   evidence and triage exact failures. Only after it finishes, capture full
+   admitted-source inventories and prepare/verify/cold-start/verify the release
+   in a disposable copy. Use at most four preparation threads while those CPUs
+   are idle; rebuild policy-invalidated caches normally. Retain actual exits
+   and common-code as well as admitted-release before/after digests. Reject
+   drift rather than editing manifests. The preceding master took 22m38s;
+   previous two-thread preparation took 23m37s and failed its source guard.
+   These observations are not timing guarantees.
 4. Triage exact integrated failures before expanding coverage. Prioritize a
    confirmed production defect over an uncovered guard; then select the next
    uncovered successful/adverse contract by user impact and shared dependencies.
@@ -125,18 +237,18 @@ The resumed execution order minimizes stale work:
 | Step | Work, exact acceptance and evidence | State |
 | --- | --- | --- |
 | 0 | Read actual branch/SHA/status, current runtime readiness, existing receipts and active agents. Identify source ownership and reserve migration IDs. Retain proxy/CA and never print credentials. | Complete |
-| 1A | Authentication: retain atomic Redis/PDIM rate admission, production private-IP enforcement and degraded bounds. Separate attack-probe identities in the isolated HTTP fixture so intentional IP blocks cannot invalidate unrelated user-flow assertions. Require actual 429/Retry-After and decrementing authenticated billing counters. | Focused rate, paid/billing and corrected HTTP fixtures pass; integrated rerun pending |
+| 1A | Authentication: retain atomic Redis/PDIM rate admission, production private-IP enforcement and degraded bounds. Separate attack-probe identities in the isolated HTTP fixture so intentional IP blocks cannot invalidate unrelated user-flow assertions. Require actual 429/Retry-After and decrementing authenticated billing counters. | The a160 master passes the corrected auth/billing HTTP scope; full production/deployed and coverage gates remain separate. |
 | 1B | Hybrid storage: replace whole-index snapshots with fresh, owner-scoped per-file PostgreSQL metadata. Commit verified bytes before metadata; prevent dedup aliases from deleting another file's bytes. Import legacy metadata once without resurrecting deletions. Prove concurrent two-instance insert/read/delete and failure propagation on disposable PostgreSQL. Migration 0097. | Source complete; SQL/codec/unit/type checks and all 15 owner-isolation/file-lifecycle HTTP cases pass |
 | 1C | Media jobs: persist owner/family/status/results in PostgreSQL before accepting work; use worker leases, heartbeat and conditional completion. A different worker must poll the same result; an expired worker must expose interruption and cannot overwrite a successor. Preserve real renderer contracts. Migration 0098. | Source complete; 21 shared media-job cases pass through Node and direct TS instrumentation, with all four metrics at 100% for the three scoped media files |
 | 1D | Fabric migration: retain both physical keys and durable progress across target copying, verified publication, source deletion and capacity accounting. Prove restart, stale-owner rejection, duplicate retry and failed I/O with real disposable SQL. Migration 0099. | Durable repair complete; actual SQL/filesystem/PDIM restart, stale-writer, key-rotation, target-loss and schema contracts pass 25 focused leaf cases |
-| 2 | Review each patch and focused receipt independently. Run applicable types and focused Node/Vitest/HTTP checks. Reconcile schema-generated fixture SQL, check migrations on disposable databases and record backward-compatibility/rollback limits. No actual Neon migration during this step. | Initial repairs and unit/HTTP corrections pass focused checks; final narrow coverage/measurement/packaging/runtime batch under review |
-| 3 | Preserve before/after provenance and ten-repeat load evidence in portable repository reports. Refresh source/test inventory, add new canonical tests to discovery, fix stale instructions and record exact tool/runtime selectors. | Source inventory refreshed; targeted and completed-master histories preserved; final instruction reconciliation pending step 9 |
-| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; all 21 HTTP suites; 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. Preserve real exit codes, source hashes, logs and cleanup status. | October 27 repaired-source run complete with unchanged inputs; executable groups pass, coverage/evidence gates fail honestly |
-| 5 | Triage integrated failures by root cause. Repair confirmed reachable defects first, then inaccurate fixtures/reporting. Follow the 100% coverage sequence below, adding behavior assertions rather than excluding untested code. Re-run the affected group; re-run integrated checks when changes affect shared startup/auth/schema/runtime. | Active C1 safety coverage and demonstrated integrity/runtime corrections; broad measured coverage gap remains |
-| 6 | Prepare the actual configured release in a disposable publishing copy. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Compare prepared source hashes with final source; rebuild stale capsules. | Final pushed-source portable cold scope passed all four commands and 16 audit checks; no scratch entries, 40 descendants cleaned; production readiness false in offline awareness scope |
+| 2 | Review each patch and focused receipt independently. Run applicable types and focused Node/Vitest/HTTP checks. Reconcile schema-generated fixture SQL, check migrations on disposable databases and record backward-compatibility/rollback limits. No actual Neon migration during this step. | Scoped source/runtime/oracle/navigation corrections pass focused receipts. The a160 full sweep and separate cb Node recheck are complete; measurement/topology findings remain tracked next work. |
+| 3 | Preserve before/after provenance and ten-repeat load evidence in portable repository reports. Refresh source/test inventory, add new canonical tests to discovery, fix stale instructions and record exact tool/runtime selectors. | Source/test instructions and original failures are retained, including the 562-member a160 archive and separate cb Node recheck. The cb cold-result and refreshed matrix are retained; evidence review and review-branch push remain step 9. |
+| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; HTTP suites; all 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. No heavy release/native work may overlap. Preserve real exit codes, source hashes, logs and cleanup status. | Completed a160 master in about 21m48s with unchanged inputs: ordinary scopes pass except one Node startup fixture; strict coverage/evidence fail. The later fixture-only cb complete Node group passes 122 files separately. |
+| 5 | Triage integrated failures by root cause. Repair confirmed reachable defects first, then inaccurate fixtures/reporting. Follow the 100% coverage sequence below, adding behavior assertions rather than excluding untested code. Re-run the affected group; re-run integrated checks when changes affect shared startup/auth/schema/runtime. | Chromium socket-path fixture failure repaired and exact nested/full Node rechecks pass. Remaining 100% coverage, all exact feature acceptance and proven coverage/topology producer corrections remain open. |
+| 6 | After the master finishes, prepare the configured release in a disposable publishing copy with complete admitted before/after inventories. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Rebuild stale/policy-invalidated capsules normally. | The cb783f1f serialized rehearsal completed at 08:15:15–08:30:50 America/Detroit on October 28: all four real commands and all 37 independent audit checks passed, with unchanged common source and all 4,526 admitted entries. All 37 tracked descendants were cleaned. The credential-free startup scope retains `productionReady: false`; deployed/full generation/global acceptance remains open. |
 | 7 | Verify deployed Replit identity, actual published HTTPS origin, required schema, enabled provider callbacks/webhooks and real application journeys. Perform controlled migration/deploy only after a concrete reviewed package and required production-change authorization. Do not guess an app origin from the editor URL. | External gates remain |
-| 8 | Capacity gate: run the bounded source HTTP profile and report measured concurrency/latency/errors. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | Bounded 10/20 worker profile passed 150 requests; global capacity unverified |
-| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Source checkpoint pushed on review branch; repaired master and live public-awareness proof complete; final evidence reconciliation active; main readiness condition unmet |
+| 8 | Capacity gate: run the existing bounded source HTTP profile without competing release/native workloads and retain its unchanged latency/error limits. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | The isolated a160 bounded profile passes 150/150 requests; steady p95 221.834846ms and spike p95 280.208732ms satisfy 500ms. The previous failing run is retained; global topology/capacity remains unverified. |
+| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | a160 and cb are committed locally on the review branch but not yet pushed at this reconciliation. The completed cb cold receipt and refreshed 80 Red/zero Green matrix are retained; final artifact/link/redaction review and normal review-branch push remain pending. Main readiness condition is unmet. |
 
 ## Detailed gate checks
 
@@ -157,9 +269,9 @@ rechecks the affected scope. A failed assertion is fixed before expanding the
 batch. There is no automatic exclusion, fabricated hit, threshold reduction or
 blanket pass for code that has not run.
 
-The repaired October 27 unit coverage producer executed 2,712 passing assertions
-without transform exclusions and measured 13.11% lines, 13.01% statements, 8.67%
-functions and 8.79% branches across 2,651 files. The 112 passing Node files,
+The completed a160 unit coverage producer executed 2,771 passing assertions
+without transform exclusions and measured 13.10% lines, 13.00% statements, 8.67%
+functions and 8.77% branches across 2,653 files. Separately executed Node files,
 application HTTP processes and Chromium execution have separate collectors or
 no compatible global collector. To avoid duplicating their existing assertions,
 execute the initial C5 provenance/comparator and single-producer batch directly
@@ -169,7 +281,14 @@ not the all-platform scope or acceptance target. The
 [coverage-producer implementation plan](coverage-producer-implementation-plan.md)
 names every affected runner, isolation boundary and rejection test. Keep
 incompatible profiles separate: the validated Studio browser and unit statement
-maps currently differ, even though their function/branch maps match.
+maps currently differ, even though their function/branch maps match. The
+[new C5 compatibility trace](coverage-compatibility-trace.md) also reproduces
+all nine retained Node profiles exactly and confirms compiler-generated helpers
+are being misattributed to original statement/function locations. Raw Infinity
+and explicit undefined coordinates explain additional comparison differences;
+all nine complete profiles remain incompatible and unmerged. Repair the
+producer and validate original-source attribution before any combined counter
+claim, then continue the existing C0–C7 sequence.
 
 | Batch | Work and smallest reviewable unit | Evidence required before moving on |
 | --- | --- | --- |
@@ -192,10 +311,10 @@ select the next exact missing path. Skips, blocked prerequisites and unavailable
 instrumentation remain visible. Do not write a test that merely mirrors a
 condition or imports a file to raise its percentage.
 
-At the last completed measurement, the remaining JS/TS gaps to 100% were 87.03
-percentage points for lines, 87.15 for statements, 91.49 for functions and 91.42
-for branches. These values describe the October 26 profile, not the result of
-the newly configured 100% target or an unexecuted final rerun.
+At the latest completed measurement, the remaining JS/TS gaps to 100% were
+86.90 percentage points for lines, 87.00 for statements, 91.33 for functions and
+91.23 for branches. These are the recorded a160 profile's rounded values.
+The later cb783f1f Node recheck does not change that instrumented profile.
 
 For each change: inspect exact callers and failure contracts; implement the
 smallest coherent behavior; test owner isolation and a successful real outcome;
@@ -218,10 +337,12 @@ fixture; they do not establish production-account misconfiguration. Production
 Tax/Connect capabilities remain unverified. API-only proof is not deployed
 checkout proof.
 
-The current read-only Neon observation confirms the deletion-journal/ref-count
-migration is absent. Prepare a writer-drain/backup/migrate/verify/rollback
-runbook; do not execute a live storage migration while old writers remain.
-New 0097/0098 tables likewise require deployment migration verification.
+The October 28 read-only Neon observation compared all 312 ORM tables and
+confirmed drift in ten table/column entries, including deletion/fencing,
+hybrid metadata, migration journals and media jobs. The transaction confirmed
+read-only mode and read metadata only. The reviewed 0096–0099 writer-drain,
+matched backup, migration, invariant and rollback procedure remains required;
+no production DDL or application data mutation was performed.
 
 ## Stop conditions and completion definition
 

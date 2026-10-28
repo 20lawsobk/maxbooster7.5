@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "scope": "Focused isolated required-snapshot dependency classification, not global launch approval",
+  "configuredSecretExactMatchFiles": 0,
+  "sourceHashesMatch": true,
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "e0d226122470610e0d5fa6f0cd89e55a71ef8b0429a47318511238b3d3338951",
+      "bytes": 4232
+    },
+    {
+      "path": "http-after/http-analytics.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "http-after/http-app.txt",
+      "sha256": "48985ed85bdbaec083c8cc0962728f63276629292b2a76fa1a43928eda26b65a",
+      "bytes": 125916
+    },
+    {
+      "path": "http-after/http-setup.txt",
+      "sha256": "18b35ef51ffc5707a9cfc1f769b7fcbedd7594179bb9fb8cf7244dfd127b8e5f",
+      "bytes": 13956
+    },
+    {
+      "path": "http-after/http-vitest.txt",
+      "sha256": "aec2f4dbc7b4d3a009af55cc3129354c45987ec694b5a62478752ad1661ad1e4",
+      "bytes": 283
+    },
+    {
+      "path": "http-after/integration.junit.xml",
+      "sha256": "d8215eeed67989aaa3edfe28c14a1a7a33c9e2a9a189ba8bc27f9ac45d9b5429",
+      "bytes": 15109
+    },
+    {
+      "path": "http-after/summary.json",
+      "sha256": "a3750e73ad9817c12b83d2b905ff2d5b0c704c9688e0ae8d057b7eba2430ce37",
+      "bytes": 4168
+    },
+    {
+      "path": "http-before/http-analytics.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "http-before/http-app.txt",
+      "sha256": "46e3cabda5ced227db2b5b35c5da921da70fb646a52778c041b8e8099c6edb32",
+      "bytes": 109916
+    },
+    {
+      "path": "http-before/http-setup.txt",
+      "sha256": "1d9b6e373074ac9ee54a20cb845912748c3aaca2374f87bd058345f335af8421",
+      "bytes": 13956
+    },
+    {
+      "path": "http-before/http-vitest.txt",
+      "sha256": "5d4a1e2fc56155b7340d7ee9d85a027789fbd62e9b4552784bcd2705b0e25bc1",
+      "bytes": 284
+    },
+    {
+      "path": "http-before/integration.junit.xml",
+      "sha256": "3cc12b15c47b64f4f9189a8412bb9de02d1a26aebbb727302c4c227b2d908a72",
+      "bytes": 10167
+    },
+    {
+      "path": "http-before/summary.json",
+      "sha256": "77a2e5ccc7315db03c8b03dbd3ef578a8b3dfd4fe5245afebf3a6c4d2533825d",
+      "bytes": 4122
+    },
+    {
+      "path": "required-awareness-after-http-driver.txt",
+      "sha256": "a3750e73ad9817c12b83d2b905ff2d5b0c704c9688e0ae8d057b7eba2430ce37",
+      "bytes": 4168
+    },
+    {
+      "path": "required-awareness-before-http-driver.txt",
+      "sha256": "77a2e5ccc7315db03c8b03dbd3ef578a8b3dfd4fe5245afebf3a6c4d2533825d",
+      "bytes": 4122
+    },
+    {
+      "path": "required-awareness-lint.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "required-awareness-types.txt",
+      "sha256": "112ae32f614b9bbeac3e77d642a5db2326a925f32c714c68f4306fb8d0108835",
+      "bytes": 273
+    },
+    {
+      "path": "required-awareness-unit-after.txt",
+      "sha256": "ee317307b9a7758ef642f70b22bff2c95949a9f649f7d5248b07d0138ab7f120",
+      "bytes": 14299
+    },
+    {
+      "path": "required-awareness-unit-after.xml",
+      "sha256": "a43c8195f1c4cca0a54b3d6e1d84ddbb4c681143d5e2f979176693f13e54802c",
+      "bytes": 19645
+    },
+    {
+      "path": "required-awareness-unit-before.txt",
+      "sha256": "8ec468124ed3fd033f67ba11cec07a334917f26412a008bbf702400ff66ddc7c",
+      "bytes": 89
+    },
+    {
+      "path": "required-awareness-unit-before.xml",
+      "sha256": "eafd473983d0cc8e022bab106ae66794d609cc2952baaf6a4abab4832bbf54f9",
+      "bytes": 33463
+    },
+    {
+      "path": "source-hashes.json",
+      "sha256": "76c13658e47cb4de4dd96b1e80c0b9aa5aa348690843342b67fb586a52698a32",
+      "bytes": 1244
+    },
+    {
+      "path": "summary.json",
+      "sha256": "05f000bc0b750612ea9495a81780f1944287b37d12463361586b70236b15c904",
+      "bytes": 1729
+    }
+  ]
+}

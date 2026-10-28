@@ -1,0 +1,235 @@
+{
+  "recordedAt": "2026-10-28T01:23:51.596125+00:00",
+  "baselineCommit": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "scope": "Narrow compatible MaxCore Markdown/Puppeteer/BiDi/Zod repair and installed-consumer security/PDF verification; not a global source freeze, deployed readiness or launch approval",
+  "productionReady": false,
+  "changedSourceFiles": [
+    "external/maxcore/pnpm-lock.yaml",
+    "external/maxcore/pnpm-workspace.yaml",
+    "external/maxcore/scripts/package.json",
+    "external/maxcore/scripts/check-js-security-versions.js",
+    "scripts/verify-runtime-artifacts.mjs",
+    "tests/patent-pdf-runtime.test.mjs",
+    "tests/runtime-artifact-gates.test.mjs",
+    "tests/maxcore-dev-dependency-security.test.mjs"
+  ],
+  "sourceFilesSha256": {
+    "external/maxcore/pnpm-lock.yaml": "6dfd669204bf96c65263669b945eab377984a165eb588492667b892d5569249c",
+    "external/maxcore/pnpm-workspace.yaml": "cd05d6aceb793eceee44a627629bdda34b1905cde14bcc2209c3f9b3d383f50a",
+    "external/maxcore/scripts/package.json": "708443896dfa23240bf0d4662df06591113fa714071f4b55946ae0cd433e24e0",
+    "external/maxcore/scripts/check-js-security-versions.js": "b62a38ac786e3d9ffd4a8bff3c84c33c1483fc0fb783692b6e21c93105c466d1",
+    "scripts/verify-runtime-artifacts.mjs": "0d68a52fc208599afaad90caeb31cc88bb10ff58334aa122c55f211d411c3230",
+    "tests/patent-pdf-runtime.test.mjs": "0547502f4d30b8644b26bece6033bbaa041c795df8b750d67433c5b5e4f96183",
+    "tests/runtime-artifact-gates.test.mjs": "05bbd450a72f0181489296370b43744525e2776c8a53ec34c41c73c0fd6633a6",
+    "tests/maxcore-dev-dependency-security.test.mjs": "d5397d833c0c1149ef45366e7a8f455fa6ba6e816f2d65768d3c3075e22deb0f"
+  },
+  "versions": {
+    "node": "v22.23.3",
+    "chromium": "Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)",
+    "versions": [
+      {
+        "name": "puppeteer-core",
+        "version": "25.13.0",
+        "engines": {
+          "node": ">=22.12.0"
+        },
+        "path": "external/maxcore/node_modules/.pnpm/puppeteer-core@25.13.0/node_modules/puppeteer-core/package.json"
+      },
+      {
+        "name": "@puppeteer/browsers",
+        "version": "3.2.4",
+        "engines": {
+          "node": ">=22.12.0"
+        },
+        "path": "external/maxcore/node_modules/.pnpm/@puppeteer+browsers@3.2.4/node_modules/@puppeteer/browsers/package.json"
+      },
+      {
+        "name": "chromium-bidi",
+        "version": "157.0.8090-0",
+        "engines": {
+          "node": ">=20.19.0 <22.0.0 || >=22.12.0"
+        },
+        "path": "external/maxcore/node_modules/.pnpm/chromium-bidi@157.0.8090-0_devtools-protocol@0.0.1696802/node_modules/chromium-bidi/package.json"
+      },
+      {
+        "name": "zod",
+        "version": "4.6.7",
+        "path": "external/maxcore/node_modules/.pnpm/zod@4.6.7/node_modules/zod/package.json"
+      },
+      {
+        "name": "markdown-it",
+        "version": "14.3.3",
+        "path": "external/maxcore/node_modules/.pnpm/markdown-it@14.3.3/node_modules/markdown-it/package.json"
+      }
+    ]
+  },
+  "cases": {
+    "before": {
+      "cases": 4,
+      "passed": 0,
+      "failed": 4,
+      "skipped": 0
+    },
+    "afterFinal": {
+      "cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "broaderRegressions": {
+      "cases": 64,
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0
+    },
+    "runtimeGateFinal": {
+      "cases": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "testSourceNote": "Before selects graph/oversize cases only. The final browser assertion accepts configured Chrome versions, rather than unnecessarily pinning the host major. The last runtime-gate-only rerun adds explicit qs6.16.0 rejection; no case is relabeled or removed.",
+  "auditObservations": {
+    "root-all": {
+      "exitCode": 1,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 4,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 4
+      },
+      "receipt": "audit-root-all.json"
+    },
+    "root-prod": {
+      "exitCode": 1,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 4,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 4
+      },
+      "receipt": "audit-root-prod.json"
+    },
+    "maxcore-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-maxcore-all.json"
+    },
+    "maxcore-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-maxcore-prod.json"
+    },
+    "pdim-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-pdim-all.json"
+    },
+    "pdim-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-pdim-prod.json"
+    },
+    "dns-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-dns-all.json"
+    },
+    "dns-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-dns-prod.json"
+    },
+    "tls-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-tls-all.json"
+    },
+    "tls-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-tls-prod.json"
+    }
+  },
+  "additionalChecks": {
+    "maxcore-typecheck": 0,
+    "maxcore-security-gate": 0,
+    "lint-final": 0,
+    "guarded-replay": 0,
+    "diff-check": 0
+  },
+  "frozenInstallInputsUnchanged": true,
+  "legacyReplayNote": "The guarded36-entry replay retains the qs predecessor chain. No Puppeteer, Zod3, or Markdown consumer exists in embedded legacy root graphs, so this MaxCore-specific batch requires no additional replay edit.",
+  "newlyDiscoveredRemaining": {
+    "advisory": "GHSA-gcqx-w48m-w2h4",
+    "dependency": "deepmerge4.3.1 via root SendGrid SDK",
+    "severity": "low",
+    "fixedUpstreamVersion": null,
+    "auditNodes": 4,
+    "status": "Root is implementing a separate tested alert transport/consumer-removal batch; this snapshot intentionally retains the failing original audit, not a suppressed pass."
+  },
+  "limitations": [
+    "Actual browser session proof uses CDP with Chromium154; BiDi proof tests the actual parser and its own Zod, not an actual browser BiDi session.",
+    "Node22.23.3 satisfies package engines; broadNode22 Replit/CI selectors still need deployed binary verification.",
+    "No current main-server Puppeteer caller found in Git-visible current sources; patent generation is the scripts CLI. A production/dev audit classification alone does not prove all package reachability.",
+    "Fresh integrated master and portable release needed after all dependency/config/test batches finish.",
+    "Global coverage, feature evidence, configured deployment/migration/provider/native/capacity gates remain separate."
+  ]
+}

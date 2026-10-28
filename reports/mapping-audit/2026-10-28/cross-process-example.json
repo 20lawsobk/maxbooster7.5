@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "status": "STATIC_SOURCE_CHAIN_ONLY",
+  "productionReady": false,
+  "example": "Account analytics main Node → MaxCore Express gateway → canonical Python factory router",
+  "sourceCitations": [
+    {
+      "file": "client/src/pages/analytics/AIDashboard.tsx",
+      "startLine": 37,
+      "endLine": 43,
+      "excerpt": "  const csrfToken = getCsrfTokenFromCookie();\n  const response = await fetch(\"/api/ai/analytics/insights\", {\n    method: \"POST\",\n    credentials: \"include\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n      ...(csrfToken ? { \"X-CSRF-Token\": csrfToken } : {}),",
+      "sourceSha256": "c3dcd8a430b88caefcb9c9c4a7cef318cea375a6630e85ae3525b81cb3f80228"
+    },
+    {
+      "file": "server/routes.ts",
+      "startLine": 7762,
+      "endLine": 7762,
+      "excerpt": "    { path: \"/api/ai\", name: \"ai\", loader: () => import(\"./routes/ai\") },",
+      "sourceSha256": "12ed13b3a48de8fcf2ed0fd6834782279dbda511f85e0a4b8a5b1b6e2a9e021b"
+    },
+    {
+      "file": "server/routes/ai.ts",
+      "startLine": 808,
+      "endLine": 828,
+      "excerpt": "  \"/analytics/insights/capability\",\n  requireAuth,\n  async (_req: Request, res: Response) => {\n    try { res.json(await accountAnalyticsService.capability()); }\n    catch (error) {\n      const status = error instanceof MaxCoreControlError ? error.status :\n        error instanceof AIUnavailableError ? error.statusCode : 500;\n      res.status(status).json({ available: false, capability: \"analytics-insights\",\n        error: status === 500 ? \"Failed to check analytics capability\" : \"MaxCore analytics is temporarily unavailable\" });\n    }\n  },\n);\n\nrouter.post(\n  \"/analytics/insights\",\n  requireAuth,\n  async (req: Request, res: Response) => {\n    try {\n      res.json(await accountAnalyticsService.insights(req.user!.id, req.body?.timeframe ?? \"30d\"));\n    } catch (error) {\n      if (error instanceof AIUnavailableError || error instanceof MaxCoreControlError ||",
+      "sourceSha256": "619190fa9c320432950ccae117e24180f88d7c7da936c765a0191d8d24f54361"
+    },
+    {
+      "file": "server/services/accountAnalyticsService.ts",
+      "startLine": 166,
+      "endLine": 174,
+      "excerpt": "    async insights(userId: unknown, timeframe: unknown = \"30d\") {\n      requireUser(userId);\n      const window = windowFor(timeframe, now());\n      const points = await dailyAccount(userId, window.start, window.end);\n      const result = await remote(\"/api/analytics/insights\", { method: \"POST\", authScope: \"generation\", timeoutMs: 10_000,\n        body: { version: 1, timeframe: window.timeframe, dataWindow: window.dataWindow, points } });\n      return validateResponse(result, window.dataWindow, \"insights\", points);\n    },\n  };",
+      "sourceSha256": "4800e08ee78288cf372b8053296ad6bf4b19b1d2b92dcb622a8c050c67957749"
+    },
+    {
+      "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
+      "startLine": 1155,
+      "endLine": 1162,
+      "excerpt": "router.get(\"/analytics/capability\", async (req, res) => {\n  await proxyRequest(req, res, \"/api/analytics/capability\");\n});\nrouter.post(\"/analytics/predict\", async (req, res) => {\n  await proxyRequest(req, res, \"/api/analytics/predict\");\n});\nrouter.post(\"/analytics/insights\", async (req, res) => {\n  await proxyRequest(req, res, \"/api/analytics/insights\");",
+      "sourceSha256": "3e236513a52a760b899723afc2e7f2c0dd8eda9c3efb22369a338a4484d5820a"
+    },
+    {
+      "file": "external/maxcore/artifacts/api-server/src/app.ts",
+      "startLine": 44,
+      "endLine": 44,
+      "excerpt": "app.use(\"/api\", router);",
+      "sourceSha256": "147795949a41fd78b09943a8b84ee4df3874f9bbcada904edef1700fc4201185"
+    },
+    {
+      "file": "external/maxcore/artifacts/api-server/src/routes/index.ts",
+      "startLine": 3,
+      "endLine": 10,
+      "excerpt": "import modelProxyRouter from \"./model-proxy\";\nimport multimodalRouter from \"./multimodal\";\n\nconst router: IRouter = Router();\n\nrouter.use(healthRouter);\nrouter.use(multimodalRouter);\nrouter.use(modelProxyRouter);",
+      "sourceSha256": "5526cc3a2568016990633851d0f6f874f12784ad93e0cb6aa5d6360178404f57"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+      "startLine": 252,
+      "endLine": 268,
+      "excerpt": "def create_router(require_generation: Callable, snapshot_getter: Callable[[], Any]) -> APIRouter:\n    router = APIRouter(prefix=\"/api/analytics\", dependencies=[Depends(require_generation), Depends(_finite_json)])\n\n    @router.get(\"/capability\")\n    def capability():\n        return {\"available\": True, \"capability\": \"account-analytics\", \"version\": 1, \"trainedModelRequired\": False,\n                \"methods\": [\"observed_summary\", \"ordinary_least_squares\"],\n                \"timeframes\": [\"7d\", \"30d\", \"90d\"], \"privateDataRetention\": \"none\",\n                \"publicContext\": _public_context(snapshot_getter)}\n\n    @router.post(\"/predict\")\n    def prediction_endpoint(request: PredictionRequest):\n        return {**predict(request), \"publicContext\": _public_context(snapshot_getter)}\n\n    @router.post(\"/insights\")\n    def insights_endpoint(request: InsightsRequest):\n        return {**insights(request), \"publicContext\": _public_context(snapshot_getter)}",
+      "sourceSha256": "6e20ef9133b98c809f20d346f4062e86f38267cb19c53a70eec98f6a9ec4891e"
+    }
+  ],
+  "requiredWork": "Trace configured transport base/auth and public main-app prefix plus the page's actual request, then link exact current owner-scoped browser/HTTP/SQL/Python cases. This static chain cannot replace those cases."
+}

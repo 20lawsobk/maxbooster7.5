@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "scope": "Replay conversion of exact retained runtime JS/maps/V8 counters; no behavior rerun or coverage merge",
+  "mergedIntoGlobalCoverage": false,
+  "productionReady": false,
+  "files": [
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "before": {
+        "statements": 64,
+        "functions": 11,
+        "branches": 15
+      },
+      "node": {
+        "statements": 67,
+        "functions": 13,
+        "branches": 17
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "before": {
+        "statements": 3004,
+        "functions": 339,
+        "branches": 1033
+      },
+      "node": {
+        "statements": 3012,
+        "functions": 340,
+        "branches": 1033
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "before": {
+        "statements": 954,
+        "functions": 278,
+        "branches": 193
+      },
+      "node": {
+        "statements": 979,
+        "functions": 279,
+        "branches": 193
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/logger.ts",
+      "before": {
+        "statements": 21,
+        "functions": 7,
+        "branches": 7
+      },
+      "node": {
+        "statements": 23,
+        "functions": 8,
+        "branches": 7
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "before": {
+        "statements": 67,
+        "functions": 15,
+        "branches": 12
+      },
+      "node": {
+        "statements": 70,
+        "functions": 16,
+        "branches": 12
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap"
+        ]
+      }
+    },
+    {
+      "file": "server/config/ports.ts",
+      "before": {
+        "statements": 21,
+        "functions": 3,
+        "branches": 6
+      },
+      "node": {
+        "statements": 25,
+        "functions": 4,
+        "branches": 6
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap"
+        ]
+      }
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "before": {
+        "statements": 194,
+        "functions": 29,
+        "branches": 45
+      },
+      "node": {
+        "statements": 206,
+        "functions": 31,
+        "branches": 47
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "before": {
+        "statements": 106,
+        "functions": 11,
+        "branches": 35
+      },
+      "node": {
+        "statements": 118,
+        "functions": 12,
+        "branches": 35
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap"
+        ]
+      }
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "before": {
+        "statements": 44,
+        "functions": 5,
+        "branches": 22
+      },
+      "node": {
+        "statements": 47,
+        "functions": 6,
+        "branches": 22
+      },
+      "strictInMemory": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      "strictSerialized": {
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    }
+  ],
+  "canonicalCoverageBeforeSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "canonicalCoverageAfterSha256": "b869f5617c61a51182802193ec63ec70899e2bd45ab6e0811b6118120f160434",
+  "canonicalCoverageUnchanged": true,
+  "status": "reproduced_incompatible_profiles_no_merge"
+}

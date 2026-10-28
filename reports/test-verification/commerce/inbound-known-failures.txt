@@ -2,31 +2,31 @@ TAP version 13
 # Subtest: billing checkout retries reuse the durable session for the same command
 ok 1 - billing checkout retries reuse the durable session for the same command
   ---
-  duration_ms: 51.253856
+  duration_ms: 47.93076
   type: 'test'
   ...
 # Subtest: storefront cart retries reuse one session and one set of pending orders
 ok 2 - storefront cart retries reuse one session and one set of pending orders
   ---
-  duration_ms: 38.202908
+  duration_ms: 38.087091
   type: 'test'
   ...
 # Subtest: beat purchase completion verifies the payment before recording a sale
 ok 3 - beat purchase completion verifies the payment before recording a sale
   ---
-  duration_ms: 9.859858
+  duration_ms: 9.355402
   type: 'test'
   ...
 # Subtest: beat purchase completion grants a sale only with the verified charge amount
 ok 4 - beat purchase completion grants a sale only with the verified charge amount
   ---
-  duration_ms: 9.000972
+  duration_ms: 9.225246
   type: 'test'
   ...
 # Subtest: Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
 ok 5 - Stripe beat-payment verification rejects unpaid, mispriced, and misattributed intents
   ---
-  duration_ms: 24.185826
+  duration_ms: 23.881144
   type: 'test'
   ...
 1..5
@@ -37,4 +37,4 @@ ok 5 - Stripe beat-payment verification rejects unpaid, mispriced, and misattrib
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 211.960481
+# duration_ms 197.132721

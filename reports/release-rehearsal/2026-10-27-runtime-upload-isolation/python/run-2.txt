@@ -1,0 +1,55 @@
+
+[test_features_deterministic_and_dim]
+  [ok  ] seeded render succeeded
+  [ok  ] feature vector not None
+  [ok  ] feature dim == EMBED_DIM
+  [ok  ] feature is finite
+  [ok  ] feature is unit-normalized
+  [ok  ] feature deterministic (same file → same vector)
+
+[test_seeded_render_is_idempotent_file]
+  [ok  ] stable filename across identical seeded renders
+  [ok  ] seeded render pixels reproducible
+
+[test_features_total_on_garbage]
+  [ok  ] None input → None (no raise)
+  [ok  ] missing path → None (no raise)
+  [ok  ] black image does not raise
+
+[test_ensure_library_idempotent]
+  [ok  ] anchors loaded >= MIN_ANCHORS
+  [ok  ] anchor_count stable & nonzero
+  [ok  ] library is idempotent (size unchanged on re-run)
+  [ok  ] real (non-anchor) seed assets present
+  [ok  ] ensure_library returns anchor count
+
+[test_coverage_gate_healthy_after_library]
+  [ok  ] has_anchors after library
+  [ok  ] n_real > 0 after library
+  [ok  ] structural gate healthy (no probes needed)
+
+[test_decode_scheme_valid]
+  [ok  ] decode_scheme(dark_neon) → valid scheme
+  [ok  ] decode_scheme(vibrant_pastel) → valid scheme
+  [ok  ] decode_scheme(monochrome) → valid scheme
+  [ok  ] decode_scheme(high_contrast) → valid scheme
+  [ok  ] decode_scheme(corporate_blue) → valid scheme
+  [ok  ] decode_scheme(warm_earth) → valid scheme
+  [ok  ] decode_scheme(bold_red_gold) → valid scheme
+  [ok  ] decode_scheme recovers most schemes (>=5/7)
+
+[test_ingest_gaps_adds_real_asset]
+  [ok  ] ingest_gaps (dict payload) added >=1 real asset
+  [ok  ] index grew after dict-gap ingestion
+  [ok  ] ingest_gaps (context payload) added asset
+  [ok  ] context ingestion registered brand
+  [ok  ] index grew after context-gap ingestion
+  [ok  ] ingest_gaps total on empty list
+
+[test_ingest_generated_asset]
+  [ok  ] ingest_generated_asset succeeded
+  [ok  ] generated asset added to index
+  [ok  ] generated asset retrievable as exact/nearest
+  [ok  ] ingest_generated_asset total on bad path
+
+ALL PASSED

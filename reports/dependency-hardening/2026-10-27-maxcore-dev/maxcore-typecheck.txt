@@ -1,0 +1,4 @@
+
+> @workspace/scripts@0.0.0 typecheck /workspace/maxbooster7.5/external/maxcore/scripts
+> tsc -p tsconfig.json --noEmit
+

@@ -2,31 +2,31 @@ TAP version 13
 # Subtest: gateway readiness waits for a real healthy response, not a fixed delay
 ok 1 - gateway readiness waits for a real healthy response, not a fixed delay
   ---
-  duration_ms: 35.936676
+  duration_ms: 39.234321
   type: 'test'
   ...
 # Subtest: application readiness requires both the SPA and dependencies
 ok 2 - application readiness requires both the SPA and dependencies
   ---
-  duration_ms: 24.450663
+  duration_ms: 22.415393
   type: 'test'
   ...
 # Subtest: liveness text, malformed JSON and degraded dependencies never count as ready
 ok 3 - liveness text, malformed JSON and degraded dependencies never count as ready
   ---
-  duration_ms: 114.991662
+  duration_ms: 112.028616
   type: 'test'
   ...
 # Subtest: hung responses have a bounded deadline
 ok 4 - hung responses have a bounded deadline
   ---
-  duration_ms: 41.569739
+  duration_ms: 44.609614
   type: 'test'
   ...
 # Subtest: real boot stub preserves root liveness but reports API unavailability
 ok 5 - real boot stub preserves root liveness but reports API unavailability
   ---
-  duration_ms: 75.136584
+  duration_ms: 77.949046
   type: 'test'
   ...
 1..5
@@ -37,4 +37,4 @@ ok 5 - real boot stub preserves root liveness but reports API unavailability
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 432.907721
+# duration_ms 471.695215

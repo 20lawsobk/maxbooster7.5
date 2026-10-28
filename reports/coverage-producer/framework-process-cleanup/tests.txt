@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+ok 1 - accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+  ---
+  duration_ms: 45.46916
+  type: 'test'
+  ...
+# Subtest: rejects stale original source and changed executed code
+ok 2 - rejects stale original source and changed executed code
+  ---
+  duration_ms: 11.272123
+  type: 'test'
+  ...
+# Subtest: rejects changed raw counters and malformed offsets rather than salvaging hits
+ok 3 - rejects changed raw counters and malformed offsets rather than salvaging hits
+  ---
+  duration_ms: 10.73293
+  type: 'test'
+  ...
+# Subtest: rejects incomplete producers and malformed UTF-8
+ok 4 - rejects incomplete producers and malformed UTF-8
+  ---
+  duration_ms: 10.844087
+  type: 'test'
+  ...
+# Subtest: retains exact original contents in inline source maps and rejects missing/stale mappings
+ok 5 - retains exact original contents in inline source maps and rejects missing/stale mappings
+  ---
+  duration_ms: 15.312563
+  type: 'test'
+  ...
+# Subtest: rejects traversal, external sources and symlink escape
+ok 6 - rejects traversal, external sources and symlink escape
+  ---
+  duration_ms: 11.703405
+  type: 'test'
+  ...
+# Subtest: requires complete identical maps even when functions and branches match
+ok 7 - requires complete identical maps even when functions and branches match
+  ---
+  duration_ms: 0.590201
+  type: 'test'
+  ...
+# Subtest: rejects branch arity and counter/map mismatches
+ok 8 - rejects branch arity and counter/map mismatches
+  ---
+  duration_ms: 0.394966
+  type: 'test'
+  ...
+# Subtest: timeout terminates an owned descendant which ignores TERM and retains pipes
+ok 9 - timeout terminates an owned descendant which ignores TERM and retains pipes
+  ---
+  duration_ms: 1127.98168
+  type: 'test'
+  ...
+# Subtest: direct exit 0 is preserved while its owned lingering descendant is cleaned
+ok 10 - direct exit 0 is preserved while its owned lingering descendant is cleaned
+  ---
+  duration_ms: 195.055133
+  type: 'test'
+  ...
+# Subtest: direct exit 7 is preserved while its owned lingering descendant is cleaned
+ok 11 - direct exit 7 is preserved while its owned lingering descendant is cleaned
+  ---
+  duration_ms: 201.043048
+  type: 'test'
+  ...
+# Subtest: output bound forces a TERM-resistant direct runner to stop promptly
+ok 12 - output bound forces a TERM-resistant direct runner to stop promptly
+  ---
+  duration_ms: 96.369281
+  type: 'test'
+  ...
+# Subtest: spawn failure is preserved with no invented child or cleanup success claim
+ok 13 - spawn failure is preserved with no invented child or cleanup success claim
+  ---
+  duration_ms: 2.238979
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1798.377341

@@ -5,7 +5,7 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     platforms: List[str] = Field(default=["tiktok", "instagram"], max_items=8)
 
 tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits_the_real_control_contract
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1842: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1852: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -25,7 +25,7 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     return self.router.on_event(event_type)  # ty: ignore[deprecated]
 
 tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits_the_real_control_contract
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2588: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2598: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -43,7 +43,7 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     @router.on_event("startup")
 
 tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits_the_real_control_contract
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7549: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -52,4 +52,4 @@ tests/test_social_generation_controls.py::test_platform_endpoint_schema_inherits
     @app.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-12 passed, 8 warnings in 3.35s
+12 passed, 8 warnings in 3.42s

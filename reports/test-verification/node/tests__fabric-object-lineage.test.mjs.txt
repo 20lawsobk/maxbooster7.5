@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: actual fabric handlers require pocket→volume→object lineage before reading or deleting bytes
 ok 1 - actual fabric handlers require pocket→volume→object lineage before reading or deleting bytes
   ---
-  duration_ms: 89.626329
+  duration_ms: 89.880335
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - actual fabric handlers require pocket→volume→object lineage before re
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 208.134185
+# duration_ms 208.239992

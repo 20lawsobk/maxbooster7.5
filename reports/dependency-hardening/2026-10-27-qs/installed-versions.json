@@ -1,0 +1,26 @@
+{
+  "node": "v22.23.3",
+  "results": [
+    {
+      "scope": ".",
+      "expressResolvedQsVersion": "6.16.1",
+      "bodyParserResolvedQsVersion": "6.16.1",
+      "expressQsPath": "node_modules/qs/lib/index.js",
+      "bodyParserQsPath": "node_modules/qs/lib/index.js"
+    },
+    {
+      "scope": "external/maxcore/artifacts/api-server",
+      "expressResolvedQsVersion": "6.16.1",
+      "bodyParserResolvedQsVersion": "6.16.1",
+      "expressQsPath": "external/maxcore/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js",
+      "bodyParserQsPath": "external/maxcore/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js"
+    },
+    {
+      "scope": "external/pdim/artifacts/api-server",
+      "expressResolvedQsVersion": "6.16.1",
+      "bodyParserResolvedQsVersion": "6.16.1",
+      "expressQsPath": "external/pdim/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js",
+      "bodyParserQsPath": "external/pdim/node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js"
+    }
+  ]
+}

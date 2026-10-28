@@ -1,0 +1,9 @@
+{
+  "staleBuildContractInputs": [
+    "package.json",
+    "script/lib/capsulePack.ts",
+    "scripts/lib/production-simulation-copy.mjs",
+    "server/services/generationAwareness.ts"
+  ],
+  "action": "Copy actual current bytes and require owned ordinary build if validateBuild rejects old dist; no edits to manifests"
+}

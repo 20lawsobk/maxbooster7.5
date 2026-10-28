@@ -1,1 +1,1 @@
-{"status": "failed", "groups": 16, "fileStatusCounts": {"executed": 571, "not_run": 29, "support": 68, "blocked_or_skipped": 16}}
+{"status": "failed", "groups": 16, "fileStatusCounts": {"executed": 586, "not_run": 29, "support": 75, "blocked_or_skipped": 16, "failed": 1}}

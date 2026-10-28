@@ -26,13 +26,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## mapping-de607b13183114b6-1
+## mapping-26db9c347f9ea056-1
 
 ```json
 {
   "kind": "dynamic-backend-path",
   "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "line": 675,
+  "line": 676,
   "receiver": "router",
   "method": "POST"
 }
@@ -1130,14 +1130,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## mapping-8b19d5195092e639-1
+## mapping-88696af2a61c0a4d-1
 
 ```json
 {
   "kind": "unverified-route-mount",
-  "subjectId": "api-cbd17e31150c4180",
+  "subjectId": "api-3aebde554a300f6b",
   "file": "external/maxcore/artifacts/api-server/src/routes/model-proxy.ts",
-  "line": 675,
+  "line": 676,
   "declaredPath": null
 }
 ```
@@ -1343,6 +1343,42 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "file": "server/routes/durableExports.ts",
   "line": 114,
   "declaredPath": null
+}
+```
+
+## mapping-b6a42a2ad525679b-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-e8e4a036051eff3f",
+  "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "line": 255,
+  "declaredPath": "/capability"
+}
+```
+
+## mapping-6d52f4d52644c255-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-a1f340f59332d78e",
+  "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "line": 262,
+  "declaredPath": "/predict"
+}
+```
+
+## mapping-62410a3c16bb1a69-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-4f9324aca2b97b4b",
+  "file": "external/maxcore/artifacts/ai-training-server/ai_model/analytics.py",
+  "line": 266,
+  "declaredPath": "/insights"
 }
 ```
 

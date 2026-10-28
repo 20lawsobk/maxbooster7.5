@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name=".: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.283138" classname="test"/>
+	<testcase name=".: compression destroys its native stream when the client aborts" time="0.103920" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.231502" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: compression destroys its native stream when the client aborts" time="0.085526" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: Express refuses forged forwarding through an invalid mapped trust subnet" time="0.267365" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: compression destroys its native stream when the client aborts" time="0.108524" classname="test"/>
+	<testcase name="PostCSS source maps work and malicious indexed offsets fail promptly" time="0.014799" classname="test"/>
+	<testcase name="the real typography plugin retains its styles with the patched selector parser" time="0.956975" classname="test"/>
+	<testcase name="pino-pretty retains formatting and fast-copy uses controlled depth errors" time="0.031503" classname="test"/>
+	<testcase name="patched Capacitor creates and syncs both platforms with every installed plugin" time="1.500885" classname="test"/>
+	<testcase name="Electron download native transport preserves redirects, agent, progress and failure cleanup" time="0.099849" classname="test"/>
+	<testcase name="artifact timeouts and cancellation bound stalled headers and stalled bodies" time="0.120350" classname="test"/>
+	<testcase name="cross-origin artifact redirects cannot forward credentials" time="0.018145" classname="test"/>
+	<testcase name="real Electron packager verifies checksum, downloads via patched transport, then reuses artifact cache" time="0.591224" classname="test" failure="Response code 403 (Forbidden) for http://127.0.0.1:34495/">
+		<failure type="testCodeFailure" message="Response code 403 (Forbidden) for http://127.0.0.1:34495/">
+[Error [ERR_TEST_FAILURE]: Response code 403 (Forbidden) for http://127.0.0.1:34495/] {
+  code: 'ERR_TEST_FAILURE',
+  failureType: 'testCodeFailure',
+  cause: Error [HTTPError]: Response code 403 (Forbidden) for http://127.0.0.1:34495/
+      at ClientRequest.&lt;anonymous> (/workspace/maxbooster7.5/packages/electron-download-transport/index.cjs:90:25)
+      at Object.onceWrapper (node:events:634:26)
+      at ClientRequest.emit (node:events:519:28)
+      at HTTPParser.parserOnIncomingClient (node:_http_client:780:27)
+      at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17)
+      at Socket.socketOnData (node:_http_client:615:22)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Socket.Readable.push (node:internal/streams/readable:392:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    response: { status: 403, statusCode: 403 }
+  }
+}
+		</failure>
+	</testcase>
+	<testcase name="installed code generators compile each real OpenAPI spec into isolated React-query and Zod outputs" time="2.543450" classname="test"/>
+	<testcase name="PDIM's installed upload middleware parses multipart bytes and enforces size limits" time="0.109288" classname="test"/>
+	<testcase name="redirect transport strips credentials across hosts (array headers)" time="0.070475" classname="test"/>
+	<testcase name="redirect transport strips credentials across hosts (object headers)" time="0.032956" classname="test"/>
+	<testcase name="patched Axios preserves JSON, redirects, binary downloads and cancellation" time="0.193472" classname="test"/>
+	<testcase name="Google's installed gaxios consumer resolves patched Undici and sends real HTTP" time="0.262422" classname="test"/>
+	<testcase name="patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior" time="0.013196" classname="test"/>
+	<testcase name="replay is opt-in, idempotent, and preserves unrelated files" time="0.032687" classname="test"/>
+	<testcase name="successive updates accept original and verified predecessors, never custom edits" time="0.011634" classname="test"/>
+	<testcase name="invalid predecessor lists and predecessors on additions are rejected" time="0.023164" classname="test"/>
+	<testcase name="guarded additions create only absent files and replay idempotently" time="0.001810" classname="test"/>
+	<testcase name="guarded additions refuse existing custom files and symlinks" time="0.006990" classname="test"/>
+	<testcase name="preflight rejects custom edits before changing another file" time="0.000847" classname="test"/>
+	<testcase name="invalid hashes, traversal, duplicates, and symlinks fail closed" time="0.005347" classname="test"/>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=false" time="0.008173" classname="test"/>
+	<testcase name=".: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000352" classname="test"/>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.004557" classname="test"/>
+	<testcase name=".: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000471" classname="test"/>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000578" classname="test"/>
+	<testcase name=".: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000362" classname="test"/>
+	<testcase name=".: literal parameters, nested objects and ordinary array formats retain their values" time="0.002022" classname="test"/>
+	<testcase name=".: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.394433" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.002391" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000475" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.000419" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000413" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000448" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.003116" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.000979" classname="test"/>
+	<testcase name="external/maxcore/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.152574" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false" time="0.008708" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true" time="0.000195" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false" time="0.003800" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true" time="0.000269" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false" time="0.000590" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true" time="0.000247" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values" time="0.000592" classname="test"/>
+	<testcase name="external/pdim/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy" time="0.131752" classname="test"/>
+	<!-- tests 52 -->
+	<!-- suites 0 -->
+	<!-- pass 51 -->
+	<!-- fail 1 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 3718.94132 -->
+</testsuites>

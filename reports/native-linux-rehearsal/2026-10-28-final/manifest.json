@@ -1,0 +1,345 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/README.md",
+      "bytes": 8844,
+      "sha256": "ee5040de81e556d1816b41a8a851d4861ec3e9c511f46c8fdd928ac531eef969"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/actual-runtime-isolation.json",
+      "bytes": 877,
+      "sha256": "735e1612be8a82f9b17fb3bd39d6224c6b940c9dc1ef5b609c79f805da0380e2"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/artifact-inspection.json",
+      "bytes": 11280,
+      "sha256": "e7e9840f1ab67c692fed00914862cee5bfe7ac5cd68671c00f45d6c4579c42f5"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/artifact-inspection.txt",
+      "bytes": 108,
+      "sha256": "524ddd4dc1518efa87223302810fa5b2dbb39a2c4f0aac1bc26f5eaad70cc9c5"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/configured-linux-dir-build.json",
+      "bytes": 732,
+      "sha256": "5cd6d1081c33d2e6ef168593b6b1996604cf8f7e0612896bec31d1cb7c25939d"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/configured-linux-dir-build.txt",
+      "bytes": 18626,
+      "sha256": "8cb7577b852eb4653e4e376b197b635d84cd927fdd0f14e8a2567c45c9ddacda"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/copied-build-validation.json",
+      "bytes": 565,
+      "sha256": "e215040c159f9756d95dfc5895a1bf3e45dd532fdcd2116ae895cfe881d72e87"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/copied-build-validation.txt",
+      "bytes": 591,
+      "sha256": "7a9a14585238c48e8f5e1470de08986bd1828c1e4112392ca6a851fc3ec40c70"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/copied-inputs.json",
+      "bytes": 1231,
+      "sha256": "a9613c6a991f4cc45b7f85f6cc4de441a40753274bb8eccdfd97991e78d316ad"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/existing-dist-validation-preflight.json",
+      "bytes": 319,
+      "sha256": "4bff1d755237e2e333800c216b6ce42a65f92ab565cd1584032463e13a368115"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/final-build-driver.initial.py",
+      "bytes": 5435,
+      "sha256": "b30b342a8f24c23911afe3a60ebd2570f081fe0e07e7405e1bceb3e891d9795c"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/final-build-driver.py",
+      "bytes": 5774,
+      "sha256": "c992be43c9141cbfb6606eeddcc6d14c78d12eef0d18dfec25a2929fb2362643"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/final-build-driver.txt",
+      "bytes": 80,
+      "sha256": "0bff33602ea452e2bdb3c3fd64b213b2236904bee3db5b23f285e1bee59ad3e7"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/initial-copy-preflight-error.json",
+      "bytes": 545,
+      "sha256": "e0506f67b501822f6662c741a9c9b6f5657e5d96c88c9963845abf1d0c080add"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/inspect-artifact.mjs",
+      "bytes": 2797,
+      "sha256": "d614bb36172faede10da5ae9e1ced69f2ad656ddf2c9a777ba52aed2ec4e7f29"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/legacy-build-config-replay.xml",
+      "bytes": 512,
+      "sha256": "8c53fb20fb22bc713e8f328c951ed0bc731932159116fdcbca0b071bf3f668a3"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/legacy-full-replay.xml",
+      "bytes": 1060,
+      "sha256": "a1014e0bf15fb37b8364e20fdfa86ff635c8b906c8bd42a9cd53035499e1135d"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-driver.initial-path-error.txt",
+      "bytes": 2774,
+      "sha256": "ad4c3617d51b079750ec235764772aab2a6d95bd2f7ea793b6134bb3b01f1a89"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-driver.initial.py",
+      "bytes": 3244,
+      "sha256": "7ea853186ad3abcfa917c8c3a1296382ef2d83ec6f94691278ef560c97c8967a"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-driver.py",
+      "bytes": 3268,
+      "sha256": "608d0bed96fff5567d3005cf50bc3ac0d10fffe3b39e9dd239bbca627901f18a"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-driver.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-probe.cjs",
+      "bytes": 6782,
+      "sha256": "2ad4319d05dd4d93925fe21f10bd67a1886c52dc77b7ae1d0cdd2c9e90370f25"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-runtime.json",
+      "bytes": 429,
+      "sha256": "b92d222a38ae325026fd4f9c22ba26534e876a5fa439f758831f577d2bd9c9cb"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/offline-runtime.txt",
+      "bytes": 4563,
+      "sha256": "2766a2ad506ae5609961399bf5b7a493d7eee1435c7812b5aa5dccf7f33a7e61"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/original-integrity-after.json",
+      "bytes": 1482,
+      "sha256": "d8a99621b9c1bd0f9592e98669755129c021d7f0b8f5322f2305e7e0803c3ab2"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/owned-production-build.json",
+      "bytes": 461,
+      "sha256": "01e710b4694f2417388f81a9bcc8849bb330f95d337c4444c31d78a61b8976ec"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/owned-production-build.txt",
+      "bytes": 23869,
+      "sha256": "104b14f16fe7fd2693aad6fa71430d4741c48db3c52f04a8f9b67f3bd39aa27b"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/policy-after-node22.xml",
+      "bytes": 959,
+      "sha256": "6dedc9e3fc159ea6845667baabfd101adaba68081b4d801cbbe4874c1df4e980"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/policy-after.xml",
+      "bytes": 1409,
+      "sha256": "e0c1595298223904a0783974b0b1a3f598eee7ef027521ce04e97ff8506a7753"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/policy-before.xml",
+      "bytes": 5764,
+      "sha256": "3f4066c8b5a9df78c25588070593f94def444ae2f02216664038b9aa0e011494"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-asar-module-acceptance.json",
+      "bytes": 598,
+      "sha256": "e61d5ad60dae9ec20f288988a5586bcbe895d8bd210a7c2c02fb90e101d77a37"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-asar-module-acceptance.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-asar-module-acceptance.stdout.txt",
+      "bytes": 3868,
+      "sha256": "2403547ad3c4aa22df5eb2247aa5bd20317897d66845213093677ee67399bc8b"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-sharp-png.json",
+      "bytes": 907,
+      "sha256": "451718ed9af9cf3b44ba61c35e37a015088afeff965f2c230cae897ae5026790"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-sharp-png.stderr.txt",
+      "bytes": 4557,
+      "sha256": "9447189a140cb4dba17f18d28edbff52868a6a7b4f732d20996e3ab463356e38"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-sharp-png.stdout.txt",
+      "bytes": 60,
+      "sha256": "6efa7da8966f69bf731df5da82071e4a99dab2d41ceb347ab1de8009bf6728ab"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-tfjs-operation.json",
+      "bytes": 865,
+      "sha256": "4c62ac2561913ef1ff9856071099d470debca512eab2aaa657a2212f58d6188c"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-tfjs-operation.stderr.txt",
+      "bytes": 240,
+      "sha256": "5dbe8fddd81d992abe7378ddffe04c1d62854e1ccdbe5d612358c283004743d1"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/actual-tfjs-operation.stdout.txt",
+      "bytes": 28,
+      "sha256": "e0be0ac390e2fe501588232b883ff3d412b3946a2936f6c8925bf98adaea3738"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/asar-module-acceptance.json",
+      "bytes": 3868,
+      "sha256": "2403547ad3c4aa22df5eb2247aa5bd20317897d66845213093677ee67399bc8b"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/binary-linked-libraries.json",
+      "bytes": 426,
+      "sha256": "a97cf74e47163158b9197b433f7431ba07cc4e3c40954d8ad6575636dfadb0bf"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/binary-linked-libraries.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/binary-linked-libraries.stdout.txt",
+      "bytes": 7823,
+      "sha256": "5a010bb26f15fd1e3670fed4c8861556217f1e9dbd60a92738dd2e0813785a87"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/diagnostic-no-sandbox-startup.json",
+      "bytes": 545,
+      "sha256": "0b243bf8f47b82af8124a06a201618debc4d40b7c04265738bbca51927c298a3"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/diagnostic-no-sandbox-startup.stderr.txt",
+      "bytes": 23069,
+      "sha256": "e17551c8fc64436f145dfce860d153a3394a7e20d9162c13f45778ba070a7a86"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/diagnostic-no-sandbox-startup.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/embedded-node-version.json",
+      "bytes": 421,
+      "sha256": "5c3ca8623c60e61a9f2b3df3953c08fb31102054193829f712d3df2caca867c0"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/embedded-node-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/embedded-node-version.stdout.txt",
+      "bytes": 9,
+      "sha256": "2b796b748c85883d00cfea9775eaa143435f0dc06c69311b444cf0dfc98214bc"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/exact-bundled-server-child.json",
+      "bytes": 471,
+      "sha256": "abf81f4e7f476264dce2536dd607e15e427130d328bb876cf77510a54d527a92"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/exact-bundled-server-child.stderr.txt",
+      "bytes": 21675,
+      "sha256": "95e22c33d5ae5352b0570035cb263bd09f7ce4269b1d11f697c0c87eba965d88"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/exact-bundled-server-child.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/normal-sandbox-startup.json",
+      "bytes": 521,
+      "sha256": "9be5c771398f69b1b12677e8419d96b8cded4fd0f6dfae3e07ec714570a38c12"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/normal-sandbox-startup.stderr.txt",
+      "bytes": 390,
+      "sha256": "f0f577f979b58c351806083c5e94043f95b858fac3a078c0ec5511fe281c3015"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/normal-sandbox-startup.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/probe-scope.json",
+      "bytes": 433,
+      "sha256": "05e287b65af596a2bc469319bf03e2f8a746fbefc532150c9b02aa61df7610b9"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/runner-packages.json",
+      "bytes": 484,
+      "sha256": "fdb26828884d712e2e65e95a9a12aac83d500918071088820f2e23b1532fb941"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/runner-packages.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/runner-packages.stdout.txt",
+      "bytes": 152,
+      "sha256": "d87835eda1a8f06de4234f8c42980a0220aafda0bdf2e89867716de0e51fcf85"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime/xvfb.stderr.txt",
+      "bytes": 81,
+      "sha256": "e2861dbf17c9cb74d57668ceaa0ec8111c014cd26d10d2d0dffdf37188dac690"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime-cleanup.json",
+      "bytes": 424,
+      "sha256": "c1b13ec6ae844012c04d296f342c7c65e402dea1e4fb82fe31c7389dff8b2349"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime-cleanup.txt",
+      "bytes": 40,
+      "sha256": "eede271264e9cd1e310bedc32d354b222beac03514f46991347b984838431cd7"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime-create.json",
+      "bytes": 1322,
+      "sha256": "699fcc191ae98178c56cb14e613fd3d58bd29517d52d097512ef156b9afc6031"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime-create.txt",
+      "bytes": 65,
+      "sha256": "134ffb966103c2b5797c7596681c68dbd669ff8d4d6bb284ea0f50353a3488ea"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/runtime-final-state.json",
+      "bytes": 69,
+      "sha256": "1954500abbee5f2427d191ad34285648ce74c54256d9881592c8b713c02c0f52"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/source-hashes.json",
+      "bytes": 628,
+      "sha256": "d0718c215528f0de26360dd68a8bb6f8aac0d152bf2627e3cb9163bc65a448a6"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/source-inputs-before.json",
+      "bytes": 517276,
+      "sha256": "55a42f25efa88b009acb16be08e1f63e901e7638c2d24199f75bbcb300246a67"
+    },
+    {
+      "path": "reports/native-linux-rehearsal/2026-10-28-final/summary.json",
+      "bytes": 1592,
+      "sha256": "fe30b08867f47b42610de518a92893d33e80975e07edf4a8ccba4c911ba7f065"
+    }
+  ]
+}

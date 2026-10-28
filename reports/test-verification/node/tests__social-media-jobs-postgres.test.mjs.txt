@@ -3,140 +3,140 @@ TAP version 13
     # Subtest: a second worker polls a real committed video result with the same public response contract
     ok 1 - a second worker polls a real committed video result with the same public response contract
       ---
-      duration_ms: 9.130875
+      duration_ms: 8.132658
       type: 'test'
       ...
     # Subtest: music-video status survives a new repository instance and handlers isolate owner/family/auth
     ok 2 - music-video status survives a new repository instance and handlers isolate owner/family/auth
       ---
-      duration_ms: 6.792118
+      duration_ms: 5.220695
       type: 'test'
       ...
     # Subtest: foreign polls cannot expire another owner's row; owned polls persist an explicit interruption
     ok 3 - foreign polls cannot expire another owner's row; owned polls persist an explicit interruption
       ---
-      duration_ms: 5.556753
+      duration_ms: 3.839862
       type: 'test'
       ...
     # Subtest: lease expiry fences a stalled writer even before another worker polls
     ok 4 - lease expiry fences a stalled writer even before another worker polls
       ---
-      duration_ms: 3.390024
+      duration_ms: 2.022912
       type: 'test'
       ...
     # Subtest: forged tokens and duplicate terminal writes cannot overwrite acknowledged results
     ok 5 - forged tokens and duplicate terminal writes cannot overwrite acknowledged results
       ---
-      duration_ms: 4.160898
+      duration_ms: 3.665289
       type: 'test'
       ...
     # Subtest: concurrent terminal writers acknowledge exactly one immutable outcome
     ok 6 - concurrent terminal writers acknowledge exactly one immutable outcome
       ---
-      duration_ms: 11.761024
+      duration_ms: 8.905053
       type: 'test'
       ...
     # Subtest: completed jobs require actual asset references and cannot persist an oversized result
     ok 7 - completed jobs require actual asset references and cannot persist an oversized result
       ---
-      duration_ms: 9.580955
+      duration_ms: 7.92848
       type: 'test'
       ...
     # Subtest: polling never reports corrupt persisted URL values as completed media
     ok 8 - polling never reports corrupt persisted URL values as completed media
       ---
-      duration_ms: 2.378008
+      duration_ms: 2.407572
       type: 'test'
       ...
     # Subtest: real heartbeat extends ownership and the timer stops after shutdown
     ok 9 - real heartbeat extends ownership and the timer stops after shutdown
       ---
-      duration_ms: 38.486576
+      duration_ms: 39.800279
       type: 'test'
       ...
     # Subtest: new admissions bound stale metadata cleanup without pruning healthy rendering jobs
     ok 10 - new admissions bound stale metadata cleanup without pruning healthy rendering jobs
       ---
-      duration_ms: 6.880816
+      duration_ms: 6.513516
       type: 'test'
       ...
     # Subtest: database outage returns an explicit retryable polling error
     ok 11 - database outage returns an explicit retryable polling error
       ---
-      duration_ms: 0.451381
+      duration_ms: 0.403438
       type: 'test'
       ...
     # Subtest: terminal validation rejects malformed URLs and accepts explicit HTTP assets without weakening ownership
     ok 12 - terminal validation rejects malformed URLs and accepts explicit HTTP assets without weakening ownership
       ---
-      duration_ms: 5.145768
+      duration_ms: 5.904066
       type: 'test'
       ...
     # Subtest: legacy incomplete rows have explicit private polling failures and fallback metadata
     ok 13 - legacy incomplete rows have explicit private polling failures and fallback metadata
       ---
-      duration_ms: 13.264192
+      duration_ms: 13.713817
       type: 'test'
       ...
     # Subtest: lost leases and database failures stop heartbeat renewal exactly once
     ok 14 - lost leases and database failures stop heartbeat renewal exactly once
       ---
-      duration_ms: 42.066575
+      duration_ms: 42.789344
       type: 'test'
       ...
     # Subtest: queued heartbeat callbacks cannot renew or notify after cancellation
     ok 15 - queued heartbeat callbacks cannot renew or notify after cancellation
       ---
-      duration_ms: 1.229225
+      duration_ms: 0.893047
       type: 'test'
       ...
     1..15
 ok 1 - social media jobs share PostgreSQL status and fence interrupted render workers
   ---
-  duration_ms: 872.007543
+  duration_ms: 843.011825
   type: 'suite'
   ...
 # Subtest: scene validation releases actual owned staged uploads on every early 400 branch
     # Subtest: missing direction
     ok 1 - missing direction
       ---
-      duration_ms: 3.617959
+      duration_ms: 3.043501
       type: 'test'
       ...
     # Subtest: URL direction
     ok 2 - URL direction
       ---
-      duration_ms: 4.466879
+      duration_ms: 7.147101
       type: 'test'
       ...
     # Subtest: unsupported platform
     ok 3 - unsupported platform
       ---
-      duration_ms: 2.160169
+      duration_ms: 2.183584
       type: 'test'
       ...
     # Subtest: missing audio
     ok 4 - missing audio
       ---
-      duration_ms: 2.062532
+      duration_ms: 3.379298
       type: 'test'
       ...
     # Subtest: valid and non-scene requests retain their staged files for the real renderer
     ok 5 - valid and non-scene requests retain their staged files for the real renderer
       ---
-      duration_ms: 1.969672
+      duration_ms: 1.472662
       type: 'test'
       ...
     # Subtest: cleanup handles single, array and absent multipart paths including missing files
     ok 6 - cleanup handles single, array and absent multipart paths including missing files
       ---
-      duration_ms: 3.491868
+      duration_ms: 3.11605
       type: 'test'
       ...
     1..6
 ok 2 - scene validation releases actual owned staged uploads on every early 400 branch
   ---
-  duration_ms: 36.025957
+  duration_ms: 38.31658
   type: 'suite'
   ...
 1..2
@@ -147,4 +147,4 @@ ok 2 - scene validation releases actual owned staged uploads on every early 400 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1023.086515
+# duration_ms 1015.217405

@@ -1,0 +1,40 @@
+{
+  "node": "v22.23.3",
+  "chromium": "Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)",
+  "versions": [
+    {
+      "name": "puppeteer-core",
+      "version": "25.13.0",
+      "engines": {
+        "node": ">=22.12.0"
+      },
+      "path": "external/maxcore/node_modules/.pnpm/puppeteer-core@25.13.0/node_modules/puppeteer-core/package.json"
+    },
+    {
+      "name": "@puppeteer/browsers",
+      "version": "3.2.4",
+      "engines": {
+        "node": ">=22.12.0"
+      },
+      "path": "external/maxcore/node_modules/.pnpm/@puppeteer+browsers@3.2.4/node_modules/@puppeteer/browsers/package.json"
+    },
+    {
+      "name": "chromium-bidi",
+      "version": "157.0.8090-0",
+      "engines": {
+        "node": ">=20.19.0 <22.0.0 || >=22.12.0"
+      },
+      "path": "external/maxcore/node_modules/.pnpm/chromium-bidi@157.0.8090-0_devtools-protocol@0.0.1696802/node_modules/chromium-bidi/package.json"
+    },
+    {
+      "name": "zod",
+      "version": "4.6.7",
+      "path": "external/maxcore/node_modules/.pnpm/zod@4.6.7/node_modules/zod/package.json"
+    },
+    {
+      "name": "markdown-it",
+      "version": "14.3.3",
+      "path": "external/maxcore/node_modules/.pnpm/markdown-it@14.3.3/node_modules/markdown-it/package.json"
+    }
+  ]
+}

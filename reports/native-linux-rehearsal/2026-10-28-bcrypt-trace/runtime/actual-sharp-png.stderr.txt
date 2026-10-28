@@ -1,0 +1,80 @@
+(node:74) [SharpElectronLinux] Warning: Binaries provided by Electron for use on Linux may be incompatible with sharp - see https://sharp.pixelplumbing.com/install#electron-and-linux
+(Use `max-booster --trace-warnings ...` to show where the warning was created)
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.042: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_ref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.043: g_object_unref: assertion 'G_IS_OBJECT (object)' failed
+
+(process:74): GLib-GObject-CRITICAL **: 09:05:14.044: g_object_unref: assertion 'G_IS_OBJECT (object)' failed

@@ -102,7 +102,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-10-27T21:53:05.347Z",
+  "generatedAt": "2026-10-28T09:15:24.158Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -3882,7 +3882,7 @@
       "method": "GET",
       "rawPath": "/analytics/insights/capability",
       "file": "server/routes/ai.ts",
-      "line": 819,
+      "line": 807,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3900,7 +3900,7 @@
       "method": "POST",
       "rawPath": "/analytics/insights",
       "file": "server/routes/ai.ts",
-      "line": 825,
+      "line": 821,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3918,7 +3918,7 @@
       "method": "GET",
       "rawPath": "/insights",
       "file": "server/routes/ai.ts",
-      "line": 832,
+      "line": 840,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3936,7 +3936,7 @@
       "method": "GET",
       "rawPath": "/anomalies",
       "file": "server/routes/ai.ts",
-      "line": 849,
+      "line": 857,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3954,7 +3954,7 @@
       "method": "POST",
       "rawPath": "/churn/predict",
       "file": "server/routes/ai.ts",
-      "line": 866,
+      "line": 874,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3972,7 +3972,7 @@
       "method": "POST",
       "rawPath": "/revenue/forecast",
       "file": "server/routes/ai.ts",
-      "line": 887,
+      "line": 895,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -3990,7 +3990,7 @@
       "method": "POST",
       "rawPath": "/organic/optimize",
       "file": "server/routes/ai.ts",
-      "line": 917,
+      "line": 925,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4008,7 +4008,7 @@
       "method": "POST",
       "rawPath": "/organic/roi",
       "file": "server/routes/ai.ts",
-      "line": 955,
+      "line": 963,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4026,7 +4026,7 @@
       "method": "POST",
       "rawPath": "/organic/schedule",
       "file": "server/routes/ai.ts",
-      "line": 999,
+      "line": 1007,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4044,7 +4044,7 @@
       "method": "GET",
       "rawPath": "/organic/network-analysis",
       "file": "server/routes/ai.ts",
-      "line": 1039,
+      "line": 1047,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4062,7 +4062,7 @@
       "method": "GET",
       "rawPath": "/diffusion/status",
       "file": "server/routes/ai.ts",
-      "line": 1068,
+      "line": 1076,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4080,7 +4080,7 @@
       "method": "GET",
       "rawPath": "/simulator/status",
       "file": "server/routes/ai.ts",
-      "line": 1095,
+      "line": 1103,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": true,
@@ -4098,7 +4098,7 @@
       "method": "GET",
       "rawPath": "/diffusion/ready",
       "file": "server/routes/ai.ts",
-      "line": 1122,
+      "line": 1130,
       "resolvedVia": "literal",
       "registeredOn": "router",
       "hasAuthMarker": false,
@@ -44188,7 +44188,7 @@
           "method": "GET",
           "path": "/api/ai/insights",
           "file": "server/routes/ai.ts",
-          "line": 832,
+          "line": 840,
           "confidence": "high"
         }
       ]
@@ -50447,7 +50447,7 @@
           "method": "GET",
           "path": "/api/ai/insights",
           "file": "server/routes/ai.ts",
-          "line": 832,
+          "line": 840,
           "confidence": "high"
         }
       ]
@@ -64945,13 +64945,13 @@
       "path": "/api/ai/analytics/insights",
       "rawPath": "/api/ai/analytics/insights",
       "file": "client/src/pages/analytics/AIDashboard.tsx",
-      "line": 22,
+      "line": 38,
       "source": "fetch",
       "kind": "fetch",
       "method": "POST",
       "methodConfidence": "detected",
       "occurrences": [
-        "client/src/pages/analytics/AIDashboard.tsx:22"
+        "client/src/pages/analytics/AIDashboard.tsx:38"
       ],
       "status": "matched",
       "backendMatches": [
@@ -64959,7 +64959,7 @@
           "method": "POST",
           "path": "/api/ai/analytics/insights",
           "file": "server/routes/ai.ts",
-          "line": 825,
+          "line": 821,
           "confidence": "high"
         }
       ]
@@ -75460,7 +75460,7 @@
       "path": "/api/ai/analytics/insights",
       "rawPath": "/api/ai/analytics/insights",
       "file": "client/src/pages/analytics/AIDashboard.tsx",
-      "line": 48,
+      "line": 65,
       "source": "useQuery",
       "kind": "query-key-custom-fn",
       "method": null,
@@ -75960,22 +75960,22 @@
     {
       "path": "/",
       "file": "client/src/components/layout/Sidebar.tsx",
-      "line": 317
+      "line": 331
     },
     {
       "path": "/settings",
       "file": "client/src/components/layout/Sidebar.tsx",
-      "line": 369
+      "line": 383
     },
     {
       "path": "/login",
       "file": "client/src/components/layout/TopBar.tsx",
-      "line": 30
+      "line": 31
     },
     {
       "path": "/settings",
       "file": "client/src/components/layout/TopBar.tsx",
-      "line": 67
+      "line": 77
     },
     {
       "path": "/settings?tab=notifications",

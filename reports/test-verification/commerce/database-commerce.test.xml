@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments" time="0.605515" classname="test"/>
-	<testsuite name="PostgreSQL migrations and real CommerceRepository settlement/fulfillment" time="0.076290" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="af966a6fd55d">
-		<testcase name="applies additive 0022/0023 migrations and books one balanced, allocated order atomically" time="0.035343" classname="test"/>
-		<testcase name="rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready" time="0.007348" classname="test"/>
-		<testcase name="concurrent duplicate settlements serialize on the production advisory lock" time="0.019283" classname="test"/>
-		<testcase name="rejects a reused PaymentIntent attached to another order" time="0.010711" classname="test"/>
-		<testcase name="database deferred constraint also rejects unbalanced journals at COMMIT" time="0.002362" classname="test"/>
+	<testcase name="durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments" time="0.688082" classname="test"/>
+	<testsuite name="PostgreSQL migrations and real CommerceRepository settlement/fulfillment" time="0.074499" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="applies additive 0022/0023 migrations and books one balanced, allocated order atomically" time="0.035917" classname="test"/>
+		<testcase name="rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready" time="0.008308" classname="test"/>
+		<testcase name="concurrent duplicate settlements serialize on the production advisory lock" time="0.018047" classname="test"/>
+		<testcase name="rejects a reused PaymentIntent attached to another order" time="0.009153" classname="test"/>
+		<testcase name="database deferred constraint also rejects unbalanced journals at COMMIT" time="0.001848" classname="test"/>
 	</testsuite>
-	<testsuite name="CommerceEngine executes production payout/refund/reversal workflows against SQL" time="0.097564" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="af966a6fd55d">
-		<testcase name="reserves against funded payable, idempotently, and rejects over-reservation" time="0.023541" classname="test"/>
-		<testcase name="concurrent same-key requests for conflicting payout accounts have one immutable winner" time="0.014571" classname="test"/>
-		<testcase name="pays a claimed reservation through the engine's real SQL state transitions" time="0.010145" classname="test"/>
-		<testcase name="refund authorization, duplicate intent, partial reversal, and over-refund guardrails" time="0.018624" classname="test"/>
-		<testcase name="full refund creates balanced reversal, exposes the debt, then recovers it exactly once" time="0.021744" classname="test"/>
+	<testsuite name="CommerceEngine executes production payout/refund/reversal workflows against SQL" time="0.089454" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="reserves against funded payable, idempotently, and rejects over-reservation" time="0.020053" classname="test"/>
+		<testcase name="concurrent same-key requests for conflicting payout accounts have one immutable winner" time="0.014007" classname="test"/>
+		<testcase name="pays a claimed reservation through the engine's real SQL state transitions" time="0.009992" classname="test"/>
+		<testcase name="refund authorization, duplicate intent, partial reversal, and over-refund guardrails" time="0.017340" classname="test"/>
+		<testcase name="full refund creates balanced reversal, exposes the debt, then recovers it exactly once" time="0.020422" classname="test"/>
 	</testsuite>
-	<testcase name="production commerce webhook inbox deduplicates concurrent duplicate events" time="0.012273" classname="test"/>
-	<testcase name="real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL" time="0.000178" classname="test">
+	<testcase name="production commerce webhook inbox deduplicates concurrent duplicate events" time="0.011454" classname="test"/>
+	<testcase name="real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL" time="0.000170" classname="test">
 		<skipped type="skipped" message="STRIPE_TEST_SECRET and STRIPE_TEST_CLIENT were not supplied."/>
 	</testcase>
 	<!-- tests 15 -->
@@ -26,5 +26,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 1 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 1053.023032 -->
+	<!-- duration_ms 1152.673461 -->
 </testsuites>

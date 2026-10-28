@@ -1,0 +1,270 @@
+--- known-original/server/monitoring/alertingService.ts
++++ guarded-payload/server/monitoring/alertingService.ts
+@@ -1,6 +1,11 @@
+-import sgMail from "@sendgrid/mail";
++import { sendSendGridAlert } from "../lib/sendgridAlertTransport.js";
+ import { logger } from "../logger.js";
+ import { env } from "../config/env.js";
++
++const escapeHtml = (value: string): string => value.replace(
++  /[&<>"']/g,
++  char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!,
++);
+ 
+ interface AlertConfig {
+   emailEnabled: boolean;
+@@ -25,16 +30,24 @@
+   metadata?: Record<string, any>;
+ }
+ 
++export interface AlertDispatchResult {
++  status: "accepted" | "failed" | "suppressed";
++  acceptedChannels: ("email" | "webhook")[];
++  failedChannels: ("email" | "webhook")[];
++  reason?: "unconfigured" | "in_flight" | "cooldown";
++}
++
+ export class AlertingService {
+   private config: AlertConfig;
+   private recentAlerts: Map<string, Date> = new Map();
++  private inFlightAlerts = new Set<string>();
+   private alertCooldownMinutes = 15;
+ 
+   constructor() {
+     this.config = {
+       emailEnabled: env.SENDGRID_API_KEY ? true : false,
+       webhookEnabled: process.env.ALERT_WEBHOOK_URL ? true : false,
+-      emailRecipients: process.env.ALERT_EMAIL_RECIPIENTS?.split(",") || [],
++      emailRecipients: [...new Set((process.env.ALERT_EMAIL_RECIPIENTS || "").split(",").map(value => value.trim()).filter(Boolean))],
+       webhookUrl: process.env.ALERT_WEBHOOK_URL,
+       thresholds: {
+         queueMaxWaiting: parseInt(
+@@ -76,33 +89,56 @@
+     this.recentAlerts.set(alertKey, new Date());
+   }
+ 
+-  async sendAlert(alert: Alert): Promise<void> {
++  async sendAlert(alert: Alert): Promise<AlertDispatchResult> {
+     const alertKey = `${alert?.title}-${alert?.severity}`;
+ 
+-    if (!this.shouldSendAlert(alertKey)) {
+-      logger.debug(`Alert suppressed (cooldown): ${alert?.title}`);
+-      return;
++    const webhookKey = `${alertKey}:webhook`;
++    const emailKey = `${alertKey}:email`;
++    const webhookConfigured = this.config.webhookEnabled && Boolean(this.config.webhookUrl);
++    const emailConfigured = this.config.emailEnabled && this.config.emailRecipients.length > 0;
++    const sendWebhook = webhookConfigured && this.shouldSendAlert(webhookKey);
++    const sendEmail = emailConfigured && this.shouldSendAlert(emailKey);
++    if (this.inFlightAlerts.has(alertKey) || (!sendWebhook && !sendEmail)) {
++      logger.debug(`Alert suppressed (unconfigured, in flight or cooldown): ${alert?.title}`);
++      return {
++        status: "suppressed", acceptedChannels: [], failedChannels: [],
++        reason: this.inFlightAlerts.has(alertKey) ? "in_flight" : webhookConfigured || emailConfigured ? "cooldown" : "unconfigured",
++      };
+     }
+ 
+     logger.warn(`🚨 ALERT [${alert?.severity.toUpperCase()}]: ${alert?.title}`);
+     logger.warn(`   ${alert?.message}`);
+ 
+-    const promises: Promise<void>[] = [];
+-
+-    if (this.config.webhookEnabled && this.config.webhookUrl) {
+-      promises?.push(this.sendWebhookAlert(alert));
+-    }
+-
+-    if (this.config.emailEnabled && this.config.emailRecipients?.length > 0) {
+-      promises?.push(this.sendEmailAlert(alert));
+-    }
+-
+-    await Promise?.allSettled(promises);
+-    this.markAlertSent(alertKey);
+-  }
+-
+-  private async sendWebhookAlert(alert: Alert): Promise<void> {
+-    if (!this.config.webhookUrl) return;
++    const dispatches: { channel: "email" | "webhook"; key: string; promise: Promise<boolean> }[] = [];
++    this.inFlightAlerts.add(alertKey);
++
++    if (sendWebhook) {
++      dispatches.push({ channel: "webhook", key: webhookKey, promise: this.sendWebhookAlert(alert) });
++    }
++
++    if (sendEmail) {
++      dispatches.push({ channel: "email", key: emailKey, promise: this.sendEmailAlert(alert) });
++    }
++
++    try {
++      const results = await Promise.allSettled(dispatches.map(value => value.promise));
++      const result: AlertDispatchResult = { status: "failed", acceptedChannels: [], failedChannels: [] };
++      results.forEach((value, index) => {
++        const dispatch = dispatches[index];
++        if (value.status === "fulfilled" && value.value) {
++          this.markAlertSent(dispatch.key);
++          result.acceptedChannels.push(dispatch.channel);
++        } else result.failedChannels.push(dispatch.channel);
++      });
++      if (result.acceptedChannels.length) result.status = "accepted";
++      return result;
++    } finally {
++      this.inFlightAlerts.delete(alertKey);
++    }
++  }
++
++  private async sendWebhookAlert(alert: Alert): Promise<boolean> {
++    if (!this.config.webhookUrl) return false;
+ 
+     try {
+       const payload = {
+@@ -125,19 +161,20 @@
+         throw new Error(`Webhook returned ${response?.status}`);
+       }
+ 
+-      logger.info(`✅ Webhook alert sent: ${alert?.title}`);
++      logger.info(`✅ Webhook alert accepted: ${alert?.title}`);
++      return true;
+     } catch (error) {
+       logger.warn({ err: error }, "Failed to send webhook alert:");
+-    }
+-  }
+-
+-  private async sendEmailAlert(alert: Alert): Promise<void> {
++      return false;
++    }
++  }
++
++  private async sendEmailAlert(alert: Alert): Promise<boolean> {
+     try {
+       if (!env.SENDGRID_API_KEY) {
+         logger.warn("Email alert skipped: SENDGRID_API_KEY not configured");
+-        return;
++        return false;
+       }
+-      sgMail?.setApiKey(env.SENDGRID_API_KEY);
+ 
+       const severityEmoji = {
+         info: "ℹ️",
+@@ -145,6 +182,9 @@
+         critical: "🚨",
+       };
+ 
++      const titleHtml = escapeHtml(alert.title);
++      const messageHtml = escapeHtml(alert.message);
++      const metadataHtml = alert.metadata ? escapeHtml(JSON.stringify(alert.metadata, null, 2)) : "";
+       const msg = {
+         to: this.config.emailRecipients,
+         from: env.SENDGRID_FROM_EMAIL || "alerts@maxbooster.ai",
+@@ -177,18 +217,18 @@
+ </head>
+ <body>
+   <div class="header">
+-    <h1>${severityEmoji[alert?.severity]} ${alert?.title}</h1>
++    <h1>${severityEmoji[alert?.severity]} ${titleHtml}</h1>
+     <p style="margin: 0;">Severity: ${alert?.severity.toUpperCase()}</p>
+   </div>
+   <div class="content">
+     <p><strong>Time:</strong> ${alert?.timestamp.toISOString()}</p>
+-    <p>${alert?.message}</p>
++    <p>${messageHtml}</p>
+     ${
+       alert?.metadata
+         ? `
+       <div class="metadata">
+         <strong>Additional Details:</strong>
+-        <pre>${JSON.stringify(alert?.metadata, null, 2)}</pre>
++        <pre>${metadataHtml}</pre>
+       </div>
+     `
+         : ""
+@@ -202,12 +242,14 @@
+         `,
+       };
+ 
+-      await (sgMail as any)?.default.send(msg);
++      await sendSendGridAlert(msg, env.SENDGRID_API_KEY);
+       logger.info(
+-        `✅ Email alert sent to ${this.config.emailRecipients?.length} recipient(s)`,
++        `✅ Email alert accepted by SendGrid for ${this.config.emailRecipients.length} recipient(s)`,
+       );
++      return true;
+     } catch (error) {
+       logger.warn({ err: error }, "Failed to send email alert:");
++      return false;
+     }
+   }
+ 
+--- known-original/server/monitoring/emailMonitor.ts
++++ guarded-payload/server/monitoring/emailMonitor.ts
+@@ -1,5 +1,10 @@
+-import type { MailDataRequired } from "@sendgrid/helpers/classes/mail";
+ import { logger } from "../logger.js";
++
++interface MonitoredEmail {
++  to?: unknown;
++  templateId?: string;
++  subject?: string;
++}
+ 
+ interface EmailLog {
+   timestamp: Date;
+@@ -20,7 +25,7 @@
+   };
+ 
+   logEmail(
+-    email: MailDataRequired,
++    email: MonitoredEmail,
+     status: "sent" | "failed",
+     error?: string,
+     deliveryTime?: number,
+--- known-original/server/workers/index.ts
++++ guarded-payload/server/workers/index.ts
+@@ -6,7 +6,6 @@
+ import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
+ import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
+ import { Resend } from "resend";
+-import sgMail from "@sendgrid/mail";
+ import { logger } from "../logger.js";
+ import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
+ 
+@@ -14,14 +13,6 @@
+ const csvImportService = new RoyaltiesCSVImportService();
+ const anomalyService = new AnalyticsAnomalyService();
+ 
+-if (process.env.SENDGRID_API_KEY) {
+-  sgMail?.setApiKey(process.env.SENDGRID_API_KEY);
+-  logger.info("✅ SendGrid initialized for email worker");
+-} else {
+-  logger.warn(
+-    "⚠️  SendGrid API key not configured. Email worker will fail to send emails.",
+-  );
+-}
+ 
+ const MEMORY_WARNING_THRESHOLD = 512 * 1024 * 1024; // 512 MB — realistic for Replit VM
+ const MEMORY_CRITICAL_THRESHOLD = 768 * 1024 * 1024; // 768 MB — triggers forced GC
+--- known-original/server/routes/monitoring.ts
++++ guarded-payload/server/routes/monitoring.ts
+@@ -279,7 +279,7 @@
+   "/alerting/test",
+   asyncHandler(async (req: any, res: any) => {
+     try {
+-      await alertingService?.sendAlert({
++      const outcome = await alertingService.sendAlert({
+         severity: "info",
+         title: "Test Alert",
+         message: "This is a test alert from Max Booster monitoring system.",
+@@ -287,9 +287,12 @@
+         metadata: { testBy: req.user.email },
+       });
+ 
+-      res.json({
+-        success: true,
+-        message: "Test alert sent successfully",
++      const accepted = outcome.status === "accepted";
++      const status = accepted ? 202 : outcome.status === "failed" || outcome.reason === "unconfigured" ? 503 : 409;
++      res.status(status).json({
++        success: accepted,
++        message: accepted ? "Test alert accepted by provider" : outcome.status === "failed" ? "No provider accepted the test alert" : "Test alert was not dispatched",
++        ...outcome,
+       });
+     } catch (error) {
+       logger.warn("Error in alerting test:", (error as any)?.message);

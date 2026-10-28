@@ -1,0 +1,78 @@
+
+[test_cascade_rungs]
+  ok: exact rung hit
+  ok: nearest rung hit
+  ok: brand_prior reachable
+  ok: anchor rung fallback
+
+[test_never_empty_when_nonempty]
+  ok: non-empty index never returns None
+  ok: empty index returns None
+
+[test_totality]
+  ok: totality[nan] returns a real asset without raising
+  ok: totality[inf] returns a real asset without raising
+  ok: totality[zeros] returns a real asset without raising
+  ok: totality[wrong_dim_short] returns a real asset without raising
+  ok: totality[wrong_dim_long] returns a real asset without raising
+  ok: totality[string] returns a real asset without raising
+  ok: totality[none] returns a real asset without raising
+  ok: add rejects NaN vector
+  ok: add rejects zero vector
+
+[test_determinism]
+  ok: determinism: same asset
+  ok: determinism: same distance
+
+[test_coverage_gate]
+  ok: empty → critical gate
+  ok: no anchors → critical gate
+  ok: well-covered → healthy gate
+  ok: coverage fraction high
+  ok: random probes lower coverage
+
+[test_serialization_roundtrip]
+  ok: load_state succeeds
+  ok: roundtrip size matches
+  ok: roundtrip anchors match
+  ok: roundtrip query matches
+
+[test_exact_key_replacement]
+  ok: exact hit before replace
+  ok: stale exact key no longer an exact hit
+  ok: new exact key hits after replace
+
+[test_watchdog_heals_missing_anchors]
+  ok: precondition: no anchors
+  ok: watchdog loaded anchors
+  ok: watchdog recorded a fix
+  ok: anchor loader was called
+
+[test_watchdog_enqueues_coverage_gaps]
+[CoverageWatchdog][CRITICAL][coverage_gap] Coverage gate=critical (fraction_within_radius=0.12, assets=2, anchors=1). → FIX: Queued 7 weak queries as ingestion targets
+  ok: coverage gaps enqueued
+  ok: gate recorded
+
+[test_watchdog_drains_via_ingestion]
+[CoverageWatchdog][CRITICAL][coverage_gap] Coverage gate=critical (fraction_within_radius=0.12, assets=2, anchors=1). → FIX: Queued 7 weak queries as ingestion targets
+  ok: ingestion drain invoked
+
+[test_drain_atomic_no_loss]
+  ok: pre-enqueue len 5
+  ok: ingestion started
+  ok: ingestion received the claimed batch (5)
+  ok: queue cleared after atomic claim
+  ok: gaps enqueued during drain are kept
+  ok: 3 new gaps survive for next cycle
+
+[test_drain_requeue_on_failure]
+[CoverageWatchdog][WARNING][ingestion_drain_error] Ingestion drain raised: ingestion boom — re-queued 4 targets.
+  ok: failed ingestion re-queues the batch (no loss)
+
+[test_watchdog_check_isolation]
+[CoverageWatchdog][CRITICAL][anchor_core_empty] Anchor core is empty and no anchor_loader_fn is wired — retrieval cannot guarantee a non-empty result until real anchors are loaded.
+[CoverageWatchdog] probe_source_fn error: probe source exploded
+[CoverageWatchdog][CRITICAL][coverage_gap] Coverage gate=critical (fraction_within_radius=0.00, assets=8, anchors=0).
+  ok: probe_source failure is contained
+
+ALL PASSED

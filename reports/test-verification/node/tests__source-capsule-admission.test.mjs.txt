@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: real adaptive source capsule applies root-only exclusions without dropping nested source fixtures
 ok 1 - real adaptive source capsule applies root-only exclusions without dropping nested source fixtures
   ---
-  duration_ms: 426.227564
+  duration_ms: 362.664617
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - real adaptive source capsule applies root-only exclusions without droppin
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 587.174922
+# duration_ms 487.757614

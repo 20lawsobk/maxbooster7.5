@@ -2,17 +2,35 @@
 
 This schedule orders work; it does not declare it passed. Every section and every named work dimension in the [full platform ledger](platform-completion-plan.md) must execute. Dependencies may be tested once with exact evidence links, while each consuming route still needs its own successful and adverse journey. Aliases retain separate route access, parameters, links and reload checks.
 
+Reconciled October 28, 2026, America/Detroit. The
+[seven-level critical path](launch-critical-path.md) binds the milestone,
+deliverable, feature, component, implementation task, validation and production
+acceptance levels to every existing work-item ID. The
+[reproducible launch audit](launch-readiness-audit.md) records evidence freshness
+and every page domain; its scores are verified acceptance, not an invented
+implementation-completion estimate. All 80 rows below remain mandatory.
+
 ## Dependency order and execution discipline
 
-1. Finish the active storage migration, security, media-job and measurement fixes; preserve before/after proof. Freeze all source/configuration/test inputs, then run the master and a fresh portable release rehearsal.
+1. Finish the currently reproduced narrow fixes: patched-install fixture, required-awareness dependency classification, precise runtime-upload packaging exclusion, owned Python generation fixtures, authoritative assertion helpers and actual Linux ASAR/resource packaging. Preserve each baseline and focused proof. Freeze all source/configuration/test inputs and register new tests, then run the master without concurrent release/native packaging or competing load. Only after that master finishes, capture full admitted inventories and prepare/verify/cold-start/verify a fresh release in an owned publishing copy, with up to four idle preparation threads and all normal policy/cache/source guards.
 2. Repair any newly reproduced shared defect before page batches. Complete authentication, authorization, validation, CSRF, durable schema/storage/jobs, public-awareness refresh and generation capability contracts that page journeys require.
 3. Execute the six page waves below with disjoint file ownership. For each page follow its named business sections, every control/API/backend row and each validation, security, persistence, recovery, provider, accessibility, responsive, localization and performance instruction. Do not stop after rendering.
 4. Work every global ledger in parallel where dependencies permit: unrouted controls, standalone/unmounted backend declarations, unresolved mappings, remaining measured code and every canonical repository file. Resolve reachability before removing or retiring source; document supported behavior and execute its contract.
 5. Run the separate language/configuration/client lanes: JavaScript/TypeScript 100% all four metrics, Python branches, Go/Rust profiles, available native/C++ source, SQL constraints/migrations, shell/Nix/build configuration, assets/translations, desktop/mobile/PWA and native/browser audio plugin paths. Missing source/device/provider prerequisites stay open.
 6. Run deployment, signed provider delivery, coordinated SQL/blob recovery, monitoring, restart/rollback and representative capacity tests in the actual intended topology. Preserve bounded measurements separately from projections.
-7. Link exact source-bound passing evidence to every required check and section step; recheck all remaining zero-hit counters and unresolved mappings, rerun the stable-source master and verify the release package again. Promote to main only under the authorized readiness condition.
+7. Link exact source-bound passing evidence to every required check and section step; recheck all remaining zero-hit counters and unresolved mappings, rerun the stable-source master and then verify the release package again serially. Revalidate actual deployment/provider/client/recovery/capacity evidence. Promote to main only under the authorized readiness condition: all 80 declarations Green and every required platform gate passed.
 
 An execution batch closes only when all of its named work items have actual evidence, its affected regressions pass, source maps and input hashes match, and failures have honest user-visible behavior. A complete inventory, import, mock transport or threshold setting is not that evidence. Unavailable external gates do not block unrelated reversible implementation and isolated tests.
+
+Within a wave, take shared prerequisites before their consumers, then process
+the existing declaration order and each section's source order. A newly
+reproduced shared production defect takes precedence over an uncovered guard.
+Record its root cause and dependency edge, resolve it with a bounded regression,
+then resume the exact interrupted item. Independent page sections may run in
+parallel under disjoint ownership; final source-input measurements remain
+frozen and uncontended. After every task update exact accepted/open counts and
+dependent page gates; do not average away an unmet security, accessibility or
+integration gate.
 
 ## Every page declaration in execution order
 

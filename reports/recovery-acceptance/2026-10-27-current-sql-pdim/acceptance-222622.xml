@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="current SQL metadata and canonical PDIM bytes jointly recover in independent fresh processes" time="4.738004" disabled="0" errors="0" tests="5" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="current service writes settle, then actual authoritative PDIM snapshot is exported through its pinned descriptor" time="2.405841" classname="test"/>
+		<testcase name="real production pg_dump helper uses a caller-pinned SQL snapshot after all owned writers stop" time="0.089527" classname="test"/>
+		<testcase name="corrupt SQL, corrupt PDIM and mismatched pair reject before protected SQL or file mutation" time="0.011083" classname="test"/>
+		<testcase name="original process and original SQL/database directory are unavailable before independent restore" time="0.019242" classname="test"/>
+		<testcase name="verified paired bytes restore fresh SQL in one transaction and a fresh canonical owner from retained checkpoint only" time="1.054044" classname="test"/>
+	</testsuite>
+	<testsuite name="owned PostgreSQL: real dump bytes restore schema, data, sequence and a pinned snapshot" time="1.048836" disabled="0" errors="0" tests="4" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="schema constraints, exact Unicode/JSON/null/numeric/bytea values and identity sequence survive actual restore" time="0.013226" classname="test"/>
+		<testcase name="exported snapshot excludes a concurrent commit without changing source data" time="0.103856" classname="test"/>
+		<testcase name="a failing operator recovery invariant rolls back the entire actual restore transaction" time="0.033670" classname="test"/>
+		<testcase name="real pg_dump output over the byte budget fails and removes partial private files" time="0.063410" classname="test"/>
+	</testsuite>
+	<!-- tests 11 -->
+	<!-- suites 0 -->
+	<!-- pass 11 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 6132.427702 -->
+</testsuites>

@@ -4,8 +4,8 @@ ai_model/director/api.py:77
   <repo>/external/maxcore/artifacts/ai-training-server/ai_model/director/api.py:77: PydanticDeprecatedSince20: `max_items` is deprecated and will be removed, use `max_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
     platforms: List[str] = Field(default=["tiktok", "instagram"], max_items=8)
 
-server.py:1842
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1842: DeprecationWarning: 
+server.py:1852
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1852: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -24,8 +24,8 @@ server.py:1842
           
     return self.router.on_event(event_type)  # ty: ignore[deprecated]
 
-server.py:2588
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2588: DeprecationWarning: 
+server.py:2598
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2598: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -42,8 +42,8 @@ ai_model/training/live_learning.py:531
           
     @router.on_event("startup")
 
-server.py:7539
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+server.py:7549
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7549: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -52,4 +52,4 @@ server.py:7539
     @app.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-13 passed, 8 warnings in 3.44s
+13 passed, 8 warnings in 3.66s

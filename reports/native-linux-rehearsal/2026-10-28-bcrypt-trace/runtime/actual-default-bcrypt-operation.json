@@ -1,0 +1,19 @@
+{
+  "name": "actual-default-bcrypt-operation",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "-e",
+    "if(process.env.PREBUILDS_ONLY)throw Error(\"Global prebuild bypass forbidden in acceptance\");const {createRequire}=require(\"node:module\");const r=createRequire(\"/artifact/resources/app.asar/package.json\");const selected=r(\"node-gyp-build\").path(\"/artifact/resources/app.asar/node_modules/bcrypt\");if(!selected.endsWith(\"prebuilds/linux-x64/bcrypt.glibc.node\"))throw Error(\"Unexpected native selection \"+selected);const bcrypt=r(\"bcrypt\");(async()=>{const hash=await bcrypt.hash(\"owned Unicode 🎹 fixture\",12);const correct=await bcrypt.compare(\"owned Unicode 🎹 fixture\",hash),incorrect=await bcrypt.compare(\"wrong fixture\",hash);if(!correct||incorrect||bcrypt.getRounds(hash)!==12)throw Error(\"Actual bcrypt acceptance failed\");console.log(JSON.stringify({selected,version:r(\"bcrypt/package.json\").version,correctPasswordAccepted:correct,wrongPasswordRejected:!incorrect,cost:bcrypt.getRounds(hash),prebuildsOnlyOverridePresent:false}));})().catch(error=>{console.error(error);process.exitCode=1});"
+  ],
+  "cwd": "/artifact/resources",
+  "startedAt": "2026-10-28T09:05:14.463Z",
+  "pid": 99,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 15000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

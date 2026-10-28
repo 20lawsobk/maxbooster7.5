@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "scope": "Focused account analytics source acceptance; no platform launch claim",
+  "configuredSecretExactMatchFiles": 0,
+  "sourceHashesMatch": true,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6739,
+      "sha256": "e0f134f4c8135fc96b2ac1eb17a4f9fb64655c1d5b68c31fb856f5cb606ddff9"
+    },
+    {
+      "path": "account-analytics-browser-first.txt",
+      "bytes": 381,
+      "sha256": "4b9a92644206659a89107f5783405d92d5608177856b8ac325a79848b2d2516e"
+    },
+    {
+      "path": "account-analytics-contract-after-post.txt",
+      "bytes": 2760,
+      "sha256": "ccf91e36e22f2b0741504c12aaa0c3b23eae087fa47035854438c73421362cf2"
+    },
+    {
+      "path": "account-analytics-contract-after-source-semantics.txt",
+      "bytes": 2744,
+      "sha256": "202a6560ec3c431bfb30b675bea4e69685655bae9f321d5887a43a80aa57221c"
+    },
+    {
+      "path": "account-analytics-contract-initial.txt",
+      "bytes": 7874,
+      "sha256": "b355733ec580a17395b5094c68136106a887247936347f4d07fabd5c26a5eab5"
+    },
+    {
+      "path": "account-analytics-contract-protocol-final.txt",
+      "bytes": 3603,
+      "sha256": "9789b992ecfe5a332e8fca2c511a31f7367fc2a346300fd1e2f55b00783cd88a"
+    },
+    {
+      "path": "account-analytics-lint-stable-final.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "account-analytics-main-http-stable-final.txt",
+      "bytes": 4125,
+      "sha256": "4eea8984ac08cbea2feeef0ce625ed3b93f2f978537d1a9638cc4e93b3d5ac85"
+    },
+    {
+      "path": "account-analytics-node-corrected-browser-final.txt",
+      "bytes": 3861,
+      "sha256": "f3c621786eb378624ef1f91f659fb495e03d37e3f630b0002e6b1235b6e5aed2"
+    },
+    {
+      "path": "account-analytics-node-stable-final.txt",
+      "bytes": 5832,
+      "sha256": "31a58243694b4d452b212661f94d3d824c9e3efade78a5f68cabbd1ef97c0227"
+    },
+    {
+      "path": "account-analytics-proxy-unified.txt",
+      "bytes": 4284,
+      "sha256": "8e1ae28f72c9e410a44c7f5ef6dee402ea4f08f2db9097760b1efdc609259ebf"
+    },
+    {
+      "path": "account-analytics-types-stable-final.txt",
+      "bytes": 297,
+      "sha256": "2baf01fe6a8bb39afd560a5e94d5428f0caa61e4246e67cf62668aff1bf5748d"
+    },
+    {
+      "path": "http-final/http-analytics.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "http-final/http-app.txt",
+      "bytes": 103998,
+      "sha256": "29cdaaaad73c16efdf8dace58f4e5ee949a2cd48e8bd060fbb7164803ddbd35b"
+    },
+    {
+      "path": "http-final/http-setup.txt",
+      "bytes": 13961,
+      "sha256": "da68e77b486d5cb9906521515af3906641de26e788e185b47f0c513b86868fa0"
+    },
+    {
+      "path": "http-final/http-vitest.txt",
+      "bytes": 299,
+      "sha256": "b58a2ae2d2eb2ee313befdb8aad4f33be7d48bbbe0c80b6a96be074972d6c753"
+    },
+    {
+      "path": "http-final/integration.junit.xml",
+      "bytes": 5287,
+      "sha256": "cc4bb4dbc879f88079a341cb4b744d6d1ab54eeb9eaf4502154d82ba20a9fc47"
+    },
+    {
+      "path": "http-final/summary.json",
+      "bytes": 4125,
+      "sha256": "055a258bc6e5f55eea8b3860266aa3b5108c3af29b796ab56a563fb876282d0c"
+    },
+    {
+      "path": "http-first/http-analytics.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "http-first/http-app.txt",
+      "bytes": 102141,
+      "sha256": "b4b18554f90f79d993e9d77a25f02d998e54ff18da4386b355b9fc12a4a9f0ad"
+    },
+    {
+      "path": "http-first/http-setup.txt",
+      "bytes": 13957,
+      "sha256": "10d150af5df57c5ab0b136e1bc8646694f030d0a90136a317df7ed34180369dc"
+    },
+    {
+      "path": "http-first/http-vitest.txt",
+      "bytes": 299,
+      "sha256": "4eb66de238d3bb7906012043342e513a55dd9d129f1880e89f95f399a2c09249"
+    },
+    {
+      "path": "http-first/integration.junit.xml",
+      "bytes": 4743,
+      "sha256": "294d14a339e0adf41e933c1d42782271e71726752817491327766ab2efa0c6e0"
+    },
+    {
+      "path": "http-first/summary.json",
+      "bytes": 4125,
+      "sha256": "361c564a82248e8e2529234d00bf0bdde8f4759afdda386dd74742b04f63159b"
+    },
+    {
+      "path": "http-protocol-final/http-analytics.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "http-protocol-final/http-app.txt",
+      "bytes": 104263,
+      "sha256": "e652ba35451700f40e9aa32ea4181e568a721ddf33bae3d582da5ccd12743b20"
+    },
+    {
+      "path": "http-protocol-final/http-setup.txt",
+      "bytes": 13955,
+      "sha256": "0f73123cf6abeb077c74c6bd70076e07888ab27eea8bd3ad9b6b07afa8760563"
+    },
+    {
+      "path": "http-protocol-final/http-vitest.txt",
+      "bytes": 308,
+      "sha256": "f0f5d638840617d1f242992dd484a7f7330beca085d3ec759640884398b72380"
+    },
+    {
+      "path": "http-protocol-final/integration.junit.xml",
+      "bytes": 5293,
+      "sha256": "75495bf9c2c157c4a005e2d4a752e5d796a068fe78164998e4e9bc41d6cbaebf"
+    },
+    {
+      "path": "http-protocol-final/summary.json",
+      "bytes": 4125,
+      "sha256": "271f5b45a9413df5c108ecbb2eb13633e0239f9812639a2117902232a42ffe49"
+    },
+    {
+      "path": "http-stable-final/http-analytics.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "http-stable-final/http-app.txt",
+      "bytes": 103998,
+      "sha256": "44f6e5c49b89b09f321b945d7ea6f70f84ce5d0f8d784da46239d64f085a5838"
+    },
+    {
+      "path": "http-stable-final/http-setup.txt",
+      "bytes": 13950,
+      "sha256": "e237a1fa2b74e90f6ac513c8de51d8a66ba574e9bc49096c9958d4cf3d8167a1"
+    },
+    {
+      "path": "http-stable-final/http-vitest.txt",
+      "bytes": 306,
+      "sha256": "8f831bc68f7ad8b41a72eeba80b0a856d9737e22bed8dfadf38810346bcda47f"
+    },
+    {
+      "path": "http-stable-final/integration.junit.xml",
+      "bytes": 5292,
+      "sha256": "f30b0b1f95361aed216b2dca102ac05385d37df60f04018ebd2514f35a8a1b89"
+    },
+    {
+      "path": "http-stable-final/summary.json",
+      "bytes": 4125,
+      "sha256": "4eea8984ac08cbea2feeef0ce625ed3b93f2f978537d1a9638cc4e93b3d5ac85"
+    },
+    {
+      "path": "maxcore-analytics-python-after-finite-json.txt",
+      "bytes": 99,
+      "sha256": "7cae71f9d54138e9bb5dad241ff988a2c24c70b72a3770fc3be843fa44aa8041"
+    },
+    {
+      "path": "maxcore-analytics-python-coverage-run.txt",
+      "bytes": 99,
+      "sha256": "594257192ecef7980dd335e92a762b85a2fcdc758cf7fa3a409eaa80184ab884"
+    },
+    {
+      "path": "maxcore-analytics-python-final.txt",
+      "bytes": 769,
+      "sha256": "d5247794dfdecd122d1e4721839075302ca3a85854e105b1fcc1db363066a3ec"
+    },
+    {
+      "path": "maxcore-analytics-python-initial-fixed-harness.txt",
+      "bytes": 26612,
+      "sha256": "35fe3651857257fecd43cba479741b5c1b60d20225f195d3443264cec4d0fa9b"
+    },
+    {
+      "path": "maxcore-analytics-python-protocol-final.txt",
+      "bytes": 195,
+      "sha256": "9ca8cf9b728be3cbda3f3fe84987eeadbac25abd71777a67661b350836f440fe"
+    },
+    {
+      "path": "python-coverage-final.json",
+      "bytes": 19476,
+      "sha256": "42b6d2826389843dbdde1e29a2bc878e94de3ea8dead20d7dd618ad7b6f34335"
+    },
+    {
+      "path": "python-coverage-final.sqlite3",
+      "bytes": 61440,
+      "sha256": "4e7d537c654a5c5a2acf2bea9be33e7e308b40b6168f78f51ca34b98dc8a09f2"
+    },
+    {
+      "path": "python-coverage-initial.json",
+      "bytes": 19476,
+      "sha256": "8c35ed76ed9881982792482b9765b5f5624185d20ec058837f177abeb30f0beb"
+    },
+    {
+      "path": "python-source-hashes-initial.json",
+      "bytes": 543,
+      "sha256": "85782180ca7d01ab2b9d9216b0284ad0133d42873ea19adee8ab04c103fbcb6a"
+    },
+    {
+      "path": "source-hashes.json",
+      "bytes": 1875,
+      "sha256": "afb763ff9fe50fe94ef3ac1a880543b2958aeecd102ee01d03f55f03a240036a"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 2619,
+      "sha256": "f1a0395ea37ea4283626a648bf8146d4586efa705c51a066b6ae6447e718ded3"
+    }
+  ]
+}

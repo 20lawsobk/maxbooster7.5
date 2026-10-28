@@ -1,0 +1,316 @@
+{
+  "recordedAt": "2026-10-28T01:36:28.372632+00:00",
+  "baselineCommit": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "scope": "Root SendGrid SDK/deepmerge consumer removal with bounded native alert transport supplied by root; coherent fail-closed legacy security replay; targeted installed graph and regression evidence, not global release approval",
+  "productionReady": false,
+  "advisory": "GHSA-gcqx-w48m-w2h4",
+  "upstreamPatchedDeepmergeVersion": null,
+  "sourceFilesSha256": {
+    "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+    "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad",
+    "tools/legacy-security-update.json": "1c683b8231d68483b5979ae6e6de0a06c8a1d0a8016ac332db0837e84e1fdb2c",
+    "scripts/verify-runtime-artifacts.mjs": "ba5b3514a63abd4dd1c4ac399c656327ed4303502ffa2ff8a49f0ea4d2f1f8d0",
+    "tests/runtime-artifact-gates.test.mjs": "2524b05a06682ccd44c604ba5b48e9b175ca40661e8f93cde7cd8037a05298f0",
+    "tests/legacy-sendgrid-security-coherence.test.mjs": "f8b65424e299c552cce3760cd651fd64eef848cedf492f2aede3818d63f2c138",
+    "server/lib/sendgridAlertTransport.ts": "bc2e412164e1bd13400210eba71422c7476c27e7294f45dc47d06759e6369bc6",
+    "server/monitoring/alertingService.ts": "b7aefd988b825b138264d2bc14c37a3c486b4021e7cdbf9c659397b4348cb0b8",
+    "server/monitoring/emailMonitor.ts": "17cdb56f917deeaa17c4895100f7340de11dbf9be39a9bebf2010a21297965cf",
+    "server/workers/index.ts": "67588805b1be3d7a40fca8abbea759aef8e67eb5d32c6abe8360cd4738b5d291",
+    "server/routes/monitoring.ts": "ff6b2d4b9976f591bff66a7e0daca3666abbf271700308fcccf9824397296099",
+    "tests/sendgrid-alert-transport.test.mjs": "f59307c5a14ebd9a5cc2bf16e4c84bc37804153db1e8efca47e5f3c6c81ab6bc"
+  },
+  "cases": {
+    "mainCombinedFinal": {
+      "cases": 77,
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0
+    },
+    "legacyFirstKnownOriginalPayload": {
+      "cases": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "legacyNestedExactKnownOriginalPayload": {
+      "cases": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "countsOverlapNote": "77 main combined cases include11 actualalerttransport/route,2 reallegacybundlecoherence and64 existingregressions. The two legacy11-case runs reuse the samecases with each serializedlegacycaller/route pair; never add them as unique new global assertions.",
+  "auditObservations": {
+    "root-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-root-all.json"
+    },
+    "root-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-root-prod.json"
+    },
+    "maxcore-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-maxcore-all.json"
+    },
+    "maxcore-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-maxcore-prod.json"
+    },
+    "pdim-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-pdim-all.json"
+    },
+    "pdim-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "receipt": "audit-pdim-prod.json"
+    },
+    "dns-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-dns-all.json"
+    },
+    "dns-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-dns-prod.json"
+    },
+    "tls-all": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-tls-all.json"
+    },
+    "tls-prod": {
+      "exitCode": 0,
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "receipt": "audit-tls-prod.json"
+    }
+  },
+  "actualInstalledDependencyAbsence": {
+    "node": "v22.23.3",
+    "absence": {
+      "@sendgrid/mail": {
+        "absent": true
+      },
+      "@sendgrid/client": {
+        "absent": true
+      },
+      "@sendgrid/helpers": {
+        "absent": true
+      },
+      "deepmerge": {
+        "absent": true
+      }
+    },
+    "gate": {
+      "ready": true,
+      "failures": [],
+      "occurrences": 97
+    }
+  },
+  "installEvidence": {
+    "install-root": {
+      "command": [
+        "npm",
+        "install",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund",
+        "--prefer-offline"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T01:29:02.752879+00:00",
+      "durationSeconds": 2.32,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/install-root.txt",
+      "logSha256": "c448f51aba445fd08daff6567ab16ac4a2eeee244003834cf7ccfbeca1df024a",
+      "inputHashesBefore": {
+        "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+        "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+      },
+      "inputHashesAfter": {
+        "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+        "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+      },
+      "inputsUnchanged": true
+    },
+    "frozen-lock-validation": {
+      "command": [
+        "npm",
+        "ci",
+        "--dry-run",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T01:29:05.074253+00:00",
+      "durationSeconds": 1.537,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/frozen-lock-validation.txt",
+      "logSha256": "8c947e0a3b6531576f7e1ed2588345afb7d2220f17a4c8c08b0c9e790099e956",
+      "inputHashesBefore": {
+        "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+        "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+      },
+      "inputHashesAfter": {
+        "package.json": "02bd05b1f4c1462e72025cb3e55b590d96d2ce062ac822e36456b3a53fd22083",
+        "package-lock.json": "5b3367c2823a5ecb18ea8b74d3b2486e24ec180c6287e34c9586e4870787ffad"
+      },
+      "inputsUnchanged": true
+    },
+    "install-pdim-recreate": {
+      "command": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile",
+        "--ignore-scripts",
+        "--force"
+      ],
+      "cwd": "external/pdim",
+      "startedAt": "2026-10-28T01:32:15.712975+00:00",
+      "durationSeconds": 12.185,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/dependency-hardening/2026-10-27-sendgrid-sdk-removal/install-pdim-recreate.txt",
+      "logSha256": "712263ff1a76ebc6a2681b64e54a7b91f7d1dc53f40ed481844537c42b0eda2a",
+      "inputHashesBefore": {
+        "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+        "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4"
+      },
+      "inputHashesAfter": {
+        "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+        "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4"
+      },
+      "inputsUnchanged": true
+    }
+  },
+  "guardedReplay": {
+    "baseline": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+    "sourceCommit": "2c9b739a89bb2334142ded99da14fe57878208b1",
+    "originalEntries": 36,
+    "currentEntries": 46,
+    "fixtureIsolated": true,
+    "scope": "Known-original rehearsal, not an actual retained legacy checkout or deployed legacy acceptance",
+    "status": "passed",
+    "updatedEntries": [
+      "maxbooster7.5/package.json",
+      "maxbooster7.5/package-lock.json",
+      "maxbooster7.5/pnpm-lock.yaml",
+      "maxbooster7.5/pnpm-workspace.yaml",
+      "maxbooster7.5/maxbooster7.5/package.json",
+      "maxbooster7.5/maxbooster7.5/package-lock.json",
+      "maxbooster7.5/maxbooster7.5/pnpm-lock.yaml",
+      "maxbooster7.5/maxbooster7.5/pnpm-workspace.yaml",
+      "maxbooster7.5/server/monitoring/alertingService.ts",
+      "maxbooster7.5/server/monitoring/emailMonitor.ts",
+      "maxbooster7.5/server/workers/index.ts",
+      "maxbooster7.5/server/lib/sendgridAlertTransport.ts",
+      "maxbooster7.5/maxbooster7.5/server/monitoring/alertingService.ts",
+      "maxbooster7.5/maxbooster7.5/server/monitoring/emailMonitor.ts",
+      "maxbooster7.5/maxbooster7.5/server/workers/index.ts",
+      "maxbooster7.5/maxbooster7.5/server/lib/sendgridAlertTransport.ts",
+      "maxbooster7.5/server/routes/monitoring.ts",
+      "maxbooster7.5/maxbooster7.5/server/routes/monitoring.ts"
+    ],
+    "allFinalChecksumsVerified": true,
+    "idempotent": true,
+    "unknownCallerHistoryRejectsBeforeAnyManifestWrite": true,
+    "customTransportAdditionsRejectedAndPreserved": true,
+    "unrelatedFilePreserved": true,
+    "fixtureCleaned": true
+  },
+  "legacyPatchProvenance": "legacy-patch-provenance.json",
+  "additionalChecks": {
+    "lint": 0,
+    "diff-check": 0
+  },
+  "priorRunnerFailuresPreserved": {
+    "initialInstalledTreeGate": "actual-installed-absence.json records obsolete unreferenced PDIM qs6.16.0 virtual-store payload even though activeconsumer andlock were6.16.1. FrozenforcedPDIMreinstallremovedthepayload; no sourceorlockeditneeded.",
+    "initialCombinedRegression": "after-regressions.xml records76cases/75passes/1failedtestfile because the new test incorrectly imported an undeclared root-level YAML package. It now resolves the declared parser through the actualMaxCoreOrvalconsumer; final77casesallpass. No productiondefectcausedthetestimportfailure."
+  },
+  "limitations": [
+    "Root package installation was a real targeted existing-tree npm install with unchangedmanifest/lock hashes, followedby npm ci --dry-run lock consistency validation. It is not a fresh npm ci rebuild; portable release preparation/coldstartup still required.",
+    "No application/provider credentials or remote email delivery used. Provider202acceptance isnotdelivery.",
+    "No retained legacy working tree exists in thischeckout. Known-originalreplayrehearsal uses verifiedGitobject2c9b739a; nestedupgradesonlyaccept thoseexactbytesandotherwise failentirepreflight. Oldunrelatedlegacycodeisintentionallypreserved,notcertifiedproductiongrade.",
+    "Nativebrowserandallotherfeature/provider/deployment/capacity/100percentcoveragegatesareseparate.",
+    "InitialMaxCorecohortrootauditfailure remainsanaccuratehistoricalsnapshot beforethisSDKconsumerremoval."
+  ]
+}

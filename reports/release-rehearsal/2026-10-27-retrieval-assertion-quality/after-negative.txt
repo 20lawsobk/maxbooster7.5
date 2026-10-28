@@ -1,0 +1,48 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________________ test_actual_pipeline_false_check _______________________
+
+    def test_actual_pipeline_false_check():
+>       test_pipeline._check('owned pipeline false condition',False)
+
+/tmp/retrieval-negative-oracle-83m5h0dt/test_actual_retrieval_oracles.py:4: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'owned pipeline false condition', cond = False
+
+    def _check(name: str, cond: bool) -> None:
+        status = "ok  " if cond else "FAIL"
+        print(f"  [{status}] {name}")
+        if not cond:
+            _FAILS.append(name)
+>           raise AssertionError(name)
+E           AssertionError: owned pipeline false condition
+
+ai_model/retrieval/test_pipeline.py:86: AssertionError
+----------------------------- Captured stdout call -----------------------------
+  [FAIL] owned pipeline false condition
+________________________ test_actual_phase4_false_check ________________________
+
+    def test_actual_phase4_false_check():
+>       test_phase4._check('owned phase4 false condition',False)
+
+/tmp/retrieval-negative-oracle-83m5h0dt/test_actual_retrieval_oracles.py:7: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'owned phase4 false condition', cond = False
+
+    def _check(name: str, cond: bool) -> None:
+        status = "ok  " if cond else "FAIL"
+        print(f"  [{status}] {name}")
+        if not cond:
+            _FAILS.append(name)
+>           raise AssertionError(name)
+E           AssertionError: owned phase4 false condition
+
+ai_model/retrieval/test_phase4.py:53: AssertionError
+----------------------------- Captured stdout call -----------------------------
+  [FAIL] owned phase4 false condition
+=========================== short test summary info ============================
+FAILED ../../../../../../tmp/retrieval-negative-oracle-83m5h0dt/test_actual_retrieval_oracles.py::test_actual_pipeline_false_check
+FAILED ../../../../../../tmp/retrieval-negative-oracle-83m5h0dt/test_actual_retrieval_oracles.py::test_actual_phase4_false_check
+2 failed in 0.12s

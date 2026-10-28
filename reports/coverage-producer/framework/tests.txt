@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+ok 1 - accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch
+  ---
+  duration_ms: 50.99297
+  type: 'test'
+  ...
+# Subtest: rejects stale original source and changed executed code
+ok 2 - rejects stale original source and changed executed code
+  ---
+  duration_ms: 12.917843
+  type: 'test'
+  ...
+# Subtest: rejects changed raw counters and malformed offsets rather than salvaging hits
+ok 3 - rejects changed raw counters and malformed offsets rather than salvaging hits
+  ---
+  duration_ms: 10.015816
+  type: 'test'
+  ...
+# Subtest: rejects incomplete producers and malformed UTF-8
+ok 4 - rejects incomplete producers and malformed UTF-8
+  ---
+  duration_ms: 11.540806
+  type: 'test'
+  ...
+# Subtest: retains exact original contents in inline source maps and rejects missing/stale mappings
+ok 5 - retains exact original contents in inline source maps and rejects missing/stale mappings
+  ---
+  duration_ms: 13.681534
+  type: 'test'
+  ...
+# Subtest: rejects traversal, external sources and symlink escape
+ok 6 - rejects traversal, external sources and symlink escape
+  ---
+  duration_ms: 12.976141
+  type: 'test'
+  ...
+# Subtest: requires complete identical maps even when functions and branches match
+ok 7 - requires complete identical maps even when functions and branches match
+  ---
+  duration_ms: 0.413764
+  type: 'test'
+  ...
+# Subtest: rejects branch arity and counter/map mismatches
+ok 8 - rejects branch arity and counter/map mismatches
+  ---
+  duration_ms: 0.310238
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 196.386842

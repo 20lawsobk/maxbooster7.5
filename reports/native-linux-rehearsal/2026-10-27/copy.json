@@ -1,0 +1,15 @@
+{
+  "durationSeconds": 11.758,
+  "copiedGitVisibleFiles": 4906,
+  "regularCopiedTrees": [
+    "node_modules",
+    "external/maxcore/node_modules",
+    "external/pdim/node_modules",
+    "dist",
+    "external/maxcore/artifacts/api-server/dist"
+  ],
+  "validatedInternalSymlinks": 3399,
+  "originalInputSha256": "8cad7cae3ab4895c19ba78fba1b7ff5d9670c16a2a4fea7008a3e7631180c6be",
+  "allAdmittedInputsCopiedExactly": true,
+  "noHardlinksOrOutsideLinks": true
+}

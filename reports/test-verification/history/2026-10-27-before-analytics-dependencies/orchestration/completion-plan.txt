@@ -1,0 +1,1 @@
+{"status": "inventory_complete", "productionReady": false, "pageDeclarations": 80, "controls": 8374, "backendRegistrations": 2901, "frontendContracts": 932, "sourceCoverageFiles": 2651, "unknownMappings": 127, "repositoryFiles": 5501, "sharedSubsystems": 20, "workItems": 52892, "businessSectionPages": 80, "businessSectionTasks": 2161, "businessDimensionSteps": 12966}

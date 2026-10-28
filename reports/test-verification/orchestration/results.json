@@ -1,6 +1,6 @@
 {
-  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
-  "startedAt": "2026-10-27T21:49:12.305985+00:00",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "startedAt": "2026-10-28T09:11:45.486233+00:00",
   "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
   "selectedGroups": [
     "browser",
@@ -24,13 +24,13 @@
         "build"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:49:14.797009+00:00",
-      "durationSeconds": 21.592,
+      "startedAt": "2026-10-28T09:11:47.846916+00:00",
+      "durationSeconds": 20.547,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/build.txt",
-      "logSha256": "35213937616de738d040c2e68bda5fc20ec7d187e75426367982ef41a5f55349",
+      "logSha256": "eb972c68e457545502e09b4bc4f3c2d69969c8dbbc8b620a8c6e9eb9a83294af",
       "group": "checks",
       "id": "build"
     },
@@ -41,13 +41,13 @@
         "test:ci"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:49:36.389001+00:00",
-      "durationSeconds": 172.605,
+      "startedAt": "2026-10-28T09:12:08.393997+00:00",
+      "durationSeconds": 160.733,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/ci.txt",
-      "logSha256": "b6d431e31a6660ba01a5732f556d0245e37e389bf25f441537b3b561bb7cb504",
+      "logSha256": "0a6e991294d317011926f30f7a9666cff526dacc4c0f896ba7e5391f94eaba78",
       "group": "root",
       "id": "ci",
       "unitReportFresh": true
@@ -64,13 +64,13 @@
         "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:52:28.996428+00:00",
-      "durationSeconds": 0.975,
+      "startedAt": "2026-10-28T09:14:49.140165+00:00",
+      "durationSeconds": 0.817,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/additional.txt",
-      "logSha256": "e0091d91cee121607f2bb0f43e0e20ab85c5ebf1492f3aec5e46d1bd3b84e89f",
+      "logSha256": "556f09cb4a5f08e39b98ab1f4475ff37c067d622b8d5405b3d5d3fbc258b271a",
       "group": "root",
       "id": "additional"
     },
@@ -85,13 +85,13 @@
         "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:52:29.971855+00:00",
-      "durationSeconds": 213.118,
+      "startedAt": "2026-10-28T09:14:49.957848+00:00",
+      "durationSeconds": 225.419,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/coverage.txt",
-      "logSha256": "4a7a4bedffcd3eb801227b9437186ce5bcd8d5c6cb35cb89c5a42a7017f800fc",
+      "logSha256": "74241f684da0ad5c1a32b700f824a238fe5b2aa4eecdad488de5ed6f99c3a753",
       "group": "coverage",
       "id": "coverage",
       "coverageParseExclusions": []
@@ -102,7 +102,7 @@
         "scripts/patch-electron-builder-transport.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:56:03.096774+00:00",
+      "startedAt": "2026-10-28T09:18:35.380394+00:00",
       "durationSeconds": 0.065,
       "exitCode": 0,
       "timedOut": false,
@@ -120,13 +120,13 @@
         "/workspace/maxbooster7.5/reports/test-verification/node"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:56:03.162077+00:00",
-      "durationSeconds": 104.076,
-      "exitCode": 0,
+      "startedAt": "2026-10-28T09:18:35.445656+00:00",
+      "durationSeconds": 132.008,
+      "exitCode": 1,
       "timedOut": false,
-      "status": "passed",
+      "status": "failed",
       "log": "reports/test-verification/orchestration/node.txt",
-      "logSha256": "435dd601855f376523bf6e4fb38b0152fde75c7cdab5641c7d3a8003795a5af2",
+      "logSha256": "a372a7eaa52449a2558e20ab00bdd57c48d2b81034c646d2fbc0106fa301c3e0",
       "group": "node",
       "id": "node"
     },
@@ -143,13 +143,13 @@
         "/workspace/maxbooster7.5/reports/test-verification/python/suites.md"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T21:57:47.238818+00:00",
-      "durationSeconds": 183.354,
+      "startedAt": "2026-10-28T09:20:47.454083+00:00",
+      "durationSeconds": 196.235,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/python.txt",
-      "logSha256": "00dab6ae8d37d0ff3bf49fbae43cd8d794f40429b4857d216e99eacd04727e9f",
+      "logSha256": "4327cc28d95df2fee405e588e962a4c4c3e5cc0c2ae37df5aff76c20a2644426",
       "group": "python",
       "id": "python"
     },
@@ -161,8 +161,8 @@
         "/workspace/maxbooster7.5/reports/test-verification/commerce"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:00:50.593153+00:00",
-      "durationSeconds": 41.418,
+      "startedAt": "2026-10-28T09:24:03.689291+00:00",
+      "durationSeconds": 40.796,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -187,13 +187,13 @@
         "/workspace/.go/cache"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:01:32.011931+00:00",
-      "durationSeconds": 42.641,
+      "startedAt": "2026-10-28T09:24:44.485454+00:00",
+      "durationSeconds": 41.763,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/subsystems.txt",
-      "logSha256": "ca65b4338cdb1da15ddc692ee72018ba41c289d136cc801e243c26d02f318a9a",
+      "logSha256": "b96cfb8d5b2a20992e76dd90df96fb1a26c6b29e1ed4a7eecb3058fb562ca798",
       "group": "subsystems",
       "id": "subsystems"
     },
@@ -209,13 +209,13 @@
         "tests/studio-plugin-audio-browser.test.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:02:14.653687+00:00",
-      "durationSeconds": 6.913,
+      "startedAt": "2026-10-28T09:25:26.249102+00:00",
+      "durationSeconds": 7.415,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/browser.txt",
-      "logSha256": "6a476b7e73bcf5a3302102467e7a74f466ab00178d081a2925ba00fc22f01358",
+      "logSha256": "9bd4155c1ddc8454a9c99e9188eca4ccfda3ac27e7d89e2189bcb0b0a3adea00",
       "group": "browser",
       "id": "browser"
     },
@@ -225,13 +225,13 @@
         "scripts/testing/integration-browser.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:02:21.569145+00:00",
-      "durationSeconds": 153.716,
+      "startedAt": "2026-10-28T09:25:33.667623+00:00",
+      "durationSeconds": 147.002,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/http.txt",
-      "logSha256": "e295ae5f2de6e6747a4be00b7e90a0d5a2eddec67d6d75463040501f61468db9",
+      "logSha256": "dac778cf9138bbcbb2296105cbd6b44c5d02b1290fba41a734562f2d7d10339d",
       "group": "http",
       "id": "http"
     },
@@ -241,13 +241,13 @@
         "scripts/testing/page80-acceptance.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:04:55.285633+00:00",
-      "durationSeconds": 146.737,
+      "startedAt": "2026-10-28T09:28:00.670130+00:00",
+      "durationSeconds": 149.165,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/pages.txt",
-      "logSha256": "59cfc03a8a112a8794e614452eee8c857c5ac2f144ae7658e17ccb3f82c6d4ff",
+      "logSha256": "e380e1e86fb859348ae742ab4db8e8e47e07918549e4283d1296d1c8f5f20a01",
       "group": "pages",
       "id": "pages"
     },
@@ -258,13 +258,13 @@
         "--http-load"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:07:22.023579+00:00",
-      "durationSeconds": 51.025,
+      "startedAt": "2026-10-28T09:30:29.836237+00:00",
+      "durationSeconds": 50.889,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/bounded-http-load.txt",
-      "logSha256": "e94815bef9d2c2f2b13d6adf297133e65644bf72e45f8fe2d1c6b4b982ab3d1d",
+      "logSha256": "4870fe179ea012b89e492b9d6eee81249f3cea4a12bf487bbf6102685cbe5cc8",
       "group": "load",
       "id": "bounded-http-load"
     },
@@ -278,8 +278,8 @@
         "/workspace/maxbooster7.5/reports/test-verification/operations"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:08:13.049263+00:00",
-      "durationSeconds": 20.054,
+      "startedAt": "2026-10-28T09:31:20.726212+00:00",
+      "durationSeconds": 21.08,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -295,8 +295,8 @@
         "check"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:08:33.104103+00:00",
-      "durationSeconds": 38.549,
+      "startedAt": "2026-10-28T09:31:41.807228+00:00",
+      "durationSeconds": 25.923,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -312,8 +312,8 @@
         "lint"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:09:11.653080+00:00",
-      "durationSeconds": 43.028,
+      "startedAt": "2026-10-28T09:32:07.730580+00:00",
+      "durationSeconds": 49.509,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -331,32 +331,32 @@
         "--json"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:09:54.681696+00:00",
-      "durationSeconds": 1.123,
+      "startedAt": "2026-10-28T09:32:57.239900+00:00",
+      "durationSeconds": 0.924,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/audit.txt",
-      "logSha256": "06ea807069c8bd47482767bd0df8701d5645cee32e5c406b2c76c9524e472abc",
+      "logSha256": "7747caf3fd124cefaf3022a5be83f36e73c0e0b8c0ab951d263cbcb931728855",
       "group": "checks",
       "id": "audit"
     }
   ],
   "productionReady": false,
-  "sourceInputsSha256": "1bffd19f52e0e03535fefca06a40e4b712fd235491423f4525862acea730fbc4",
+  "sourceInputsSha256": "e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69",
   "catalog": {
     "command": [
       "/workspace/.cloud-python/bin/python",
       "scripts/testing/generate-catalog.py"
     ],
     "cwd": ".",
-    "startedAt": "2026-10-27T21:49:12.566533+00:00",
-    "durationSeconds": 2.23,
+    "startedAt": "2026-10-28T09:11:45.771949+00:00",
+    "durationSeconds": 2.075,
     "exitCode": 0,
     "timedOut": false,
     "status": "passed",
     "log": "reports/test-verification/orchestration/catalog.txt",
-    "logSha256": "d9d5a9c3c8e297673369ed83bd978b604fe1b6f01cf0d047bf3e51ae2f4c5f9d"
+    "logSha256": "3d723e643ee4961e64b97208afa4856c899cf72ab9dade4a51ed7e203d5e0bb3"
   },
   "sourceInputsUnchanged": true,
   "changedSourceInputs": [],
@@ -369,13 +369,13 @@
         "/workspace/maxbooster7.5/reports/test-verification"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:09:56.018243+00:00",
-      "durationSeconds": 4.581,
+      "startedAt": "2026-10-28T09:32:58.420707+00:00",
+      "durationSeconds": 4.78,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/summary.txt",
-      "logSha256": "b77df6f57d86c789030fcd45b1bf3acaca0bdefe6a4d610cd5d78ba14faadeab",
+      "logSha256": "af9c7cd3b07dc42e1ecb8f53d80e87111be0fe6df0d829c3f3c757108afbad2f",
       "id": "summary"
     },
     {
@@ -389,13 +389,13 @@
         "--strict"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:10:00.599340+00:00",
-      "durationSeconds": 12.127,
+      "startedAt": "2026-10-28T09:33:03.201687+00:00",
+      "durationSeconds": 13.122,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/platform.txt",
-      "logSha256": "1150dd4e08d945a4d85cdaa28ebfc17a7cb916f41db4929d83c689d5d6d8ab6f",
+      "logSha256": "15b1b42f893ddd4d89c173eb51bf7a263b1f60cbb910ac1a84041e7a8ecdfa07",
       "id": "platform"
     },
     {
@@ -409,13 +409,13 @@
         "--strict"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:10:12.726838+00:00",
-      "durationSeconds": 2.824,
+      "startedAt": "2026-10-28T09:33:16.324292+00:00",
+      "durationSeconds": 3.224,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/remediation.txt",
-      "logSha256": "629ead58586f0d0ab7ab8419eb85b57310cb563263f92bf165a8c80b063abbcd",
+      "logSha256": "9fee56a2aa02342c8e94f866f79093af1463981c1e2fbe63737778528911a728",
       "id": "remediation"
     },
     {
@@ -429,13 +429,13 @@
         "--require-page-work"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:10:15.551586+00:00",
-      "durationSeconds": 10.202,
+      "startedAt": "2026-10-28T09:33:19.549072+00:00",
+      "durationSeconds": 10.551,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/completion-plan.txt",
-      "logSha256": "057963b6df95663a1d41570d81bc6ff4e024a2306a8cfa404c5944dcacb808a7",
+      "logSha256": "12adadf29460b3d597ac67b46b947c8df90e4ddb1c0cbb0bb87168c31ada0dce",
       "id": "completion-plan"
     },
     {
@@ -446,17 +446,17 @@
         "/workspace/maxbooster7.5/reports/test-verification"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-27T22:10:25.754381+00:00",
-      "durationSeconds": 3.675,
+      "startedAt": "2026-10-28T09:33:30.100733+00:00",
+      "durationSeconds": 3.878,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/final-summary.txt",
-      "logSha256": "dbb429eabe098e65b45f31fac688ae02782c4342c228c64ad65f796078b737ce",
+      "logSha256": "a0039ab309b21c41b2a4cb7a8868935d664867bef6fc8fecf8009dbeb23fb4c2",
       "id": "final-summary"
     }
   ],
   "status": "failed",
   "allTestsPassed": false,
-  "finishedAt": "2026-10-27T22:10:29.430071+00:00"
+  "finishedAt": "2026-10-28T09:33:33.978873+00:00"
 }

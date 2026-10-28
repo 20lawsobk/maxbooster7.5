@@ -8,13 +8,13 @@ This source register and the machine JSON distinguish declarations, static assoc
 | --- | ---: |
 | routedPageDeclarations | 80 |
 | uiInteractionDeclarations | 8374 |
-| backendRegistrations | 2901 |
+| backendRegistrations | 2907 |
 | frontendApiContracts | 932 |
-| scannedTypeScriptJavaScriptFiles | 3390 |
-| actualCoverageFiles | 2651 |
-| requiredChecks | 33504 |
-| unverifiedChecks | 33504 |
-| unknownMappings | 127 |
+| scannedTypeScriptJavaScriptFiles | 3404 |
+| actualCoverageFiles | 2653 |
+| requiredChecks | 33538 |
+| unverifiedChecks | 33532 |
+| unknownMappings | 130 |
 | invalidEvidenceLinks | 0 |
 
 ## Routed pages
@@ -133,7 +133,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/audio-job` | 1 | 1 | 6 |
 | `main-endpoint-audit/audio-processing` | 8 | 1 | 53 |
 | `main-endpoint-audit/audit` | 2 | 1 | 11 |
-| `main-endpoint-audit/auth` | 84 | 7 | 488 |
+| `main-endpoint-audit/auth` | 84 | 7 | 487 |
 | `main-endpoint-audit/auto` | 3 | 1 | 17 |
 | `main-endpoint-audit/auto-updates` | 13 | 1 | 72 |
 | `main-endpoint-audit/autopilot` | 74 | 6 | 413 |
@@ -183,7 +183,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/generation` | 1 | 1 | 6 |
 | `main-endpoint-audit/gpu` | 1 | 1 | 5 |
 | `main-endpoint-audit/growth` | 23 | 1 | 135 |
-| `main-endpoint-audit/health` | 15 | 7 | 94 |
+| `main-endpoint-audit/health` | 15 | 7 | 92 |
 | `main-endpoint-audit/helpdesk` | 5 | 1 | 28 |
 | `main-endpoint-audit/history` | 1 | 1 | 7 |
 | `main-endpoint-audit/hns` | 11 | 1 | 60 |
@@ -223,7 +223,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/payment-bypass` | 1 | 1 | 5 |
 | `main-endpoint-audit/payouts` | 32 | 1 | 174 |
 | `main-endpoint-audit/personalization` | 35 | 1 | 195 |
-| `main-endpoint-audit/ping` | 1 | 1 | 5 |
+| `main-endpoint-audit/ping` | 1 | 1 | 4 |
 | `main-endpoint-audit/platform` | 14 | 1 | 86 |
 | `main-endpoint-audit/platform-sync` | 12 | 1 | 67 |
 | `main-endpoint-audit/playlist-pitching` | 8 | 1 | 45 |
@@ -239,8 +239,8 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/push-subscriptions` | 3 | 1 | 18 |
 | `main-endpoint-audit/push-test` | 1 | 1 | 6 |
 | `main-endpoint-audit/radio-pitches` | 7 | 1 | 40 |
-| `main-endpoint-audit/ready` | 5 | 5 | 30 |
-| `main-endpoint-audit/readyz` | 1 | 1 | 6 |
+| `main-endpoint-audit/ready` | 5 | 5 | 29 |
+| `main-endpoint-audit/readyz` | 1 | 1 | 5 |
 | `main-endpoint-audit/register-after-payment` | 1 | 1 | 6 |
 | `main-endpoint-audit/retention` | 5 | 1 | 29 |
 | `main-endpoint-audit/revenue-forecast` | 6 | 1 | 34 |
@@ -308,6 +308,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/boostsheets` | 1 | 1 | 5 |
 | `python-decorator-ast/campaign` | 1 | 1 | 6 |
 | `python-decorator-ast/campaigns` | 6 | 1 | 35 |
+| `python-decorator-ast/capability` | 1 | 1 | 5 |
 | `python-decorator-ast/concurrency` | 1 | 1 | 5 |
 | `python-decorator-ast/config` | 1 | 1 | 5 |
 | `python-decorator-ast/content` | 3 | 2 | 19 |
@@ -325,6 +326,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/health` | 4 | 3 | 24 |
 | `python-decorator-ast/image` | 1 | 1 | 7 |
 | `python-decorator-ast/infer` | 1 | 1 | 6 |
+| `python-decorator-ast/insights` | 1 | 1 | 6 |
 | `python-decorator-ast/knowledge` | 4 | 1 | 21 |
 | `python-decorator-ast/maxcore` | 2 | 1 | 11 |
 | `python-decorator-ast/memory` | 1 | 1 | 5 |
@@ -334,7 +336,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `python-decorator-ast/optimize` | 2 | 2 | 12 |
 | `python-decorator-ast/platform` | 14 | 1 | 86 |
 | `python-decorator-ast/platforms` | 1 | 1 | 5 |
-| `python-decorator-ast/predict` | 2 | 2 | 12 |
+| `python-decorator-ast/predict` | 3 | 3 | 18 |
 | `python-decorator-ast/proxy` | 5 | 1 | 34 |
 | `python-decorator-ast/ready` | 3 | 2 | 18 |
 | `python-decorator-ast/root` | 1 | 1 | 5 |
@@ -362,7 +364,7 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `typescript-router-ast/activity` | 1 | 1 | 5 |
 | `typescript-router-ast/ai-insights` | 1 | 1 | 5 |
 | `typescript-router-ast/analysis` | 1 | 1 | 6 |
-| `typescript-router-ast/analytics` | 1 | 1 | 5 |
+| `typescript-router-ast/analytics` | 4 | 2 | 22 |
 | `typescript-router-ast/analyze` | 3 | 1 | 19 |
 | `typescript-router-ast/analyze-audio` | 1 | 1 | 7 |
 | `typescript-router-ast/analyze-audio-beats` | 1 | 1 | 7 |
@@ -495,7 +497,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `server/lib/pdimClient.ts` | 529/954 | 92/278 | 186 |
 | `shared/ml/models/AdOptimizationEngine.ts` | 0/902 | 0/163 | 163 |
 | `client/src/components/marketplace/StorefrontBuilder.tsx` | 86/493 | 3/158 | 155 |
-| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1374/3004 | 185/339 | 154 |
+| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1379/3004 | 185/339 | 154 |
 | `client/src/pages/Advertisement.tsx` | 0/388 | 0/151 | 151 |
 | `client/src/components/marketplace/StorefrontDnsZoneManager.tsx` | 8/338 | 0/147 | 147 |
 | `server/services/hyperLearningEngine.ts` | 0/1004 | 0/145 | 145 |
@@ -506,7 +508,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `server/services/distributionDataTransferService.ts` | 149/1168 | 21/146 | 125 |
 | `client/src/pages/Royalties.tsx` | 70/370 | 2/126 | 124 |
 | `client/src/lib/video/SceneGraph.ts` | 0/380 | 0/122 | 122 |
-| `external/maxcore/artifacts/api-server/src/routes/model-proxy.ts` | 401/727 | 36/158 | 122 |
+| `external/maxcore/artifacts/api-server/src/routes/model-proxy.ts` | 408/734 | 39/161 | 122 |
 | `server/services/careerCoachService.ts` | 0/206 | 0/119 | 119 |
 | `shared/ml/models/AdvertisingAutopilotAI_v3.ts` | 0/615 | 0/112 | 112 |
 | `client/src/pages/ProjectsPageImpl.tsx` | 0/336 | 0/112 | 112 |
@@ -530,7 +532,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `client/src/components/social/UnifiedCalendar.tsx` | 0/227 | 0/91 | 91 |
 | `external/pdim/artifacts/api-server/src/pocket-dimension/fabric/PocketStorageService.ts` | 12/460 | 3/93 | 90 |
 
-The table shows at most 50 files with the largest uncovered surfaces. All 2651 measured files, exact function names and uncovered statement lines remain in the machine register.
+The table shows at most 50 files with the largest uncovered surfaces. All 2653 measured files, exact function names and uncovered statement lines remain in the machine register.
 
 ## Limits
 

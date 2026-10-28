@@ -1,0 +1,53 @@
+{
+  "baseline": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "from": "6.16.0",
+  "to": "6.16.1",
+  "registryIntegrity": "sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==",
+  "changedFiles": [
+    "package.json",
+    "package-lock.json",
+    "pnpm-workspace.yaml",
+    "external/maxcore/pnpm-workspace.yaml",
+    "external/maxcore/pnpm-lock.yaml",
+    "external/pdim/pnpm-workspace.yaml",
+    "external/pdim/pnpm-lock.yaml",
+    "tools/legacy-security-update.json"
+  ],
+  "beforeSha256": {
+    "package.json": "6b4985977a99b3d37149f4de98d2d0f5d7c219eac1b11b4932b384fd7897673e",
+    "package-lock.json": "1e02ca2b8245a20867f61d6d09b8cc347b275a57a3cfb94d017158fdaea8f80e",
+    "pnpm-workspace.yaml": "00a7cfccb9f0136113d053c3d9bf82ee9e974534ba8b5d05ccc68b3bc93245f3",
+    "external/maxcore/pnpm-workspace.yaml": "55c0f4ca78a8b33e71d18dd39e4b03b406cb5194ddd6c56e8bd192ee4d3decac",
+    "external/maxcore/pnpm-lock.yaml": "805e7c44a2ebbb1792334201ddb38510f1b2c99d9694c519dfdf33923dd53b88",
+    "external/pdim/pnpm-workspace.yaml": "597577136518569685254823c69658e9466eddce80b2211daf58ea15c6fab511",
+    "external/pdim/pnpm-lock.yaml": "195483f0da875e652c048bb0780b9ab0c15e47bc5469651b7321332e88ee0246",
+    "tools/legacy-security-update.json": "42a29b91bc3cf1bc89774715beb5aa9669026caba2dd5aff151f47d2603045a7"
+  },
+  "afterSha256": {
+    "package.json": "4b922736b32dec3bff9f630b4482f88dc8f31e32cf39201812dc720be6254aa6",
+    "package-lock.json": "a58bbb3858639cdc236480decfccfc837e1d88d8637899835dba7b07839840d8",
+    "pnpm-workspace.yaml": "4061b234e8e63b773afa306675a11f24541d4cb20f054929209f78e2160ce10e",
+    "external/maxcore/pnpm-workspace.yaml": "0d9028dac393ced973f8e631ef1d875ca8008d88125dbffb8c72e7b843513377",
+    "external/maxcore/pnpm-lock.yaml": "2cb903ce8c9d9929de00d7678695ed8ca90d047b0dec1dbb9e6db6ad35ff75b2",
+    "external/pdim/pnpm-workspace.yaml": "256ad4dd753b1570c092f1e86e16eeaf6f72e40e6bd667d3d513a521bc72f4a4",
+    "external/pdim/pnpm-lock.yaml": "f7af3577ab6de0159f5cab9f0b61b5da3a6330ecb06d2c0829afa846ea7d3188",
+    "tools/legacy-security-update.json": "5585ffb05e5e2bec4b12a8ade00e02f5b45f2c8df136ab916349a0c69a42f911"
+  },
+  "replayEntriesUpdated": [
+    "maxbooster7.5/package.json",
+    "maxbooster7.5/package-lock.json",
+    "maxbooster7.5/pnpm-lock.yaml",
+    "maxbooster7.5/pnpm-workspace.yaml",
+    "maxbooster7.5/maxbooster7.5/package.json",
+    "maxbooster7.5/maxbooster7.5/package-lock.json",
+    "maxbooster7.5/maxbooster7.5/pnpm-lock.yaml",
+    "maxbooster7.5/maxbooster7.5/pnpm-workspace.yaml"
+  ],
+  "allUnrelatedReplayEntriesUnchanged": true,
+  "allOriginalBeforeHashesRetained": true,
+  "lockMutation": "Exact qs version/tarball/integrity replacements; preserved registry URL hosts and no broad package-manager lock regeneration",
+  "pnpmReferences": {
+    "external/maxcore/pnpm-lock.yaml": 5,
+    "external/pdim/pnpm-lock.yaml": 5
+  }
+}

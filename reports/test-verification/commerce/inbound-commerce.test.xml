@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="marketplace checkout freezes database pricing, metadata identity, and provider idempotency" time="0.020887" classname="test"/>
-	<testcase name="merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions" time="0.008533" classname="test"/>
-	<testcase name="growth merchandise checkout validates shipping and immutable subtotal before provider create" time="0.011160" classname="test"/>
-	<testcase name="growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once" time="0.017918" classname="test"/>
-	<testcase name="billing create-checkout route executes canonical price catalog and rejects caller-supplied prices" time="0.039852" classname="test"/>
+	<testcase name="marketplace checkout freezes database pricing, metadata identity, and provider idempotency" time="0.025281" classname="test"/>
+	<testcase name="merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions" time="0.010419" classname="test"/>
+	<testcase name="growth merchandise checkout validates shipping and immutable subtotal before provider create" time="0.014102" classname="test"/>
+	<testcase name="growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once" time="0.018615" classname="test"/>
+	<testcase name="billing create-checkout route executes canonical price catalog and rejects caller-supplied prices" time="0.044626" classname="test"/>
 	<!-- tests 5 -->
 	<!-- suites 0 -->
 	<!-- pass 5 -->
@@ -12,5 +12,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 172.633858 -->
+	<!-- duration_ms 199.836178 -->
 </testsuites>

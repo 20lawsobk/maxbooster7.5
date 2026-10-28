@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="56" failures="0" errors="0" time="5.737731356">
+    <testsuite name="tests/ai-analytics-integration.test.ts" timestamp="2026-10-28T02:14:13.905Z" hostname="af966a6fd55d" tests="19" failures="0" errors="0" skipped="0" time="2.649827179">
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 401 when unauthenticated" time="0.026953032">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → 200 with correct shape" time="0.036076103">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/fanbase → returns array-safe topPlatforms when available" time="0.040365864">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict reports missing account history without requiring a trained model" time="0.079812701">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; capability and personal summaries use the dedicated authenticated MaxCore statistics contract" time="0.183478774">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insight and capability routes require the real authenticated session" time="0.128874157">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; personal insights validate the period and engagement does not reinterpret lifetime counters as daily activity" time="0.170701526">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; known owned daily values produce exact forecasts and summaries while body identity and foreign rows are ignored" time="0.239170486">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; a controlled MaxCore outage remains a retryable503 rather than an invented local prediction" time="0.353325451">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; POST /api/ai/analytics/predict rejects an invalid metric before generation" time="0.070705059">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard → 200 with expected overview fields" time="0.045735719">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=7d → authenticated 200" time="0.036653213">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?timeRange=90d → authenticated 200" time="0.051378871">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/advertising/campaigns → authenticated owned campaign array" time="0.036695618">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/anomalies requires an authenticated administrator" time="0.082986609">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; an administrator with a real verified factor reads only owned persisted anomalies" time="0.427645848">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/release-strategy → 200 with missing history explicit" time="0.044873147">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/music/milestones → 200 with owned persisted progress" time="0.049628906">
+        </testcase>
+        <testcase classname="tests/ai-analytics-integration.test.ts" name="AI Analytics &amp; Fanbase Insights — Real Data Endpoints &gt; GET /api/analytics/dashboard?limit=1000 preserves the authorized response" time="0.036167645">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/feature-revenue-merch.test.ts" timestamp="2026-10-28T02:14:13.911Z" hostname="af966a6fd55d" tests="37" failures="0" errors="0" skipped="0" time="3.087904177">
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; setup: register and login test user" time="1.171598841">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns returns list" time="0.049201548">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/stats returns statistics" time="0.059895858">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; POST /api/fan-campaigns creates a campaign" time="0.069849524">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns/:id retrieves campaign" time="0.054765609">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; PUT /api/fan-campaigns/:id updates campaign" time="0.125984013">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; DELETE /api/fan-campaigns/:id removes campaign" time="0.114064439">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Fan Campaigns &gt; GET /api/fan-campaigns without auth → 401" time="0.026340959">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast returns current forecast" time="0.052628796">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/projections returns projections" time="0.03993556">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/accuracy returns forecast accuracy metrics" time="0.036161768">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast/rate returns growth rate" time="0.052652021">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; POST /api/revenue-forecast/generate triggers AI forecast generation" time="0.051883814">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Revenue Intelligence / Forecasting &gt; GET /api/revenue-forecast without auth → 401" time="0.034431698">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets returns list" time="0.062693608">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets creates a budget" time="0.041237755">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id retrieves budget" time="0.052340762">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets/:id/items returns budget items" time="0.047186357">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; POST /api/project-budgets/:id/items adds a budget item" time="0.051565563">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; PUT /api/project-budgets/:id updates budget" time="0.106526156">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/items/:id removes budget item" time="0.040375804">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; DELETE /api/project-budgets/:id removes budget" time="0.046263155">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Project Budgets &gt; GET /api/project-budgets without auth → 401" time="0.042625082">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch returns merch list" time="0.039763455">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/stats returns merch statistics" time="0.057649941">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/orders returns order list" time="0.036117279">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; POST /api/merch creates a merch item" time="0.037788371">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch/:id retrieves merch item" time="0.057115736">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; PUT /api/merch/:id updates merch item" time="0.045157287">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; DELETE /api/merch/:id removes merch item" time="0.049122207">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Merch Store &gt; GET /api/merch without auth → 401" time="0.044610006">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/templates returns contract templates" time="0.061370348">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/my-contracts returns user contracts" time="0.038085569">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/tax-rates is accessible with country param" time="0.029369001">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Contracts &gt; GET /api/contracts/stats/summary returns contract statistics" time="0.03848021">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations returns recommendations" time="0.062069944">
+        </testcase>
+        <testcase classname="tests/feature-revenue-merch.test.ts" name="Feature: Fan Campaigns, Revenue Intelligence, Budgets, Merch, Contracts &gt; Career Coach &gt; GET /api/career-coach/recommendations without auth → 401" time="0.053962699">
+        </testcase>
+    </testsuite>
+</testsuites>

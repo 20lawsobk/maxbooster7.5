@@ -2,61 +2,61 @@ TAP version 13
 # Subtest: release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
 ok 1 - release gate excludes legacy only with image exclusion; workspace audit still rejects stale legacy
   ---
-  duration_ms: 42.145195
+  duration_ms: 44.54822
   type: 'test'
   ...
 # Subtest: installed stale nested copy fails despite patched top-level package and lock
 ok 2 - installed stale nested copy fails despite patched top-level package and lock
   ---
-  duration_ms: 4.091546
+  duration_ms: 3.061699
   type: 'test'
   ...
 # Subtest: unpatched node-forge is rejected even when only a nested consumer installs it
 ok 3 - unpatched node-forge is rejected even when only a nested consumer installs it
   ---
-  duration_ms: 1.771293
+  duration_ms: 1.607064
   type: 'test'
   ...
 # Subtest: missing workspace, prerelease version and escaping installed symlink fail closed
 ok 4 - missing workspace, prerelease version and escaping installed symlink fail closed
   ---
-  duration_ms: 2.746606
+  duration_ms: 3.207458
   type: 'test'
   ...
 # Subtest: fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
 ok 5 - fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x
   ---
-  duration_ms: 2.458992
+  duration_ms: 2.88353
   type: 'test'
   ...
 # Subtest: all security families reject stale nested copies and accept explicitly validated branches
 ok 6 - all security families reject stale nested copies and accept explicitly validated branches
   ---
-  duration_ms: 94.034959
+  duration_ms: 123.846851
   type: 'test'
   ...
-# Subtest: unpatched brace walkers and shared HTTP cache policies cannot be reintroduced
-ok 7 - unpatched brace walkers and shared HTTP cache policies cannot be reintroduced
+# Subtest: unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
+ok 7 - unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced
   ---
-  duration_ms: 3.099628
+  duration_ms: 4.246746
   type: 'test'
   ...
 # Subtest: capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
 ok 8 - capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules
   ---
-  duration_ms: 12.983768
+  duration_ms: 15.575406
   type: 'test'
   ...
 # Subtest: restored output gate rejects absent artifacts and invalid JS without executing it
 ok 9 - restored output gate rejects absent artifacts and invalid JS without executing it
   ---
-  duration_ms: 60.808777
+  duration_ms: 60.84578
   type: 'test'
   ...
 # Subtest: restored Node provenance admits the provisioned pin and rejects stale or malformed records
 ok 10 - restored Node provenance admits the provisioned pin and rejects stale or malformed records
   ---
-  duration_ms: 0.902943
+  duration_ms: 1.025998
   type: 'test'
   ...
 1..10
@@ -67,4 +67,4 @@ ok 10 - restored Node provenance admits the provisioned pin and rejects stale or
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 347.867029
+# duration_ms 383.356568

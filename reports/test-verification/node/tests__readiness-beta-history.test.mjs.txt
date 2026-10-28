@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: beta progress replacement preserves immutable previous report bytes and checksums
 ok 1 - beta progress replacement preserves immutable previous report bytes and checksums
   ---
-  duration_ms: 4.270193
+  duration_ms: 4.772599
   type: 'test'
   ...
 # Subtest: closure suite inputs exist and incomplete latest cycles are explicitly described
 ok 2 - closure suite inputs exist and incomplete latest cycles are explicitly described
   ---
-  duration_ms: 0.266983
+  duration_ms: 0.308576
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - closure suite inputs exist and incomplete latest cycles are explicitly de
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 120.054585
+# duration_ms 122.387502

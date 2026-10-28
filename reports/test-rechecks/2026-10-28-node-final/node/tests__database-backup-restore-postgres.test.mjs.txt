@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: owned PostgreSQL: real dump bytes restore schema, data, sequence and a pinned snapshot
+    # Subtest: schema constraints, exact Unicode/JSON/null/numeric/bytea values and identity sequence survive actual restore
+    ok 1 - schema constraints, exact Unicode/JSON/null/numeric/bytea values and identity sequence survive actual restore
+      ---
+      duration_ms: 15.946826
+      type: 'test'
+      ...
+    # Subtest: exported snapshot excludes a concurrent commit without changing source data
+    ok 2 - exported snapshot excludes a concurrent commit without changing source data
+      ---
+      duration_ms: 107.708074
+      type: 'test'
+      ...
+    # Subtest: a failing operator recovery invariant rolls back the entire actual restore transaction
+    ok 3 - a failing operator recovery invariant rolls back the entire actual restore transaction
+      ---
+      duration_ms: 41.120909
+      type: 'test'
+      ...
+    # Subtest: real pg_dump output over the byte budget fails and removes partial private files
+    ok 4 - real pg_dump output over the byte budget fails and removes partial private files
+      ---
+      duration_ms: 68.222898
+      type: 'test'
+      ...
+    1..4
+ok 1 - owned PostgreSQL: real dump bytes restore schema, data, sequence and a pinned snapshot
+  ---
+  duration_ms: 1141.509715
+  type: 'test'
+  ...
+1..1
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1337.104791

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "node",
+    "node_modules/electron-builder/cli.js",
+    "--linux",
+    "dir",
+    "--x64",
+    "--publish",
+    "never",
+    "--config.electronDist=/tmp/maxbooster-linux-u3f69z18/downloads/electron-v43.8.3-linux-x64.zip",
+    "--config.directories.output=/tmp/maxbooster-linux-u3f69z18/out-prototype-sharp"
+  ],
+  "cwd": "/tmp/maxbooster-linux-u3f69z18/project",
+  "startedAt": "2026-10-28T02:35:17.592649+00:00",
+  "durationSeconds": 37.688,
+  "ownedProcessGroup": 103569,
+  "exitCode": 0,
+  "timedOut": false,
+  "log": "reports/native-linux-rehearsal/2026-10-27/owned-sharp-prototype-dir-build.txt",
+  "logSha256": "b235553dd945b490d6a536751bef51d0a982e0c7cde0bf2e9fc6b1c6d7ba585d",
+  "sourceScope": "Onlyownedprototypecopy; no production patch yet"
+}

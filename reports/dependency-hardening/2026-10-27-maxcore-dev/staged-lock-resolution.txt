@@ -1,0 +1,18 @@
+Scope: all 9 workspace projects
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 28, reused 0, downloaded 0, added 0
+artifacts/ai-dashboard                   |  WARN  deprecated recharts@2.15.4
+Progress: resolved 66, reused 0, downloaded 0, added 0
+Progress: resolved 82, reused 0, downloaded 0, added 0
+Progress: resolved 86, reused 0, downloaded 0, added 0
+Progress: resolved 87, reused 0, downloaded 0, added 0
+Progress: resolved 133, reused 0, downloaded 0, added 0
+Progress: resolved 179, reused 0, downloaded 0, added 0
+Progress: resolved 225, reused 0, downloaded 0, added 0
+Progress: resolved 284, reused 0, downloaded 0, added 0
+Progress: resolved 342, reused 0, downloaded 0, added 0
+Progress: resolved 407, reused 0, downloaded 0, added 0
+Progress: resolved 466, reused 0, downloaded 0, added 0
+Progress: resolved 489, reused 0, downloaded 0, added 0, done
+
+Done in 15.3s using pnpm v10.26.1

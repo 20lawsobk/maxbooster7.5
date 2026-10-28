@@ -1,0 +1,53 @@
+[test_brand_centroid_mean]
+  [ok  ] brand_count == 2
+  [ok  ] centroid not None
+  [ok  ] centroid == normalized mean of stored vecs
+  [ok  ] centroid is unit length
+  [ok  ] unknown brand → None
+  [ok  ] brand_stats reflects count
+[test_brand_centroid_replace_matches_rebuild]
+  [ok  ] both centroids present
+  [ok  ] incremental replace == rebuilt centroid
+  [ok  ] count still 2 after replace
+[test_brand_centroid_survives_state_roundtrip]
+  [ok  ] load_state ok
+  [ok  ] centroid present after restore
+  [ok  ] centroid identical across state round-trip
+  [ok  ] brand_count restored
+[test_brand_centroid_remove_recomputes]
+  [ok  ] count drops to 1 after remove
+  [ok  ] centroid == remaining vec
+[test_embedding_cache_hit_and_copy]
+  [ok  ] first embed is a miss
+  [ok  ] vector dim correct
+  [ok  ] second embed is a hit
+  [ok  ] cached vector equals computed
+  [ok  ] returned vectors are independent copies
+[test_embedding_cache_bypass]
+  [ok  ] use_cache=False bypasses cache (no hits/misses recorded)
+[test_seeded_render_reuses_file]
+  [ok  ] first seeded render succeeded
+  [ok  ] identical seed → identical filename
+  [ok  ] file reused, not re-rendered
+[test_seeded_render_concurrent_dedupe]
+  [ok  ] all concurrent renders returned the same file
+  [ok  ] output file exists
+[test_ingestor_enqueue_dedupe_and_drain]
+  [ok  ] first enqueue accepted
+  [ok  ] duplicate enqueue deduped
+  [ok  ] drain ingested one asset
+  [ok  ] index grew by the generated asset
+  [ok  ] brand centroid now exists for nova
+  [ok  ] ingested_total == 1
+  [ok  ] deduped_total == 1
+  [ok  ] queue drained empty
+[test_ingestor_bad_path_retries_then_drops]
+  [ok  ] bad path enqueued
+[GeneratedIngestor][WARNING][ingest_failed] Dropped generated asset after 3 attempts (does_not_exist_phase4.png): ingest returned False
+  [ok  ] nothing ingested from bad path
+  [ok  ] dropped after exhausting retries
+  [ok  ] retries were recorded
+  [ok  ] queue empty after drop
+  [ok  ] index unchanged by failed ingest
+
+ALL PHASE 4 TESTS PASSED

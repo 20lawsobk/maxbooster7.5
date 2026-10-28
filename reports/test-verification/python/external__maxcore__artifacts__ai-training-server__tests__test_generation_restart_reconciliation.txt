@@ -8,7 +8,7 @@ tests/test_generation_restart_reconciliation.py::RestartTests::test_readiness_re
 tests/test_generation_restart_reconciliation.py::RestartTests::test_registered_startup_reconciles_legacy_without_touching_delivery_or_owners
 tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_never_deletes_unowned_or_symlink_scratch
 tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_retries_failed_owned_unlink_before_deleting_journal
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7549: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -33,4 +33,4 @@ tests/test_generation_restart_reconciliation.py::RestartTests::test_terminal_gc_
     return self.router.on_event(event_type)  # ty: ignore[deprecated]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-8 passed, 16 warnings, 3 subtests passed in 1.86s
+8 passed, 16 warnings, 3 subtests passed in 1.84s

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "node",
+    "reports/dependency-hardening/2026-10-27-qs/verify-replay.mjs",
+    "c06fbecdb32a5c3b76662f631604bfd9abac386b"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-27T22:20:26.725703+00:00",
+  "durationSeconds": 0.067,
+  "exitCode": 1,
+  "timedOut": false,
+  "status": "failed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/replay-drill-initial-buffer-limit.txt",
+  "logSha256": "079561cb56c0ee2ded1efd520072009ce41dd3972c36f97f606d688e49b2b05b",
+  "diagnosis": "Evidence driver exceeded Node execFileSync default1MiB stdout buffer while reading the saved public replay bundle; no fixture write occurred. Driver buffer corrected before rerun."
+}

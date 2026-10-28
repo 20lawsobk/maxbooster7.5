@@ -1850,6 +1850,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1909,6 +1914,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "eventBindings": [],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -80009,6 +80019,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -80053,14 +80068,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-6328b98825213623
+## ui-975edfade3e58d49
 
 ```json
 {
-  "id": "ui-6328b98825213623",
+  "id": "ui-975edfade3e58d49",
   "source": {
     "file": "client/src/components/layout/AppLayout.tsx",
-    "line": 100,
+    "line": 101,
     "column": 9
   },
   "tag": "Sidebar",
@@ -80068,12 +80083,17 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "eventBindings": [
     {
       "event": "onMobileClose",
-      "expressionKind": "ArrowFunction",
-      "handler": null
+      "expressionKind": "Identifier",
+      "handler": "closeMobileMenu"
     }
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -80097,12 +80117,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-6328b98825213623/control-behavior",
+      "id": "ui-975edfade3e58d49/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-6328b98825213623/control-failure",
+      "id": "ui-975edfade3e58d49/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -80119,14 +80139,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-a2d4f10a25f80786
+## ui-d0d9ca11329dc60e
 
 ```json
 {
-  "id": "ui-a2d4f10a25f80786",
+  "id": "ui-d0d9ca11329dc60e",
   "source": {
     "file": "client/src/components/layout/AppLayout.tsx",
-    "line": 107,
+    "line": 108,
     "column": 11
   },
   "tag": "TopBar",
@@ -80141,6 +80161,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -80163,12 +80188,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-a2d4f10a25f80786/control-behavior",
+      "id": "ui-d0d9ca11329dc60e/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-a2d4f10a25f80786/control-failure",
+      "id": "ui-d0d9ca11329dc60e/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -80185,14 +80210,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-705fd60d835ea90e
+## ui-3828cf72f867bcb1
 
 ```json
 {
-  "id": "ui-705fd60d835ea90e",
+  "id": "ui-3828cf72f867bcb1",
   "source": {
     "file": "client/src/components/layout/AppLayout.tsx",
-    "line": 140,
+    "line": 142,
     "column": 11
   },
   "tag": "MobileBottomNav",
@@ -80206,6 +80231,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -80229,12 +80259,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-705fd60d835ea90e/control-behavior",
+      "id": "ui-3828cf72f867bcb1/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-705fd60d835ea90e/control-failure",
+      "id": "ui-3828cf72f867bcb1/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81108,14 +81138,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-2eea6ab9192c3719
+## ui-b371ddfc98bfbb10
 
 ```json
 {
-  "id": "ui-2eea6ab9192c3719",
+  "id": "ui-b371ddfc98bfbb10",
   "source": {
     "file": "client/src/components/layout/Sidebar.tsx",
-    "line": 240,
+    "line": 250,
     "column": 9
   },
   "tag": "div",
@@ -81166,12 +81196,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-2eea6ab9192c3719/control-behavior",
+      "id": "ui-b371ddfc98bfbb10/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-2eea6ab9192c3719/control-failure",
+      "id": "ui-b371ddfc98bfbb10/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81188,19 +81218,20 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-4a6000d07de3aa8e
+## ui-b72cc52a3e04a587
 
 ```json
 {
-  "id": "ui-4a6000d07de3aa8e",
+  "id": "ui-b72cc52a3e04a587",
   "source": {
     "file": "client/src/components/layout/Sidebar.tsx",
-    "line": 287,
+    "line": 300,
     "column": 13
   },
   "tag": "Button",
   "labels": {
-    "data-testid": "sidebar-close"
+    "data-testid": "sidebar-close",
+    "aria-label": "Close navigation menu"
   },
   "eventBindings": [
     {
@@ -81234,12 +81265,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-4a6000d07de3aa8e/control-behavior",
+      "id": "ui-b72cc52a3e04a587/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-4a6000d07de3aa8e/control-failure",
+      "id": "ui-b72cc52a3e04a587/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81256,14 +81287,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-479d9c9cc8f8853b
+## ui-09288376a7ab1304
 
 ```json
 {
-  "id": "ui-479d9c9cc8f8853b",
+  "id": "ui-09288376a7ab1304",
   "source": {
     "file": "client/src/components/layout/Sidebar.tsx",
-    "line": 324,
+    "line": 338,
     "column": 17
   },
   "tag": "Link",
@@ -81303,12 +81334,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-479d9c9cc8f8853b/control-behavior",
+      "id": "ui-09288376a7ab1304/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-479d9c9cc8f8853b/control-failure",
+      "id": "ui-09288376a7ab1304/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81325,14 +81356,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-c9b6fd0662599ae8
+## ui-27a8441a308cf701
 
 ```json
 {
-  "id": "ui-c9b6fd0662599ae8",
+  "id": "ui-27a8441a308cf701",
   "source": {
     "file": "client/src/components/layout/Sidebar.tsx",
-    "line": 368,
+    "line": 382,
     "column": 11
   },
   "tag": "Link",
@@ -81363,12 +81394,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-c9b6fd0662599ae8/control-behavior",
+      "id": "ui-27a8441a308cf701/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-c9b6fd0662599ae8/control-failure",
+      "id": "ui-27a8441a308cf701/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81385,19 +81416,20 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-51bf4bf12bd1f8e8
+## ui-09b540e6b78df08d
 
 ```json
 {
-  "id": "ui-51bf4bf12bd1f8e8",
+  "id": "ui-09b540e6b78df08d",
   "source": {
     "file": "client/src/components/layout/TopBar.tsx",
-    "line": 39,
+    "line": 40,
     "column": 11
   },
   "tag": "Button",
   "labels": {
-    "data-testid": "mobile-menu-button"
+    "data-testid": "mobile-menu-button",
+    "aria-label": "Open navigation menu"
   },
   "eventBindings": [
     {
@@ -81431,12 +81463,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-51bf4bf12bd1f8e8/control-behavior",
+      "id": "ui-09b540e6b78df08d/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-51bf4bf12bd1f8e8/control-failure",
+      "id": "ui-09b540e6b78df08d/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81453,17 +81485,17 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-2871509b1d1a7a88
+## ui-0f63676b1efba992
 
 ```json
 {
-  "id": "ui-2871509b1d1a7a88",
+  "id": "ui-0f63676b1efba992",
   "source": {
     "file": "client/src/components/layout/TopBar.tsx",
-    "line": 67,
+    "line": 71,
     "column": 11
   },
-  "tag": "Link",
+  "tag": "Button",
   "labels": {},
   "eventBindings": [],
   "spreadAttributeLines": [],
@@ -81491,12 +81523,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-2871509b1d1a7a88/control-behavior",
+      "id": "ui-0f63676b1efba992/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-2871509b1d1a7a88/control-failure",
+      "id": "ui-0f63676b1efba992/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81513,18 +81545,19 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-d6048cde5e5d07e5
+## ui-9ca2eb446c30ce51
 
 ```json
 {
-  "id": "ui-d6048cde5e5d07e5",
+  "id": "ui-9ca2eb446c30ce51",
   "source": {
     "file": "client/src/components/layout/TopBar.tsx",
-    "line": 68,
+    "line": 77,
     "column": 13
   },
-  "tag": "Button",
+  "tag": "Link",
   "labels": {
+    "aria-label": "Settings",
     "data-testid": "settings-button"
   },
   "eventBindings": [],
@@ -81553,12 +81586,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-d6048cde5e5d07e5/control-behavior",
+      "id": "ui-9ca2eb446c30ce51/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-d6048cde5e5d07e5/control-failure",
+      "id": "ui-9ca2eb446c30ce51/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -81575,19 +81608,20 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-a4635e8e9888dd0e
+## ui-6868a26f3f09e2a9
 
 ```json
 {
-  "id": "ui-a4635e8e9888dd0e",
+  "id": "ui-6868a26f3f09e2a9",
   "source": {
     "file": "client/src/components/layout/TopBar.tsx",
-    "line": 78,
+    "line": 82,
     "column": 11
   },
   "tag": "Button",
   "labels": {
-    "data-testid": "sign-out-button"
+    "data-testid": "sign-out-button",
+    "aria-label": null
   },
   "eventBindings": [
     {
@@ -81621,12 +81655,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "requiredChecks": [
     {
-      "id": "ui-a4635e8e9888dd0e/control-behavior",
+      "id": "ui-6868a26f3f09e2a9/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-a4635e8e9888dd0e/control-failure",
+      "id": "ui-6868a26f3f09e2a9/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }
@@ -103496,6 +103530,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -103558,6 +103597,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "eventBindings": [],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -103627,6 +103671,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -103695,6 +103744,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -103760,6 +103814,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -103837,6 +103896,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -103902,6 +103966,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -103970,6 +104039,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -104041,6 +104115,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -108873,6 +108952,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -108933,6 +109017,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -108992,6 +109081,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "eventBindings": [],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -109059,6 +109153,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -109125,6 +109224,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -109190,6 +109294,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -276345,6 +276454,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -276410,6 +276524,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -276477,6 +276596,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
+    {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -276542,6 +276666,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   ],
   "spreadAttributeLines": [],
   "testCandidates": [
+    {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "failed"
+    },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -406985,14 +407114,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## ui-61f28002f3be1399
+## ui-f5a9e17174a248c2
 
 ```json
 {
-  "id": "ui-61f28002f3be1399",
+  "id": "ui-f5a9e17174a248c2",
   "source": {
     "file": "client/src/pages/analytics/AIDashboard.tsx",
-    "line": 83,
+    "line": 100,
     "column": 11
   },
   "tag": "Button",
@@ -407008,12 +407137,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "testCandidates": [],
   "requiredChecks": [
     {
-      "id": "ui-61f28002f3be1399/control-behavior",
+      "id": "ui-f5a9e17174a248c2/control-behavior",
       "template": "control-behavior",
       "status": "UNVERIFIED"
     },
     {
-      "id": "ui-61f28002f3be1399/control-failure",
+      "id": "ui-f5a9e17174a248c2/control-failure",
       "template": "control-failure",
       "status": "UNVERIFIED"
     }

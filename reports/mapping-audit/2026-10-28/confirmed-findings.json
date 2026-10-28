@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "productionReady": false,
+  "items": [
+    {
+      "id": "nested-router-prefix-loss",
+      "status": "CONFIRMED_PRODUCER_DEFECT",
+      "risk": "P1-evidence-integrity",
+      "affectedSystems": [
+        "scripts/audit-endpoints.mjs",
+        "scripts/testing/platform-register.py",
+        "page/API dependency register"
+      ],
+      "rootCause": "The audit stores one file-level prefix for the child router.use(durableExports) as empty, rather than composing the parent export router mount from the main application's lazy-loader registration.",
+      "actualIncorrectRecords": [
+        {
+          "id": "api-972dd5ce32a073e2",
+          "method": "POST",
+          "recordedPath": "/jobs/:jobId/:action",
+          "recordedConfidence": "high",
+          "source": {
+            "file": "server/routes/durableExports.ts",
+            "line": 98
+          },
+          "staticallyRequiredPath": "/api/export/jobs/:jobId/:action"
+        },
+        {
+          "id": "api-e7ca6c071ab1c2ca",
+          "method": "DELETE",
+          "recordedPath": "/history/:id",
+          "recordedConfidence": "high",
+          "source": {
+            "file": "server/routes/durableExports.ts",
+            "line": 124
+          },
+          "staticallyRequiredPath": "/api/export/history/:id"
+        }
+      ],
+      "sourceCitations": [
+        {
+          "file": "scripts/audit-endpoints.mjs",
+          "startLine": 201,
+          "endLine": 210,
+          "excerpt": "      const ident = m[4];\n      const prefix = m[3] || \"\";\n      const resolved = localImports.get(ident);\n      if (!resolved) continue;\n      const loc = `${relative(ROOT, file)}:${lineAt(src, m.index)}`;\n      if (!prefixMap.has(resolved)) {\n        prefixMap.set(resolved, { prefix, mountedFrom: [loc] });\n      } else {\n        prefixMap.get(resolved).mountedFrom.push(loc);\n      }",
+          "sourceSha256": "d4532347e5bb688306125b52c138a7dfbaf4d4e98727cf03eceae6b17de09513"
+        },
+        {
+          "file": "server/routes.ts",
+          "startLine": 7886,
+          "endLine": 7891,
+          "excerpt": "    // Export & Download Management\n    {\n      path: \"/api/export\",\n      name: \"export\",\n      loader: () => import(\"./routes/export\"),\n    },",
+          "sourceSha256": "12ed13b3a48de8fcf2ed0fd6834782279dbda511f85e0a4b8a5b1b6e2a9e021b"
+        },
+        {
+          "file": "server/routes.ts",
+          "startLine": 7898,
+          "endLine": 7904,
+          "excerpt": "  for (let i = 0; i < routeModules.length; i++) {\n    const { path, name } = routeModules[i];\n    const result = loadedModules[i];\n    if (result && result.type !== \"skip\") {\n      if (result.type === \"router\" && result.value) {\n        try {\n          app.use(path, result.value as RouterLike);",
+          "sourceSha256": "12ed13b3a48de8fcf2ed0fd6834782279dbda511f85e0a4b8a5b1b6e2a9e021b"
+        },
+        {
+          "file": "server/routes/export.ts",
+          "startLine": 10,
+          "endLine": 13,
+          "excerpt": "import durableExports from \"./durableExports\";\n\nconst router = Router();\nrouter.use(durableExports);",
+          "sourceSha256": "2f231510c7ec9367a01fc93efdd729d2eb0b772a79041fd2d330769072f78a10"
+        },
+        {
+          "file": "server/routes/durableExports.ts",
+          "startLine": 98,
+          "endLine": 98,
+          "excerpt": "router.post(\"/jobs/:jobId/:action\", requireAuth, handler(async (req, res) => {",
+          "sourceSha256": "4120a98a9dcf6b137a0a8f7712b5c62a28ed1ae0d909f428b00bddb59a539598"
+        },
+        {
+          "file": "server/routes/durableExports.ts",
+          "startLine": 124,
+          "endLine": 124,
+          "excerpt": "router.delete(\"/history/:id\", requireAuth, handler(async (req, res) => {",
+          "sourceSha256": "4120a98a9dcf6b137a0a8f7712b5c62a28ed1ae0d909f428b00bddb59a539598"
+        }
+      ],
+      "requiredFix": "Compose root-process → parent-router → child-router prefixes, preserving each mount/alias and original registration identity. A file-level first prefix must not substitute for the mount graph.",
+      "validationCriteria": "A real-source parser regression produces /api/export/jobs/:jobId/:action and /api/export/history/:id, never their unprefixed versions. A controlled HTTP/router-stack fixture verifies those exact mounted routes and precedence.",
+      "productionAcceptanceCriteria": "Every affected consumer is rebound to the correct process/path and its actual authorization, durable artifact, failure/retry and cancellation/delete assertions pass from current source.",
+      "scopeLimit": "This proves an inventory defect, not a missing runtime route or a passing export workflow."
+    },
+    {
+      "id": "finite-template-marked-literal",
+      "status": "CONFIRMED_PRODUCER_DEFECT",
+      "risk": "P1-evidence-integrity",
+      "affectedSystems": [
+        "scripts/audit-endpoints.mjs",
+        "scripts/testing/platform-register.py",
+        "Fan Hub consent/unsubscribe contract identities"
+      ],
+      "rootCause": "The regex literal branch accepts a backtick TemplateExpression containing interpolation and marks it high-confidence without substituting the finite lexical action binding.",
+      "actualIncorrectRecords": [
+        {
+          "id": "api-34fc89e127fc051f",
+          "method": "GET",
+          "recordedPath": "/api/fan-hub/${action}/:token",
+          "recordedConfidence": "high",
+          "source": {
+            "file": "server/routes/fanHub.ts",
+            "line": 18
+          },
+          "staticallyRequiredPaths": [
+            "/api/fan-hub/consent/:token",
+            "/api/fan-hub/unsubscribe/:token"
+          ]
+        },
+        {
+          "id": "api-a985a7e5e584a792",
+          "method": "POST",
+          "recordedPath": "/api/fan-hub/${action}/:token",
+          "recordedConfidence": "high",
+          "source": {
+            "file": "server/routes/fanHub.ts",
+            "line": 25
+          },
+          "staticallyRequiredPaths": [
+            "/api/fan-hub/consent/:token",
+            "/api/fan-hub/unsubscribe/:token"
+          ]
+        }
+      ],
+      "sourceCitations": [
+        {
+          "file": "scripts/audit-endpoints.mjs",
+          "startLine": 363,
+          "endLine": 380,
+          "excerpt": "    // Middleware and formatting are commonly placed on preceding lines, so\n    // allow whitespace/comments before the route path. The first argument is\n    // still required to be a literal; computed expressions remain explicit\n    // unresolved registrations below.\n    const strMatch = after.match(\n      /^\\s*(?:(?:\\/\\/[^\\n]*\\n)|(?:\\/\\*[\\s\\S]*?\\*\\/\\s*))*(['\"`])((?:\\\\.|(?!\\1)[^\\\\])*)\\1/,\n    );\n    if (strMatch) {\n      routes.push({\n        method,\n        rawPath: strMatch[2],\n        file: rel,\n        line,\n        resolvedVia: \"literal\",\n        registeredOn,\n        hasAuthMarker: AUTH_MARKERS.some((a) => argsWindow.includes(a)),\n        callsNext,\n      });",
+          "sourceSha256": "d4532347e5bb688306125b52c138a7dfbaf4d4e98727cf03eceae6b17de09513"
+        },
+        {
+          "file": "server/routes/fanHub.ts",
+          "startLine": 16,
+          "endLine": 35,
+          "excerpt": "// Public capability links: GET is safe for email scanners; POST changes consent.\nfor (const action of [\"consent\", \"unsubscribe\"] as const) {\n  router.get(`/${action}/:token`, (req, res) => {\n    if (!/^[a-f0-9]{64}$/.test(req.params.token)) return res.sendStatus(400);\n    const csrf = String((req as any).csrfToken ?? req.cookies?.[\"csrf-token\"] ?? \"\");\n    if (!/^[a-zA-Z0-9_-]+$/.test(csrf)) return res.status(503).send(\"Security token unavailable. Refresh this page.\");\n    res.set(\"Referrer-Policy\", \"no-referrer\").set(\"Cache-Control\", \"no-store\")\n      .type(\"html\").send(`<form method=\"post\"><input type=\"hidden\" name=\"_csrf\" value=\"${csrf}\"><p>${action === \"consent\" ? \"Confirm artist email subscription\" : \"Unsubscribe from artist emails\"}</p><button type=\"submit\">Confirm</button></form>`);\n  });\n  router.post(`/${action}/:token`, async (req, res) => {\n    if (!/^[a-f0-9]{64}$/.test(req.params.token)) return res.sendStatus(400);\n    try {\n      const changed = action === \"consent\" ? await confirmFanConsent(req.params.token) : await unsubscribeFan(req.params.token);\n      return res.status(changed ? 200 : 410).send(changed ? \"Preference saved.\" : \"This link is invalid or expired.\");\n    } catch (error) {\n      logger.warn({ err: error }, \"Fan preference update failed\");\n      return res.status(503).send(\"Unable to save preference. Please retry.\");\n    }\n  });\n}",
+          "sourceSha256": "05aee1b4bd9a3d1fa368e4095fd263a15c389902a922e375a83e35783cefb2b9"
+        },
+        {
+          "file": "server/routes.ts",
+          "startLine": 7809,
+          "endLine": 7814,
+          "excerpt": "    // Fan Hub / Fan CRM\n    {\n      path: \"/api/fan-hub\",\n      name: \"fanHub\",\n      loader: () => import(\"./routes/fanHub\"),\n    },",
+          "sourceSha256": "12ed13b3a48de8fcf2ed0fd6834782279dbda511f85e0a4b8a5b1b6e2a9e021b"
+        }
+      ],
+      "requiredFix": "Distinguish true string/no-substitution literals from template expressions. Expand only bounded, scope-correct literal bindings; preserve an explicit unknown for all unsupported expressions.",
+      "validationCriteria": "Exactly four current GET/POST × consent/unsubscribe route instances are enumerated under /api/fan-hub, with no literal ${action} path. Shadowed, nonliteral and unbounded bindings stay unresolved.",
+      "productionAcceptanceCriteria": "Each exact alias passes safe GET, CSRF-protected POST, token validation, single-use/expiry and durable preference behavior. Other route aliases cannot supply its acceptance automatically.",
+      "scopeLimit": "This proves an inventory defect, not a successful email delivery or deployed preference journey."
+    }
+  ]
+}

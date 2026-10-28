@@ -114,16 +114,16 @@ Generated from the complete source register and page business-section analyses. 
   "summary": {
     "pageDeclarations": 80,
     "controls": 8374,
-    "backendRegistrations": 2901,
+    "backendRegistrations": 2907,
     "frontendContracts": 932,
-    "sourceCoverageFiles": 2651,
-    "unknownMappings": 127,
-    "repositoryFiles": 5501,
+    "sourceCoverageFiles": 2653,
+    "unknownMappings": 130,
+    "repositoryFiles": 5528,
     "sharedSubsystems": 20,
-    "workItems": 52892,
+    "workItems": 52965,
     "businessSectionPages": 80,
-    "businessSectionTasks": 2161,
-    "businessDimensionSteps": 12966
+    "businessSectionTasks": 2162,
+    "businessDimensionSteps": 12972
   },
   "planningCompleteness": {
     "status": "PASS",
@@ -144,8 +144,8 @@ Generated from the complete source register and page business-section analyses. 
         "setEquality": true
       },
       "backendRoutes": {
-        "expected": 2901,
-        "planned": 2901,
+        "expected": 2907,
+        "planned": 2907,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true
@@ -158,21 +158,21 @@ Generated from the complete source register and page business-section analyses. 
         "setEquality": true
       },
       "sourceCoverage": {
-        "expected": 2651,
-        "planned": 2651,
+        "expected": 2653,
+        "planned": 2653,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true
       },
       "unknownMappings": {
-        "expected": 127,
-        "planned": 127,
+        "expected": 130,
+        "planned": 130,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true
       }
     },
-    "requiredCheckCount": 33504,
+    "requiredCheckCount": 33538,
     "missingReferences": [],
     "missingBusinessSectionPageIds": []
   },

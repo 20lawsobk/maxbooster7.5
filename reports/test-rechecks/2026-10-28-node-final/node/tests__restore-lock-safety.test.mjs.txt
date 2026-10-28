@@ -1,0 +1,23 @@
+TAP version 13
+# [pdim-restore] node_modules/ restore already in progress (pid 190594) — waiting instead of racing it
+# Subtest: restore lock timeout never authorizes concurrent extraction or deletes a live owner's lock
+ok 1 - restore lock timeout never authorizes concurrent extraction or deletes a live owner's lock
+  ---
+  duration_ms: 27.616709
+  type: 'test'
+  ...
+# Subtest: uncontended restore releases only after work completes
+ok 2 - uncontended restore releases only after work completes
+  ---
+  duration_ms: 0.841719
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 148.705549

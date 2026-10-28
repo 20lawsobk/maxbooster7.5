@@ -7,55 +7,81 @@ It neither publishes to Replit nor establishes a multi-instance capacity claim.
 
 ## Current evidence
 
-The October 27 preparation bound to commit
-`b369d68e34bef0e30c96fbd5b72fa7339e6425f2` passed all four release commands.
-The [recorded result](../../reports/release-rehearsal/2026-10-27-published-guard-final/summary.json)
-includes the published-target revalidation guard, migration journal and scratch
-filter corrections. Its source identity remained current after the cold check.
+The latest [serialized cb783f1f rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
+passed preparation, verification, copied-payload cold startup and verification
+after startup from source `cb783f1f9b34719a214dd7f9203a31dea64c051e`.
+It ran October 28, 2026, 08:15:15–08:30:50 America/Detroit
+(`12:15:15Z`–`12:30:50Z` in the raw receipts), after the a160 full master
+and separate cb complete Node-group recheck finished. Four preparation threads
+used the normal zstd19 codec, source/checksum guards and shared cache policy.
+Policy-invalidated capsules were rebuilt normally.
 
 | Command | Actual seconds | Exit |
-| --- | --- | --- |
-| `npm run release:prepare` | 173.102 | 0 |
-| `npm run release:verify` | 3.150 | 0 |
-| `node scripts/readiness-packed-acceptance.mjs …` | 37.155 | 0 |
-| `npm run release:verify` after cold startup | 2.182 | 0 |
+| --- | ---: | ---: |
+| `npm run release:prepare` | 887.744 | 0 |
+| `npm run release:verify` | 2.026 | 0 |
+| `node scripts/readiness-packed-acceptance.mjs …` | 39.745 | 0 |
+| `npm run release:verify` after cold startup | 2.125 | 0 |
 
-The [independent read-only audit](../../reports/release-rehearsal/2026-10-27-published-guard-final/hygiene-audit.json)
-matched all four log hashes, the execution driver, the recorded code-input and
-release-source digests, the actual current source and the complete prepared
-payload inventory. All 16 audit checks passed. The source inventory has 4,554
-entries; the publishing payload has 37 entries totaling 804,554,617 bytes.
-Inspection of the actual application archive found 1,891 members, including the
-runtime social-platform registry and `0099_fabric_migration_journal.sql`.
-Neither the source inventory nor the application archive admitted
-`.pdim-scratch-*` or `.pdim-cluster-test-*` entries. All 40 tracked descendant
-processes were cleaned up.
+The [actual summary](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/summary.json)
+retains all four exits and log hashes. The
+[independent read-only audit](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/hygiene-audit.json)
+passed all 37 checks at 08:32:07 America/Detroit. The common code/config/test
+digest stayed `eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07`.
+All 4,526 release-admitted entries match exactly before/after, with complete
+serialized inventories and an empty added/removed/changed diff. The audit also
+matched the current source, prepared payload and Git HEAD to cb at that timestamp.
+A later evidence-only commit may reference this tested source receipt without
+changing its original revision or claiming another full master ran.
 
-This is **cold payload scope only**. Frontend and health returned 200, the
-protected API returned 401, and the imported Node/Python children were live.
-PostgreSQL, Redis and route checks passed. The isolated run deliberately denied
-public-source egress and supplied an empty private public-state directory.
-MaxCore and application readiness therefore correctly returned 503 for
-unavailable live awareness/generation capability. The receipt retains
-`productionReady: false`; it does not prove an actual Replit Nix/publishing image,
-deployed HTTPS identity, operational generation, provider delivery or global
-capacity. A subsequent admitted source, dependency or build-setting change
-requires preparation and verification again.
+The payload contains 37 entries totaling 719,499,770 bytes. The actual application
+archive has 1,892 members, including the runtime social-platform registry and
+`0099_fabric_migration_journal.sql`; MaxCore has 46,255 members. Both archives match
+the manifest. Scratch trees and the precise MaxCore runtime upload subtree are
+absent from source and capsules; source assets and fixtures remain admitted under
+the normal policy. All 37 tracked descendants were cleaned, with zero remaining.
+The adjacent cohort manifest hashes every retained artifact except itself.
 
-Earlier attempts remain intact rather than being overwritten by this result:
+This is **cold payload scope only**. The fresh copied payload starts with checkout
+dependency fallback disabled, disposable PostgreSQL/Redis/state, actual imported
+services and no application/provider credentials. Frontend and health return 200;
+protected API admission, database, Redis and route checks have their own receipts.
+Public-source egress is blocked and initial public state is empty. The exact
+accepted gate is `cold-startup-with-ml-unavailable`, with `accepted: true`,
+`productionReady: false` and `unverifiedNonMl: []`. Recognized unavailable
+awareness/generation permits this startup scope to pass; it does not establish
+operational generation, a real Replit Nix image, deployed HTTPS identity, provider
+delivery, full 80-page acceptance or global capacity. Public awareness does not
+acquire a trained-checkpoint requirement from this fixture. Any later admitted
+source, dependency or public build-setting change requires fresh preparation
+and verification.
+
+Earlier attempts remain intact:
 
 | Receipt | Recorded outcome and limitation |
 | --- | --- |
-| [October 26](../../reports/release-rehearsal/2026-10-26/summary.json) | Capsules were built and round-trip verified; the source guard rejected concurrent application changes. |
-| [October 27 retry](../../reports/release-rehearsal/2026-10-27/summary.json) | Verified capsules were reused and changed MaxCore rebuilt; the source guard rejected concurrent configuration/script changes. |
-| [Earlier cold check](../../reports/release-rehearsal/2026-10-27-final/summary.json) | Cold scope passed, but later archive review found an old cluster-test bundle and source-identity scratch noise. |
-| [Platform cold check](../../reports/release-rehearsal/2026-10-27-platform-final/summary.json) | Cold scope passed and scratch hygiene was corrected; the [audit](../../reports/release-rehearsal/2026-10-27-platform-final/hygiene-audit.json) recorded that the subsequent published-target guard made its source stale. |
+| [October 26](../../reports/release-rehearsal/2026-10-26/summary.json) | Capsules built and round-trip verified; source guard rejected concurrent application changes. |
+| [October 27 retry](../../reports/release-rehearsal/2026-10-27/summary.json) | Verified capsules reused and changed MaxCore rebuilt; source guard rejected concurrent configuration/script changes. |
+| [Earlier cold check](../../reports/release-rehearsal/2026-10-27-final/summary.json) | Cold scope passed; later archive review found an old cluster-test bundle and source-identity scratch noise. |
+| [Platform cold check](../../reports/release-rehearsal/2026-10-27-platform-final/summary.json) | Cold scope passed and scratch hygiene corrected; its audit records the subsequent published-target guard making its source stale. |
+| [Published-target guard check](../../reports/release-rehearsal/2026-10-27-published-guard-final/summary.json) | All four commands and 16 audit checks passed for b369 source; later analytics/dependency changes make that payload historical. |
+| [Analytics/dependency preparation](../../reports/release-rehearsal/2026-10-27-analytics-dependencies-final/summary.json) | All runtime capsules round-trip verified; final source guard rejected concurrent generated bundle/media changes. No cold startup or new prepared release. |
 
-The shared scratch policy excludes both directory families from source copies,
-release identity and application member selection. Regressions prove omission
-without deleting the original scratch trees and retain identity binding for real
-runtime changes. Cached capsules are reused only through their existing checksum
-and source/policy identity validation.
+The [failed preparation's mutation evidence](../../reports/release-rehearsal/2026-10-27-analytics-dependencies-final/source-drift-diagnosis.json)
+retains exact observed paths, hashes and times. Its initial admitted inventory was
+not saved by the original preparer; a historical inventory is separately labeled
+and is not substituted. The
+[runtime upload isolation batch](../../reports/release-rehearsal/2026-10-27-runtime-upload-isolation/README.md)
+then passed 14 actual packaging checks with only the demonstrated runtime subtree
+excluded. Owned Python fixtures preserve the original source uploads. The
+[assertion-oracle review](test-oracle-review.md) separately retains all five
+log/counter-only helpers' correction, their actual negative pytest failures and
+positive execution proof. Those earlier receipts are not overwritten.
+
+The shared scratch policy excludes `.pdim-scratch-*` and `.pdim-cluster-test-*`
+from source copies, release identity and application member selection without
+deleting original scratch trees. Cached capsules are reused only through their
+existing checksum and source/policy identity validation.
 
 ## Preparation sequence
 

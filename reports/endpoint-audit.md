@@ -1,6 +1,6 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-10-27T21:53:05.357Z without live requests.
+Generated 2026-10-28T09:15:24.183Z without live requests.
 
 - Backend route registrations: **2391** (2371 unique method/path pairs).
 - Mounted router files: **157**.
@@ -37,7 +37,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `GET /api/advertising/attribution/channels` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:95 → server/routes/advertising.ts:1473
 - `GET /api/advertising/attribution/paths` via useQuery — client/src/components/advertising/CrossChannelAttribution.tsx:102 → server/routes/advertising.ts:1548
 - `GET /api/analytics/dashboard?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:172 → server/routes.ts:4537
-- `GET /api/ai/insights?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:238 → server/routes/ai.ts:832
+- `GET /api/ai/insights?range=:param` via fetch — client/src/components/analytics/DataDenseAnalytics.tsx:238 → server/routes/ai.ts:840
 - `GET /api/auth/preferences` via useQuery — client/src/components/auth/AuthProvider.tsx:68 → server/routes.ts:889
 - `POST /api/auth/login` via apiRequest — client/src/components/auth/AuthProvider.tsx:132 → server/routes.ts:485
 - `POST /api/auth/register` via apiRequest — client/src/components/auth/AuthProvider.tsx:148 → server/routes.ts:318
@@ -292,7 +292,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/personalization/dismiss-action/:param` via apiRequest — client/src/components/personalization/NextActionCard.tsx:135 → server/routes/personalization.ts:606
 - `GET /api/personalization/recommendations` via useQuery — client/src/components/personalization/NextActionCard.tsx:418 → server/routes/personalization.ts:346
 - `GET /api/analytics/dashboard` via useQuery — client/src/components/personalization/PersonalizedDashboard.tsx:133 → server/routes.ts:4537
-- `GET /api/ai/insights` via useQuery — client/src/components/personalization/PersonalizedDashboard.tsx:267 → server/routes/ai.ts:832
+- `GET /api/ai/insights` via useQuery — client/src/components/personalization/PersonalizedDashboard.tsx:267 → server/routes/ai.ts:840
 - `GET /api/personalization/learning-state` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:70 → server/routes/personalization.ts:440
 - `GET /api/personalization/learning-insights` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:77 → server/routes/personalization.ts:454
 - `GET /api/personalization/interaction-patterns` via useQuery — client/src/components/personalization/PreferenceLearner.tsx:82 → server/routes/personalization.ts:472
@@ -898,7 +898,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/support/tickets/:param/messages` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:108 → server/routes/support.ts:205
 - `POST /api/support/tickets/:param/tags` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:145 → server/routes/support.ts:247
 - `DELETE /api/support/tickets/:param/tags/:param` via fetch — client/src/pages/admin/SupportTicketDetail.tsx:214 → server/routes/support.ts:292
-- `POST /api/ai/analytics/insights` via fetch — client/src/pages/analytics/AIDashboard.tsx:22 → server/routes/ai.ts:825
+- `POST /api/ai/analytics/insights` via fetch — client/src/pages/analytics/AIDashboard.tsx:38 → server/routes/ai.ts:821
 - `GET /api/analytics/ar-discovery` via useQuery — client/src/pages/analytics/ARDiscoveryPanel.tsx:289 → server/routes/analytics-internal.ts:2000
 - `GET /api/analytics-alerts/cross-platform-comparison` via fetch — client/src/pages/analytics/CrossPlatformComparison.tsx:243 → server/routes/api/analyticsAlerts.ts:227
 - `GET /api/analytics/global-ranking?days=:param` via fetch — client/src/pages/analytics/GlobalRankingDashboard.tsx:399 → server/routes/analytics-internal.ts:1250
@@ -1936,7 +1936,7 @@ Resolved source traces: **12**; generic/unverified call sites: **7**.
 - `not-api-reference: /api/training/schedule` — client/src/pages/admin/TrainingDashboard.tsx:254
 - `not-api-reference: /api/training/start` — client/src/pages/admin/TrainingDashboard.tsx:261
 - `cache-key: /api/training/stop` — client/src/pages/admin/TrainingDashboard.tsx:269
-- `query-key-custom-fn: /api/ai/analytics/insights` — client/src/pages/analytics/AIDashboard.tsx:48
+- `query-key-custom-fn: /api/ai/analytics/insights` — client/src/pages/analytics/AIDashboard.tsx:65
 - `query-key-custom-fn: /api/analytics/audience` — client/src/pages/analytics/AudienceInsights.tsx:169
 - `query-key-custom-fn: /api/analytics-alerts/cross-platform-comparison` — client/src/pages/analytics/CrossPlatformComparison.tsx:240
 - `query-key-custom-fn: /api/analytics/global-ranking` — client/src/pages/analytics/GlobalRankingDashboard.tsx:396

@@ -1,0 +1,1 @@
+JUNIT report written to /workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-runtime-upload-isolation/packaging-before.xml

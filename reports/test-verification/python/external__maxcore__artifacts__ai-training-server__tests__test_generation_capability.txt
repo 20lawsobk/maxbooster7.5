@@ -1,2 +1,2 @@
 .....                                                               [100%]
-5 passed, 5 subtests passed in 2.31s
+5 passed, 5 subtests passed in 2.35s

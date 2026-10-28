@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "scope": "Hash verification of retained current-format controlled recovery evidence; no new execution or production readiness claim",
+  "verifiedAt": "2026-10-28T01:19:08.911506+00:00",
+  "sourceHashReferencesVerified": 16,
+  "sourceHashesVerified": {
+    "tests/current-storage-joint-recovery.test.mjs": "a81efb35a6b1ba981d6223a5ba4988c6ae9da436e493d51a8adc26896571a85e",
+    "tests/contracts/helpers-current-storage-joint-worker.ts": "5f7845044acc1db1b4d98e53e3484e0f86a171c46f0669b552e69881059d146b",
+    "tests/database-backup-restore-postgres.test.mjs": "152e20065c6d37035290e6786a22b8180fa0f1e80984a1b00bf72485616fc567",
+    "server/lib/localPdimServer.ts": "9fa5bbb63afe569ea0dca115b0e1960c7732595f812f76dc4ccea89a82784c42",
+    "server/services/hybridStorageService.ts": "5da055881ccc603d59c48ee885d90fca3b86d1687898a5a77d4710c2d04b80f3",
+    "server/services/hybridStorageRepository.ts": "918447d774bd0ff161abfcc47463268c39a9f7a7590126fc77b031bdf425f931",
+    "server/services/hybridImmutableByteStore.ts": "c5b2027e3375b98d7369719add567d1a719776afa53731b3bd030ae743a2fbd8",
+    "server/services/socialMediaJobRepository.ts": "dc21294f3fd4b1db7a0fe48e2ea87a24ec7c77666f9589fd7eb623e395f9c593",
+    "server/services/backup/databaseDump.ts": "b509cf064b553ecf0b6f91d24a433244687e4f0e79a174d833a1e250ffccca3a",
+    "server/services/backup/databaseRestore.ts": "e9e77c19f300583aa8a10d11952ff383ed602de1bd24c26c67b139a2ab52f226",
+    "server/services/backup/postgresTools.ts": "0c8eb273da81b429c2c5be5444281f831a43dacf3b2754cb4cfd0e13ec3d0cd6",
+    "scripts/pdim-content-recovery-drill-lib.mjs": "b33ccd4f270b5f50dcb4b4ae3052000367368725bf553d7476e997dd91aebe74",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+  },
+  "junitLogHashVerified": true,
+  "junitLeafCases": 9,
+  "junitFailed": 0,
+  "junitErrors": 0,
+  "junitSkipped": 0,
+  "finalReceipt": "receipt-1793139987290.json",
+  "files": {
+    "README.md": {
+      "bytes": 2718,
+      "sha256": "fcddd3208cb55a6cbc03795308f96ab8092d0ecd9912db4831d4d8e989d954d3"
+    },
+    "acceptance-222622.xml": {
+      "bytes": 2029,
+      "sha256": "8701e5c5d8fd0689d46dbae58ebe9468c589d307c00dad996228d9cc0b114089"
+    },
+    "command-receipt-222622.json": {
+      "bytes": 1215,
+      "sha256": "1a1b0d6e9eba4002fa913f319fdd59a9267fbf20415a600110edc684058a35b1"
+    },
+    "receipt-1793139820056.json": {
+      "bytes": 2382,
+      "sha256": "f5b058de19803d68b8e8adb639c5e8d9ba20f3a3e665c5ebf6aeb2a0eefc6469"
+    },
+    "receipt-1793139865650.json": {
+      "bytes": 2721,
+      "sha256": "1ee0f8a89693e1fd696e6c804f4588183792f0bf8127bd6e289965da97aeb082"
+    },
+    "receipt-1793139987290.json": {
+      "bytes": 3396,
+      "sha256": "ac3611eae7826680752f376950ac8010f72e298920523745bda2c33898a729c4"
+    }
+  },
+  "privatePayloadsRetained": false,
+  "productionReady": false
+}

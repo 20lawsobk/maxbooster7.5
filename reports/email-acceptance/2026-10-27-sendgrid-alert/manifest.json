@@ -1,0 +1,89 @@
+{
+  "scope": "Immutable local evidence hashes; no launch approval",
+  "artifacts": {
+    "README.md": {
+      "bytes": 1792,
+      "sha256": "fe7401e43e510a74880fcfdd4ac5e376e87db874e79be85217262ea38bcdbfc5"
+    },
+    "after-final-receipt.json": {
+      "bytes": 500,
+      "sha256": "9ebbc3c1fa418cbcd739781ae1af1f518cbcfda332e3cffecc4ee60ef5c7882c"
+    },
+    "after-final.junit.xml": {
+      "bytes": 1260,
+      "sha256": "5de7f5d38a0d46929d0aa839b2922f4aa65bd01d9c92baf56257fbe55e3b0382"
+    },
+    "after-receipt.json": {
+      "bytes": 494,
+      "sha256": "251114dcb91d982e21a5753377d6c567c0ce382ea1578610b50839e50935001e"
+    },
+    "after-route-receipt.json": {
+      "bytes": 500,
+      "sha256": "6062be8a6bb8f7c01df95b8be20e032031b1b4315de340cde64143f5a9378b09"
+    },
+    "after-route.junit.xml": {
+      "bytes": 1679,
+      "sha256": "40a8547679a7782e7a5d22f8d04619d7b852bc0c17d0c65234fe544998407e68"
+    },
+    "after.junit.xml": {
+      "bytes": 1137,
+      "sha256": "18d806c0b99a7632c9af0d94c9647af6cb6d2913f69e94270c825577936b1dc1"
+    },
+    "before-final-receipt.json": {
+      "bytes": 501,
+      "sha256": "25ba9b5b7ca15a1647147ef3ccdccedb53322feceaf29083da520d50c611013d"
+    },
+    "before-final.junit.xml": {
+      "bytes": 4814,
+      "sha256": "de0a49f6d6dbb85f1820d329085ff6ff91e060d0753c3f9b06b5b6740008e3bf"
+    },
+    "before-receipt.json": {
+      "bytes": 495,
+      "sha256": "39203484dad21d5cc8c3ef6c08e0fbfa759cf5154c61465011ce4d32897ad94a"
+    },
+    "before-route-receipt.json": {
+      "bytes": 500,
+      "sha256": "9e0a6e31662165d3e7f8043d21a2785ed3f47d97ba59b55f171263504c505016"
+    },
+    "before-route.junit.xml": {
+      "bytes": 7961,
+      "sha256": "993fdf7b29179111fc9a79d0e2b0ac8ceeb2930e310aa922ca4b6a8752b37860"
+    },
+    "before.junit.xml": {
+      "bytes": 3803,
+      "sha256": "f9a5438c28e914da6cad64e8f1f19900a8f109a6d0b20d0a67c63d862767d590"
+    },
+    "checks-final.json": {
+      "bytes": 1374,
+      "sha256": "524fa5e3f52e884c0388e923f70104c5ae28f6cc7e9aaa4d31852e317a8564de"
+    },
+    "checks.json": {
+      "bytes": 2013,
+      "sha256": "8ebf49d33d476148a2d0301428e4576df395de1fcafc51905722d193bb349d32"
+    },
+    "lint-runtime-final.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lint-runtime.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lint-test-final.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lint-test.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "summary.json": {
+      "bytes": 1671,
+      "sha256": "904ffea7bd2964d128afa683c0459c1488cf9c949f63c7747af6d2c818daff92"
+    },
+    "transport-types.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

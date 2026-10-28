@@ -1,0 +1,20 @@
+{
+  "command": [
+    "node",
+    "node_modules/eslint/bin/eslint.js",
+    "tests/maxcore-dev-dependency-security.test.mjs",
+    "tests/patent-pdf-runtime.test.mjs",
+    "tests/runtime-artifact-gates.test.mjs",
+    "scripts/verify-runtime-artifacts.mjs",
+    "external/maxcore/scripts/check-js-security-versions.js",
+    "--quiet"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:23:02.613878+00:00",
+  "durationSeconds": 1.382,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/lint-final.txt",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

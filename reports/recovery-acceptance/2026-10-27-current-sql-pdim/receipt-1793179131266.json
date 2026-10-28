@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "completedAt": "2026-10-28T09:18:51.259Z",
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "scope": "Controlled writer-drained current-format PostgreSQL + disk-backed canonical PDIM recovery in fresh processes; no offsite, private Neon, Replit, migration or global capacity claim",
+  "source": {
+    "writersDrained": true,
+    "pinnedSnapshot": true,
+    "snapshotBytes": 3429,
+    "snapshotSha256": "b145e51310915a0f4fa4b786aac2b7dae9ac26d19b237fa98c6fc73e355173c2",
+    "activeFiles": 3,
+    "pendingUploads": 1,
+    "pendingDeletes": 1,
+    "mediaJobs": 2,
+    "migrationIntents": 1,
+    "permanentReplicaTombstones": 1,
+    "checkpoint": "synchronous-event-loop-linearized"
+  },
+  "recovered": {
+    "currentSqlMetadataRecovered": true,
+    "currentPdimBytesRecovered": true,
+    "exactContentHashesVerified": 4,
+    "foreignOwnerDenials": 3,
+    "deletedFilesNotResurrected": 2,
+    "pendingUploadRecovered": true,
+    "pendingDeleteRecovered": true,
+    "mediaJobOwnershipAndExpiryVerified": true,
+    "migrationIntentRecovered": true,
+    "migrationAccountingVerified": true,
+    "permanentTombstoneVerified": true,
+    "crossOwnerDedupPreserved": true
+  },
+  "pairedBundle": {
+    "sqlBytes": 17730,
+    "sqlSha256": "40589d45cc226e473f6d177f77f13c51f90a7d209ca69172c0d31dfdab4eced1",
+    "pdimBytes": 3429,
+    "pdimSha256": "b145e51310915a0f4fa4b786aac2b7dae9ac26d19b237fa98c6fc73e355173c2"
+  },
+  "admissionRejections": 4,
+  "protectedTargetsUnchanged": true,
+  "originalSourceDestroyed": true,
+  "originalSourceProcessExited": true,
+  "nodeVersion": "v22.23.3",
+  "postgresMajor": 17,
+  "privateArtifactModes": "0600",
+  "privatePayloadsRetainedInReports": false,
+  "actualTools": {
+    "pgDump": true,
+    "psql": true
+  },
+  "sourceHashes": {
+    "tests/current-storage-joint-recovery.test.mjs": "a81efb35a6b1ba981d6223a5ba4988c6ae9da436e493d51a8adc26896571a85e",
+    "tests/contracts/helpers-current-storage-joint-worker.ts": "5f7845044acc1db1b4d98e53e3484e0f86a171c46f0669b552e69881059d146b",
+    "server/lib/localPdimServer.ts": "9fa5bbb63afe569ea0dca115b0e1960c7732595f812f76dc4ccea89a82784c42",
+    "server/services/hybridStorageService.ts": "5da055881ccc603d59c48ee885d90fca3b86d1687898a5a77d4710c2d04b80f3",
+    "server/services/hybridStorageRepository.ts": "918447d774bd0ff161abfcc47463268c39a9f7a7590126fc77b031bdf425f931",
+    "server/services/hybridImmutableByteStore.ts": "c5b2027e3375b98d7369719add567d1a719776afa53731b3bd030ae743a2fbd8",
+    "server/services/socialMediaJobRepository.ts": "dc21294f3fd4b1db7a0fe48e2ea87a24ec7c77666f9589fd7eb623e395f9c593",
+    "server/services/backup/databaseDump.ts": "b509cf064b553ecf0b6f91d24a433244687e4f0e79a174d833a1e250ffccca3a",
+    "server/services/backup/databaseRestore.ts": "e9e77c19f300583aa8a10d11952ff383ed602de1bd24c26c67b139a2ab52f226",
+    "server/services/backup/postgresTools.ts": "0c8eb273da81b429c2c5be5444281f831a43dacf3b2754cb4cfd0e13ec3d0cd6",
+    "scripts/pdim-content-recovery-drill-lib.mjs": "b33ccd4f270b5f50dcb4b4ae3052000367368725bf553d7476e997dd91aebe74",
+    "server/pocket-dimension/fabric/infra/MigrationOutbox.ts": "da97fef3794c8282f11208e16689f717ebf12adf39f01eebe56b8a8069572323",
+    "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+  }
+}

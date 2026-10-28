@@ -1,0 +1,23 @@
+{
+  "name": "runner-packages",
+  "executable": "/usr/bin/dpkg-query",
+  "args": [
+    "-W",
+    "xvfb",
+    "libgtk-3-0",
+    "libnss3",
+    "libgbm1",
+    "libasound2"
+  ],
+  "cwd": "/profile",
+  "startedAt": "2026-10-28T09:05:10.616Z",
+  "pid": 13,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 5000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

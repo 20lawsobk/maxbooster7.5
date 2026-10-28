@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "inputs": {
+    "reports/test-verification/platform-register.json": "da64a18cf86c5bd86dc488d5634081304d5a1c0c9640daeb05602a8866dbc198",
+    "reports/test-verification/completion-plan.json": "466f92e8dd351a37550e7a1714b9bfbb3ff7bf3bd80bb2da343ca787b0f605c4"
+  },
+  "artifacts": [
+    {
+      "path": "dependencies.json",
+      "sha256": "93b6d71375a4ae10f1d4021315d30bc0fa92ab82b338d0beb9f1f119e938453e",
+      "bytes": 260643
+    },
+    {
+      "path": "features.json",
+      "sha256": "dad755e1b2fef9bac8dfb8f215793b8f43a0f3948168444e77264a84a93ed6d7",
+      "bytes": 4310474
+    },
+    {
+      "path": "gaps.json",
+      "sha256": "45b3e0592d112e645866246d13e240123746a85a645edc63c7f2227376443128",
+      "bytes": 73433184
+    },
+    {
+      "path": "matrix.md",
+      "sha256": "7abe71e1d1190206fdd5f321d9749eac36002acfa59001954ff1a3eb6a9d4ffd",
+      "bytes": 82349
+    },
+    {
+      "path": "roadmap.json",
+      "sha256": "0f5394419b940f82f0af91571bbb7a532597749e7fc41fa96a3f260ad77b703b",
+      "bytes": 27338544
+    },
+    {
+      "path": "status.json",
+      "sha256": "2008d1b6cde92b0bbfeed5461ff70c78f6aa1e663222b0ed1041384ed475a71c",
+      "bytes": 9840154
+    }
+  ],
+  "productionReady": false
+}

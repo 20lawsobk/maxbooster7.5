@@ -1,0 +1,19 @@
+
+> max-booster@3.0.0 build
+> node scripts/build-production.mjs
+
+external/maxcore: dependency escaped workspace: /tmp/maxbooster-linux-u3f69z18/project/node_modules/compression/package.json
+external/pdim: dependency escaped workspace: /tmp/maxbooster-linux-u3f69z18/project/node_modules/compression/package.json
+Build failed: Error: Command failed: bash script/sync-subsystem-dependencies.sh
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)
+    at execSync (node:child_process:988:15)
+    at main (/tmp/maxbooster-linux-u3f69z18/project/script/build.ts:35:3) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 94894,
+  stdout: null,
+  stderr: null
+}

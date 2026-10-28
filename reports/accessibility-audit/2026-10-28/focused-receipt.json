@@ -1,0 +1,97 @@
+{
+  "startedAt": "2026-10-28T09:01:26.949820+00:00",
+  "finishedAt": "2026-10-28T09:01:28.278309+00:00",
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "--test-reporter-destination=/workspace/maxbooster7.5/reports/accessibility-audit/2026-10-28/after-final.txt",
+    "--test-reporter=junit",
+    "--test-reporter-destination=/workspace/maxbooster7.5/reports/accessibility-audit/2026-10-28/after-final.junit.xml",
+    "tests/layout-navigation-accessibility-browser.test.mjs"
+  ],
+  "environmentVariableNames": [
+    "CHROMIUM_PATH",
+    "HOME",
+    "LD_LIBRARY_PATH",
+    "PATH"
+  ],
+  "configuredApplicationOrProviderCredentialsInherited": false,
+  "exitCode": 0,
+  "sourceInputsBefore": {
+    "client/src/components/layout/AppLayout.tsx": {
+      "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563",
+      "bytes": 4095
+    },
+    "client/src/components/layout/TopBar.tsx": {
+      "sha256": "901166b719f70315848436ec770d490c35c04abd5e304afc8d9c99e5c0adbb2f",
+      "bytes": 3579
+    },
+    "client/src/components/layout/Sidebar.tsx": {
+      "sha256": "8006ac3b3030c495a0364af6c87fe2f67eb1129fca5f08bef112a88297cef0d4",
+      "bytes": 13593
+    },
+    "client/src/components/ui/button.tsx": {
+      "sha256": "4ec2ac7b6bfb6a4ce80770e57f1c24d82bf36b4976783e9d2513cff0e650d1bb",
+      "bytes": 2979
+    },
+    "tests/layout-navigation-accessibility-browser.test.mjs": {
+      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+      "bytes": 11588
+    },
+    "tests/helpers-browser-processes.mjs": {
+      "sha256": "4647f3d7b1130d5dae6304e972735523dd26b8639215b86415b79f82d1dafcd6",
+      "bytes": 786
+    },
+    "script/deployment/owned-processes.mjs": {
+      "sha256": "36ce439bd8ecb9edf9f758cdf2b1636da2fd9d70944981928f8eb3b0cad0f2d9",
+      "bytes": 3921
+    }
+  },
+  "sourceInputsAfter": {
+    "client/src/components/layout/AppLayout.tsx": {
+      "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563",
+      "bytes": 4095
+    },
+    "client/src/components/layout/TopBar.tsx": {
+      "sha256": "901166b719f70315848436ec770d490c35c04abd5e304afc8d9c99e5c0adbb2f",
+      "bytes": 3579
+    },
+    "client/src/components/layout/Sidebar.tsx": {
+      "sha256": "8006ac3b3030c495a0364af6c87fe2f67eb1129fca5f08bef112a88297cef0d4",
+      "bytes": 13593
+    },
+    "client/src/components/ui/button.tsx": {
+      "sha256": "4ec2ac7b6bfb6a4ce80770e57f1c24d82bf36b4976783e9d2513cff0e650d1bb",
+      "bytes": 2979
+    },
+    "tests/layout-navigation-accessibility-browser.test.mjs": {
+      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+      "bytes": 11588
+    },
+    "tests/helpers-browser-processes.mjs": {
+      "sha256": "4647f3d7b1130d5dae6304e972735523dd26b8639215b86415b79f82d1dafcd6",
+      "bytes": 786
+    },
+    "script/deployment/owned-processes.mjs": {
+      "sha256": "36ce439bd8ecb9edf9f758cdf2b1636da2fd9d70944981928f8eb3b0cad0f2d9",
+      "bytes": 3921
+    }
+  },
+  "sourceInputsUnchanged": true,
+  "leafCases": 9,
+  "passedLeafCases": 9,
+  "passedCaseNames": [
+    "390px actual accessibility name: Open navigation menu",
+    "390px actual accessibility name: Settings",
+    "390px actual accessibility name: Sign Out",
+    "Settings is one link without nested button or link descendants",
+    "Closed mobile drawer cannot receive sequential keyboard focus",
+    "Menu control references existing drawer and exposes closed state",
+    "Opening with Enter moves focus into named mobile drawer",
+    "Escape closes drawer and restores opener focus and body scrolling",
+    "Desktop resize exposes real navigation and releases mobile inert state"
+  ],
+  "scope": "Actual shared layout/TopBar/Sidebar/Button/icons/production CSS in Chromium; auth, translation and unrelated widgets are owned fixtures. Not full page, real auth or full accessibility compliance."
+}

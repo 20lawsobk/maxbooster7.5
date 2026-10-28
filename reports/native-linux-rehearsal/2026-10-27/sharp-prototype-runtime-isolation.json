@@ -1,0 +1,7 @@
+{
+  "networkMode": "none",
+  "privileged": false,
+  "readOnlyRootfs": true,
+  "user": "1000:1000",
+  "containerId": "3ab8e5d1b24725825ad318496c081587f6ae2746a6d517ea785b72669d78840a"
+}

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: sealed ML absence is asserted explicitly without establishing full readiness
+ok 1 - sealed ML absence is asserted explicitly without establishing full readiness
+  ---
+  duration_ms: 0.938486
+  type: 'test'
+  ...
+# Subtest: unrelated database failures cannot hide behind expected ML absence
+ok 2 - unrelated database failures cannot hide behind expected ML absence
+  ---
+  duration_ms: 0.284279
+  type: 'test'
+  ...
+# Subtest: unrelated redis failures cannot hide behind expected ML absence
+ok 3 - unrelated redis failures cannot hide behind expected ML absence
+  ---
+  duration_ms: 0.075494
+  type: 'test'
+  ...
+# Subtest: unrelated routes failures cannot hide behind expected ML absence
+ok 4 - unrelated routes failures cannot hide behind expected ML absence
+  ---
+  duration_ms: 0.065649
+  type: 'test'
+  ...
+# Subtest: unrelated audit failures cannot hide behind expected ML absence
+ok 5 - unrelated audit failures cannot hide behind expected ML absence
+  ---
+  duration_ms: 0.078879
+  type: 'test'
+  ...
+# Subtest: unrelated automation failures cannot hide behind expected ML absence
+ok 6 - unrelated automation failures cannot hide behind expected ML absence
+  ---
+  duration_ms: 0.055904
+  type: 'test'
+  ...
+# Subtest: missing or malformed dependency evidence fails closed
+ok 7 - missing or malformed dependency evidence fails closed
+  ---
+  duration_ms: 0.15865
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 150.677424

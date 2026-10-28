@@ -1,0 +1,8 @@
+{
+  "electron/main.js": "7dfcb67b36f2d3f62b85a6c30310cf5919f3a5dc47046b74da80a382de2c779b",
+  "electron/runtime-policy.cjs": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+  "package.json": "9206f9d31d7e1701315b7ef7a88dc20f8c14de31d50173867c2941c9d99befb7",
+  "tools/legacy-security-update.json": "b6552fe84796806b2a312c79167e60a13782768772591ffb9441d3520494c3ca",
+  "scripts/testing/electron-asar-module-acceptance.mjs": "6b638eb50c83ee8f8bdc1883cf51ae8951c281e7f5aa6453721dd25ea2cf2f44",
+  "tests/electron-asar-launch-policy.test.mjs": "a31fb2f61335448b273a32eb5df1342f898ad5fa0182d38e14caf7fe4f583d15"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "actual-sharp-png",
+  "executable": "/artifact/max-booster",
+  "args": [
+    "--input-type=module",
+    "-e",
+    "const {default:sharp}=await import(\"file:///artifact/resources/app.asar/node_modules/sharp/dist/index.mjs\"); const image=await sharp({create:{width:2,height:2,channels:3,background:{r:12,g:34,b:56}}}).png().toBuffer();if(image.subarray(0,8).toString(\"hex\")!==\"89504e470d0a1a0a\")throw Error(\"Real PNG signature missing\");console.log(JSON.stringify({vips:sharp.versions.vips,bytes:image.length,signature:image.subarray(0,8).toString(\"hex\")}));"
+  ],
+  "cwd": "/artifact/resources",
+  "startedAt": "2026-10-28T09:05:13.856Z",
+  "pid": 74,
+  "exitCode": 0,
+  "signal": null,
+  "stoppedByFixture": false,
+  "spawnError": null,
+  "boundedDurationMs": 15000,
+  "moduleResolutionFailureObserved": false,
+  "sandboxFailureObserved": false,
+  "bundledServerExitObserved": false
+}

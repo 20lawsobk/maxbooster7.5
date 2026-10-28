@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-10-28T02:36:58.863444+00:00",
+  "scope": "Bounded static review for custom failure counters/logging reachable under the actual canonical pytest runner; not proof of every test oracle",
+  "discoveredCanonicalFiles": 130,
+  "blockedFiles": 19,
+  "customCheckHelpers": [
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/audio/test_audio_analysis.py",
+      "line": 35,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "0c11bb8fcfc4464e4f9aa31c9cac86b34ea2250168893ee4de63cd33ba7a5d1d"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+      "line": 48,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+      "line": 81,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
+      "line": 52,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
+      "line": 22,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22"
+    },
+    {
+      "file": "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
+      "line": 36,
+      "raisesDirectly": true,
+      "hasAssert": false,
+      "blocked": false,
+      "sourceSha256": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e"
+    }
+  ],
+  "runnerSha256": "4c54897643efcac387cac990f43cc3995eefd4fcba6b1123fded6ebd52c2e21a",
+  "additionalConfirmedFalsePassingHelpers": [
+    "ai_model/retrieval/test_rcgs.py",
+    "ai_model/retrieval/test_retrieval.py",
+    "ai_model/rta/test_render_contracts.py"
+  ],
+  "allFiveAffectedNowRaise": true,
+  "productionReady": false
+}

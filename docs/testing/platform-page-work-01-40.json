@@ -9132,7 +9132,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -9179,7 +9179,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -9188,7 +9188,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -9197,7 +9197,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -9205,9 +9205,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -14130,12 +14130,12 @@
         "ui-203b9f1585e6eb03",
         "ui-2094b2c8310368c3",
         "ui-22a500cd77f5b3e5",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-29b3473e97456805",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
         "ui-2e97b7c682879247",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-30fcc3043b51b0e5",
         "ui-338df62dbd6002aa",
         "ui-3473965aff43bd1c",
@@ -14145,15 +14145,15 @@
         "ui-3fb80c771094ebb6",
         "ui-3ff76f68be9e58d7",
         "ui-41b0f6c14b88296f",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-488d045934c7fdb0",
         "ui-4a4bcbb25eacfdb9",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4b3b1033ce1a6599",
         "ui-4b57f4685ec7cdba",
         "ui-4c70bc6f106bf5e8",
         "ui-4e9519aeebe2a12a",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51cb1ead375d2a17",
         "ui-520b3e86fb28ff6a",
         "ui-528f647a9de4fa7f",
@@ -14169,7 +14169,7 @@
         "ui-60c9c0e6145c26fa",
         "ui-6221c0c6980128ea",
         "ui-6239b3054ef8cf42",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-6577584b0da6fb6c",
         "ui-660d292c53a1a27b",
@@ -14180,7 +14180,7 @@
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-70a69093d20ab189",
         "ui-7298665600dcb01e",
         "ui-72b913bd708484de",
@@ -14209,8 +14209,8 @@
         "ui-9e81c30790f20e60",
         "ui-9e8b48d9bfea4e81",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a7e5bdc6477ae1d6",
         "ui-a95cd492708d621f",
         "ui-aa788eb9d2142629",
@@ -14229,7 +14229,7 @@
         "ui-c6b78583cf3bdf05",
         "ui-c7bb8a70f1aa4d0a",
         "ui-c8728bc6f7fc73bc",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cbfdcf78fd801cbe",
         "ui-cf2b58eec584dae4",
@@ -14237,7 +14237,7 @@
         "ui-d39328848b4c441d",
         "ui-d5222e06f84829a6",
         "ui-d5c474d9d8f857f3",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d69df1f71a664037",
         "ui-e1408bfc96fd3371",
         "ui-e149798fdf5cac49",
@@ -14343,8 +14343,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/releases/CountdownCard.tsx",
@@ -14699,7 +14699,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -14746,7 +14746,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -14755,7 +14755,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -14764,7 +14764,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -14772,9 +14772,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -15893,27 +15893,27 @@
         "ui-10a17ec9718ae282",
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-39c924f316fa2b11",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-78d565f7f7078b98",
         "ui-84245433268496bc",
         "ui-87a4ca027697e750",
@@ -15922,16 +15922,16 @@
         "ui-9ba6573d8f3d79ac",
         "ui-9e8b48d9bfea4e81",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-e3140489bade506e",
         "ui-edf2849ec9c5472c",
@@ -15984,8 +15984,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/onboarding/SimplifiedDashboard.tsx",
@@ -18827,7 +18827,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -18874,7 +18874,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -18883,7 +18883,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -18892,7 +18892,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -18900,9 +18900,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -21133,8 +21133,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/studio/StudioProjectDialog.tsx",
@@ -22473,7 +22473,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -22520,7 +22520,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -22529,7 +22529,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -22538,7 +22538,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -22546,9 +22546,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -22601,8 +22601,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 21,
@@ -22638,7 +22638,7 @@
         "line": 216
       },
       "status": "UNVERIFIED",
-      "businessJourneyWork": "Exercise AI insight loading, selection/refresh, account/subscription authority, structured insight rendering and explicit unavailable/error outcomes; verify awareness provenance and actual analytics generation contracts rather than accepting a rendered placeholder.",
+      "businessJourneyWork": "Exercise recorded-summary loading/refresh, account/subscription access and account-keyed cache transitions; verify real owner-scoped MaxCore statistics, complete UTC windows, insufficient-history/public-context states, malformed-response rejection and retry. Public awareness must remain read-only and separate from private account aggregates.",
       "routeSpecificWork": "Verify this exact registered path, direct navigation, reload, auth transition and unknown/malformed parameters; do not reuse another path\u2019s result as automatic alias acceptance.",
       "businessSections": [
         {
@@ -22650,16 +22650,18 @@
             {
               "file": "client/src/pages/analytics/AIDashboard.tsx",
               "line": 1,
-              "endLine": 142
+              "endLine": 169
             }
           ],
           "frontendWork": [
             "Exercise every rendered control and conditional state in AIDashboard complete controls, state, rendered children and API bindings \u2014 AIDashboard:1; resolve dynamic list items, nested rendered children and event-handler effects from actual source.",
-            "Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 1 source controls enumerated for this section."
+            "Check controlled inputs, displayed labels/values, tab/dialog/form transitions, reset/cancel/submit and fresh-session rehydration; retain all 1 source controls enumerated for this section.",
+            "Assert auth-pending disables fetch, user-ID cache changes cannot display another account summary, malformed/non-JSON responses show an error, and UTC window dates remain literal with an exclusive end in Detroit and other time zones."
           ],
           "backendWork": [
             "Trace this section\u2019s callbacks to every candidate frontend contract below and confirm the exact mounted process, HTTP method/path, request/response schema, storage/service and worker. Candidate file calls are not yet proven section bindings.",
-            "Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets."
+            "Implement and verify missing production behavior only after reproducing the exact contract gap; preserve precise statuses and real errors rather than broad accepted status sets.",
+            "Trace existing POST /api/ai/analytics/insights through authenticated ownership, actual SQL and canonical MaxCore observed_summary; validate method/counts/totals and keep private aggregates out of public-awareness ingestion and training. Separately verify capability and streams/revenue baseline forecasts; lifetime post counters are not daily engagement reports."
           ],
           "validationPermissionsSecurity": [
             "Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.",
@@ -22685,7 +22687,7 @@
               "tag": "Button",
               "source": {
                 "file": "client/src/pages/analytics/AIDashboard.tsx",
-                "line": 83
+                "line": 100
               },
               "attributes": {
                 "onClick": "{() => refetch()}",
@@ -22695,26 +22697,26 @@
             }
           ],
           "interactionIds": [
-            "ui-61f28002f3be1399"
+            "ui-f5a9e17174a248c2"
           ],
           "frontendContractIds": [
-            "call-eeda10eb3cd5af6d"
+            "call-49affbf6894e346a"
           ],
           "backendRouteIds": [
-            "api-e6eff8cae111ad3d"
+            "api-c78a8e66ec4e4573"
           ],
           "apiBindingStatus": "CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE"
         },
         {
           "id": "section-43c25a441b47e18b",
-          "name": "AI Analytics Dashboard \u2014 AIDashboard:75",
+          "name": "AI Analytics Dashboard \u2014 AIDashboard:92",
           "kind": "h1",
           "status": "UNVERIFIED",
           "sourceFiles": [
             {
               "file": "client/src/pages/analytics/AIDashboard.tsx",
-              "line": 75,
-              "endLine": 78
+              "line": 92,
+              "endLine": 95
             }
           ],
           "frontendWork": [
@@ -22747,23 +22749,23 @@
           "controls": [],
           "interactionIds": [],
           "frontendContractIds": [
-            "call-eeda10eb3cd5af6d"
+            "call-49affbf6894e346a"
           ],
           "backendRouteIds": [
-            "api-e6eff8cae111ad3d"
+            "api-c78a8e66ec4e4573"
           ],
           "apiBindingStatus": "CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE"
         },
         {
           "id": "section-78d269a86508313a",
-          "name": "Your AI insight \u2014 AIDashboard:95",
+          "name": "Your performance summary \u2014 AIDashboard:112",
           "kind": "CardTitle",
           "status": "UNVERIFIED",
           "sourceFiles": [
             {
               "file": "client/src/pages/analytics/AIDashboard.tsx",
-              "line": 95,
-              "endLine": 98
+              "line": 112,
+              "endLine": 115
             }
           ],
           "frontendWork": [
@@ -22796,10 +22798,57 @@
           "controls": [],
           "interactionIds": [],
           "frontendContractIds": [
-            "call-eeda10eb3cd5af6d"
+            "call-49affbf6894e346a"
           ],
           "backendRouteIds": [
-            "api-e6eff8cae111ad3d"
+            "api-c78a8e66ec4e4573"
+          ],
+          "apiBindingStatus": "CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE"
+        },
+        {
+          "id": "section-1329be7864863173",
+          "name": "Insufficient reporting history, public-context status and statistical limits \u2014 AIDashboard:139",
+          "kind": "conditional-state",
+          "status": "UNVERIFIED",
+          "sourceFiles": [
+            {
+              "file": "client/src/pages/analytics/AIDashboard.tsx",
+              "line": 139,
+              "endLine": 161
+            }
+          ],
+          "frontendWork": [
+            "Exercise empty recorded history, optional unavailable public context, observed-summary success and the non-causal performance disclaimer. Verify actual visible text without zero-performance or guaranteed-quality claims."
+          ],
+          "backendWork": [
+            "Assert canonical insufficient_history with null unknown totals and actual observed-day counts, owner-scoped recorded summaries, missing-day semantics and separate read-only public provenance. No private account input may enter public learning."
+          ],
+          "validationPermissionsSecurity": [
+            "Prove anonymous, authenticated owner, foreign owner and applicable subscription/admin/role scopes; identify the actual intended access policy even for public informational controls.",
+            "Test all actual field limits, required/optional boundaries, malformed values, CSRF/session handling, safe rendering/URLs/files, no cross-account cache leakage and secrets/PII redaction."
+          ],
+          "durableProviderGenerationJourneys": [
+            "For every mutation, verify persisted state and bytes from a fresh request/process, duplicate/replay/concurrency handling, transaction/lease authority, interruption and recovery; for display-only sections prove source-of-truth correspondence.",
+            "For provider, payment, download, notification or generation controls, verify the actual output/receipt/entitlement and failure lifecycle with an owned fixture; separately require controlled deployed delivery and truthful unavailable states. Explicitly resolve applicability from source; never auto-pass absent fixtures."
+          ],
+          "failureAccessibilityMobileI18nPerformance": [
+            "Exercise loading, empty, success, validation error, unauthorized/forbidden, missing record, timeout, dependency outage, retry and cancellation/unmount states supported by this section.",
+            "Verify accessible names, semantic roles, keyboard order/focus/escape, screen-reader errors/status, contrast and reduced motion.",
+            "Verify narrow/touch/mobile layouts, zoom, RTL and translated/missing/long text, locale dates/numbers/currency/time zones and supported language switching.",
+            "Measure relevant render/request/media work with representative records, pagination/large lists and bounded retries; inspect subscriptions/listeners/timers cleanup and record workload/latency rather than projected capacity."
+          ],
+          "evidenceNeeded": [
+            "Current-source instrumented line/statement/function/branch counters at 100% for the relevant source, with raw maps and no silently excluded files.",
+            "Named component/browser cases for every listed interaction and state; real HTTP/database/service/worker cases for each bound backend contract, with exact statuses, durable assertions and negative owner/security cases.",
+            "Record command/tool versions, source hashes, fixture isolation, timestamps, actual exits and cleanup; map exact passing case identities to platform-register required checks. Static inspection and source/test associations do not close acceptance."
+          ],
+          "controls": [],
+          "interactionIds": [],
+          "frontendContractIds": [
+            "call-49affbf6894e346a"
+          ],
+          "backendRouteIds": [
+            "api-c78a8e66ec4e4573"
           ],
           "apiBindingStatus": "CANDIDATE_FILE_CALLS_REQUIRE_SECTION_TRACE"
         },
@@ -22812,7 +22861,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -22859,7 +22908,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -22868,7 +22917,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -22877,7 +22926,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -22885,9 +22934,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -23295,7 +23344,7 @@
           ]
         },
         {
-          "id": "call-eeda10eb3cd5af6d",
+          "id": "call-49affbf6894e346a",
           "method": "POST",
           "path": "/api/ai/analytics/insights",
           "source": {
@@ -23304,12 +23353,12 @@
           },
           "topologyStatus": "matched",
           "backendRouteIds": [
-            "api-e6eff8cae111ad3d"
+            "api-c78a8e66ec4e4573"
           ],
           "status": "UNVERIFIED",
           "backendSources": [
             {
-              "id": "api-e6eff8cae111ad3d",
+              "id": "api-c78a8e66ec4e4573",
               "method": "POST",
               "path": "/api/ai/analytics/insights",
               "source": {
@@ -23331,43 +23380,43 @@
         "ui-10a17ec9718ae282",
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-61f28002f3be1399",
-        "ui-6328b98825213623",
+        "ui-f5a9e17174a248c2",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-78d565f7f7078b98",
         "ui-84245433268496bc",
         "ui-87a4ca027697e750",
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
         "ui-f9f1315309a3abbb",
@@ -23386,7 +23435,7 @@
         "call-e50428bcbbb5a563",
         "call-e655004b3be38ccf",
         "call-e8522d80c7b64747",
-        "call-eeda10eb3cd5af6d",
+        "call-49affbf6894e346a",
         "call-f4d5de16a940565d"
       ],
       "allRegisteredBackendRouteIds": [
@@ -23405,22 +23454,22 @@
         "api-ada499737fe455a9",
         "api-b5765bd71835678e",
         "api-d29e42a77351fe87",
-        "api-e6eff8cae111ad3d"
+        "api-c78a8e66ec4e4573"
       ],
       "coverageOfSource": {
         "inspectedJsxSourceFiles": [
           {
             "file": "client/src/pages/analytics/AIDashboard.tsx",
-            "lineCount": 142,
-            "sha256": "db52f23b7e4a0fad4928c97d6ef3e45ed82abb45f9741a42fa3e4410836b532e"
+            "lineCount": 169,
+            "sha256": "c3dcd8a430b88caefcb9c9c4a7cef318cea375a6630e85ae3525b81cb3f80228"
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
-        "sourceSectionsEnumerated": 2,
+        "sourceSectionsEnumerated": 3,
         "sourceControlsEnumerated": 5,
         "registeredReachableSourceFiles": [
           "built-in plugins dsp/BasePlugin.ts",
@@ -23558,6 +23607,10 @@
         {
           "path": "reports/release-rehearsal/2026-10-27-final/summary.json",
           "scope": "Prepared portable cold startup only; productionReady remains false."
+        },
+        {
+          "path": "reports/analytics-acceptance/2026-10-27/README.md",
+          "scope": "Focused real HTTP/SQL/MaxCore and controlled browser assertions; inspect exact source hashes and remaining limits. Does not close all page work."
         }
       ]
     },
@@ -29569,7 +29622,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -29616,7 +29669,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -29625,7 +29678,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -29634,7 +29687,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -29642,9 +29695,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -37241,12 +37294,12 @@
         "ui-2476a2ec386fbc9c",
         "ui-26af37c6ce386804",
         "ui-2709546fb56bafc2",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2a3fdc5cdd370497",
         "ui-2b75ce276d7518e4",
         "ui-2e4ea2127258bfab",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-312fa3bef0f5d3b0",
         "ui-33b53ba00a6f9a9f",
         "ui-34796b406fba6dbc",
@@ -37260,11 +37313,11 @@
         "ui-3ff76f68be9e58d7",
         "ui-41b0f6c14b88296f",
         "ui-466403269bdfe9b2",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-48ee5e6746c4dcdb",
         "ui-49cb42d2580df93b",
         "ui-4a434fc6f8ef5409",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4abe3d310b02b63a",
         "ui-4afe6fa3cb6c430f",
         "ui-4b3b1033ce1a6599",
@@ -37272,7 +37325,7 @@
         "ui-4cdc75848756b633",
         "ui-506eb2473d7d54ba",
         "ui-514be7ae61ed4044",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-559aef42d2479328",
         "ui-56aeea845f9fd359",
         "ui-57ee6ff58660ff40",
@@ -37290,7 +37343,7 @@
         "ui-60c9c0e6145c26fa",
         "ui-6239b3054ef8cf42",
         "ui-6322d6bcd04f9f76",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-6577584b0da6fb6c",
         "ui-65e1248bacd44df4",
@@ -37310,7 +37363,7 @@
         "ui-6f4c67eae2cb81a0",
         "ui-6fbecffd9578c892",
         "ui-7031abaa0d0de7a1",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-715973a500b395b1",
         "ui-7519845872f222ab",
         "ui-7542f3c2e33bb6a2",
@@ -37342,9 +37395,9 @@
         "ui-a051fac5c8352c75",
         "ui-a2480db9ff5a2dec",
         "ui-a2b9968279d6aab9",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a38f303c49f5f91e",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a98bdbe7a92390f5",
         "ui-aa0be3ef876e37ee",
         "ui-aa788eb9d2142629",
@@ -37373,7 +37426,7 @@
         "ui-c650988c8661dc69",
         "ui-c7bb8a70f1aa4d0a",
         "ui-c8252f35348c007f",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cd9dcf60db491e04",
         "ui-ce4d481d1d248690",
@@ -37381,7 +37434,7 @@
         "ui-d181ece37a8255bc",
         "ui-d2077c60aacb8341",
         "ui-d39328848b4c441d",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6e0e7e181e99ae2",
         "ui-d8695d5a2b98afc8",
         "ui-ddd08f586f813447",
@@ -37482,8 +37535,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/ErrorBoundary.tsx",
@@ -39660,7 +39713,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -39707,7 +39760,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -39716,7 +39769,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -39725,7 +39778,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -39733,9 +39786,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -40264,25 +40317,25 @@
         "ui-10a17ec9718ae282",
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3043dd5f13319a69",
         "ui-344971318d9a821c",
         "ui-356e583e74d80de5",
         "ui-36025cf4cc5348d2",
         "ui-3775ac9518ce655f",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
         "ui-625edd441e5107d3",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-66d2098cef0e2afc",
@@ -40291,7 +40344,7 @@
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
         "ui-7aef5f37a5d96548",
@@ -40303,18 +40356,18 @@
         "ui-a051fac5c8352c75",
         "ui-a065d7715c49fa05",
         "ui-a2937bf3d15d582f",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a698784f7405a801",
         "ui-aa788eb9d2142629",
         "ui-aac324caacd37ce4",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-e6fc5385d675a8e7",
         "ui-f16cb6a82d022efc",
@@ -40374,8 +40427,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 22,
@@ -49717,7 +49770,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -49764,7 +49817,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -49773,7 +49826,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -49782,7 +49835,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -49790,9 +49843,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -64440,7 +64493,7 @@
         "ui-2795b80c8cf9e808",
         "ui-27a0a6d4e9d57e56",
         "ui-280e2d16772e47fc",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2871a19a5b27069e",
         "ui-2881f1c33cd0784f",
         "ui-28e3858cf00aa645",
@@ -64455,7 +64508,7 @@
         "ui-2c3d33bf360b37ad",
         "ui-2d2075eeac56beff",
         "ui-2e0ddc03805873e5",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-2eee0abfd2e1a155",
         "ui-2ef4c18d739ca1e6",
         "ui-2fb78f2ccb5dd9ef",
@@ -64504,14 +64557,14 @@
         "ui-45ea8e3d982316bb",
         "ui-46464a8f47de5311",
         "ui-47635113d082c860",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4826942b835c7abf",
         "ui-485ac379235cdacb",
         "ui-486a40c0c488350f",
         "ui-486bcc73f821e1e9",
         "ui-492956a3033984ad",
         "ui-4a54e20c0b8622e8",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a8a3997afe5a868",
         "ui-4bba6098a106a8a3",
         "ui-4c3e2b4df9562c6e",
@@ -64524,7 +64577,7 @@
         "ui-4f2010285f9835ff",
         "ui-4fa224bcffaa161a",
         "ui-5139f7e32763014a",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51db676f43c5c58c",
         "ui-53f6d03fd2b024a1",
         "ui-542c5f849f2db2af",
@@ -64552,7 +64605,7 @@
         "ui-609387948e8e79f0",
         "ui-60c9c0e6145c26fa",
         "ui-61c344a9af53b9fd",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-6387a58fa11f5e38",
         "ui-638fc2645fc7f979",
         "ui-63e2d179d155f16b",
@@ -64579,7 +64632,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6f8346ce605a60b2",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-710b87b0543b15b7",
         "ui-71731e4f01bdfc57",
         "ui-71a0af454d89b5b5",
@@ -64681,10 +64734,10 @@
         "ui-a19c07cb8a2649de",
         "ui-a2177a3703becb27",
         "ui-a263dd3e51007818",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a328526812134b31",
         "ui-a3287edf99d779fa",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a48eb3d4a0a8c902",
         "ui-a4f8b830ddad3141",
         "ui-a6627dfbd73fa4f0",
@@ -64746,7 +64799,7 @@
         "ui-c8524976914b2139",
         "ui-c88e9369446863af",
         "ui-c91751cad7c0e984",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cac2517d8c02137b",
         "ui-cb25a5e4a4b46c79",
         "ui-cb886274bd4b59ea",
@@ -64763,7 +64816,7 @@
         "ui-d423b081d1565828",
         "ui-d45202fb0287d882",
         "ui-d5b67fc3370d9386",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d7acee675dcb4283",
         "ui-d7fc7face2bce015",
         "ui-d849deb67c29dbf5",
@@ -65002,8 +65055,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/social/index.ts",
@@ -72150,7 +72203,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -72197,7 +72250,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -72206,7 +72259,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -72215,7 +72268,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -72223,9 +72276,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -82159,7 +82212,7 @@
         "ui-24535abc66987693",
         "ui-265c2db018b53b0a",
         "ui-27a0a6d4e9d57e56",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2933a10a1bde3ca4",
         "ui-29d6586d2e2efe59",
         "ui-2a334e7fe9e1f64a",
@@ -82169,7 +82222,7 @@
         "ui-2c106842ebcfd928",
         "ui-2c3d33bf360b37ad",
         "ui-2c7f2ae9a2ff8f37",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-32adef85f4e22984",
         "ui-33a22702fa6c9310",
         "ui-369b747e3744783f",
@@ -82182,17 +82235,17 @@
         "ui-4426368d5cac48d9",
         "ui-4438e56c477e9ba1",
         "ui-45613b82cc4944a1",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4826942b835c7abf",
         "ui-486bcc73f821e1e9",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a8a3997afe5a868",
         "ui-4bba6098a106a8a3",
         "ui-4c70bc6f106bf5e8",
         "ui-4d619720345ea974",
         "ui-4e8606197cd7dc61",
         "ui-507aa0d260864f5c",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51d042636c1c4c9e",
         "ui-520e5c20e7388b9b",
         "ui-5633f2f178beafc7",
@@ -82208,7 +82261,7 @@
         "ui-6043e30a900bddc0",
         "ui-60c9c0e6145c26fa",
         "ui-627145395039d972",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-637964c2b37283c6",
         "ui-63e2d179d155f16b",
         "ui-644b474bdb4ee1cf",
@@ -82225,7 +82278,7 @@
         "ui-6ea1dde5d33264dd",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-70a69d07aa7b3a96",
         "ui-71a0af454d89b5b5",
         "ui-73584e6ecf64a2db",
@@ -82283,8 +82336,8 @@
         "ui-a221ffc15cb56c47",
         "ui-a24c6affebbfaee4",
         "ui-a263dd3e51007818",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a58788d7238a1e6c",
         "ui-a675450a069a785d",
         "ui-a762d2b96711f829",
@@ -82317,7 +82370,7 @@
         "ui-c650988c8661dc69",
         "ui-c82f0705368b15aa",
         "ui-c97934b8a6cd8aad",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-c9d90896bc2575f5",
         "ui-cae1d9c4e2cceb87",
         "ui-cb25a5e4a4b46c79",
@@ -82330,7 +82383,7 @@
         "ui-d423b081d1565828",
         "ui-d481280a670a96da",
         "ui-d52cb18451243661",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d77da01d7b9b3301",
         "ui-d87c97c96684a3c6",
         "ui-d8bda38d391514f3",
@@ -82473,8 +82526,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/advertising/index.ts",
@@ -92772,7 +92825,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -92819,7 +92872,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -92828,7 +92881,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -92837,7 +92890,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -92845,9 +92898,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -103415,7 +103468,7 @@
         "ui-27fdeb2c52152d11",
         "ui-280027f10ff53240",
         "ui-28310b3f4c19e6e3",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2891464cdf260549",
         "ui-28bf882876c8efc7",
         "ui-29b67358db4301e5",
@@ -103438,7 +103491,7 @@
         "ui-2e24028d7d1818fb",
         "ui-2e5e31fd25abe95d",
         "ui-2edf2ef121de2246",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-2f75376eb95eac56",
         "ui-30013698abf613b9",
         "ui-30726c4b52eb6cf8",
@@ -103504,14 +103557,14 @@
         "ui-46a5fcda28da4718",
         "ui-4709e961be1f0656",
         "ui-47422679d5ed8f30",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4805366bfc624dd0",
         "ui-48fc7f59fea410cc",
         "ui-4935e33db0235d40",
         "ui-493ce32b6c715660",
         "ui-49c9f8fdade50243",
         "ui-4a234ee3a3b1fdbd",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a94c7454d131a09",
         "ui-4b227124a68da289",
         "ui-4bc9dd49fd250126",
@@ -103524,7 +103577,7 @@
         "ui-50a2ccff78ec0ebd",
         "ui-510c8fc9bd25784a",
         "ui-519a835e1ed96394",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51e4986d6ec2578c",
         "ui-52ad0d13e4492fcd",
         "ui-532aded793edea5c",
@@ -103560,7 +103613,7 @@
         "ui-62cc4b4185cb84eb",
         "ui-62dd99dbac6e3e93",
         "ui-631a0e01e96f0df2",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-6367ac690dc5028b",
         "ui-636b7c107283070e",
         "ui-63a23166ef836141",
@@ -103596,7 +103649,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6f877e780c4300f2",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-70afffa246919722",
         "ui-7170d2d2e7447eea",
         "ui-720680854485c991",
@@ -103710,12 +103763,12 @@
         "ui-a275d3b1ac9d4eff",
         "ui-a28bb4b5c46d7d00",
         "ui-a2c2f5bdd88be49d",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a30099913f240331",
         "ui-a377a3d8e36c51f8",
         "ui-a3f350de2575afe4",
         "ui-a441ebf5d2d73625",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a5c8c1dc430d382f",
         "ui-a601bad83269ed61",
         "ui-a60288378709c149",
@@ -103800,7 +103853,7 @@
         "ui-c7dde1317f1ea571",
         "ui-c87bb25b801bf7f3",
         "ui-c9354db88c52751b",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cb25a5e4a4b46c79",
         "ui-cb54068cfa9c8b99",
         "ui-cb7e3c67729601d5",
@@ -103826,7 +103879,7 @@
         "ui-d54109694ef812cf",
         "ui-d5612a3f7718e071",
         "ui-d5841bbe92fdbc86",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6f298407ce11cc0",
         "ui-d76176caf57a4bf5",
         "ui-d7ceb4862c51eca0",
@@ -104029,8 +104082,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/marketplace/index.ts",
@@ -114306,7 +114359,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -114353,7 +114406,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -114362,7 +114415,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -114371,7 +114424,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -114379,9 +114432,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -124949,7 +125002,7 @@
         "ui-27fdeb2c52152d11",
         "ui-280027f10ff53240",
         "ui-28310b3f4c19e6e3",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2891464cdf260549",
         "ui-28bf882876c8efc7",
         "ui-29b67358db4301e5",
@@ -124972,7 +125025,7 @@
         "ui-2e24028d7d1818fb",
         "ui-2e5e31fd25abe95d",
         "ui-2edf2ef121de2246",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-2f75376eb95eac56",
         "ui-30013698abf613b9",
         "ui-30726c4b52eb6cf8",
@@ -125038,14 +125091,14 @@
         "ui-46a5fcda28da4718",
         "ui-4709e961be1f0656",
         "ui-47422679d5ed8f30",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4805366bfc624dd0",
         "ui-48fc7f59fea410cc",
         "ui-4935e33db0235d40",
         "ui-493ce32b6c715660",
         "ui-49c9f8fdade50243",
         "ui-4a234ee3a3b1fdbd",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a94c7454d131a09",
         "ui-4b227124a68da289",
         "ui-4bc9dd49fd250126",
@@ -125058,7 +125111,7 @@
         "ui-50a2ccff78ec0ebd",
         "ui-510c8fc9bd25784a",
         "ui-519a835e1ed96394",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51e4986d6ec2578c",
         "ui-52ad0d13e4492fcd",
         "ui-532aded793edea5c",
@@ -125094,7 +125147,7 @@
         "ui-62cc4b4185cb84eb",
         "ui-62dd99dbac6e3e93",
         "ui-631a0e01e96f0df2",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-6367ac690dc5028b",
         "ui-636b7c107283070e",
         "ui-63a23166ef836141",
@@ -125130,7 +125183,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6f877e780c4300f2",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-70afffa246919722",
         "ui-7170d2d2e7447eea",
         "ui-720680854485c991",
@@ -125244,12 +125297,12 @@
         "ui-a275d3b1ac9d4eff",
         "ui-a28bb4b5c46d7d00",
         "ui-a2c2f5bdd88be49d",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a30099913f240331",
         "ui-a377a3d8e36c51f8",
         "ui-a3f350de2575afe4",
         "ui-a441ebf5d2d73625",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a5c8c1dc430d382f",
         "ui-a601bad83269ed61",
         "ui-a60288378709c149",
@@ -125334,7 +125387,7 @@
         "ui-c7dde1317f1ea571",
         "ui-c87bb25b801bf7f3",
         "ui-c9354db88c52751b",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cb25a5e4a4b46c79",
         "ui-cb54068cfa9c8b99",
         "ui-cb7e3c67729601d5",
@@ -125360,7 +125413,7 @@
         "ui-d54109694ef812cf",
         "ui-d5612a3f7718e071",
         "ui-d5841bbe92fdbc86",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6f298407ce11cc0",
         "ui-d76176caf57a4bf5",
         "ui-d7ceb4862c51eca0",
@@ -125563,8 +125616,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/marketplace/index.ts",
@@ -126907,7 +126960,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -126954,7 +127007,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -126963,7 +127016,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -126972,7 +127025,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -126980,9 +127033,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -127740,27 +127793,27 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-269f2e3296cf1385",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-30de38a8b6c0a9d1",
         "ui-3617693c27dff70b",
         "ui-3ff76f68be9e58d7",
         "ui-440ff62567dc9198",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4bc9dd49fd250126",
         "ui-4c70bc6f106bf5e8",
         "ui-4f2701eeeadcb312",
         "ui-508ea140c518fd07",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-56bd6e20803332fb",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
         "ui-62dcbb8afb15674a",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
@@ -127768,7 +127821,7 @@
         "ui-6e88913623c5c6f1",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7559e5748044ac0e",
         "ui-78d565f7f7078b98",
         "ui-7e8e280170b5c1b7",
@@ -127780,17 +127833,17 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-bc984cb0d5c7e149",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-ed5348ca0f6addf8",
         "ui-f202dbb108e7e48f",
@@ -127848,8 +127901,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/marketplace/BeatCard.tsx",
@@ -134460,7 +134513,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -134507,7 +134560,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -134516,7 +134569,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -134525,7 +134578,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -134533,9 +134586,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -137620,20 +137673,20 @@
         "ui-1cca6274b9e5cdbc",
         "ui-23508de771da2744",
         "ui-248e207b25910694",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-293db19de0c407be",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-313964803424ab32",
         "ui-3c4349ed3a1bbbb3",
         "ui-3d53e362e0807d0e",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
         "ui-4d77f0bad95e9646",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-5425f4b46f79ca0a",
         "ui-549f77676d673c9a",
         "ui-573dc02117d0972a",
@@ -137645,7 +137698,7 @@
         "ui-5dc5f6dc725b0714",
         "ui-5fcd035837c37f6b",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-64199502935b4156",
         "ui-6583cc89c6fb8df6",
@@ -137655,7 +137708,7 @@
         "ui-6e0320c15cc841a5",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7374671bf942a608",
         "ui-7421479304185642",
         "ui-7519845872f222ab",
@@ -137682,8 +137735,8 @@
         "ui-a051fac5c8352c75",
         "ui-a0d724bc2e2a9c9b",
         "ui-a24076a108081632",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a644bce95ebda7fe",
         "ui-a6cf576f69bfd5d7",
         "ui-aa33756905ac3c0a",
@@ -137702,14 +137755,14 @@
         "ui-c650988c8661dc69",
         "ui-c87175637b44b311",
         "ui-c9625079a62b69be",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-ca0c655ba03d3ec9",
         "ui-cba895665a9c6e60",
         "ui-cc82eec8938457f8",
         "ui-cf2b58eec584dae4",
         "ui-d34fb19279a9434c",
         "ui-d4ab3150db1d5c82",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-db04ce25b379eade",
         "ui-ddbaea8f428b87fd",
         "ui-df0e44522918daac",
@@ -137826,8 +137879,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/royalties/index.ts",
@@ -138085,7 +138138,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -138132,7 +138185,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -138141,7 +138194,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -138150,7 +138203,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -138158,9 +138211,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -154795,7 +154848,7 @@
         "ui-272d8d24c32246b3",
         "ui-283d8aab55835d7d",
         "ui-284ac606af0db888",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-288c8452eda52bcd",
         "ui-289bb3248bad4bcf",
         "ui-28f6a4e4753b0342",
@@ -154824,7 +154877,7 @@
         "ui-2d3793e3999eabd5",
         "ui-2d561c1d1cf8a465",
         "ui-2da0aacd9c6c0c06",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3019797d8f32eb8a",
         "ui-304c9ef944af7cd2",
         "ui-308098f8816c6dbb",
@@ -154886,12 +154939,12 @@
         "ui-461a362288cb9f6b",
         "ui-46aaa8d06d79e0f7",
         "ui-47753ae6f0faba7b",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-48fd2b8f3eb0ab72",
         "ui-49cc52104b3ea28b",
         "ui-49dc2492b8a6da58",
         "ui-4a1cdd12e365e218",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a8a3997afe5a868",
         "ui-4b3b1033ce1a6599",
         "ui-4b6a1276aab50dc9",
@@ -154913,7 +154966,7 @@
         "ui-5091ef561ceb5918",
         "ui-50b993149d2adb46",
         "ui-51be74d5e811a17a",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-52482e77e9456cfb",
         "ui-52716fb7a3ace613",
         "ui-533a622ec777703a",
@@ -154963,7 +155016,7 @@
         "ui-625d4bd89694c3eb",
         "ui-62daa27d6783228b",
         "ui-62f3fe5a8534cd96",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63a71b7bcfa5bf21",
         "ui-63e2d179d155f16b",
         "ui-6445933c285857ef",
@@ -154998,7 +155051,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
         "ui-6ffb5260c1f1653e",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7096be75f91b28bd",
         "ui-72d7d01f41af5515",
         "ui-72f66283eba0aa9f",
@@ -155104,11 +155157,11 @@
         "ui-a106c6d7ba46b6ab",
         "ui-a263dd3e51007818",
         "ui-a2bbd35a21c7e282",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a309002a6c301093",
         "ui-a328082a5540ed66",
         "ui-a45fc71b289b833a",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a49125a084f100d4",
         "ui-a4f5c2e5b0435540",
         "ui-a54cabe1a813d32e",
@@ -155191,7 +155244,7 @@
         "ui-c88b5daff7bcfee5",
         "ui-c88ba8ba766516ea",
         "ui-c98a9311f80b97bd",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cad32b6a3abf7e1c",
         "ui-cb1fa968b0fe5452",
         "ui-cb25a5e4a4b46c79",
@@ -155218,7 +155271,7 @@
         "ui-d51fdcf65757feec",
         "ui-d5343e8128e612ea",
         "ui-d5cc9c01f5cd3b55",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6453248cebb71df",
         "ui-d6d0df4932a1892c",
         "ui-d6fca0020ce62836",
@@ -155509,8 +155562,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/ErrorBoundary.tsx",
@@ -155973,7 +156026,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -156020,7 +156073,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -156029,7 +156082,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -156038,7 +156091,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -156046,9 +156099,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -172683,7 +172736,7 @@
         "ui-272d8d24c32246b3",
         "ui-283d8aab55835d7d",
         "ui-284ac606af0db888",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-288c8452eda52bcd",
         "ui-289bb3248bad4bcf",
         "ui-28f6a4e4753b0342",
@@ -172712,7 +172765,7 @@
         "ui-2d3793e3999eabd5",
         "ui-2d561c1d1cf8a465",
         "ui-2da0aacd9c6c0c06",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3019797d8f32eb8a",
         "ui-304c9ef944af7cd2",
         "ui-308098f8816c6dbb",
@@ -172774,12 +172827,12 @@
         "ui-461a362288cb9f6b",
         "ui-46aaa8d06d79e0f7",
         "ui-47753ae6f0faba7b",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-48fd2b8f3eb0ab72",
         "ui-49cc52104b3ea28b",
         "ui-49dc2492b8a6da58",
         "ui-4a1cdd12e365e218",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4a8a3997afe5a868",
         "ui-4b3b1033ce1a6599",
         "ui-4b6a1276aab50dc9",
@@ -172801,7 +172854,7 @@
         "ui-5091ef561ceb5918",
         "ui-50b993149d2adb46",
         "ui-51be74d5e811a17a",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-52482e77e9456cfb",
         "ui-52716fb7a3ace613",
         "ui-533a622ec777703a",
@@ -172851,7 +172904,7 @@
         "ui-625d4bd89694c3eb",
         "ui-62daa27d6783228b",
         "ui-62f3fe5a8534cd96",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63a71b7bcfa5bf21",
         "ui-63e2d179d155f16b",
         "ui-6445933c285857ef",
@@ -172886,7 +172939,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
         "ui-6ffb5260c1f1653e",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7096be75f91b28bd",
         "ui-72d7d01f41af5515",
         "ui-72f66283eba0aa9f",
@@ -172992,11 +173045,11 @@
         "ui-a106c6d7ba46b6ab",
         "ui-a263dd3e51007818",
         "ui-a2bbd35a21c7e282",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a309002a6c301093",
         "ui-a328082a5540ed66",
         "ui-a45fc71b289b833a",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a49125a084f100d4",
         "ui-a4f5c2e5b0435540",
         "ui-a54cabe1a813d32e",
@@ -173079,7 +173132,7 @@
         "ui-c88b5daff7bcfee5",
         "ui-c88ba8ba766516ea",
         "ui-c98a9311f80b97bd",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cad32b6a3abf7e1c",
         "ui-cb1fa968b0fe5452",
         "ui-cb25a5e4a4b46c79",
@@ -173106,7 +173159,7 @@
         "ui-d51fdcf65757feec",
         "ui-d5343e8128e612ea",
         "ui-d5cc9c01f5cd3b55",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6453248cebb71df",
         "ui-d6d0df4932a1892c",
         "ui-d6fca0020ce62836",
@@ -173397,8 +173450,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/ErrorBoundary.tsx",
@@ -174698,7 +174751,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -174745,7 +174798,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -174754,7 +174807,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -174763,7 +174816,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -174771,9 +174824,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -175290,29 +175343,29 @@
         "ui-163beaa7cc0a8093",
         "ui-19351da557492895",
         "ui-1ab70bffd27903d3",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-28806376656b6409",
         "ui-2a334e7fe9e1f64a",
         "ui-2a9094bca65789ec",
         "ui-2b75ce276d7518e4",
         "ui-2c622c68bf1f5605",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-320080fb38ce0864",
         "ui-3d99fb0712c30d46",
         "ui-3ff76f68be9e58d7",
         "ui-4235783ef0b53e47",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
         "ui-4fff84d2bb4e5ae6",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-58d4146fc98ee783",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-608d08e84e251ddf",
         "ui-60c9c0e6145c26fa",
         "ui-60e3f1ebfeda8512",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-65794cbb126e4177",
         "ui-660d292c53a1a27b",
@@ -175321,7 +175374,7 @@
         "ui-6c5c591e29862478",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
         "ui-796d8bd4bf9259f8",
@@ -175340,8 +175393,8 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a4a2e79cbc256596",
         "ui-aa788eb9d2142629",
         "ui-aef8ab20bdab18e6",
@@ -175356,7 +175409,7 @@
         "ui-c1f1aeebe48ca063",
         "ui-c3294aa5d60cba3a",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-ca98a9e25410e69c",
         "ui-cb25a5e4a4b46c79",
         "ui-cba895665a9c6e60",
@@ -175364,7 +175417,7 @@
         "ui-cf2b58eec584dae4",
         "ui-cf936ad2b2484741",
         "ui-d3cd1922a517a1f5",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d63d87d25929e571",
         "ui-d77652b4671f438e",
         "ui-e149798fdf5cac49",
@@ -175426,8 +175479,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 2,
@@ -192455,7 +192508,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -192502,7 +192555,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -192511,7 +192564,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -192520,7 +192573,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -192528,9 +192581,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -211502,7 +211555,7 @@
         "ui-27dcd3b984ffb19a",
         "ui-2803f28af9a88c2e",
         "ui-2842cd81b74d7c40",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-28a6f7939e15d25d",
         "ui-296d91ad9c9f9ea8",
         "ui-29d2b709ae9a920f",
@@ -211520,7 +211573,7 @@
         "ui-2de0f4d827ac5350",
         "ui-2e85648bdf381376",
         "ui-2ece67d59bd650f1",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-2f27dc9e209f8a8a",
         "ui-2f2ba49fe439d87b",
         "ui-2f76d16ae2aa051a",
@@ -211575,14 +211628,14 @@
         "ui-45e613fada3ec52a",
         "ui-46d9bd91d4fea99c",
         "ui-47282a9ce6809a4c",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4844786d34b91d68",
         "ui-48b09ed794b614cb",
         "ui-493fcae8feb2ebaa",
         "ui-49e0dc422ddb30b5",
         "ui-4a03952b17481fc0",
         "ui-4a4d57bf4b94884a",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4adb9294610e65e8",
         "ui-4b5424461e93a63f",
         "ui-4ba83c6f6b641ade",
@@ -211600,7 +211653,7 @@
         "ui-50cab0d953904fcb",
         "ui-510001cf409e1717",
         "ui-5158395a7fc2b094",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-51e2b11604206289",
         "ui-52145917192d62ac",
         "ui-527bcfc1c1072e0c",
@@ -211644,7 +211697,7 @@
         "ui-60c9c0e6145c26fa",
         "ui-610a05b6260f3622",
         "ui-61d632dfae5c2c7d",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-66933d046321fc62",
@@ -211677,7 +211730,7 @@
         "ui-6fbecffd9578c892",
         "ui-6fe3903b1d7ba0a0",
         "ui-702f3d0699bb7987",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7072b778bdf9719a",
         "ui-70ab86a02c06324f",
         "ui-70c7f22146353ec3",
@@ -211788,13 +211841,13 @@
         "ui-a18a4b87aaf60b35",
         "ui-a1eb1165e24eaa88",
         "ui-a2a447511355080d",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a32de94f530c1387",
         "ui-a35f2af2cb082d5c",
         "ui-a3d0c8348af25288",
         "ui-a3f27c3d9f82cb21",
         "ui-a40491b72526bd87",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a55e4348c5022d28",
         "ui-a56de17e22ebcc27",
         "ui-a5968886e102f151",
@@ -211879,7 +211932,7 @@
         "ui-c7eea58221d526bd",
         "ui-c81aebe9391370e6",
         "ui-c9acc5afe5a01afc",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-ca633ea05487686c",
         "ui-cb25a5e4a4b46c79",
         "ui-cba895665a9c6e60",
@@ -211913,7 +211966,7 @@
         "ui-d52ebd5db8042774",
         "ui-d54ada87d898deba",
         "ui-d5ecd2b0db3659e9",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d62c216def800de4",
         "ui-d6566bdf2287a5c3",
         "ui-d76389597fb8c97d",
@@ -212265,8 +212318,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/distribution/ArtistProfileManager.tsx",
@@ -216047,7 +216100,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -216094,7 +216147,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -216103,7 +216156,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -216112,7 +216165,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -216120,9 +216173,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -216675,20 +216728,20 @@
         "ui-147a7510c4c070cd",
         "ui-15c50979b4a2a800",
         "ui-19351da557492895",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3ff76f68be9e58d7",
         "ui-45fbd1133f307090",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-6583b460a2c0fd46",
         "ui-660d292c53a1a27b",
@@ -216696,7 +216749,7 @@
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-78d565f7f7078b98",
         "ui-84245433268496bc",
         "ui-87a4ca027697e750",
@@ -216704,17 +216757,17 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c2a93bf899c9d63a",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
         "ui-f9f1315309a3abbb",
@@ -216771,8 +216824,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 20,
@@ -217175,7 +217228,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -217222,7 +217275,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -217231,7 +217284,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -217240,7 +217293,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -217248,9 +217301,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -217723,23 +217776,23 @@
         "ui-12dfc68435cefe53",
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-33fc8c5d4e2a5a9a",
         "ui-3751bdfa7f937220",
         "ui-3fb04e4f570e2ced",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
         "ui-4d24b1ffc9721fa2",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-641f992482a447d7",
         "ui-660d292c53a1a27b",
@@ -217747,7 +217800,7 @@
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
         "ui-7ce8c287305435c9",
@@ -217756,17 +217809,17 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cba8ac13aba1a11f",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
         "ui-f9f1315309a3abbb",
@@ -217818,8 +217871,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 1,
@@ -218330,7 +218383,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -218377,7 +218430,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -218386,7 +218439,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -218395,7 +218448,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -218403,9 +218456,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -218944,27 +218997,27 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-1ac16168f05650da",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3ff76f68be9e58d7",
         "ui-46d8b210b68260f2",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7356909396a81608",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
@@ -218973,19 +219026,19 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b05c0f522ece75a6",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cb25a5e4a4b46c79",
         "ui-cba895665a9c6e60",
         "ui-cca56d254cb235a4",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d6d8d81cea48b080",
         "ui-d701a46b5575ce16",
         "ui-d794c18c0b41ea0c",
@@ -219048,8 +219101,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 2,
@@ -219769,7 +219822,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -219816,7 +219869,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -219825,7 +219878,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -219834,7 +219887,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -219842,9 +219895,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -220357,29 +220410,29 @@
         "ui-19351da557492895",
         "ui-1c2bbb741afb4b9d",
         "ui-1f1e01cbda1c280b",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4b68b06f40866128",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-56b680f00ab14e31",
         "ui-575df24d6a86765a",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7519845872f222ab",
         "ui-75a95b6827eb9f9b",
         "ui-78d565f7f7078b98",
@@ -220394,8 +220447,8 @@
         "ui-99e85c45691966c6",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a858e91a39bd9884",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
@@ -220403,10 +220456,10 @@
         "ui-b9311cf59beb0b62",
         "ui-c430d3dd334d45d1",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d9a23ac2b08e62d9",
         "ui-e149798fdf5cac49",
         "ui-e5210e171878197a",
@@ -220463,8 +220516,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 5,
@@ -220769,7 +220822,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -220816,7 +220869,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -220825,7 +220878,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -220834,7 +220887,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -220842,9 +220895,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -221316,26 +221369,26 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-22ad8b1228612dd9",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-78d565f7f7078b98",
         "ui-84245433268496bc",
         "ui-87a4ca027697e750",
@@ -221343,17 +221396,17 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cb25a5e4a4b46c79",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
         "ui-f9f1315309a3abbb",
@@ -221404,8 +221457,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 1,
@@ -223863,7 +223916,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -223910,7 +223963,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -223919,7 +223972,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -223928,7 +223981,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -223936,9 +223989,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -224356,27 +224409,27 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-238afaae8d19120c",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-3c5f0d024cfd2f3e",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
         "ui-67c713adf99573ce",
         "ui-6ba0c83dc62c067a",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-706de1c7c3325265",
         "ui-78772f77bb5325bf",
         "ui-78d565f7f7078b98",
@@ -224388,17 +224441,17 @@
         "ui-9a2ac2dfb5297ca3",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a51a6ffd52fea9f4",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-dbae333f305aec45",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
@@ -224449,8 +224502,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 14,
@@ -225816,7 +225869,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -225863,7 +225916,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -225872,7 +225925,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -225881,7 +225934,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -225889,9 +225942,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -226396,20 +226449,20 @@
         "ui-19351da557492895",
         "ui-1ac08350868ace45",
         "ui-22166ff4bedfa55b",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
         "ui-2bb2ea6b2d7b958c",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-37d11fbdb54155e4",
         "ui-3ff76f68be9e58d7",
         "ui-44b82d6be2cb543f",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4c70bc6f106bf5e8",
         "ui-4dec0124a9dae88f",
         "ui-4f84c161385838f0",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-59744d5309270354",
         "ui-59e29d0517679d8a",
         "ui-5ca3fac9bbb33334",
@@ -226418,7 +226471,7 @@
         "ui-5eab7c938cacb8a4",
         "ui-60c9c0e6145c26fa",
         "ui-623959ec277007fd",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63bfaf35996901b6",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
@@ -226428,7 +226481,7 @@
         "ui-6d6e4f60458d8aa8",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-7519845872f222ab",
         "ui-7602579f5a8fd77a",
         "ui-78d565f7f7078b98",
@@ -226441,8 +226494,8 @@
         "ui-9b7c4d1b1a710996",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-aa788eb9d2142629",
         "ui-adae046610c45378",
         "ui-b067e9a48325de98",
@@ -226450,10 +226503,10 @@
         "ui-c13a04307e1f7eb9",
         "ui-c6361e5f5e7b65e8",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-db0af1cbe91d4556",
         "ui-e149798fdf5cac49",
         "ui-ed17a0c5e8e62556",
@@ -226510,8 +226563,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 13,
@@ -230413,7 +230466,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -230460,7 +230513,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -230469,7 +230522,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -230478,7 +230531,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -230486,9 +230539,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -231122,25 +231175,25 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-27ade3bc8b5a4641",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
         "ui-2d05b09010c9fdfd",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-30a545ff20c6d4e7",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4ba2554193f17526",
         "ui-4c70bc6f106bf5e8",
         "ui-4e7103477942a2f1",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-5486d1ee271f43e3",
         "ui-55bfc0954951faf2",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-637647f3df2f697f",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
@@ -231149,7 +231202,7 @@
         "ui-6e6562eefb28a59c",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-743a2d73df0e4265",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
@@ -231161,19 +231214,19 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a5c666d0376b5f51",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c088a51dd86406c6",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-caa5985a0a7601dd",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-dff2a41ab37c924f",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
@@ -231239,8 +231292,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 47,
@@ -235152,7 +235205,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -235199,7 +235252,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -235208,7 +235261,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -235217,7 +235270,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -235225,9 +235278,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -235861,25 +235914,25 @@
         "ui-147a7510c4c070cd",
         "ui-19351da557492895",
         "ui-27ade3bc8b5a4641",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-2a334e7fe9e1f64a",
         "ui-2b75ce276d7518e4",
         "ui-2d05b09010c9fdfd",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-30a545ff20c6d4e7",
         "ui-3ff76f68be9e58d7",
-        "ui-479d9c9cc8f8853b",
-        "ui-4a6000d07de3aa8e",
+        "ui-09288376a7ab1304",
+        "ui-b72cc52a3e04a587",
         "ui-4ba2554193f17526",
         "ui-4c70bc6f106bf5e8",
         "ui-4e7103477942a2f1",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-5486d1ee271f43e3",
         "ui-55bfc0954951faf2",
         "ui-59e29d0517679d8a",
         "ui-5dc5f6dc725b0714",
         "ui-60c9c0e6145c26fa",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-637647f3df2f697f",
         "ui-63e2d179d155f16b",
         "ui-660d292c53a1a27b",
@@ -235888,7 +235941,7 @@
         "ui-6e6562eefb28a59c",
         "ui-6f05ab0e825accb5",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-743a2d73df0e4265",
         "ui-7519845872f222ab",
         "ui-78d565f7f7078b98",
@@ -235900,19 +235953,19 @@
         "ui-97f927a9cc40024e",
         "ui-9ba6573d8f3d79ac",
         "ui-a051fac5c8352c75",
-        "ui-a2d4f10a25f80786",
-        "ui-a4635e8e9888dd0e",
+        "ui-d0d9ca11329dc60e",
+        "ui-6868a26f3f09e2a9",
         "ui-a5c666d0376b5f51",
         "ui-aa788eb9d2142629",
         "ui-b067e9a48325de98",
         "ui-b43cc7e819219b5c",
         "ui-c088a51dd86406c6",
         "ui-c650988c8661dc69",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-caa5985a0a7601dd",
         "ui-cba895665a9c6e60",
         "ui-cf2b58eec584dae4",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-dff2a41ab37c924f",
         "ui-e149798fdf5cac49",
         "ui-f202dbb108e7e48f",
@@ -235978,8 +236031,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           }
         ],
         "sourceSectionsEnumerated": 47,
@@ -247550,7 +247603,7 @@
             {
               "file": "client/src/components/layout/AppLayout.tsx",
               "line": 1,
-              "endLine": 146
+              "endLine": 147
             }
           ],
           "frontendWork": [
@@ -247597,7 +247650,7 @@
               "tag": "Sidebar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 100
+                "line": 101
               },
               "attributes": {},
               "text": ""
@@ -247606,7 +247659,7 @@
               "tag": "TopBar",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 107
+                "line": 108
               },
               "attributes": {},
               "text": ""
@@ -247615,7 +247668,7 @@
               "tag": "MobileBottomNav",
               "source": {
                 "file": "client/src/components/layout/AppLayout.tsx",
-                "line": 140
+                "line": 142
               },
               "attributes": {},
               "text": ""
@@ -247623,9 +247676,9 @@
           ],
           "interactionIds": [
             "ui-84245433268496bc",
-            "ui-6328b98825213623",
-            "ui-a2d4f10a25f80786",
-            "ui-705fd60d835ea90e"
+            "ui-975edfade3e58d49",
+            "ui-d0d9ca11329dc60e",
+            "ui-3828cf72f867bcb1"
           ],
           "frontendContractIds": [],
           "backendRouteIds": [],
@@ -255869,7 +255922,7 @@
         "ui-25d68d5b6842f6ec",
         "ui-26937449827dd28c",
         "ui-26e36e7fb4bb0039",
-        "ui-2871509b1d1a7a88",
+        "ui-9ca2eb446c30ce51",
         "ui-288189a329dd82f7",
         "ui-29c0d470dab43abe",
         "ui-2a334e7fe9e1f64a",
@@ -255877,7 +255930,7 @@
         "ui-2b6c284bff0cc4f8",
         "ui-2b75ce276d7518e4",
         "ui-2ee17fa9a0e0d9ca",
-        "ui-2eea6ab9192c3719",
+        "ui-b371ddfc98bfbb10",
         "ui-2f3f0c1572d43edd",
         "ui-2ff244d1dc312407",
         "ui-30e9902368ba37f8",
@@ -255899,10 +255952,10 @@
         "ui-46383b4c5a0e168b",
         "ui-46539bbd40f21b29",
         "ui-4779bbb4d1d4d680",
-        "ui-479d9c9cc8f8853b",
+        "ui-09288376a7ab1304",
         "ui-4894edd3b947158d",
         "ui-49870bac3e81203d",
-        "ui-4a6000d07de3aa8e",
+        "ui-b72cc52a3e04a587",
         "ui-4b84c60273606015",
         "ui-4c5b9dfccfe79098",
         "ui-4c70bc6f106bf5e8",
@@ -255910,7 +255963,7 @@
         "ui-4f004360183c0113",
         "ui-4fe690d18b7e7d1e",
         "ui-51b8a7782f5c36fa",
-        "ui-51bf4bf12bd1f8e8",
+        "ui-09b540e6b78df08d",
         "ui-52a27a3716f10250",
         "ui-53212f2f07cd7d99",
         "ui-567774c68a0c56c2",
@@ -255923,7 +255976,7 @@
         "ui-6086ce0d934070c1",
         "ui-60c9c0e6145c26fa",
         "ui-6298d119bbf7455e",
-        "ui-6328b98825213623",
+        "ui-975edfade3e58d49",
         "ui-63e2d179d155f16b",
         "ui-63e7976dbc548b45",
         "ui-6402e7db504c2751",
@@ -255942,7 +255995,7 @@
         "ui-6f05ab0e825accb5",
         "ui-6f0f092bc759853b",
         "ui-6fbecffd9578c892",
-        "ui-705fd60d835ea90e",
+        "ui-3828cf72f867bcb1",
         "ui-70db5d8dda1b18c3",
         "ui-71058350f8316578",
         "ui-737109495f707f46",
@@ -255979,11 +256032,11 @@
         "ui-a051fac5c8352c75",
         "ui-a1bbc6e0fc821abf",
         "ui-a28f15dcdb84ced9",
-        "ui-a2d4f10a25f80786",
+        "ui-d0d9ca11329dc60e",
         "ui-a3bb247bffa1bd9f",
         "ui-a3c69bb4ed79910f",
         "ui-a3d34e5fbaa79e46",
-        "ui-a4635e8e9888dd0e",
+        "ui-6868a26f3f09e2a9",
         "ui-a4c994a654071cf2",
         "ui-a50482b0db26c3a3",
         "ui-a60682dd07c5c290",
@@ -256031,7 +256084,7 @@
         "ui-c650988c8661dc69",
         "ui-c66917c696efa4b8",
         "ui-c885554ebdd7372f",
-        "ui-c9b6fd0662599ae8",
+        "ui-27a8441a308cf701",
         "ui-cb25a5e4a4b46c79",
         "ui-cb65a9962e505d4e",
         "ui-cb66a72f77931259",
@@ -256047,7 +256100,7 @@
         "ui-d3911f113e0d3fdc",
         "ui-d3a332ba8535bfbc",
         "ui-d53e923ebe1dcebb",
-        "ui-d6048cde5e5d07e5",
+        "ui-0f63676b1efba992",
         "ui-d63d4bdf4204b76e",
         "ui-d7fac45a0ed0e53b",
         "ui-d86f69f8d44cb187",
@@ -256222,8 +256275,8 @@
           },
           {
             "file": "client/src/components/layout/AppLayout.tsx",
-            "lineCount": 146,
-            "sha256": "783a4fd28f85506c1639adc157c65c53bf7e60f1826c431be3a1b39f332f9eb3"
+            "lineCount": 147,
+            "sha256": "7d00e32dfbbfae02ac50d98b9814dc12a6f9e29ede90cc8e84b3c2b987734563"
           },
           {
             "file": "client/src/components/notifications/index.ts",

@@ -1,0 +1,1 @@
+{"scenario": "before_inventory_error", "assertions": "passed", "observedDriverExit": 1, "status": "failed_admitted_observation", "calls": {"source": 2, "inventory": 2, "prepare": 0}, "actualPreparationOrColdExecuted": false}

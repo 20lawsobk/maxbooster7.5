@@ -1,0 +1,1 @@
+{"vips":"8.18.7","bytes":95,"signature":"89504e470d0a1a0a"}

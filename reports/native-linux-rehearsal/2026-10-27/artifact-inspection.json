@@ -1,0 +1,125 @@
+{
+  "target": "linux-x64-dir",
+  "electronVersion": "43.8.3",
+  "binary": {
+    "bytes": 225008888,
+    "sha256": "be79f4206514ab4bcca03fc0752c1cceb8b69c0f8ded32cfcb78953777edbf5d"
+  },
+  "asar": {
+    "bytes": 375571544,
+    "sha256": "6d033a608da659d030406ba1749e67b5af2d8c3357f3ce397d2a929ec2f6206f",
+    "entries": 61633
+  },
+  "package": {
+    "name": "max-booster",
+    "version": "3.0.0",
+    "main": "electron/main.js"
+  },
+  "entryChecks": {
+    "electron/main.js": {
+      "bytes": 6572,
+      "sha256": "f3bc7d559d62233498ebed533d139a70d68c2b5b5b112dd6cca89711256a4ed2",
+      "matchesCurrentSourceOrBuild": true
+    },
+    "electron/preload.js": {
+      "bytes": 282,
+      "sha256": "0fe4d5d7527b217baee25bdfbc71f00cdfc7e918df23db30abe9a23ea642e8c2",
+      "matchesCurrentSourceOrBuild": true
+    },
+    "electron/runtime-policy.cjs": {
+      "bytes": 728,
+      "sha256": "361135660c827fbcf3b4802e49018cf4332674ec91d8615f7b3c2a44245c616f",
+      "matchesCurrentSourceOrBuild": true
+    },
+    "dist/index.mjs": {
+      "bytes": 13030398,
+      "sha256": "a902c543760465c38d49158cac5750a4c8246991ca9bdfe5df0169c18004a8d2",
+      "matchesCurrentSourceOrBuild": true
+    }
+  },
+  "observedPresence": {
+    "node_modules/express/package.json": true,
+    "node_modules/pg/package.json": true,
+    "external/maxcore/artifacts/api-server/dist/index.mjs": false,
+    "external/pdim": false,
+    "python_runtime": false,
+    "migrations": false,
+    ".replit": false,
+    "dist/build-complete.json": false
+  },
+  "topLevelFiles": [
+    {
+      "name": "LICENSE.electron.txt",
+      "bytes": 1096
+    },
+    {
+      "name": "LICENSES.chromium.html",
+      "bytes": 19956022
+    },
+    {
+      "name": "chrome-sandbox",
+      "bytes": 15232
+    },
+    {
+      "name": "chrome_100_percent.pak",
+      "bytes": 120300
+    },
+    {
+      "name": "chrome_200_percent.pak",
+      "bytes": 198617
+    },
+    {
+      "name": "chrome_crashpad_handler",
+      "bytes": 1877584
+    },
+    {
+      "name": "icudtl.dat",
+      "bytes": 10875024
+    },
+    {
+      "name": "libEGL.so",
+      "bytes": 260072
+    },
+    {
+      "name": "libGLESv2.so",
+      "bytes": 6482480
+    },
+    {
+      "name": "libffmpeg.so",
+      "bytes": 2731736
+    },
+    {
+      "name": "libvk_swiftshader.so",
+      "bytes": 4652168
+    },
+    {
+      "name": "libvulkan.so.1",
+      "bytes": 2485112
+    },
+    {
+      "name": "max-booster",
+      "bytes": 225008888
+    },
+    {
+      "name": "resources.pak",
+      "bytes": 7422300
+    },
+    {
+      "name": "snapshot_blob.bin",
+      "bytes": 365744
+    },
+    {
+      "name": "v8_context_snapshot.bin",
+      "bytes": 740304
+    },
+    {
+      "name": "version",
+      "bytes": 6
+    },
+    {
+      "name": "vk_swiftshader_icd.json",
+      "bytes": 107
+    }
+  ],
+  "scope": "Actual packaged bytes/paths only; missing resource observations are not yet a reproduced startup failure"
+}

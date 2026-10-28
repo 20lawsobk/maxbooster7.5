@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: actual scripts and TypeDoc consumers resolve the compatible patched graph
+ok 1 - actual scripts and TypeDoc consumers resolve the compatible patched graph
+  ---
+  duration_ms: 1.417138
+  type: 'test'
+  ...
+# Subtest: actual BiDi parser handles valid input and reports invalid field paths with its own Zod
+ok 2 - actual BiDi parser handles valid input and reports invalid field paths with its own Zod
+  ---
+  duration_ms: 121.534305
+  type: 'test'
+  ...
+# Subtest: actual BiDi Zod rejects oversized array before element traversal
+ok 3 - actual BiDi Zod rejects oversized array before element traversal
+  ---
+  duration_ms: 1.742959
+  type: 'test'
+  ...
+# Subtest: actual BiDi Zod rejects oversized map before element traversal
+ok 4 - actual BiDi Zod rejects oversized map before element traversal
+  ---
+  duration_ms: 1.187932
+  type: 'test'
+  ...
+# Subtest: actual BiDi Zod rejects oversized set before element traversal
+ok 5 - actual BiDi Zod rejects oversized set before element traversal
+  ---
+  duration_ms: 0.816642
+  type: 'test'
+  ...
+# Subtest: actual TypeDoc Markdown preserves normal rendering and bounds six advisory inputs
+ok 6 - actual TypeDoc Markdown preserves normal rendering and bounds six advisory inputs
+  ---
+  duration_ms: 1289.660516
+  type: 'test'
+  ...
+# Subtest: actual upgraded Puppeteer drives configured Chromium through owned loopback CDP
+ok 7 - actual upgraded Puppeteer drives configured Chromium through owned loopback CDP
+  ---
+  duration_ms: 661.256484
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2348.83422

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only schema observation and exact driver, no production mutation",
+  "artifacts": {
+    "neon-schema-readonly.json": {
+      "bytes": 2767,
+      "sha256": "d4df254dcc87f3199eca7759091a27b3ca55d7fcce442497337b8a71c9f8accb"
+    },
+    "neon-schema-readonly-driver.mjs": {
+      "bytes": 3147,
+      "sha256": "386a6cdc9e50672c54f1b53fae64fe33945e2f67ef5520d01081fc4f4d1703e8"
+    },
+    "README.md": {
+      "bytes": 2191,
+      "sha256": "3bcc2131b9d40b99589124db7934b1a88ae8f185d5af6ca2b832a9ca8c8da649"
+    }
+  }
+}

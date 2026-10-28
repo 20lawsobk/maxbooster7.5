@@ -1,0 +1,45 @@
+{
+  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "group": "node",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/layout-navigation-accessibility-browser.test.mjs"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T12:10:28.676989+00:00",
+      "durationSeconds": 1.981,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/accessibility-audit/2026-10-28-sealed-startup/master-nested-after/tests__layout-navigation-accessibility-browser.test.mjs.txt",
+      "logSha256": "88143e60af85ab03eabc6fcf227d70a5e36ba2fd51abc2943dbd02fe0b008c04",
+      "file": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "countScope": "node:test reported totals (includes parent tests)"
+    }
+  ],
+  "summary": {
+    "files": 1,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
+}

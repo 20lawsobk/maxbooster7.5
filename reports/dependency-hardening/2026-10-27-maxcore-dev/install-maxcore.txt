@@ -1,0 +1,22 @@
+Scope: all 9 workspace projects
+Recreating /workspace/maxbooster7.5/external/maxcore/node_modules
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +487
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 487, reused 0, downloaded 53, added 53
+Progress: resolved 487, reused 0, downloaded 102, added 94
+Progress: resolved 487, reused 0, downloaded 121, added 102
+Progress: resolved 487, reused 0, downloaded 163, added 122
+Progress: resolved 487, reused 0, downloaded 221, added 218
+Progress: resolved 487, reused 0, downloaded 278, added 277
+Progress: resolved 487, reused 0, downloaded 340, added 340
+Progress: resolved 487, reused 0, downloaded 392, added 392
+Progress: resolved 487, reused 0, downloaded 445, added 443
+Progress: resolved 487, reused 0, downloaded 487, added 487, done
+
+devDependencies:
++ prettier 3.8.1
++ typescript 5.9.3
+
+Done in 11.1s using pnpm v10.26.1

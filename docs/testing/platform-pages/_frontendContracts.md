@@ -496,7 +496,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "topologyStatus": "matched",
   "methodConfidence": "assumed",
   "backendRouteIds": [
-    "api-9e98ff2b7ad8dc23"
+    "api-eba2a2b70ee6cbd7"
   ],
   "behavioralAcceptance": "UNVERIFIED"
 }
@@ -5638,7 +5638,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "topologyStatus": "matched",
   "methodConfidence": "detected",
   "backendRouteIds": [
-    "api-9e98ff2b7ad8dc23"
+    "api-eba2a2b70ee6cbd7"
   ],
   "behavioralAcceptance": "UNVERIFIED"
 }
@@ -17804,21 +17804,21 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## call-eeda10eb3cd5af6d
+## call-49affbf6894e346a
 
 ```json
 {
-  "id": "call-eeda10eb3cd5af6d",
+  "id": "call-49affbf6894e346a",
   "source": {
     "file": "client/src/pages/analytics/AIDashboard.tsx",
-    "line": 22
+    "line": 38
   },
   "method": "POST",
   "path": "/api/ai/analytics/insights",
   "topologyStatus": "matched",
   "methodConfidence": "detected",
   "backendRouteIds": [
-    "api-e6eff8cae111ad3d"
+    "api-c78a8e66ec4e4573"
   ],
   "behavioralAcceptance": "UNVERIFIED"
 }

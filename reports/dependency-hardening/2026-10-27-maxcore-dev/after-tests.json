@@ -1,0 +1,16 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=junit",
+    "tests/maxcore-dev-dependency-security.test.mjs"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T01:20:48.520268+00:00",
+  "durationSeconds": 2.435,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-maxcore-dev/after-tests.xml",
+  "logSha256": "6d6e7ddda7fbdaa9ae1b226a7ef13590bce23eabf4bde806387d33d48d3940f8"
+}

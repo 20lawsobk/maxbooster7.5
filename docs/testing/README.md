@@ -6,6 +6,33 @@ prerequisites. [results.md](results.md) records the actual rerun, including
 failures, skipped cases and work that could not run. A source index is not a
 coverage percentage or evidence of a passing test.
 
+The latest local source checkpoint is
+`cb783f1f9b34719a214dd7f9203a31dea64c051e` on
+`sophia/platform-production-hardening-2026-10-27`, not yet pushed at this
+reconciliation. The completed a160 full master ran 05:11:45–05:33:33 on
+October 28, America/Detroit, with unchanged source inputs. Build, 2,728 unit
+cases, 18 additional cases and the Python/commerce/subsystem/browser/HTTP/page/
+load/operational/type/lint/audit scopes passed. Its 2,771 instrumented assertions
+passed, but the strict 100% thresholds failed at 13.10% lines, 13.00% statements,
+8.67% functions and 8.77% branches; feature-evidence gates also failed. One Node
+fixture failed before assertions because Chromium's nested temporary socket
+path exceeded the Unix limit. The
+[original a160 master](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md)
+and [preceding 8cad run](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
+retain their actual failures.
+
+The fixture-only cb783f1f repair then passed the exact nested reproduction and
+[complete 122-file Node recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md):
+644 passing TAP cases, two skips and zero failures, including parents in its
+646 total, in 126.867s with unchanged inputs. This separate recheck does not
+make the a160 full master pass or claim that its other groups reran against cb.
+The [serialized cb cold rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
+then passed all four actual commands and all 37 independent audit checks. Common
+source and all 4,526 admitted entries stayed unchanged. Its accepted scope remains
+credential-free cold startup with `productionReady: false`.
+The [launch gates](global-launch-readiness.md) distinguish completed scopes
+from remaining deployed/native/global acceptance.
+
 The single entry point is `npm run test:master` (`test:all` is the same command).
 It discovers the current tests, runs all supported isolated groups, measures
 code coverage, builds a source register of pages, API handlers and UI controls,
@@ -21,6 +48,18 @@ Its generated page ledgers and machine inventory retain every item rather than
 sampling a few areas. [Launch gates](global-launch-readiness.md), [release rehearsal](release-rehearsal.md)
 and the [migration procedure](storage-release-runbook.md) distinguish source
 verification from deployment and global-capacity evidence.
+
+The [seven-level critical path](launch-critical-path.md) extends that plan;
+the [launch audit](launch-readiness-audit.md) supplies the complete status,
+feature/gap/dependency registers, explicit domain pass/fail criteria and
+machine roadmap. Its current inventory retains all 80 declarations, 2,162
+sections, 12,972 dimension steps and 52,965 existing work items. Its refreshed
+matrix remains 80 Red/zero Green, with unknown implementation completion left
+unknown. The older failed canonical master remains correctly stale after the
+fixture-only cb source change; separate passing Node/cold receipts retain their
+own scopes. Report creation and its 42 passing reporting/provenance regressions
+are not product acceptance. The initial independent review's stale-input
+failure remains retained until a new versioned review validates fresh outputs.
 
 The full run closes successfully only when its tests and strict evidence gates
 are clear. Missing dependencies, missing test coverage, failed assertions and
@@ -41,6 +80,30 @@ documents compatible instrumentation for existing Node, application HTTP and
 browser execution. Source identity and map compatibility must be verified
 before merging; adding percentages or copying counters between different maps
 is not valid combined coverage.
+The first [standalone Node producer](node-coverage-producer.md) documents its
+commands, retained artifacts, failed attempts and current unmerged scope.
+The [compatibility trace](coverage-compatibility-trace.md) identifies confirmed
+compiler-helper attribution defects that must be repaired before merging.
+The [mapping trace](mapping-blocker-trace.md) retains all 130 unresolved entries
+and exact source-producer corrections without inventing missing handlers.
+Focused instructions cover [account analytics](account-analytics.md),
+[monitoring alert outcomes](monitoring-alerts.md), and
+[current-format SQL/PDIM recovery](current-storage-joint-recovery.md).
+Each identifies actual implementations, fixture boundaries, case purposes,
+commands and the remaining deployed acceptance scope.
+Additional instructions cover [Python assertion oracles](test-oracle-review.md),
+[actual Electron ASAR/native-loader checks](electron-asar-module-acceptance.md)
+and the [all-80 accessibility requirements](accessibility-launch-audit.md).
+The shared-navigation regression's nine actual Chromium leaf passes apply to
+its declared controls and fixture. The two added startup diagnostics verify
+fixture failures, not additional product accessibility. The
+[sealed-startup instructions](../../reports/accessibility-audit/2026-10-28-sealed-startup/README.md)
+retain the exact nested failure and correction. Static reachability to 47 declarations
+does not certify those pages or all WCAG criteria. Actual packaged Zod,
+TensorFlow, Sharp and bcrypt operations pass their native-loader scope; the
+credential-free full child reaches the expected private configuration guard.
+That result neither certifies configured GUI/sidecar/database readiness nor
+indicates that the already configured Replit keys are missing.
 The platform coverage configuration also runs `tests/coverage/*.test.ts` with
 real disposable PostgreSQL. These reuse the Node suites' business assertions
 while importing production TypeScript directly for instrumentation. Shared
@@ -50,7 +113,7 @@ separately rather than summed as additional feature coverage.
 
 ## Prepare the tools and dependencies
 
-Use Node 22.12 or newer (recorded run: 22.23.3), npm 10, pnpm 10,
+Use the prepared Node 22 runtime, at least 22.12 (recorded run: 22.23.3), npm 10, pnpm 10,
 Python 3.12+, PostgreSQL server tools (`initdb`, `pg_ctl`, `postgres`, `psql`),
 native Redis, Chromium, FFmpeg, espeak-ng with its data files, OpenSSL,
 tar/xz/zstd, Git, Go 1.26.6 and Rust 1.93.1 with Cargo. Run disposable PostgreSQL
@@ -58,11 +121,12 @@ fixtures as a non-root OS user. Put these executables on `PATH`.
 `replit.nix` declares the main system tools; the cloud environment may use
 extracted binaries and require their `LD_LIBRARY_PATH` as well.
 
-Install JavaScript dependencies from the four independent locks:
+Install JavaScript dependencies from all five independent lock graphs:
 
 ```sh
 npm ci
 npm --prefix dns-os ci
+npm --prefix tls-proxy ci
 pnpm --dir external/maxcore install --frozen-lockfile
 pnpm --dir external/pdim install --frozen-lockfile
 ```
@@ -120,6 +184,19 @@ Coverage-provider parse exclusions also fail the evidence gate, even if the
 provider exits zero. The actual subprocess exit remains recorded separately.
 Fix invalid imports or transformation failures rather than excluding the file.
 
+Run the final master and its bounded load without competing native packaging,
+capsule compression or another capacity workload. After the master finishes,
+prepare/verify/cold-start/verify the current release serially in an owned
+publishing copy, retaining complete admitted-source before/after inventories.
+The preceding concurrent preparation failed its guard when a build changed an
+admitted API bundle and a Python suite generated an admitted runtime image.
+Precise upload exclusion and owned generation fixtures now have focused proof;
+the serialized cb rehearsal subsequently passed all four commands and 37
+independent audit checks. Any later admitted source/build-setting change requires
+a fresh rehearsal. A shared packaging-policy change legitimately invalidates
+runtime caches: rebuild them with the existing compression/source guards, using
+at most four otherwise idle preparation threads. See [the release procedure](release-rehearsal.md).
+
 Useful selectors:
 
 ```sh
@@ -144,6 +221,29 @@ checks IDs, references, every business section and named instruction dimension,
 and inspected source hashes. Its successful exit validates plan completeness,
 not feature completion. After a relevant source change, refresh the affected
 source analysis rather than changing recorded hashes to silence a mismatch.
+
+After the full master has finished writing its canonical register and plan,
+regenerate the launch matrix and check the actual launch conjunction:
+
+```sh
+python3 scripts/testing/launch-readiness-audit.py
+python3 scripts/testing/launch-readiness-audit.py --require-green
+```
+
+The first command returns zero when valid artifacts are generated; it grants
+no launch approval. The second remains nonzero until all 80 page declarations
+and required global/source/deployed/client gates have current passing proof.
+Use a new `--output` directory for a versioned receipt. The initial independent
+review found one stale register/plan input binding after preflight regeneration;
+preserve that failure and independently review new artifacts after the final
+canonical reports, rather than rewriting its receipt.
+
+The [fresh read-only Neon observation](../../reports/deployment-observations/2026-10-28/README.md)
+compared 312 ORM tables and confirmed ten schema entries with drift. It ran
+read-only metadata queries and no DDL. Existing configured keys do not establish
+schema compatibility or deployed provider delivery. Actual migration and
+joint recovery follow the concrete release runbook; ordinary test selectors
+never target the production database.
 
 Optional `--rust-toolchain /path/to/rust`, `--go-path /path/to/gopath` and
 `--go-cache /path/to/cache` select prepared native toolchains/caches. Refer to

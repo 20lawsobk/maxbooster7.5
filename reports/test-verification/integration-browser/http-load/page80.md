@@ -8,9 +8,9 @@ Artifact label: **sealed non-ML authenticated HTTP load; not full-stack or packe
 
 `env -i PATH="$PATH" HOME=/tmp node scripts/testing/page80-acceptance.mjs`
 
-Run started: 2026-10-27T22:07:22.124Z
+Run started: 2026-10-28T09:30:29.933Z
 
-Report generated: 2026-10-27T22:08:08.260Z
+Report generated: 2026-10-28T09:31:15.932Z
 
 ## Safety boundary
 
@@ -27,19 +27,19 @@ Report generated: 2026-10-27T22:08:08.260Z
 {
   "capacityAdmission": {
     "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-    "hostMemAvailableBytes": 33826271232,
+    "hostMemAvailableBytes": 33383710720,
     "cgroup": {
-      "currentBytes": 5495836672,
+      "currentBytes": 8865447936,
       "maximumBytes": 34359738368,
-      "headroomBytes": 28863901696,
-      "anonymousBytes": 565456896,
-      "filePageCacheBytes": 4308811776,
-      "inactiveFileBytes": 513384448,
-      "activeFileBytes": 3705925632,
-      "kernelBytes": 620363776,
-      "reclaimableKernelSlabBytes": 593629712
+      "headroomBytes": 25494290432,
+      "anonymousBytes": 559517696,
+      "filePageCacheBytes": 7384473600,
+      "inactiveFileBytes": 403316736,
+      "activeFileBytes": 6493605888,
+      "kernelBytes": 920686592,
+      "reclaimableKernelSlabBytes": 883523784
     },
-    "effectiveAvailableBytes": 28863901696,
+    "effectiveAvailableBytes": 25494290432,
     "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
     "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
     "minimumAvailableBytes": 1610612736
@@ -87,7 +87,7 @@ Report generated: 2026-10-27T22:08:08.260Z
     "status": 200,
     "contentType": "text/html; charset=utf-8",
     "bytes": 16213,
-    "sha256": "904544a3a06d30d58b179edc8364681fabcb589bbe38ad89245832b83adac6ce"
+    "sha256": "4d53766a59955ff8973471d72ac9f3d1e6c7efcc4d9af8c2b7d393977373d804"
   },
   "authHttp": {
     "csrfCookieHeaderBinding": "pass",
@@ -102,19 +102,19 @@ Report generated: 2026-10-27T22:08:08.260Z
     "label": "source application HTTP simulation; not packed application acceptance",
     "admission": {
       "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-      "hostMemAvailableBytes": 33826271232,
+      "hostMemAvailableBytes": 33383710720,
       "cgroup": {
-        "currentBytes": 5495836672,
+        "currentBytes": 8865447936,
         "maximumBytes": 34359738368,
-        "headroomBytes": 28863901696,
-        "anonymousBytes": 565456896,
-        "filePageCacheBytes": 4308811776,
-        "inactiveFileBytes": 513384448,
-        "activeFileBytes": 3705925632,
-        "kernelBytes": 620363776,
-        "reclaimableKernelSlabBytes": 593629712
+        "headroomBytes": 25494290432,
+        "anonymousBytes": 559517696,
+        "filePageCacheBytes": 7384473600,
+        "inactiveFileBytes": 403316736,
+        "activeFileBytes": 6493605888,
+        "kernelBytes": 920686592,
+        "reclaimableKernelSlabBytes": 883523784
       },
-      "effectiveAvailableBytes": 28863901696,
+      "effectiveAvailableBytes": 25494290432,
       "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
       "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
       "minimumAvailableBytes": 1610612736
@@ -189,8 +189,8 @@ Report generated: 2026-10-27T22:08:08.260Z
         "successful": 70,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 175.198104,
-        "p99Ms": 197.95125,
+        "p95Ms": 221.834846,
+        "p99Ms": 275.653345,
         "durationDefinition": "all completed request durations, including failed requests"
       },
       {
@@ -201,8 +201,8 @@ Report generated: 2026-10-27T22:08:08.260Z
         "successful": 80,
         "failed": 0,
         "successPercent": 100,
-        "p95Ms": 252.327331,
-        "p99Ms": 261.776291,
+        "p95Ms": 280.208732,
+        "p99Ms": 348.751157,
         "durationDefinition": "all completed request durations, including failed requests"
       }
     ],

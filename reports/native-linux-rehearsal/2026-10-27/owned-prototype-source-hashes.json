@@ -1,0 +1,8 @@
+{
+  "scope": "Owned copy only, before any production patch; default packaging with minimal resolver/cwd and removal of one required-dependency exclusion",
+  "files": {
+    "electron/main.js": "7dfcb67b36f2d3f62b85a6c30310cf5919f3a5dc47046b74da80a382de2c779b",
+    "electron/runtime-policy.cjs": "00584c7e0d272ac6eb44c3cab9d5a487c91def15f27d6343289fec11db5edee2",
+    "package.json": "28775f0912d278250b6c60a0bab15b2d75b2ce0b4e6395797ff239dc18b48dbb"
+  }
+}

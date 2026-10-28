@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "scope": "Retained immutable baseline archive, exact selected entries and actual Node profile hashes",
+  "baselineArchiveSha256": "0f66e0d8b0d17209e794110baa8d4305e48c94d46b081e01b76003bd006884cf",
+  "baselineMemberSha256": "b3c316c5eef7f07ef552b1b1653b3f7c058f685d2491f69f6110a87148423fcd",
+  "selectedFiles": 9,
+  "nodeProfileSha256": "fbc25eda571237d7f97091b61eac4216e62f26b8840f829a4d6853e3ea1f2c75",
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

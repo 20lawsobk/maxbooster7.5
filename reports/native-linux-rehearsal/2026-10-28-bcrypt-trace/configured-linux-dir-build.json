@@ -1,0 +1,24 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "node",
+    "node_modules/electron-builder/cli.js",
+    "--linux",
+    "dir",
+    "--x64",
+    "--publish",
+    "never",
+    "--config.electronDist=/tmp/maxbooster-linux-u3f69z18/downloads/electron-v43.8.3-linux-x64.zip",
+    "--config.directories.output=/tmp/maxbooster-linux-u3f69z18/out-bcrypt-fixed"
+  ],
+  "cwd": "/tmp/maxbooster-linux-u3f69z18/project",
+  "startedAt": "2026-10-28T09:04:24.547886+00:00",
+  "durationSeconds": 36.827,
+  "ownedProcessGroup": 123936,
+  "exitCode": 0,
+  "timedOut": false,
+  "log": "reports/native-linux-rehearsal/2026-10-28-bcrypt-trace/configured-linux-dir-build.txt",
+  "logSha256": "1eb24dedd409298fa13c21ec8e505520df02888374e69787c3d323c0a37da162"
+}

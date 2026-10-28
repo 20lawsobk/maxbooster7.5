@@ -1,0 +1,19 @@
+{
+  "artifacts": [
+    {
+      "path": "pytest.txt",
+      "sha256": "b42e232d738bc0a2f0cb9c8485f36f7b535e08e334f179a8fa24cb4c4c418766",
+      "bytes": 99
+    },
+    {
+      "path": "pytest.xml",
+      "sha256": "e4591022e316735b1bd13a84a2a61f81a5bfcdc3479ebf4504f9c3719f7d5d2f",
+      "bytes": 6535
+    },
+    {
+      "path": "summary.json",
+      "sha256": "1ba529520d661765fd3351e47cc34558f2962a3458e1db92094268dc43b27d6b",
+      "bytes": 690
+    }
+  ]
+}

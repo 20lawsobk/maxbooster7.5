@@ -1,0 +1,19 @@
+{
+  "command": [
+    "pnpm",
+    "install",
+    "--frozen-lockfile",
+    "--ignore-scripts",
+    "--config.manage-package-manager-versions=false",
+    "--store-dir",
+    "/workspace/.cloud-tools/share/pnpm/store"
+  ],
+  "cwd": "external/maxcore",
+  "startedAt": "2026-10-27T22:18:41.159717+00:00",
+  "durationSeconds": 1.485,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/install-maxcore.txt",
+  "logSha256": "f90802610891316780acce00c8ab5d722a458b80364c2a7239d38c010d080003"
+}

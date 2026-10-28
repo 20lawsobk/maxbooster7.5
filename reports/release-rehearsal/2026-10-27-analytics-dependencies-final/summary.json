@@ -1,0 +1,39 @@
+{
+  "startedAt": "2026-10-28T01:45:36.926068+00:00",
+  "scope": "Fresh credential-free publicbuildprofile; prepared portable payload and disposable local cold startup; no Replit deployment or global capacity claim",
+  "productionReady": false,
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "release:prepare"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T01:45:37.179694+00:00",
+      "durationSeconds": 1417.375,
+      "exitCode": 1,
+      "timedOut": false,
+      "status": "failed",
+      "log": "reports/release-rehearsal/2026-10-27-analytics-dependencies-final/prepare.txt",
+      "logSha256": "cee5c65367c71b96f30ba58ac0619c53b211ee6b19f99b748c176c834749675e",
+      "id": "prepare"
+    }
+  ],
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "previousAttempt": "reports/release-rehearsal/2026-10-27-published-guard-final/summary.json",
+  "retainedAttempts": [
+    "reports/release-rehearsal/2026-10-26/summary.json",
+    "reports/release-rehearsal/2026-10-27/summary.json",
+    "reports/release-rehearsal/2026-10-27-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-platform-final/summary.json",
+    "reports/release-rehearsal/2026-10-27-published-guard-final/summary.json"
+  ],
+  "inputScope": "Credential-free live-awareness public build; application/provider/database secrets are not forwarded",
+  "executionDriverSha256": "fbc6c05175f49a04a7bba4d9d1244b2a0655d2fe8bc7fd4bbf9188830b1820d0",
+  "sourceInputsSha256": "8cad7cae3ab4895c19ba78fba1b7ff5d9670c16a2a4fea7008a3e7631180c6be",
+  "status": "failed",
+  "finishedAt": "2026-10-28T02:09:14.815245+00:00",
+  "sourceInputsAfterSha256": "8cad7cae3ab4895c19ba78fba1b7ff5d9670c16a2a4fea7008a3e7631180c6be",
+  "sourceInputsUnchanged": true
+}

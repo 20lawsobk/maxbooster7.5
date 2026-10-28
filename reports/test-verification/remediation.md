@@ -1,17 +1,17 @@
 # Actionable test and feature repair guide
 
-Generated: `2026-10-27T22:10:15.293617+00:00`. Status: **needs_work**. Unresolved tasks: **3409**.
+Generated: `2026-10-28T09:33:19.328150+00:00`. Status: **needs_work**. Unresolved tasks: **3415**.
 
 Observations come from the linked reports. A likely diagnosis is not a confirmed application bug. Run the reproduction command in the prepared isolated environment, complete the listed actions, and retain fresh proof. Generating this guide does not change a test result.
 
 | Task kind | Unresolved |
 | --- | ---: |
-| assertion_failure | 1 |
+| assertion_failure | 2 |
 | blocked_check | 20 |
-| command_failure | 1 |
-| coverage_gap | 2492 |
-| feature_acceptance_gap | 832 |
-| mapping_gap | 14 |
+| command_failure | 2 |
+| coverage_gap | 2494 |
+| feature_acceptance_gap | 833 |
+| mapping_gap | 15 |
 | missing_execution | 29 |
 | skipped_case | 20 |
 
@@ -19,22 +19,22 @@ Observations come from the linked reports. A likely diagnosis is not a confirmed
 
 | Observed boundary / diagnosis | Tasks |
 | --- | ---: |
-| Source-defined behavior lacks the required execution/feature evidence. | 3320 |
+| Source-defined behavior lacks the required execution/feature evidence. | 3323 |
 | This check was not executed under its required conditions. | 69 |
-| The source inventory cannot resolve the actual target of a dynamic registration or interaction. | 14 |
+| The source inventory cannot resolve the actual target of a dynamic registration or interaction. | 15 |
 | A required capability/readiness condition was not established. | 3 |
+| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 3 |
 | The deletion test imports a source module that is absent from this checkout. | 2 |
-| The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred. | 1 |
 
 Machine details, exact uncovered source locations and platform acceptance IDs are in `remediation.json`. The platform register provides every page/API/control requirement; these tasks link to it without copying the entire register.
 
-This Markdown shows the first 100 prioritized tasks of 3409. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
+This Markdown shows the first 100 prioritized tasks of 3415. The JSON retains every task and every uncovered location. Use `--markdown-limit N` to expand this review without changing the machine results.
 
 ## `repair-e9ca68ef654083c1` — coverage
 
 Source: `scripts/testing/run-all.py`. Group: `coverage`. Kind: `command_failure`. Priority: **P1**.
 
-Observed: [21:54:51.510] INFO (18084): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [21:54:53.472] WARN (18539): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [21:54:53.495] WARN (18539): Push unsubscribe error:     err: {
+Observed: [09:17:08.565] INFO (149051): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms [09:17:08.992] WARN (149059): Mobile token remove error:     err: {       "type": "Error",       "message": "database unavailable",       "stack":           [ACCESSOR]     } [09:17:09.010] WARN (149059): Push unsubscribe error:     err: {
 
 Diagnosis (**needs_verification**): A required capability/readiness condition was not established.
 
@@ -51,6 +51,62 @@ Required changes:
 1. Capture the disposable service readiness details and identify the exact unavailable component or candidate-quality gate.
 2. Implement or configure the required operational capability and verify actual text/media output, quality and durable delivery with the same public-signal conditioning.
 3. Keep separate unconfigured-state 503 tests and configured-state success tests. Do not forge a certificate, report model_loaded=true without proof, or turn a failing readiness gate into a blanket 200.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-13b56480f2b7eba2` — node
+
+Source: `scripts/testing/run-all.py`. Group: `node`. Kind: `command_failure`. Priority: **P1**.
+
+Observed: /sharp-security.test.mjs passed: tests/social-media-jobs-postgres.test.mjs passed: tests/social-oauth-state.cjs passed: tests/social-publish-now-postgres.test.mjs passed: tests/source-capsule-admission.test.mjs passed: tests/startup-health.test.mjs passed: tests/storage-chunk-shared-postgres.test.mjs passed: tests/storefront-canonical-links.test.mjs passed: tests/subscription-checkout-isolated.test.mjs passed: tests/testing/coverage-provenance.test.mjs passed: tests/tls-toolchain-consumer.test.mjs passed: tests/unit/aiMediaResourceContracts.test.mjs passed: tests/unit/client-account-boundary.test.mjs passed: tests/unit/client-auth-beta-contracts.test.mjs passed: tests/unit/client-offline-readiness.test.mjs passed: tests/unit/client-sync-receipts.test.mjs passed: tests/unit/client-worker-handoff.test.mjs passed: tests/unit/generated-pdim-isolated.mjs passed: tests/unit/production-simulation-policy.test.mjs passed: tests/vst3-binary-inspection.test.mjs passed: tests/web-ci-scope.test.mjs
+
+Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
+
+Evidence: `reports/test-verification/orchestration/node.txt`.
+
+Reproduce from the documented working directory:
+
+```sh
+/workspace/.cloud-python/bin/python scripts/testing/run-node-suites.py --output /workspace/maxbooster7.5/reports/test-verification/node
+```
+
+Required changes:
+
+1. Reproduce the exact named case in scripts/testing/run-all.py using the command below and inspect its first expected/actual difference.
+2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
+3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
+4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
+
+Proof needed:
+
+- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
+- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
+
+## `repair-dea6b32e272220e8` — Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus
+
+Source: `tests/layout-navigation-accessibility-browser.test.mjs`. Group: `node`. Kind: `assertion_failure`. Priority: **P1**.
+
+Observed: failureType: 'testCodeFailure'   error: 'Chromium startup timeout'   code: 'ERR_TEST_FAILURE'   stack: |-     Timeout._onTimeout (file://./tests/layout-navigation-accessibility-browser.test.mjs:59:55)     listOnTimeout (node:internal/timers:585:17)     process.processTimers (node:internal/timers:521:7)   ... 1..1 # tests 1
+
+Diagnosis (**needs_verification**): The captured assertion/process failure needs source-level diagnosis; its cause has not been inferred.
+
+Evidence: `reports/test-verification/node/tests__layout-navigation-accessibility-browser.test.mjs.txt`.
+
+Reproduce from the documented working directory:
+
+```sh
+python3 scripts/testing/run-node-suites.py --file tests/layout-navigation-accessibility-browser.test.mjs
+```
+
+Required changes:
+
+1. Reproduce the exact named case in tests/layout-navigation-accessibility-browser.test.mjs using the command below and inspect its first expected/actual difference.
+2. Trace the asserted handler/function and its owning frontend, authorization, validation and persistence dependencies; compare the current public contract with the fixture.
+3. Repair the implementation when the contract is still required, or update an obsolete fixture using valid current inputs while retaining equivalent business/negative assertions.
+4. Add a regression for the demonstrated root cause and rerun the dependent group; do not suppress the assertion or broaden accepted results merely to obtain green output.
 
 Proof needed:
 
@@ -2764,62 +2820,6 @@ npm run test:all -- --plan
 Required changes:
 
 1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-slapback.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-e351da1b59a2c2dc` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-stereo.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-stereo.ts. Follow its actual caller, route/owner and persistence boundary.
-2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
-3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
-4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.
-
-Proof needed:
-
-- Rerun the exact affected case/file and retain its original failure plus successful new evidence.
-- Re-run dependent feature journeys; do not replace a required business result with a broad accepted-status list.
-
-## `repair-4eed3d57375e9e0f` — Unexecuted source branches/functions
-
-Source: `built-in plugins dsp/mb-delay-tape.ts`. Group: `coverage`. Kind: `coverage_gap`. Priority: **P2**.
-
-Observed: 1 statements, 0 functions and 0 branch arms have zero hits.
-
-Diagnosis (**confirmed**): Source-defined behavior lacks the required execution/feature evidence.
-
-Evidence: `reports/test-verification/coverage/coverage-final.json`.
-
-Reproduce from the documented working directory:
-
-```sh
-npm run test:all -- --plan
-```
-
-Required changes:
-
-1. Add a meaningful isolated regression for the named source: built-in plugins dsp/mb-delay-tape.ts. Follow its actual caller, route/owner and persistence boundary.
 2. Exercise the listed zero-hit functions/branches or required feature checks with valid, boundary, malformed and unauthorized inputs; include unavailable dependencies and retry/restart behavior where applicable.
 3. For UI controls, use real DOM/browser interactions and assert loading, empty, error and delivered-success states plus the resulting backend effect.
 4. Register the new test in the owning runnable group, then regenerate the catalog, coverage and platform register. File-name associations and expect(true) placeholders do not close acceptance gaps.

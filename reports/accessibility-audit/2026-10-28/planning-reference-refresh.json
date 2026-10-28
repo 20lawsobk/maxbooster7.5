@@ -1,0 +1,1428 @@
+{
+  "scope": "Manual-review-preserving business-plan reference refresh after actual shared navigation accessibility fixes; no acceptance status promotion",
+  "interactionMappings": [
+    {
+      "before": {
+        "id": "ui-6328b98825213623",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 100,
+          "column": 9
+        },
+        "tag": "Sidebar",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMobileClose",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-6328b98825213623/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-6328b98825213623/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-975edfade3e58d49",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 101,
+          "column": 9
+        },
+        "tag": "Sidebar",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMobileClose",
+            "expressionKind": "Identifier",
+            "handler": "closeMobileMenu"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-975edfade3e58d49/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-975edfade3e58d49/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-a2d4f10a25f80786",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 107,
+          "column": 11
+        },
+        "tag": "TopBar",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMenuClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-a2d4f10a25f80786/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-a2d4f10a25f80786/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-d0d9ca11329dc60e",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 108,
+          "column": 11
+        },
+        "tag": "TopBar",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMenuClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-d0d9ca11329dc60e/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-d0d9ca11329dc60e/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-705fd60d835ea90e",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 140,
+          "column": 11
+        },
+        "tag": "MobileBottomNav",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMoreClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-705fd60d835ea90e/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-705fd60d835ea90e/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-3828cf72f867bcb1",
+        "source": {
+          "file": "client/src/components/layout/AppLayout.tsx",
+          "line": 142,
+          "column": 11
+        },
+        "tag": "MobileBottomNav",
+        "labels": {},
+        "eventBindings": [
+          {
+            "event": "onMoreClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/account-analytics-browser.test.mjs",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-3828cf72f867bcb1/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-3828cf72f867bcb1/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/applayout.test.mjs",
+          "command": "node --import tsx --test tests/browser/applayout.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-2eea6ab9192c3719",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 240,
+          "column": 9
+        },
+        "tag": "div",
+        "labels": {
+          "role": "button",
+          "aria-label": "Close sidebar",
+          "data-testid": "sidebar-overlay"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMobileClose"
+          },
+          {
+            "event": "onKeyDown",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          },
+          {
+            "event": "onTouchEnd",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-2eea6ab9192c3719/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-2eea6ab9192c3719/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-b371ddfc98bfbb10",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 250,
+          "column": 9
+        },
+        "tag": "div",
+        "labels": {
+          "role": "button",
+          "aria-label": "Close sidebar",
+          "data-testid": "sidebar-overlay"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMobileClose"
+          },
+          {
+            "event": "onKeyDown",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          },
+          {
+            "event": "onTouchEnd",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-b371ddfc98bfbb10/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-b371ddfc98bfbb10/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-4a6000d07de3aa8e",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 287,
+          "column": 13
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "sidebar-close"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMobileClose"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-4a6000d07de3aa8e/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-4a6000d07de3aa8e/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-b72cc52a3e04a587",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 300,
+          "column": 13
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "sidebar-close",
+          "aria-label": "Close navigation menu"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMobileClose"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-b72cc52a3e04a587/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-b72cc52a3e04a587/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-479d9c9cc8f8853b",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 324,
+          "column": 17
+        },
+        "tag": "Link",
+        "labels": {
+          "href": null,
+          "data-testid": null
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-479d9c9cc8f8853b/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-479d9c9cc8f8853b/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-09288376a7ab1304",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 338,
+          "column": 17
+        },
+        "tag": "Link",
+        "labels": {
+          "href": null,
+          "data-testid": null
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "ArrowFunction",
+            "handler": null
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-09288376a7ab1304/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-09288376a7ab1304/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-c9b6fd0662599ae8",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 368,
+          "column": 11
+        },
+        "tag": "Link",
+        "labels": {},
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-c9b6fd0662599ae8/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-c9b6fd0662599ae8/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-27a8441a308cf701",
+        "source": {
+          "file": "client/src/components/layout/Sidebar.tsx",
+          "line": 382,
+          "column": 11
+        },
+        "tag": "Link",
+        "labels": {},
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-27a8441a308cf701/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-27a8441a308cf701/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/sidebar.test.mjs",
+          "command": "node --import tsx --test tests/browser/sidebar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-51bf4bf12bd1f8e8",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 39,
+          "column": 11
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "mobile-menu-button"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMenuClick"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-51bf4bf12bd1f8e8/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-51bf4bf12bd1f8e8/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-09b540e6b78df08d",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 40,
+          "column": 11
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "mobile-menu-button",
+          "aria-label": "Open navigation menu"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "onMenuClick"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-09b540e6b78df08d/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-09b540e6b78df08d/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-2871509b1d1a7a88",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 67,
+          "column": 11
+        },
+        "tag": "Link",
+        "labels": {},
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-2871509b1d1a7a88/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-2871509b1d1a7a88/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-9ca2eb446c30ce51",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 77,
+          "column": 13
+        },
+        "tag": "Link",
+        "labels": {
+          "aria-label": "Settings",
+          "data-testid": "settings-button"
+        },
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-9ca2eb446c30ce51/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-9ca2eb446c30ce51/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-d6048cde5e5d07e5",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 68,
+          "column": 13
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "settings-button"
+        },
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-d6048cde5e5d07e5/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-d6048cde5e5d07e5/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-0f63676b1efba992",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 71,
+          "column": 11
+        },
+        "tag": "Button",
+        "labels": {},
+        "eventBindings": [],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-0f63676b1efba992/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-0f63676b1efba992/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    },
+    {
+      "before": {
+        "id": "ui-a4635e8e9888dd0e",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 78,
+          "column": 11
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "sign-out-button"
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "handleSignOut"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-a4635e8e9888dd0e/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-a4635e8e9888dd0e/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      },
+      "after": {
+        "id": "ui-6868a26f3f09e2a9",
+        "source": {
+          "file": "client/src/components/layout/TopBar.tsx",
+          "line": 82,
+          "column": 11
+        },
+        "tag": "Button",
+        "labels": {
+          "data-testid": "sign-out-button",
+          "aria-label": null
+        },
+        "eventBindings": [
+          {
+            "event": "onClick",
+            "expressionKind": "Identifier",
+            "handler": "handleSignOut"
+          }
+        ],
+        "spreadAttributeLines": [],
+        "testCandidates": [
+          {
+            "path": "tests/unit/analytics-pending-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/bootstrap-account-authority.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/onboarding-completion-refresh.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          },
+          {
+            "path": "tests/unit/page-read-failure-render.test.ts",
+            "association": "static-import-or-literal-source-reference",
+            "executionStatus": "executed"
+          }
+        ],
+        "requiredChecks": [
+          {
+            "id": "ui-6868a26f3f09e2a9/control-behavior",
+            "template": "control-behavior",
+            "status": "UNVERIFIED"
+          },
+          {
+            "id": "ui-6868a26f3f09e2a9/control-failure",
+            "template": "control-failure",
+            "status": "UNVERIFIED"
+          }
+        ],
+        "status": "UNVERIFIED",
+        "addTest": {
+          "suggestedPath": "tests/browser/topbar.test.mjs",
+          "command": "node --import tsx --test tests/browser/topbar.test.mjs",
+          "cwd": ".",
+          "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+          "fixtureTemplate": "browser-control"
+        },
+        "reachableFromRoutedPageImports": true
+      }
+    }
+  ],
+  "pageSectionIdsPreserved": true,
+  "files": {
+    "docs/testing/platform-page-work-01-40.json": {
+      "beforeSha256": "5a4da0c2030e306adb23fbf52d0d0dd10850b50a779058a03dda4d8694f63b2d",
+      "afterSha256": "b91f3926dc9dc4d956d9f528a5511e11dac7190462f9949fe4d807ba9ca1cf25"
+    },
+    "docs/testing/platform-page-work-41-80.json": {
+      "beforeSha256": "d52b253986bcd144a5ee8601800de17ca7eb51f4a9f76182514dc5f08a4caf60",
+      "afterSha256": "db441f2c94d18d9e220dea6cf4a4bff2630907386f6bf52fca2fe243df7bb647"
+    }
+  }
+}

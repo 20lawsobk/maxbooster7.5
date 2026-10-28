@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `b369d68e34bef0e30c96fbd5b72fa7339e6425f2`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 107, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1245; failures: 0; errors: 0; skipped: 12.
+- Source baseline: `a1603b13b6352a978e3877a2f43f1ccd98a98a18`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 111, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1381; failures: 0; errors: 0; skipped: 12.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -3212,6 +3212,127 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 3}.
 - `test_completed_archives_validate_without_requiring_obsolete_serving_weights`: completed archives validate without requiring obsolete serving weights
 - `test_current_identity_check_fails_when_model_bytes_are_missing`: current identity check fails when model bytes are missing
 - `test_incomplete_later_archive_cannot_be_promoted_to_verified_evidence`: incomplete later archive cannot be promoted to verified evidence
+
+</details>
+
+### `tests/testing/test_assertion_oracles.py`
+
+Real pytest must reject false checks in canonical custom assertion helpers.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_false_condition_is_one_real_pytest_assertion_failure`: false condition is one real pytest assertion failure
+- `test_true_condition_passes_without_recording_a_failure`: true condition passes without recording a failure
+
+</details>
+
+### `tests/testing/test_launch_readiness_audit.py`
+
+Fail-closed launch decisions and exact inventory/provenance regressions.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_launch_readiness_audit.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 42}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_missing_quality_domain_is_rejected`: missing quality domain is rejected
+- `test_any_nonpassing_domain_prevents_green`: any nonpassing domain prevents green
+- `test_full_page_domain_score_cannot_override_production_blocker`: full page domain score cannot override production blocker
+- `test_only_complete_conjunction_can_green`: only complete conjunction can green
+- `test_all_80_alias_declarations_and_every_section_dimension_retained`: all 80 alias declarations and every section dimension retained
+- `test_inventory_loss_or_corruption_is_rejected`: inventory loss or corruption is rejected
+- `test_empty_evidence_never_green_even_when_all_source_checks_pass`: empty evidence never green even when all source checks pass
+- `test_full_page_criteria_and_global_gap_proofs_do_not_close_missing_exact_section_work`: full page criteria and global gap proofs do not close missing exact section work
+- `test_full_producer_can_green_only_with_every_retained_requirement_and_dimension`: full producer can green only with every retained requirement and dimension
+- `test_unrouted_backend_and_consumer_work_cannot_disappear_from_green_conjunction`: unrouted backend and consumer work cannot disappear from green conjunction
+- `test_stale_evidence_cannot_contribute_to_verified_percentage`: stale evidence cannot contribute to verified percentage
+- `test_current_source_hash_paths_digest_and_test_provenance_all_required`: current source hash paths digest and test provenance all required
+- `test_passing_test_hash_change_invalidates_source_snapshot`: passing test hash change invalidates source snapshot
+- `test_full_repository_manifest_changes_in_sql_and_tests_invalidate_old_proof`: full repository manifest changes in sql and tests invalidate old proof
+- `test_regenerated_inventory_does_not_relabel_historical_master_execution`: regenerated inventory does not relabel historical master execution
+- `test_custom_input_manifest_binds_selected_actual_files`: custom input manifest binds selected actual files
+- `test_criterion_requires_exact_actual_passing_current_test`: criterion requires exact actual passing current test
+
+</details>
+
+### `tests/testing/test_maxcore_analytics.py`
+
+Real authenticated FastAPI contracts for transient MaxCore account analytics.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_analytics.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 59}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_all_routes_require_generation_authorization`: all routes require generation authorization
+- `test_capability_advertises_real_methods_without_weights_or_private_retention`: capability advertises real methods without weights or private retention
+- `test_exact_linear_calendar_series_has_correct_horizon_and_first_day`: exact linear calendar series has correct horizon and first day
+- `test_calendar_gaps_remain_missing_and_do_not_compress_the_regression_axis`: calendar gaps remain missing and do not compress the regression axis
+- `test_insufficient_history_never_produces_values_or_a_fake_accuracy`: insufficient history never produces values or a fake accuracy
+- `test_noise_produces_finite_widening_residual_intervals_with_explicit_assumptions`: noise produces finite widening residual intervals with explicit assumptions
+- `test_zero_constant_and_decreasing_series_stay_finite_nonnegative`: zero constant and decreasing series stay finite nonnegative
+- `test_prediction_rejects_invalid_authority_dates_horizons_and_values`: prediction rejects invalid authority dates horizons and values
+- `test_overflowing_json_exponent_is_rejected_before_error_serialization`: overflowing json exponent is rejected before error serialization
+- `test_insights_report_measured_totals_and_calendar_comparisons_without_causality`: insights report measured totals and calendar comparisons without causality
+- `test_empty_and_sparse_insights_do_not_invent_zero_performance`: empty and sparse insights do not invent zero performance
+- `test_zero_and_tiny_denominator_comparisons_are_explicit_and_finite`: zero and tiny denominator comparisons are explicit and finite
+- `test_insights_enforce_same_bounded_private_aggregate_contract`: insights enforce same bounded private aggregate contract
+- `test_public_context_is_separate_fresh_metadata_and_never_receives_private_points`: public context is separate fresh metadata and never receives private points
+- `test_missing_invalid_or_expired_public_context_does_not_masquerade_as_fresh`: missing invalid or expired public context does not masquerade as fresh
+- `test_snapshot_failure_leaves_statistical_computation_available_and_no_data_is_retained`: snapshot failure leaves statistical computation available and no data is retained
+- `test_canonical_server_mounts_router_with_generation_scope_and_read_only_snapshot`: canonical server mounts router with generation scope and read only snapshot
+
+</details>
+
+### `tests/testing/test_platform_evidence.py`
+
+Explicit feature proofs require every exact current passing case.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 25}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `test_complete_explicit_bundle_preserves_all_exact_case_identities`: complete explicit bundle preserves all exact case identities
+- `test_legacy_single_exact_case_remains_supported`: legacy single exact case remains supported
+- `test_one_nonpassing_required_case_rejects_the_entire_bundle`: one nonpassing required case rejects the entire bundle
+- `test_changed_platform_source_rejects_otherwise_passing_cases`: changed platform source rejects otherwise passing cases
+- `test_changed_test_bytes_reject_old_passing_receipt`: changed test bytes reject old passing receipt
+- `test_deleted_test_cannot_be_a_current_proof`: deleted test cannot be a current proof
+- `test_static_or_approximate_associations_do_not_close_a_check`: static or approximate associations do not close a check
+- `test_malformed_or_empty_bundle_cannot_prove_acceptance`: malformed or empty bundle cannot prove acceptance
+- `test_mixed_legacy_and_bundle_identities_are_ambiguous_and_rejected`: mixed legacy and bundle identities are ambiguous and rejected
+- `test_duplicate_case_does_not_count_as_two_independent_required_cases`: duplicate case does not count as two independent required cases
+- `test_unknown_or_malformed_check_never_becomes_verified`: unknown or malformed check never becomes verified
+- `test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity`: unregistered test cannot borrow an existing exact passing identity
+- `test_validator_does_not_mutate_the_declared_proof`: validator does not mutate the declared proof
 
 </details>
 

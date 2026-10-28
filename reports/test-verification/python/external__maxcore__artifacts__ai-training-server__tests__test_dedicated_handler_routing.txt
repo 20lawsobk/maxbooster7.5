@@ -5,7 +5,7 @@ tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but
     platforms: List[str] = Field(default=["tiktok", "instagram"], max_items=8)
 
 tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1842: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:1852: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -25,7 +25,7 @@ tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but
     return self.router.on_event(event_type)  # ty: ignore[deprecated]
 
 tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2588: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:2598: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -43,7 +43,7 @@ tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but
     @router.on_event("startup")
 
 tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but_keeps_network_identity
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7539: DeprecationWarning: 
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:7549: DeprecationWarning: 
           on_event is deprecated, use lifespan event handlers instead.
   
           Read more about it in the
@@ -53,8 +53,8 @@ tests/test_dedicated_handler_routing.py::test_ads_meta_uses_social_awareness_but
 
 tests/test_dedicated_handler_routing.py::test_audio_internal_body_caller_mood_and_targets_beat_fast_priors[calm-calm]
 tests/test_dedicated_handler_routing.py::test_audio_internal_body_caller_mood_and_targets_beat_fast_priors[None-mellow]
-  <repo>/external/maxcore/artifacts/ai-training-server/server.py:10533: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  <repo>/external/maxcore/artifacts/ai-training-server/server.py:10543: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
     "created_at": datetime.utcnow().isoformat() + "Z",
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-23 passed, 10 warnings in 4.26s
+23 passed, 10 warnings in 3.79s

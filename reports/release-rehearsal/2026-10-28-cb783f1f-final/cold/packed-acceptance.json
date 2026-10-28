@@ -1,0 +1,546 @@
+{
+  "startedAt": "2026-10-28T12:30:07.120Z",
+  "scope": "Cold payload only; ephemeral PostgreSQL and private copied public model state; no provider credentials",
+  "startup": "pass",
+  "preparedArtifactIdentity": "pass",
+  "portMapping": "Explicit ephemeral platform port table; original payload snapshot retained",
+  "initialPayloadOnly": true,
+  "modelState": {
+    "mode": "private copied state",
+    "selectedPointer": "cleared in copy only",
+    "immutableEvidenceRewritten": false,
+    "capability": "not_ready",
+    "selection": "Local discovery must revalidate parent IDs, checkpoint digests and public certificates under the copied root. Cold runtime boot alone does not prove model capability."
+  },
+  "ephemeralDatabase": "pass",
+  "checkoutDependencyFallback": false,
+  "health": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-10-28T12:30:26.738Z"
+    },
+    "elapsedMs": 4
+  },
+  "runtimeAssets": {
+    "platformRegistry": {
+      "hashMatches": true,
+      "revision": "2026-09-11.1",
+      "sha256": "c2de89e78f8248263b9f8bf52c9cce9f68ab8ab605d666d06367fad61eeb4256"
+    }
+  },
+  "frontend": {
+    "status": 200,
+    "body": "<!doctype html>\n<html lang=\"en\" dir=\"ltr\" prefix=\"og: https://ogp.me/ns#\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>Max Booster - AI Music Career Management Platform</title>\n    <meta\n      na",
+    "elapsedMs": 40
+  },
+  "anonymousAuth": {
+    "status": 200,
+    "body": null,
+    "elapsedMs": 134
+  },
+  "protectedApi": {
+    "status": 401,
+    "body": {
+      "message": "Not authenticated"
+    },
+    "elapsedMs": 130
+  },
+  "maxcoreLiveness": {
+    "status": 200,
+    "body": {
+      "ok": true
+    },
+    "elapsedMs": 12
+  },
+  "modelLiveness": {
+    "status": 200,
+    "body": {
+      "status": "healthy",
+      "model_blocked": false,
+      "readiness_endpoint": "/ready",
+      "model_loaded": false,
+      "serving_release": {
+        "requested": "live-awareness",
+        "active": null,
+        "candidate_quality": "awaiting_operational_public_live_candidate",
+        "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+        "review_required": false,
+        "backend_exclusive": "not_verified",
+        "live_learning": {
+          "training": "waiting_for_observations",
+          "serving": "blocked_release",
+          "release_error": "AwarenessUnavailable",
+          "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+          "interval_seconds": 900,
+          "reload_seconds": 30,
+          "steps": 4,
+          "context_tokens": 2048,
+          "review_required": false,
+          "learning_policy": "public-peak-shortform-v1",
+          "model_config": {
+            "width": 256,
+            "layers": 6,
+            "heads": 8,
+            "expansion": 4
+          },
+          "bootstrap_steps": 8,
+          "bootstrap_cooldown_seconds": 300,
+          "bootstrap_window_seconds": 3600,
+          "bootstrap_max_runs": 12,
+          "worker_timeout_seconds": 120
+        }
+      },
+      "uptime_seconds": 8.35687780380249,
+      "version": "1.0.0",
+      "warm_start": {
+        "state": "pending",
+        "steps": {}
+      },
+      "storage_mode": "live"
+    },
+    "elapsedMs": 7
+  },
+  "maxcoreReadiness": {
+    "status": 503,
+    "body": {
+      "ready": false,
+      "node": {
+        "workers": "up",
+        "python_restarting": true,
+        "circuit_breaker": "closed",
+        "keepalive_enabled": false,
+        "keepalive_running": false
+      },
+      "python": {
+        "reachable": true,
+        "generation_ready": false,
+        "model_loaded": false,
+        "model_blocked": false,
+        "serving_release": {
+          "requested": "live-awareness",
+          "active": null,
+          "candidate_quality": "awaiting_operational_public_live_candidate",
+          "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+          "review_required": false,
+          "backend_exclusive": "not_verified",
+          "live_learning": {
+            "training": "waiting_for_observations",
+            "serving": "blocked_release",
+            "release_error": "AwarenessUnavailable",
+            "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+            "interval_seconds": 900,
+            "reload_seconds": 30,
+            "steps": 4,
+            "context_tokens": 2048,
+            "review_required": false,
+            "learning_policy": "public-peak-shortform-v1",
+            "model_config": {
+              "width": 256,
+              "layers": 6,
+              "heads": 8,
+              "expansion": 4
+            },
+            "bootstrap_steps": 8,
+            "bootstrap_cooldown_seconds": 300,
+            "bootstrap_window_seconds": 3600,
+            "bootstrap_max_runs": 12,
+            "worker_timeout_seconds": 120
+          }
+        },
+        "uptime_seconds": 8.367198705673218,
+        "warm_start_state": "pending",
+        "deep_warm_state": "pending"
+      },
+      "keepalive": {
+        "cycle_count": 0,
+        "last_cycle_at": null,
+        "summary": {},
+        "all_endpoints_ok": true
+      },
+      "deep_warm": {
+        "done": false,
+        "python_state": "pending",
+        "last_warm_at": null,
+        "next_warm_at": null
+      }
+    },
+    "elapsedMs": 17
+  },
+  "modelReadiness": {
+    "status": 503,
+    "body": {
+      "ready": false,
+      "model_loaded": false,
+      "awareness": {
+        "ready": false,
+        "snapshot_id": null,
+        "expires_at": null,
+        "running": true,
+        "configured_sources": [
+          "apple_charts",
+          "bluesky_peak_advertising",
+          "bluesky_peak_culture",
+          "bluesky_peak_music",
+          "bluesky_peak_social",
+          "deezer_charts",
+          "digital_music_news",
+          "distrokid",
+          "guardian_culture",
+          "hn_marketing_discussion",
+          "hn_music",
+          "hypebot",
+          "landr",
+          "marketing_dive",
+          "mastodon_peak_advertising",
+          "mastodon_peak_culture",
+          "mastodon_peak_music",
+          "mastodon_peak_social",
+          "mastodon_trending",
+          "meta_creators",
+          "music_ally",
+          "music_business_worldwide",
+          "musicradar",
+          "spotify_newsroom",
+          "tunecore",
+          "youtube_NoCopyrightSounds",
+          "youtube_Proximity",
+          "youtube_TrapNation"
+        ],
+        "ingest_owner": true,
+        "gpu": {
+          "backend": "digital_gpu_awareness_software",
+          "completed": 0,
+          "operations": {}
+        },
+        "snapshot_gpu": null,
+        "source_health": {
+          "apple_charts": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.560364,
+            "ok": false,
+            "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+          },
+          "bluesky_peak_advertising": {
+            "domain": "advertising",
+            "error": "source_failed",
+            "observed_at": 1793190640.5815685,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_culture": {
+            "domain": "culture",
+            "error": "source_failed",
+            "observed_at": 1793190640.5604064,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_music": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.7429364,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          }
+        },
+        "latest_scan_health": {
+          "apple_charts": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.560364,
+            "ok": false,
+            "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+          },
+          "bluesky_peak_advertising": {
+            "domain": "advertising",
+            "error": "source_failed",
+            "observed_at": 1793190640.5815685,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_culture": {
+            "domain": "culture",
+            "error": "source_failed",
+            "observed_at": 1793190640.5604064,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_music": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.7429364,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          }
+        },
+        "observation_cache_error": null,
+        "last_scan_observation_write_count": 0,
+        "validation_diagnostic": null,
+        "phase": "collecting_sources",
+        "error": null
+      },
+      "model_error": "no_operationally_capable_certified_public_live_candidate",
+      "serving_release": {
+        "requested": "live-awareness",
+        "active": null,
+        "candidate_quality": "awaiting_operational_public_live_candidate",
+        "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+        "review_required": false,
+        "backend_exclusive": "not_verified",
+        "live_learning": {
+          "training": "waiting_for_observations",
+          "serving": "blocked_release",
+          "release_error": "AwarenessUnavailable",
+          "unavailable_reason": "no_operationally_capable_certified_public_live_candidate",
+          "interval_seconds": 900,
+          "reload_seconds": 30,
+          "steps": 4,
+          "context_tokens": 2048,
+          "review_required": false,
+          "learning_policy": "public-peak-shortform-v1",
+          "model_config": {
+            "width": 256,
+            "layers": 6,
+            "heads": 8,
+            "expansion": 4
+          },
+          "bootstrap_steps": 8,
+          "bootstrap_cooldown_seconds": 300,
+          "bootstrap_window_seconds": 3600,
+          "bootstrap_max_runs": 12,
+          "worker_timeout_seconds": 120
+        }
+      }
+    },
+    "elapsedMs": 1
+  },
+  "readinessRequestBudgetMs": 10000,
+  "readiness": {
+    "status": 503,
+    "body": {
+      "status": "degraded",
+      "timestamp": "2026-10-28T12:30:43.387Z",
+      "buildId": "5515ad54",
+      "subsystems": [
+        {
+          "name": "database",
+          "status": "ok",
+          "lastChecked": 1793190643357,
+          "latencyMs": 2
+        },
+        {
+          "name": "redis",
+          "status": "ok",
+          "lastChecked": 1793190643368,
+          "latencyMs": 13
+        },
+        {
+          "name": "routes",
+          "status": "ok",
+          "detail": "critical routes registered; route loading complete",
+          "lastChecked": 1793190643356,
+          "latencyMs": 1
+        },
+        {
+          "name": "audit",
+          "status": "ok",
+          "detail": "score 100/100",
+          "lastChecked": 1793190643356,
+          "latencyMs": 1
+        },
+        {
+          "name": "automation",
+          "status": "ok",
+          "detail": "workflows=0",
+          "lastChecked": 1793190643356,
+          "latencyMs": 1
+        },
+        {
+          "name": "maxcore",
+          "status": "degraded",
+          "detail": "supervised Python model not ready (running=true, restarts=0)",
+          "lastChecked": 1793190643381,
+          "latencyMs": 0
+        }
+      ],
+      "unifiedAwareness": {
+        "ready": false,
+        "snapshot_id": null,
+        "expires_at": null,
+        "running": true,
+        "configured_sources": [
+          "apple_charts",
+          "bluesky_peak_advertising",
+          "bluesky_peak_culture",
+          "bluesky_peak_music",
+          "bluesky_peak_social",
+          "deezer_charts",
+          "digital_music_news",
+          "distrokid",
+          "guardian_culture",
+          "hn_marketing_discussion",
+          "hn_music",
+          "hypebot",
+          "landr",
+          "marketing_dive",
+          "mastodon_peak_advertising",
+          "mastodon_peak_culture",
+          "mastodon_peak_music",
+          "mastodon_peak_social",
+          "mastodon_trending",
+          "meta_creators",
+          "music_ally",
+          "music_business_worldwide",
+          "musicradar",
+          "spotify_newsroom",
+          "tunecore",
+          "youtube_NoCopyrightSounds",
+          "youtube_Proximity",
+          "youtube_TrapNation"
+        ],
+        "ingest_owner": true,
+        "gpu": {
+          "backend": "digital_gpu_awareness_software",
+          "completed": 0,
+          "operations": {}
+        },
+        "snapshot_gpu": null,
+        "source_health": {
+          "apple_charts": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.560364,
+            "ok": false,
+            "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+          },
+          "bluesky_peak_advertising": {
+            "domain": "advertising",
+            "error": "source_failed",
+            "observed_at": 1793190640.5815685,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_culture": {
+            "domain": "culture",
+            "error": "source_failed",
+            "observed_at": 1793190640.5604064,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_music": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.7429364,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          }
+        },
+        "latest_scan_health": {
+          "apple_charts": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.560364,
+            "ok": false,
+            "url": "https://rss.applemarketingtools.com/api/v2/us/music/most-played/50/songs.json"
+          },
+          "bluesky_peak_advertising": {
+            "domain": "advertising",
+            "error": "source_failed",
+            "observed_at": 1793190640.5815685,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_culture": {
+            "domain": "culture",
+            "error": "source_failed",
+            "observed_at": 1793190640.5604064,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          },
+          "bluesky_peak_music": {
+            "domain": "music",
+            "error": "source_failed",
+            "observed_at": 1793190640.7429364,
+            "ok": false,
+            "url": "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+          }
+        },
+        "observation_cache_error": null,
+        "last_scan_observation_write_count": 0,
+        "validation_diagnostic": null,
+        "phase": "collecting_sources",
+        "error": null
+      },
+      "latency": {
+        "avgMs": 37,
+        "p95Ms": 119,
+        "p99Ms": 175,
+        "minMs": 1,
+        "maxMs": 175,
+        "samples": 37,
+        "windowSec": 300,
+        "slowestEndpoints": [
+          {
+            "endpoint": "GET /api/projects",
+            "avgMs": 119,
+            "p95Ms": 119,
+            "p99Ms": 119,
+            "samples": 1
+          },
+          {
+            "endpoint": "GET /api/ready",
+            "avgMs": 37,
+            "p95Ms": 71,
+            "p99Ms": 175,
+            "samples": 31
+          },
+          {
+            "endpoint": "GET /api/auth/me",
+            "avgMs": 63,
+            "p95Ms": 63,
+            "p99Ms": 63,
+            "samples": 1
+          },
+          {
+            "endpoint": "GET /api/csrf-token",
+            "avgMs": 15,
+            "p95Ms": 38,
+            "p99Ms": 38,
+            "samples": 3
+          },
+          {
+            "endpoint": "GET /api/health",
+            "avgMs": 1,
+            "p95Ms": 1,
+            "p99Ms": 1,
+            "samples": 1
+          }
+        ]
+      }
+    },
+    "elapsedMs": 36
+  },
+  "readinessGate": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "restored": {
+    "node_modules": true,
+    "python_runtime": true,
+    "external/maxcore": true,
+    "external/pdim": true,
+    "dist/index.mjs": true,
+    "dist/deployment/executive.mjs": true,
+    "bin/boosterstate": true,
+    "shared/social-platform-optimization.json": true
+  },
+  "productionReady": false,
+  "processCleanup": {
+    "tracked": 37,
+    "remaining": []
+  },
+  "finishedAt": "2026-10-28T12:30:46.780Z"
+}

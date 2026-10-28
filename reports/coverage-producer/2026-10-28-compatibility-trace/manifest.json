@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "scope": "Every retained artifact in this bounded read-only compatibility trace; actual producer and archive inputs are referenced and separately verified",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 2413,
+      "sha256": "070599bf763bb6c1e88af283966a1ec22a95c7258521dd025ca2c05d8c22a708"
+    },
+    {
+      "path": "analysis-driver.txt",
+      "bytes": 152,
+      "sha256": "7109794947ef060e1f2a13156f441ef4c0f119b4273e722b90e56c7c8748c759"
+    },
+    {
+      "path": "analysis-receipt.json",
+      "bytes": 5531,
+      "sha256": "7e762b083e3e82956ef09fc139dea12a95eb329033fca31708d21efe239486d1"
+    },
+    {
+      "path": "baseline-selected-files.json",
+      "bytes": 2184186,
+      "sha256": "384f6c2eec0fce5619585914bb4cae16421b8cff1ffdd031c868e430509b5f49"
+    },
+    {
+      "path": "current-canonical-comparison.json",
+      "bytes": 3292,
+      "sha256": "72cab0cb73ae574777647e70ef6d460333561563896c041886c53eb1624e4fe4"
+    },
+    {
+      "path": "final-retained-runtime-replay.txt",
+      "bytes": 99,
+      "sha256": "7723508deb2114b11d8f4cd4fe5e98f2d5bce406fcbbf0f1df337055ac4adbcd"
+    },
+    {
+      "path": "in-memory-map-details.json",
+      "bytes": 3852,
+      "sha256": "9c53e7ccddaf85cb4b476dbbceb61eb30ae06c007350013d86cc74dcfe49c37f"
+    },
+    {
+      "path": "initial-package-entry-harness-error.txt",
+      "bytes": 1206,
+      "sha256": "e91da040464f769fb8b004f644bdd0aed558d49f6c8fc57affb97c6efe6e9f98"
+    },
+    {
+      "path": "ports-exact-details.json",
+      "bytes": 20985,
+      "sha256": "b7c21feabaf705a4a0343da3ca8dd481cade9922a7da0c9520463d986d249fd5"
+    },
+    {
+      "path": "provenance.json",
+      "bytes": 947,
+      "sha256": "9bd7b02206f845ba96439bd6a92bc521ee105cca4fbcf313d923a161a105bbf7"
+    },
+    {
+      "path": "replay-comparison.initial.mjs",
+      "bytes": 7307,
+      "sha256": "20509caa0146428026887a03a07995ff0a22a28487b63183e07adebd7b6a80af"
+    },
+    {
+      "path": "replay-comparison.mjs",
+      "bytes": 8201,
+      "sha256": "c77216f01a7510b50cc685e3948760528de07ad3a3735dfd79150ab606c5bb05"
+    },
+    {
+      "path": "replay-summary.json",
+      "bytes": 5840,
+      "sha256": "68d82beec11bf34600f0d32fbe2792e2f9f9403888f32e2e7412a8574e60a406"
+    },
+    {
+      "path": "replay.txt",
+      "bytes": 99,
+      "sha256": "7723508deb2114b11d8f4cd4fe5e98f2d5bce406fcbbf0f1df337055ac4adbcd"
+    },
+    {
+      "path": "retained-input-verification.json",
+      "bytes": 495,
+      "sha256": "8566682b01c7169c8dc6f8224afbd51b10613f37a48c73894c38be75fe0d9f33"
+    },
+    {
+      "path": "retained-input-verification.txt",
+      "bytes": 477,
+      "sha256": "4cfc8ef14dec97c7da465f5834777667305ecd5d95090e11ea3d400a897fbbe4"
+    },
+    {
+      "path": "run-readonly-analysis.py",
+      "bytes": 3127,
+      "sha256": "dd2610c8ea747d921e3fb49086f9aa24c72104de0577798fa6c67e8351b1f3c1"
+    },
+    {
+      "path": "serialized-profile-comparison.json",
+      "bytes": 2963,
+      "sha256": "4434c07ad7e2c833b9baddc58adf708d284de591fc608848f774bf7e0a93f4df"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1443,
+      "sha256": "0e099b91706fc57cdf4009d47248c0b62418c795aed961fd817f88067fdbfe7c"
+    },
+    {
+      "path": "transform-contract-observation.json",
+      "bytes": 1182,
+      "sha256": "c5ff935e3b95c272ebf6ef8f12b4191a714a108a94b82350ddc414978a63e9df"
+    },
+    {
+      "path": "verify-retained-inputs.py",
+      "bytes": 1627,
+      "sha256": "d78c2a5385156326424a78e6f61639d97144fe36acf5d9fcc94aa1acc28f0c20"
+    }
+  ],
+  "documentation": {
+    "path": "docs/testing/coverage-compatibility-trace.md",
+    "bytes": 11498,
+    "sha256": "f42eded0a16c2f8086d0050a7ae93de12bd1ba66b140349d4377905d23084049"
+  }
+}

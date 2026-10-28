@@ -1,0 +1,18 @@
+{
+  "command": [
+    "pnpm",
+    "audit",
+    "--prod",
+    "--audit-level",
+    "low",
+    "--json"
+  ],
+  "cwd": "external/pdim",
+  "startedAt": "2026-10-27T22:19:47.048793+00:00",
+  "durationSeconds": 1.952,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/dependency-hardening/2026-10-27-qs/audit-pdim-prod.txt",
+  "logSha256": "d9816e1980e8a322b1ad380a33ef7b51fb541db6f5085a0432f7bf42d2dca130"
+}

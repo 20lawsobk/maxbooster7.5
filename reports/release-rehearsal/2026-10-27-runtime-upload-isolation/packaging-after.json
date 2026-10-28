@@ -1,0 +1,22 @@
+{
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "tests/unit/production-simulation-copy.test.ts",
+    "tests/unit/capsule-pack-restore-roundtrip.test.ts",
+    "tests/unit/dockerignore-scan-sensitive-paths.test.ts",
+    "--retry=0",
+    "--maxWorkers=1",
+    "--reporter=junit",
+    "--outputFile=/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-runtime-upload-isolation/packaging-after.xml"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:17:03.785319+00:00",
+  "durationSeconds": 1.479,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/release-rehearsal/2026-10-27-runtime-upload-isolation/packaging-after.txt",
+  "logSha256": "f851e457d6efafed840b17f77c1a20b87d39bd413bbf8cb60ecb1759322738fd"
+}

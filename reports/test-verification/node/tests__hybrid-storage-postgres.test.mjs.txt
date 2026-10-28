@@ -3,139 +3,139 @@ TAP version 13
     # Subtest: concurrent writes, fresh reads, unique same-name keys and ownership
     ok 1 - concurrent writes, fresh reads, unique same-name keys and ownership
       ---
-      duration_ms: 539.184284
+      duration_ms: 602.375806
       type: 'test'
       ...
     # Subtest: public bytes have independent ownership records
     ok 2 - public bytes have independent ownership records
       ---
-      duration_ms: 79.082881
+      duration_ms: 86.708453
       type: 'test'
       ...
     # Subtest: concurrent final deletion and dedup admission preserve every successful upload
     ok 3 - concurrent final deletion and dedup admission preserve every successful upload
       ---
-      duration_ms: 836.876206
+      duration_ms: 967.157057
       type: 'test'
       ...
     # Subtest: independent immutable handles reject missing/corrupt bytes and replacement
     ok 4 - independent immutable handles reject missing/corrupt bytes and replacement
       ---
-      duration_ms: 96.104674
+      duration_ms: 57.996889
       type: 'test'
       ...
     # Subtest: metadata publication failures retain invisible recoverable intents and never ACK
     ok 5 - metadata publication failures retain invisible recoverable intents and never ACK
       ---
-      duration_ms: 108.970054
+      duration_ms: 74.429467
       type: 'test'
       ...
     # Subtest: physical delete failure remains durable and retryable from another worker
     ok 6 - physical delete failure remains durable and retryable from another worker
       ---
-      duration_ms: 55.90066
+      duration_ms: 69.143573
       type: 'test'
       ...
     # Subtest: empty analytics, missing objects and download authority have explicit outcomes
     ok 7 - empty analytics, missing objects and download authority have explicit outcomes
       ---
-      duration_ms: 12.574882
+      duration_ms: 4.115688
       type: 'test'
       ...
     # Subtest: invalid uploads never create an intent and zero-byte files remain readable
     ok 8 - invalid uploads never create an intent and zero-byte files remain readable
       ---
-      duration_ms: 10.754396
+      duration_ms: 6.7689
       type: 'test'
       ...
     # Subtest: folder and tier filters preserve owner boundaries and stable download URLs
     ok 9 - folder and tier filters preserve owner boundaries and stable download URLs
       ---
-      duration_ms: 239.348938
+      duration_ms: 131.320908
       type: 'test'
       ...
     # Subtest: physical analytics count shared bytes once and scope logical ownership
     ok 10 - physical analytics count shared bytes once and scope logical ownership
       ---
-      duration_ms: 67.703102
+      duration_ms: 83.298015
       type: 'test'
       ...
     # Subtest: cleanup recommendations and deletion honor age, access and owner
     ok 11 - cleanup recommendations and deletion honor age, access and owner
       ---
-      duration_ms: 255.494704
+      duration_ms: 326.285387
       type: 'test'
       ...
     # Subtest: legacy hot-tier decisions only migrate old, infrequently used physical entries
     ok 12 - legacy hot-tier decisions only migrate old, infrequently used physical entries
       ---
-      duration_ms: 97.084842
+      duration_ms: 97.168524
       type: 'test'
       ...
     # Subtest: SQL publication and duplicate-key failures reject without partial committed rows
     ok 13 - SQL publication and duplicate-key failures reject without partial committed rows
       ---
-      duration_ms: 76.659936
+      duration_ms: 68.17302
       type: 'test'
       ...
     # Subtest: invalid byte receipts and corrupted pending data never become visible
     ok 14 - invalid byte receipts and corrupted pending data never become visible
       ---
-      duration_ms: 5.853922
+      duration_ms: 5.227656
       type: 'test'
       ...
     # Subtest: deduplicated and active reads verify full content before acknowledgement
     ok 15 - deduplicated and active reads verify full content before acknowledgement
       ---
-      duration_ms: 61.297608
+      duration_ms: 98.70057
       type: 'test'
       ...
     # Subtest: immutable publication needs a confirmed manifest and rejects corrupt metadata
     ok 16 - immutable publication needs a confirmed manifest and rejects corrupt metadata
       ---
-      duration_ms: 102.34645
+      duration_ms: 353.116106
       type: 'test'
       ...
     # Subtest: legacy parser rejects public-map corruption and cyclic or unresolved ownership
     ok 17 - legacy parser rejects public-map corruption and cyclic or unresolved ownership
       ---
-      duration_ms: 1.529688
+      duration_ms: 1.039357
       type: 'test'
       ...
     # Subtest: verified containers reject inconsistent headers and decoded lengths
     ok 18 - verified containers reject inconsistent headers and decoded lengths
       ---
-      duration_ms: 0.705845
+      duration_ms: 0.646656
       type: 'test'
       ...
     # Subtest: rollback transport failures preserve the original error and release SQL clients
     ok 19 - rollback transport failures preserve the original error and release SQL clients
       ---
-      duration_ms: 66.469851
+      duration_ms: 92.872474
       type: 'test'
       ...
     # Subtest: a deletion waiting on the content lock observes a completed concurrent deletion
     ok 20 - a deletion waiting on the content lock observes a completed concurrent deletion
       ---
-      duration_ms: 53.398044
+      duration_ms: 71.804983
       type: 'test'
       ...
     # Subtest: legacy aliases retain the original blob after primary deletion and cannot resurrect
     ok 21 - legacy aliases retain the original blob after primary deletion and cannot resurrect
       ---
-      duration_ms: 9.713395
+      duration_ms: 10.542819
       type: 'test'
       ...
     # Subtest: unknown legacy references abort the entire import and retain the source
     ok 22 - unknown legacy references abort the entire import and retain the source
       ---
-      duration_ms: 2.343215
+      duration_ms: 3.081568
       type: 'test'
       ...
     1..22
 ok 1 - hybrid metadata is shared across independent services without lost updates
   ---
-  duration_ms: 3503.838036
+  duration_ms: 3962.206496
   type: 'suite'
   ...
 1..1
@@ -146,4 +146,4 @@ ok 1 - hybrid metadata is shared across independent services without lost update
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 3655.584121
+# duration_ms 4096.455282

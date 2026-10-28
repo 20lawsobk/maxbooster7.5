@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T12:15:10.194278+00:00",
+  "status": "confirmed_measurement_blockers_profiles_unmerged",
+  "scope": "C5/P1-P2 read-only exact coverage compatibility trace, not a new product test or source fix",
+  "originalNodeSourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "retainedBaselineVerified": true,
+  "replayedProfiles": 9,
+  "replayedCountersExactlyReproduced": true,
+  "incompatibleCompleteFiles": 9,
+  "serializedBranchMapsEqual": 3,
+  "representativeModule": "server/config/ports.ts",
+  "representativeCanonical": {
+    "statements": 21,
+    "functions": 3,
+    "branches": 6
+  },
+  "representativeNode": {
+    "statements": 25,
+    "functions": 4,
+    "branches": 6
+  },
+  "coordinateObservation": "Raw end-column sentinel is Infinity, not NaN; raw explicit undefined properties can differ from absent properties after JSON serialization",
+  "currentCanonicalMapsEqualRetainedBaselineForAllNine": true,
+  "protectedInputsUnchanged": true,
+  "configuredCredentialsPassedToChildren": false,
+  "sourceCodeChanged": false,
+  "testsChanged": false,
+  "thresholdsChanged": false,
+  "globalCountersChanged": false,
+  "mergedIntoGlobalCoverage": false,
+  "productionReady": false,
+  "nextAction": "C5/P1: version and validate coordinate/transform contract with actual generated-helper and untouched-original counterexamples, then prove one compatible P2 run before widening producers"
+}

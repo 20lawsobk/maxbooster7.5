@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "scope": "Retained actual cb783f1f portable cold-payload rehearsal, full admitted-input stability and 37-check independent audit; not production launch approval",
+  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "sourceInputsSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+  "sourceInputsUnchanged": true,
+  "admittedInputsUnchanged": true,
+  "productionReady": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 8055,
+      "sha256": "b329600a36780f145beaa581bd9ab8ca920613888025873bcd1209ecc3e0bb99"
+    },
+    {
+      "path": "admitted-after-observation.txt",
+      "bytes": 712972,
+      "sha256": "c1480f34da8542e66bc64023968c458fdce942c7634842caf67c28f0c0d22ed2"
+    },
+    {
+      "path": "admitted-after.json",
+      "bytes": 848753,
+      "sha256": "5b74c597f83b7dc3ffba88be62997d00d5ba44f0a78a880933d71c4f9d3e5f58"
+    },
+    {
+      "path": "admitted-before-observation.txt",
+      "bytes": 712972,
+      "sha256": "c1480f34da8542e66bc64023968c458fdce942c7634842caf67c28f0c0d22ed2"
+    },
+    {
+      "path": "admitted-before.json",
+      "bytes": 848753,
+      "sha256": "5b74c597f83b7dc3ffba88be62997d00d5ba44f0a78a880933d71c4f9d3e5f58"
+    },
+    {
+      "path": "admitted-diff.json",
+      "bytes": 80,
+      "sha256": "7b8e1860b8407c89ab4fe6e1b0fad9fa238f83779daa0b47b67abcc2e17cd769"
+    },
+    {
+      "path": "app_remainder-members.txt",
+      "bytes": 76072,
+      "sha256": "41b101493626a6b3a5a222ade26c1ef39c5c155c2c121eb3cdf0c1113a44ef3b"
+    },
+    {
+      "path": "cold/packed-acceptance.json",
+      "bytes": 17122,
+      "sha256": "4617e99dbcde4e70b94c1b9b9d2c5e150d9ae300623178913d5b0e05a102b020"
+    },
+    {
+      "path": "cold/packed-postgres.log",
+      "bytes": 716,
+      "sha256": "773f64dfb2042eecd80c297356b31a9661f0ffcb844b884b6f8cdd8bbf0fe670"
+    },
+    {
+      "path": "cold/packed-setup.log",
+      "bytes": 14181,
+      "sha256": "cfceb16f243ead5fef37f27a671c307de024eab439e3898bc4e4629801fa12f7"
+    },
+    {
+      "path": "cold/packed-startup.log",
+      "bytes": 159446,
+      "sha256": "61c6221db17ec8c4b6d7225264de652fc0443ed58a4e7380b5d5210a3233ee0c"
+    },
+    {
+      "path": "cold-runner.txt",
+      "bytes": 43,
+      "sha256": "7add66abc87a7448f4f9493cce529389d95d6667b6d99700740b630373e5cb90"
+    },
+    {
+      "path": "execution-driver.py",
+      "bytes": 7855,
+      "sha256": "f2eb6d2a0ed71daf5ddf2d9775cd13abf00deb2241dcd7fc85569629ff1244c7"
+    },
+    {
+      "path": "external_maxcore-members.txt",
+      "bytes": 5195341,
+      "sha256": "c0d14aeb397194efd63b20cc2c05ecb037d781835398ddfe7d0eaa881236d6b7"
+    },
+    {
+      "path": "hygiene-audit.json",
+      "bytes": 2441,
+      "sha256": "4b75da3b1575e8db5d76c2e5d88a525025b7ca3ac0900f7e94629632f56d9d96"
+    },
+    {
+      "path": "prepare.txt",
+      "bytes": 76923,
+      "sha256": "0b19b2940dc92b4920ac0d68d8694582d8a17c1202a8ebf0f1e9692b902c05d7"
+    },
+    {
+      "path": "release-manifest.json",
+      "bytes": 910036,
+      "sha256": "99c608aa1d885a5359eacf95df12693f68f5efc447dc4a9a74915a86faa4d68f"
+    },
+    {
+      "path": "source-code-inputs-after.json",
+      "bytes": 517643,
+      "sha256": "de070594759bbde8747ac80019ca87fbad0140c6cef81ff06b66ac489332276b"
+    },
+    {
+      "path": "source-code-inputs.json",
+      "bytes": 517643,
+      "sha256": "de070594759bbde8747ac80019ca87fbad0140c6cef81ff06b66ac489332276b"
+    },
+    {
+      "path": "source-inputs.json",
+      "bytes": 848753,
+      "sha256": "5b74c597f83b7dc3ffba88be62997d00d5ba44f0a78a880933d71c4f9d3e5f58"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 6025,
+      "sha256": "a998bdcda8f4134548ef2e80343e2e2fc5262fc14f46b94e8fa0b583a5e6e4c2"
+    },
+    {
+      "path": "verify-after-cold.txt",
+      "bytes": 285,
+      "sha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486"
+    },
+    {
+      "path": "verify.txt",
+      "bytes": 285,
+      "sha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486"
+    }
+  ]
+}

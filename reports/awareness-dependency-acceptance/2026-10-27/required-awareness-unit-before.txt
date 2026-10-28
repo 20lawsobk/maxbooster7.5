@@ -1,0 +1,1 @@
+JUNIT report written to /workspace/onboarding-results/required-awareness-unit-before.xml

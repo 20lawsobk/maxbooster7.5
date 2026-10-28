@@ -1,48 +1,48 @@
 TAP version 13
-# [pdim-restore] Extracting fixture.pdim (zstd-19) → /tmp/maxbooster-test-wxbm4q9x/maxbooster-test-bx_wce14/publish-zstd-x9fp2N/.pdim-scratch-fixture-25046/ (staging for fixture/) ...
+# [pdim-restore] Extracting fixture.pdim (zstd-19) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-gvjckbxd/publish-zstd-FvfC0h/.pdim-scratch-fixture-167595/ (staging for fixture/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
 # [pdim-restore] ✅ fixture/ restored from fixture.pdim
 # [pdim-restore] Checksum mismatch for fixture.pdim
 # Subtest: shared packer removes source only after a gate-valid zstd capsule and real restore round-trips
 ok 1 - shared packer removes source only after a gate-valid zstd capsule and real restore round-trips
   ---
-  duration_ms: 213.663932
+  duration_ms: 225.06851
   type: 'test'
   ...
 # Subtest: missing required directory fails instead of claiming a successful capsule
 ok 2 - missing required directory fails instead of claiming a successful capsule
   ---
-  duration_ms: 54.155929
+  duration_ms: 53.60653
   type: 'test'
   ...
 # Subtest: GNU tar also restores zstd capsules when bsdtar is unavailable
 ok 3 - GNU tar also restores zstd capsules when bsdtar is unavailable
   ---
-  duration_ms: 198.671939
+  duration_ms: 226.654453
   type: 'test'
   ...
 # Subtest: source-tree packing preserves files until the shell performs cleanup
 ok 4 - source-tree packing preserves files until the shell performs cleanup
   ---
-  duration_ms: 120.732402
+  duration_ms: 131.18794
   type: 'test'
   ...
 # Subtest: compressor failure retains source and the previous archive
 ok 5 - compressor failure retains source and the previous archive
   ---
-  duration_ms: 63.748462
+  duration_ms: 73.83959
   type: 'test'
   ...
 # Subtest: both publishing paths use shared deployment packing while retaining adaptive app-capsule generation
 ok 6 - both publishing paths use shared deployment packing while retaining adaptive app-capsule generation
   ---
-  duration_ms: 0.418371
+  duration_ms: 0.478833
   type: 'test'
   ...
 # Subtest: adaptive application capsule is verified by a fresh reader; legacy gzip pockets remain readable
 ok 7 - adaptive application capsule is verified by a fresh reader; legacy gzip pockets remain readable
   ---
-  duration_ms: 333.211081
+  duration_ms: 414.557553
   type: 'test'
   ...
 1..7
@@ -53,4 +53,4 @@ ok 7 - adaptive application capsule is verified by a fresh reader; legacy gzip p
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1136.929453
+# duration_ms 1283.17236

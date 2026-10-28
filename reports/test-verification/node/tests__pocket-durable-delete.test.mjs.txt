@@ -1,15 +1,15 @@
 TAP version 13
-# [21:57:17.382] INFO (24277): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+# [09:20:12.449] INFO (166854): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
 # Subtest: pocket deletion persists immediately and retains chunks still referenced by another entry
 ok 1 - pocket deletion persists immediately and retains chunks still referenced by another entry
   ---
-  duration_ms: 80.906293
+  duration_ms: 80.063104
   type: 'test'
   ...
 # Subtest: failed physical reclamation resumes from a persisted receipt after reopening
 ok 2 - failed physical reclamation resumes from a persisted receipt after reopening
   ---
-  duration_ms: 57.062657
+  duration_ms: 60.262978
   type: 'test'
   ...
 1..2
@@ -20,4 +20,4 @@ ok 2 - failed physical reclamation resumes from a persisted receipt after reopen
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 494.360209
+# duration_ms 465.481011

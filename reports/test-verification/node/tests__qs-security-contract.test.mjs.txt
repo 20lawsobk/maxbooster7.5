@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: .: comma encoding handles JSON body, encodeValuesOnly=false
+ok 1 - .: comma encoding handles JSON body, encodeValuesOnly=false
+  ---
+  duration_ms: 3.105614
+  type: 'test'
+  ...
+# Subtest: .: comma encoding handles JSON body, encodeValuesOnly=true
+ok 2 - .: comma encoding handles JSON body, encodeValuesOnly=true
+  ---
+  duration_ms: 0.281865
+  type: 'test'
+  ...
+# Subtest: .: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+ok 3 - .: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.33819
+  type: 'test'
+  ...
+# Subtest: .: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+ok 4 - .: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.340564
+  type: 'test'
+  ...
+# Subtest: .: comma encoding handles null-prototype query, encodeValuesOnly=false
+ok 5 - .: comma encoding handles null-prototype query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.3979
+  type: 'test'
+  ...
+# Subtest: .: comma encoding handles null-prototype query, encodeValuesOnly=true
+ok 6 - .: comma encoding handles null-prototype query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.310979
+  type: 'test'
+  ...
+# Subtest: .: literal parameters, nested objects and ordinary array formats retain their values
+ok 7 - .: literal parameters, nested objects and ordinary array formats retain their values
+  ---
+  duration_ms: 0.818515
+  type: 'test'
+  ...
+# Subtest: .: actual Express query, form and JSON consumers return serialized output and stay healthy
+ok 8 - .: actual Express query, form and JSON consumers return serialized output and stay healthy
+  ---
+  duration_ms: 126.734928
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false
+ok 9 - external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false
+  ---
+  duration_ms: 1.73731
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true
+ok 10 - external/maxcore/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true
+  ---
+  duration_ms: 0.360724
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+ok 11 - external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.321075
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+ok 12 - external/maxcore/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.26493
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false
+ok 13 - external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.370248
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true
+ok 14 - external/maxcore/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.278731
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values
+ok 15 - external/maxcore/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values
+  ---
+  duration_ms: 0.671162
+  type: 'test'
+  ...
+# Subtest: external/maxcore/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy
+ok 16 - external/maxcore/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy
+  ---
+  duration_ms: 78.674934
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false
+ok 17 - external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=false
+  ---
+  duration_ms: 1.470047
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true
+ok 18 - external/pdim/artifacts/api-server: comma encoding handles JSON body, encodeValuesOnly=true
+  ---
+  duration_ms: 0.169176
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+ok 19 - external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.275395
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+ok 20 - external/pdim/artifacts/api-server: comma encoding handles prototype-preserving query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.283518
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false
+ok 21 - external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=false
+  ---
+  duration_ms: 0.315186
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true
+ok 22 - external/pdim/artifacts/api-server: comma encoding handles null-prototype query, encodeValuesOnly=true
+  ---
+  duration_ms: 0.219761
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values
+ok 23 - external/pdim/artifacts/api-server: literal parameters, nested objects and ordinary array formats retain their values
+  ---
+  duration_ms: 0.686005
+  type: 'test'
+  ...
+# Subtest: external/pdim/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy
+ok 24 - external/pdim/artifacts/api-server: actual Express query, form and JSON consumers return serialized output and stay healthy
+  ---
+  duration_ms: 68.66843
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 465.022964

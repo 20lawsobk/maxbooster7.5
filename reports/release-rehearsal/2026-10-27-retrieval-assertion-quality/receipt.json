@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "scope": "Canonical retrieval pytest and documented module entrypoints after real assertion-oracle repair; owned upload and cleanup probes retained",
+  "driverSha256": "40c4920df5d39bb609052ee9c108a3054044aed525a6a8e526f4ca939dd57104",
+  "sourceHashes": {
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087",
+    "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e"
+  },
+  "runs": [
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--import-mode=importlib",
+        "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
+        "/workspace/maxbooster7.5/external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
+        "--junitxml=/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-retrieval-assertion-quality/pytest.xml"
+      ],
+      "startedAt": "2026-10-28T02:27:04.308091+00:00",
+      "finishedAt": "2026-10-28T02:27:22.681128+00:00",
+      "exitCode": 0,
+      "log": "run-1.txt",
+      "logSha256": "18357e52336d7277bdbb8f5625201d225c02fa8c9eb6b6ac50077b628ac30bf8",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_pipeline"
+      ],
+      "startedAt": "2026-10-28T02:27:22.747029+00:00",
+      "finishedAt": "2026-10-28T02:27:38.506802+00:00",
+      "exitCode": 0,
+      "log": "run-2.txt",
+      "logSha256": "82aaf2015c23a8162ac27ce44e682c948449e2ea027a3b76180ef52398f06c13",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "-u",
+        "-m",
+        "ai_model.retrieval.test_phase4"
+      ],
+      "startedAt": "2026-10-28T02:27:38.569338+00:00",
+      "finishedAt": "2026-10-28T02:27:43.045911+00:00",
+      "exitCode": 0,
+      "log": "run-3.txt",
+      "logSha256": "b12a928eb643df45be3dd7caf8078fc216ce1b8199c152727b4e110a1b7af8a3",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-retrieval-assertion-quality/late-import-probe.py"
+      ],
+      "startedAt": "2026-10-28T02:27:43.112325+00:00",
+      "finishedAt": "2026-10-28T02:27:43.291742+00:00",
+      "exitCode": 0,
+      "log": "run-4.txt",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    },
+    {
+      "command": [
+        "/workspace/.cloud-python/bin/python",
+        "/workspace/maxbooster7.5/reports/release-rehearsal/2026-10-27-retrieval-assertion-quality/failure-cleanup-probe.py"
+      ],
+      "startedAt": "2026-10-28T02:27:43.372571+00:00",
+      "finishedAt": "2026-10-28T02:27:46.079884+00:00",
+      "exitCode": 0,
+      "log": "run-5.txt",
+      "logSha256": "1ec1053b2019702280494fe4703ac8419526539cdb0c4f1def885370143aa395",
+      "sourceUploadsUnchanged": true,
+      "remainingOwnedTemporaryRoots": []
+    }
+  ],
+  "sourceUploadFilesBefore": 36,
+  "sourceUploadFilesAfter": 36,
+  "sourceUploadsUnchanged": true,
+  "allRunsPassed": true,
+  "productionReady": false,
+  "beforeLeakEvidence": "../2026-10-27-analytics-dependencies-final/source-drift-diagnosis.json"
+}

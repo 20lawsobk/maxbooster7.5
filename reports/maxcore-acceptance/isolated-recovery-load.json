@@ -14,10 +14,10 @@
       "max_concurrency": 8,
       "expected_unready_responses": 32,
       "unexpected_responses": 0,
-      "wall_seconds": 1.21,
+      "wall_seconds": 1.24,
       "p50_ms": 5.21,
-      "p95_ms": 1147.6,
-      "p99_ms": 1148.4
+      "p95_ms": 1183.93,
+      "p99_ms": 1185.47
     },
     "idempotent_restart": "completed job remained terminal; no second fixture delivery"
   },

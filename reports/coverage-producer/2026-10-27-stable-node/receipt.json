@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "scope": "One existing Node suite; separate UNMERGED profile, not global coverage",
+  "command": [
+    "/workspace/.cloud-tools/node_modules/node/bin/node",
+    "--import",
+    "/workspace/maxbooster7.5/scripts/testing/coverage-node-bootstrap.mjs",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "tests/fabric-replica-generation.test.mjs"
+  ],
+  "sourceRevision": "c06fbecdb32a5c3b76662f631604bfd9abac386b",
+  "test": "tests/fabric-replica-generation.test.mjs",
+  "testSha256": "72b5abd3b5c24594ad0d3137c8fa3d59575b4cc4470668f5a873d32ffec6b289",
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "collected_unmerged",
+  "profiles": [
+    {
+      "producerId": "40770-0",
+      "manifestSha256": "df414ecaca832e8a414c70d70b2fbe86ded22cfd648d4250e6399cd13f86c429",
+      "runtime": {
+        "node": "22.23.3",
+        "v8": "12.4.254.21-node.57"
+      }
+    }
+  ],
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "sourceInputs": {
+    "beforeSha256": "c91dae9af283638fd45b310ca7fad5663092e204eca6d630d8933a96152e268e",
+    "afterSha256": "c91dae9af283638fd45b310ca7fad5663092e204eca6d630d8933a96152e268e",
+    "unchanged": true
+  },
+  "comparison": {
+    "baselineSha256": "b318793c9bc54bd74352ed81212b1cfee2a28114da18ef3ad592d3b3fbf5b32a",
+    "files": [
+      {
+        "file": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/logger.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/config/ports.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      },
+      {
+        "file": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+        "compatible": false,
+        "mismatches": [
+          "statementMap",
+          "fnMap",
+          "branchMap"
+        ]
+      }
+    ]
+  },
+  "converter": {
+    "package": "ast-v8-to-istanbul",
+    "version": "1.0.7"
+  }
+}

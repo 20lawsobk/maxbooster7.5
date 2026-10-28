@@ -1,0 +1,72 @@
+  [FAIL] INTENTIONAL FALSE CONDITION
+FF  [FAIL] INTENTIONAL FALSE CONDITION
+F
+=================================== FAILURES ===================================
+_ test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py-def _check(name: str, cond: bool) -> None:\n    status = "ok  " if cond else "FAIL"\n    print(f"  [{status}] {name}")\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)-fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06] _
+
+name = 'external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py'
+source = 'def _check(name: str, cond: bool) -> None:\n    status = "ok  " if cond else "FAIL"\n    print(f"  [{status}] {name}")\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)'
+sha = 'fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06'
+
+    @pytest.mark.parametrize("name,source,sha", SPECIMENS)
+    def test_false_check_propagates_only_to_bookkeeping(name,source,sha):
+        namespace={"_FAILS":[],"_failures":0}
+        exec(compile(source,name,"exec"),namespace)
+>       namespace["_check"]("INTENTIONAL FALSE CONDITION",False)
+
+test_oracle_probe.py:7: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'INTENTIONAL FALSE CONDITION', cond = False
+
+>   ???
+E   AssertionError: INTENTIONAL FALSE CONDITION
+
+external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py:6: AssertionError
+_ test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py-def _check(name: str, cond: bool) -> None:\n    global _failures\n    status = "ok" if cond else "FAILED"\n    if not cond:\n        _failures += 1\n        raise AssertionError(name)\n    print(f"  {status}: {name}")-d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22] _
+
+name = 'external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py'
+source = 'def _check(name: str, cond: bool) -> None:\n    global _failures\n    status = "ok" if cond else "FAILED"\n    if not cond:\n        _failures += 1\n        raise AssertionError(name)\n    print(f"  {status}: {name}")'
+sha = 'd02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22'
+
+    @pytest.mark.parametrize("name,source,sha", SPECIMENS)
+    def test_false_check_propagates_only_to_bookkeeping(name,source,sha):
+        namespace={"_FAILS":[],"_failures":0}
+        exec(compile(source,name,"exec"),namespace)
+>       namespace["_check"]("INTENTIONAL FALSE CONDITION",False)
+
+test_oracle_probe.py:7: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'INTENTIONAL FALSE CONDITION', cond = False
+
+>   ???
+E   AssertionError: INTENTIONAL FALSE CONDITION
+
+external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py:6: AssertionError
+_ test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py-def _check(name: str, cond: bool, detail: str = "") -> None:\n    status = "ok  " if cond else "FAIL"\n    line = f"  [{status}] {name}"\n    if detail:\n        line += f" \u2014 {detail}"\n    print(line)\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)-7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e] _
+
+name = 'external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py'
+source = 'def _check(name: str, cond: bool, detail: str = "") -> None:\n    status = "ok  " if cond else "FAIL"\n    line = f" ... += f" — {detail}"\n    print(line)\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)'
+sha = '7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e'
+
+    @pytest.mark.parametrize("name,source,sha", SPECIMENS)
+    def test_false_check_propagates_only_to_bookkeeping(name,source,sha):
+        namespace={"_FAILS":[],"_failures":0}
+        exec(compile(source,name,"exec"),namespace)
+>       namespace["_check"]("INTENTIONAL FALSE CONDITION",False)
+
+test_oracle_probe.py:7: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'INTENTIONAL FALSE CONDITION', cond = False, detail = ''
+
+>   ???
+E   AssertionError: INTENTIONAL FALSE CONDITION
+
+external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED test_oracle_probe.py::test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py-def _check(name: str, cond: bool) -> None:\n    status = "ok  " if cond else "FAIL"\n    print(f"  [{status}] {name}")\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)-fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06]
+FAILED test_oracle_probe.py::test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py-def _check(name: str, cond: bool) -> None:\n    global _failures\n    status = "ok" if cond else "FAILED"\n    if not cond:\n        _failures += 1\n        raise AssertionError(name)\n    print(f"  {status}: {name}")-d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22]
+FAILED test_oracle_probe.py::test_false_check_propagates_only_to_bookkeeping[external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py-def _check(name: str, cond: bool, detail: str = "") -> None:\n    status = "ok  " if cond else "FAIL"\n    line = f"  [{status}] {name}"\n    if detail:\n        line += f" \u2014 {detail}"\n    print(line)\n    if not cond:\n        _FAILS.append(name)\n        raise AssertionError(name)-7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e]
+3 failed in 0.02s

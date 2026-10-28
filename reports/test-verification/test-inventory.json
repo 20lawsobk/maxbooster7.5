@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "b369d68e34bef0e30c96fbd5b72fa7339e6425f2",
-  "workingTreeInputDigest": "5e0e5bed1a844928deb4a2cfc4e182073da948cf880080b138f8865a0d5fb7b6",
+  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "workingTreeInputDigest": "bc6b7cdbda3b4c181c2ba867a45f78d7394e1c1a10c5492d442ae80d35a12690",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 616,
-    "supportSourceFiles": 68,
+    "canonicalTestFiles": 632,
+    "supportSourceFiles": 75,
     "retainedSnapshotFiles": 71,
-    "nonExecutableSupportFiles": 10,
+    "nonExecutableSupportFiles": 11,
     "byGroup": {
       "commerce": 21,
       "integration-browser": 26,
       "manual-destructive-provider": 37,
-      "python": 120,
-      "root-node": 112,
-      "root-unit": 295,
-      "runner-support": 68,
+      "python": 124,
+      "root-node": 122,
+      "root-unit": 297,
+      "runner-support": 75,
       "subsystems": 5
     }
   },
@@ -1320,7 +1320,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py",
-      "sha256": "63b86b32cbdb4831e22f51cc256e7926d5f781d4d88466abe8e8a4465d862444",
+      "sha256": "60ef70f61dc4c3b629aa3803739f394db77bf929f9ddd53fb269b4404836362e",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1349,7 +1349,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py",
-      "sha256": "a88f6f07af0cc68f64bfdc809a262cde67781941f21043ea383614dc31a11793",
+      "sha256": "7f23051b2a4c66a03e5e20ab581bc7faffbda5ce972e18d5a8224635753be087",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1376,7 +1376,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py",
-      "sha256": "5ff1cb401b06d2698e6c1646792139fa2bcf47d13197fadf5a1722b8e8d6b980",
+      "sha256": "fe0c63324c0c7f84cdedcee00d840e0f0720394c87621650aea1d3b3a8396d06",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1399,7 +1399,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py",
-      "sha256": "47b1c544e0313b543864e42c58b3ade9832b1b00009981a64253d46415317abe",
+      "sha256": "d02d7e7d77884fc0bdf461957a96535ac0f68decb22f4322b51754d9d47c6e22",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -1431,7 +1431,7 @@
     },
     {
       "path": "external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py",
-      "sha256": "c13146406c9004754892750d08157495e0b8986e38d5ca128686ba100e31ae8f",
+      "sha256": "7a2511e3ddd699be46a6998c6ad2107248b64e2993300cf678edeaf49a5d975e",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -3384,7 +3384,7 @@
     },
     {
       "path": "external/maxcore/scripts/check-js-security-versions.js",
-      "sha256": "fdd83b9bccf793a6a25c48128af3aecbedb9d1299fafce7d5108eef362edd473",
+      "sha256": "b62a38ac786e3d9ffd4a8bff3c84c33c1483fc0fb783692b6e21c93105c466d1",
       "category": "test",
       "group": "subsystems",
       "runner": "node-assertion-script",
@@ -3738,6 +3738,23 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "scripts/testing/collect-node-coverage.mjs",
+      "sha256": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "collect node coverage",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "scripts/testing/commerce-legacy-fixture.mjs",
       "sha256": "da438be7781b009932e7ce5d6606f0697b48ed6c484071dc45a2bf38b6f668ad",
       "category": "support",
@@ -3768,6 +3785,57 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Process isolation and evidence helpers for the repository test runners.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/coverage-node-bootstrap.mjs",
+      "sha256": "bd1a984cf459aeb3c0c6416bf72091f0d08752628c7cbff47b33d3577805baa4",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Opt-in internal inspector collector. No listener/debug port or app credentials.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/coverage-provenance.mjs",
+      "sha256": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Fail-closed identity and map checks for separately collected coverage.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/electron-asar-module-acceptance.mjs",
+      "sha256": "6b638eb50c83ee8f8bdc1883cf51ae8951c281e7f5aa6453721dd25ea2cf2f44",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real Electron ASAR module-resolution acceptance. Explicit native runtime only. No downloading, installed-tree mutation, application credentials or network.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3809,7 +3877,7 @@
     },
     {
       "path": "scripts/testing/integration-browser.mjs",
-      "sha256": "9fa027334d8682fec28ba9a950b240fb0a7d660b523fb8c953c107a4deb8f84f",
+      "sha256": "fb481f18f985d6d7e748d4f00dd067e536980ac03a495bdb2149030b9448f4b6",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3821,6 +3889,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Rehearse the HTTP integration suites against a disposable application/database. Invoke from the repository root under env -i; never point these mutations at the developer server, a shared database, or a provider-backed deployment.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "scripts/testing/launch-readiness-audit.py",
+      "sha256": "67266d4052c84b45517ba2042dab2cf04131ad6bf14147726a5986015b823c36",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Extend, never replace, the exhaustive platform plan with launch decisions. Static presence and a successful render are inventory observations, not evidence of feature completion. This producer deliberately fails closed on missing,",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -3843,7 +3928,7 @@
     },
     {
       "path": "scripts/testing/platform-register.py",
-      "sha256": "bfda1529d437095ae114c57efb45bdee47fd2b84ced730aa2becd539fe184f8d",
+      "sha256": "25bf59e91f237d3f256d26bf046e6b3d42c43d3c67863bdb21c88f27f5b457d1",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -5214,6 +5299,58 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/account-analytics-browser.test.mjs",
+      "sha256": "4fad54e52071fb060a699c319e4b6fead467c67c96d5b21c261b7bd59e2d0dbc",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/account-analytics-browser.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real Chromium, React DOM and installed Query v5; owned HTTP/auth/layout boundaries. This verifies the routed component's behavior, not provider data delivery.",
+      "caseTitles": [
+        "AI analytics page renders honest measured, insufficient, failure and account-transition states"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/account-analytics-contract.test.mjs",
+      "sha256": "930f1e6bc7ee0e520e07ed9573d9f260ae94d85a93aa5dbe78e27d2e8e4393b7",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/account-analytics-contract.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real PostgreSQL -> app aggregate service -> canonical MaxCore ASGI over HTTP. Requires owned local PostgreSQL tools and the prepared portable Python runtime.",
+      "caseTitles": [
+        "private owner aggregates reach actual MaxCore statistics without model or learning state",
+        "capability is dedicated and model-free; unauthorized direct requests fail",
+        "calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data",
+        "owned factual summaries preserve exact currency fractions and listener-observation caveat",
+        "multiple platforms aggregate once per UTC day without flattening missing days",
+        "empty account does not inherit another owner's data or claim zero performance",
+        "lifetime post counters cannot masquerade as timestamped daily engagement history",
+        "invalid input and absent identity reject before SQL or external requests",
+        "invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output",
+        "unavailable or structurally empty MaxCore output never invokes a local forecast fallback",
+        "generic availability cannot advertise a dedicated model-free no-retention analytics capability",
+        "protocol mismatches cannot replace the requested forecast calendar or observation accounting",
+        "personal summaries reject unbacked totals, impossible counts and ready states without observations"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/admin-governance-isolated.cjs",
       "sha256": "0500aff96e5d62669e2b49285084f987836770c8fe324caa3dd98fe63acd833b",
       "category": "test",
@@ -5246,7 +5383,7 @@
     },
     {
       "path": "tests/ai-analytics-integration.test.ts",
-      "sha256": "9cfcbc14247c7b2a5bc358105069192d6c6421df1e6b589e7b7f1727fe7e8ded",
+      "sha256": "85448e877fe126fb9a195b3c542d053c674dd3cab66e77efa9ae904eacc11aa3",
       "category": "test",
       "group": "integration-browser",
       "runner": "vitest",
@@ -5266,7 +5403,12 @@
         "GET /api/analytics/music/fanbase \u2192 401 when unauthenticated",
         "GET /api/analytics/music/fanbase \u2192 200 with correct shape",
         "GET /api/analytics/music/fanbase \u2192 returns array-safe topPlatforms when available",
-        "POST /api/ai/analytics/predict reports its missing generation contract explicitly",
+        "POST /api/ai/analytics/predict reports missing account history without requiring a trained model",
+        "capability and personal summaries use the dedicated authenticated MaxCore statistics contract",
+        "personal insight and capability routes require the real authenticated session",
+        "personal insights validate the period and engagement does not reinterpret lifetime counters as daily activity",
+        "known owned daily values produce exact forecasts and summaries while body identity and foreign rows are ignored",
+        "a controlled MaxCore outage remains a retryable503 rather than an invented local prediction",
         "POST /api/ai/analytics/predict rejects an invalid metric before generation",
         "GET /api/analytics/dashboard \u2192 200 with expected overview fields",
         "GET /api/analytics/dashboard?timeRange=7d \u2192 authenticated 200",
@@ -5893,6 +6035,23 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/contracts/helpers-account-analytics-server.py",
+      "sha256": "9b66d8805eea33cfdbfcfff5bfe5c9a439de91c6efba3ca6866c65987e976812",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Owned isolated HTTP fixture for the actual canonical analytics router only. No general MaxCore generation, readiness, model, scheduler, database, public-feed fetcher or learning process is started. All other MaxCore capabilities are absent.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/contracts/helpers-contract-hooks.mjs",
       "sha256": "48eb4c6078fe81ce53bd87ce5c76f08bd50edc0193011da73a62a00ac67a1cba",
       "category": "support",
@@ -5906,6 +6065,23 @@
       "risks": [],
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Always attempt every owned-fixture cleanup, even after another one fails.",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/contracts/helpers-current-storage-joint-worker.ts",
+      "sha256": "5f7845044acc1db1b4d98e53e3484e0f86a171c46f0669b552e69881059d146b",
+      "category": "support",
+      "group": "runner-support",
+      "runner": "support",
+      "cwd": ".",
+      "command": null,
+      "prerequisites": [
+        "Invoked or imported by its owning test runner; do not run as a standalone test"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Owned process fixture: real current-format SQL + canonical local PDIM only.",
       "caseTitles": [],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -6127,6 +6303,31 @@
       "configMembership": [
         "vitest.integration.config.ts"
       ]
+    },
+    {
+      "path": "tests/current-storage-joint-recovery.test.mjs",
+      "sha256": "a81efb35a6b1ba981d6223a5ba4988c6ae9da436e493d51a8adc26896571a85e",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/current-storage-joint-recovery.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Current-format, writer-drained SQL + canonical PDIM recovery; no live services.",
+      "caseTitles": [
+        "current SQL metadata and canonical PDIM bytes jointly recover in independent fresh processes",
+        "current service writes settle, then actual authoritative PDIM snapshot is exported through its pinned descriptor",
+        "real production pg_dump helper uses a caller-pinned SQL snapshot after all owned writers stop",
+        "corrupt SQL, corrupt PDIM and mismatched pair reject before protected SQL or file mutation",
+        "original process and original SQL/database directory are unavailable before independent restore",
+        "verified paired bytes restore fresh SQL in one transaction and a fresh canonical owner from retained checkpoint only"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
       "path": "tests/database-backup-restore-postgres.test.mjs",
@@ -6660,6 +6861,31 @@
       "status": "execution_not_inferred_from_inventory",
       "purpose": "Live E2E: Social \"Generate from URL\" \u2192 /api/multimodal/generate (text/image/audio)",
       "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/electron-asar-launch-policy.test.mjs",
+      "sha256": "099a9ab4babb0d38ba8fec9e224cec5e0f2b34cd4d102dd377e9af8c7137994f",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/electron-asar-launch-policy.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "development launch prefers the real ESM entry and retains its physical cwd; development launch admits a real CJS-only entry",
+      "caseTitles": [
+        "development launch prefers the real ESM entry and retains its physical cwd",
+        "development launch admits a real CJS-only entry",
+        "a missing bundled server is explicit rather than an invented path",
+        "real ASAR metadata keeps ${extension} module ancestry virtual and cwd physical",
+        "a physical unpacked fallback retains a real directory when no virtual entry exists",
+        "${name}: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing"
+      ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
@@ -7770,6 +7996,35 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/layout-navigation-accessibility-browser.test.mjs",
+      "sha256": "b2f8d571ff7b8e1ebf95ff9f379aa40338d7f48cefaba14cd366bebd225ac147",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/layout-navigation-accessibility-browser.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real Chromium keyboard/AX regression for the shared application navigation. Authentication and unrelated widgets are fixtures; layout, navigation, buttons, icons and the production stylesheet execute unchanged.",
+      "caseTitles": [
+        "Browser startup reports a real early exit with bounded stderr",
+        "Browser startup reports a missing executable without waiting for the deadline",
+        "Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus",
+        "390px actual accessibility name: ${expected}",
+        "Settings is one link without nested button or link descendants",
+        "Closed mobile drawer cannot receive sequential keyboard focus",
+        "Menu control references existing drawer and exposes closed state",
+        "Opening with Enter moves focus into named mobile drawer",
+        "Escape closes drawer and restores opener focus and body scrolling",
+        "Desktop resize exposes real navigation and releases mobile inert state"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/legacy-security-update.test.mjs",
       "sha256": "57741a89c65f985af2a3b4385e720fb6d60635250b7cc67a01c24dde91e6ea35",
       "category": "test",
@@ -7792,6 +8047,27 @@
         "guarded additions refuse existing custom files and symlinks",
         "preflight rejects custom edits before changing another file",
         "invalid hashes, traversal, duplicates, and symlinks fail closed"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/legacy-sendgrid-security-coherence.test.mjs",
+      "sha256": "f8b65424e299c552cce3760cd651fd64eef848cedf492f2aede3818d63f2c138",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/legacy-sendgrid-security-coherence.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Validate the real guarded payload, including safe replay of custom history.",
+      "caseTitles": [
+        "both guarded legacy SDK removals include coherent callers and the actual transport",
+        "actual completed legacy bundle replays idempotently and rejects unknown caller history intact"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -7971,6 +8247,30 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/maxcore-dev-dependency-security.test.mjs",
+      "sha256": "d5397d833c0c1149ef45366e7a8f455fa6ba6e816f2d65768d3c3075e22deb0f",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/maxcore-dev-dependency-security.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Actual installed MaxCore generator consumers, not mocked dependency versions.",
+      "caseTitles": [
+        "actual scripts and TypeDoc consumers resolve the compatible patched graph",
+        "actual BiDi parser handles valid input and reports invalid field paths with its own Zod",
+        "actual BiDi Zod rejects oversized ${kind} before element traversal",
+        "actual TypeDoc Markdown preserves normal rendering and bounds six advisory inputs",
+        "actual upgraded Puppeteer drives configured Chromium through owned loopback CDP"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/neon-schema-contract.test.mjs",
       "sha256": "d2364bfe95f0f149a2bffcd7e020121d2f1e51b4799abd5f6ae47546eff8ae6a",
       "category": "test",
@@ -7997,7 +8297,7 @@
     },
     {
       "path": "tests/nested-reconciliation.test.mjs",
-      "sha256": "e71b14eafdbb0dfacdc70da2d0589702d265943b543d1b72d7f1b27d6e9344b4",
+      "sha256": "1fb23df47793c6378040706696356dbb5816b1ce55a1beb84303b03a7bd1a309",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -8249,7 +8549,7 @@
     },
     {
       "path": "tests/patent-pdf-runtime.test.mjs",
-      "sha256": "5b45880916b19ce8077f89d6c97d2b72210c240fdd76a87ad96fd54e5c58c2e3",
+      "sha256": "0547502f4d30b8644b26bece6033bbaa041c795df8b750d67433c5b5e4f96183",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -9330,6 +9630,28 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/qs-security-contract.test.mjs",
+      "sha256": "917a3f3c8fdbcb598def8ee68e3d0ccc1abe8d19e6a71f5d0a70dce30019a64c",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/qs-security-contract.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "${scope}: comma encoding handles ${source}, encodeValuesOnly=${encodeValuesOnly}; ${scope}: literal parameters, nested objects and ordinary array formats retain their values",
+      "caseTitles": [
+        "${scope}: comma encoding handles ${source}, encodeValuesOnly=${encodeValuesOnly}",
+        "${scope}: literal parameters, nested objects and ordinary array formats retain their values",
+        "${scope}: actual Express query, form and JSON consumers return serialized output and stay healthy"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/readiness-beta-history.test.mjs",
       "sha256": "6e47999769dc287dc29e64e26b7e675ba02aea2a7710a659b79544563de37e4e",
       "category": "test",
@@ -9601,7 +9923,7 @@
     },
     {
       "path": "tests/runtime-artifact-gates.test.mjs",
-      "sha256": "8b98695a233680025acdacf301b20a0cab71c8b956579537b70410d7b0b7d087",
+      "sha256": "2524b05a06682ccd44c604ba5b48e9b175ca40661e8f93cde7cd8037a05298f0",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -9621,7 +9943,7 @@
         "missing workspace, prerelease version and escaping installed symlink fail closed",
         "fast-uri accepts independently compatible patched 3.x and 4.x, rejects vulnerable 4.x",
         "all security families reject stale nested copies and accept explicitly validated branches",
-        "unpatched brace walkers and shared HTTP cache policies cannot be reintroduced",
+        "unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced",
         "capsule gate hashes actual bytes and rejects missing, changed and unknown-codec capsules",
         "restored output gate rejects absent artifacts and invalid JS without executing it",
         "restored Node provenance admits the provisioned pin and rejects stale or malformed records"
@@ -9757,6 +10079,36 @@
       "purpose": "connected account brand icons resolve without traversing the entire icon library",
       "caseTitles": [
         "connected account brand icons resolve without traversing the entire icon library"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/sendgrid-alert-transport.test.mjs",
+      "sha256": "f59307c5a14ebd9a5cc2bf16e4c84bc37804153db1e8efca47e5f3c6c81ab6bc",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/sendgrid-alert-transport.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "actual alert service reaches SendGrid, escapes HTML and keeps recipients private; provider rejection does not consume cooldown; a subsequent accepted attempt does",
+      "caseTitles": [
+        "actual alert service reaches SendGrid, escapes HTML and keeps recipients private",
+        "provider rejection does not consume cooldown; a subsequent accepted attempt does",
+        "an accepted webhook does not suppress retry of a failed email channel",
+        "simultaneous identical alerts share one in-flight admission and later cooldown",
+        "unconfigured alert email makes no provider request",
+        "invalid addresses, headers, credential and oversized bodies fail before any request",
+        "only202 means accepted; redirects and provider bodies never appear in diagnostics",
+        "owned HTTP server verifies serialization, bounded timeout and redirect refusal",
+        "actual monitoring route reports provider acceptance and cooldown without claiming delivery",
+        "actual monitoring route reports failed acceptance and permits a later retry",
+        "actual monitoring route reports missing channel configuration and honors fixture admission"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10181,6 +10533,38 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/testing/coverage-provenance.test.mjs",
+      "sha256": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/testing/coverage-provenance.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch; rejects stale original source and changed executed code",
+      "caseTitles": [
+        "accepts retained actual runtime code, UTF-16 ranges and a genuinely unexecuted branch",
+        "rejects stale original source and changed executed code",
+        "rejects changed raw counters and malformed offsets rather than salvaging hits",
+        "rejects incomplete producers and malformed UTF-8",
+        "retains exact original contents in inline source maps and rejects missing/stale mappings",
+        "rejects traversal, external sources and symlink escape",
+        "requires complete identical maps even when functions and branches match",
+        "rejects branch arity and counter/map mismatches",
+        "timeout terminates an owned descendant which ignores TERM and retains pipes",
+        "direct exit ${exitCode} is preserved while its owned lingering descendant is cleaned",
+        "output bound forces a TERM-resistant direct runner to stop promptly",
+        "spawn failure is preserved with no invented child or cleanup success claim",
+        "P1 rejects a real PostgreSQL suite before execution or output creation"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/testing/test_archived_quality_verifiers.py",
       "sha256": "812c5790b53bdbb4e87d9d76824e5363eadd836a743ebf01fb37c0eeec11ff59",
       "category": "test",
@@ -10199,6 +10583,131 @@
         "test_completed_archives_validate_without_requiring_obsolete_serving_weights",
         "test_current_identity_check_fails_when_model_bytes_are_missing",
         "test_incomplete_later_archive_cannot_be_promoted_to_verified_evidence"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_assertion_oracles.py",
+      "sha256": "df12b732f7fb48ef8d7a39bed771ece79d6f0aabeb4c25f7a0c47a5196ac8c8f",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_assertion_oracles.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real pytest must reject false checks in canonical custom assertion helpers. Only each actual helper's AST is compiled; full model modules, upload state, network transports and their import-time initialization are not admitted here.",
+      "caseTitles": [
+        "test_false_condition_is_one_real_pytest_assertion_failure",
+        "test_true_condition_passes_without_recording_a_failure"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_launch_readiness_audit.py",
+      "sha256": "44a81984703f06289255e59b1640d45edbc0c09e95b4dd79d0c78f0517103d18",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_launch_readiness_audit.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Fail-closed launch decisions and exact inventory/provenance regressions.",
+      "caseTitles": [
+        "test_missing_quality_domain_is_rejected",
+        "test_any_nonpassing_domain_prevents_green",
+        "test_full_page_domain_score_cannot_override_production_blocker",
+        "test_only_complete_conjunction_can_green",
+        "test_all_80_alias_declarations_and_every_section_dimension_retained",
+        "test_inventory_loss_or_corruption_is_rejected",
+        "test_empty_evidence_never_green_even_when_all_source_checks_pass",
+        "test_full_page_criteria_and_global_gap_proofs_do_not_close_missing_exact_section_work",
+        "test_full_producer_can_green_only_with_every_retained_requirement_and_dimension",
+        "test_unrouted_backend_and_consumer_work_cannot_disappear_from_green_conjunction",
+        "test_stale_evidence_cannot_contribute_to_verified_percentage",
+        "test_current_source_hash_paths_digest_and_test_provenance_all_required",
+        "test_passing_test_hash_change_invalidates_source_snapshot",
+        "test_full_repository_manifest_changes_in_sql_and_tests_invalidate_old_proof",
+        "test_regenerated_inventory_does_not_relabel_historical_master_execution",
+        "test_custom_input_manifest_binds_selected_actual_files",
+        "test_criterion_requires_exact_actual_passing_current_test"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_maxcore_analytics.py",
+      "sha256": "bb8f1021953f269742e1de09c658825634e21798ae713dec6c1f81fd5028953f",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_maxcore_analytics.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real authenticated FastAPI contracts for transient MaxCore account analytics. The ASGI transport calls the real router and numerical code without httpx, trained weights, external HTTP, a database, or public-awareness ingestion.",
+      "caseTitles": [
+        "test_all_routes_require_generation_authorization",
+        "test_capability_advertises_real_methods_without_weights_or_private_retention",
+        "test_exact_linear_calendar_series_has_correct_horizon_and_first_day",
+        "test_calendar_gaps_remain_missing_and_do_not_compress_the_regression_axis",
+        "test_insufficient_history_never_produces_values_or_a_fake_accuracy",
+        "test_noise_produces_finite_widening_residual_intervals_with_explicit_assumptions",
+        "test_zero_constant_and_decreasing_series_stay_finite_nonnegative",
+        "test_prediction_rejects_invalid_authority_dates_horizons_and_values",
+        "test_overflowing_json_exponent_is_rejected_before_error_serialization",
+        "test_insights_report_measured_totals_and_calendar_comparisons_without_causality",
+        "test_empty_and_sparse_insights_do_not_invent_zero_performance",
+        "test_zero_and_tiny_denominator_comparisons_are_explicit_and_finite",
+        "test_insights_enforce_same_bounded_private_aggregate_contract",
+        "test_public_context_is_separate_fresh_metadata_and_never_receives_private_points",
+        "test_missing_invalid_or_expired_public_context_does_not_masquerade_as_fresh",
+        "test_snapshot_failure_leaves_statistical_computation_available_and_no_data_is_retained",
+        "test_canonical_server_mounts_router_with_generation_scope_and_read_only_snapshot"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_platform_evidence.py",
+      "sha256": "7f9580a2333d1ddc5b98429fb3a47bbf302da6dc166715bfa6134f5892746895",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Explicit feature proofs require every exact current passing case.",
+      "caseTitles": [
+        "test_complete_explicit_bundle_preserves_all_exact_case_identities",
+        "test_legacy_single_exact_case_remains_supported",
+        "test_one_nonpassing_required_case_rejects_the_entire_bundle",
+        "test_changed_platform_source_rejects_otherwise_passing_cases",
+        "test_changed_test_bytes_reject_old_passing_receipt",
+        "test_deleted_test_cannot_be_a_current_proof",
+        "test_static_or_approximate_associations_do_not_close_a_check",
+        "test_malformed_or_empty_bundle_cannot_prove_acceptance",
+        "test_mixed_legacy_and_bundle_identities_are_ambiguous_and_rejected",
+        "test_duplicate_case_does_not_count_as_two_independent_required_cases",
+        "test_unknown_or_malformed_check_never_becomes_verified",
+        "test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity",
+        "test_validator_does_not_mutate_the_declared_proof"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10298,6 +10807,27 @@
         "actual TLS tsx command transpiles and executes an isolated TypeScript fixture"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/unit/account-analytics-proxy.test.ts",
+      "sha256": "b1eabc20585c17abd89637003976de141b411d1d23c4d772f41fbabdfa8cb249",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/account-analytics-proxy.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "account analytics proxy",
+      "caseTitles": [],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
     },
     {
       "path": "tests/unit/acmeClientLifecycle.test.ts",
@@ -11403,7 +11933,7 @@
     },
     {
       "path": "tests/unit/capsule-pack-restore-roundtrip.test.ts",
-      "sha256": "3926b0fb8a48b28a2bc29e48ddc9268ac98d2a645796ed5b57b6bd6f7f987e93",
+      "sha256": "3036e388abc1274d3f4a2e006d882f86e025511ba58d5fea251eb26fe2f0c5ff",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15585,7 +16115,7 @@
     },
     {
       "path": "tests/unit/production-simulation-copy.test.ts",
-      "sha256": "f1a1f6c1f569b9075779864e6e99ca685175e315e1fed7c9a5d6457e76afdbfd",
+      "sha256": "5aaa923dff8d18620f5f910ecd31bc7c3096ba0212b6512747f169a92b64aec9",
       "category": "test",
       "group": "root-unit",
       "runner": "vitest",
@@ -15602,6 +16132,7 @@
         "production simulation filtered copy",
         "filters sensitive/generated paths before copying and retains runtime source",
         "ignores changing restore/test scratch in release identity while binding runtime changes",
+        "omits MaxCore runtime uploads from copies and release identity without dropping source assets",
         "production deployment candidate preflight",
         "refuses a candidate-only selection whose run artifacts are excluded"
       ],
@@ -16261,6 +16792,30 @@
         "returns success and records the request/version history on a matched transition",
         "returns failure and creates no version history when metadata updates zero rows",
         "returns success and records version history on a matched metadata update"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
+      "configMembership": [
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "path": "tests/unit/required-awareness-dependency.test.ts",
+      "sha256": "273592ffa638e1c87e1e27038263c84e6d08e9c791f3f07e7f91edf2de61513e",
+      "category": "test",
+      "group": "root-unit",
+      "runner": "vitest",
+      "cwd": ".",
+      "command": "env -i PATH=\"$PATH\" LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:-}\" HOME=/tmp LANG=C CI=1 npx vitest run --config vitest.config.ts tests/unit/required-awareness-dependency.test.ts",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Required internal public-snapshot failure classification, not a generic upstream/public-auth status rewrite. Uses actual client/control transport and generation helper with only its HTTP/config/logger boundaries owned fixtures.",
+      "caseTitles": [
+        "required generation awareness is a fixed internal dependency",
+        "does not request or replace awareness for unrelated private analytics endpoints"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime",
       "configMembership": [
@@ -18867,6 +19422,11 @@
     {
       "path": "tests/payment-processing/README.md",
       "sha256": "f3af25e88b4b22cd7f734a795169fb2422a564d68458d3643b6ed783cb3b6926",
+      "reason": "Non-executable test data/documentation/fixture"
+    },
+    {
+      "path": "tests/platform-acceptance-map.json",
+      "sha256": "9d5f383c24fbe21eea507e528ace54acc78dd61a78d0e992dfbf9aa8786da6d8",
       "reason": "Non-executable test data/documentation/fixture"
     }
   ]

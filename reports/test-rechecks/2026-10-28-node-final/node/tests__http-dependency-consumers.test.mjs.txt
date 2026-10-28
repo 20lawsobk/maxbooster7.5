@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: redirect transport strips credentials across hosts (array headers)
+ok 1 - redirect transport strips credentials across hosts (array headers)
+  ---
+  duration_ms: 34.989786
+  type: 'test'
+  ...
+# Subtest: redirect transport strips credentials across hosts (object headers)
+ok 2 - redirect transport strips credentials across hosts (object headers)
+  ---
+  duration_ms: 4.934083
+  type: 'test'
+  ...
+# Subtest: patched Axios preserves JSON, redirects, binary downloads and cancellation
+ok 3 - patched Axios preserves JSON, redirects, binary downloads and cancellation
+  ---
+  duration_ms: 114.155466
+  type: 'test'
+  ...
+# Subtest: Google's installed gaxios consumer resolves patched Undici and sends real HTTP
+ok 4 - Google's installed gaxios consumer resolves patched Undici and sends real HTTP
+  ---
+  duration_ms: 112.542724
+  type: 'test'
+  ...
+# Subtest: patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior
+ok 5 - patched IP parser retains IPv4/IPv6 subnet and mapped-address behavior
+  ---
+  duration_ms: 10.972051
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 406.709597

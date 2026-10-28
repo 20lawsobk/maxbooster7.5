@@ -1,0 +1,33 @@
+
+ RUN  v4.1.12 /workspace/maxbooster7.5
+
+ ✓ tests/unit/posting-optimization-unified.test.ts > Self-Evolution posting_optimization → unifiedAIController.generateContent (manual button) > injects neither content_type nor objective when no knob is active 3ms
+ ✓ tests/unit/posting-optimization-unified.test.ts > Self-Evolution posting_optimization → unifiedAIController.generateContent (manual button) > engagementTargeting='high' forwards objective='engagement', and reverts on rollback 2ms
+ ✓ tests/unit/posting-optimization-unified.test.ts > Self-Evolution posting_optimization → unifiedAIController.generateContent (manual button) > contentFormatPriority biases content_type only when the caller did not pin one 1ms
+ ✓ tests/unit/posting-optimization-unified.test.ts > Self-Evolution posting_optimization → unifiedAIController.generateContent (manual button) > keeps a URL topic parseable by MaxCore instead of appending metadata to it 1ms
+ ✓ tests/unit/posting-optimization-unified.test.ts > applyPostingOptimization — content-type/objective bias (unified controller) > maps carousel → engagement when unpinned, and respects a pinned contentType 1ms
+ ✓ tests/unit/posting-optimization-unified.test.ts > applyPostingOptimization — content-type/objective bias (unified controller) > returns nothing extra when there is no active knob 0ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > serves /awareness/unified/status while generation is warming, retaining authentication and deadlines 68ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > serves /awareness/unified/context while generation is warming, retaining authentication and deadlines 20ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > dispatches only explicit deterministic planning during model warmup with auth and a bounded deadline 9ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > forwards fresh live-conditioned content to the actual capability gate during warmup 6ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > dispatches live-conditioned /generate/image with a bounded media budget during unrelated text warmup 4ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > dispatches live-conditioned /generate/audio with a bounded media budget during unrelated text warmup 5ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > dispatches live-conditioned /generate-video with a bounded media budget during unrelated text warmup 4ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > dispatches live-conditioned /generate/video with a bounded media budget during unrelated text warmup 6ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > serves authenticated health diagnostics while the model is unready 10ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > rejects unauthenticated binary /video-job/fixture/preview/0 before entering recovery 3ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > rejects unauthenticated binary /video-job/fixture/download before entering recovery 2ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > forwards missing awareness receipts to authoritative validation without a warmup hold 4ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > bounds /audio/upload by the connected client's upload/analysis lifetime 3ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > bounds /analysis/upload?kind=image by the connected client's upload/analysis lifetime 4ms
+ ✓ tests/unit/awareness-proxy-independence.test.ts > bounds /analysis/text by the connected client's upload/analysis lifetime 3ms
+ ✓ tests/unit/account-analytics-proxy.test.ts > dispatches actual analytics/capability contract during model warmup without injecting identity into private aggregates 64ms
+ ✓ tests/unit/account-analytics-proxy.test.ts > dispatches actual analytics/predict contract during model warmup without injecting identity into private aggregates 20ms
+ ✓ tests/unit/account-analytics-proxy.test.ts > dispatches actual analytics/insights contract during model warmup without injecting identity into private aggregates 9ms
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  01:30:26
+   Duration  808ms (transform 341ms, setup 46ms, import 792ms, tests 255ms, environment 0ms)
+

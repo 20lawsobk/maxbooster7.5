@@ -1,0 +1,17 @@
+{
+  "command": [
+    "docker",
+    "--host=unix:///var/run/docker.sock",
+    "start",
+    "--attach",
+    "maxbooster-linux-u3f69z18-sharp-prototype-runtime"
+  ],
+  "cwd": ".",
+  "startedAt": "2026-10-28T02:37:23.744023+00:00",
+  "durationSeconds": 13.812,
+  "exitCode": 0,
+  "timedOut": false,
+  "status": "passed",
+  "log": "reports/native-linux-rehearsal/2026-10-27/sharp-prototype-offline-runtime.txt",
+  "logSha256": "b871712dd9fe42004e8c9e24f87b174da49060c8c57488096a3951045ddd9696"
+}
