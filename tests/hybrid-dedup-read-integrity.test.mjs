@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -28,10 +29,13 @@ function setup({ readError = null, saveError = null } = {}) {
   vm.runInContext(js, context);
   const storage = new context.TestStorage();
   const originalDate = new Date("2020-01-01T00:00:00.000Z");
+  const expectedHash = createHash("sha256")
+    .update(Buffer.from("real-bytes:users/owner/original"))
+    .digest("hex");
   const primary = {
     key: "users/owner/original",
     userId: "owner",
-    contentHash: "sha256-content",
+    contentHash: expectedHash,
     isPublic: false,
     isDeduplicated: false,
     accessCount: 0,
@@ -50,6 +54,7 @@ function setup({ readError = null, saveError = null } = {}) {
   Object.assign(storage, {
     fileIndex: new Map([[primary.key, primary], [duplicate.key, duplicate]]),
     initialize: async () => {},
+    computeContentHash: (data) => createHash("sha256").update(data).digest("hex"),
     readFromStorage: async (entry) => {
       readKeys.push(entry.key);
       if (readError) throw readError;
@@ -139,4 +144,21 @@ test("explicitly public primary permits nonowner read", async () => {
   assert.equal(bytes.toString(), "real-bytes:" + f.primary.key);
   assert.equal(f.primary.accessCount, 1);
   assert.equal(f.saves, 1);
+});
+
+// Metadata hash agreement is not enough: validate bytes returned by PDIM.
+test("tampered primary bytes are rejected before access accounting", async () => {
+  const f = setup();
+  f.storage.readFromStorage = async () => Buffer.from("tampered physical bytes");
+  await assert.rejects(() => f.storage.read("owner", f.primary.key), /content integrity check failed/);
+  assert.equal(f.primary.accessCount, 0);
+  assert.equal(f.saves, 0);
+});
+
+test("tampered deduplicated bytes are rejected before access accounting", async () => {
+  const f = setup();
+  f.storage.readFromStorage = async () => Buffer.from("tampered physical bytes");
+  await assert.rejects(() => f.storage.read("second", f.duplicate.key), /content integrity check failed/);
+  assert.equal(f.duplicate.accessCount, 0);
+  assert.equal(f.saves, 0);
 });

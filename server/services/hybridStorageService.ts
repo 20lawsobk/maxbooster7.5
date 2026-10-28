@@ -647,6 +647,11 @@ export class HybridStorageService {
     }
 
     const data = await this.readFromStorage(sourceEntry);
+    // A valid metadata reference does not guarantee that PDIM returned the
+    // correct bytes. Fail closed before returning data or recording access.
+    if (this.computeContentHash(data) !== entry.contentHash) {
+      throw new Error(`Hybrid storage content integrity check failed: ${key}`);
+    }
     const previousAccessCount = entry.accessCount;
     const previousLastAccessed = entry.lastAccessed;
     entry.accessCount++;
