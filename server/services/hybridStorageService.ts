@@ -569,7 +569,7 @@ export class HybridStorageService {
       const primaryKey = existingKeys.find((candidateKey) =>
         mayDeduplicateHybridBytes(this.fileIndex.get(candidateKey), contentHash, userId),
       );
-      const existingEntry = this.fileIndex.get(primaryKey);
+      const existingEntry = primaryKey ? this.fileIndex.get(primaryKey) : undefined;
       if (existingEntry) {
         const newEntry: HybridFileMetadata = {
           key,
