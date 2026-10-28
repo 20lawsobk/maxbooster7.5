@@ -122,3 +122,67 @@ test('independent unindexed file rejects recovery without mutation',async()=>{
   p.files['users/other/unindexed']=metadata('users/other/unindexed',{userId:'other',hash:'other-content'});
   await rejectedWithoutMutation(p,'unindexed independent file must not be accepted');
 });
+
+
+// Exercise the committed upload() method, not a hand-written duplicate.
+// Hash-bucket iteration order is not a guarantee of primary-byte ownership.
+const uploadMethod = service.members.find(n => ts.isMethodDeclaration(n) && n.name?.getText(ast) === 'upload');
+assert.ok(uploadMethod, 'upload method exists');
+const uploadJs = ts.transpileModule(
+  'class TestUpload { ' + uploadMethod.getText(ast) + ' }; globalThis.TestUpload = TestUpload;',
+  {compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}},
+).outputText;
+
+function setupUpload(bucketKeys, entries) {
+  const ctx=vm.createContext({logger:{info(){}}});
+  vm.runInContext(uploadJs,ctx);
+  const s=new ctx.TestUpload();
+  let writes=0, physicalWrites=0;
+  s.fileIndex=new Map(entries.map(e=>[e.key,e]));
+  s.contentHashIndex=new Map([['same-content',[...bucketKeys]]]);
+  s.publicContentHashes=new Map();
+  s.initialize=async()=>{};
+  s.computeContentHash=()=> 'same-content';
+  s.generateFileKey=()=> 'users/new/new';
+  s.saveIndex=async()=>{writes++};
+  s.coldPocket={write:async()=>{physicalWrites++;return {compressedSize:3}}};
+  return {s,counts:()=>({writes,physicalWrites})};
+}
+
+test('upload-time deduplication resolves primary even when restored bucket lists alias first',async()=>{
+  const primary=metadata('users/owner/primary');
+  const alias=metadata('users/buyer/alias',{userId:'buyer',isDeduplicated:true,deduplicationRef:primary.key});
+  const {s,counts}=setupUpload([alias.key,primary.key],[primary,alias]);
+  const result=await s.upload('new','new.wav',{length:3},'audio/wav');
+  assert.equal(result.isDeduplicated,true);
+  assert.equal(s.fileIndex.get(result.key).deduplicationRef,primary.key);
+  assert.equal(s.fileIndex.get(result.key).isDeduplicated,true);
+  assert.equal(s.contentHashIndex.get('same-content').length,3);
+  assert.deepEqual(counts(),{writes:1,physicalWrites:0});
+});
+
+test('public upload points public content hash at concrete primary, not alias',async()=>{
+  const primary=metadata('users/owner/primary');
+  const alias=metadata('users/buyer/alias',{userId:'buyer',isDeduplicated:true,deduplicationRef:primary.key});
+  const {s}=setupUpload([alias.key,primary.key],[primary,alias]);
+  const result=await s.upload('new','new.wav',{length:3},'audio/wav',{isPublic:true});
+  assert.equal(s.fileIndex.get(result.key).deduplicationRef,primary.key);
+  assert.equal(s.publicContentHashes.get('same-content'),primary.key);
+});
+
+test('missing primary refuses upload without creating a dangling alias or persisting',async()=>{
+  const alias=metadata('users/buyer/alias',{userId:'buyer',isDeduplicated:true,deduplicationRef:'users/owner/missing'});
+  const {s,counts}=setupUpload([alias.key],[alias]);
+  await assert.rejects(()=>s.upload('new','new.wav',{length:3},'audio/wav'),/no primary byte owner/);
+  assert.equal(s.fileIndex.size,1);
+  assert.equal(s.fileIndex.has('users/new/new'),false);
+  assert.deepEqual(counts(),{writes:0,physicalWrites:0});
+});
+
+test('normal primary-first upload deduplicates without physical rewrite',async()=>{
+  const primary=metadata('users/owner/primary');
+  const {s,counts}=setupUpload([primary.key],[primary]);
+  const result=await s.upload('new','new.wav',{length:3},'audio/wav');
+  assert.equal(s.fileIndex.get(result.key).deduplicationRef,primary.key);
+  assert.deepEqual(counts(),{writes:1,physicalWrites:0});
+});
