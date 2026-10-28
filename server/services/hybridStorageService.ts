@@ -583,26 +583,43 @@ export class HybridStorageService {
       throw new Error(`File not found: ${key}`);
     }
 
-    if (entry?.userId !== userId && !entry?.isPublic) {
+    if (entry.userId !== userId && !entry.isPublic) {
       throw new Error(`Access denied: ${key}`);
     }
 
-    if (entry?.isDeduplicated && entry?.deduplicationRef) {
-      const refEntry = this.fileIndex.get(entry?.deduplicationRef);
-      if (refEntry) {
-        entry.accessCount++;
-        entry.lastAccessed = new Date();
-        return this.readFromStorage(refEntry);
+    let sourceEntry = entry;
+    if (entry.isDeduplicated) {
+      const refEntry = entry.deduplicationRef
+        ? this.fileIndex.get(entry.deduplicationRef)
+        : null;
+      // A missing, chained or mismatched reference must not fall through
+      // to another storage path. Cross-user deduplication requires the same
+      // content hash and a concrete primary byte owner.
+      if (
+        !refEntry ||
+        refEntry.isDeduplicated ||
+        refEntry.contentHash !== entry.contentHash
+      ) {
+        throw new Error(`Invalid hybrid deduplication reference: ${key}`);
       }
+      sourceEntry = refEntry;
     }
 
+    const data = await this.readFromStorage(sourceEntry);
+    const previousAccessCount = entry.accessCount;
+    const previousLastAccessed = entry.lastAccessed;
     entry.accessCount++;
     entry.lastAccessed = new Date();
 
-    const data = await this.readFromStorage(entry);
-
-    // PDIM-only: no tier-up to Replit Object Storage.
-    await this.saveIndex();
+    try {
+      // Persist access accounting for deduplicated and primary reads alike.
+      await this.saveIndex();
+    } catch (error) {
+      // Do not leave a failed persistence attempt counted as a durable read.
+      entry.accessCount = previousAccessCount;
+      entry.lastAccessed = previousLastAccessed;
+      throw error;
+    }
     return data;
   }
 
