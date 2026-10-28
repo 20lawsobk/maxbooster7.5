@@ -115,6 +115,23 @@ export interface TieringDecision {
   recommendedTier: StorageTier;
 }
 
+/** Validate cleanup retention before any destructive storage operation. */
+export function normalizeHybridCleanupDays(value: unknown): number {
+  if (value === undefined) return 90;
+  if (typeof value === "string" && /^[1-9][0-9]*$/.test(value)) {
+    value = Number(value);
+  }
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 1 ||
+    value > 36500
+  ) {
+    throw new Error("Invalid cleanup retention window");
+  }
+  return value;
+}
+
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
@@ -1078,7 +1095,7 @@ export class HybridStorageService {
   ): Promise<{ deletedCount: number; freedBytes: number }> {
     await this.initialize();
 
-    const thresholdDays = options?.olderThanDays || 90;
+    const thresholdDays = normalizeHybridCleanupDays(options?.olderThanDays);
     const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
     const now = Date?.now();
 
@@ -1098,9 +1115,12 @@ export class HybridStorageService {
       const entry = this.fileIndex.get(key);
       if (!entry) continue;
       try {
-        await this.delete(userId, key);
-        deletedCount++;
-        freedBytes += entry?.sizeBytes;
+        // A shared-primary guard may refuse deletion without throwing.
+        // Count only deletion outcomes explicitly acknowledged as successful.
+        if (await this.delete(userId, key) === true) {
+          deletedCount++;
+          freedBytes += entry?.sizeBytes;
+        }
       } catch {}
     }
 
