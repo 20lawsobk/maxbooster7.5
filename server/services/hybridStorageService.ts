@@ -419,6 +419,51 @@ export class HybridStorageService {
     return "cold";
   }
 
+  /**
+   * Roll back process-local ownership changes when PDIM rejects an index save.
+   * This does not make the legacy whole-index format crash-safe or transactional;
+   * SQL-backed metadata and immutable bytes remain required for that.
+   */
+  private async commitUploadIndex(
+    entry: HybridFileMetadata,
+    publicPrimaryKey?: string,
+  ): Promise<void> {
+    if (this.fileIndex.has(entry.key)) {
+      throw new Error(`Hybrid storage file key collision: ${entry.key}`);
+    }
+    const previousPublicKey = this.publicContentHashes.get(entry.contentHash);
+    this.fileIndex.set(entry.key, entry);
+    const hashKeys = this.contentHashIndex.get(entry.contentHash) || [];
+    this.contentHashIndex.set(entry.contentHash, [...hashKeys, entry.key]);
+    if (publicPrimaryKey !== undefined) {
+      this.publicContentHashes.set(entry.contentHash, publicPrimaryKey);
+    }
+    try {
+      await this.saveIndex();
+    } catch (error) {
+      // A failed index write must not leave an upload visible in memory.
+      this.fileIndex.delete(entry.key);
+      const currentKeys = this.contentHashIndex.get(entry.contentHash) || [];
+      const remainingKeys = currentKeys.filter((key) => key !== entry.key);
+      if (remainingKeys.length) {
+        this.contentHashIndex.set(entry.contentHash, remainingKeys);
+      } else {
+        this.contentHashIndex.delete(entry.contentHash);
+      }
+      if (
+        publicPrimaryKey !== undefined &&
+        this.publicContentHashes.get(entry.contentHash) === publicPrimaryKey
+      ) {
+        if (previousPublicKey === undefined) {
+          this.publicContentHashes.delete(entry.contentHash);
+        } else {
+          this.publicContentHashes.set(entry.contentHash, previousPublicKey);
+        }
+      }
+      throw error;
+    }
+  }
+
   async upload(
     userId: string,
     fileName: string,
@@ -470,14 +515,7 @@ export class HybridStorageService {
           metadata: options?.metadata,
         };
 
-        this.fileIndex.set(key, newEntry);
-        existingKeys?.push(key);
-
-        if (isPublic) {
-          this.publicContentHashes.set(contentHash, primaryKey);
-        }
-
-        await this.saveIndex();
+        await this.commitUploadIndex(newEntry, isPublic ? primaryKey : undefined);
 
         logger.info(
           `[HybridStorage] Deduplicated: ${key} -> ${primaryKey}`,
@@ -518,13 +556,7 @@ export class HybridStorageService {
             metadata: options?.metadata,
           };
 
-          this.fileIndex.set(key, newEntry);
-
-          const hashKeys = this.contentHashIndex.get(contentHash) || [];
-          hashKeys?.push(key);
-          this.contentHashIndex.set(contentHash, hashKeys);
-
-          await this.saveIndex();
+          await this.commitUploadIndex(newEntry);
 
           logger.info(
             `[HybridStorage] Cross-user deduplicated: ${key} -> ${publicRef}`,
@@ -573,17 +605,7 @@ export class HybridStorageService {
       metadata: options?.metadata,
     };
 
-    this.fileIndex.set(key, entry);
-
-    const hashKeys = this.contentHashIndex.get(contentHash) || [];
-    hashKeys?.push(key);
-    this.contentHashIndex.set(contentHash, hashKeys);
-
-    if (isPublic) {
-      this.publicContentHashes.set(contentHash, key);
-    }
-
-    await this.saveIndex();
+    await this.commitUploadIndex(entry, isPublic ? key : undefined);
 
     logger.info(
       `[HybridStorage] Uploaded: ${key} (${tier} tier, ${data?.length} bytes)`,
