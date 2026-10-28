@@ -12,6 +12,43 @@ import { spawn } from 'node:child_process';
 import WebSocket from 'ws';
 import { trackBrowserProcesses } from './helpers-browser-processes.mjs';
 
+function waitForDebugger(browser) {
+  return new Promise((resolve, reject) => {
+    let output = '';
+    const cleanup = () => {
+      clearTimeout(timer);
+      browser.stderr.removeListener('data', onData);
+      browser.removeListener('error', onError);
+      browser.removeListener('close', onClose);
+    };
+    const fail = message => { cleanup(); reject(new Error(`${message}\n${output.slice(-8192)}`)); };
+    const onData = chunk => {
+      output = (output + chunk).slice(-65536);
+      const match = output.match(/DevTools listening on (ws:\/\/[^\s]+)/);
+      if (match) { cleanup(); resolve(match[1]); }
+    };
+    const onError = error => fail(`Chromium spawn failed: ${error.message}`);
+    const onClose = (code, signal) => fail(`Chromium exited before debugger readiness (exit ${code}, signal ${signal ?? 'none'})`);
+    const timer = setTimeout(() => fail('Chromium startup timeout'), 10000);
+    browser.stderr.on('data', onData);
+    browser.once('error', onError);
+    browser.once('close', onClose);
+  });
+}
+
+test('Browser startup reports a real early exit with bounded stderr', async () => {
+  const browser = spawn(process.execPath, ['-e', 'process.stderr.write("owned-browser-startup-failure\\n");process.exit(37)'],
+    { env: {}, stdio: ['ignore', 'ignore', 'pipe'] });
+  await assert.rejects(waitForDebugger(browser), /Chromium exited before debugger readiness \(exit 37.*owned-browser-startup-failure/s);
+});
+
+test('Browser startup reports a missing executable without waiting for the deadline', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'layout-missing-browser-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const browser = spawn(path.join(directory, 'absent-chromium'), [], { env: {}, stdio: ['ignore', 'ignore', 'pipe'] });
+  await assert.rejects(waitForDebugger(browser), /Chromium spawn failed:.*ENOENT/);
+});
+
 test('Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus', { timeout: 45000 }, async t => {
   const root = process.cwd();
   const chromium = [process.env.CHROMIUM_PATH, '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(p => p && fs.existsSync(p));
@@ -48,18 +85,19 @@ test('Shared navigation exposes named controls and keeps closed mobile navigatio
   });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   const port = server.address().port;
-  const childEnv = {PATH:process.env.PATH,HOME:temp,TMPDIR:temp};
+  // Chromium binds a Unix-domain SingletonSocket beneath TMPDIR. The master's
+  // nested private test homes can exceed its path limit, so give the browser a
+  // short owned directory rather than weakening isolation or retrying startup.
+  const browserTemp = fs.mkdtempSync(path.join(process.platform === 'win32' ? os.tmpdir() : '/tmp', 'layout-chrome-'));
+  t.after(() => fs.rmSync(browserTemp, {recursive:true,force:true,maxRetries:10,retryDelay:100}));
+  const childEnv = {PATH:process.env.PATH,HOME:temp,TMPDIR:browserTemp};
   for (const key of ['LD_LIBRARY_PATH','FONTCONFIG_PATH','XDG_DATA_DIRS']) if(process.env[key]) childEnv[key]=process.env[key];
   const browser = spawn(chromium,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--remote-debugging-port=0',`--user-data-dir=${temp}`,'about:blank'],{env:childEnv,stdio:['ignore','ignore','pipe']});
   const stopBrowser = trackBrowserProcesses(browser);
   let socket;
   const errors=[];
   try {
-    const endpoint=await new Promise((resolve,reject)=>{
-      let output='';const timer=setTimeout(()=>reject(new Error('Chromium startup timeout')),10000);
-      browser.stderr.on('data',chunk=>{output+=chunk;const match=output.match(/DevTools listening on (ws:\/\/[^\s]+)/);if(match){clearTimeout(timer);resolve(match[1]);}});
-      browser.once('error',error=>{clearTimeout(timer);reject(error);});
-    });
+    const endpoint=await waitForDebugger(browser);
     const targets=await(await fetch(`http://${new URL(endpoint).host}/json/list`)).json();
     socket=new WebSocket(targets.find(target=>target.type==='page').webSocketDebuggerUrl);
     await new Promise((resolve,reject)=>{socket.once('open',resolve);socket.once('error',reject);});
