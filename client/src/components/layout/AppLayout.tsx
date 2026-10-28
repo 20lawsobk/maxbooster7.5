@@ -1,4 +1,4 @@
-import { useState, ReactNode, createContext, useContext } from "react";
+import { useState, useCallback, ReactNode, createContext, useContext } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -69,6 +69,7 @@ export function AppLayout({
   noPadding = false,
 }: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const fluidLayout = useFluidLayout();
   const { containerRef, layoutMode, isMobile, isTablet, isSmallHeight } =
     fluidLayout;
@@ -99,7 +100,7 @@ export function AppLayout({
       >
         <Sidebar
           isMobileOpen={isMobileMenuOpen}
-          onMobileClose={() => setIsMobileMenuOpen(false)}
+          onMobileClose={closeMobileMenu}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -108,6 +109,7 @@ export function AppLayout({
             title={title}
             subtitle={subtitle}
             onMenuClick={() => setIsMobileMenuOpen(true)}
+            isMobileMenuOpen={isMobileMenuOpen}
           />
 
           <main

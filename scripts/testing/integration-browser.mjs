@@ -23,7 +23,7 @@ const home = path.join(temporary, 'home');
 fs.mkdirSync(home);
 const env = { PATH: process.env.PATH, HOME: home, LANG: 'C', TZ: 'UTC', ...(process.env.LD_LIBRARY_PATH ? { LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH } : {}) };
 const summary = { startedAt: new Date().toISOString(), scope: 'Disposable PostgreSQL and real source application; all external TCP/TLS and UDP denied', sourceRevision: '', requestedFiles: requested, status: 'running', productionReady: false };
-let client, app, appOwnership, testOwnership, ownershipPoll, pgStarted = false;
+let client, app, appOwnership, testOwnership, analyticsOwnership, ownershipPoll, pgStarted = false;
 const clean = source => source.replace(/postgres(?:ql)?:\/\/[^\s"'<>]+/gi, 'postgresql://[redacted]')
   .replace(/\b(?:sk|pk)_(?:test|live)_[A-Za-z0-9_]+/g, '[redacted-stripe-key]')
   .replace(/((?:session[_-]?secret|authorization|access[_-]?token|refresh[_-]?token)["' :=]+)[^\s,"'}<>]+/gi, '$1[redacted]');
@@ -57,7 +57,7 @@ try {
   summary.testSourceSha256 = Object.fromEntries([...testFiles, 'vitest.integration.config.ts', 'scripts/testing/integration-browser.mjs'].map(file => [file, createHash('sha256').update(fs.readFileSync(file)).digest('hex')]));
   const ports = new Set();
   const port = async () => { let value; do { value = await availablePort(); } while (ports.has(value)); ports.add(value); return value; };
-  const pgPort = await port(), appPort = await port(), pdimPort = await port();
+  const pgPort = await port(), appPort = await port(), pdimPort = await port(), analyticsPort = await port();
   const fixtureCwd = path.join(temporary, 'cwd'); fs.mkdirSync(fixtureCwd);
   for (const member of ['node_modules', 'dist', 'package.json', 'shared', 'external', 'tsconfig.json', 'tsconfig.server.json']) {
     fs.symlinkSync(path.join(root, member), path.join(fixtureCwd, member));
@@ -88,10 +88,44 @@ try {
   await client.query('CREATE TABLE maxbooster_test_fixture_proof (token text PRIMARY KEY)');
   await client.query('INSERT INTO maxbooster_test_fixture_proof(token) VALUES ($1)', [fixtureToken]);
   summary.ephemeralDatabase = 'pass';
+  // The dedicated analytics contract is a real canonical MaxCore router, not
+  // an inference/model stand-in. General generation remains unavailable.
+  const analyticsToken = randomBytes(32).toString('hex');
+  const analyticsOrigin = `http://127.0.0.1:${analyticsPort}`;
+  const analyticsFd = fs.openSync(path.join(temporary, 'analytics.txt'), 'w');
+  const analytics = spawn(process.env.MAXBOOSTER_PYTHON || path.join(root, 'python_runtime/bin/python3'),
+    ['-I', '-B', path.join(root, 'tests/contracts/helpers-account-analytics-server.py'),
+      path.join(root, 'external/maxcore/artifacts/ai-training-server'), String(analyticsPort)], {
+      cwd: temporary, env: { ...env, OWNED_ANALYTICS_FIXTURE_TOKEN: analyticsToken,
+        OPENBLAS_NUM_THREADS: '1', OMP_NUM_THREADS: '1' }, stdio: ['ignore', analyticsFd, analyticsFd], detached: true,
+    });
+  fs.closeSync(analyticsFd);
+  let analyticsStartupError; analytics.once('error', error => { analyticsStartupError = error; });
+  analyticsOwnership = createOwnedProcessTracker(analytics.pid);
+  let analyticsStarted = false;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (analyticsStartupError || analytics.exitCode !== null || analytics.signalCode !== null) break;
+    try {
+      const response = await fetch(`${analyticsOrigin}/api/analytics/capability`, {
+        headers: { Authorization: `Bearer ${analyticsToken}` }, signal: AbortSignal.timeout(200),
+      });
+      const capability = response.ok ? await response.json() : null;
+      if (capability?.available === true && capability.version === 1) { analyticsStarted = true; break; }
+    } catch {}
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  if (!analyticsStarted) throw new Error('Owned canonical analytics router did not start');
+  summary.analyticsFixture = { status: 'started', implementation: 'canonical MaxCore ai_model/analytics.py',
+    scope: 'private transient numerical analysis only; general model/generation/readiness unavailable; no learning, persistence or public feed ingestion',
+    sourceSha256: Object.fromEntries(['tests/contracts/helpers-account-analytics-server.py',
+      'external/maxcore/artifacts/ai-training-server/ai_model/analytics.py'].map(file =>
+        [file, createHash('sha256').update(fs.readFileSync(file)).digest('hex')])) };
   const common = { ...env, DATABASE_URL: databaseUrl, SESSION_SECRET: randomBytes(48).toString('hex'),
     READINESS_ISOLATED_PG: '1', READINESS_EGRESS_GUARD: '1', READINESS_LOCAL_CODECS: '1', MAXCORE_LOCAL: '0', TEST_EXPECT_MAXCORE_UNAVAILABLE: '1',
     STRIPE_WEBHOOK_SECRET: `whsec_${randomBytes(32).toString('hex')}`,
     MAXCORE_API_URL: 'http://127.0.0.1:9', MAXCORE_BASE_URL: 'http://127.0.0.1:9',
+    MAXCORE_URL: analyticsOrigin, AI_SERVER_KEY: analyticsToken,
+    MAXBOOSTER_ANALYTICS_FIXTURE_ORIGIN: analyticsOrigin, MAXBOOSTER_ANALYTICS_FIXTURE_TOKEN: analyticsToken,
     MAXCORE_PRIVATE_STATE_DIR: path.join(temporary, 'maxcore-state'),
     ...(process.env.MAXBOOSTER_PYTHON ? { MAXBOOSTER_PYTHON: process.env.MAXBOOSTER_PYTHON } : {}),
     LOCAL_PDIM_PORT: String(pdimPort), LOCAL_PDIM_STORE_FILE: path.join(temporary, 'pdim.json'),
@@ -105,7 +139,7 @@ try {
   });
   fs.closeSync(appFd);
   appOwnership = createOwnedProcessTracker(app.pid);
-  ownershipPoll = setInterval(() => { appOwnership.capture(); testOwnership?.capture(); }, 200); ownershipPoll.unref();
+  ownershipPoll = setInterval(() => { appOwnership.capture(); testOwnership?.capture(); analyticsOwnership?.capture(); }, 200); ownershipPoll.unref();
   const base = `http://127.0.0.1:${appPort}`;
   await waitForApp(base); summary.applicationRoutes = 'pass';
   // Vitest itself forks workers, and the supervisor integration launches local
@@ -170,14 +204,15 @@ globalThis.fetch = (input, init) => {
   clearInterval(ownershipPoll);
   if (testOwnership) summary.testProcessCleanup = await testOwnership.stop({ graceMs: 2000, descendantGraceMs: 2000 });
   if (appOwnership) summary.appProcessCleanup = await appOwnership.stop({ graceMs: 28000, descendantGraceMs: 2000 });
-  if (summary.testProcessCleanup?.remaining.length || summary.appProcessCleanup?.remaining.length) { summary.status = 'failed'; process.exitCode = 1; }
+  if (analyticsOwnership) summary.analyticsProcessCleanup = await analyticsOwnership.stop({ graceMs: 2000, descendantGraceMs: 1000 });
+  if (summary.testProcessCleanup?.remaining.length || summary.appProcessCleanup?.remaining.length || summary.analyticsProcessCleanup?.remaining.length) { summary.status = 'failed'; process.exitCode = 1; }
   await client?.end().catch(() => {});
   if (pgStarted) {
     const stop = spawnSync('pg_ctl', ['-D', path.join(temporary, 'pg'), '-m', 'immediate', '-w', 'stop'], { env, encoding: 'utf8', timeout: 30000 });
     summary.postgresCleanup = stop.status === 0 ? 'pass' : 'failed';
     if (stop.status !== 0) { process.exitCode = 1; summary.status = 'failed'; }
   }
-  for (const [source, target] of [['setup.txt', 'http-setup.txt'], ['app.txt', 'http-app.txt'], ['vitest.txt', 'http-vitest.txt']]) {
+  for (const [source, target] of [['setup.txt', 'http-setup.txt'], ['app.txt', 'http-app.txt'], ['vitest.txt', 'http-vitest.txt'], ['analytics.txt', 'http-analytics.txt']]) {
     const file = path.join(temporary, source);
     if (fs.existsSync(file)) fs.writeFileSync(path.join(reportDirectory, target), clean(fs.readFileSync(file, 'utf8')));
   }

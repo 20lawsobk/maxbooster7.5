@@ -297,7 +297,7 @@ router.post(
   "/alerting/test",
   asyncHandler(async (req: any, res: any) => {
     try {
-      await alertingService?.sendAlert({
+      const outcome = await alertingService.sendAlert({
         severity: "info",
         title: "Test Alert",
         message: "This is a test alert from Max Booster monitoring system.",
@@ -305,9 +305,12 @@ router.post(
         metadata: { testBy: req.user.email },
       });
 
-      res.json({
-        success: true,
-        message: "Test alert sent successfully",
+      const accepted = outcome.status === "accepted";
+      const status = accepted ? 202 : outcome.status === "failed" || outcome.reason === "unconfigured" ? 503 : 409;
+      res.status(status).json({
+        success: accepted,
+        message: accepted ? "Test alert accepted by provider" : outcome.status === "failed" ? "No provider accepted the test alert" : "Test alert was not dispatched",
+        ...outcome,
       });
     } catch (error) {
       logger.warn("Error in alerting test:", (error as any)?.message);

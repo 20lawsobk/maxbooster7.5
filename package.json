@@ -122,13 +122,14 @@
       "dist/cluster.mjs",
       "dist/public/**/*",
       "!electron/package-lock.json",
-      "!node_modules/@tensorflow/**/*",
       "!node_modules/@sentry-internal/node-cpu-profiler/**/*",
-      "!**/*.map"
+      "!**/*.map",
+      "!node_modules/bcrypt/build/**/*"
     ],
     "asarUnpack": [
       "dist/index.mjs",
-      "dist/index.cjs"
+      "dist/index.cjs",
+      "node_modules/@img/sharp-*/**/*"
     ],
     "directories": {
       "output": "dist-installers",
@@ -240,7 +241,6 @@
     "@replit/vite-plugin-cartographer": "^0.4.6",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.4",
-    "@sendgrid/mail": "^8.1.6",
     "@sentry/node": "^10.76.2",
     "@sentry/profiling-node": "^10.76.2",
     "@sentry/react": "^10.76.2",
@@ -458,7 +458,7 @@
     "brace-expansion": "^5.0.12",
     "fast-uri": "3.1.9",
     "js-yaml": "4.3.2",
-    "qs": "6.16.0",
+    "qs": "6.16.1",
     "yaml": "^2.9.1",
     "dompurify": "^3.4.17",
     "swagger-jsdoc": {

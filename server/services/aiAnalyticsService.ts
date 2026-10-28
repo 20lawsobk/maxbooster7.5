@@ -3,6 +3,7 @@ import { db } from "../db";
 import { users, analytics, projects, posts, sessions, dspAnalytics } from "@shared/schema";
 import { sql, gte, lte, desc, and, count, eq, isNotNull } from "drizzle-orm";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { accountAnalyticsService } from "./accountAnalyticsService.js";
 
 function missingMaxCoreAnalyticsContract(capability: string): never {
   throw new AIUnavailableError(
@@ -96,125 +97,10 @@ function calculateStandardDeviation(values: number[]): number {
 
 
 export async function predictMetric(
+  userId: string,
   params: PredictMetricRequest,
-): Promise<PredictMetricResponse> {
-  missingMaxCoreAnalyticsContract("metric prediction");
-  const { metric, timeframe } = params;
-
-  const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
-  const startDate = new Date();
-  startDate?.setDate(startDate?.getDate() - days);
-
-  let historicalData: Array<{ date: Date; value: number }> = [];
-
-  if (metric === "streams") {
-    const results = await db
-      .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
-      })
-      .from(analytics)
-      .where(gte(analytics.date, startDate))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
-
-    historicalData = results?.map((r) => ({
-      date: r.date,
-      value: Number(r?.value) || 0,
-    }));
-  } else if (metric === "engagement") {
-    const results = await db
-      .select({
-        date: posts.publishedAt,
-        value: sql<number>`COUNT(*)`,
-      })
-      .from(posts)
-      .where(
-        and(gte(posts.publishedAt, startDate), eq(posts.status, "published")),
-      )
-      .groupBy(posts.publishedAt)
-      .orderBy(posts.publishedAt);
-
-    historicalData = results
-      .filter((r) => r?.date !== null)
-      .map((r) => ({
-        date: r.date!,
-        value: Number(r?.value) || 0,
-      }));
-  } else if (metric === "revenue") {
-    const analyticsRevenue = await db
-      .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.revenue}), 0) AS NUMERIC)`,
-      })
-      .from(analytics)
-      .where(gte(analytics.date, startDate))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
-
-    historicalData = analyticsRevenue?.map((r) => ({
-      date: r.date,
-      value: Number(r?.value) || 0,
-    }));
-  }
-
-  if (historicalData?.length === 0) {
-    return {
-      predictions: [],
-      trend: "stable",
-      accuracy: 0,
-    };
-  }
-
-  const dataPoints = historicalData?.map((item, index) => ({
-    x: index,
-    y: item.value,
-  }));
-
-  const { slope, intercept } = linearRegression(dataPoints);
-
-  const forecastDays = Math.min(days, 30);
-  const predictions: Array<{
-    date: string;
-    value: number;
-    confidence: number;
-  }> = [];
-
-  for (let i = 1; i <= forecastDays; i++) {
-    const x = dataPoints?.length + i;
-    const predictedValue = Math.max(0, slope * x + intercept);
-    const futureDate = new Date();
-    futureDate?.setDate(futureDate?.getDate() + i);
-
-    const values = historicalData?.map((d) => d?.value);
-    const stdDev = calculateStandardDeviation(values);
-    const mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
-    const confidence =
-      stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / mean));
-
-    predictions?.push({
-      date: futureDate.toISOString().split("T")[0],
-      value: Math.round(predictedValue),
-      confidence: Number(confidence?.toFixed(2)),
-    });
-  }
-
-  let trend: "up" | "down" | "stable" = "stable";
-  if (Math.abs(slope) > 0.1) {
-    trend = slope > 0 ? "up" : "down";
-  }
-
-  const values = historicalData?.map((d) => d?.value);
-  const stdDev = calculateStandardDeviation(values);
-  const mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
-  const accuracy =
-    stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / (mean || 1)));
-
-  return {
-    predictions,
-    trend,
-    accuracy: Number(accuracy?.toFixed(2)),
-  };
+) {
+  return accountAnalyticsService.predict(userId, params);
 }
 
 // 5-minute in-process cache — prevents repeated full-table scans on every admin request

@@ -15,7 +15,7 @@ const minimums = [
   { name: "esbuild", major: 0, version: "0.28.1" },
   { name: "nanoid", major: 3, version: "3.3.18" },
   { name: "ip-address", major: 10, version: "10.7.1" },
-  { name: "markdown-it", major: 14, version: "14.3.1" },
+  { name: "markdown-it", major: 14, version: "14.3.3" },
   { name: "undici", major: 6, version: "6.29.1" },
   { name: "@xmldom/xmldom", major: 0, version: "0.9.12", optional: true },
   { name: "dompurify", major: 3, version: "3.4.16", optional: true },

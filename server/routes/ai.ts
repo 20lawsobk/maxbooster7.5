@@ -17,7 +17,7 @@ import {
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { MaxCoreControlError } from "../services/maxcoreControlTransport.js";
-import { unsupportedAICapabilityPayload } from "../lib/aiCapabilityContracts.js";
+import { accountAnalyticsService } from "../services/accountAnalyticsService.js";
 import { notificationService } from "../services/notificationService.js";
 import { loopbackUrl, runtimePorts } from "../config/ports.js";
 
@@ -779,7 +779,7 @@ router.post(
           .json({ error: "Valid timeframe is required (7d, 30d, 90d)" });
       }
 
-      const prediction = await unifiedAIController?.predictAnalyticsMetric({
+      const prediction = await unifiedAIController.predictAnalyticsMetric(req.user!.id, {
         metric,
         timeframe,
       });
@@ -792,41 +792,49 @@ router.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
+      if (error instanceof MaxCoreControlError) {
+        return res.status(error.status).json({ error: "MaxCore analytics is temporarily unavailable" });
+      }
       logger.warn({ err: error }, "Analytics prediction route error:");
       res.status(500).json({ error: "Failed to predict analytics metric" });
     }
   },
 );
 
-/**
- * Generate a personal analytics interpretation through MaxCore.
- *
- * MaxCore's only text-generation endpoint (`/api/generate/content`) is a
- * template-based social-caption composer: its `hook`/`body` are built from a
- * hardcoded f-string ("{artist} just dropped something you need to hear —
- * {topic}") and the free-text fields we could send (`instruction`,
- * `extra_context`) only feed the awareness/conditioning channel, never get
- * analyzed or quoted back. Verified live: sending it the user's real
- * analytics data produced a generic hype caption with no reference to any
- * supplied number. There is currently no MaxCore capability that reasons
- * over arbitrary business data, so this always reports honest
- * unavailability rather than presenting mismatched caption text as AI
- * analysis (see .agents/memory/maxcore-only-fail-explicit.md).
- */
-// Advertise availability separately from generation so the UI does not
-// repeatedly invoke a feature whose provider cannot yet interpret analytics.
-// Both endpoints remain authenticated; neither fabricates AI insights.
+// Dedicated MaxCore statistics use only this session owner's aggregates.
+// Public awareness remains a separate read-only context receipt; account data
+// never enters its public-content ingestion or learning systems.
 router.get(
   "/analytics/insights/capability",
   requireAuth,
-  (_req: Request, res: Response) => res.json(unsupportedAICapabilityPayload()),
+  async (_req: Request, res: Response) => {
+    try { res.json(await accountAnalyticsService.capability()); }
+    catch (error) {
+      const status = error instanceof MaxCoreControlError ? error.status :
+        error instanceof AIUnavailableError ? error.statusCode : 500;
+      res.status(status).json({ available: false, capability: "analytics-insights",
+        error: status === 500 ? "Failed to check analytics capability" : "MaxCore analytics is temporarily unavailable" });
+    }
+  },
 );
 
 router.post(
   "/analytics/insights",
   requireAuth,
-  (_req: Request, res: Response) =>
-    res.status(501).json(unsupportedAICapabilityPayload()),
+  async (req: Request, res: Response) => {
+    try {
+      res.json(await accountAnalyticsService.insights(req.user!.id, req.body?.timeframe ?? "30d"));
+    } catch (error) {
+      if (error instanceof AIUnavailableError || error instanceof MaxCoreControlError ||
+          error && typeof error === "object" && "statusCode" in error) {
+        const status = error instanceof MaxCoreControlError ? error.status : Number(error.statusCode);
+        return res.status(status >= 400 && status < 600 ? status : 500).json({
+          error: status === 400 ? error.message : "MaxCore analytics is temporarily unavailable" });
+      }
+      logger.warn({ err: error }, "Account analytics insight route error:");
+      res.status(500).json({ error: "Failed to generate account analytics insights" });
+    }
+  },
 );
 
 router.get("/insights", requireAuth, async (_req: Request, res: Response) => {

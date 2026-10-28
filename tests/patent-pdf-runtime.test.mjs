@@ -11,7 +11,7 @@ import { generatePatentPdf } from "../external/maxcore/scripts/src/generate-pate
 test("upstream Puppeteer browser manager no longer requires extract-zip", () => {
   const require = createRequire(new URL("../external/maxcore/scripts/package.json", import.meta.url));
   const puppeteer = require("puppeteer-core/package.json");
-  assert.equal(puppeteer.version, "25.11.0");
+  assert.equal(puppeteer.version, "25.13.0");
   const browsersRequire = createRequire(require.resolve("puppeteer-core"));
   const browserEntry = browsersRequire.resolve("@puppeteer/browsers");
   let packageRoot = path.dirname(browserEntry);
@@ -21,7 +21,7 @@ test("upstream Puppeteer browser manager no longer requires extract-zip", () => 
   }
   const manifest = JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"));
   assert.equal(manifest.name, "@puppeteer/browsers");
-  assert.equal(manifest.version, "3.2.2");
+  assert.equal(manifest.version, "3.2.4");
   assert.equal(manifest.dependencies["extract-zip"], undefined);
   assert.equal(fs.readFileSync(new URL("../external/maxcore/pnpm-lock.yaml", import.meta.url), "utf8").includes("extract-zip@"), false);
 });

@@ -11,9 +11,10 @@ interface TopBarProps {
   title?: string;
   subtitle?: string;
   onMenuClick?: () => void;
+  isMobileMenuOpen?: boolean;
 }
 
-export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
+export function TopBar({ title, subtitle, onMenuClick, isMobileMenuOpen = false }: TopBarProps = {}) {
   const { logout } = useAuth();
   const [, navigate] = useLocation();
   const [signingOut, setSigningOut] = useState(false);
@@ -42,6 +43,9 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
             className="lg:hidden"
             onClick={onMenuClick}
             data-testid="mobile-menu-button"
+            aria-label="Open navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="app-sidebar"
           >
             <Menu className="w-5 h-5" />
           </Button>
@@ -64,17 +68,17 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
         <div className="flex items-center space-x-2">
           <PendingChangesIndicator variant="badge" showDropdown={true} />
           <NotificationCenter />
-          <Link to="/settings">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              data-testid="settings-button"
-            >
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <Link to="/settings" aria-label="Settings" data-testid="settings-button">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -82,6 +86,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
             disabled={signingOut}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             data-testid="sign-out-button"
+            aria-label={signingOut ? "Signing out..." : "Sign Out"}
           >
             {signingOut ? (
               <Loader2 className="w-4 h-4 animate-spin" />

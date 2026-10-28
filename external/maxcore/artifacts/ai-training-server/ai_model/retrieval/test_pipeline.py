@@ -6,11 +6,17 @@ slower integration test than test_retrieval.py.
 Run:
     cd artifacts/ai-training-server
     uv run python -u -m ai_model.retrieval.test_pipeline
+
+Both pytest and the module entrypoint render into owned temporary uploads.
 """
 
 from __future__ import annotations
 
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import numpy as np
 
@@ -25,6 +31,51 @@ from ai_model.retrieval.asset_pipeline import (
 from ai_model.retrieval.image_features import EMBED_DIM, image_to_vector
 
 _FAILS: list = []
+_TEST_UPLOAD_CONTEXT = None
+
+
+@contextmanager
+def _isolated_uploads(namespace):
+    """Redirect real render/retrieval aliases together, then restore them."""
+    original = namespace["_UPLOADS_DIR"]
+    with TemporaryDirectory(prefix="maxcore-retrieval-test-") as owned, ExitStack() as stack:
+        uploads = Path(owned) / "images"
+        uploads.mkdir(mode=0o700)
+        # Already-imported readers may hold their own copy of the engine path.
+        # Later imports inherit the engine's redirected value automatically.
+        for name, module in list(sys.modules.items()):
+            if name.startswith("ai_model.") and getattr(module, "_UPLOADS_DIR", None) == original:
+                stack.enter_context(patch.object(module, "_UPLOADS_DIR", uploads))
+        namespace["_UPLOADS_DIR"] = uploads
+        stack.callback(namespace.__setitem__, "_UPLOADS_DIR", original)
+        cleanup = namespace.get("_CLEANUP")
+        previous_cleanup = set(cleanup) if isinstance(cleanup, set) else None
+        if previous_cleanup is not None:
+            cleanup.clear()
+        try:
+            yield uploads
+        finally:
+            # Modules imported while active copied the temporary engine path;
+            # restore those aliases too before the owned directory disappears.
+            for name, module in list(sys.modules.items()):
+                if name.startswith("ai_model.") and getattr(module, "_UPLOADS_DIR", None) == uploads:
+                    module._UPLOADS_DIR = original
+            if previous_cleanup is not None:
+                cleanup.clear()
+                cleanup.update(previous_cleanup)
+
+
+def setup_module():
+    global _TEST_UPLOAD_CONTEXT
+    _TEST_UPLOAD_CONTEXT = _isolated_uploads(globals())
+    _TEST_UPLOAD_CONTEXT.__enter__()
+
+
+def teardown_module():
+    global _TEST_UPLOAD_CONTEXT
+    if _TEST_UPLOAD_CONTEXT is not None:
+        _TEST_UPLOAD_CONTEXT.__exit__(None, None, None)
+        _TEST_UPLOAD_CONTEXT = None
 
 
 def _check(name: str, cond: bool) -> None:
@@ -32,6 +83,7 @@ def _check(name: str, cond: bool) -> None:
     print(f"  [{status}] {name}")
     if not cond:
         _FAILS.append(name)
+        raise AssertionError(name)
 
 
 def _new_index() -> AssetIndex:
@@ -159,7 +211,7 @@ def test_ingest_generated_asset() -> None:
            ingest_generated_asset(idx, "/nope/none.png") is False)
 
 
-def main() -> int:
+def _run_tests() -> int:
     tests = [
         test_features_deterministic_and_dim,
         test_seeded_render_is_idempotent_file,
@@ -180,6 +232,11 @@ def main() -> int:
             _FAILS.append(f"{t.__name__}:EXC:{exc}")
     print("\n" + ("ALL PASSED" if not _FAILS else f"FAILED: {_FAILS}"))
     return 0 if not _FAILS else 1
+
+
+def main() -> int:
+    with _isolated_uploads(globals()):
+        return _run_tests()
 
 
 if __name__ == "__main__":

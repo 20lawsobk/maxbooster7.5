@@ -66,6 +66,9 @@ const EXCLUDED_TOP_LEVEL = new Set([
 ]);
 
 const MAXCORE_EXCLUDED_SUBTREES = [
+  // Generated/customer runtime media belongs in persistent serving storage,
+  // never in a source snapshot, disposable simulation or publishing capsule.
+  "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",
   "artifacts/ai-training-server/ai_model/training/live_learning_runs",

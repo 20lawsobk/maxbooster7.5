@@ -5,6 +5,8 @@ dedupe, and the generated-asset ingestor.
 Run:
     cd artifacts/ai-training-server
     uv run python -u -m ai_model.retrieval.test_phase4
+
+Both pytest and the module entrypoint render into owned temporary uploads.
 """
 
 from __future__ import annotations
@@ -23,9 +25,24 @@ from ai_model.retrieval.image_features import (
     embedding_cache_stats,
     image_to_vector,
 )
+from ai_model.retrieval.test_pipeline import _isolated_uploads
 
 _FAILS: list = []
 _CLEANUP: set = set()
+_TEST_UPLOAD_CONTEXT = None
+
+
+def setup_module():
+    global _TEST_UPLOAD_CONTEXT
+    _TEST_UPLOAD_CONTEXT = _isolated_uploads(globals())
+    _TEST_UPLOAD_CONTEXT.__enter__()
+
+
+def teardown_module():
+    global _TEST_UPLOAD_CONTEXT
+    if _TEST_UPLOAD_CONTEXT is not None:
+        _TEST_UPLOAD_CONTEXT.__exit__(None, None, None)
+        _TEST_UPLOAD_CONTEXT = None
 
 
 def _check(name: str, cond: bool) -> None:
@@ -33,6 +50,7 @@ def _check(name: str, cond: bool) -> None:
     print(f"  [{status}] {name}")
     if not cond:
         _FAILS.append(name)
+        raise AssertionError(name)
 
 
 def _new_index() -> AssetIndex:
@@ -259,7 +277,7 @@ def _cleanup() -> None:
             pass
 
 
-def main() -> None:
+def _run_tests() -> None:
     try:
         test_brand_centroid_mean()
         test_brand_centroid_replace_matches_rebuild()
@@ -279,6 +297,11 @@ def main() -> None:
         print(f"FAILED ({len(_FAILS)}): " + ", ".join(_FAILS))
         raise SystemExit(1)
     print("ALL PHASE 4 TESTS PASSED")
+
+
+def main() -> None:
+    with _isolated_uploads(globals()):
+        _run_tests()
 
 
 if __name__ == "__main__":

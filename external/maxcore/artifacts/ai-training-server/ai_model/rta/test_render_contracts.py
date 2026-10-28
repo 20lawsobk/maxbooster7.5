@@ -41,6 +41,7 @@ def _check(name: str, cond: bool, detail: str = "") -> None:
     print(line)
     if not cond:
         _FAILS.append(name)
+        raise AssertionError(name)
 
 
 # ── 1. Cross-process image determinism ──────────────────────────────────────

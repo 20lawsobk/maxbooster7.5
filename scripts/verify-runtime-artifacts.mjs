@@ -22,14 +22,17 @@ export const floors = {
   // Their unpatched consumers have been removed or upgraded.
   braces: null,
   "http-cache-semantics": null,
-  "fast-uri": "3.1.9", "js-yaml": "4.3.2", qs: "6.16.0",
+  // No upstream patch exists for the SendGrid helper's deepmerge advisory.
+  // The consumer is removed; do not allow its vulnerable merge back in.
+  deepmerge: null,
+  "fast-uri": "3.1.9", "js-yaml": "4.3.2", qs: "6.16.1",
   multer: "2.5.0", tar: "7.5.22", "@xmldom/xmldom": "0.9.12",
   esbuild: "0.28.1", "@esbuild/linux-x64": "0.28.1",
   orval: "8.33.0", "linkify-it": "5.0.2", sharp: "0.35.5",
   postcss: "8.5.23", browserslist: "4.28.7",
   "baseline-browser-mapping": "2.11.0", "@babel/core": "7.29.6",
   "brace-expansion": "5.0.12", nanoid: "3.3.18", uuid: "11.1.1",
-  yaml: "2.8.3", dompurify: "3.4.17", "body-parser": "2.4.0", "markdown-it": "14.3.1",
+  yaml: "2.8.3", dompurify: "3.4.17", "body-parser": "2.4.0", "markdown-it": "14.3.3", zod: "4.6.6",
   vitest: "4.1.12", "@vitest/mocker": "4.1.12", "csv-parse": "7.0.2",
   // No patched release exists for the reported extract-zip advisories.
   // Keep it in the inventory so reintroduction fails rather than disappearing.

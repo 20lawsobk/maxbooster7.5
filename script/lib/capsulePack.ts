@@ -58,6 +58,9 @@ export const MAXCORE_CAPSULE_EXCLUDE_PATHS = [
   "**/__pycache__",
   "*.pyc",
   "**/*.pyc",
+  // Exclude runtime images/audio/video and staging, preserving sibling source,
+  // first-party assets and explicitly named fixture trees.
+  "artifacts/ai-training-server/uploads",
   "artifacts/ai-training-server/ai_model/training_data",
   "artifacts/ai-training-server/ai_model/training/candidate_runs",
   "artifacts/ai-training-server/ai_model/training/live_learning_runs",

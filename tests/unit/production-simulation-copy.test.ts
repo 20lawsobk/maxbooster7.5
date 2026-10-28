@@ -220,6 +220,41 @@ describe("production simulation filtered copy", () => {
     await expect(fs.readFile(path.join(temporaryRoot, ".pdim-cluster-test-123/fixture.mjs"), "utf8"))
       .resolves.toBe("private scratch");
   });
+
+  it("omits MaxCore runtime uploads from copies and release identity without dropping source assets", async () => {
+    temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "maxcore-runtime-upload-policy-"));
+    const source = path.join(temporaryRoot, "source"), destination = path.join(temporaryRoot, "copy");
+    await fs.mkdir(source); await fs.mkdir(destination);
+    const prefix = "external/maxcore/artifacts/ai-training-server/";
+    const privatePaths = ["uploads/images/customer.png", "uploads/videos/.tmp/private.mp4", "uploads/audio/customer.wav"];
+    const retainedPaths = ["server.py", "ai_model/image/image_engine.py", "ai_model/image/fixtures/template.png", "assets/first-party.png", "uploads-fixtures/public.png"];
+    for (const relative of [...privatePaths, ...retainedPaths]) {
+      const file = path.join(source, prefix, relative);
+      await fs.mkdir(path.dirname(file), { recursive: true });
+      await fs.writeFile(file, `owned fixture:${relative}`);
+    }
+    const external = path.join(temporaryRoot, "outside-fixture.txt");
+    await fs.writeFile(external, "owned private fixture remains untouched");
+    await fs.symlink(external, path.join(source, prefix, "uploads", "private-link"));
+    copyProductionSimulationTree(source, destination);
+    for (const relative of privatePaths) {
+      expect(shouldCopyProductionSimulationPath(prefix + relative)).toBe(false);
+      await expect(fs.access(path.join(destination, prefix, relative))).rejects.toThrow();
+    }
+    const before = await inventory(source, sourceIncluded);
+    expect(before.some(entry => entry.path.startsWith(prefix + "uploads/"))).toBe(false);
+    await fs.writeFile(path.join(source, prefix, privatePaths[0]), "runtime upload changed");
+    await fs.writeFile(path.join(source, prefix, "uploads", "another-private.json"), "private metadata");
+    expect(await inventory(source, sourceIncluded)).toEqual(before);
+    for (const relative of retainedPaths) {
+      await expect(fs.readFile(path.join(destination, prefix, relative), "utf8")).resolves.toBe(`owned fixture:${relative}`);
+      expect(before.some(entry => entry.path === prefix + relative)).toBe(true);
+    }
+    await fs.writeFile(path.join(source, prefix, "ai_model/image/image_engine.py"), "changed real source");
+    expect(await inventory(source, sourceIncluded)).not.toEqual(before);
+    await expect(fs.readFile(external, "utf8")).resolves.toBe("owned private fixture remains untouched");
+    await expect(fs.readlink(path.join(source, prefix, "uploads", "private-link"))).resolves.toBe(external);
+  });
 });
 
 describe("production deployment candidate preflight", () => {

@@ -32,12 +32,20 @@ export async function prepareGenerationAwareness(
 ): Promise<Record<string, unknown>> {
   const mode = generationModes[endpoint.split("?")[0]];
   if (!mode) return body;
-  const receipt = await maxCoreControlTransport.request<UnifiedAwarenessReceipt>(
-    "/api/awareness/unified/context", {
-      method: "POST", authScope: "generation", timeoutMs: 5_000,
-      body: { modality: mode, platform: typeof body.platform === "string" ? body.platform : undefined },
-    },
-  );
+  let receipt: UnifiedAwarenessReceipt;
+  try {
+    receipt = await maxCoreControlTransport.request<UnifiedAwarenessReceipt>(
+      "/api/awareness/unified/context", {
+        method: "POST", authScope: "generation", timeoutMs: 5_000,
+        body: { modality: mode, platform: typeof body.platform === "string" ? body.platform : undefined },
+      },
+    );
+  } catch (cause) {
+    // This fixed internal dependency cannot supply the required snapshot.
+    // Keep upstream status/details for logs without changing the status policy
+    // of the shared transport or exposing dependency auth as public-user auth.
+    throw new MaxCoreControlError("Required MaxCore awareness snapshot unavailable", 503, cause);
+  }
   const context = typeof receipt?.awareness === "string"
     ? receipt.awareness
     : receipt?.awareness && typeof receipt.awareness === "object"

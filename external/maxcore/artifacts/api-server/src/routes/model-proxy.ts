@@ -322,13 +322,14 @@ async function proxyRequest(
   const awarenessOnly = path === "/api/awareness/unified/status" ||
     path === "/api/awareness/unified/context";
   const plannerOnly = path === "/api/generate/text" && req.body?.mode === "planner";
+  const accountAnalytics = ["/api/analytics/capability", "/api/analytics/predict", "/api/analytics/insights"].includes(path);
   const mediaGeneration = ["/api/generate/image", "/api/generate/audio",
     "/api/generate-video", "/api/video/generate-ai", "/platform/video/generate",
     "/api/video/extend", "/platform/daw/generate"].includes(path);
   const generationRequest = mediaGeneration || ["/api/generate/content", "/api/generate/text",
     "/api/platform/social/generate", "/api/platform/ads/generate", "/api/generate/campaign"].includes(path);
   const diagnosticOnly = ["/health", "/api/health", "/ready", "/api/ready"].includes(path);
-  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : plannerOnly ? 30_000 :
+  const directDeadline = awarenessOnly || diagnosticOnly ? 4_000 : accountAnalytics ? 10_000 : plannerOnly ? 30_000 :
     generationRequest ? (mediaGeneration ? 600_000 : 60_000) : undefined;
   const startTime = Date.now();
   // Track per-route and total request counts
@@ -355,7 +356,7 @@ async function proxyRequest(
       method: req.method as any,
       dispatcher: _keepAlivePool,
       headers,
-      body: !isGet && req.body ? JSON.stringify(modelOwnedBody(req.body, authHeaders)) : undefined,
+      body: !isGet && req.body ? JSON.stringify(accountAnalytics ? req.body : modelOwnedBody(req.body, authHeaders)) : undefined,
       headersTimeout: directDeadline ?? 0,
       bodyTimeout: directDeadline ?? 0,
       signal: lifetime.signal,
@@ -1147,6 +1148,18 @@ router.get("/awareness/unified/status", async (req, res) => {
 });
 router.post("/awareness/unified/context", async (req, res) => {
   await proxyRequest(req, res, "/api/awareness/unified/context");
+});
+
+// Bounded, model-free statistics contract; never held behind weight recovery.
+// No owner identifiers are injected into the private numeric request body.
+router.get("/analytics/capability", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/capability");
+});
+router.post("/analytics/predict", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/predict");
+});
+router.post("/analytics/insights", async (req, res) => {
+  await proxyRequest(req, res, "/api/analytics/insights");
 });
 
 // Pocket accelerator — Digital GPU GEMM dedup cache stats

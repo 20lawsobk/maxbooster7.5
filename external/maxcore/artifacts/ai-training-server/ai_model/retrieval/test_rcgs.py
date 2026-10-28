@@ -6,6 +6,8 @@ handling.
 Run:
     cd artifacts/ai-training-server
     uv run python -u -m ai_model.retrieval.test_rcgs
+
+Both pytest and the module entrypoint use owned temporary upload files.
 """
 
 from __future__ import annotations
@@ -28,8 +30,23 @@ from ai_model.retrieval.probes import (
     recent_probes,
     record_probe,
 )
+from ai_model.retrieval.test_pipeline import _isolated_uploads
 
 _FAILS: List[str] = []
+_TEST_UPLOAD_CONTEXT = None
+
+
+def setup_module():
+    global _TEST_UPLOAD_CONTEXT
+    _TEST_UPLOAD_CONTEXT = _isolated_uploads(globals())
+    _TEST_UPLOAD_CONTEXT.__enter__()
+
+
+def teardown_module():
+    global _TEST_UPLOAD_CONTEXT
+    if _TEST_UPLOAD_CONTEXT is not None:
+        _TEST_UPLOAD_CONTEXT.__exit__(None, None, None)
+        _TEST_UPLOAD_CONTEXT = None
 
 
 def _check(name: str, cond: bool) -> None:
@@ -37,6 +54,7 @@ def _check(name: str, cond: bool) -> None:
     print(f"  [{status}] {name}")
     if not cond:
         _FAILS.append(name)
+        raise AssertionError(name)
 
 
 def _rand_vec(seed: int) -> np.ndarray:
@@ -264,7 +282,7 @@ def test_watchdog_probe_context() -> None:
     _check("brand context survives to gap queue", "Nova" in brands)
 
 
-def main() -> int:
+def _run_tests() -> int:
     test_probes()
     test_path_resolution()
     test_condition_background()
@@ -275,6 +293,11 @@ def main() -> int:
         return 1
     print("ALL RCGS TESTS PASSED")
     return 0
+
+
+def main() -> int:
+    with _isolated_uploads(globals()):
+        return _run_tests()
 
 
 if __name__ == "__main__":

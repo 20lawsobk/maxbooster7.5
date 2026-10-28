@@ -100,13 +100,92 @@ describe("AI Analytics & Fanbase Insights — Real Data Endpoints", () => {
 
   // ── AI analytics predict ──────────────────────────────────────────────────
 
-  it("POST /api/ai/analytics/predict reports its missing generation contract explicitly", async () => {
-    const res = await api("POST", "/api/ai/analytics/predict", {
-      metric: "streams",
-      timeframe: "30d",
+  it("POST /api/ai/analytics/predict reports missing account history without requiring a trained model", async () => {
+    const res = await api("POST", "/api/ai/analytics/predict", { metric: "streams", timeframe: "30d" });
+    expect(res.status).toBe(200);
+    expect(res.json).toMatchObject({ success: true, data: { status: "insufficient_history", predictions: [], accuracy: null,
+      method: { name: "ordinary_least_squares", trainedModelRequired: false } } });
+  });
+
+  it("capability and personal summaries use the dedicated authenticated MaxCore statistics contract", async () => {
+    const capability = await api("GET", "/api/ai/analytics/insights/capability");
+    expect(capability.status).toBe(200);
+    expect(capability.json).toMatchObject({ available: true, version: 1, trainedModelRequired: false });
+    const summary = await api("POST", "/api/ai/analytics/insights", {});
+    expect(summary.status).toBe(200);
+    expect(summary.json).toMatchObject({ status: "insufficient_history", insight: expect.any(String),
+      metrics: { streams: null, revenue: null, listeners: null }, method: { name: "observed_summary" } });
+  });
+
+  it("personal insight and capability routes require the real authenticated session", async () => {
+    const savedCookies = cookies, savedCsrf = csrfToken;
+    try {
+      cookies = ""; csrfToken = "";
+      expect((await api("GET", "/api/ai/analytics/insights/capability")).status).toBe(401);
+      expect((await api("POST", "/api/ai/analytics/insights", {})).status).toBe(401);
+    } finally { cookies = savedCookies; csrfToken = savedCsrf; }
+  });
+
+  it("personal insights validate the period and engagement does not reinterpret lifetime counters as daily activity", async () => {
+    expect((await api("POST", "/api/ai/analytics/insights", { timeframe: "1d" })).status).toBe(400);
+    const engagement = await api("POST", "/api/ai/analytics/predict", { metric: "engagement", timeframe: "7d" });
+    expect(engagement.status).toBe(200);
+    expect(engagement.json).toMatchObject({ success: true, data: { status: "insufficient_history", predictions: [],
+      sourceAvailability: { available: false, code: "DAILY_ENGAGEMENT_REPORTS_UNAVAILABLE" } } });
+  });
+
+  it("known owned daily values produce exact forecasts and summaries while body identity and foreign rows are ignored", async () => {
+    const fixture = await withFixtureDatabase(testUser.email, async client => {
+      const owner = await client.query("SELECT id FROM users WHERE email=$1", [testUser.email]);
+      const foreign = await client.query("INSERT INTO users(email,password) SELECT $1,password FROM users WHERE email=$2 RETURNING id",
+        [`forecast_foreign_${Date.now()}@maxbooster-test.invalid`, testUser.email]);
+      for (let day = 0; day < 7; day++) {
+        await client.query("INSERT INTO analytics(user_id,date,streams,revenue,total_listeners) VALUES($1,date_trunc('day',now() AT TIME ZONE 'UTC')-interval '7 days'+$2*interval '1 day',$3,$4,$5)",
+          [owner.rows[0].id, day, 10 * (day + 1), 0.25 * (day + 1), 3 * (day + 1)]);
+        await client.query("INSERT INTO analytics(user_id,date,streams,revenue,total_listeners) VALUES($1,date_trunc('day',now() AT TIME ZONE 'UTC')-interval '7 days'+$2*interval '1 day',999999,999999,999999)",
+          [foreign.rows[0].id, day]);
+      }
+      await client.query("INSERT INTO analytics(user_id,date,streams,revenue,total_listeners) VALUES($1,date_trunc('day',now() AT TIME ZONE 'UTC'),777777,777777,777777)", [owner.rows[0].id]);
+      return { owner: owner.rows[0].id, foreign: foreign.rows[0].id };
     });
-    expect(res.status).toBe(503);
-    expect(res.json).toMatchObject({ error: expect.stringContaining("dedicated analytics contract") });
+    try {
+      const forecast = await api("POST", "/api/ai/analytics/predict", { metric: "streams", timeframe: "7d",
+        userId: fixture.foreign, points: [{ date: "2026-01-01", value: 999999 }] });
+      expect(forecast.status).toBe(200);
+      expect(forecast.json).toMatchObject({ success: true, data: { status: "ready", trend: "up", accuracy: null,
+        dataWindow: { dataPoints: 7, missingDays: 0 } } });
+      expect((forecast.json as { data: { predictions: { value: number }[] } }).data.predictions.map(point => point.value))
+        .toEqual([80, 90, 100, 110, 120, 130, 140]);
+      const summary = await api("POST", "/api/ai/analytics/insights", { timeframe: "7d", userId: fixture.foreign });
+      expect(summary.status).toBe(200);
+      expect(summary.json).toMatchObject({ status: "ready", metrics: { streams: 280, revenue: 7, listeners: 84 } });
+      expect((summary.json as { insight: string }).insight).toContain("not a unique audience count");
+    } finally {
+      await withFixtureDatabase(testUser.email, async client => {
+        await client.query("DELETE FROM analytics WHERE user_id=ANY($1::varchar[])", [[fixture.owner, fixture.foreign]]);
+        await client.query("DELETE FROM users WHERE id=$1", [fixture.foreign]);
+      });
+    }
+  });
+
+  it("a controlled MaxCore outage remains a retryable503 rather than an invented local prediction", async () => {
+    const origin = process.env.MAXBOOSTER_ANALYTICS_FIXTURE_ORIGIN;
+    const token = process.env.MAXBOOSTER_ANALYTICS_FIXTURE_TOKEN;
+    expect(origin && token).toBeTruthy();
+    const fault = (unavailable: boolean) => fetch(`${origin}/__fixture/outage`, { method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ unavailable }), signal: AbortSignal.timeout(2000) });
+    try {
+      expect((await fault(true)).status).toBe(200);
+      const forecast = await api("POST", "/api/ai/analytics/predict", { metric: "streams", timeframe: "7d" });
+      expect(forecast.status).toBe(503);
+      expect(forecast.json).toMatchObject({ error: expect.stringContaining("temporarily unavailable") });
+      const summary = await api("POST", "/api/ai/analytics/insights", {});
+      expect(summary.status).toBe(503);
+      const capability = await api("GET", "/api/ai/analytics/insights/capability");
+      expect(capability.status).toBe(503); expect(capability.json).toMatchObject({ available: false });
+    } finally { expect((await fault(false)).status).toBe(200); }
+    expect((await api("GET", "/api/ai/analytics/insights/capability")).status).toBe(200);
   });
 
   it("POST /api/ai/analytics/predict rejects an invalid metric before generation", async () => {

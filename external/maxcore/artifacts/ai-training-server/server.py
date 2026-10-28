@@ -1239,6 +1239,16 @@ def require_scope(scope: str):
 from ai_model.native_analysis.api import create_analysis_router
 app.include_router(create_analysis_router(require_scope("generate"), _UPLOADS_PATH))
 
+# Account aggregates are analyzed transiently inside MaxCore. They never enter
+# the public-awareness ingestion or live-learning pipelines.
+from ai_model.analytics import create_router as _account_analytics_router
+
+def _account_analytics_snapshot():
+    from ai_model.awareness import current_snapshot
+    return current_snapshot()
+
+app.include_router(_account_analytics_router(require_scope("generate"), _account_analytics_snapshot))
+
 # Campaign Director: unified multi-modal generation (audio/video/social/ads).
 # Mounted with 'generate' scope — same auth as other generation endpoints.
 try:

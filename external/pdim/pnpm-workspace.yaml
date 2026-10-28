@@ -67,7 +67,7 @@ overrides:
   path-to-regexp: ^8.4.2
   'picomatch@2': ^2.3.2
   'picomatch@4': ^4.0.5
-  qs: 6.16.0
+  qs: 6.16.1
   teeny-request>uuid: ^11.1.1
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'

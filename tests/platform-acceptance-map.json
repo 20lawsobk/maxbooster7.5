@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "scope": "Explicit full-check policy links reviewed in docs/testing/acceptance-link-review.md. Only exact cases from the current frozen master may establish these checks. No broader endpoint/page/readiness assertion.",
+  "checks": [
+    {
+      "checkId": "api-7f174c69ff83279c/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "testFile": "tests/health.test.ts",
+      "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+      "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
+      "group": "http"
+    },
+    {
+      "checkId": "api-2153be5bc8e5692b/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "testFile": "tests/health.test.ts",
+      "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+      "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
+      "group": "http"
+    },
+    {
+      "checkId": "api-50167c08abd2dfe2/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "testFile": "tests/health.test.ts",
+      "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+      "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
+      "group": "http"
+    },
+    {
+      "checkId": "api-059a423751b44e6c/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "testFile": "tests/health.test.ts",
+      "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+      "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
+      "group": "http"
+    },
+    {
+      "checkId": "api-ebf54287f664010e/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "testFile": "tests/health.test.ts",
+      "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
+      "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
+      "group": "http"
+    },
+    {
+      "checkId": "api-ef05357bba6ab833/access-policy",
+      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "cases": [
+        {
+          "testFile": "tests/auth-flows.test.ts",
+          "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+          "caseName": "Full Auth Flow > 4. GET /api/auth/me returns user when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/auth-flows.test.ts",
+          "testSha256": "780b02ce0102c1ff016c2682938c4620833df1ec439dac431a7e01bd2b9edb18",
+          "caseName": "Full Auth Flow > 10. /api/auth/me returns null or 401 after logout",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/api-guards.test.ts",
+          "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
+          "caseName": "Unauthenticated route guards > GET /api/auth/me → 200 (public, returns null)",
+          "group": "http"
+        }
+      ]
+    }
+  ]
+}

@@ -19,7 +19,7 @@ test("release gate excludes legacy only with image exclusion; workspace audit st
   const root = fixture(t);
   for (const scope of [".", "external/maxcore", "external/pdim", "dns-os", "tls-proxy"]) {
     write(root, `${scope}/package.json`, "{}");
-    write(root, `${scope}/node_modules/qs/package.json`, '{"name":"qs","version":"6.16.0"}');
+    write(root, `${scope}/node_modules/qs/package.json`, '{"name":"qs","version":"6.16.1"}');
   }
   write(root, "maxbooster7.5/node_modules/qs/package.json", '{"name":"qs","version":"6.15.3"}');
   write(root, ".dockerignore", "maxbooster7.5/\n");
@@ -37,9 +37,9 @@ test("release gate excludes legacy only with image exclusion; workspace audit st
 });
 test("installed stale nested copy fails despite patched top-level package and lock", t => {
   const root = fixture(t);
-  write(root, "package.json", '{"dependencies":{"qs":"6.16.0"}}');
-  write(root, "package-lock.json", '{"packages":{"node_modules/qs":{"version":"6.16.0"}}}');
-  write(root, "node_modules/qs/package.json", '{"name":"qs","version":"6.16.0"}');
+  write(root, "package.json", '{"dependencies":{"qs":"6.16.1"}}');
+  write(root, "package-lock.json", '{"packages":{"node_modules/qs":{"version":"6.16.1"}}}');
+  write(root, "node_modules/qs/package.json", '{"name":"qs","version":"6.16.1"}');
   assert.equal(inspectDependencies(root, ["."]).ready, true);
   write(root, "node_modules/parent/node_modules/qs/package.json", '{"name":"qs","version":"6.15.3"}');
   assert.equal(inspectDependencies(root, ["."]).ready, false);
@@ -54,7 +54,7 @@ test("missing workspace, prerelease version and escaping installed symlink fail 
   const root = fixture(t), outside = fixture(t);
   write(root, "package.json", "{}");
   assert.equal(inspectDependencies(root, ["."]).ready, false);
-  write(root, "node_modules/qs/package.json", '{"name":"qs","version":"6.16.0-rc.1"}');
+  write(root, "node_modules/qs/package.json", '{"name":"qs","version":"6.16.1-rc.1"}');
   assert.equal(inspectDependencies(root, ["."]).ready, false);
   fs.symlinkSync(outside, path.join(root, "node_modules/escape"));
   assert.match(inspectDependencies(root, ["."]).failures.join("\n"), /escapes workspace/);
@@ -72,6 +72,7 @@ test("all security families reject stale nested copies and accept explicitly val
   const root = fixture(t);
   write(root, "package.json", "{}");
   const pairs = [
+    ["qs", "6.16.0", "6.16.1"],
     ["axios", "1.19.0", "1.20.0"], ["fastify", "5.12.5", "5.12.6"],
     ["ip-address", "10.7.3", "10.7.4"], ["undici", "7.30.0", "7.30.1"],
     ["undici", "6.28.1", "6.29.1"],
@@ -85,7 +86,7 @@ test("all security families reject stale nested copies and accept explicitly val
     ["brace-expansion", "2.1.1", "5.0.12"], ["nanoid", "3.3.16", "3.3.18"],
     ["brace-expansion", "2.1.4", "2.1.7"],
     ["uuid", "7.0.3", "11.1.1"], ["yaml", "2.8.2", "2.9.1"],
-    ["markdown-it", "14.1.1", "14.3.2"], ["vitest", "4.1.11", "4.1.12"],
+    ["markdown-it", "14.3.2", "14.3.3"], ["zod", "3.25.76", "4.6.7"], ["zod", "4.6.5", "4.6.6"], ["vitest", "4.1.11", "4.1.12"],
     ["@vitest/mocker", "4.1.11", "4.1.12"], ["csv-parse", "6.2.1", "7.0.2"],
     ["fast-uri", "3.1.8", "3.1.9"], ["fast-uri", "4.2.1", "4.2.3"],
     ["multer", "2.4.0", "2.5.0"],
@@ -103,10 +104,10 @@ test("all security families reject stale nested copies and accept explicitly val
   write(root, "node_modules/extract-zip/package.json", '{"name":"extract-zip","version":"2.0.1"}');
   assert.match(inspectDependencies(root, ["."]).failures.join("\n"), /no patched release/);
 });
-test("unpatched brace walkers and shared HTTP cache policies cannot be reintroduced", t => {
+test("unpatched brace walkers, merge helpers and shared HTTP cache policies cannot be reintroduced", t => {
   const root = fixture(t);
   write(root, "package.json", "{}");
-  for (const [name, version] of [["braces", "3.0.3"], ["http-cache-semantics", "4.2.0"]]) {
+  for (const [name, version] of [["braces", "3.0.3"], ["http-cache-semantics", "4.2.0"], ["deepmerge", "4.3.1"]]) {
     const file = `node_modules/consumer/node_modules/${name}/package.json`;
     write(root, file, JSON.stringify({ name, version }));
     assert.match(inspectDependencies(root, ["."]).failures.join("\n"), /no patched release/);

@@ -158,6 +158,43 @@ def read_json(file, fallback):
     return json.loads(file.read_text()) if file.is_file() else fallback
 
 
+def resolve_evidence_cases(mapping, *, check_ids, platform_digest, test_entries, passed_cases, root=ROOT):
+    """Resolve an explicit conjunctive proof; source associations never count.
+
+    Legacy links name one exact case. A ``cases`` bundle allows a requirement
+    to be established by several cases, but every member must currently pass
+    against the same platform digest and its unchanged, registered test file.
+    """
+    fields = ("testFile", "testSha256", "caseName", "group")
+    if (not isinstance(mapping, dict) or not isinstance(mapping.get("checkId"), str) or mapping["checkId"] not in check_ids
+            or mapping.get("platformSourceDigest") != platform_digest):
+        return None
+    if "cases" in mapping:
+        if any(field in mapping for field in fields):
+            return None  # Do not silently choose between two different proofs.
+        cases = mapping["cases"]
+        if not isinstance(cases, list) or not cases:
+            return None
+    else:
+        cases = [mapping]
+    resolved, seen = [], set()
+    for case in cases:
+        if not isinstance(case, dict) or any(not isinstance(case.get(field), str) or not case[field] for field in fields):
+            return None
+        file = case["testFile"]
+        identity = (case["group"], file, case["caseName"])
+        if file not in test_entries or identity in seen or identity not in passed_cases:
+            return None
+        try:
+            if case["testSha256"] != digest(root / file):
+                return None
+        except (OSError, ValueError):
+            return None
+        resolved.append({field: case[field] for field in fields})
+        seen.add(identity)
+    return resolved
+
+
 def location(file, line):
     return {"file": file, "line": line}
 
@@ -545,13 +582,13 @@ def main():
     if len(checks_by_id) != sum(len(subject["requiredChecks"]) for subject in pages + routes + interactions):
         raise ValueError("Duplicate subject/check IDs: refusing to silently merge separate source declarations")
     for mapping in mappings:
-        check = checks_by_id.get(mapping.get("checkId")); file = mapping.get("testFile", "")
-        valid = (check is not None and mapping.get("platformSourceDigest") == platform_digest
-                 and file in test_entries and mapping.get("testSha256") == digest(ROOT / file)
-                 and (mapping.get("group"), file, mapping.get("caseName")) in passed_cases)
-        if valid:
-            check.update(status="PASS", evidence={key: mapping[key] for key in ("testFile", "testSha256", "caseName", "group")})
-        else: invalid_evidence.append({"checkId": mapping.get("checkId"), "reason": "Unknown check, changed source digest, changed test, or missing exact passing case"})
+        cases = resolve_evidence_cases(mapping, check_ids=checks_by_id, platform_digest=platform_digest,
+                                       test_entries=test_entries, passed_cases=passed_cases)
+        if cases:
+            evidence = {"cases": cases, "mode": "all-cases-required"} if "cases" in mapping else cases[0]
+            checks_by_id[mapping["checkId"]].update(status="PASS", evidence=evidence)
+        else: invalid_evidence.append({"checkId": mapping.get("checkId") if isinstance(mapping, dict) else None,
+                                      "reason": "Unknown check, changed source digest, changed test, or missing exact passing case in required evidence"})
     for subject in pages + routes + interactions:
         subject["status"] = "PASS" if all(check["status"] == "PASS" for check in subject["requiredChecks"]) else "UNVERIFIED"
     pending = sum(check["status"] != "PASS" for check in checks_by_id.values())
@@ -581,6 +618,7 @@ def main():
               "sourceCoverage": source_coverage, "unknownMappings": unknown, "invalidEvidenceLinks": invalid_evidence,
               "evidenceLinking": {"automaticCaseFields": ["platformChecks", "checkIds", "platformSourceDigest", "testSha256"],
                                   "optionalAcceptanceMap": str(args.acceptance_map.relative_to(ROOT)) if args.acceptance_map.is_relative_to(ROOT) else str(args.acceptance_map),
+                                  "conjunctiveCaseBundles": "An explicit cases array requires every unique exact case to pass with the current test hash and shared platformSourceDigest; no partial bundle closes a check.",
                                   "approvalOrSignatureRequired": False,
                                   "meaning": "Links bind automated passing case evidence to named requirements; absent links mean unverified behavior, not a request for human approval."},
               "limits": ["Source declarations and import reachability do not prove that code executed or that business assertions cover it.",

@@ -10,7 +10,7 @@ const {
 } = require("electron");
 const path = require("node:path");
 const { fork } = require("node:child_process");
-const { pingReadiness, externalHttpUrl } = require("./runtime-policy.cjs");
+const { pingReadiness, externalHttpUrl, resolveDesktopServer } = require("./runtime-policy.cjs");
 const fs = require("node:fs");
 
 const isDev = !app.isPackaged;
@@ -24,33 +24,12 @@ let mainWindow = null;
 let serverProcess = null;
 let serverReady = false;
 
-function resolveServerEntry() {
-  const candidates = [
-    path.join(
-      process.resourcesPath || "",
-      "app.asar.unpacked",
-      "dist",
-      "index.mjs",
-    ),
-    path.join(
-      process.resourcesPath || "",
-      "app.asar.unpacked",
-      "dist",
-      "index.cjs",
-    ),
-    path.join(process.resourcesPath || "", "app", "dist", "index.mjs"),
-    path.join(__dirname, "..", "dist", "index.mjs"),
-    path.join(__dirname, "..", "dist", "index.cjs"),
-  ];
-  for (const c of candidates) {
-    if (c && fs.existsSync(c)) return c;
-  }
-  return null;
-}
-
 function startServer() {
-  const entry = resolveServerEntry();
-  if (!entry) {
+  const launch = resolveDesktopServer({
+    appDirectory: __dirname,
+    resourcesDirectory: process.resourcesPath || path.resolve(__dirname, ".."),
+  });
+  if (!launch) {
     console.error(
       "[electron] Bundled server not found; falling back to static SPA",
     );
@@ -66,9 +45,9 @@ function startServer() {
     SKIP_BOOSTERSTATE: "1",
   };
 
-  const child = fork(entry, [], {
+  const child = fork(launch.entry, [], {
     env,
-    cwd: path.dirname(entry),
+    cwd: launch.cwd,
     stdio: ["ignore", "pipe", "pipe", "ipc"],
   });
 

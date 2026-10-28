@@ -824,12 +824,12 @@ export class UnifiedAIController {
     );
   }
 
-  public async predictAnalyticsMetric(params: {
+  public async predictAnalyticsMetric(userId: string, params: {
     metric: "streams" | "engagement" | "revenue";
     timeframe: "7d" | "30d" | "90d";
   }) {
     await this.ensureInitialized();
-    return aiAnalyticsService?.predictMetric(params);
+    return aiAnalyticsService.predictMetric(userId, params);
   }
 
   public async predictChurn() {

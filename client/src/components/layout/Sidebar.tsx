@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -195,6 +195,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useTranslation();
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -204,10 +205,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    if (!isMobileOpen) return;
+    if (!isMobileOpen || isDesktop) return;
 
     const originalOverflow = document.body.style.overflow;
+    const opener = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
     document.body.style.overflow = "hidden";
+    sidebarRef.current?.querySelector<HTMLButtonElement>("[data-testid=sidebar-close]")?.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && onMobileClose) {
@@ -220,8 +225,13 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener("keydown", handleKeyDown);
+      // A resize makes the same navigation a normal visible desktop region.
+      // Keep focus there rather than restoring a now-hidden mobile trigger.
+      if (!window.matchMedia("(min-width: 1024px)").matches && opener?.isConnected) {
+        opener.focus();
+      }
     };
-  }, [isMobileOpen, onMobileClose]);
+  }, [isMobileOpen, isDesktop, onMobileClose]);
 
   if (!user) {
     return null;
@@ -256,6 +266,8 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
+        id="app-sidebar"
+        ref={sidebarRef}
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col h-full transition-transform duration-300 lg:translate-x-0 sidebar-premium",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
@@ -263,6 +275,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         role="navigation"
         aria-label="Main navigation"
         aria-hidden={!isDesktop && !isMobileOpen}
+        inert={!isDesktop && !isMobileOpen}
       >
         {/* Sidebar header */}
         <div className="px-4 py-5 border-b border-white/5">
@@ -290,6 +303,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
               className="lg:hidden text-white/50 hover:text-white hover:bg-white/5"
               onClick={onMobileClose}
               data-testid="sidebar-close"
+              aria-label="Close navigation menu"
             >
               <X className="w-5 h-5" />
             </Button>

@@ -409,6 +409,12 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       [".env.production", "env-fixture"],
       [".cloudflared/config.yml", "tunnel-config-fixture"],
       ["cookies.txt", "cookie-fixture"],
+      ["artifacts/ai-training-server/uploads/images/customer.png", "private generated image"],
+      ["artifacts/ai-training-server/uploads/videos/.tmp/customer.mp4", "private video staging"],
+      ["artifacts/ai-training-server/uploads/audio/customer.wav", "private generated audio"],
+      ["artifacts/ai-training-server/ai_model/image/fixtures/template.png", "first-party image fixture"],
+      ["artifacts/ai-training-server/assets/approved.png", "first-party asset"],
+      ["artifacts/ai-training-server/uploads-fixtures/public.png", "adjacent fixture tree"],
       [
         "artifacts/ai-training-server/ai_model/training_data/pull_1.json",
         "generated-pull-fixture",
@@ -495,6 +501,9 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
       ".env.production",
       ".cloudflared/config.yml",
       "cookies.txt",
+      "artifacts/ai-training-server/uploads/images/customer.png",
+      "artifacts/ai-training-server/uploads/videos/.tmp/customer.mp4",
+      "artifacts/ai-training-server/uploads/audio/customer.wav",
       "artifacts/ai-training-server/ai_model/training_data/pull_1.json",
       "artifacts/ai-training-server/ai_model/training/candidate_runs/run-1/candidate.pt",
       "artifacts/ai-training-server/ai_model/training/live_learning_runs/run-2/holdout.json",
@@ -507,6 +516,9 @@ describe("Capsule pack/restore round trip (real zstd + real tar)", () => {
     }
     for (const retained of [
       "nested/.npmrc",
+      "artifacts/ai-training-server/ai_model/image/fixtures/template.png",
+      "artifacts/ai-training-server/assets/approved.png",
+      "artifacts/ai-training-server/uploads-fixtures/public.png",
       "artifacts/ai-training-server/ai_model/training/trainer.py",
       "artifacts/ai-training-server/training/combined_training_data.json",
       modelRelative,

@@ -8,7 +8,6 @@ import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js"
 import { Resend } from "resend";
 import { sendEmailOnce } from "../services/emailSendOnce.js";
 import { requireRetrySafeEmailJob, requireEmailSettings } from "./emailProviderAck.js";
-import sgMail from "@sendgrid/mail";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
 
@@ -16,14 +15,6 @@ const audioService = new AudioService();
 const csvImportService = new RoyaltiesCSVImportService();
 const anomalyService = new AnalyticsAnomalyService();
 
-if (process.env.SENDGRID_API_KEY) {
-  sgMail?.setApiKey(process.env.SENDGRID_API_KEY);
-  logger.info("✅ SendGrid initialized for email worker");
-} else {
-  logger.warn(
-    "⚠️  SendGrid API key not configured. Email worker will fail to send emails.",
-  );
-}
 
 const MEMORY_WARNING_THRESHOLD = 512 * 1024 * 1024; // 512 MB — realistic for Replit VM
 const MEMORY_CRITICAL_THRESHOLD = 768 * 1024 * 1024; // 768 MB — triggers forced GC

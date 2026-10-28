@@ -1,5 +1,10 @@
-import type { MailDataRequired } from "@sendgrid/helpers/classes/mail";
 import { logger } from "../logger.js";
+
+interface MonitoredEmail {
+  to?: unknown;
+  templateId?: string;
+  subject?: string;
+}
 
 interface EmailLog {
   timestamp: Date;
@@ -20,7 +25,7 @@ class EmailMonitor {
   };
 
   logEmail(
-    email: MailDataRequired,
+    email: MonitoredEmail,
     status: "sent" | "failed",
     error?: string,
     deliveryTime?: number,

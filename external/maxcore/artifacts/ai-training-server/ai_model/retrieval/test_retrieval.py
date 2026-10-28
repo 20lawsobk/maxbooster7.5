@@ -24,6 +24,7 @@ def _check(name: str, cond: bool) -> None:
     status = "ok" if cond else "FAILED"
     if not cond:
         _failures += 1
+        raise AssertionError(name)
     print(f"  {status}: {name}")
 
 
