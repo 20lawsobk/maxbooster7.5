@@ -440,7 +440,16 @@ export class HybridStorageService {
 
     const existingKeys = this.contentHashIndex.get(contentHash);
     if (existingKeys && existingKeys?.length > 0) {
-      const existingEntry = this.fileIndex.get(existingKeys[0]);
+      // Hash buckets may be restored in an arbitrary order. Never point a
+      // new alias at another alias: read() rejects chained references.
+      const primaryKey = existingKeys.find((candidateKey) => {
+        const candidate = this.fileIndex.get(candidateKey);
+        return candidate && !candidate.isDeduplicated && candidate.contentHash === contentHash;
+      });
+      if (!primaryKey) {
+        throw new Error("Invalid hybrid deduplication index: no primary byte owner");
+      }
+      const existingEntry = this.fileIndex.get(primaryKey);
       if (existingEntry) {
         const newEntry: HybridFileMetadata = {
           key,
@@ -457,7 +466,7 @@ export class HybridStorageService {
           userId,
           isPublic,
           isDeduplicated: true,
-          deduplicationRef: existingKeys[0],
+          deduplicationRef: primaryKey,
           metadata: options?.metadata,
         };
 
@@ -465,13 +474,13 @@ export class HybridStorageService {
         existingKeys?.push(key);
 
         if (isPublic) {
-          this.publicContentHashes.set(contentHash, existingKeys[0]);
+          this.publicContentHashes.set(contentHash, primaryKey);
         }
 
         await this.saveIndex();
 
         logger.info(
-          `[HybridStorage] Deduplicated: ${key} -> ${existingKeys[0]}`,
+          `[HybridStorage] Deduplicated: ${key} -> ${primaryKey}`,
         );
         return {
           key,
