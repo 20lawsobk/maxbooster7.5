@@ -27,7 +27,7 @@ const javascript = ts.transpileModule(
   { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } },
 ).outputText;
 const context = vm.createContext({
-  Buffer, Date, Map, Error,
+  exports: {}, Buffer, Date, Map, Error,
   logger: { info() {}, warn() {} },
   normalizeHybridUploadFolder: (value) => value,
 });
