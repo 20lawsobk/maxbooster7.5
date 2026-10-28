@@ -1694,7 +1694,7 @@ export async function registerRoutes(
       // "private" (not "public") — this endpoint now requires auth and gates
       // users/* keys by owner, so a shared/CDN cache must never store a
       // response that was only authorized for one specific requester.
-      res.setHeader("Cache-Control", stemAccess === true ? "private, no-store" : "private, max-age=31536000, immutable");
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("X-Storage-Tier", storageTier);
 
       return res.send(fileBuffer);
