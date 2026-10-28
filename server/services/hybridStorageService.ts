@@ -304,16 +304,10 @@ export class HybridStorageService {
     if (size >= HybridStorageService?.FILE_INDEX_WARN_THRESHOLD) {
       if (size >= HybridStorageService?.MAX_FILE_INDEX_ENTRIES) {
         logger.error(
-          `[HybridStorage] fileIndex at capacity (${size} entries) — evicting oldest 10% by lastAccessed. ` +
-            "Architectural migration to per-key PDIM storage is required.",
+          `[HybridStorage] fileIndex at capacity (${size} entries) — refusing to evict ownership metadata. ` +
+            "Migration to durable per-key SQL storage is required.",
         );
-        const evictCount = Math.ceil(size * 0.1);
-        const sorted = [...this.fileIndex.entries()].sort(
-          ([, a], [, b]) => a?.lastAccessed.getTime() - b?.lastAccessed.getTime(),
-        );
-        for (let i = 0; i < evictCount; i++) {
-          this.fileIndex.delete(sorted[i][0]);
-        }
+        throw new Error("Hybrid storage ownership index capacity exceeded");
       } else {
         logger.warn(
           `[HybridStorage] fileIndex approaching capacity: ${size}/${HybridStorageService?.MAX_FILE_INDEX_ENTRIES} entries.`,
@@ -331,10 +325,13 @@ export class HybridStorageService {
         }),
       );
     } catch (error) {
-      logger.warn(
+      logger.error(
         { err: error },
         "[HybridStorage] Failed to save index to PDIM:",
       );
+      throw new Error("Failed to persist hybrid storage ownership index", {
+        cause: error,
+      });
     }
   }
 
