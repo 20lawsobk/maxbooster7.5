@@ -132,6 +132,25 @@ export function normalizeHybridCleanupDays(value: unknown): number {
   return value;
 }
 
+/**
+ * Normalize a caller-supplied hybrid upload folder before composing a PDIM key.
+ * A folder is a relative sequence of ordinary path segments, never a path
+ * escape or an encoded path that another layer might decode later.
+ */
+export function normalizeHybridUploadFolder(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (
+    typeof value !== "string" ||
+    value.length > 256 ||
+    !/^[A-Za-z0-9 _./-]+$/.test(value) ||
+    value.includes("..") ||
+    value.split("/").some((segment) => segment.trim() === "" || segment === ".")
+  ) {
+    throw new Error("Invalid hybrid storage folder");
+  }
+  return value;
+}
+
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
@@ -477,10 +496,12 @@ export class HybridStorageService {
       metadata?: Record<string, any>;
     },
   ): Promise<UploadResult> {
+    // Validate untrusted folder segments before initializing or writing PDIM.
+    const safeFolder = normalizeHybridUploadFolder(options?.folder);
     await this.initialize();
 
     const contentHash = this.computeContentHash(data);
-    const key = this.generateFileKey(userId, fileName, options?.folder);
+    const key = this.generateFileKey(userId, fileName, safeFolder);
     // Check before any physical write: commitUploadIndex rejects collisions only
     // after a primary byte write, which could overwrite an existing object.
     if (this.fileIndex.has(key)) {
