@@ -118,3 +118,36 @@ test('unknown key returns false without backend operations', async () => {
   assert.equal(await s.delete('alice', 'missing'), false);
   assert.deepEqual(events.deleted, []);
 });
+
+test('failed alias index persistence restores ownership and hash references', async () => {
+  const { s, index, hashIndex, events } = setup({ duplicate: true });
+  s.saveIndex = async () => { throw new Error('index unavailable'); };
+  await assert.rejects(() => s.delete('bob', 'duplicate'), /index unavailable/);
+  assert.equal(index.has('duplicate'), true, 'failed save cannot erase alias ownership in memory');
+  assert.deepEqual(Array.from(hashIndex.get('sha256-a')), ['primary', 'duplicate']);
+  assert.deepEqual(events.deleted, [], 'alias deletion must not delete shared bytes');
+});
+
+test('failed public alias index persistence restores public visibility pointer', async () => {
+  const { s, index, hashIndex, publicIndex } = setup({ duplicate: true, duplicatePublic: true });
+  s.saveIndex = async () => { throw new Error('index unavailable'); };
+  await assert.rejects(() => s.delete('bob', 'duplicate'), /index unavailable/);
+  assert.equal(index.has('duplicate'), true);
+  assert.deepEqual(Array.from(hashIndex.get('sha256-a')), ['primary', 'duplicate']);
+  assert.equal(publicIndex.get('sha256-a'), 'duplicate', 'failed save must restore original public pointer');
+});
+
+test('failed alias save preserves a concurrent sibling and newer public pointer', async () => {
+  const { s, index, hashIndex, publicIndex } = setup({ duplicate: true, duplicatePublic: true });
+  s.saveIndex = async () => {
+    index.set('new-public', { key: 'new-public', userId: 'carol', contentHash: 'sha256-a', isDeduplicated: true, isPublic: true });
+    hashIndex.set('sha256-a', [...hashIndex.get('sha256-a'), 'new-public']);
+    publicIndex.set('sha256-a', 'new-public');
+    throw new Error('index unavailable');
+  };
+  await assert.rejects(() => s.delete('bob', 'duplicate'), /index unavailable/);
+  assert.equal(index.has('duplicate'), true);
+  assert.equal(index.has('new-public'), true);
+  assert.deepEqual(Array.from(hashIndex.get('sha256-a')), ['primary', 'duplicate', 'new-public']);
+  assert.equal(publicIndex.get('sha256-a'), 'new-public');
+});

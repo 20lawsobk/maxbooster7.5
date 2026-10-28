@@ -727,6 +727,8 @@ export class HybridStorageService {
     }
 
     const hashKeys = this.contentHashIndex.get(entry.contentHash) || [];
+    const originalHashPosition = hashKeys.indexOf(key);
+    const originalPublicKey = this.publicContentHashes.get(entry.contentHash);
     // A deduplicated reference reads the original primary's storage path.
     // Reassigning metadata alone does not move the bytes. Refuse deletion
     // until durable immutable-byte reference migration is implemented.
@@ -763,7 +765,34 @@ export class HybridStorageService {
       }
     }
 
-    await this.saveIndex();
+    const updatedPublicKey = this.publicContentHashes.get(entry.contentHash);
+    try {
+      await this.saveIndex();
+    } catch (error) {
+      // Alias deletion never removes physical bytes. Restore its in-memory
+      // ownership if durable index persistence fails, preserving sibling keys.
+      // Primary deletion still needs a durable journal before crash-safe use.
+      if (entry.isDeduplicated) {
+        this.fileIndex.set(key, entry);
+        if (originalHashPosition >= 0) {
+          const currentKeys = this.contentHashIndex.get(entry.contentHash) || [];
+          if (!currentKeys.includes(key)) {
+            const restoredKeys = [...currentKeys];
+            restoredKeys.splice(Math.min(originalHashPosition, restoredKeys.length), 0, key);
+            this.contentHashIndex.set(entry.contentHash, restoredKeys);
+          }
+        }
+        // Do not overwrite a public pointer changed by another operation.
+        if (this.publicContentHashes.get(entry.contentHash) === updatedPublicKey) {
+          if (originalPublicKey !== undefined) {
+            this.publicContentHashes.set(entry.contentHash, originalPublicKey);
+          } else {
+            this.publicContentHashes.delete(entry.contentHash);
+          }
+        }
+      }
+      throw error;
+    }
     logger.info(`[HybridStorage] Deleted: ${key}`);
     return true;
   }
