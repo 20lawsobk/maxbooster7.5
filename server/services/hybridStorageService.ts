@@ -1172,6 +1172,11 @@ export class HybridStorageService {
     targetTier: StorageTier,
     targetLocation: StorageLocation,
   ): Promise<boolean> {
+    // The PDIM-only service cannot honor requests for a hot or Replit tier.
+    // Refuse unsupported destinations instead of reporting a fake migration.
+    if (targetTier !== "cold" || targetLocation !== "pocket-dimension") {
+      return false;
+    }
     await this.initialize();
 
     const entry = this.fileIndex.get(key);
@@ -1182,7 +1187,7 @@ export class HybridStorageService {
     if (entry?.location === targetLocation && entry?.tier === targetTier)
       return true;
 
-    // PDIM-only: migration to 'replit' is silently remapped to 'pocket-dimension'.
+    // Only the real PDIM/cold destination is accepted above.
     const resolvedLocation: StorageLocation = "pocket-dimension";
     const resolvedTier: StorageTier = "cold";
 
@@ -1191,12 +1196,29 @@ export class HybridStorageService {
 
     try {
       const data = await this.readFromStorage(entry);
+      // A migration must not republish corrupted PDIM bytes under a valid hash.
+      if (this.computeContentHash(data) !== entry.contentHash) {
+        throw new Error("Hybrid migration source bytes failed integrity verification");
+      }
       const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
+      const previous = {
+        location: entry.location,
+        tier: entry.tier,
+        compressedSize: entry.compressedSize,
+      };
       entry.location = "pocket-dimension";
       entry.tier = "cold";
       entry.compressedSize = pocketEntry?.compressedSize;
 
-      await this.saveIndex();
+      try {
+        await this.saveIndex();
+      } catch (error) {
+        // Keep process-local metadata aligned with the last acknowledged index.
+        entry.location = previous.location;
+        entry.tier = previous.tier;
+        entry.compressedSize = previous.compressedSize;
+        throw error;
+      }
       logger.info(
         `[HybridStorage] Migrated ${key} → pocket-dimension/cold (PDIM-only)`,
       );
