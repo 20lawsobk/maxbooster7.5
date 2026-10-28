@@ -1598,18 +1598,20 @@ export async function registerRoutes(
       );
 
       let trackedOwnerId: string | null = null;
+      let trackedIsPublic: boolean | null = null;
       // Never serve a file whose tracking row is marked deleted — the soft
       // delete keeps the storage object only for the restore window.
       {
         const { userStorageFiles } = await import("../shared/schema.js");
         const { eq, sql: dsql } = await import("drizzle-orm");
         const [row] = await db
-          .select({ deletedAt: userStorageFiles.deletedAt, userId: userStorageFiles.userId })
+          .select({ deletedAt: userStorageFiles.deletedAt, userId: userStorageFiles.userId, isPublic: userStorageFiles.isPublic })
           .from(userStorageFiles)
           .where(eq(userStorageFiles.fileKey, key))
           .orderBy(dsql`${userStorageFiles.deletedAt} DESC NULLS FIRST`)
           .limit(1);
         trackedOwnerId = row?.userId ?? null;
+        trackedIsPublic = row?.isPublic ?? null;
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
@@ -1638,6 +1640,7 @@ export async function registerRoutes(
         hybridMeta?.userId ?? null,
         hybridMeta?.isPublic === true,
         stemAccess,
+        trackedIsPublic,
       )) {
         return res.status(403).json({ message: "Access denied" });
       }
