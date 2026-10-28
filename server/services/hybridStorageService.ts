@@ -132,6 +132,26 @@ export function normalizeHybridCleanupDays(value: unknown): number {
   return value;
 }
 
+/** Reject unsafe user-supplied upload folders before constructing PDIM keys. */
+export function normalizeHybridUploadFolder(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (
+    typeof value !== "string" ||
+    value.length > 255 ||
+    value.startsWith("/") ||
+    value.endsWith("/") ||
+    value.includes("\\") ||
+    value.includes("%") ||
+    value.includes("?") ||
+    value.includes("#") ||
+    /[\u0000-\u001f\u007f]/.test(value) ||
+    value.split("/").some((segment) => !segment || segment === "." || segment.includes(".."))
+  ) {
+    throw new Error("Invalid hybrid upload folder");
+  }
+  return value;
+}
+
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
@@ -400,10 +420,12 @@ export class HybridStorageService {
       metadata?: Record<string, any>;
     },
   ): Promise<UploadResult> {
+    // Validate before initialization or any storage/index side effect.
+    const safeFolder = normalizeHybridUploadFolder(options?.folder);
     await this.initialize();
 
     const contentHash = this.computeContentHash(data);
-    const key = this.generateFileKey(userId, fileName, options?.folder);
+    const key = this.generateFileKey(userId, fileName, safeFolder);
     const isPublic = options?.isPublic || false;
 
     const existingKeys = this.contentHashIndex.get(contentHash);
@@ -1157,7 +1179,10 @@ export class HybridStorageService {
       .digest("hex")
       .substring(0, 8);
 
-    const sanitizedName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
+    // Key syntax must match download/delete guards; keep originalName unchanged.
+    const sanitizedName = fileName
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .replace(/\.\./g, "__");
     const base = folder
       ? `${userId}/${folder}/${hash}-${sanitizedName}`
       : `${userId}/${hash}-${sanitizedName}`;
