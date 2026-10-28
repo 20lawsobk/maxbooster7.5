@@ -1,5 +1,6 @@
 /** Fail-closed identity and map checks for separately collected coverage. */
 import fs from 'node:fs';
+import ts from 'typescript';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -188,4 +189,101 @@ export function validateManifest(manifest, artifactRoot, repositoryRoot) {
     }
   }
   return true;
+}
+
+const hash = value => createHash('sha256').update(value).digest('hex');
+const ident = (node, name) => node?.type === 'Identifier' && (name === undefined || node.name === name);
+const literal = (node, value) => node?.type === 'Literal' && node.value === value;
+
+export function createKeepNamesPolicy({ code, sourceMap, ast }) {
+  const ignored = new WeakSet();
+  const audit = { schemaVersion: 1, policy: 'esbuild-keep-names-proven-prefix-v1', executedCodeSha256: hash(code),
+    originalParser: { package: 'typescript', version: ts.version }, ignoredGeneratedNodes: [], compatibleMapClaim: false };
+  if (!sourceMap) return { ignoreNode: () => undefined, audit };
+  if (!ast || ast.type !== 'Program' || !Array.isArray(sourceMap.sources) || !Array.isArray(sourceMap.sourcesContent) ||
+    sourceMap.sources.length !== sourceMap.sourcesContent.length || sourceMap.sourcesContent.some(value => typeof value !== 'string')) {
+    throw new Error('Coverage generated-node policy requires complete runtime AST and original source content');
+  }
+  audit.sourceMapSha256 = hash(JSON.stringify(sourceMap));
+  audit.originalSources = sourceMap.sources.map((source, index) => ({ source, sha256: hash(sourceMap.sourcesContent[index]) }));
+  const identifiers = new Set(), declarationSites = [];
+  for (let index = 0; index < sourceMap.sourcesContent.length; index++) {
+    const file = ts.createSourceFile(sourceMap.sources[index], sourceMap.sourcesContent[index], ts.ScriptTarget.Latest, true,
+      /\.[cm]?tsx$/.test(sourceMap.sources[index]) ? ts.ScriptKind.TSX : /\.jsx$/.test(sourceMap.sources[index]) ? ts.ScriptKind.JSX : /\.[cm]?ts$/.test(sourceMap.sources[index]) ? ts.ScriptKind.TS : ts.ScriptKind.JS);
+    if (file.parseDiagnostics.length) throw new Error('Original source parse failed; generated-node policy refuses to guess');
+    const sites = new Set();
+    function visit(node) {
+      if (ts.isIdentifier(node)) identifiers.add(node.text);
+      const originalFunction = ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) ||
+        (ts.isVariableDeclaration(node) && node.initializer &&
+          (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer) || ts.isClassExpression(node.initializer)));
+      if (originalFunction && node.name && ts.isIdentifier(node.name)) {
+        const position = file.getLineAndCharacterOfPosition(node.name.getStart(file));
+        sites.add(`${position.line}:${position.character}:${node.name.text}`);
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(file);
+    declarationSites.push(sites);
+  }
+  const trace = new TraceMap(sourceMap), mappings = decodedMappings(trace), offsets = [0];
+  for (let index = 0; index < code.length; index++) if (code[index] === '\n') offsets.push(index + 1);
+  const points = mappings.flatMap((line, index) => line.filter(segment => segment.length > 1)
+    .map(segment => ({ offset: offsets[index] + segment[0], segment })));
+  const firstMapped = points[0]?.offset ?? -1;
+  const inside = node => points.filter(point => point.offset >= node.start && point.offset < node.end);
+  const prefixIsUnmapped = node => node.end <= firstMapped && inside(node).length === 0;
+  const vars = ast.body.filter(node => node.type === 'VariableDeclaration' && node.kind === 'var').flatMap(node => node.declarations);
+  const definition = vars.find(node => ident(node.id) && /^__defProp\d*$/.test(node.id.name) && !identifiers.has(node.id.name) &&
+    node.init?.type === 'MemberExpression' && !node.init.computed && ident(node.init.object, 'Object') && ident(node.init.property, 'defineProperty') && prefixIsUnmapped(node));
+  if (!definition) return { ignoreNode: () => undefined, audit };
+  const helper = vars.find(node => {
+    if (!ident(node.id) || !/^__name\d*$/.test(node.id.name) || identifiers.has(node.id.name) || !prefixIsUnmapped(node)) return false;
+    const arrow = node.init;
+    if (arrow?.type !== 'ArrowFunctionExpression' || arrow.async || arrow.params.length !== 2 || !arrow.params.every(param => ident(param))) return false;
+    const call = arrow.body;
+    if (call?.type !== 'CallExpression' || !ident(call.callee, definition.id.name) || call.arguments.length !== 3 ||
+      !ident(call.arguments[0], arrow.params[0].name) || !literal(call.arguments[1], 'name')) return false;
+    const properties = call.arguments[2]?.type === 'ObjectExpression' && call.arguments[2].properties;
+    if (!Array.isArray(properties) || properties.length !== 2 || properties.some(property => property.type !== 'Property' || property.computed || property.method || property.kind !== 'init')) return false;
+    const value = properties.find(property => ident(property.key, 'value'));
+    const configurable = properties.find(property => ident(property.key, 'configurable'));
+    return value && configurable && ident(value.value, arrow.params[1].name) && literal(configurable.value, true);
+  });
+  if (!helper) return { ignoreNode: () => undefined, audit };
+  // Refuse ambiguous generated bindings. The proven prelude is the sole writer.
+  let ambiguous = false;
+  const bindingNames = new Set([definition.id.name, helper.id.name]);
+  function walk(node) {
+    if (!node || typeof node !== 'object') return;
+    if ((node.type === 'VariableDeclarator' && ident(node.id) && bindingNames.has(node.id.name) && node !== definition && node !== helper) ||
+      (node.type === 'AssignmentExpression' && ident(node.left) && bindingNames.has(node.left.name)) ||
+      (node.type === 'UpdateExpression' && ident(node.argument) && bindingNames.has(node.argument.name))) ambiguous = true;
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'loc') continue;
+      if (Array.isArray(value)) value.forEach(walk);
+      else if (value && typeof value === 'object') walk(value);
+    }
+  }
+  walk(ast);
+  if (ambiguous) return { ignoreNode: () => undefined, audit };
+  const accept = (node, reason, origin) => {
+    ignored.add(node);
+    audit.ignoredGeneratedNodes.push({ type: node.type, start: node.start, end: node.end, sha256: hash(code.slice(node.start, node.end)), reason, ...(origin ? { originalDeclaration: origin } : {}) });
+  };
+  accept(definition, 'Exact unmapped compiler Object.defineProperty binding absent from all original identifiers');
+  accept(helper, 'Exact unmapped keepNames helper binding absent from all original identifiers');
+  for (const node of ast.body) {
+    const call = node.type === 'ExpressionStatement' && node.expression;
+    if (call?.type !== 'CallExpression' || !ident(call.callee, helper.id.name) || call.arguments.length !== 2 ||
+      !ident(call.arguments[0]) || !literal(call.arguments[1], call.arguments[0].name)) continue;
+    const positions = inside(node), first = positions[0];
+    if (!first || first.offset !== call.start) continue;
+    const segment = first.segment;
+    if (!declarationSites[segment[1]]?.has(`${segment[2]}:${segment[3]}:${call.arguments[0].name}`) ||
+      positions.some(point => point.segment[1] !== segment[1] || point.segment[2] !== segment[2] || point.segment[3] !== segment[3])) continue;
+    accept(node, 'Standalone compiler-only helper call mapped exclusively to an actual original declaration name',
+      { source: sourceMap.sources[segment[1]], line: segment[2] + 1, column: segment[3], name: call.arguments[0].name });
+  }
+  return { ignoreNode: node => ignored.has(node) ? 'ignore-this-and-nested-nodes' : undefined, audit };
 }

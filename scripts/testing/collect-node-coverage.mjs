@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand } from './coverage-provenance.mjs';
+import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand, createKeepNamesPolicy } from './coverage-provenance.mjs';
 const require = createRequire(import.meta.url);
 const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const args = process.argv.slice(2), target = args[0], requested = args[1];
@@ -51,7 +51,10 @@ try{
   for(const script of manifest.scripts){
    const code=fs.readFileSync(path.join(directory,script.codeFile),'utf8');
    const map=script.mapFile?JSON.parse(fs.readFileSync(path.join(directory,script.mapFile),'utf8')):undefined;
-   const converted=await convert({code,sourceMap:map,ast:parseAstAsync(code),coverage:{url:script.url,functions:script.coverage.functions}});
+   const ast=await parseAstAsync(code);
+   const generatedPolicy=createKeepNamesPolicy({code,sourceMap:map,ast});
+   const converted=await convert({code,sourceMap:map,ast,ignoreNode:generatedPolicy.ignoreNode,coverage:{url:script.url,functions:script.coverage.functions}});
+   (report.generatedNodePolicies??=[]).push({scriptId:script.scriptId,...generatedPolicy.audit});
    for(const[file,data]of Object.entries(converted)){
     validateIstanbul(data);
     if(combined.files().includes(file)&&!compareCoverageMaps(combined.fileCoverageFor(file).toJSON(),data).compatible)throw Error('Incompatible producer maps for '+file);
