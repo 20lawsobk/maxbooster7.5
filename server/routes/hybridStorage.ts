@@ -9,6 +9,7 @@ import { Router, Request, Response } from "express";
 import {
   hybridStorageService,
   normalizeHybridCleanupDays,
+  normalizeHybridUploadFolder,
   StorageTier,
   StorageLocation,
 } from "../services/hybridStorageService.js";
@@ -39,6 +40,12 @@ router.post(
 
       const userId = req.user!.id;
       const { folder, forceLocation, forceTier } = req.body;
+      let safeFolder: string | undefined;
+      try {
+        safeFolder = normalizeHybridUploadFolder(folder);
+      } catch {
+        return res.status(400).json({ error: "Invalid hybrid storage folder" });
+      }
 
       const result = await hybridStorageService?.upload(
         userId,
@@ -46,7 +53,7 @@ router.post(
         req.file.buffer,
         req.file.mimetype,
         {
-          folder,
+          folder: safeFolder,
           forceLocation: forceLocation as StorageLocation | undefined,
           forceTier: forceTier as StorageTier | undefined,
         },
