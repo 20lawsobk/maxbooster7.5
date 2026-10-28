@@ -21,3 +21,25 @@ export function authorizedHybridReadPrincipal(
   }
   return null;
 }
+
+/**
+ * Authorize bytes before either hybrid or direct PDIM fetch. An authenticated
+ * session is not an authorization grant for an arbitrary unscoped object key.
+ * Prefer durable tracking ownership, then hybrid metadata, then the explicit
+ * legacy users/<requester>/ namespace. Never infer public access from absence
+ * of metadata. Paid stems and explicitly public metadata are separate grants.
+ */
+export function canReadStoredFile(
+  requesterId: string,
+  key: string,
+  trackedOwnerId: string | null,
+  hybridOwnerId: string | null,
+  explicitlyPublic: boolean,
+  verifiedStemAccess: boolean | null,
+): boolean {
+  if (!requesterId || !key) return false;
+  if (verifiedStemAccess === true || explicitlyPublic) return true;
+  if (trackedOwnerId !== null) return trackedOwnerId === requesterId;
+  if (hybridOwnerId !== null) return hybridOwnerId === requesterId;
+  return key.startsWith(`users/${requesterId}/`);
+}
