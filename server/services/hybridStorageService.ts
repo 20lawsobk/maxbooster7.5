@@ -1097,7 +1097,7 @@ export class HybridStorageService {
   }
 
   async optimizeStorage(
-    userId: string,
+    _userId: string,
   ): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
     await this.initialize();
 
