@@ -371,7 +371,13 @@ def collect_current_passing_cases(incoming, current_inputs, *, root=ROOT):
     if ("node", "node") in bound and fresh(node_path, bound[("node", "node")][0]):
         node = load(node_path, {})
         node_runs = node.get("runs", []) if isinstance(node, dict) else []
-        for run in node_runs if isinstance(node_runs, list) else []:
+        node_runs = node_runs if isinstance(node_runs, list) else []
+        occurrences = Counter(run["file"] for run in node_runs if isinstance(run, dict)
+                              and isinstance(run.get("file"), str) and run["file"])
+        duplicates = {file for file, count in occurrences.items() if count != 1}
+        if duplicates: rejected["duplicate-node-file-execution"] += len(duplicates)
+        for run in node_runs:
+            if isinstance(run, dict) and isinstance(run.get("file"), str) and run["file"] in duplicates: continue
             if (not isinstance(run, dict) or not isinstance(run.get("file"), str) or run["file"] not in files
                     or type(run.get("exitCode")) is not int or run["exitCode"] != 0
                     or not isinstance(run.get("command"), list) or run["file"] not in run["command"]): continue

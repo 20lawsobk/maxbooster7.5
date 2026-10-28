@@ -389,3 +389,57 @@ def test_default_file_producer_requires_exact_command_and_numeric_success(actual
         else: entry["command"] = "python runner.py " + ("another.py" if change == "wrong-source-command" else proof["caseFile"] + ".backup")
     rewrite_artifact(proof, "python/results.json", mutate)
     assert collect_actual(proof)[0] == set()
+
+
+@pytest.mark.parametrize("second_outcome", ["passed", "failed", "skipped"])
+def test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass(actual_execution, second_outcome):
+    """Both occurrences really execute the same unchanged owned source."""
+    import datetime
+    import json
+    import sys
+
+    proof = actual_execution("node")
+    proof["source"].write_text("import {test} from 'node:test'; import assert from 'node:assert/strict';\n"
+                              "test('owned current case',{skip:process.env.OWNED_OUTCOME==='skipped'},()=>assert.equal(process.env.OWNED_OUTCOME,'passed'));\n")
+    source_sha = hashlib.sha256(proof["source"].read_bytes()).hexdigest()
+    runner = """
+import datetime, hashlib, json, os, pathlib, subprocess, sys, time
+source, node, destination, second = sys.argv[1:]
+destination = pathlib.Path(destination)
+rows = []
+for index, outcome in enumerate(['passed', second]):
+    command = [node, '--test', '--test-reporter=tap', source]
+    started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    before = time.monotonic()
+    result = subprocess.run(command, env={**os.environ, 'OWNED_OUTCOME': outcome}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=5)
+    log = destination / ('owned-node-' + str(index) + '.txt')
+    log.write_bytes(result.stdout)
+    assert result.returncode == (1 if outcome == 'failed' else 0)
+    assert (b'# skipped 1' in result.stdout) == (outcome == 'skipped')
+    rows.append({'command':command, 'cwd':'.', 'startedAt':started, 'durationSeconds':round(time.monotonic()-before,3),
+        'exitCode':result.returncode, 'timedOut':False, 'status':'passed' if result.returncode == 0 else 'failed',
+        'log':str(log), 'logSha256':hashlib.sha256(result.stdout).hexdigest(), 'file':source})
+(destination / 'results.json').write_text(json.dumps({'group':'node', 'runs':rows}))
+print('Two actual owned runs completed: passed + ' + second)
+"""
+    spec = importlib.util.spec_from_file_location("duplicate_node_common", ROOT / "scripts/testing/common.py")
+    common = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(common)
+    common.ROOT = proof["root"]
+    started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    prior = proof["master"]["runs"][0]
+    command = [sys.executable, "-c", runner, proof["caseFile"], prior["command"][0],
+               str(proof["incoming"] / "node"), second_outcome]
+    run = common.run_command(command, proof["incoming"] / "orchestration/duplicate-node.txt", cwd=proof["root"], timeout=15)
+    assert run["exitCode"] == 0
+    assert hashlib.sha256(proof["source"].read_bytes()).hexdigest() == source_sha
+    run.update(group="node", id="node")
+    files = {proof["caseFile"]: source_sha}
+    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    proof["current"] = {"sha256": digest, "files": files}
+    (proof["incoming"] / "orchestration/source-inputs.json").write_text(json.dumps(proof["current"]))
+    rewrite_artifact(proof, "orchestration/results.json", lambda master: master.update(
+        startedAt=started, sourceInputsSha256=digest, runs=[run]))
+    passed, state = collect_actual(proof)
+    assert passed == set()
+    assert state["rejectedEvidence"]["duplicate-node-file-execution"] == 1
