@@ -241,10 +241,13 @@ router.get(
 router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { fileKey, targetTier, targetLocation } = req.body;
+    const { fileKey, targetTier, targetLocation } = req.body ?? {};
 
-    if (!fileKey || !targetTier || !targetLocation) {
+    if (typeof fileKey !== "string" || !fileKey || !targetTier || !targetLocation) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+    if (targetTier !== "cold" || targetLocation !== "pocket-dimension") {
+      return res.status(400).json({ error: "Unsupported hybrid storage migration target" });
     }
 
     const metadata = hybridStorageService?.getMetadata(fileKey);
