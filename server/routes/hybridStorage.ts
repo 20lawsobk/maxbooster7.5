@@ -10,6 +10,8 @@ import {
   hybridStorageService,
   normalizeHybridCleanupDays,
   normalizeHybridUploadFolder,
+  toPublicHybridFileMetadata,
+  toPublicHybridStorageAnalytics,
   StorageTier,
   StorageLocation,
 } from "../services/hybridStorageService.js";
@@ -183,7 +185,8 @@ router.get("/files", requireAuth, async (req: Request, res: Response) => {
       folder: folder as string | undefined,
     });
 
-    res.json({ files });
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({ files: files.map(toPublicHybridFileMetadata) });
   } catch (error) {
     logger.warn({ err: error }, "[HybridStorage] List error:");
     res.status(500).json({ error: "Failed to list files" });
@@ -223,7 +226,7 @@ router.get(
       }
 
       res.setHeader("Cache-Control", "private, no-store");
-      res.json({ metadata });
+      res.json({ metadata: toPublicHybridFileMetadata(metadata) });
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Metadata error:");
       res.status(500).json({ error: "Failed to get metadata" });
@@ -262,7 +265,10 @@ router.post("/migrate", requireAuth, async (req: Request, res: Response) => {
 
     if (success) {
       const newMetadata = hybridStorageService?.getMetadata(fileKey);
-      res.json({ success: true, metadata: newMetadata });
+      res.json({
+        success: true,
+        metadata: newMetadata ? toPublicHybridFileMetadata(newMetadata) : undefined,
+      });
     } else {
       res.status(500).json({ error: "Migration failed" });
     }
@@ -281,7 +287,8 @@ router.get("/analytics", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const analytics = await hybridStorageService?.getAnalytics(userId);
 
-    res.json({ analytics });
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({ analytics: toPublicHybridStorageAnalytics(analytics) });
   } catch (error) {
     logger.warn({ err: error }, "[HybridStorage] Analytics error:");
     res.status(500).json({ error: "Failed to get analytics" });
