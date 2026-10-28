@@ -120,3 +120,35 @@ test('failed public pointer change restores earlier pointer', async () => {
   assert.equal(f.storage.publicContentHashes.get(hash), 'older-primary');
   assert.equal(f.storage.fileIndex.size, 0);
 });
+
+test('colliding new upload key never overwrites previously persisted primary bytes', async () => {
+  const f = setup();
+  const stored = new Map();
+  f.storage.generateFileKey = () => 'users/owner/reused-key';
+  f.storage.coldPocket.write = async (path, data) => {
+    stored.set(path, Buffer.from(data));
+    return { compressedSize: data.length };
+  };
+  const original = Buffer.from('original-owner-data');
+  const different = Buffer.from('other-content-must-not-overwrite');
+  const first = await f.storage.upload('owner', 'first.txt', original, 'text/plain');
+  const beforeMetadata = f.storage.fileIndex.get(first.key);
+  await assert.rejects(
+    () => f.storage.upload('owner', 'second.txt', different, 'text/plain'),
+    /key collision/,
+  );
+  assert.deepEqual(stored.get('storage/' + first.key), original, 'existing bytes must remain unchanged');
+  assert.equal(f.storage.fileIndex.get(first.key), beforeMetadata);
+  assert.deepEqual(Array.from(f.storage.contentHashIndex.get(beforeMetadata.contentHash)), [first.key]);
+});
+
+test('colliding alias key is rejected without changing ownership indexes', async () => {
+  const f = setup();
+  f.storage.generateFileKey = () => 'users/owner/reused-key';
+  const first = await send(f, 'owner');
+  const before = f.saves;
+  await assert.rejects(() => send(f, 'owner'), /key collision/);
+  assert.equal(f.saves, before);
+  assert.equal(f.storage.fileIndex.size, 1);
+  assert.deepEqual(Array.from(f.storage.contentHashIndex.get(hash)), [first.key]);
+});
