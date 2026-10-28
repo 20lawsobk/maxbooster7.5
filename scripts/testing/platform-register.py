@@ -8,14 +8,18 @@ from __future__ import annotations
 
 import argparse
 import ast
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
+import datetime
+import math
 import hashlib
 import json
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all"}
@@ -193,6 +197,221 @@ def resolve_evidence_cases(mapping, *, check_ids, platform_digest, test_entries,
         resolved.append({field: case[field] for field in fields})
         seen.add(identity)
     return resolved
+
+
+
+def collect_current_passing_cases(incoming, current_inputs, *, root=ROOT):
+    """Bind leaf proofs to unchanged current inputs and their actual selected run.
+
+    This runs during master postprocessing, before finishedAt/overall status
+    exist. A failed global coverage threshold does not erase passing leaf cases.
+    Regenerating case-results or editing an acceptance-map digest is not a run.
+    """
+    incoming, root = incoming.resolve(), root.resolve()
+    rejected, artifacts, loaded = Counter(), {}, {}
+
+    def load(file, fallback):
+        if file in loaded: return loaded[file]
+        try:
+            value = read_json(file, fallback)
+            if file.is_file(): artifacts[str(file)] = digest(file)
+            loaded[file] = value
+            return value
+        except (OSError, ValueError, TypeError):
+            rejected["unreadable-producer-artifact"] += 1
+            return fallback
+
+    def owned(reference):
+        if not isinstance(reference, str) or not reference: return None
+        file = Path(reference)
+        if not file.is_absolute(): file = root / file
+        try:
+            file = file.resolve()
+            return file if file.is_relative_to(incoming) and file.is_file() else None
+        except (OSError, ValueError): return None
+
+    def timestamp(value):
+        try:
+            date = datetime.datetime.fromisoformat(value)
+            return date.timestamp() if date.tzinfo is not None else None
+        except (TypeError, ValueError, OverflowError): return None
+
+    # One second accommodates rounded command durations/filesystem precision;
+    # it does not permit borrowing artifacts from a previous master invocation.
+    def fresh(file, window):
+        try:
+            modified = file.stat().st_mtime if file is not None else -1
+            return modified >= master_start and window[0] - 1 <= modified <= window[1] + 1
+        except OSError: return False
+
+    def command_window(row, parent):
+        if not isinstance(row, dict): return None
+        start, duration = timestamp(row.get("startedAt")), row.get("durationSeconds")
+        code = row.get("exitCode")
+        if (start is None or not isinstance(duration, (int, float)) or isinstance(duration, bool)
+                or not math.isfinite(duration) or duration < 0 or type(code) is not int or code < 0
+                or row.get("timedOut") is not False or row.get("coverageParseExclusions")
+                or row.get("status") not in ({"passed", "passed_with_skips"} if code == 0 else {"failed"})
+                or not isinstance(row.get("command"), list) or not row["command"]
+                or any(not isinstance(part, str) for part in row["command"])):
+            return None
+        end = start + duration
+        if start < parent[0] - 1 or end > parent[1] + 1: return None
+        log = owned(row.get("log"))
+        if not fresh(log, (start, end)) or not isinstance(row.get("logSha256"), str) or digest(log) != row["logSha256"]:
+            return None
+        artifacts[str(log)] = row["logSha256"]
+        return start, end
+
+    recorded = load(incoming / "orchestration/source-inputs.json", {})
+    master = load(incoming / "orchestration/results.json", {})
+    # This ledger legitimately gains postprocessing/final status after this
+    # function returns. Bind its stable executed-run subset, not a transient hash.
+    artifacts.pop(str(incoming / "orchestration/results.json"), None)
+    current_inputs = current_inputs if isinstance(current_inputs, dict) else {}
+    files = recorded.get("files") if isinstance(recorded, dict) else None
+    calculated = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    source_current = (isinstance(files, dict) and bool(files) and files == current_inputs.get("files")
+                      and recorded.get("sha256") == current_inputs.get("sha256") == calculated
+                      and isinstance(master, dict) and master.get("sourceInputsSha256") == calculated
+                      and master.get("sourceInputsUnchanged") is True and master.get("changedSourceInputs") == [])
+    selected = master.get("selectedGroups") if isinstance(master, dict) else None
+    master_start = timestamp(master.get("startedAt")) if isinstance(master, dict) else None
+    state = {"status": "STALE_OR_MISSING", "sourceInputsMatchCurrent": bool(source_current),
+             "currentSourceInputsSha256": current_inputs.get("sha256"), "recordedSourceInputsSha256": recorded.get("sha256") if isinstance(recorded, dict) else None,
+             "selectedExecutedGroups": [], "rejectedEvidence": {}, "inputArtifactsSha256": artifacts,
+             "meaning": "Only exact leaf proofs bound to unchanged current source and actual selected commands qualify; overall master/coverage/launch approval is separate."}
+    if (not source_current or master_start is None or not isinstance(selected, list) or not selected
+            or any(not isinstance(group, str) for group in selected) or len(set(selected)) != len(selected)):
+        state["rejectedEvidence"] = {"missing-or-stale-current-execution": 1}
+        return set(), state
+    stable_binding = {key: master.get(key) for key in ("sourceRevision", "startedAt", "sourceInputsSha256",
+                       "sourceInputsUnchanged", "changedSourceInputs", "selectedGroups", "runs")}
+    state["executionBinding"] = stable_binding
+    state["executionBindingSha256"] = hashlib.sha256(json.dumps(stable_binding, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    runs = master.get("runs", [])
+    runs = runs if isinstance(runs, list) else []
+    keys = Counter((row.get("group"), row.get("id")) for row in runs if isinstance(row, dict)
+                   and isinstance(row.get("group"), str) and isinstance(row.get("id"), str))
+    bound = {}
+    for row in runs:
+        if not isinstance(row, dict): continue
+        key = row.get("group"), row.get("id")
+        if not all(isinstance(part, str) for part in key) or keys[key] != 1 or key[0] not in selected: continue
+        window = command_window(row, (master_start, float("inf")))
+        if window: bound[key] = (window, row)
+    state["selectedExecutedGroups"] = sorted({key[0] for key in bound})
+    state["status"] = "CURRENT" if bound else "MISSING_EXECUTED_GROUPS"
+    def unique_tap_passes(log):
+        seen, passed = Counter(), set()
+        for match in re.finditer(r"^(ok|not ok) \d+ - (.+?)(?: # (SKIP|TODO).*)?$", log.read_text(errors="replace"), re.M):
+            seen[match.group(2)] += 1
+            if match.group(1) == "ok" and not match.group(3): passed.add(match.group(2))
+        return {name for name in passed if seen[name] == 1}
+
+    def source_command(entry, file, group):
+        command = entry.get("command")
+        if group == "python" and isinstance(command, str):
+            try: command = shlex.split(command)
+            except ValueError: return False
+        return isinstance(command, list) and file in command
+
+    result, xml_cache = set(), {}
+    group_runs = {"root-unit": ("root", "ci"), "root-additional": ("root", "additional"),
+                  "coverage-contracts": ("coverage", "coverage"), "python": ("python", "python"),
+                  "commerce": ("commerce", "commerce"), "http": ("http", "http")}
+    case_rows = load(incoming / "case-results.json", [])
+    if not isinstance(case_rows, list):
+        rejected["malformed-case-results"] += 1
+        case_rows = []
+    for case in case_rows:
+        if not isinstance(case, dict) or case.get("status") != "passed": continue
+        identity = case.get("group"), case.get("file"), case.get("name")
+        if not all(isinstance(part, str) and part for part in identity) or identity[1] not in files: continue
+        artifact = owned(case.get("junit"))
+        key = group_runs.get(identity[0])
+        if identity[0] == "root-unit" and artifact and artifact.name == "coverage-unit.junit.xml": key = ("coverage", "coverage")
+        if key not in bound or not fresh(artifact, bound[key][0]):
+            rejected["unbound-or-stale-case-artifact"] += 1; continue
+        default_file = None
+        if identity[0] in {"python", "commerce"}:
+            group = identity[0]
+            producer_path = incoming / group / "results.json"
+            producer = load(producer_path, {}) if fresh(producer_path, bound[key][0]) else {}
+            entries = producer.get("suites" if group == "python" else "commands", []) if isinstance(producer, dict) else []
+            entries = entries if isinstance(entries, list) else []
+            matching = [entry for entry in entries if isinstance(entry, dict) and entry.get("file" if group == "python" else "path") == identity[1]
+                        and isinstance(entry.get("junit"), str) and owned(str(incoming / group / entry["junit"])) == artifact
+                        and type(entry.get("exitCode")) is int and entry["exitCode"] == 0
+                        and source_command(entry, identity[1], group)
+                        and (group != "python" or entry.get("sourceSha256") == files[identity[1]])]
+            if len(matching) != 1:
+                rejected["unbound-default-file-producer"] += 1; continue
+            default_file = identity[1]
+        cache_key = artifact, default_file
+        if cache_key not in xml_cache:
+            passed, occurrences = set(), Counter()
+            try:
+                def collect(element, suite=""):
+                    name = element.get("name", "") if element.tag == "testsuite" else suite
+                    if element.tag == "testcase":
+                        identity = default_file or element.get("file") or name, element.get("name")
+                        occurrences[identity] += 1
+                        if not any(element.find(tag) is not None for tag in ("failure", "error", "skipped")):
+                            passed.add(identity)
+                    else:
+                        for child in element: collect(child, name)
+                collect(ET.parse(artifact).getroot())
+                artifacts[str(artifact)] = digest(artifact)
+            except (OSError, ET.ParseError): rejected["unreadable-case-xml"] += 1
+            xml_cache[cache_key] = {identity for identity in passed if occurrences[identity] == 1}
+        if identity[1:] in xml_cache[cache_key]: result.add(identity)
+        else: rejected["case-not-passed-in-bound-xml"] += 1
+    node_path = incoming / "node/results.json"
+    if ("node", "node") in bound and fresh(node_path, bound[("node", "node")][0]):
+        node = load(node_path, {})
+        node_runs = node.get("runs", []) if isinstance(node, dict) else []
+        for run in node_runs if isinstance(node_runs, list) else []:
+            if (not isinstance(run, dict) or not isinstance(run.get("file"), str) or run["file"] not in files
+                    or type(run.get("exitCode")) is not int or run["exitCode"] != 0
+                    or not isinstance(run.get("command"), list) or run["file"] not in run["command"]): continue
+            if not command_window(run, bound[("node", "node")][0]):
+                rejected["unbound-node-command"] += 1; continue
+            result.update(("node", run["file"], name) for name in unique_tap_passes(owned(run["log"])))
+    browser_path = incoming / "integration-browser/browser-page80-summary.json"
+    if ("browser", "browser") in bound and fresh(browser_path, bound[("browser", "browser")][0]):
+        window, run = bound[("browser", "browser")]
+        browser_report = load(browser_path, {})
+        browser = browser_report.get("browser", {}) if isinstance(browser_report, dict) else {}
+        browser = browser if isinstance(browser, dict) else {}
+        names, paths = browser.get("caseNames", []), browser.get("files", [])
+        log = owned(str(browser_path.parent / browser["log"])) if isinstance(browser.get("log"), str) else None
+        # Aggregate TAP cannot bind a case to one of several executed files.
+        # Preserve the run but require per-file producer identity before linking.
+        if (type(browser.get("exitCode")) is int and browser["exitCode"] == run["exitCode"] == 0
+                and isinstance(names, list) and isinstance(paths, list) and len(names) == len(paths) == 1
+                and isinstance(names[0], str) and isinstance(paths[0], str) and paths[0] in files
+                and [part for part in run["command"] if part in files] == paths
+                and fresh(log, window) and digest(log) == run["logSha256"]):
+            result.update(("browser", paths[0], names[0]) for _ in [None] if names[0] in unique_tap_passes(log))
+        else: rejected["unbound-browser-artifact"] += 1
+    state["rejectedEvidence"] = dict(rejected)
+    state["passingCases"] = len(result)
+    return result, state
+
+def audit_route_identity(route, scopes):
+    path = route.get("fullPath") or route.get("rawPath")
+    parts = (route["file"], route["line"], route["method"], path)
+    # Preserve existing IDs unless the source declaration really represents
+    # identical URLs in distinct application processes.
+    if len(scopes.get(parts, ())) > 1:
+        parts += (route.get("processScope"),)
+    return identifier("api", *parts)
+
+
+def audit_mount_resolved(route):
+    """A fallback raw path does not establish a mounted endpoint."""
+    return bool(route.get("fullPath")) and route.get("confidence") in {"high", "medium"}
 
 
 def location(file, line):
@@ -453,11 +672,14 @@ def main():
     for item in interactions: interactions_by_file[item["source"]["file"]].append(item["id"])
 
     registered = set()
+    route_scopes = defaultdict(set)
+    for raw in audit.get("backendRoutes", []):
+        route_scopes[(raw["file"], raw["line"], raw["method"], raw.get("fullPath") or raw.get("rawPath"))].add(raw.get("processScope"))
     for raw in audit.get("backendRoutes", []):
         file = raw["file"]; line = raw["line"]; path = raw.get("fullPath") or raw.get("rawPath")
-        item = {"id": identifier("api", file, line, raw["method"], path), "method": raw["method"], "path": path,
+        item = {"id": audit_route_identity(raw, route_scopes), "method": raw["method"], "path": path,
                 "source": location(file, line), "processScope": raw.get("processScope"), "confidence": raw.get("confidence"),
-                "mountResolved": bool(raw.get("fullPath")), "hasAuthMarker": raw.get("hasAuthMarker"), "origin": "main-endpoint-audit"}
+                "mountResolved": audit_mount_resolved(raw), "hasAuthMarker": raw.get("hasAuthMarker"), "origin": "main-endpoint-audit"}
         routes.append(item); registered.add((file, line, raw["method"]))
     # Resolve declared imported TypeScript mount graphs without pretending that
     # a router lacking an entrypoint is definitely mounted at the root.
@@ -552,29 +774,18 @@ def main():
 
     source_coverage = coverage_records((args.coverage or incoming / "coverage").resolve())
     cases = read_json(incoming / "case-results.json", [])
-    passed_cases = {(row.get("group"), row.get("file"), row.get("name")) for row in cases if row.get("status") == "passed"}
-    # Browser and Node runners retain honest TAP/process evidence rather than
-    # inventing JUnit files. Make their exact declared cases linkable too.
-    browser = read_json(incoming / "integration-browser/browser-page80-summary.json", {}).get("browser", {})
-    if browser.get("exitCode") == 0 and len(browser.get("files", [])) == len(browser.get("caseNames", [])):
-        passed_cases.update(("browser", file, name) for file, name in zip(browser["files"], browser["caseNames"]))
-    node_report = read_json(incoming / "node/results.json", {})
-    for run in node_report.get("runs", []):
-        log = Path(run.get("log", ""))
-        if not log.is_absolute(): log = ROOT / log
-        if not log.is_file(): continue
-        if run.get("logSha256") and digest(log) != run["logSha256"]:
-            unknown.append({"kind": "node-evidence-log-digest-mismatch", "file": run["file"]})
-            continue
-        for match in re.finditer(r"^ok \d+ - (.+?)(?: # (SKIP|TODO).*)?$", log.read_text(errors="replace"), re.M):
-            if not match.group(2): passed_cases.add(("node", run["file"], match.group(1)))
+    cases = cases if isinstance(cases, list) else []
+    from common import source_inputs
+    passed_cases, incoming_execution = collect_current_passing_cases(incoming, source_inputs(), root=ROOT)
     acceptance = read_json(args.acceptance_map, {"checks": []}); invalid_evidence = []
     mappings = list(acceptance.get("checks", []))
     # Test reporters may emit check IDs themselves. These automated links do
     # not require a separate manifest, reviewer identity or approval.
     for case in cases:
-        if case.get("status") != "passed": continue
-        for check_id in case.get("platformChecks", case.get("checkIds", [])):
+        if not isinstance(case, dict) or case.get("status") != "passed": continue
+        reported_checks = case.get("platformChecks", case.get("checkIds", []))
+        if not isinstance(reported_checks, list): continue
+        for check_id in reported_checks:
             mappings.append({"checkId": check_id, "platformSourceDigest": case.get("platformSourceDigest"),
                              "testFile": case.get("file"), "testSha256": case.get("testSha256"),
                              "caseName": case.get("name"), "group": case.get("group")})
@@ -588,7 +799,7 @@ def main():
             evidence = {"cases": cases, "mode": "all-cases-required"} if "cases" in mapping else cases[0]
             checks_by_id[mapping["checkId"]].update(status="PASS", evidence=evidence)
         else: invalid_evidence.append({"checkId": mapping.get("checkId") if isinstance(mapping, dict) else None,
-                                      "reason": "Unknown check, changed source digest, changed test, or missing exact passing case in required evidence"})
+                                      "reason": "Unknown check, changed source/test digest, or no exact passing case bound to current unchanged execution; see evidenceProvenance"})
     for subject in pages + routes + interactions:
         subject["status"] = "PASS" if all(check["status"] == "PASS" for check in subject["requiredChecks"]) else "UNVERIFIED"
     pending = sum(check["status"] != "PASS" for check in checks_by_id.values())
@@ -616,6 +827,7 @@ def main():
               },
               "pages": pages, "backendRoutes": routes, "frontendContracts": contracts, "interactions": interactions,
               "sourceCoverage": source_coverage, "unknownMappings": unknown, "invalidEvidenceLinks": invalid_evidence,
+              "evidenceProvenance": incoming_execution,
               "evidenceLinking": {"automaticCaseFields": ["platformChecks", "checkIds", "platformSourceDigest", "testSha256"],
                                   "optionalAcceptanceMap": str(args.acceptance_map.relative_to(ROOT)) if args.acceptance_map.is_relative_to(ROOT) else str(args.acceptance_map),
                                   "conjunctiveCaseBundles": "An explicit cases array requires every unique exact case to pass with the current test hash and shared platformSourceDigest; no partial bundle closes a check.",

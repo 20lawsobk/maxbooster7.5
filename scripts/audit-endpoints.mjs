@@ -50,6 +50,7 @@
 import { readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, relative, extname, dirname, resolve as pathResolve } from "node:path";
 import { stripRouteTypeArguments } from "./lib/route-call-source.mjs";
+import { resolveFiniteTemplatePath } from "./lib/finite-route-paths.mjs";
 
 const ROOT = process.cwd();
 const SERVER_DIR = join(ROOT, "server");
@@ -135,7 +136,25 @@ function resolveSpecifier(fromFile, specifier, seen = new Set()) {
 // ---------------------------------------------------------------------------
 
 function buildMountPrefixMap(serverFiles) {
-  const prefixMap = new Map(); // resolvedFile -> { prefix, mountedFrom: [file:line,...] }
+  const prefixMap = new Map(); // resolvedFile -> all finite source-proven mount contexts
+  const mountEdges = [];
+  const diagnostics = [];
+  const joinPrefix = (base, extra) => (base.replace(/\/$/, "") + "/" + extra.replace(/^\//, "")).replace(/\/{2,}/g, "/").replace(/\/$/, "");
+  const processFor = (file, source) => relative(ROOT, file) !== "server/index.ts" &&
+    /\b(?:const|let|var)\s+\w+\s*=\s*express\s*\(\s*\)/.test(source) && /\.\s*listen\s*\(/.test(source)
+      ? `standalone:${relative(ROOT, file)}` : "main-app";
+  const addContext = (target, context) => {
+    let entry = prefixMap.get(target);
+    if (!entry) { entry = { prefix: context.prefix, mountedFrom: [], contexts: [] }; prefixMap.set(target, entry); }
+    for (const location of context.mountedFrom) if (!entry.mountedFrom.includes(location)) entry.mountedFrom.push(location);
+    const existing = entry.contexts.find(row => row.prefix === context.prefix && row.processScope === context.processScope);
+    if (existing) {
+      for (const location of context.mountedFrom) if (!existing.mountedFrom.includes(location)) existing.mountedFrom.push(location);
+      return false;
+    }
+    entry.contexts.push(context);
+    return true;
+  };
 
   for (const file of serverFiles) {
     const src = readFileSync(file, "utf8");
@@ -203,11 +222,22 @@ function buildMountPrefixMap(serverFiles) {
       const resolved = localImports.get(ident);
       if (!resolved) continue;
       const loc = `${relative(ROOT, file)}:${lineAt(src, m.index)}`;
-      if (!prefixMap.has(resolved)) {
-        prefixMap.set(resolved, { prefix, mountedFrom: [loc] });
-      } else {
-        prefixMap.get(resolved).mountedFrom.push(loc);
+      const receiver = m[1];
+      const isLocalRouter = [...src.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*(?:express\.)?Router\s*\(/g)]
+        .some(declaration => declaration[1] === receiver);
+      const isLocalApp = [...src.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*express\s*\(/g)]
+        .some(declaration => declaration[1] === receiver);
+      if (m[2] === "`" && prefix.includes("${")) {
+        diagnostics.push({method: "USE", file: relative(ROOT, file), line: lineAt(src, m.index), rawExpr: m[0], reason: "unresolved-template-mount-prefix"});
+        continue;
       }
+      if (isLocalRouter) {
+        mountEdges.push({ from: file, target: resolved, prefix, location: loc, line: lineAt(src, m.index) });
+      } else if (receiver === "app" || isLocalApp) {
+        addContext(resolved, { prefix, processScope: processFor(file, src), mountedFrom: [loc], chain: [file, resolved] });
+      }
+      // Imported/opaque receivers do not prove a root mount. They remain
+      // unmounted instead of inventing a complete relative URL.
     }
 
     // lazy-loader registry: { path: "<prefix>", ..., loader: () => import("<spec>") }
@@ -221,11 +251,9 @@ function buildMountPrefixMap(serverFiles) {
       const resolved = resolveSpecifier(file, lazy.specifier);
       if (!resolved) continue;
       const loc = `${relative(ROOT, file)}:${lineAt(src, lazy.index)}`;
-      if (!prefixMap.has(resolved)) {
-        prefixMap.set(resolved, { prefix: lazy.prefix, mountedFrom: [loc] });
-      } else {
-        prefixMap.get(resolved).mountedFrom.push(loc);
-      }
+      const localRouterFile = isRouterFile(src);
+      if (localRouterFile) mountEdges.push({ from: file, target: resolved, prefix: lazy.prefix, location: loc, line: lineAt(src, lazy.index) });
+      else addContext(resolved, { prefix: lazy.prefix, processScope: processFor(file, src), mountedFrom: [loc], chain: [file, resolved] });
     }
   }
   // Route entrypoints may forward their default router to an implementation
@@ -241,6 +269,25 @@ function buildMountPrefixMap(serverFiles) {
       prefixMap.set(target, { ...mount, mountedFrom: [...mount.mountedFrom, `${relative(ROOT, file)} (default re-export)`] });
     }
   }
+  // Compose relative child mounts only after their parent's complete context
+  // is known. A repeated router file terminates a cycle explicitly; no source
+  // code is evaluated and there is no guessed root prefix for unresolved edges.
+  const pending = [...prefixMap].flatMap(([file, value]) => value.contexts.map(context => ({file, context})));
+  const seenCycles = new Set();
+  while (pending.length) {
+    const {file, context} = pending.shift();
+    for (const edge of mountEdges.filter(row => row.from === file)) {
+      if (context.chain.includes(edge.target) || context.chain.length >= 13) {
+        const key = `${edge.location}:${edge.target}`;
+        if (!seenCycles.has(key)) { seenCycles.add(key); diagnostics.push({ method: "USE", file: relative(ROOT, edge.from), line: edge.line, rawExpr: edge.location, reason: "mount-cycle-or-depth-limit" }); }
+        continue;
+      }
+      const next = {prefix: joinPrefix(context.prefix, edge.prefix), processScope: context.processScope,
+        mountedFrom: [...context.mountedFrom, edge.location], chain: [...context.chain, edge.target]};
+      if (addContext(edge.target, next)) pending.push({file: edge.target, context: next});
+    }
+  }
+  prefixMap.diagnostics = diagnostics;
   return prefixMap;
 }
 
@@ -367,6 +414,17 @@ function extractRoutesFromFile(file) {
     const strMatch = after.match(
       /^\s*(?:(?:\/\/[^\n]*\n)|(?:\/\*[\s\S]*?\*\/\s*))*(['"`])((?:\\.|(?!\1)[^\\])*)\1/,
     );
+    if (strMatch?.[1] === "`" && strMatch[2].includes("${")) {
+      const paths = resolveFiniteTemplatePath(src, file, callOffset);
+      if (paths) {
+        for (const rawPath of paths) routes.push({ method, rawPath, file: rel, line,
+          resolvedVia: "finite-loop-template", registeredOn,
+          hasAuthMarker: AUTH_MARKERS.some(marker => argsWindow.includes(marker)), callsNext });
+      } else {
+        unresolved.push({method, file: rel, line, rawExpr: after.slice(0, 60).split("\n")[0].trim(), reason: "unresolved-template-path"});
+      }
+      continue;
+    }
     if (strMatch) {
       routes.push({
         method,
@@ -467,7 +525,7 @@ function buildBackendInventory() {
   const prefixMap = buildMountPrefixMap(files);
 
   const inventory = [];
-  const unresolvedDynamic = [];
+  const unresolvedDynamic = [...prefixMap.diagnostics];
 
   for (const file of files) {
     const src = readFileSync(file, "utf8");
@@ -489,6 +547,8 @@ function buildBackendInventory() {
         : "main-app";
 
     for (const r of routes) {
+      const contexts = mountInfo?.contexts?.length ? mountInfo.contexts : [null];
+      for (const context of contexts) {
       let fullPath;
       let confidence;
       // "/health", "/ready", "/status" are only unambiguously absolute when
@@ -506,8 +566,8 @@ function buildBackendInventory() {
         fullPath = r.rawPath;
         confidence = "high";
       } else if (router && mountInfo) {
-        fullPath = (mountInfo.prefix + r.rawPath).replace(/\/{2,}/g, "/");
-        confidence = mountInfo.mountedFrom.length === 1 ? "high" : "medium";
+        fullPath = ((context?.prefix ?? mountInfo.prefix) + r.rawPath).replace(/\/{2,}/g, "/");
+        confidence = context ? "high" : "medium";
       } else if (router && !mountInfo) {
         fullPath = r.rawPath;
         confidence = "unmounted-or-unresolved";
@@ -515,7 +575,8 @@ function buildBackendInventory() {
         fullPath = r.rawPath;
         confidence = "high";
       }
-      inventory.push({ ...r, fullPath, confidence, mountedFrom: mountInfo?.mountedFrom, processScope });
+      inventory.push({ ...r, fullPath, confidence, mountedFrom: context?.mountedFrom ?? mountInfo?.mountedFrom, processScope: context?.processScope ?? processScope });
+      }
     }
   }
   return { inventory, unresolvedDynamic, prefixMap };
@@ -1442,6 +1503,7 @@ function serializePrefixMap(prefixMap) {
     file: relative(ROOT, file),
     prefix: info.prefix,
     mountedFrom: info.mountedFrom || [],
+    contexts: (info.contexts || []).map(context => ({prefix: context.prefix, processScope: context.processScope, mountedFrom: context.mountedFrom})),
   }));
 }
 

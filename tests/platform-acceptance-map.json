@@ -4,7 +4,7 @@
   "checks": [
     {
       "checkId": "api-7f174c69ff83279c/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "testFile": "tests/health.test.ts",
       "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "caseName": "Liveness and Readiness Endpoints > GET /api/health returns 200",
@@ -12,7 +12,7 @@
     },
     {
       "checkId": "api-2153be5bc8e5692b/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "testFile": "tests/health.test.ts",
       "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "caseName": "Liveness and Readiness Endpoints > GET /health returns 200",
@@ -20,7 +20,7 @@
     },
     {
       "checkId": "api-50167c08abd2dfe2/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "testFile": "tests/health.test.ts",
       "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "caseName": "Liveness and Readiness Endpoints > GET /api/ping returns ok:true",
@@ -28,7 +28,7 @@
     },
     {
       "checkId": "api-059a423751b44e6c/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "testFile": "tests/health.test.ts",
       "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "caseName": "Liveness and Readiness Endpoints > GET /ready reflects the actual admitted dependency set",
@@ -36,7 +36,7 @@
     },
     {
       "checkId": "api-ebf54287f664010e/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "testFile": "tests/health.test.ts",
       "testSha256": "a68361e7ba4f9bc39b0a3c6f389bb894683af28c1fb96069372590d0ce0fd570",
       "caseName": "Liveness and Readiness Endpoints > GET /readyz uses the same truthful readiness contract",
@@ -44,7 +44,7 @@
     },
     {
       "checkId": "api-ef05357bba6ab833/access-policy",
-      "platformSourceDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
       "cases": [
         {
           "testFile": "tests/auth-flows.test.ts",
