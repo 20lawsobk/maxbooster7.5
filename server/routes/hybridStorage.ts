@@ -72,7 +72,17 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const fileKey = decodeURIComponent((req.params.fileKey as string));
+      // Express 5 already decodes route parameters. Keep exact object identity.
+      const fileKey = req.params.fileKey as string;
+      if (
+        !fileKey ||
+        fileKey.startsWith("/") ||
+        fileKey.includes("..") ||
+        fileKey.includes("\\") ||
+        fileKey.includes("\0")
+      ) {
+        return res.status(400).json({ error: "Invalid file key" });
+      }
 
       const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
@@ -94,6 +104,7 @@ router.get(
       res.setHeader("X-Storage-Tier", metadata?.tier);
       res.setHeader("X-Storage-Location", metadata?.location);
 
+      res.setHeader("Cache-Control", "private, no-store");
       res.send(data);
     } catch (error) {
       logger.warn({ err: error }, "[HybridStorage] Download error:");
