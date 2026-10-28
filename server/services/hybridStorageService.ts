@@ -176,6 +176,24 @@ export function toPublicHybridStorageAnalytics(analytics: StorageAnalytics): Sto
   };
 }
 
+
+/**
+ * Private content is an ownership boundary, even when its hash matches.
+ * Reusing another tenant's private bytes makes upload deduplication a
+ * presence oracle. Same-owner or explicitly public primary bytes are safe
+ * to reference; never create aliases of aliases.
+ */
+export function mayDeduplicateHybridBytes(
+  candidate: Pick<HybridFileMetadata, "userId" | "isPublic" | "isDeduplicated" | "contentHash"> | undefined,
+  contentHash: string,
+  requesterId: string,
+): boolean {
+  return !!candidate &&
+    candidate.isDeduplicated === false &&
+    candidate.contentHash === contentHash &&
+    (candidate.userId === requesterId || candidate.isPublic === true);
+}
+
 export class HybridStorageService {
   private static instance: HybridStorageService;
   private replitClient: any = null;
@@ -538,13 +556,19 @@ export class HybridStorageService {
     if (existingKeys && existingKeys?.length > 0) {
       // Hash buckets may be restored in an arbitrary order. Never point a
       // new alias at another alias: read() rejects chained references.
-      const primaryKey = existingKeys.find((candidateKey) => {
+      // A hash collision with another tenant's private primary is not an
+      // authorization grant. Preserve valid same-hash primaries as separate
+      // physical objects rather than revealing their existence to uploaders.
+      const hasPrimary = existingKeys.some((candidateKey) => {
         const candidate = this.fileIndex.get(candidateKey);
         return candidate && !candidate.isDeduplicated && candidate.contentHash === contentHash;
       });
-      if (!primaryKey) {
+      if (!hasPrimary) {
         throw new Error("Invalid hybrid deduplication index: no primary byte owner");
       }
+      const primaryKey = existingKeys.find((candidateKey) =>
+        mayDeduplicateHybridBytes(this.fileIndex.get(candidateKey), contentHash, userId),
+      );
       const existingEntry = this.fileIndex.get(primaryKey);
       if (existingEntry) {
         const newEntry: HybridFileMetadata = {
@@ -583,47 +607,8 @@ export class HybridStorageService {
       }
     }
 
-    if (isPublic) {
-      const publicRef = this.publicContentHashes.get(contentHash);
-      if (publicRef) {
-        const existingEntry = this.fileIndex.get(publicRef);
-        if (existingEntry) {
-          const newEntry: HybridFileMetadata = {
-            key,
-            originalName: fileName,
-            mimeType,
-            sizeBytes: data?.length,
-            compressedSize: existingEntry?.compressedSize,
-            tier: existingEntry?.tier,
-            location: existingEntry?.location,
-            contentHash,
-            accessCount: 0,
-            lastAccessed: new Date(),
-            createdAt: new Date(),
-            userId,
-            isPublic: true,
-            isDeduplicated: true,
-            deduplicationRef: publicRef,
-            metadata: options?.metadata,
-          };
-
-          await this.commitUploadIndex(newEntry);
-
-          logger.info(
-            `[HybridStorage] Cross-user deduplicated: ${key} -> ${publicRef}`,
-          );
-          return {
-            key,
-            tier: existingEntry?.tier,
-            sizeBytes: data?.length,
-            compressedSize: existingEntry?.compressedSize,
-            contentHash,
-            isDeduplicated: true,
-            compressionRatio: data?.length / existingEntry?.compressedSize,
-          };
-        }
-      }
-    }
+    // No eligible primary: write independent bytes. Do not fall back to a
+    // public-hash pointer that could still reference a private primary.
 
     const tier =
       options?.forceTier || this.determineInitialTier(data?.length, mimeType);
@@ -778,7 +763,9 @@ export class HybridStorageService {
     // A deduplicated reference reads the original primary's storage path.
     // Reassigning metadata alone does not move the bytes. Refuse deletion
     // until durable immutable-byte reference migration is implemented.
-    if (!entry.isDeduplicated && hashKeys.some((otherKey) => otherKey !== key)) {
+    if (!entry.isDeduplicated && hashKeys.some((otherKey) =>
+      this.fileIndex.get(otherKey)?.deduplicationRef === key
+    )) {
       logger.warn(`[HybridStorage] Refusing to delete shared primary: ${key}`);
       return false;
     }
