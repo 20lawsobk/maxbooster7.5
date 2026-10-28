@@ -959,27 +959,14 @@ router.post("/validate", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/scan", requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { fileId } = req.body;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    res.json({
-      success: true,
-      fileId,
-      scanResult: {
-        clean: true,
-        threats: [],
-        scannedAt: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.warn({ err: error }, "File scan failed:");
-    res.status(500).json({
-      error: error instanceof Error ? error?.message : "Scan failed",
-    });
-  }
+router.post("/scan", requireAuth, async (_req: Request, res: Response) => {
+  // There is no file-content scanner behind this endpoint. Never manufacture
+  // a clean verdict or a scan timestamp for an object that was not inspected.
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(501).json({
+    success: false,
+    error: "File malware scanning is not implemented",
+  });
 });
 
 function formatBytes(bytes: number): string {
