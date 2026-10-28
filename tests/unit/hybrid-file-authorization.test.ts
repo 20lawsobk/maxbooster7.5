@@ -40,12 +40,29 @@ describe("direct and hybrid file byte-fetch authorization", () => {
     ["allow untracked hybrid owner with unscoped key", "owner", unscoped, null, "owner", false, null, true],
     ["reject untracked hybrid foreign owner", "other", unscoped, null, "owner", false, null, false],
     ["reject conflicting durable foreign owner even if hybrid claims caller", "other", unscoped, "owner", "other", false, null, false],
-    ["allow explicitly public hybrid metadata", "other", unscoped, "owner", "owner", true, null, true],
+    ["allow explicitly public hybrid metadata without durable row", "other", unscoped, null, "owner", true, null, true],
     ["allow verified paid marketplace stem", "buyer", unscoped, "owner", "owner", false, true, true],
     ["reject unverified marketplace stem", "buyer", unscoped, "owner", "owner", false, false, false],
     ["reject empty object key", "owner", "", "owner", "owner", true, true, false],
   ];
   it.each(cases)("%s", (_label, requester, key, tracked, hybrid, publicMeta, stem, expected) => {
     expect(canReadStoredFile(requester, key, tracked, hybrid, publicMeta, stem)).toBe(expected);
+  });
+});
+
+describe("durable public visibility overrides stale hybrid metadata", () => {
+  const key = "opaque-asset/private.wav";
+  const cases: Array<[string, string, string | null, string | null, boolean, boolean | null, boolean | null, boolean]> = [
+    ["deny stale hybrid public flag for durable private row", "outsider", "owner", "owner", true, null, false, false],
+    ["deny stale hybrid public flag for durable unknown visibility", "outsider", "owner", "owner", true, null, null, false],
+    ["allow explicitly public file when durable and hybrid metadata agree", "outsider", "owner", "owner", true, null, true, true],
+    ["owner may read their durable private file", "owner", "owner", "owner", true, null, false, true],
+    ["completed-order stem entitlement remains valid", "buyer", "owner", "owner", true, true, false, true],
+    ["hybrid-only public metadata remains readable", "outsider", null, "owner", true, null, null, true],
+    ["durable private owner wins over conflicting hybrid owner", "outsider", "owner", "outsider", true, null, false, false],
+    ["hybrid-only private metadata remains protected", "outsider", null, "owner", false, null, null, false],
+  ];
+  it.each(cases)("%s", (_label, requester, tracked, hybrid, hybridPublic, stem, trackedPublic, expected) => {
+    expect(canReadStoredFile(requester, key, tracked, hybrid, hybridPublic, stem, trackedPublic)).toBe(expected);
   });
 });
