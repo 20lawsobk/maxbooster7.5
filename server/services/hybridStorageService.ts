@@ -635,43 +635,48 @@ export class HybridStorageService {
     const entry = this.fileIndex.get(key);
     if (!entry) return false;
 
-    if (entry?.userId !== userId) {
+    if (entry.userId !== userId) {
       throw new Error(`Access denied: ${key}`);
     }
 
-    const hashKeys = this.contentHashIndex.get(entry?.contentHash);
-    if (hashKeys) {
-      const idx = hashKeys?.indexOf(key);
-      if (idx > -1) hashKeys?.splice(idx, 1);
-      if (hashKeys?.length === 0) {
-        this.contentHashIndex.delete(entry?.contentHash);
-        this.publicContentHashes.delete(entry?.contentHash);
-      }
+    const hashKeys = this.contentHashIndex.get(entry.contentHash) || [];
+    // A deduplicated reference reads the original primary's storage path.
+    // Reassigning metadata alone does not move the bytes. Refuse deletion
+    // until durable immutable-byte reference migration is implemented.
+    if (!entry.isDeduplicated && hashKeys.some((otherKey) => otherKey !== key)) {
+      logger.warn(`[HybridStorage] Refusing to delete shared primary: ${key}`);
+      return false;
     }
 
-    if (!entry?.isDeduplicated) {
-      const otherRefs = hashKeys && hashKeys?.length > 0;
-
-      if (!otherRefs) {
-        // PDIM-only: always delete from cold pocket.
-        await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
-      } else if (hashKeys && hashKeys?.length > 0) {
-        const newPrimary = hashKeys[0];
-        const newPrimaryEntry = this.fileIndex.get(newPrimary);
-        if (newPrimaryEntry) {
-          newPrimaryEntry.isDeduplicated = false;
-          newPrimaryEntry.deduplicationRef = undefined;
-        }
-
-        if (entry?.isPublic) {
-          this.publicContentHashes.set(entry?.contentHash, newPrimary);
-        }
-      }
+    if (!entry.isDeduplicated) {
+      // A failed or unacknowledged PDIM deletion must not erase the index.
+      // The prior catch(() => {}) incorrectly reported successful deletion.
+      const deleted = await this.coldPocket!.delete(`storage/${key}`);
+      if (deleted !== true) return false;
     }
 
+    const remainingKeys = hashKeys.filter((otherKey) => otherKey !== key);
+    if (remainingKeys.length > 0) {
+      this.contentHashIndex.set(entry.contentHash, remainingKeys);
+    } else {
+      this.contentHashIndex.delete(entry.contentHash);
+    }
     this.fileIndex.delete(key);
-    await this.saveIndex();
 
+    // Public hash pointers must not outlive the referenced file.
+    const publicKey = this.publicContentHashes.get(entry.contentHash);
+    if (publicKey && !this.fileIndex.has(publicKey)) {
+      const replacement = remainingKeys.find(
+        (otherKey) => this.fileIndex.get(otherKey)?.isPublic,
+      );
+      if (replacement) {
+        this.publicContentHashes.set(entry.contentHash, replacement);
+      } else {
+        this.publicContentHashes.delete(entry.contentHash);
+      }
+    }
+
+    await this.saveIndex();
     logger.info(`[HybridStorage] Deleted: ${key}`);
     return true;
   }
