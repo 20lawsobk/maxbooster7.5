@@ -159,7 +159,8 @@ export function normalizeHybridUploadFolder(value: unknown): string | undefined 
  * Keep the internal index unchanged for read/delete/recovery.
  */
 export function toPublicHybridFileMetadata(entry: HybridFileMetadata): HybridFileMetadata {
-  const { deduplicationRef: _internalRef, ...safe } = entry;
+  const safe = { ...entry };
+  delete safe.deduplicationRef;
   return safe;
 }
 
