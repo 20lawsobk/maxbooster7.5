@@ -49,3 +49,14 @@ export function canReadStoredFile(
   if (hybridOwnerId !== null) return hybridOwnerId === requesterId;
   return key.startsWith(`users/${requesterId}/`);
 }
+
+/**
+ * Hybrid metadata establishes a storage authority. If its byte read fails,
+ * do not bypass that authority through the raw/direct storage backend: the
+ * failure may be an authorization denial or a concurrent visibility change.
+ * Legacy direct objects remain eligible only when hybrid metadata is absent
+ * and the caller has independently passed the durable ownership gate.
+ */
+export function canFallbackToDirectStorage(hybridMetadataPresent: boolean): boolean {
+  return !hybridMetadataPresent;
+}
