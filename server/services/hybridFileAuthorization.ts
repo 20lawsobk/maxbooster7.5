@@ -36,10 +36,16 @@ export function canReadStoredFile(
   hybridOwnerId: string | null,
   explicitlyPublic: boolean,
   verifiedStemAccess: boolean | null,
+  trackedIsPublic: boolean | null = null,
 ): boolean {
   if (!requesterId || !key) return false;
-  if (verifiedStemAccess === true || explicitlyPublic) return true;
-  if (trackedOwnerId !== null) return trackedOwnerId === requesterId;
+  if (verifiedStemAccess === true) return true;
+  // A durable private row must not be overridden by stale hybrid public metadata.
+  if (trackedOwnerId !== null) {
+    return trackedOwnerId === requesterId ||
+      (trackedIsPublic === true && explicitlyPublic);
+  }
+  if (explicitlyPublic) return true;
   if (hybridOwnerId !== null) return hybridOwnerId === requesterId;
   return key.startsWith(`users/${requesterId}/`);
 }
