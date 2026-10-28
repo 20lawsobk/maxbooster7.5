@@ -296,6 +296,14 @@ export class HybridStorageService {
         }
         nextHashes.set(hash, keys as string[]);
       }
+      // Every owned file must be indexed by its content hash. Missing
+      // aliases can otherwise make delete() mistake a shared primary for
+      // unreferenced physical bytes and remove another account's data.
+      for (const key of nextFiles.keys()) {
+        if (!seenHashKeys.has(key)) {
+          throw new Error(`missing hybrid content-hash index entry ${JSON.stringify(key)}`);
+        }
+      }
       const nextPublic = new Map<string, string>();
       for (const [hash, key] of Object.entries((index as any).publicHashes)) {
         if (

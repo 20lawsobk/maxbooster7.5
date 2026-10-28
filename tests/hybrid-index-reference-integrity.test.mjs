@@ -101,3 +101,24 @@ test('invalid public content pointer rejects index',async()=>{
   const p=goodIndex();p.publicHashes={'same-content':'users/outsider/missing'};
   await rejectedWithoutMutation(p,'missing public ref');
 });
+
+test('missing deduplicated alias in hash index rejects recovery without mutation',async()=>{
+  const p=goodIndex();
+  p.contentHashes['same-content']=['users/owner/primary'];
+  await rejectedWithoutMutation(p,'unindexed alias must not permit primary deletion');
+});
+test('missing primary in hash index rejects recovery without mutation',async()=>{
+  const p=goodIndex();
+  p.contentHashes['same-content']=['users/buyer/alias'];
+  await rejectedWithoutMutation(p,'unindexed primary must not be accepted');
+});
+test('missing complete hash bucket rejects recovery without mutation',async()=>{
+  const p=goodIndex();
+  p.contentHashes={};
+  await rejectedWithoutMutation(p,'unindexed files must not be accepted');
+});
+test('independent unindexed file rejects recovery without mutation',async()=>{
+  const p=goodIndex();
+  p.files['users/other/unindexed']=metadata('users/other/unindexed',{userId:'other',hash:'other-content'});
+  await rejectedWithoutMutation(p,'unindexed independent file must not be accepted');
+});
