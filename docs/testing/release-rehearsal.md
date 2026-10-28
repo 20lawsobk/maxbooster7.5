@@ -7,7 +7,24 @@ It neither publishes to Replit nor establishes a multi-instance capacity claim.
 
 ## Current evidence
 
-The latest [serialized cb783f1f rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
+The [current 10d rehearsal](../../reports/release-rehearsal/2026-10-28-10d19267-final/README.md)
+passes preparation, verification, copied-payload cold startup and post-startup
+verification from source `10d192675beefcf1b7beef3ce47c271db0cc17cf`. It ran
+October 28, 2026, 13:49:17–13:51:58 America/Detroit (17:49:17Z–17:51:58Z), after
+the completed unchanged-source master. Actual exits are all 0:prepare 114.010s,
+verify 1.980s,cold 40.029s,verify-after-cold 1.922s. All 37 independent checks passed
+at 13:52:50 America/Detroit. Common digest `cbf794e0` and all 4,527 admitted entries
+stayed unchanged;37 payload entries total 719,501,006 bytes, and all 36 tracked
+descendants were cleaned. Model-serving mode is live-awareness/runtime-managed,
+readinessRequired:true. Accepted scope remains cold-startup-with-ml-unavailable,
+productionReady:false and unverifiedNonMl:[]; it certifies startup only. Public
+signals were unavailable in this empty-state/blocked-egress fixture, so no
+trained-checkpoint requirement or full generation/deployed/global pass is inferred.
+Original ignored runtime uploads remain physically in the checkout; only their
+admission to release inventories/capsules is excluded. Exact commands, hashes,
+archive member counts and reproduction instructions are in the current cohort.
+
+The previous completed [serialized cb783f1f rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
 passed preparation, verification, copied-payload cold startup and verification
 after startup from source `cb783f1f9b34719a214dd7f9203a31dea64c051e`.
 It ran October 28, 2026, 08:15:15–08:30:50 America/Detroit
@@ -38,8 +55,10 @@ The payload contains 37 entries totaling 719,499,770 bytes. The actual applicati
 archive has 1,892 members, including the runtime social-platform registry and
 `0099_fabric_migration_journal.sql`; MaxCore has 46,255 members. Both archives match
 the manifest. Scratch trees and the precise MaxCore runtime upload subtree are
-absent from source and capsules; source assets and fixtures remain admitted under
-the normal policy. All 37 tracked descendants were cleaned, with zero remaining.
+absent from the admitted release-source inventory and capsules; source assets
+and fixtures remain admitted under the normal policy. Original ignored runtime
+uploads remain in the checkout; this inventory test does not assert physical
+absence or delete those files. All 37 tracked descendants were cleaned, with zero remaining.
 The adjacent cohort manifest hashes every retained artifact except itself.
 
 This is **cold payload scope only**. The fresh copied payload starts with checkout

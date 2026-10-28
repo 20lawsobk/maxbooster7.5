@@ -1,8 +1,8 @@
 git rev-parse HEAD
-a1603b13b6352a978e3877a2f43f1ccd98a98a18
+10d192675beefcf1b7beef3ce47c271db0cc17cf
 
-/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-6EUdZ3/drizzle.json
-Reading config file '/tmp/maxbooster-http-tests-6EUdZ3/drizzle.json'
+/workspace/.cloud-tools/node_modules/node/bin/node node_modules/drizzle-kit/bin.cjs generate --config=/tmp/maxbooster-http-tests-CSQG0R/drizzle.json
+Reading config file '/tmp/maxbooster-http-tests-CSQG0R/drizzle.json'
 282 tables
 achievements 11 columns 0 indexes 0 fks
 ad_campaigns 21 columns 0 indexes 0 fks
@@ -287,9 +287,9 @@ workspaces 10 columns 0 indexes 0 fks
 youtube_connections 10 columns 0 indexes 0 fks
 youtube_uploads 13 columns 0 indexes 0 fks
 
-[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-6EUdZ3/generated/0000_empty_adam_warlock.sql 🚀
+[✓] Your SQL migration file ➜ /tmp/maxbooster-http-tests-CSQG0R/generated/0000_first_mattie_franklin.sql 🚀
 
-initdb -D /tmp/maxbooster-http-tests-6EUdZ3/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
+initdb -D /tmp/maxbooster-http-tests-CSQG0R/pg -U test_fixture --auth=trust --no-locale --encoding=UTF8
 The files belonging to this database system will be owned by user "agent".
 This user must also own the server process.
 
@@ -298,7 +298,7 @@ The default text search configuration will be set to "english".
 
 Data page checksums are disabled.
 
-creating directory /tmp/maxbooster-http-tests-6EUdZ3/pg ... ok
+creating directory /tmp/maxbooster-http-tests-CSQG0R/pg ... ok
 creating subdirectories ... ok
 selecting dynamic shared memory implementation ... posix
 selecting default "max_connections" ... 100
@@ -311,10 +311,10 @@ syncing data to disk ... ok
 
 Success. You can now start the database server using:
 
-    pg_ctl -D /tmp/maxbooster-http-tests-6EUdZ3/pg -l logfile start
+    pg_ctl -D /tmp/maxbooster-http-tests-CSQG0R/pg -l logfile start
 
 
-pg_ctl -D /tmp/maxbooster-http-tests-6EUdZ3/pg -l /tmp/maxbooster-http-tests-6EUdZ3/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-6EUdZ3 -p 36433 -c shared_buffers=32MB -c max_connections=40 -w start
+pg_ctl -D /tmp/maxbooster-http-tests-CSQG0R/pg -l /tmp/maxbooster-http-tests-CSQG0R/postgres.txt -o -h 127.0.0.1 -k /tmp/maxbooster-http-tests-CSQG0R -p 41307 -c shared_buffers=32MB -c max_connections=40 -w start
 waiting for server to start.... done
 server started
 

@@ -146,3 +146,49 @@ retained paths and absolute source URLs bind this workspace; another clone
 must re-collect or explicitly validate relocated originals instead of silently
 rewriting map paths. No dependency installation, network, private state,
 application startup or new product side effect is required.
+
+
+## Follow-on C5 trace after the source-proven helper repair
+
+The later bca helper policy and its actual two-assertion Node collection are
+retained separately in
+[the keepNames cohort](../../reports/coverage-producer/2026-10-28-keepnames-final/README.md).
+All profiles remain unmerged. Two persisted complete map sets agree after that
+bounded repair; seven still have genuine transform/original-span differences.
+This paragraph updates the earlier snapshot without rewriting its original
+counterexample or execution results.
+
+The new [shared transform trace](../../reports/coverage-producer/2026-10-28-next-contract-trace/README.md)
+identifies class-static name statements, tsx dynamic-import interop functions
+and branches, and genuine original arrow/statement span shifts. Plain
+unminified esbuild with keepNames disabled does not align the tested logger
+maps. The actual tsconfig-aware Vite transform, SSR stage and installed Vitest
+provider instead reproduce all 27 persisted maps for all nine subjects. Every
+control counter is zero and no application subject executes. A bounded typed
+replay retains 7,434 positive-Infinity end columns and 3,080 own undefined
+coordinates (770 complete synthetic locations); it observes no other typed or
+prototype differences. This diagnoses representation, not a codec acceptance
+policy or permission to upgrade old untyped JSON.
+
+All nine complete map sets in the current 10d19267 canonical run also equal
+those historical maps and map-only controls. Its source-bound actual metrics
+are 13.11% lines, 13.01% statements, 8.68% functions and 8.78% branches across
+2,653 files. Neither old counters nor empty control counters were merged or
+credited. The existing 100% targets and every page/shared/language/deployment
+requirement remain open.
+
+A wrapper correction matters before execution integration: Vite publicly
+exports `moduleRunnerTransform`, so the new adapter need not import the
+minified private SSR symbol used by the original diagnostic. Canonical
+Vitest's module evaluator records the UTF-16 `codeDefinition.length` VM prefix;
+plain Vite's default evaluator has different line-padding behavior. The
+zero-counter controls' wrapperLength 0 proves map shape only. Actual runtime
+script/body/map/wrapper identity and fresh V8 ranges must be captured before
+counter conversion; old tsx offsets cannot be applied to reconstructed code.
+
+The [bounded patch specification](../../reports/coverage-producer/2026-10-28-next-contract-trace/next-patch-spec.json)
+expands the existing C5/P1–P2 steps: versioned identity, supported participating
+execution, exact guarded provider policy, typed raw/wire validation, canonical
+pre-serialization capture and a fresh same-source P1 proof before complete-map
+merge admission. It then resumes P3–P7 and C6/C7. This trace implements none of
+those future source changes and grants no feature, coverage or launch pass.

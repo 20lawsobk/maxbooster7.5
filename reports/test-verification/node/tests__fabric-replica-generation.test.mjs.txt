@@ -1,15 +1,15 @@
 TAP version 13
-# [09:19:30.376] INFO (164864): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
+# [13:38:37.821] INFO (236414): [PDIM] Auto multiplier: 3 (clusterWorkers=1 × ceil(cpuCores=5/2)=3) — AIMD init=1ms, floor=6ms (1workers×6ms, combined≤167 req/s), ZPOPMIN gap=3ms
 # Subtest: canonical PDIM permanently fences deleted replica keys and refuses immutable replacement
 ok 1 - canonical PDIM permanently fences deleted replica keys and refuses immutable replacement
   ---
-  duration_ms: 47.799898
+  duration_ms: 61.065989
   type: 'test'
   ...
 # Subtest: a delayed replica publication cannot resurrect bytes after a newer cleanup ACK
 ok 2 - a delayed replica publication cannot resurrect bytes after a newer cleanup ACK
   ---
-  duration_ms: 4.238453
+  duration_ms: 2.531413
   type: 'test'
   ...
 1..2
@@ -20,4 +20,4 @@ ok 2 - a delayed replica publication cannot resurrect bytes after a newer cleanu
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 446.626882
+# duration_ms 512.671663

@@ -1,0 +1,69 @@
+{
+  "scope": "Raw newly reconstructed maps versus saved historical JSON; no acceptance codec or legacy-profile upgrade",
+  "files": [
+    {
+      "file": "server/config/ports.ts",
+      "positiveInfinityEndColumns": 32,
+      "undefinedOwnCoordinates": 16,
+      "completeSyntheticLocations": 4
+    },
+    {
+      "file": "server/logger.ts",
+      "positiveInfinityEndColumns": 41,
+      "undefinedOwnCoordinates": 4,
+      "completeSyntheticLocations": 1
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "positiveInfinityEndColumns": 77,
+      "undefinedOwnCoordinates": 48,
+      "completeSyntheticLocations": 12
+    },
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "positiveInfinityEndColumns": 97,
+      "undefinedOwnCoordinates": 52,
+      "completeSyntheticLocations": 13
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "positiveInfinityEndColumns": 93,
+      "undefinedOwnCoordinates": 28,
+      "completeSyntheticLocations": 7
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "positiveInfinityEndColumns": 178,
+      "undefinedOwnCoordinates": 96,
+      "completeSyntheticLocations": 24
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "positiveInfinityEndColumns": 293,
+      "undefinedOwnCoordinates": 96,
+      "completeSyntheticLocations": 24
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "positiveInfinityEndColumns": 1551,
+      "undefinedOwnCoordinates": 420,
+      "completeSyntheticLocations": 105
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "positiveInfinityEndColumns": 5072,
+      "undefinedOwnCoordinates": 2320,
+      "completeSyntheticLocations": 580
+    }
+  ],
+  "totals": {
+    "positiveInfinityEndColumns": 7434,
+    "undefinedOwnCoordinates": 3080,
+    "completeSyntheticLocations": 770
+  },
+  "prototypeDifferences": 0,
+  "otherTypedDifferences": 0,
+  "infinityMeansNaN": false,
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

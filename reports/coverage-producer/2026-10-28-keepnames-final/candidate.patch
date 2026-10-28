@@ -1,0 +1,262 @@
+--- a/scripts/testing/coverage-provenance.mjs
++++ b/scripts/testing/coverage-provenance.mjs
+@@ -1,5 +1,6 @@
+ /** Fail-closed identity and map checks for separately collected coverage. */
+ import fs from 'node:fs';
++import ts from 'typescript';
+ import path from 'node:path';
+ import { createHash } from 'node:crypto';
+ import { spawn } from 'node:child_process';
+@@ -189,3 +190,100 @@
+   }
+   return true;
+ }
++
++const hash = value => createHash('sha256').update(value).digest('hex');
++const ident = (node, name) => node?.type === 'Identifier' && (name === undefined || node.name === name);
++const literal = (node, value) => node?.type === 'Literal' && node.value === value;
++
++export function createKeepNamesPolicy({ code, sourceMap, ast }) {
++  const ignored = new WeakSet();
++  const audit = { schemaVersion: 1, policy: 'esbuild-keep-names-proven-prefix-v1', executedCodeSha256: hash(code),
++    originalParser: { package: 'typescript', version: ts.version }, ignoredGeneratedNodes: [], compatibleMapClaim: false };
++  if (!sourceMap) return { ignoreNode: () => undefined, audit };
++  if (!ast || ast.type !== 'Program' || !Array.isArray(sourceMap.sources) || !Array.isArray(sourceMap.sourcesContent) ||
++    sourceMap.sources.length !== sourceMap.sourcesContent.length || sourceMap.sourcesContent.some(value => typeof value !== 'string')) {
++    throw new Error('Coverage generated-node policy requires complete runtime AST and original source content');
++  }
++  audit.sourceMapSha256 = hash(JSON.stringify(sourceMap));
++  audit.originalSources = sourceMap.sources.map((source, index) => ({ source, sha256: hash(sourceMap.sourcesContent[index]) }));
++  const identifiers = new Set(), declarationSites = [];
++  for (let index = 0; index < sourceMap.sourcesContent.length; index++) {
++    const file = ts.createSourceFile(sourceMap.sources[index], sourceMap.sourcesContent[index], ts.ScriptTarget.Latest, true,
++      /\.[cm]?tsx$/.test(sourceMap.sources[index]) ? ts.ScriptKind.TSX : /\.jsx$/.test(sourceMap.sources[index]) ? ts.ScriptKind.JSX : /\.[cm]?ts$/.test(sourceMap.sources[index]) ? ts.ScriptKind.TS : ts.ScriptKind.JS);
++    if (file.parseDiagnostics.length) throw new Error('Original source parse failed; generated-node policy refuses to guess');
++    const sites = new Set();
++    function visit(node) {
++      if (ts.isIdentifier(node)) identifiers.add(node.text);
++      const originalFunction = ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) ||
++        (ts.isVariableDeclaration(node) && node.initializer &&
++          (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer) || ts.isClassExpression(node.initializer)));
++      if (originalFunction && node.name && ts.isIdentifier(node.name)) {
++        const position = file.getLineAndCharacterOfPosition(node.name.getStart(file));
++        sites.add(`${position.line}:${position.character}:${node.name.text}`);
++      }
++      ts.forEachChild(node, visit);
++    }
++    visit(file);
++    declarationSites.push(sites);
++  }
++  const trace = new TraceMap(sourceMap), mappings = decodedMappings(trace), offsets = [0];
++  for (let index = 0; index < code.length; index++) if (code[index] === '\n') offsets.push(index + 1);
++  const points = mappings.flatMap((line, index) => line.filter(segment => segment.length > 1)
++    .map(segment => ({ offset: offsets[index] + segment[0], segment })));
++  const firstMapped = points[0]?.offset ?? -1;
++  const inside = node => points.filter(point => point.offset >= node.start && point.offset < node.end);
++  const prefixIsUnmapped = node => node.end <= firstMapped && inside(node).length === 0;
++  const vars = ast.body.filter(node => node.type === 'VariableDeclaration' && node.kind === 'var').flatMap(node => node.declarations);
++  const definition = vars.find(node => ident(node.id) && /^__defProp\d*$/.test(node.id.name) && !identifiers.has(node.id.name) &&
++    node.init?.type === 'MemberExpression' && !node.init.computed && ident(node.init.object, 'Object') && ident(node.init.property, 'defineProperty') && prefixIsUnmapped(node));
++  if (!definition) return { ignoreNode: () => undefined, audit };
++  const helper = vars.find(node => {
++    if (!ident(node.id) || !/^__name\d*$/.test(node.id.name) || identifiers.has(node.id.name) || !prefixIsUnmapped(node)) return false;
++    const arrow = node.init;
++    if (arrow?.type !== 'ArrowFunctionExpression' || arrow.async || arrow.params.length !== 2 || !arrow.params.every(param => ident(param))) return false;
++    const call = arrow.body;
++    if (call?.type !== 'CallExpression' || !ident(call.callee, definition.id.name) || call.arguments.length !== 3 ||
++      !ident(call.arguments[0], arrow.params[0].name) || !literal(call.arguments[1], 'name')) return false;
++    const properties = call.arguments[2]?.type === 'ObjectExpression' && call.arguments[2].properties;
++    if (!Array.isArray(properties) || properties.length !== 2 || properties.some(property => property.type !== 'Property' || property.computed || property.method || property.kind !== 'init')) return false;
++    const value = properties.find(property => ident(property.key, 'value'));
++    const configurable = properties.find(property => ident(property.key, 'configurable'));
++    return value && configurable && ident(value.value, arrow.params[1].name) && literal(configurable.value, true);
++  });
++  if (!helper) return { ignoreNode: () => undefined, audit };
++  // Refuse ambiguous generated bindings. The proven prelude is the sole writer.
++  let ambiguous = false;
++  const bindingNames = new Set([definition.id.name, helper.id.name]);
++  function walk(node) {
++    if (!node || typeof node !== 'object') return;
++    if ((node.type === 'VariableDeclarator' && ident(node.id) && bindingNames.has(node.id.name) && node !== definition && node !== helper) ||
++      (node.type === 'AssignmentExpression' && ident(node.left) && bindingNames.has(node.left.name)) ||
++      (node.type === 'UpdateExpression' && ident(node.argument) && bindingNames.has(node.argument.name))) ambiguous = true;
++    for (const [key, value] of Object.entries(node)) {
++      if (key === 'loc') continue;
++      if (Array.isArray(value)) value.forEach(walk);
++      else if (value && typeof value === 'object') walk(value);
++    }
++  }
++  walk(ast);
++  if (ambiguous) return { ignoreNode: () => undefined, audit };
++  const accept = (node, reason, origin) => {
++    ignored.add(node);
++    audit.ignoredGeneratedNodes.push({ type: node.type, start: node.start, end: node.end, sha256: hash(code.slice(node.start, node.end)), reason, ...(origin ? { originalDeclaration: origin } : {}) });
++  };
++  accept(definition, 'Exact unmapped compiler Object.defineProperty binding absent from all original identifiers');
++  accept(helper, 'Exact unmapped keepNames helper binding absent from all original identifiers');
++  for (const node of ast.body) {
++    const call = node.type === 'ExpressionStatement' && node.expression;
++    if (call?.type !== 'CallExpression' || !ident(call.callee, helper.id.name) || call.arguments.length !== 2 ||
++      !ident(call.arguments[0]) || !literal(call.arguments[1], call.arguments[0].name)) continue;
++    const positions = inside(node), first = positions[0];
++    if (!first || first.offset !== call.start) continue;
++    const segment = first.segment;
++    if (!declarationSites[segment[1]]?.has(`${segment[2]}:${segment[3]}:${call.arguments[0].name}`) ||
++      positions.some(point => point.segment[1] !== segment[1] || point.segment[2] !== segment[2] || point.segment[3] !== segment[3])) continue;
++    accept(node, 'Standalone compiler-only helper call mapped exclusively to an actual original declaration name',
++      { source: sourceMap.sources[segment[1]], line: segment[2] + 1, column: segment[3], name: call.arguments[0].name });
++  }
++  return { ignoreNode: node => ignored.has(node) ? 'ignore-this-and-nested-nodes' : undefined, audit };
++}
+--- a/scripts/testing/collect-node-coverage.mjs
++++ b/scripts/testing/collect-node-coverage.mjs
+@@ -4,7 +4,7 @@
+ import { fileURLToPath } from 'node:url';
+ import { spawnSync } from 'node:child_process';
+ import { createRequire } from 'node:module';
+-import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand } from './coverage-provenance.mjs';
++import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand, createKeepNamesPolicy } from './coverage-provenance.mjs';
+ const require = createRequire(import.meta.url);
+ const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
+ const args = process.argv.slice(2), target = args[0], requested = args[1];
+@@ -51,7 +51,10 @@
+   for(const script of manifest.scripts){
+    const code=fs.readFileSync(path.join(directory,script.codeFile),'utf8');
+    const map=script.mapFile?JSON.parse(fs.readFileSync(path.join(directory,script.mapFile),'utf8')):undefined;
+-   const converted=await convert({code,sourceMap:map,ast:parseAstAsync(code),coverage:{url:script.url,functions:script.coverage.functions}});
++   const ast=await parseAstAsync(code);
++   const generatedPolicy=createKeepNamesPolicy({code,sourceMap:map,ast});
++   const converted=await convert({code,sourceMap:map,ast,ignoreNode:generatedPolicy.ignoreNode,coverage:{url:script.url,functions:script.coverage.functions}});
++   (report.generatedNodePolicies??=[]).push({scriptId:script.scriptId,...generatedPolicy.audit});
+    for(const[file,data]of Object.entries(converted)){
+     validateIstanbul(data);
+     if(combined.files().includes(file)&&!compareCoverageMaps(combined.fileCoverageFor(file).toJSON(),data).compatible)throw Error('Incompatible producer maps for '+file);
+--- a/tests/testing/coverage-provenance.test.mjs
++++ b/tests/testing/coverage-provenance.test.mjs
+@@ -6,7 +6,10 @@
+ import vm from 'node:vm';
+ import { fileURLToPath, pathToFileURL } from 'node:url';
+ import { Session } from 'node:inspector';
+-import { sha256, ownedPath, validateRanges, decodeSourceMap, validateSourceMap, compareCoverageMaps, validateIstanbul, validateManifest, runOwnedCommand } from '../../scripts/testing/coverage-provenance.mjs';
++import { transformSync } from 'esbuild';
++import { parseAstAsync } from 'vite';
++import { convert } from 'ast-v8-to-istanbul';
++import { sha256, ownedPath, validateRanges, decodeSourceMap, validateSourceMap, compareCoverageMaps, validateIstanbul, validateManifest, runOwnedCommand, createKeepNamesPolicy } from '../../scripts/testing/coverage-provenance.mjs';
+ async function runtimeFixture(t) {
+   const directory=fs.mkdtempSync(path.join(os.tmpdir(),'coverage-provenance-'));
+   t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));
+@@ -114,3 +117,114 @@
+  assert.equal(result.stdout,'');assert.equal(fs.existsSync(path.join(root,output)),false);
+  assert.equal(result.cleanup.complete,true);assert.equal(result.timedOut,false);
+ });
++
++function nodes(ast, predicate) {
++  const found = [];
++  function visit(node) {
++    if (!node || typeof node !== 'object') return;
++    if (predicate(node)) found.push(node);
++    for (const [key, value] of Object.entries(node)) if (key !== 'loc') {
++      if (Array.isArray(value)) value.forEach(visit);
++      else if (value && typeof value === 'object') visit(value);
++    }
++  }
++  visit(ast); return found;
++}
++async function fixture(source) {
++  const file = '/owned/original-fixture.js';
++  const result = transformSync(source, { sourcefile: file, sourcemap: 'external', sourcesContent: true,
++    format: 'esm', keepNames: true, minifyWhitespace: true, minifyIdentifiers: false, target: 'es2022' });
++  const code = result.code, sourceMap = JSON.parse(result.map), ast = await parseAstAsync(code);
++  return { code, sourceMap, ast, policy: createKeepNamesPolicy({ code, sourceMap, ast }), file };
++}
++test('actual isolated VM retains the complete original denominator and unexecuted original function and branch', async t => {
++  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'c5-synthetic-'));
++  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
++  const file = path.join(directory, 'original.js'), runtime = path.join(directory, 'executed.js');
++  const source = 'const first = 1; function used(flag) { if (flag) return "😀"; return "unexecuted arm"; } function untouched() { return "uncalled original"; } globalThis.result = used(true);';
++  fs.writeFileSync(file, source);
++  const options = { sourcefile: file, sourcemap: 'external', sourcesContent: true, format: 'esm', minifyWhitespace: true, minifyIdentifiers: false, target: 'es2022' };
++  const generated = transformSync(source, { ...options, keepNames: true }), plain = transformSync(source, { ...options, keepNames: false });
++  const session = new Session(); session.connect();
++  const post = (method, params = {}) => new Promise((resolve, reject) => session.post(method, params, (error, result) => error ? reject(error) : resolve(result)));
++  let raw, observed;
++  try {
++    await post('Debugger.enable'); await post('Profiler.enable');
++    await post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
++    const context = vm.createContext({});
++    vm.runInContext(generated.code, context, { filename: pathToFileURL(runtime).href, timeout: 1000 });
++    assert.equal(context.result, '😀');
++    raw = (await post('Profiler.takePreciseCoverage')).result.find(script => script.url === pathToFileURL(runtime).href);
++    assert.ok(raw);
++    observed = (await post('Debugger.getScriptSource', { scriptId: raw.scriptId })).scriptSource;
++    assert.equal(observed, generated.code);
++  } finally {
++    await post('Profiler.stopPreciseCoverage'); session.disconnect();
++  }
++  const sourceMap = JSON.parse(generated.map), ast = await parseAstAsync(observed), policy = createKeepNamesPolicy({ code: observed, sourceMap, ast });
++  const candidate = Object.values(await convert({ code: observed, sourceMap, ast, ignoreNode: policy.ignoreNode, coverage: raw }))[0];
++  // A real compiler without keepNames supplies a map-only original-node control.
++  // Empty counters are intentional for this denominator control, never a run claim.
++  const control = Object.values(await convert({ code: plain.code, sourceMap: JSON.parse(plain.map), ast: await parseAstAsync(plain.code), coverage: { url: pathToFileURL(runtime).href, functions: [] } }))[0];
++  for (const key of ['statementMap', 'fnMap', 'branchMap']) assert.deepEqual(candidate[key], control[key]);
++  assert.equal(Object.keys(candidate.fnMap).length, 2);
++  const used = Object.keys(candidate.fnMap).find(id => candidate.fnMap[id].name === 'used');
++  const untouched = Object.keys(candidate.fnMap).find(id => candidate.fnMap[id].name === 'untouched');
++  assert.equal(candidate.f[used], 1); assert.equal(candidate.f[untouched], 0);
++  assert.ok(Object.values(candidate.b).flat().some(count => count === 0));
++  assert.ok(Object.values(candidate.s).some(count => count === 0));
++  fs.writeFileSync(path.join(directory, 'synthetic-runtime-proof.json'), JSON.stringify({ runtime: { node: process.versions.node, v8: process.versions.v8 }, source, executedCode: observed, sourceMap, rawSelectedRuntimeCoverage: raw, generatedPolicy: policy.audit, candidate, denominatorControl: { statementMap: control.statementMap, fnMap: control.fnMap, branchMap: control.branchMap }, productionReady: false, mergedIntoGlobalCoverage: false }, null, 2));
++});
++test('actual esbuild helpers never hide an author-defined __name function or its call', async () => {
++  const f = await fixture('function __name(value) { return value; } function target(x) { return x ? 1 : 2; } __name(target);');
++  // Actual esbuild renames the author's binding to avoid its own helper name.
++  // Locate the emitted author function by its known original return behavior.
++  const authored = nodes(f.ast, node => node.type === 'FunctionDeclaration' && node.params[0]?.name === 'value' && node.body.body[0]?.argument?.name === 'value');
++  assert.equal(authored.length, 1); assert.equal(f.policy.ignoreNode(authored[0], 'function'), undefined);
++  const authoredCalls = nodes(f.ast, node => node.type === 'ExpressionStatement' && node.expression?.callee?.name === authored[0].id.name);
++  assert.equal(authoredCalls.length, 1); assert.equal(f.policy.ignoreNode(authoredCalls[0], 'statement'), undefined);
++  assert.equal(f.policy.audit.ignoredGeneratedNodes.length, 0, 'Original identifier collision is conservatively unfiltered');
++});
++test('an author-written exact lookalike helper pair remains original source', async () => {
++  const f = await fixture('var __defProp = Object.defineProperty; var __name = (target, value) => __defProp(target, "name", { value, configurable: true }); function target(x) { return x ? 1 : 2; } __name(target, "target");');
++  const originalWrapper = nodes(f.ast, node => node.type === 'VariableDeclarator' && node.init?.type === 'CallExpression' && node.init.arguments[0]?.type === 'ArrowFunctionExpression');
++  assert.equal(originalWrapper.length, 1); assert.equal(f.policy.ignoreNode(originalWrapper[0], 'statement'), undefined);
++  const authoredCalls = nodes(f.ast, node => node.type === 'ExpressionStatement' && node.expression?.callee?.name === originalWrapper[0].id.name);
++  assert.equal(authoredCalls.length, 1); assert.equal(f.policy.ignoreNode(authoredCalls[0], 'statement'), undefined);
++  assert.equal(f.policy.audit.ignoredGeneratedNodes.length, 0, 'Original lookalike helper identifiers prevent any filtering');
++});
++test('function-valued helper arguments are not removed with a compiler wrapper', async () => {
++  const f = await fixture('const real = x => x ? "😀" : "unexecuted"; export { real };');
++  const original = nodes(f.ast, node => node.type === 'VariableDeclarator' && node.id?.name === 'real');
++  assert.equal(original.length, 1); assert.equal(f.policy.ignoreNode(original[0], 'statement'), undefined);
++  const arrow = nodes(original[0].init, node => node.type === 'ArrowFunctionExpression');
++  assert.equal(arrow.length, 1); assert.equal(f.policy.ignoreNode(arrow[0], 'function'), undefined);
++  const output = await convert({ code: f.code, sourceMap: f.sourceMap, ast: f.ast, ignoreNode: f.policy.ignoreNode, coverage: { url: `file://${f.file}`, functions: [] } });
++  const originalProfile = Object.values(output)[0];
++  assert.equal(Object.keys(originalProfile.fnMap).length, 1); assert.deepEqual(Object.values(originalProfile.f), [0]);
++  assert.ok(Object.values(originalProfile.b).flat().length >= 2); assert.ok(Object.values(originalProfile.b).flat().every(count => count === 0));
++});
++test('a mapped prelude is not accepted as a generated prefix', async () => {
++  const f = await fixture('function real(x) { return x ? 1 : 2; }');
++  const sourceMap = { ...f.sourceMap, mappings: 'AAAA,' + f.sourceMap.mappings };
++  const policy = createKeepNamesPolicy({ code: f.code, sourceMap, ast: f.ast });
++  assert.equal(policy.audit.ignoredGeneratedNodes.length, 0);
++});
++test('reassigned generated bindings fail closed instead of hiding their code', async () => {
++  const f = await fixture('function real(x) { return x ? 1 : 2; }');
++  const generated = nodes(f.ast, node => node.type === 'VariableDeclarator' && /^__name\d*$/.test(node.id?.name))[0];
++  const code = f.code + `;${generated.id.name} = value => value;`;
++  const policy = createKeepNamesPolicy({ code, sourceMap: f.sourceMap, ast: await parseAstAsync(code) });
++  assert.equal(policy.audit.ignoredGeneratedNodes.length, 0);
++});
++test('Unicode original declaration identifiers are matched by parsed identity and exact original coordinate', async () => {
++  const f = await fixture('function 東京(value) { return value ? "🎹" : "未実行"; } export { 東京 };');
++  assert.equal(f.policy.audit.ignoredGeneratedNodes.filter(node => node.originalDeclaration?.name === '東京').length, 1);
++  const original = nodes(f.ast, node => node.type === 'FunctionDeclaration' && node.id?.name === '東京')[0];
++  assert.equal(f.policy.ignoreNode(original, 'function'), undefined);
++});
++test('unmapped original JavaScript is never classified as compiler output', async () => {
++  const code = 'var __defProp=Object.defineProperty;var __name=(target,value)=>__defProp(target,"name",{value,configurable:true});';
++  const policy = createKeepNamesPolicy({ code, ast: await parseAstAsync(code) });
++  assert.equal(policy.audit.ignoredGeneratedNodes.length, 0);
++});

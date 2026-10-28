@@ -1,64 +1,58 @@
 # Launch readiness and remaining evidence
 
 Reconciled October 28, 2026, America/Detroit. **Global launch readiness is not
-established; no page is granted a complete Green designation.** The locally
-committed source checkpoint is
-`cb783f1f9b34719a214dd7f9203a31dea64c051e` on
-`sophia/platform-production-hardening-2026-10-27`. At this reconciliation that
-commit has not yet been pushed. Main promotion remains conditional on the
+established; no page is granted a complete Green designation.** The verified
+pushed review checkpoint is
+`13c199569e5f6fa29a6002b36169b76c65e26b5f` on
+`sophia/platform-production-hardening-2026-10-27`. It includes a160/cb source
+and the source-bound test, cold-release and audit evidence. Main remains
+unchanged. Main promotion remains conditional on the
 owner's actual production-ready requirements, including all 80 pages and all
 required shared, deployed, native and cross-language gates.
 
-The latest completed full master ran from 05:11:45 through 05:33:33 on
-October 28 in America/Detroit (`09:11:45Z`–`09:33:33Z` in its raw receipts),
-about 21m48s, against `a1603b13b6352a978e3877a2f43f1ccd98a98a18`.
-Its source digest stayed unchanged:
-`e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69`.
-Build, 2,728 unit cases, 18 additional cases, Python, commerce, Rust/Go/imported
-subsystems, focused Chromium, HTTP, 80-page render observations, bounded load,
-operations, types, lint and production audit passed. The 2,771 instrumented
-assertions passed, but the strict 100% coverage and feature-evidence gates
-failed. One Node file also failed before its navigation assertions because
-nested temporary paths exceeded Chromium's Unix socket limit. The
-[full a160 history](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md)
-retains 562 raw evidence members and their hashes. The generated
-[master results](results.md) retain that actual failed outcome.
+The latest full master completed October 28, 2026, 09:30:12–09:53:54
+America/Detroit (`13:30:12Z`–`13:53:54Z`), about 23m42s, from
+`10d192675beefcf1b7beef3ce47c271db0cc17cf`. This source and the preceding bca/e512 repairs
+remain local pending a normal review-branch push. Its common source digest
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418` stayed unchanged.
+Build, 2,728 unit cases, 18 additional cases, all 124 Node files, Python,
+commerce, native subsystems, focused Chromium, HTTP, all 80 route-render
+observations, bounded load, operations, types, lint and production audit pass
+their stated scopes. Node has 690 passing TAP cases and two skips (692 including
+parents); Python has 112 passing files, one skipped and 19 blocked, zero failed.
+All 2,771 instrumented assertions pass, but unchanged 100% thresholds fail at
+13.11% lines,13.01% statements,8.68% functions and 8.78% branches across 2,653 files,
+with no parse exclusions. Strict platform/remediation gates also fail. The
+[10d history](../../reports/test-verification/history/2026-10-28-10d19267-master/README.md)
+and [master results](results.md) preserve the actual source-bound outcome.
 
-The later `cb783f1f` change corrects only that browser fixture and preserves
-the nine product assertions and startup deadline. The same nested-runner
-reproduction now passes, plus two startup diagnostics. The subsequent
-[complete Node-group recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md)
-passes all 122 files: 644 passing TAP cases and two explicit skips, including
-parent cases in the 646 total, in 126.867s. Its source digest
-`eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07`
-stayed unchanged. This separate recheck does not relabel the a160 full master
-as passing or claim that its other groups reran against cb783f1f.
+The [a160 history](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md),
+[8cad history](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md),
+[cb Node recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md) and
+[cb cold rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
+retain their original scopes and failures. The
+[e512 early cancellation](../../reports/test-verification/history/2026-10-28-e5124419-preflight-aborted/README.md)
+exited143 while finishing the final duplicate-producer guard; it is neither a
+completed master nor a product assertion failure. The [current 10d cold rehearsal](../../reports/release-rehearsal/2026-10-28-10d19267-final/README.md)
+now passes all four commands and 37 independent checks, with unchanged common
+source/all 4,527 admitted entries,37 payload entries totaling719,501,006 bytes and
+all 36 tracked descendants cleaned. Its startup-only scope retains productionReady:false.
 
-The preceding master is retained in the
-[8cad source-bound history](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md):
-`2026-10-28T01:46:41Z`–`02:09:19Z` (October 27 in America/Detroit),
-22m38s, unchanged source digest
-`8cad7cae3ab4895c19ba78fba1b7ff5d9670c16a2a4fea7008a3e7631180c6be`.
-It retained real coverage/evidence failures, one nested-install fixture failure,
-one required-awareness HTTP failure and a bounded p95 load failure. Subsequent
-focused fixes are documented below; they do not rewrite that run's outcomes.
-The earlier b369/c06 source runs and October 26 repair receipts are historical
-evidence for their own scopes, not the current source's passing certificate.
-
-The [reproducible launch audit](launch-readiness-audit.md) extends the existing
+The [launch audit](launch-readiness-audit.md) extends the same
 [complete platform ledger](platform-completion-plan.md),
-[all-80 execution schedule](platform-work-schedule.md) and
-[seven-level critical path](launch-critical-path.md). Its refreshed
-[current matrix](../../reports/launch-readiness/current/matrix.md) is **80 Red,
-zero Green**, with unknown implementation percentages left unknown and the older
-full-master source binding correctly stale after the fixture-only cb change. Its 42
-reporting/provenance regressions pass. The
-[independent initial review](../../reports/launch-readiness/review-2026-10-28/README.md)
-retains 15 passing checks and one failed stale-input binding after the canonical
-register/plan changed. The later metadata refresh preserves the correct current
-NO-GO; do not relabel that historical failed review as passed. Future source
-batches still require fresh execution and matrix review. A complete
-matrix is evidence accounting, not feature acceptance.
+[all-80 schedule](platform-work-schedule.md) and
+[seven-level critical path](launch-critical-path.md). The
+[current matrix](../../reports/launch-readiness/current/matrix.md) remains
+**80Red, zeroGreen**. Current common inputs match the completed master; matching
+source cannot override its failed coverage and full feature-evidence gates.
+All 80 declarations,2,162 sections,12,972 dimension steps and 53,020 work items remain.
+The actual source-evidence gate admits only six reviewed checks through eight
+current HTTP cases, with zero invalid links. It rejects ambiguous/unbound
+metadata and cannot promote a test by editing its candidate digest. The
+[133 focused regressions](../../reports/platform-evidence/2026-10-28-source-binding-final/README.md)
+and earlier42launch-report tests test machinery, not whole-page acceptance.
+The [initial independent review](../../reports/launch-readiness/review-2026-10-28/README.md)
+retains its original stale-input failure unchanged.
 
 ## Deployment target and state authority
 
@@ -82,21 +76,21 @@ several healthy instances independently responding to `PING`.
 
 | Gate | Evidence required to close it | Current source and retained evidence |
 | --- | --- | --- |
-| Source integration | Integrate coherent frontend/backend fixes; run actual positive/adverse/owner/concurrent/recovery contracts and the full unchanged-source sweep. | The a160 full master completed with unchanged inputs. Its unit, HTTP, page observations, bounded load and ordinary checks passed; one Node browser fixture failed before assertions. The fixture-only cb783f1f correction then passed the complete 122-file Node group separately. Coverage and full feature acceptance remain open. |
-| Entire platform work inventory | Retain all 80 declarations, every section/control/frontend contract/backend process, every source/configuration/asset file and all supported shared/client/operational lanes. | Current plan retains 80 pages, 2,162 sections, 12,972 dimension steps, 8,374 controls, 2,907 backend registrations, 932 frontend contracts, 20 shared lanes and 52,965 work items. This establishes planning completeness only. Missing/partial/implemented features require actual contract evidence; source presence alone is unverified. |
-| Complete master | Build; unit/additional/Node/Python/commerce/native suites; browser/HTTP/page journeys; bounded load; operations/recovery; types/lint/audits and strict evidence gates, with actual skips/blocks/source stability. | Completed for a160 in about 21m48s: 2,728 unit and 18 additional cases pass; all 2,771 coverage assertions pass but strict coverage thresholds fail. Python/commerce/subsystems/browser/HTTP/page/load/operations/types/lint/audit pass; one Node startup fixture fails. The cb Node-only recheck passes 644 TAP cases with two skips across 122 files, with unchanged inputs. Counts overlap and are not summed as unique coverage. |
-| Coverage and feature evidence | Actual 100% lines/statements/functions/branches over the declared current source, valid compatible maps, all exact feature links and separate other-language measurements. | The completed a160 profile measures 13.10% lines, 13.00% statements, 8.67% functions and 8.77% branches across 2,653 files. Six exact operational/auth checks passed; 33,532 of 33,538 checks and 130 mappings remain unverified, with zero invalid links. These are verification tasks, not confirmed bug counts. The [coverage compatibility trace](coverage-compatibility-trace.md) confirms compiler-helper mapping defects; all nine Node profiles remain unmerged. |
+| Source integration | Integrate coherent frontend/backend fixes; run actual positive/adverse/owner/concurrent/recovery contracts and the full unchanged-source sweep. | The completed 10d master has unchanged current inputs and passes all ordinary execution groups, including all 124 Node files. The new source-binding and duplicate guards pass133 focused cases. Coverage and full feature acceptance remain open. |
+| Entire platform work inventory | Retain all 80 declarations, every section/control/frontend contract/backend process, every source/configuration/asset file and all supported shared/client/operational lanes. | Current plan retains 80 pages,2,162 sections,12,972 dimension steps,8,374 controls,2,909 backend registrations,932 frontend contracts,20 shared lanes,5,532 repository files and 53,020 work items. This proves planning completeness only; implementation and acceptance require actual contract evidence. |
+| Complete master | Build; unit/additional/Node/Python/commerce/native suites; browser/HTTP/page journeys; bounded load; operations/recovery; types/lint/audits and strict evidence gates, with actual skips/blocks/source stability. | Completed 10d in 23m42s:2,728 unit/18 additional cases pass; 2,771 instrumented assertions pass but 100% thresholds fail. Node 124 files have 690 TAPpasses/two skips/zero failures, Python 112 files pass with one skip and 19 blocked, and all other ordinary groups pass. Strict feature/remediation gates fail. Counts overlap and are not summed. |
+| Coverage and feature evidence | Actual 100% lines/statements/functions/branches over the declared current source, valid compatible maps, all exact feature links and separate other-language measurements. | The actual10d profile measures13.11% lines,13.01% statements,8.68% functions and 8.78% branches across 2,653 files, with zero parse exclusions. Six narrowly reviewed checks pass through eight actual current HTTP cases;33,543 of 33,549 checks and 170 mappings remain unverified, with zero invalid links. These are verification tasks, not confirmed bug counts. All nine standalone Node profiles remain strictly incompatible and unmerged. |
 | Accessibility and responsive UX | Every exact route/section/state satisfies all applicable WCAG 2.2 A/AA requirements, supported layouts, keyboard/focus and actual screen-reader/device criteria with current proof. | The shared navigation repair passes nine real Chromium leaf checks, with 47 declarations statically reachable. Its fixture now also passes two startup diagnostics and the exact nested-runner reproduction; those diagnostics add no product accessibility coverage. No full page is declared compliant. The [all-80 accessibility audit](accessibility-launch-audit.md) retains every section and all 55 WCAG A/AA criterion IDs in 18 work groups. |
 | Database release | Identify actual target/schema, drain incompatible writers, preserve a recoverable matched SQL/PDIM backup, apply ordered reviewed migrations, verify invariants and start compatible writers. | The [fresh read-only Neon observation](../../reports/deployment-observations/2026-10-28/README.md) compared 312 ORM tables and found ten schema entries with missing tables/columns required by the repaired runtime. The transaction confirmed read-only mode and read metadata only. No DDL or application data mutation occurred. Migrations 0096–0099 and controlled canary/recovery proof remain required. |
 | Legacy storage and recovery | Verify stored container headers/dependencies, shared references and retryable deletion; independently restore a matched current SQL/blob pair with exact bytes/owner denials. | Unknown legacy dependencies intentionally retain potential bases with 409. Nine focused current SQL/PDIM recovery leaf checks pass in owned disposable fixtures. Actual deployed/offsite backup, recovery time/objectives and compatible writer proof remain open. |
-| Portable cold release/startup | Current-source disposable preparation, capsule hashes/restore, private children, truthful readiness, shutdown/restart and admitted-input stability. | The [cb783f1f serialized rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md) passed all four commands at 08:15:15–08:30:50 America/Detroit on October 28. All 37 independent audit checks passed; the common digest and all 4,526 admitted entries stayed unchanged, the 37-entry payload totals 719,499,770 bytes and all 37 tracked descendants were cleaned. The accepted scope remains `cold-startup-with-ml-unavailable`, with `productionReady: false`. Four threads used the normal codec/cache policy; this is no deployed/generation/global launch approval. |
+| Portable cold release/startup | Current-source disposable preparation, capsule hashes/restore, private children, truthful readiness, shutdown/restart and admitted-input stability. | The current 10d four-command rehearsal and all 37 independent checks pass, with unchanged common/all 4,527 admitted inputs,37 payload entries/719,501,006 bytes and 36 tracked descendants cleaned. Scope is cold-startup-with-ml-unavailable,productionReady:false. This startup pass does not certify live generation, the actual Replit image, full-page acceptance or global launch; cb remains historical. |
 | Public Replit deployment | Actual published HTTPS origin, release/source/image identity, target schema, private services, health/readiness and enabled browser/callback journeys. | The editor/project URL is known; the published origin and current deployed release are not verified. Configured Replit API keys are acknowledged. A credential-free isolated fixture rejecting missing configuration is not evidence that Replit keys are absent. |
 | External providers | Actual enabled OAuth permissions/callbacks, payment confirmation, signed webhooks, email/distribution/social delivery and durable bounded retry/receipt behavior. | Dedicated Stripe TEST API evidence is partial and API-only. Repaired SendGrid transport distinguishes accepted/failed/suppressed results with controlled real HTTP tests; provider acceptance does not certify inbox delivery. Production enabled-provider delivery remains unverified. |
 | Generation and private analytics | Each page/control invokes its exact admitted mode/engine, uses fresh permitted public awareness, delivers decoded owner-scoped outputs/durable receipts and keeps private account data out of public learning. | Specific model-free renderers/beat flows and owner-scoped recorded statistical analytics have focused proof. Required awareness transport failure now returns honest 503 rather than CareerCoach 500, with 70 unit and 56 HTTP checks passing. Every consuming page, general semantic output quality and deployed mode remain separately unverified. |
-| Capacity and operations | Actual intended topology under representative concurrency/traffic/generation, existing latency/error budgets, queue/resource limits, soak, restart/recovery and independent monitoring. | The isolated a160 source profile passed 150/150 requests: steady 70 requests at 10 workers, p95 221.834846ms; spike 80 requests at 20 workers, p95 280.208732ms. Both meet the unchanged 500ms p95 limit. The earlier competing-work 613.903365ms failure remains retained. This bounded authentication/project workload does not establish 90M simultaneous clients, generation capacity or global multi-region execution. |
+| Capacity and operations | Actual intended topology under representative concurrency/traffic/generation, existing latency/error budgets, queue/resource limits, soak, restart/recovery and independent monitoring. | The current 10d bounded source profile passes 150/150 requests: steady 70 at 10 workers, p95 308.680022ms; spike 80 at 20 workers, p95 375.381277ms. Both meet the unchanged 500ms limit. Earlier failures remain retained. This authentication/project workload does not establish 90M simultaneous clients, generation capacity or global multi-region operation. |
 | Native Linux VST3 | Original JUCE/C++ source, actual Linux build and host/plugin processing for the advertised native capability. | Uploaded Windows binaries/build outputs do not provide the missing source. Browser DSP has separate passing tests and cannot certify the native plugin. |
-| Desktop, mobile, offline and hardware clients | Actual supported installer/device/hardware builds, normal sandbox, configured private/remote backend contract, authenticated GUI/offline/update/account-isolation journeys and cleanup. | Real Linux DIR packaging and packaged Electron operations now pass Zod, TFJS, Sharp PNG and canonical bcrypt cost-12 verification after ASAR/resource/build-host-shadowing repairs. The full credential-free child reaches the expected SESSION_SECRET guard; full configured GUI/sidecar/database readiness remains open. Normal sandbox, every configured OS/installer/mobile/device/hardware flow remain unverified. GitHub native jobs previously could not start because of its reported account billing lock; no build steps executed there. |
-| Final launch approval | Every page and required platform/deployed gate Green from valid current evidence, requested coverage met, no unresolved production blocker and reproducible tested release. | **NO-GO.** The refreshed matrix remains 80 Red/zero Green. Its canonical full-master binding is correctly stale after the fixture-only cb change, and the a160 master retains its original coverage/evidence failures. The separate cb Node and cold-payload scopes pass. Broad exact feature/accessibility/deployment/client/provider/capacity gates remain open; main is not promoted on partial proof. |
+| Desktop, mobile, offline and hardware clients | Actual supported installer/device/hardware builds, normal sandbox, configured private/remote backend contract, authenticated GUI/offline/update/account-isolation journeys and cleanup. | Real Linux DIR packaging and packaged Electron operations now pass Zod, TFJS, Sharp PNG and canonical bcrypt cost-12 verification after ASAR/resource/build-host-shadowing repairs. The full credential-free child reaches the expected SESSION_SECRET guard; full configured GUI/sidecar/database readiness remains open. Normal sandbox, every configured OS/installer/mobile/device/hardware flow remain unverified. The new review-checkpoint desktop/mobile workflows also executed zero steps across all 10 jobs; all seven failed jobs explicitly report the account billing lock. The [actual 13c19956 GitHub receipts](../../reports/ci-acceptance/2026-10-28-13c19956-native-jobs.json) preserve every job and annotation. This account gate requires resolution before those builds can validate any source. |
+| Final launch approval | Every page and required platform/deployed gate Green from valid current evidence, requested coverage met, no unresolved production blocker and reproducible tested release. | **NO-GO.** All 80 pages remain Red. The actual current master has unchanged source and passing ordinary scopes, but fails requested 100%coverage and strict feature/remediation acceptance. Current-source cold startup passes its bounded scope; broad feature/accessibility/deployed/client/provider/capacity gates remain open. Main is not promoted on partial proof. |
 
 The coverage target is now 100% for all four JS/TS metrics. The
 [ordered coverage batches](completion-execution-plan.md#execution-sequence-toward-100-coverage)
@@ -201,26 +195,23 @@ must retain those distinctions.
 
 ## Current critical-path execution
 
-The a160 full master and cb783f1f fixture-only Node recheck are complete and
-preserved separately. All 122 Node files now pass their execution scope, with
-two explicit skips; the full master still records its original failure.
-The serialized cb783f1f cold rehearsal is complete: all four actual commands
-passed, all 4,526 admitted entries and the common source digest stayed unchanged,
-and all 37 independent artifact/cleanup audit checks passed. Its retained
-`productionReady: false` permits only the stated credential-free startup scope.
-The refreshed all-80 matrix remains 80 Red/zero Green, with the older failed
-full-master source binding correctly stale; the separate Node/cold receipts do
-not make that master pass. Four preparation threads used the existing compression
-policy and normal invalidated-cache rebuilds.
+The completed 10d full master passes all ordinary scopes from unchanged current
+source, including124 Node files with zero failed files. Its strict100%coverage
+and full-feature gates remain failed. Preserve its source-bound history and
+the older a160/cb/8cad outcomes separately. Current 10d cold acceptance now passes all four commands and 37 independent
+checks, with unchanged common/all 4,527 admitted inputs and 36 owned descendants
+cleaned. Its productionReady:false credential-free startup scope grants no
+live-generation/deployed/global acceptance. The cb receipt remains historical.
 
-The [all-130 mapping trace](mapping-blocker-trace.md) records each unresolved
-entry and its existing work identity, including dormant declarations,
-computed routes and middleware. It also proves two incorrect high-confidence
-topology classes: lost nested API prefixes and literalized finite template
-paths. The [coverage trace](coverage-compatibility-trace.md) proves generated
-helper statements/functions are misattributed and explains raw Infinity and
-undefined-coordinate differences. These source-producer corrections remain
-tracked next implementation work; documenting them closes no behavior check.
+Implemented topology fixes replace four incorrect backend records with six
+concrete paths while retaining all 80 pages and 2,162 sections. The
+[mapping trace](mapping-blocker-trace.md) preserves all 130 original warnings
+plus 40newly exposed unresolved mounts. The new source-binding gate has133 focused
+passes and actual frozen-master proof only for six narrow access-policy links.
+The [coverage trace](coverage-compatibility-trace.md) and keep-name repair retain
+all nine standalone profiles unmerged. Shared transform/coordinate compatibility,
+remaining exact behaviors and all other language/deployment requirements remain
+on the unchanged C0–C7 and seven-level roadmap.
 
 Preserve the refreshed matrix and independently check links/hashes. Continue
 every exact feature and section in the unchanged

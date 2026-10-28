@@ -2,55 +2,55 @@ TAP version 13
 # Subtest: development launch prefers the real ESM entry and retains its physical cwd
 ok 1 - development launch prefers the real ESM entry and retains its physical cwd
   ---
-  duration_ms: 3.190683
+  duration_ms: 4.218872
   type: 'test'
   ...
 # Subtest: development launch admits a real CJS-only entry
 ok 2 - development launch admits a real CJS-only entry
   ---
-  duration_ms: 3.30824
+  duration_ms: 0.772256
   type: 'test'
   ...
 # Subtest: a missing bundled server is explicit rather than an invented path
 ok 3 - a missing bundled server is explicit rather than an invented path
   ---
-  duration_ms: 0.461055
+  duration_ms: 5.218141
   type: 'test'
   ...
 # Subtest: real ASAR metadata keeps mjs module ancestry virtual and cwd physical
 ok 4 - real ASAR metadata keeps mjs module ancestry virtual and cwd physical
   ---
-  duration_ms: 20.642273
+  duration_ms: 27.138508
   type: 'test'
   ...
 # Subtest: real ASAR metadata keeps cjs module ancestry virtual and cwd physical
 ok 5 - real ASAR metadata keeps cjs module ancestry virtual and cwd physical
   ---
-  duration_ms: 5.847479
+  duration_ms: 9.619608
   type: 'test'
   ...
 # Subtest: a physical unpacked fallback retains a real directory when no virtual entry exists
 ok 6 - a physical unpacked fallback retains a real directory when no virtual entry exists
   ---
-  duration_ms: 0.578543
+  duration_ms: 0.956955
   type: 'test'
   ...
 # Subtest: root: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
 ok 7 - root: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
   ---
-  duration_ms: 12.428836
+  duration_ms: 20.937253
   type: 'test'
   ...
 # Subtest: maxbooster7.5/package.json: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
 ok 8 - maxbooster7.5/package.json: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
   ---
-  duration_ms: 7.959765
+  duration_ms: 12.501452
   type: 'test'
   ...
 # Subtest: maxbooster7.5/maxbooster7.5/package.json: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
 ok 9 - maxbooster7.5/maxbooster7.5/package.json: packaged bcrypt keeps published platform prebuilds and rejects host-specific rebuild shadowing
   ---
-  duration_ms: 8.206087
+  duration_ms: 11.999572
   type: 'test'
   ...
 1..9
@@ -61,4 +61,4 @@ ok 9 - maxbooster7.5/maxbooster7.5/package.json: packaged bcrypt keeps published
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 303.666258
+# duration_ms 401.837315

@@ -1,8 +1,8 @@
 # Static Frontend/Backend API Inventory
 
-Generated 2026-10-28T09:15:24.183Z without live requests.
+Generated 2026-10-28T13:34:02.892Z without live requests.
 
-- Backend route registrations: **2391** (2371 unique method/path pairs).
+- Backend route registrations: **2393** (2372 unique method/path pairs).
 - Mounted router files: **157**.
 - Frontend API call sites: **1198** (932 unique method/path pairs).
 - Matched: **932**; unmatched confirmed: **0**; method-unconfirmed: **0**.
@@ -201,7 +201,7 @@ Every entry below has a statically detected frontend transport and at least one 
 - `POST /api/export/bulk` via apiRequest — client/src/components/export/BulkExportManager.tsx:456 → server/routes/export.ts:1239
 - `GET /api/export/jobs/:param` via fetch — client/src/components/export/BulkExportManager.tsx:520 → server/routes/export.ts:310
 - `GET /api/export/history` via useQuery — client/src/components/export/ExportHistory.tsx:358 → server/routes/export.ts:496
-- `DELETE /api/export/history/:param` via apiRequest — client/src/components/export/ExportHistory.tsx:364 → server/routes/export.ts:530
+- `DELETE /api/export/history/:param` via apiRequest — client/src/components/export/ExportHistory.tsx:364 → server/routes/durableExports.ts:124, server/routes/export.ts:530
 - `POST /api/export/share-links` via apiRequest — client/src/components/export/ShareLinkGenerator.tsx:162 → server/routes/export.ts:559
 - `POST /api/files/bulk-delete` via fetch — client/src/components/files/BulkFileManager.tsx:197 → server/routes/files.ts:751
 - `GET /api/files/:param/download` via fetch — client/src/components/files/DownloadManager.tsx:475 → server/routes/files.ts:840
@@ -1958,9 +1958,6 @@ External URL references: 42; SPA path references: 258. These are intentionally n
 - `server/middleware/csrf.ts` → `/` (server/index.ts:767, server/index.ts:768)
 - `server/middleware/multiTenantRouter.ts` → `/` (server/index.ts:1038)
 - `server/routes/seo.ts` → `/` (server/index.ts:1295, server/routes.ts:7717)
-- `server/middleware/auth.ts` → `/` (server/routes/adaptivePricing.ts:18, server/routes/admin/auditLog.ts:20, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/beatMoneyLoop.ts:20, server/routes/admin/contentSampler.ts:16, server/routes/admin/index.ts:22, server/routes/admin/metrics.ts:23, server/routes/analytics-internal.ts:14, server/routes/apiKeys.ts:16, server/routes/arIntelligence.ts:31, server/routes/artistProfiles.ts:54, server/routes/audit.ts:26, server/routes/autopilotKnowledge.ts:13, server/routes/autopilotPreferences.ts:12, server/routes/connectedAccounts.ts:12, server/routes/content-analysis.ts:200, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes/fanHub.ts:36, server/routes/fanMemberships.ts:32, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes/logs.ts:21, server/routes/monitoring.ts:13, server/routes/monitoring.ts:14, server/routes/notifications.ts:20, server/routes/outreach.ts:27, server/routes/payouts.ts:90, server/routes/playlistPitching.ts:14, server/routes/publishing.ts:59, server/routes/recoveryCodes.ts:11, server/routes/security.ts:10, server/routes/simulation.ts:24, server/routes/testing.ts:71, server/routes/webhooks-admin.ts:18)
-- `server/middleware/rateLimiter.ts` → `/` (server/routes/ai.ts:26, server/routes/payouts.ts:91, server/routes/socialAI.ts:69)
-- `server/routes/durableExports.ts` → `/` (server/routes/export.ts:13)
 - `server/middleware/requestId.ts` → `/` (server/routes.ts:243)
 - `server/middleware/governanceBoundary.ts` → `/` (server/routes.ts:248)
 - `server/auth.ts` → `/api` (server/routes.ts:257)
@@ -2108,6 +2105,9 @@ External URL references: 42; SPA path references: 258. These are intentionally n
 - `server/routes/hybridStorage.ts` → `/api/hybrid-storage` (server/routes.ts:7881)
 - `server/routes/export.ts` → `/api/export` (server/routes.ts:7888)
 - `server/middleware/selfHealingMiddleware.ts` → `/` (server/safety/mandatoryMiddleware.ts:503)
+- `server/middleware/auth.ts` → `/api/artist-profiles` (server/routes.ts:6999, server/routes/artistProfiles.ts:54, server/routes.ts:7348, server/routes/analytics-internal.ts:14, server/routes.ts:7358, server/routes/monitoring.ts:13, server/routes/monitoring.ts:14, server/routes.ts:7386, server/routes/payouts.ts:90, server/routes.ts:7395, server/routes/kyc.ts:21, server/routes/kyc.ts:25, server/routes.ts:7480, server/routes/autopilotPreferences.ts:12, server/routes.ts:7485, server/routes/autopilotKnowledge.ts:13, server/routes.ts:7572, server/routes/content-analysis.ts:200, server/routes.ts:7598, server/routes/executiveDashboard.ts:12, server/routes/executiveDashboard.ts:17, server/routes/executiveDashboard.ts:144, server/routes.ts:7603, server/routes/admin/index.ts:22, server/routes.ts:7608, server/routes/admin/metrics.ts:23, server/routes.ts:7613, server/routes/admin/beatMoneyLoop.ts:19, server/routes/admin/beatMoneyLoop.ts:20, server/routes.ts:7618, server/routes/admin/auditLog.ts:20, server/routes.ts:7623, server/routes/admin/contentSampler.ts:16, server/routes.ts:7628, server/routes/audit.ts:26, server/routes.ts:7633, server/routes/testing.ts:71, server/routes.ts:7638, server/routes/webhooks-admin.ts:18, server/routes.ts:7642, server/routes/logs.ts:21, server/routes.ts:7694, server/routes/simulation.ts:24, server/routes.ts:7728, server/routes/security.ts:10, server/routes.ts:7742, server/routes/adaptivePricing.ts:18, server/routes.ts:7773, server/routes/arIntelligence.ts:31, server/routes.ts:7780, server/routes/outreach.ts:27, server/routes.ts:7787, server/routes/apiKeys.ts:16, server/routes.ts:7794, server/routes/recoveryCodes.ts:11, server/routes.ts:7801, server/routes/connectedAccounts.ts:12, server/routes.ts:7811, server/routes/fanHub.ts:36, server/routes.ts:7818, server/routes/fanMemberships.ts:32, server/routes.ts:7832, server/routes/playlistPitching.ts:14, server/routes.ts:7860, server/routes/publishing.ts:59)
+- `server/middleware/rateLimiter.ts` → `/api/payouts` (server/routes.ts:7386, server/routes/payouts.ts:91, server/routes.ts:7415, server/routes/socialAI.ts:69, server/routes.ts:7762, server/routes/ai.ts:26)
+- `server/routes/durableExports.ts` → `/api/export` (server/routes.ts:7888, server/routes/export.ts:13)
 
 ## Findings
 

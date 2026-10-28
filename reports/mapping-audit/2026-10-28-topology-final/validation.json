@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "scope": "Focused cohort identity, raw-result and artifact integrity only; not product or launch acceptance",
+  "checks": {
+    "manifestArtifacts": true,
+    "immutableCandidateArtifacts": true,
+    "exactAppliedPatch": true,
+    "allOriginal130Requirements": true,
+    "originalWorkIdsAndAcceptance": true,
+    "all130OldIdsPreserved": true,
+    "all40NewMountObligations": true,
+    "all4BackendTo6Relations": true,
+    "all24RequirementsTo35Relations": true,
+    "noHandEditedBackendRefsNeeded": true,
+    "all80PageIdsRetained": true,
+    "all2162SectionIdsRetained": true,
+    "actualIntegrated38NodePassed": true,
+    "actualIntegrated7ConsumerPassed": true,
+    "actualExistingSelfTestPassed": true,
+    "actual1800CopiedSourcesUnchanged": true,
+    "exact4OldTo6CorrectRows": true,
+    "allOther2387RowsRetained": true,
+    "all13DynamicDiagnosticsRetained": true,
+    "noNewDuplicateRouteTuples": true,
+    "honestNotProductionReady": true,
+    "actualRecordedSourceMatchedProposal": true,
+    "earlierHelperMatchesIndependentFailureHash": true,
+    "allCurrentDocumentationLinksResolve": true
+  },
+  "failed": [],
+  "brokenLinks": [],
+  "productionReady": false
+}

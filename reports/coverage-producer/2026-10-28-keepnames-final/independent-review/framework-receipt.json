@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/workspace/.cloud-tools/node_modules/.bin/node",
+    "--test",
+    "--test-concurrency=1",
+    "tests/testing/coverage-provenance.test.mjs"
+  ],
+  "cwd": "/workspace/onboarding-results/c5-candidate/independent-review/staged",
+  "startedAt": "2026-10-28T12:55:31.701111+00:00",
+  "finishedAt": "2026-10-28T12:55:35.455023+00:00",
+  "exitCode": 0,
+  "credentialsInherited": false,
+  "scope": "Actual exact three-file integrated candidate copied outside checkout; no production/app imports; no coverage merge"
+}

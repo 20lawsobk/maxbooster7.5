@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: real bootstrap verifies the selected toolchain and preserves each package outside cleanup
 ok 1 - real bootstrap verifies the selected toolchain and preserves each package outside cleanup
   ---
-  duration_ms: 782.848395
+  duration_ms: 1098.177708
   type: 'test'
   ...
 # Subtest: bootstrap announces and cleans up a failure before admitting destructive tasks
 ok 2 - bootstrap announces and cleans up a failure before admitting destructive tasks
   ---
-  duration_ms: 197.792771
+  duration_ms: 326.725049
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - bootstrap announces and cleans up a failure before admitting destructive 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1091.928275
+# duration_ms 1593.490939

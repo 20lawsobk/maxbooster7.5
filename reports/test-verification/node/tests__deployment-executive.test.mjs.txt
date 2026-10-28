@@ -2,44 +2,44 @@ TAP version 13
 # Subtest: real subprocesses overlap and prerequisites finish before successors
 ok 1 - real subprocesses overlap and prerequisites finish before successors
   ---
-  duration_ms: 288.740076
+  duration_ms: 415.513531
   type: 'test'
   ...
 # Subtest: deadline kills hung task instead of admitting its dependent
 ok 2 - deadline kills hung task instead of admitting its dependent
   ---
-  duration_ms: 251.386689
+  duration_ms: 310.885802
   type: 'test'
   ...
 # Subtest: failed prerequisite blocks dependent; invalid graphs rejected before execution
 ok 3 - failed prerequisite blocks dependent; invalid graphs rejected before execution
   ---
-  duration_ms: 82.75512
+  duration_ms: 130.890352
   type: 'test'
   ...
 # Subtest: admission adapts when available memory recovers
 ok 4 - admission adapts when available memory recovers
   ---
-  duration_ms: 136.08138
+  duration_ms: 134.419471
   type: 'test'
   ...
 # Subtest: startup plan requires all restores before launching app; source deletion is last
 ok 5 - startup plan requires all restores before launching app; source deletion is last
   ---
-  duration_ms: 1.114451
+  duration_ms: 1.254475
   type: 'test'
   ...
 # Subtest: a ready application is supervised beyond the startup deadline
 ok 6 - a ready application is supervised beyond the startup deadline
   ---
-  duration_ms: 352.410188
+  duration_ms: 389.659029
   type: 'test'
   ...
 #    Packing Portable Python 3.12 runtime...
 # Subtest: failed process descendants cannot continue writing after rejection
 ok 7 - failed process descendants cannot continue writing after rejection
   ---
-  duration_ms: 1005.580021
+  duration_ms: 1076.801182
   type: 'test'
   ...
 # [capsule-cache] python_runtime.pdim: miss 357986994b3e465e8c11c09e9866f64a9bd62d68dc40bb0f1d97caa4efdfe65f
@@ -48,19 +48,19 @@ ok 7 - failed process descendants cannot continue writing after rejection
 # [capsule] python_runtime.pdim: manifest committed; source retained
 #    ✅ python_runtime/ packed (0MB); source preserved
 # [capsule-cache] Verified python_runtime.pdim; zstd-19; source removed
-# [pdim-restore] Extracting python_runtime.pdim (zstd-19) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-a6hrxbf5/executive-real-pack-shGiGU/.pdim-scratch-python_runtime-163594/ (staging for python_runtime/) ...
+# [pdim-restore] Extracting python_runtime.pdim (zstd-19) → /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-l1jkzzch/executive-real-pack-VJ4iup/.pdim-scratch-python_runtime-235003/ (staging for python_runtime/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for python_runtime.pdim
 # [pdim-restore] ✅ python_runtime/ restored from python_runtime.pdim
 # Subtest: actual build.sh pack task removes only its fixture source and restores it
 ok 8 - actual build.sh pack task removes only its fixture source and restores it
   ---
-  duration_ms: 299.22694
+  duration_ms: 387.179991
   type: 'test'
   ...
 # Subtest: compression allocation grows with measured capacity, not runtime VM settings
 ok 9 - compression allocation grows with measured capacity, not runtime VM settings
   ---
-  duration_ms: 106.807953
+  duration_ms: 202.816334
   type: 'test'
   ...
 1..9
@@ -71,4 +71,4 @@ ok 9 - compression allocation grows with measured capacity, not runtime VM setti
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2657.244591
+# duration_ms 3233.516641

@@ -3,67 +3,67 @@ TAP version 13
     # Subtest: concurrent initialization creates exactly one paused state row
     ok 1 - concurrent initialization creates exactly one paused state row
       ---
-      duration_ms: 32.439091
+      duration_ms: 24.782083
       type: 'test'
       ...
     # Subtest: generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
     ok 2 - generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership
       ---
-      duration_ms: 643.92802
+      duration_ms: 610.098224
       type: 'test'
       ...
     # Subtest: a second replica cannot run or orphan an active cycle while its database lock is held
     ok 3 - a second replica cannot run or orphan an active cycle while its database lock is held
       ---
-      duration_ms: 7.124557
+      duration_ms: 13.703728
       type: 'test'
       ...
     # Subtest: only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
     ok 4 - only a completed marketplace settlement marks sold; replay does not duplicate seller earnings
       ---
-      duration_ms: 29.099599
+      duration_ms: 34.718366
       type: 'test'
       ...
     # Subtest: zero published posts is reported honestly while retaining the payable listing
     ok 5 - zero published posts is reported honestly while retaining the payable listing
       ---
-      duration_ms: 514.779557
+      duration_ms: 583.062791
       type: 'test'
       ...
     # Subtest: concurrent manual requests cannot overlap and pause clears queued cycles
     ok 6 - concurrent manual requests cannot overlap and pause clears queued cycles
       ---
-      duration_ms: 518.109631
+      duration_ms: 682.321049
       type: 'test'
       ...
     # Subtest: listing failure rolls back beat and royalty rows and removes public/audio uploads
     ok 7 - listing failure rolls back beat and royalty rows and removes public/audio uploads
       ---
-      duration_ms: 542.749311
+      duration_ms: 576.649789
       type: 'test'
       ...
     # Subtest: silent audio is rejected before listing even without renderer quality metadata
     ok 8 - silent audio is rejected before listing even without renderer quality metadata
       ---
-      duration_ms: 301.121718
+      duration_ms: 360.870895
       type: 'test'
       ...
     # Subtest: renderer failure lists nothing, releases the slot and records backoff
     ok 9 - renderer failure lists nothing, releases the slot and records backoff
       ---
-      duration_ms: 9.148921
+      duration_ms: 11.905053
       type: 'test'
       ...
     # Subtest: real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
     ok 10 - real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint
       ---
-      duration_ms: 9211.672308
+      duration_ms: 9731.553929
       type: 'test'
       ...
     1..10
 ok 1 - Beat Money Loop lifecycle on a disposable PostgreSQL database
   ---
-  duration_ms: 14010.243658
+  duration_ms: 14964.497681
   type: 'test'
   ...
 1..1
@@ -74,4 +74,4 @@ ok 1 - Beat Money Loop lifecycle on a disposable PostgreSQL database
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 17026.771187
+# duration_ms 18072.460791

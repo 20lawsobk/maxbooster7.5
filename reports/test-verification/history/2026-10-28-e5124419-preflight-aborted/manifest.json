@@ -1,0 +1,51 @@
+{
+  "scope": "Deliberately cancelled early master, never a completed/passing full run",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1115,
+      "sha256": "dffaf14b57c63d9191cac1e8d337b78f886470d9060cf3133b51246a317152f9"
+    },
+    {
+      "path": "build.txt",
+      "bytes": 21811,
+      "sha256": "aa9d1de7f7f8a2e0ec8cd020760fadd27226ebe9136ca1e5d457c35ed0f6739d"
+    },
+    {
+      "path": "catalog.txt",
+      "bytes": 297,
+      "sha256": "d0c4d12caf5aa2f85d41e35b7d66bd11645af7809503c3d3937dba7913f81435"
+    },
+    {
+      "path": "master.txt",
+      "bytes": 30,
+      "sha256": "ff55a6a6ae5fa3181870edfb89f85fe0b971fa32f81f8b78e7256f91e15cc8ca"
+    },
+    {
+      "path": "orchestration-results.json",
+      "bytes": 1486,
+      "sha256": "ef4358eb526d44292bd5df688009c7bd2bcf0325ca556003e51f7d7155f98160"
+    },
+    {
+      "path": "owned-cancellation.json",
+      "bytes": 783,
+      "sha256": "2980548a3e195a177e8ed3c27762214e4647bbceef42791fe34cf4c1f5781cb1"
+    },
+    {
+      "path": "source-inputs-after.json",
+      "bytes": 518093,
+      "sha256": "8c82dd3ec1d1f34efd6eebaa1bd60e0361571099afdc2f81dfd33652b09e47b9"
+    },
+    {
+      "path": "source-inputs-before.json",
+      "bytes": 518093,
+      "sha256": "8c82dd3ec1d1f34efd6eebaa1bd60e0361571099afdc2f81dfd33652b09e47b9"
+    },
+    {
+      "path": "status.json",
+      "bytes": 717,
+      "sha256": "b08eb320d80ebd2ceabca3c415c1bb625156a5f3264db296536e100176fe6c20"
+    }
+  ],
+  "productionReady": false
+}

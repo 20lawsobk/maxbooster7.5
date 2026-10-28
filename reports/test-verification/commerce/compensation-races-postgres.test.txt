@@ -3,67 +3,67 @@ TAP version 13
     # Subtest: hold-created
     ok 1 - hold-created
       ---
-      duration_ms: 19.889469
+      duration_ms: 37.116902
       type: 'test'
       ...
     # Subtest: hold-won
     ok 2 - hold-won
       ---
-      duration_ms: 14.379209
+      duration_ms: 29.634333
       type: 'test'
       ...
     # Subtest: older dispute event reads current provider state after delayed refund pagination
     ok 3 - older dispute event reads current provider state after delayed refund pagination
       ---
-      duration_ms: 21.287955
+      duration_ms: 42.645625
       type: 'test'
       ...
     # Subtest: authoritative dispute reads serialize on the same source transaction
     ok 4 - authoritative dispute reads serialize on the same source transaction
       ---
-      duration_ms: 22.47968
+      duration_ms: 33.437816
       type: 'test'
       ...
     # Subtest: dispute identity mismatch rolls back without fees or hold changes
     ok 5 - dispute identity mismatch rolls back without fees or hold changes
       ---
-      duration_ms: 5.808551
+      duration_ms: 12.477351
       type: 'test'
       ...
     # Subtest: hung dispute read rolls back and releases its source lock
     ok 6 - hung dispute read rolls back and releases its source lock
       ---
-      duration_ms: 10011.705745
+      duration_ms: 10015.04815
       type: 'test'
       ...
     # Subtest: pending refund observations serialize: pending-created
     ok 7 - pending refund observations serialize: pending-created
       ---
-      duration_ms: 29.425324
+      duration_ms: 40.633202
       type: 'test'
       ...
     # Subtest: pending refund observations serialize: pending-succeeded
     ok 8 - pending refund observations serialize: pending-succeeded
       ---
-      duration_ms: 22.079459
+      duration_ms: 31.049753
       type: 'test'
       ...
     # Subtest: legacy lifetime entitlement uses current provider status instead of stale event status
     ok 9 - legacy lifetime entitlement uses current provider status instead of stale event status
       ---
-      duration_ms: 10.761941
+      duration_ms: 12.995076
       type: 'test'
       ...
     # Subtest: legacy lifetime provider observations serialize before entitlement writes
     ok 10 - legacy lifetime provider observations serialize before entitlement writes
       ---
-      duration_ms: 12.373849
+      duration_ms: 10.334153
       type: 'test'
       ...
     1..10
 ok 1 - refund reconciliation preserves newer dispute transitions in real isolated PostgreSQL
   ---
-  duration_ms: 10885.0101
+  duration_ms: 11113.989005
   type: 'test'
   ...
 1..1
@@ -74,4 +74,4 @@ ok 1 - refund reconciliation preserves newer dispute transitions in real isolate
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 10955.82914
+# duration_ms 11198.508464

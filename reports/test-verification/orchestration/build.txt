@@ -8,10 +8,15 @@ building server...
 
   dist/index.mjs  1004.0kb
 
-⚡ Done in 118ms
+⚡ Done in 153ms
 ==> Building frontend with Vite...
 vite v7.3.7 building client environment for production...
 transforming...
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
 node_modules/zod/v4/core/regexes.js (74:0): A comment
 
 "/** Anchors a pattern source. The interpolation lives here rather than at the call site because
@@ -19,11 +24,6 @@ node_modules/zod/v4/core/regexes.js (74:0): A comment
  * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
 
 in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
-node_modules/zod/v4/core/util.js (400:0): A comment
-
-"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
-
-in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
 ✓ 5058 modules transformed.
 rendering chunks...
 [plugin vite:reporter] 
@@ -168,7 +168,7 @@ rendering chunks...
 ../dist/public/assets/vendor-charts-0qLVVKil.js             440.45 kB
 ../dist/public/assets/vendor-react-c-or_TZQ.js              600.44 kB
 ../dist/public/assets/studio-DTh2CDlz.js                    742.07 kB
-✓ built in 17.46s
+✓ built in 19.31s
    ✅ Vite build complete → dist/public/
 ==> Bundling all runtime entries (server, cluster, gateway, sizing, recovery)...
    ✅ All runtime entry bundles built from current source

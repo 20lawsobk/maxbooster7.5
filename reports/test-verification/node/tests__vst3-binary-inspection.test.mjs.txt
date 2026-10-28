@@ -2,128 +2,128 @@ TAP version 13
 # Subtest: VST3 static inspection follows PE names, ordinals and executable function addresses
 ok 1 - VST3 static inspection follows PE names, ordinals and executable function addresses
   ---
-  duration_ms: 1.930742
+  duration_ms: 2.27188
   type: 'test'
   ...
 # Subtest: a named export cannot impersonate a local VST3 factory through forwarding, nulls or data
 ok 2 - a named export cannot impersonate a local VST3 factory through forwarding, nulls or data
   ---
-  duration_ms: 0.480235
+  duration_ms: 0.510451
   type: 'test'
   ...
 # Subtest: malformed and truncated executables fail closed within bounded export tables
     # Subtest: truncated DOS header
     ok 1 - truncated DOS header
       ---
-      duration_ms: 0.390689
+      duration_ms: 0.508507
       type: 'test'
       ...
     # Subtest: PE offset outside file
     ok 2 - PE offset outside file
       ---
-      duration_ms: 0.165079
+      duration_ms: 0.426044
       type: 'test'
       ...
     # Subtest: wrong architecture
     ok 3 - wrong architecture
       ---
-      duration_ms: 0.14544
+      duration_ms: 0.22476
       type: 'test'
       ...
     # Subtest: not a DLL
     ok 4 - not a DLL
       ---
-      duration_ms: 0.166821
+      duration_ms: 0.173782
       type: 'test'
       ...
     # Subtest: not PE32+
     ok 5 - not PE32+
       ---
-      duration_ms: 0.126551
+      duration_ms: 0.986789
       type: 'test'
       ...
     # Subtest: truncated optional header
     ok 6 - truncated optional header
       ---
-      duration_ms: 0.223988
+      duration_ms: 0.33104
       type: 'test'
       ...
     # Subtest: directory count outside optional header
     ok 7 - directory count outside optional header
       ---
-      duration_ms: 0.230808
+      duration_ms: 1.275696
       type: 'test'
       ...
     # Subtest: export directory outside sections
     ok 8 - export directory outside sections
       ---
-      duration_ms: 0.244499
+      duration_ms: 0.310849
       type: 'test'
       ...
     # Subtest: section raw bytes outside file
     ok 9 - section raw bytes outside file
       ---
-      duration_ms: 0.183537
+      duration_ms: 0.224809
       type: 'test'
       ...
     # Subtest: overlapping RVA mappings
     ok 10 - overlapping RVA mappings
       ---
-      duration_ms: 0.11289
+      duration_ms: 0.126501
       type: 'test'
       ...
     # Subtest: oversized name table
     ok 11 - oversized name table
       ---
-      duration_ms: 0.192921
+      duration_ms: 0.113692
       type: 'test'
       ...
     # Subtest: invalid name address
     ok 12 - invalid name address
       ---
-      duration_ms: 0.134363
+      duration_ms: 0.206922
       type: 'test'
       ...
     # Subtest: invalid ordinal
     ok 13 - invalid ordinal
       ---
-      duration_ms: 0.17896
+      duration_ms: 0.17257
       type: 'test'
       ...
     # Subtest: invalid function table address
     ok 14 - invalid function table address
       ---
-      duration_ms: 0.194433
+      duration_ms: 0.107172
       type: 'test'
       ...
     # Subtest: invalid factory address
     ok 15 - invalid factory address
       ---
-      duration_ms: 0.116075
+      duration_ms: 0.107452
       type: 'test'
       ...
     # Subtest: unterminated name at section boundary
     ok 16 - unterminated name at section boundary
       ---
-      duration_ms: 0.110747
+      duration_ms: 0.112239
       type: 'test'
       ...
     1..16
 ok 3 - malformed and truncated executables fail closed within bounded export tables
   ---
-  duration_ms: 4.682413
+  duration_ms: 7.111815
   type: 'test'
   ...
 # Subtest: repository inventory exposes actual factory verification without claiming processing
 ok 4 - repository inventory exposes actual factory verification without claiming processing
   ---
-  duration_ms: 26.806092
+  duration_ms: 31.621467
   type: 'test'
   ...
 # Subtest: inspection CLI reports static evidence and rejects invalid input
 ok 5 - inspection CLI reports static evidence and rejects invalid input
   ---
-  duration_ms: 284.046427
+  duration_ms: 329.745923
   type: 'test'
   ...
 1..5
@@ -134,4 +134,4 @@ ok 5 - inspection CLI reports static evidence and rejects invalid input
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 449.237479
+# duration_ms 527.635613

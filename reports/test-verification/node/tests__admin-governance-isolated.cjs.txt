@@ -2,73 +2,73 @@ TAP version 13
 # Subtest: KYC missing documents remain an actionable checklist
 ok 1 - KYC missing documents remain an actionable checklist
   ---
-  duration_ms: 175.83671
+  duration_ms: 212.713253
   type: 'test'
   ...
 # Subtest: verified identity cannot be edited by its owner
 ok 2 - verified identity cannot be edited by its owner
   ---
-  duration_ms: 90.119145
+  duration_ms: 115.772104
   type: 'test'
   ...
 # Subtest: approval requires current reviewed evidence inside a transaction
 ok 3 - approval requires current reviewed evidence inside a transaction
   ---
-  duration_ms: 47.239148
+  duration_ms: 69.132822
   type: 'test'
   ...
 # Subtest: API token issuance stores only its verifier and audit metadata; owner revocation disables it
 ok 4 - API token issuance stores only its verifier and audit metadata; owner revocation disables it
   ---
-  duration_ms: 6.197717
+  duration_ms: 8.323571
   type: 'test'
   ...
 # Subtest: support metadata mutations are server-side JSONB expressions, not stale snapshots
 ok 5 - support metadata mutations are server-side JSONB expressions, not stale snapshots
   ---
-  duration_ms: 0.202215
+  duration_ms: 0.354826
   type: 'test'
   ...
 # Subtest: existing bearer verifier accepts a matching token, then rejects revocation and expiry
 ok 6 - existing bearer verifier accepts a matching token, then rejects revocation and expiry
   ---
-  duration_ms: 26.194527
+  duration_ms: 38.730692
   type: 'test'
   ...
 # Subtest: moderation removal persists local effect, recipient warning and actor audit
 ok 7 - moderation removal persists local effect, recipient warning and actor audit
   ---
-  duration_ms: 11.315156
+  duration_ms: 15.358194
   type: 'test'
   ...
 # Subtest: all changed domain modules parse without loading external boundaries
 ok 8 - all changed domain modules parse without loading external boundaries
   ---
-  duration_ms: 84.54324
+  duration_ms: 132.285578
   type: 'test'
   ...
 # Subtest: KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock
 ok 9 - KYC reviewer digest binds identity/evidence and approval stores an immutable snapshot under parent lock
   ---
-  duration_ms: 38.860981
+  duration_ms: 93.299469
   type: 'test'
   ...
 # Subtest: runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed
 ok 10 - runtime governance rate limit uses one atomic cluster counter across policy edits and fails closed
   ---
-  duration_ms: 29.019397
+  duration_ms: 32.483689
   type: 'test'
   ...
 # Subtest: governance policy differentiates disabled registration from unavailable or malformed policy
 ok 11 - governance policy differentiates disabled registration from unavailable or malformed policy
   ---
-  duration_ms: 7.719182
+  duration_ms: 12.320306
   type: 'test'
   ...
 # Subtest: support routes reject Express 5 array or empty ticket parameters before database access
 ok 12 - support routes reject Express 5 array or empty ticket parameters before database access
   ---
-  duration_ms: 96.707217
+  duration_ms: 127.700999
   type: 'test'
   ...
 1..12
@@ -79,4 +79,4 @@ ok 12 - support routes reject Express 5 array or empty ticket parameters before 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1094.256101
+# duration_ms 1336.352084

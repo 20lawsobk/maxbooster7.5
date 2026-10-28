@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: Replit deletion requests idempotent absence and retains the physical node namespace
 ok 1 - Replit deletion requests idempotent absence and retains the physical node namespace
   ---
-  duration_ms: 1.254603
+  duration_ms: 1.732316
   type: 'test'
   ...
 # Subtest: resolved SDK deletion errors reject before accounting can be credited
 ok 2 - resolved SDK deletion errors reject before accounting can be credited
   ---
-  duration_ms: 0.421746
+  duration_ms: 0.739236
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - resolved SDK deletion errors reject before accounting can be credited
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 171.291045
+# duration_ms 198.649725

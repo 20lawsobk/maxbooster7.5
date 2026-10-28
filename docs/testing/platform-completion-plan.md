@@ -114,13 +114,13 @@ Generated from the complete source register and page business-section analyses. 
   "summary": {
     "pageDeclarations": 80,
     "controls": 8374,
-    "backendRegistrations": 2907,
+    "backendRegistrations": 2909,
     "frontendContracts": 932,
     "sourceCoverageFiles": 2653,
-    "unknownMappings": 130,
-    "repositoryFiles": 5528,
+    "unknownMappings": 170,
+    "repositoryFiles": 5532,
     "sharedSubsystems": 20,
-    "workItems": 52965,
+    "workItems": 53020,
     "businessSectionPages": 80,
     "businessSectionTasks": 2162,
     "businessDimensionSteps": 12972
@@ -144,8 +144,8 @@ Generated from the complete source register and page business-section analyses. 
         "setEquality": true
       },
       "backendRoutes": {
-        "expected": 2907,
-        "planned": 2907,
+        "expected": 2909,
+        "planned": 2909,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true
@@ -165,14 +165,14 @@ Generated from the complete source register and page business-section analyses. 
         "setEquality": true
       },
       "unknownMappings": {
-        "expected": 130,
-        "planned": 130,
+        "expected": 170,
+        "planned": 170,
         "missingIds": [],
         "extraIds": [],
         "setEquality": true
       }
     },
-    "requiredCheckCount": 33538,
+    "requiredCheckCount": 33549,
     "missingReferences": [],
     "missingBusinessSectionPageIds": []
   },

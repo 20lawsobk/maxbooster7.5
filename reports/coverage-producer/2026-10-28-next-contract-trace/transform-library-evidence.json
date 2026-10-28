@@ -1,0 +1,133 @@
+{
+  "scope": "Installed compiler/SSR/provider source observation only",
+  "versions": {
+    "vite": "7.3.7",
+    "vitest": "4.1.12",
+    "@vitest/coverage-v8": "4.1.12",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.12",
+    "ast-v8-to-istanbul": "1.0.7",
+    "typescript": "5.9.3"
+  },
+  "files": [
+    {
+      "path": "node_modules/tsx/dist/index-DQtFPMc2.mjs",
+      "sha256": "58dbdda360329e6077831c323fe99e84bbf4f25ef13e4e41641078759b0f6c49",
+      "bytes": 56531,
+      "citations": [
+        {
+          "term": "const Le=\"2\",xn=",
+          "utf8ByteOffset": 39046,
+          "line": 13,
+          "excerpt": "ng.prototype.replaceAll called with a non-global RegExp argument\");return this._replaceRegexp(e,n)}}const Le=\"2\",xn=(s=>{const e=\"default\";return s[e]&&typeof s[e]==\"object\"&&\"__esModule\"in s[e]?s[e]:s}).toString(),vn=`.then(${xn})`,ce=u((s,e,n)=>{if(n){if(!e.includes(\"import(\"))return}else if(!e.includes(\"import\"))return;const o=ae(e,s)[0].filter(g=>g.d>-1);if(o.length===0)return;const a=new $e(e);for(const g of o)a.appendRight(g.se,vn);const l=a.toString(),p=a.generateMap({source:s,includeContent:!1,hires:\"boundary\"});return{code:l,map:p}},\"t"
+        },
+        {
+          "term": "vn=`.then(${xn})`",
+          "utf8ByteOffset": 39161,
+          "line": 13,
+          "excerpt": "=(s=>{const e=\"default\";return s[e]&&typeof s[e]==\"object\"&&\"__esModule\"in s[e]?s[e]:s}).toString(),vn=`.then(${xn})`,ce=u((s,e,n)=>{if(n){if(!e.includes(\"import(\"))return}else if(!e.includes(\"import\"))return;const o=ae(e,s)[0].filter(g=>g.d>-1);if(o.length===0)return;const a=new $e(e);for(const g of o)a.appendRight(g.se,vn);const l=a.toString(),p=a.generateMap({source:s,includeContent:!1,hires:\"boundary\"});return{code:l,map:p}},\"transformDynamicImport\"),Ke=u(s=>{try{const e=D.readFileSync(s,\"utf8\");return JSON.parse(e)}catch{}},\"readJsonFile\")"
+        },
+        {
+          "term": "minifyWhitespace:!0,keepNames:!0",
+          "utf8ByteOffset": 54581,
+          "line": 14,
+          "excerpt": "ader:\"default\"}),Ar=Er(Lr),Ne={...Or,sourcemap:!0,sourcesContent:!!process.env.NODE_V8_COVERAGE||Ar,minifyWhitespace:!0,keepNames:!0},Re=u(s=>{const e=s.sourcefile;if(e){const n=J.extname(e.split(\"?\")[0]);n?n===\".cts\"||n===\".mts\"?s.sourcefile=`${e.slice(0,-3)}ts`:n===\".mjs\"&&(s.sourcefile=`${e.slice(0,-3)}js`):s.sourcefile+=\".js\"}return n=>(n.map&&(s.sourcefile!==e&&(n.map=n.map.replace(JSON.stringify(s.sourcefile),JSON.stringify(e))),n.map=JSON.parse(n.map)),n)},\"patchOptions\"),Me=u(s=>{throw s.name=\"TransformError\",delete s.errors,delete s.wa"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/config.js",
+      "sha256": "2e71344450b7c25a7fe0848d5ee474fb7342614d900ab9168588986150cbb9f9",
+      "bytes": 1342444,
+      "citations": [
+        {
+          "term": "const transformOptions = {",
+          "utf8ByteOffset": 231070,
+          "line": 6150,
+          "excerpt": "nfig$2.esbuild;\n\tconst filter$1 = createFilter(include || /\\.(m?ts|[jt]sx)$/, exclude || /\\.js$/);\n\tconst transformOptions = {\n\t\ttarget: \"esnext\",\n\t\t...esbuildTransformOptions,\n\t\tminify: false,\n\t\tminifyIdentifiers: false,\n\t\tminifySyntax: false,\n\t\tminifyWhitespace: false,\n\t\ttreeShaking: false,\n\t\tkeepNames: false,\n\t\tsupported: {\n\t\t\t...defaultEsbuildSupported,\n\t\t\t...esbuildTransformOptions.supported\n\t\t}\n\t};\n\tlet server;\n\treturn {\n\t\tname: \"vite:esbuild\",\n\t\tconfigureServer(_server) {\n\t\t\tserver = _server;\n\t\t},\n\t\tasync transform(code, id) {\n\t\t\tif (fil"
+        },
+        {
+          "term": "minifyWhitespace: false,",
+          "utf8ByteOffset": 231217,
+          "line": 6156,
+          "excerpt": "\t\t...esbuildTransformOptions,\n\t\tminify: false,\n\t\tminifyIdentifiers: false,\n\t\tminifySyntax: false,\n\t\tminifyWhitespace: false,\n\t\ttreeShaking: false,\n\t\tkeepNames: false,\n\t\tsupported: {\n\t\t\t...defaultEsbuildSupported,\n\t\t\t...esbuildTransformOptions.supported\n\t\t}\n\t};\n\tlet server;\n\treturn {\n\t\tname: \"vite:esbuild\",\n\t\tconfigureServer(_server) {\n\t\t\tserver = _server;\n\t\t},\n\t\tasync transform(code, id) {\n\t\t\tif (filter$1(id) || filter$1(cleanUrl(id))) {\n\t\t\t\tconst result = await transformWithEsbuild(code, id, transformOptions, void 0, config$2, server?.watcher)"
+        },
+        {
+          "term": "keepNames: false,",
+          "utf8ByteOffset": 231266,
+          "line": 6158,
+          "excerpt": "minifyIdentifiers: false,\n\t\tminifySyntax: false,\n\t\tminifyWhitespace: false,\n\t\ttreeShaking: false,\n\t\tkeepNames: false,\n\t\tsupported: {\n\t\t\t...defaultEsbuildSupported,\n\t\t\t...esbuildTransformOptions.supported\n\t\t}\n\t};\n\tlet server;\n\treturn {\n\t\tname: \"vite:esbuild\",\n\t\tconfigureServer(_server) {\n\t\t\tserver = _server;\n\t\t},\n\t\tasync transform(code, id) {\n\t\t\tif (filter$1(id) || filter$1(cleanUrl(id))) {\n\t\t\t\tconst result = await transformWithEsbuild(code, id, transformOptions, void 0, config$2, server?.watcher);\n\t\t\t\tif (result.warnings.length) result.warnings"
+        },
+        {
+          "term": "async function ssrTransformScript",
+          "utf8ByteOffset": 560359,
+          "line": 15611,
+          "excerpt": "`${ssrModuleExportsKey}.default =`),\n\t\tmap: inMap,\n\t\tdeps: [],\n\t\tdynamicDeps: [],\n\t\tssr: true\n\t};\n}\nasync function ssrTransformScript(code, inMap, url$3, originalCode) {\n\tconst s = new MagicString(code);\n\tlet ast;\n\ttry {\n\t\tast = await parseAstAsync(code);\n\t} catch (err$2) {\n\t\tif (err$2.code === \"PARSE_ERROR\") {\n\t\t\terr$2.message = `Parse failure: ${err$2.message}\\n`;\n\t\t\terr$2.id = url$3;\n\t\t\tif (typeof err$2.pos === \"number\") {\n\t\t\t\terr$2.loc = numberToPos(code, err$2.pos);\n\t\t\t\terr$2.loc.file = url$3;\n\t\t\t\terr$2.frame = generateCodeFrame(code, err$"
+        },
+        {
+          "term": "s.generateMap({ hires: \"boundary\" })",
+          "utf8ByteOffset": 330656,
+          "line": 8703,
+          "excerpt": "ode);\n\t\t\tif (s) return {\n\t\t\t\tcode: s.toString(),\n\t\t\t\tmap: this.environment.config.build.sourcemap ? s.generateMap({ hires: \"boundary\" }) : null\n\t\t\t};\n\t\t\telse return null;\n\t\t},\n\t\tgenerateBundle(_, bundle) {\n\t\t\tlet importedFiles;\n\t\t\tfor (const file in bundle) {\n\t\t\t\tconst chunk = bundle[file];\n\t\t\t\tif (chunk.type === \"chunk\" && chunk.isEntry && chunk.moduleIds.length === 1 && config$2.assetsInclude(chunk.moduleIds[0]) && this.getModuleInfo(chunk.moduleIds[0])?.meta[\"vite:asset\"]) {\n\t\t\t\t\tif (!importedFiles) {\n\t\t\t\t\t\timportedFiles = /* @__PURE__ */ ne"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/coverage-v8/dist/provider.js",
+      "sha256": "9f7848b27aabc311e867d9a034b4f569892e68533b837116ab932e05fa20558f",
+      "bytes": 12314,
+      "citations": [
+        {
+          "term": "async remapCoverage",
+          "utf8ByteOffset": 4894,
+          "line": 130,
+          "excerpt": "ebug(`${color(` ${diff.toFixed()} ms `)} ${filename}`);\n\t\t\t\t}\n\t\t\t}));\n\t\t}\n\t\treturn coverageMap;\n\t}\n\tasync remapCoverage(filename, wrapperLength, result, functions) {\n\t\tlet ast;\n\t\ttry {\n\t\t\tast = await parseAstAsync(result.code);\n\t\t} catch (error) {\n\t\t\tthis.ctx.logger.error(`Failed to parse ${filename}. Excluding it from coverage.\\n`, error);\n\t\t\treturn {};\n\t\t}\n\t\treturn await astV8ToIstanbul({\n\t\t\tcode: result.code,\n\t\t\tsourceMap: result.map,\n\t\t\tast,\n\t\t\tcoverage: {\n\t\t\t\tfunctions,\n\t\t\t\turl: filename\n\t\t\t},\n\t\t\tignoreClassMethods: this.options.ignoreClas"
+        },
+        {
+          "term": "ignoreClassMethods: this.options.ignoreClassMethods",
+          "utf8ByteOffset": 5301,
+          "line": 146,
+          "excerpt": "lt.code,\n\t\t\tsourceMap: result.map,\n\t\t\tast,\n\t\t\tcoverage: {\n\t\t\t\tfunctions,\n\t\t\t\turl: filename\n\t\t\t},\n\t\t\tignoreClassMethods: this.options.ignoreClassMethods,\n\t\t\twrapperLength,\n\t\t\tignoreNode: (node, type) => {\n\t\t\t\t// SSR transformed imports\n\t\t\t\tif (type === \"statement\" && node.type === \"VariableDeclarator\" && node.id.type === \"Identifier\" && node.id.name.startsWith(\"__vite_ssr_import_\")) {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// SSR transformed exports vite@>6.3.5\n\t\t\t\tif (type === \"statement\" && node.type === \"ExpressionStatement\" && node.expression.type === "
+        },
+        {
+          "term": "wrapperLength,",
+          "utf8ByteOffset": 4924,
+          "line": 130,
+          "excerpt": "()} ms `)} ${filename}`);\n\t\t\t\t}\n\t\t\t}));\n\t\t}\n\t\treturn coverageMap;\n\t}\n\tasync remapCoverage(filename, wrapperLength, result, functions) {\n\t\tlet ast;\n\t\ttry {\n\t\t\tast = await parseAstAsync(result.code);\n\t\t} catch (error) {\n\t\t\tthis.ctx.logger.error(`Failed to parse ${filename}. Excluding it from coverage.\\n`, error);\n\t\t\treturn {};\n\t\t}\n\t\treturn await astV8ToIstanbul({\n\t\t\tcode: result.code,\n\t\t\tsourceMap: result.map,\n\t\t\tast,\n\t\t\tcoverage: {\n\t\t\t\tfunctions,\n\t\t\t\turl: filename\n\t\t\t},\n\t\t\tignoreClassMethods: this.options.ignoreClassMethods,\n\t\t\twrapperLength,\n\t\t"
+        },
+        {
+          "term": "async getSources",
+          "utf8ByteOffset": 8483,
+          "line": 192,
+          "excerpt": ".callee.name === \"_ts_decorate\") {\n\t\t\t\t\treturn \"ignore-this-and-nested-nodes\";\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t}\n\tasync getSources(url, onTransform, functions = []) {\n\t\t// TODO: need to standardize file urls before this call somehow, this is messy\n\t\tconst filepath = url.match(/^file:\\/\\/\\/\\w:\\//) ? url.slice(8) : removeStartsWith(url, FILE_PROTOCOL);\n\t\t// TODO: do we still need to \"catch\" here? why would it fail?\n\t\tconst transformResult = await onTransform(filepath).catch(() => null);\n\t\tconst map = transformResult?.map;\n\t\tconst code = transformResult?.code;\n"
+        }
+      ]
+    },
+    {
+      "path": "node_modules/vite/dist/node/module-runner.js",
+      "sha256": "e9e66cba21fc780ae9a5a64da48503afa49bf9bc25c69007333c7835b763b89c",
+      "bytes": 50376,
+      "citations": [
+        {
+          "term": "startOffset = getAsyncFunctionDeclarationPaddingLineCount()",
+          "utf8ByteOffset": 38418,
+          "line": 911,
+          "excerpt": "or == \"object\" ? runner.options.sourcemapInterceptor : void 0);\n}\nvar ESModulesEvaluator = class {\n\tstartOffset = getAsyncFunctionDeclarationPaddingLineCount();\n\tasync runInlinedModule(context, code) {\n\t\tawait new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, \"\\\"use strict\\\";\" + code)(context[ssrModuleExportsKey], context[ssrImportMetaKey], context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], context[ssrExportNameKey]), Object.seal(context[ssr"
+        },
+        {
+          "term": "async runInlinedModule",
+          "utf8ByteOffset": 38480,
+          "line": 912,
+          "excerpt": ";\n}\nvar ESModulesEvaluator = class {\n\tstartOffset = getAsyncFunctionDeclarationPaddingLineCount();\n\tasync runInlinedModule(context, code) {\n\t\tawait new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, \"\\\"use strict\\\";\" + code)(context[ssrModuleExportsKey], context[ssrImportMetaKey], context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], context[ssrExportNameKey]), Object.seal(context[ssrModuleExportsKey]);\n\t}\n\trunExternalModule(filepath) {\n\t\treturn"
+        },
+        {
+          "term": "new AsyncFunction",
+          "utf8ByteOffset": 785,
+          "line": 22,
+          "excerpt": "t() {\n\tif (asyncFunctionDeclarationPaddingLineCount === void 0) {\n\t\tlet body = \"/*code*/\", source = new AsyncFunction(\"a\", \"b\", body).toString();\n\t\tasyncFunctionDeclarationPaddingLineCount = source.slice(0, source.indexOf(body)).split(\"\\n\").length - 1;\n\t}\n\treturn asyncFunctionDeclarationPaddingLineCount;\n}\nfunction promiseWithResolvers() {\n\tlet resolve$1, reject;\n\treturn {\n\t\tpromise: new Promise((_resolve, _reject) => {\n\t\t\tresolve$1 = _resolve, reject = _reject;\n\t\t}),\n\t\tresolve: resolve$1,\n\t\treject\n\t};\n}\nconst _DRIVE_LETTER_START_RE = /^[A-Za-z"
+        }
+      ]
+    }
+  ],
+  "productionReady": false
+}

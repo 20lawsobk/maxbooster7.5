@@ -1,0 +1,46 @@
+{
+  "scope": "Persistence of unfinished unreviewed outside-checkout proposal, not implementation or acceptance",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1669,
+      "sha256": "224468a703c992b794a214d49db4fa36a49461de7bb9380c4f56af720aaed69a"
+    },
+    {
+      "path": "actual-candidate.json",
+      "bytes": 109897,
+      "sha256": "b3669ef5346a72d604a9e27663e7eaf7c0884ae9345950dec8680c157cabf100"
+    },
+    {
+      "path": "baseline.json",
+      "bytes": 118558,
+      "sha256": "ec869f5a8654914bffde362df074944250f3022c0849fbd760e458250f1a77db"
+    },
+    {
+      "path": "build-candidate.py",
+      "bytes": 4257,
+      "sha256": "25cd783e52dd6804fb63b8e8177664d6db5d80111049f31960ded5183709883a"
+    },
+    {
+      "path": "candidate-source.patch",
+      "bytes": 17454,
+      "sha256": "4ecda8182d5173e9551046588e4aa1bbe86f095835e2eb243d2a2c98ff803695"
+    },
+    {
+      "path": "platform-register.next.py",
+      "bytes": 78092,
+      "sha256": "1f2c9faabd2d566ffeef6268e4c5cf60db0f7c30654d82e0ead5387a06f0b8ab"
+    },
+    {
+      "path": "python_factory_mounts.py",
+      "bytes": 12842,
+      "sha256": "ff1b30e9c76909a981f901c6e1230cae0039e7f2995c3fdebd7ec8fb0ff5d6a6"
+    },
+    {
+      "path": "status.json",
+      "bytes": 363,
+      "sha256": "5090990a3743940c0c1901797ed5bcad97e50dee25f7f933171df94f417ac794"
+    }
+  ],
+  "productionReady": false
+}

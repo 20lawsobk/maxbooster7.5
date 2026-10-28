@@ -3,16 +3,16 @@ TAP version 13
 # Subtest: upstream Puppeteer browser manager no longer requires extract-zip
 ok 1 - upstream Puppeteer browser manager no longer requires extract-zip
   ---
-  duration_ms: 5.961742
+  duration_ms: 4.285369
   type: 'test'
   ...
 # Loading local patent document...
 # Generating PDF...
-# PDF generated: /tmp/maxbooster-test-l6unjntq/maxbooster-test-bixdjse5/patent-pdf-runtime-2Q6xNo/patent.pdf (15.0 KB)
+# PDF generated: /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-9u1qdesk/patent-pdf-runtime-S2zhuA/patent.pdf (15.0 KB)
 # Subtest: actual patent generator renders valid Letter PDF using supplied local Chromium
 ok 2 - actual patent generator renders valid Letter PDF using supplied local Chromium
   ---
-  duration_ms: 1405.516019
+  duration_ms: 1671.427353
   type: 'test'
   ...
 1..2
@@ -23,4 +23,4 @@ ok 2 - actual patent generator renders valid Letter PDF using supplied local Chr
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1747.277298
+# duration_ms 2281.030198

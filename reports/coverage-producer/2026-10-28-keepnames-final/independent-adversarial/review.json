@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-28T12:56:52.028342+00:00",
+  "verdict": "APPROVE_FOR_CONTROLLED_INTEGRATION_RECHECK",
+  "scope": "Read-only independent generated-helper false-exclusion and actual converter callback review; no repository source mutation or coverage merge",
+  "candidatePatchSha256": "d2befaa7af8a46e61fa43acd12898403de5cc7e2be1a8b5497a5b657bb74c118",
+  "provenanceCandidateSha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c",
+  "checks": {
+    "actualConverterVariableDeclaratorIdentity": true,
+    "ignoreNestedLimitedToExactProvenHelperSubtree": true,
+    "standaloneFilteredCallsHaveNoAuthoredExpressionSubtrees": true,
+    "originalSourceIdentifierCollisionsFailClosed": true,
+    "originalTypeScriptParserUsesExactDeclarationCoordinate": true,
+    "strictMapComparisonUnchanged": true,
+    "processOwnershipAndAllowlistUnchanged": true,
+    "independentCandidateTests": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "actualSyntheticInspectorExecution": true,
+      "appCredentialEnvironmentInherited": false
+    },
+    "additionalCompilerControlFixtures": {
+      "passed": 12,
+      "failed": 0,
+      "denominatorOnly": true,
+      "executedApplication": false,
+      "originalStatementFunctionBranchCountsNotReduced": true
+    }
+  },
+  "limitations": [
+    "Integration framework and fresh real collector run must pass after landing; candidate currently outside checkout.",
+    "Arbitrary invalid/substituted maps are rejected by existing validateManifest/validateSourceMap before the policy call; structural helper recognition is not a standalone authenticity certificate.",
+    "Conservative original identifier collisions can leave generated nodes present; this overcounts instead of hiding authored code.",
+    "No canonical global coverage improvement, complete-map compatibility, page acceptance, or production readiness established."
+  ],
+  "protectedSourceHashes": {
+    "scripts/testing/coverage-provenance.mjs": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+    "scripts/testing/collect-node-coverage.mjs": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+    "tests/testing/coverage-provenance.test.mjs": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f"
+  },
+  "mergedIntoGlobalCoverage": false,
+  "productionReady": false
+}

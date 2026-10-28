@@ -546591,13 +546591,13 @@
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/response-contract",
+      "id": "api-c5c109d4a9a644c9/response-contract",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546612,17 +546612,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/response-contract"
+        "workItemId": "api-c5c109d4a9a644c9/response-contract"
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/access-policy",
+      "id": "api-c5c109d4a9a644c9/access-policy",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546637,17 +546637,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/access-policy"
+        "workItemId": "api-c5c109d4a9a644c9/access-policy"
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/input-boundaries",
+      "id": "api-c5c109d4a9a644c9/input-boundaries",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546662,17 +546662,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/input-boundaries"
+        "workItemId": "api-c5c109d4a9a644c9/input-boundaries"
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/tenant-boundary",
+      "id": "api-c5c109d4a9a644c9/tenant-boundary",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546687,17 +546687,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/tenant-boundary"
+        "workItemId": "api-c5c109d4a9a644c9/tenant-boundary"
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/dependency-failure",
+      "id": "api-c5c109d4a9a644c9/dependency-failure",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546712,17 +546712,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/dependency-failure"
+        "workItemId": "api-c5c109d4a9a644c9/dependency-failure"
       }
     },
     {
-      "id": "api-972dd5ce32a073e2/mutation-durability",
+      "id": "api-c5c109d4a9a644c9/mutation-durability",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-972dd5ce32a073e2"
+        "api-c5c109d4a9a644c9"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546737,17 +546737,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-972dd5ce32a073e2/mutation-durability"
+        "workItemId": "api-c5c109d4a9a644c9/mutation-durability"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/response-contract",
+      "id": "api-d80e3bfc15855f30/response-contract",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546762,17 +546762,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/response-contract"
+        "workItemId": "api-d80e3bfc15855f30/response-contract"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/access-policy",
+      "id": "api-d80e3bfc15855f30/access-policy",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546787,17 +546787,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/access-policy"
+        "workItemId": "api-d80e3bfc15855f30/access-policy"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/input-boundaries",
+      "id": "api-d80e3bfc15855f30/input-boundaries",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546812,17 +546812,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/input-boundaries"
+        "workItemId": "api-d80e3bfc15855f30/input-boundaries"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/tenant-boundary",
+      "id": "api-d80e3bfc15855f30/tenant-boundary",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546837,17 +546837,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/tenant-boundary"
+        "workItemId": "api-d80e3bfc15855f30/tenant-boundary"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/dependency-failure",
+      "id": "api-d80e3bfc15855f30/dependency-failure",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546862,17 +546862,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/dependency-failure"
+        "workItemId": "api-d80e3bfc15855f30/dependency-failure"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/mutation-durability",
+      "id": "api-d80e3bfc15855f30/mutation-durability",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546887,17 +546887,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/mutation-durability"
+        "workItemId": "api-d80e3bfc15855f30/mutation-durability"
       }
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/deletion-durability",
+      "id": "api-d80e3bfc15855f30/deletion-durability",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-e7ca6c071ab1c2ca"
+        "api-d80e3bfc15855f30"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -546912,7 +546912,7 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-e7ca6c071ab1c2ca/deletion-durability"
+        "workItemId": "api-d80e3bfc15855f30/deletion-durability"
       }
     },
     {
@@ -554841,13 +554841,13 @@
       }
     },
     {
-      "id": "api-34fc89e127fc051f/response-contract",
+      "id": "api-621114b0a65095e5/response-contract",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-34fc89e127fc051f"
+        "api-621114b0a65095e5"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554862,17 +554862,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-34fc89e127fc051f/response-contract"
+        "workItemId": "api-621114b0a65095e5/response-contract"
       }
     },
     {
-      "id": "api-34fc89e127fc051f/access-policy",
+      "id": "api-621114b0a65095e5/access-policy",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-34fc89e127fc051f"
+        "api-621114b0a65095e5"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554887,17 +554887,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-34fc89e127fc051f/access-policy"
+        "workItemId": "api-621114b0a65095e5/access-policy"
       }
     },
     {
-      "id": "api-34fc89e127fc051f/input-boundaries",
+      "id": "api-621114b0a65095e5/input-boundaries",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-34fc89e127fc051f"
+        "api-621114b0a65095e5"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554912,17 +554912,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-34fc89e127fc051f/input-boundaries"
+        "workItemId": "api-621114b0a65095e5/input-boundaries"
       }
     },
     {
-      "id": "api-34fc89e127fc051f/tenant-boundary",
+      "id": "api-621114b0a65095e5/tenant-boundary",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-34fc89e127fc051f"
+        "api-621114b0a65095e5"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554937,17 +554937,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-34fc89e127fc051f/tenant-boundary"
+        "workItemId": "api-621114b0a65095e5/tenant-boundary"
       }
     },
     {
-      "id": "api-34fc89e127fc051f/dependency-failure",
+      "id": "api-621114b0a65095e5/dependency-failure",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-34fc89e127fc051f"
+        "api-621114b0a65095e5"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554962,17 +554962,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-34fc89e127fc051f/dependency-failure"
+        "workItemId": "api-621114b0a65095e5/dependency-failure"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/response-contract",
+      "id": "api-69404ac4c40ff1c7/response-contract",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-69404ac4c40ff1c7"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -554987,17 +554987,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/response-contract"
+        "workItemId": "api-69404ac4c40ff1c7/response-contract"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/access-policy",
+      "id": "api-69404ac4c40ff1c7/access-policy",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-69404ac4c40ff1c7"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -555012,17 +555012,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/access-policy"
+        "workItemId": "api-69404ac4c40ff1c7/access-policy"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/input-boundaries",
+      "id": "api-69404ac4c40ff1c7/input-boundaries",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-69404ac4c40ff1c7"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -555037,17 +555037,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/input-boundaries"
+        "workItemId": "api-69404ac4c40ff1c7/input-boundaries"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/tenant-boundary",
+      "id": "api-69404ac4c40ff1c7/tenant-boundary",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-69404ac4c40ff1c7"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -555062,17 +555062,17 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/tenant-boundary"
+        "workItemId": "api-69404ac4c40ff1c7/tenant-boundary"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/dependency-failure",
+      "id": "api-69404ac4c40ff1c7/dependency-failure",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-69404ac4c40ff1c7"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -555087,17 +555087,142 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/dependency-failure"
+        "workItemId": "api-69404ac4c40ff1c7/dependency-failure"
       }
     },
     {
-      "id": "api-a985a7e5e584a792/mutation-durability",
+      "id": "api-50e467fa4f4e4018/response-contract",
       "kind": "registered-required-check",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
-        "api-a985a7e5e584a792"
+        "api-50e467fa4f4e4018"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Call the exact registered method/path and assert status, content type and response schema for successful, empty and nonexistent-resource cases as applicable.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-50e467fa4f4e4018/response-contract"
+      }
+    },
+    {
+      "id": "api-50e467fa4f4e4018/access-policy",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-50e467fa4f4e4018"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Establish and test this endpoint's declared anonymous/authenticated/admin policy; reject unauthorized requests without leaking protected data.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-50e467fa4f4e4018/access-policy"
+      }
+    },
+    {
+      "id": "api-50e467fa4f4e4018/input-boundaries",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-50e467fa4f4e4018"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Test actual path/query/body boundaries and malformed or excessive input; assert validation occurs before side effects. Record explicit non-applicability for absent inputs.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-50e467fa4f4e4018/input-boundaries"
+      }
+    },
+    {
+      "id": "api-50e467fa4f4e4018/tenant-boundary",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-50e467fa4f4e4018"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "For scoped resources, use distinct fixture identities to prove ownership/tenant isolation on both reads and writes.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-50e467fa4f4e4018/tenant-boundary"
+      }
+    },
+    {
+      "id": "api-50e467fa4f4e4018/dependency-failure",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-50e467fa4f4e4018"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Make each required database/storage/provider dependency fail or time out; assert an honest bounded failure and preserve retryable state.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-50e467fa4f4e4018/dependency-failure"
+      }
+    },
+    {
+      "id": "api-50e467fa4f4e4018/mutation-durability",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-50e467fa4f4e4018"
       ],
       "requiredFixes": [
         "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
@@ -555112,7 +555237,157 @@
       "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
-        "workItemId": "api-a985a7e5e584a792/mutation-durability"
+        "workItemId": "api-50e467fa4f4e4018/mutation-durability"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/response-contract",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Call the exact registered method/path and assert status, content type and response schema for successful, empty and nonexistent-resource cases as applicable.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/response-contract"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/access-policy",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Establish and test this endpoint's declared anonymous/authenticated/admin policy; reject unauthorized requests without leaking protected data.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/access-policy"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/input-boundaries",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Test actual path/query/body boundaries and malformed or excessive input; assert validation occurs before side effects. Record explicit non-applicability for absent inputs.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/input-boundaries"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/tenant-boundary",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "For scoped resources, use distinct fixture identities to prove ownership/tenant isolation on both reads and writes.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/tenant-boundary"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/dependency-failure",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Make each required database/storage/provider dependency fail or time out; assert an honest bounded failure and preserve retryable state.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/dependency-failure"
+      }
+    },
+    {
+      "id": "api-b4f3f6941b54a095/mutation-durability",
+      "kind": "registered-required-check",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "backendRoutes",
+        "api-b4f3f6941b54a095"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "Verify the real mutation with durable readback/reopen, transaction rollback on failure, idempotent retries and concurrent delivery where applicable.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "api-b4f3f6941b54a095/mutation-durability"
       }
     },
     {
@@ -741893,7 +742168,7 @@
     {
       "id": "api-ef05357bba6ab833/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -761893,7 +762168,7 @@
     {
       "id": "api-7f174c69ff83279c/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -763343,7 +763618,7 @@
     {
       "id": "api-50167c08abd2dfe2/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -763468,7 +763743,7 @@
     {
       "id": "api-2153be5bc8e5692b/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -764118,7 +764393,7 @@
     {
       "id": "api-059a423751b44e6c/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -764268,7 +764543,7 @@
     {
       "id": "api-ebf54287f664010e/access-policy",
       "kind": "registered-required-check",
-      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "status": "PASS_CURRENT_EXACT_EVIDENCE",
       "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
       "affectedSystems": [
         "backendRoutes",
@@ -1181891,6 +1182166,1006 @@
       }
     },
     {
+      "id": "mapping-f308c5aec9488bfd-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-f308c5aec9488bfd-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-f308c5aec9488bfd-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-8bc7073db69953fd-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-8bc7073db69953fd-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-8bc7073db69953fd-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-7e4c597a88034112-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-7e4c597a88034112-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-7e4c597a88034112-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-158c34b1aba5454b-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-158c34b1aba5454b-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-158c34b1aba5454b-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-f29e4d1c3f604fce-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-f29e4d1c3f604fce-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-f29e4d1c3f604fce-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-f2506a99230b9ed9-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-f2506a99230b9ed9-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-f2506a99230b9ed9-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-e2d6a5011780b50a-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-e2d6a5011780b50a-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-e2d6a5011780b50a-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-d9424c90b603cf1b-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-d9424c90b603cf1b-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-d9424c90b603cf1b-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-6e9ef0c125385a44-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-6e9ef0c125385a44-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-6e9ef0c125385a44-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-fa2c56f256d625da-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-fa2c56f256d625da-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-fa2c56f256d625da-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-d946f39bdb39837f-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-d946f39bdb39837f-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-d946f39bdb39837f-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-f6bad221aa38bf0c-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-f6bad221aa38bf0c-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-f6bad221aa38bf0c-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-266bf7c0212f005e-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-266bf7c0212f005e-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-266bf7c0212f005e-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-00edf3e45c82654c-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-00edf3e45c82654c-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-00edf3e45c82654c-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-573415486f7338c5-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-573415486f7338c5-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-573415486f7338c5-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-a790e3c468cdf00b-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-a790e3c468cdf00b-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-a790e3c468cdf00b-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-369c6db566d4f351-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-369c6db566d4f351-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-369c6db566d4f351-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-092df018d15ce04a-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-092df018d15ce04a-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-092df018d15ce04a-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-25a9af4f072aa632-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-25a9af4f072aa632-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-25a9af4f072aa632-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-e761705c9f0f76df-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-e761705c9f0f76df-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-e761705c9f0f76df-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-5c3d8cb27f915e3f-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-5c3d8cb27f915e3f-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-5c3d8cb27f915e3f-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-dd8bd45a9aa5bee5-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-dd8bd45a9aa5bee5-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-dd8bd45a9aa5bee5-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-e2e895907c1b4ce1-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-e2e895907c1b4ce1-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-e2e895907c1b4ce1-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-53713a573d037a7c-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-53713a573d037a7c-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-53713a573d037a7c-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-d4973caa02b0cc65-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-d4973caa02b0cc65-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-d4973caa02b0cc65-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-46ac80d4e8359527-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-46ac80d4e8359527-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-46ac80d4e8359527-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-b03318f4d99fa46f-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-b03318f4d99fa46f-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-b03318f4d99fa46f-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-04486102b9038929-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-04486102b9038929-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-04486102b9038929-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-9eac6bb4cd24ec03-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-9eac6bb4cd24ec03-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-9eac6bb4cd24ec03-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-ef3ef477e8b3d66b-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-ef3ef477e8b3d66b-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-ef3ef477e8b3d66b-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-44e6562a1df489be-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-44e6562a1df489be-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-44e6562a1df489be-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-9b34f786174cc009-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-9b34f786174cc009-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-9b34f786174cc009-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-b2c879ec83d6b042-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-b2c879ec83d6b042-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-b2c879ec83d6b042-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-28571dbd1091423a-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-28571dbd1091423a-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-28571dbd1091423a-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-fe760de2a5bd05bb-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-fe760de2a5bd05bb-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-fe760de2a5bd05bb-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-770ab1721b882ebc-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-770ab1721b882ebc-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-770ab1721b882ebc-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-4b002e7662835d82-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-4b002e7662835d82-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-4b002e7662835d82-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-b8e440046b3ae892-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-b8e440046b3ae892-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-b8e440046b3ae892-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-934fb79046f9f412-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-934fb79046f9f412-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-934fb79046f9f412-1/resolve"
+      }
+    },
+    {
+      "id": "mapping-13bc8cd2a844545a-1/resolve",
+      "kind": "mapping-resolution",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "unknownMappings",
+        "mapping-13bc8cd2a844545a-1"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "mapping-13bc8cd2a844545a-1/resolve"
+      }
+    },
+    {
       "id": "mapping-e7bdcdc717ca8480-1/resolve",
       "kind": "mapping-resolution",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
@@ -1281041,6 +1282316,31 @@
       }
     },
     {
+      "id": "file-8c704b3e03229975/contract",
+      "kind": "source-config-asset-contract",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "repositoryFiles",
+        "file-8c704b3e03229975"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "file-8c704b3e03229975/contract"
+      }
+    },
+    {
       "id": "file-97180aa75f85e95d/contract",
       "kind": "source-config-asset-contract",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
@@ -1309941,6 +1311241,31 @@
       }
     },
     {
+      "id": "file-26dbc23302268c2a/contract",
+      "kind": "source-config-asset-contract",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "repositoryFiles",
+        "file-26dbc23302268c2a"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "file-26dbc23302268c2a/contract"
+      }
+    },
+    {
       "id": "file-630d2eecdf76aea4/contract",
       "kind": "source-config-asset-contract",
       "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
@@ -1310263,6 +1311588,31 @@
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
         "workItemId": "file-e80a72f561661d72/contract"
+      }
+    },
+    {
+      "id": "file-f530422b64f427d2/contract",
+      "kind": "source-config-asset-contract",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "repositoryFiles",
+        "file-f530422b64f427d2"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "file-f530422b64f427d2/contract"
       }
     },
     {
@@ -1313938,6 +1315288,31 @@
       "existingPlanReference": {
         "file": "reports/test-verification/completion-plan.json",
         "workItemId": "file-fa28ace81987fffd/contract"
+      }
+    },
+    {
+      "id": "file-3029c7611299f437/contract",
+      "kind": "source-config-asset-contract",
+      "status": "UNVERIFIED_OR_INCOMPLETE_NOT_ASSUMED_PRODUCT_DEFECT",
+      "rootCause": "Existing exact work item lacks complete current production acceptance; determine implementation versus evidence gap by executing its contract.",
+      "affectedSystems": [
+        "repositoryFiles",
+        "file-3029c7611299f437"
+      ],
+      "requiredFixes": [
+        "Execute the retained work item's exact source behavior, reproduce any defect, implement the smallest complete fix, and retain successful/adverse proof."
+      ],
+      "dependencies": [
+        "source-evidence",
+        "exact-feature-evidence"
+      ],
+      "executionOrder": "M4 after shared prerequisites; dependency-specific order in original page/shared ledger",
+      "risk": "UNASSESSED_UNTIL_CONTRACT_REVIEW",
+      "validationCriteria": "All named original work-item assertions and corresponding launch criteria pass with actual owned fixtures, exact source/test hashes and cleanup.",
+      "productionAcceptanceCriteria": "Current exact linked evidence, no required skip/unknown, all applicable page/shared/deployment gates pass.",
+      "existingPlanReference": {
+        "file": "reports/test-verification/completion-plan.json",
+        "workItemId": "file-3029c7611299f437/contract"
       }
     },
     {
@@ -1324604,6 +1325979,286 @@
       "prefix": "",
       "file": "server/index.ts",
       "line": 1448
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-1869efa45fd99774",
+      "file": "server/infrastructure/autoScaling.ts",
+      "line": 317,
+      "declaredPath": "/metrics"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-880691c4bb3cdae8",
+      "file": "server/infrastructure/autoScaling.ts",
+      "line": 338,
+      "declaredPath": "/metrics/kube"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-f6495072863529da",
+      "file": "server/infrastructure/autoScaling.ts",
+      "line": 346,
+      "declaredPath": "/health/detailed"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-5a2b6fec46e57896",
+      "file": "server/infrastructure/autoScaling.ts",
+      "line": 381,
+      "declaredPath": "/ready"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-a389d342b314bc55",
+      "file": "server/infrastructure/autoScaling.ts",
+      "line": 385,
+      "declaredPath": "/live"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-f6211b8d0e4ec6b5",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 24,
+      "declaredPath": "/status"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-4a66ddba3a805cb6",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 34,
+      "declaredPath": "/narrative"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-251ebbca2e0df2b1",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 45,
+      "declaredPath": "/insights"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-450ee59e61c25343",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 56,
+      "declaredPath": "/security"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-8b1b82f23a0d2279",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 67,
+      "declaredPath": "/events"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-a877e18e0f59b8a3",
+      "file": "server/routes/admin/intelligence.ts",
+      "line": 88,
+      "declaredPath": "/analyze"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-f698e3b8134a742a",
+      "file": "server/routes/mfaChallenge.ts",
+      "line": 17,
+      "declaredPath": "/2fa/challenge"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-904a580f65970b9e",
+      "file": "server/routes/mfaChallenge.ts",
+      "line": 26,
+      "declaredPath": "/2fa/challenge"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-7dd517cf8d01b28c",
+      "file": "server/routes/notifications.ts",
+      "line": 18,
+      "declaredPath": "/sms/status"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-77c8ac1231a77645",
+      "file": "server/routes/notifications.ts",
+      "line": 19,
+      "declaredPath": "/sms/incoming"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-68ef867d8f8e6e95",
+      "file": "server/routes/notifications.ts",
+      "line": 114,
+      "declaredPath": "/"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-1e0e1bd12d4e151e",
+      "file": "server/routes/notifications.ts",
+      "line": 172,
+      "declaredPath": "/:id/read"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-91a1ba2f50c1b935",
+      "file": "server/routes/notifications.ts",
+      "line": 210,
+      "declaredPath": "/mark-all-read"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-2c0ca49d88f4bcbc",
+      "file": "server/routes/notifications.ts",
+      "line": 232,
+      "declaredPath": "/clear-all"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-01162051183e00ac",
+      "file": "server/routes/notifications.ts",
+      "line": 254,
+      "declaredPath": "/mobile-tokens"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-f75564dae88a69b1",
+      "file": "server/routes/notifications.ts",
+      "line": 291,
+      "declaredPath": "/push-subscriptions"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-5c8769a16f7969a6",
+      "file": "server/routes/notifications.ts",
+      "line": 314,
+      "declaredPath": "/:id"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-6331b37ff9857298",
+      "file": "server/routes/notifications.ts",
+      "line": 350,
+      "declaredPath": "/preferences"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-b648cdbedbb7ab87",
+      "file": "server/routes/notifications.ts",
+      "line": 400,
+      "declaredPath": "/preferences"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-eea3fb52f000319b",
+      "file": "server/routes/notifications.ts",
+      "line": 452,
+      "declaredPath": "/push/subscribe"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-ba946a948e6a532c",
+      "file": "server/routes/notifications.ts",
+      "line": 498,
+      "declaredPath": "/push/unsubscribe"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-977e1ecd65f9119e",
+      "file": "server/routes/notifications.ts",
+      "line": 535,
+      "declaredPath": "/sms/verify"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-89573c7601d1b115",
+      "file": "server/routes/notifications.ts",
+      "line": 655,
+      "declaredPath": "/sms/confirm"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-326210e462c7d1e6",
+      "file": "server/routes/notifications.ts",
+      "line": 767,
+      "declaredPath": "/test"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-3a0ca7271aaff839",
+      "file": "server/routes/notifications.ts",
+      "line": 819,
+      "declaredPath": "/push/status"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-5cf795a7ce23ce3e",
+      "file": "server/routes/notifications.ts",
+      "line": 851,
+      "declaredPath": "/mobile-tokens"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-c24c0ce21acbe444",
+      "file": "server/routes/notifications.ts",
+      "line": 889,
+      "declaredPath": "/mobile-tokens"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-435c9b064fe590bf",
+      "file": "server/routes/notifications.ts",
+      "line": 1016,
+      "declaredPath": "/push/silent"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-77dd72821adbe56a",
+      "file": "server/routes/notifications.ts",
+      "line": 1043,
+      "declaredPath": "/push-key"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-f4027c7161425acd",
+      "file": "server/routes/notifications.ts",
+      "line": 1053,
+      "declaredPath": "/push-subscriptions"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-56e4829c0a1933f4",
+      "file": "server/routes/notifications.ts",
+      "line": 1098,
+      "declaredPath": "/push-subscriptions/status"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-579cd614bd126e1e",
+      "file": "server/routes/notifications.ts",
+      "line": 1122,
+      "declaredPath": "/push-test"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-b315effaeb4b8b20",
+      "file": "server/routes/notifications.ts",
+      "line": 1156,
+      "declaredPath": "/unread-count"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-e174878eb815f461",
+      "file": "server/routes/notifications.ts",
+      "line": 1188,
+      "declaredPath": "/:id"
+    },
+    {
+      "kind": "unverified-route-mount",
+      "subjectId": "api-bdb9078c8ebd02e7",
+      "file": "server/routes/prometheus.ts",
+      "line": 94,
+      "declaredPath": "/metrics"
     },
     {
       "kind": "unverified-route-mount",

@@ -1,0 +1,19 @@
+{
+  "scope": "Deliberately cancelled early master, never a completed/passing full run",
+  "sourceRevision": "e512441913599fd7f1a4f1e62f74e5da745e94df",
+  "cancelledAt": "2026-10-28T13:28:02.345498+00:00",
+  "exitCode": 143,
+  "reason": "Independent review found duplicate Node per-file producer ambiguity; stop early, fix, then execute fresh stable-source master",
+  "completedCommands": [
+    {
+      "id": "build",
+      "exitCode": 0
+    }
+  ],
+  "interruptedCommand": "root/ci",
+  "completedFullMaster": false,
+  "productionReady": false,
+  "beforeAfterCommonInputsEqualAtArchive": true,
+  "sourceInputsSha256": "f1aa89d9789a1ce0d85f4a0ab6e75a12bbd1a3eacab2a435dd8e66a5494beed2",
+  "remainingOwnedLivePids": []
+}

@@ -6,18 +6,19 @@ Reconciled October 28, 2026, America/Detroit. This extends the existing
 [complete platform ledger](platform-completion-plan.md). It does not restart
 their work, replace their sections or turn a plan into launch approval.
 
-The latest completed integrated source digest is
-`8cad7cae3ab4895c19ba78fba1b7ff5d9670c16a2a4fea7008a3e7631180c6be`.
-Its [retained history](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
-records the actual failures. Focused later fixes remain separate until a fresh
-stable-source sweep executes them. Read every receipt's source hashes before
-using it as current evidence.
+The latest completed integrated source is `10d19267`, with unchanged digest
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418`.
+Its [retained history](../../reports/test-verification/history/2026-10-28-10d19267-master/README.md)
+records the actual passing executable scopes and failed coverage/feature gates.
+The [earlier failures](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
+remain intact. Read every receipt's source hashes before using it as current
+evidence; a passing focused scope does not certify the whole platform.
 
 ## Complete work set and seven levels
 
 The existing machine ledger is the authoritative enumeration. At reconciliation
 it has 80 page declarations, 2,162 business sections, 12,972 business-dimension
-steps, 33,538 required feature checks, 130 mapping-resolution tasks and 52,958
+steps, 33,549 required feature checks, 170 mapping-resolution tasks and 53,020
 total work items. Re-generation may add newly found work; it may not discard an
 unverified feature because it lacks a convenient test fixture. Current counts
 and status are reproduced by the [launch audit](launch-readiness-audit.md).
@@ -196,3 +197,58 @@ unknown; a verified-acceptance ratio or launch-domain score is labelled as
 such. **Launch approval remains withheld until all 80 declarations and every
 required shared/deployed gate actually pass.** No review-signature requirement
 is introduced.
+
+## Source-binding implementation checkpoint — October 28
+
+This delta retains M0–M9, all seven expansion levels, every page/section identity
+and the full 20-lane shared work set above. It adds no substitute plan. At source
+`10d192675beefcf1b7beef3ce47c271db0cc17cf`, nested-route/finite-path identity
+repairs and current-execution evidence binding are implemented. The actual
+source-bound [focused evidence cohort](../../reports/platform-evidence/2026-10-28-source-binding-final/README.md)
+retains the original false-pass reproductions, 130 passing review cases, the
+three additional duplicate-Node regressions and final 133 passing cases.
+Those checks validate verification machinery, not product feature completion.
+
+M3 completed from frozen 10d source in 23m42s: ordinary executable groups,
+build, types, lint and audit passed; all 2,771 instrumented assertions passed,
+but requested 100% coverage and strict feature/remediation gates failed. Actual
+coverage is 13.11% lines, 13.01% statements, 8.68% functions and 8.78% branches.
+The six narrow access-policy checks passed through eight actual current HTTP
+cases, leaving 33,543 checks unverified. The current matrix has source freshness
+PASS and all 80 pages Red. Historical results were not transferred.
+
+M4's new [10d portable release rehearsal](../../reports/release-rehearsal/2026-10-28-10d19267-final/README.md)
+passed preparation, both verifications and copied-payload cold startup, plus
+37 independent audit checks. Common and all 4,527 admitted release-source
+entries stayed unchanged. Its accepted startup scope explicitly retains
+`productionReady: false`; operational generation, actual Replit deployment and
+global/page acceptance remain open. The prior cb receipt remains historical.
+A source change invalidates affected acceptance and payload identity.
+
+The pre-master inventory at source `bca5f4e1` retained 80 declarations, 2,162
+sections, 12,972 dimension steps, 8,374 controls, 2,909 backend registrations,
+932 frontend contracts, 20 shared lanes and 53,020 work items. Its 170 unresolved
+mapping diagnostics expose unsupported/uncertain declarations; they are not
+170 proven missing handlers. These are planning counts for that snapshot, not
+current production completion. The completed 10d master preserves these counts.
+No original section is removed, no threshold is lowered and no unresolved
+feature/deployed/provider/native/accessibility/global-capacity gate is closed
+by the producer repairs. Continue M5–M9 only with their actual prerequisites,
+explicit validation/acceptance and rollback boundaries retained.
+
+The next critical source batch is the existing C5/P1–P2 shared execution and
+typed-coordinate contract, specified with actual map/wrapper witnesses in the
+[next contract trace](../../reports/coverage-producer/2026-10-28-next-contract-trace/README.md).
+Its zero-counter controls are not executed product coverage. Preserve the
+single-suite ownership boundary until fresh real execution and every complete
+map validate; no incompatible profile is merged today.
+
+The [evidence-binding gap trace](evidence-binding-gaps.md) separately retains
+all 104 passing occurrences currently inadmissible as exact feature proof and
+one historical-source catalog defect. Implement unique parameter/class
+identities, actual commerce adapter subject bindings and snapshot classification
+without removing assertions or changing input semantics. These are existing
+verification-lane subtasks, not 104 newly proven product failures. The
+[unfinished Python factory proposal](../../reports/mapping-audit/2026-10-28-python-factory-proposal/README.md)
+remains unreviewed and unlanded. Resume its existing mapping lane only after
+its scope, tests and identity relations are checked; it supplies no acceptance.

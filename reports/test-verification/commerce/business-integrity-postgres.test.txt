@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: real isolated PostgreSQL: ownership, concurrent caps, shipping rejection, reservation rollback and expiry
 ok 1 - real isolated PostgreSQL: ownership, concurrent caps, shipping rejection, reservation rollback and expiry
   ---
-  duration_ms: 780.907153
+  duration_ms: 871.127181
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - real isolated PostgreSQL: ownership, concurrent caps, shipping rejection,
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1218.591353
+# duration_ms 1295.747199

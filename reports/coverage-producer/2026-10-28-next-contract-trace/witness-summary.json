@@ -1,0 +1,450 @@
+{
+  "scope": "Exact source/runtime/map observations; construct classes are evidence for differences, not an exhaustive attribution of every entry",
+  "files": [
+    {
+      "file": "server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+      "sourceSha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76",
+      "retainedRuntime": {
+        "codeSha256": "9cf78d0202a2ea81f74d5fe061a57b188c267bcaab661a0e025052f5f1f50cfa",
+        "mapSha256": "3ebee7de7c5d0c5bfb5f7f8e909ec26bfa9a65469fc15b2b8b287071f998ca8d",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+            "sha256": "2c7ed0a8f108289a7566db5060abc80773dd5dbcde39dc7f30153c7ec7d18a76"
+          }
+        ]
+      },
+      "constructs": [
+        {
+          "kind": "class-static-name-call",
+          "generatedStart": {
+            "line": 9,
+            "column": 182
+          },
+          "generatedEnd": {
+            "line": 9,
+            "column": 222
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+            "line": 20,
+            "column": 61,
+            "name": null
+          },
+          "originalLineExcerpt": "export class PocketDimensionChunkStore implements ChunkStore {",
+          "nodeSha256": "99ffb972c2478a87c62eeb93857561fd51a16616f4416c41fe8c90dd90e007e7"
+        },
+        {
+          "kind": "tsx-dynamic-import-interop",
+          "generatedStart": {
+            "line": 9,
+            "column": 572
+          },
+          "generatedEnd": {
+            "line": 9,
+            "column": 657
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/server/pocket-dimension/fabric/storage/PocketDimensionChunkStore.ts",
+            "line": 36,
+            "column": 70,
+            "name": null
+          },
+          "originalLineExcerpt": "const { PocketDimensionManager } = await import(\"../../index.js\");",
+          "nodeSha256": "79d13a12d245549454d10fc4bfb1eaed0e17aa53c49e1fda2ac7692c89a9fe82"
+        }
+      ],
+      "differingNodeWitnesses": 8,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 64,
+          "nodeEntries": 66,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 3
+        },
+        "fnMap": {
+          "canonicalEntries": 11,
+          "nodeEntries": 12,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 3
+        },
+        "branchMap": {
+          "canonicalEntries": 15,
+          "nodeEntries": 17,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 2
+        }
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
+      "sourceSha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770",
+      "retainedRuntime": {
+        "codeSha256": "48d452aab80d3a81bdad34836c07ab47fa0c7ac35ce3f9d455ecd9a21e66f809",
+        "mapSha256": "9ce4f93aff897bee1ef1b924d1f040f7a1ae1b0f4ba69ab4fb4f09d9102f9c9a",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "sha256": "0107348e75c23d667c6cf0382896ead3e1a990ff686806478fbf5bb94f870770"
+          }
+        ]
+      },
+      "constructs": [
+        {
+          "kind": "class-static-name-call",
+          "generatedStart": {
+            "line": 1,
+            "column": 4821
+          },
+          "generatedEnd": {
+            "line": 1,
+            "column": 4846
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/redis/store.ts",
+            "line": 270,
+            "column": 45,
+            "name": null
+          },
+          "originalLineExcerpt": "export class RedisStore extends EventEmitter {",
+          "nodeSha256": "b923b2e5f6097769fb977da90869154849ab6b7315598181683a64bb5a977585"
+        }
+      ],
+      "differingNodeWitnesses": 118,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 3004,
+          "nodeEntries": 3005,
+          "onlyCanonicalEntries": 16,
+          "onlyNodeEntries": 17
+        },
+        "fnMap": {
+          "canonicalEntries": 339,
+          "nodeEntries": 339,
+          "onlyCanonicalEntries": 99,
+          "onlyNodeEntries": 99
+        },
+        "branchMap": {
+          "canonicalEntries": 1033,
+          "nodeEntries": 1033,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 2
+        }
+      }
+    },
+    {
+      "file": "server/lib/pdimClient.ts",
+      "sourceSha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9",
+      "retainedRuntime": {
+        "codeSha256": "01f50a97946181a2fe0d781b082dac06e44141c0ad023cbd73b76a4581713982",
+        "mapSha256": "a01684c0057c84b1b38489e10d253944ed66e267ba3e4ac0e985865dd2919685",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "sha256": "eef5afab18d6b5697efd49b0eb6c840f27d0b10759b65b8a11542a558d8fb1a9"
+          }
+        ]
+      },
+      "constructs": [
+        {
+          "kind": "class-static-name-call",
+          "generatedStart": {
+            "line": 1,
+            "column": 12867
+          },
+          "generatedEnd": {
+            "line": 1,
+            "column": 12897
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/server/lib/pdimClient.ts",
+            "line": 742,
+            "column": 50,
+            "name": null
+          },
+          "originalLineExcerpt": "export class PdimRedisClient extends EventEmitter {",
+          "nodeSha256": "4ab887639a761bc507b6edd3a5427046493f7fbf3da7956bb701ac585adeba9b"
+        }
+      ],
+      "differingNodeWitnesses": 104,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 954,
+          "nodeEntries": 955,
+          "onlyCanonicalEntries": 63,
+          "onlyNodeEntries": 64
+        },
+        "fnMap": {
+          "canonicalEntries": 278,
+          "nodeEntries": 278,
+          "onlyCanonicalEntries": 39,
+          "onlyNodeEntries": 39
+        },
+        "branchMap": {
+          "canonicalEntries": 193,
+          "nodeEntries": 193,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 1
+        }
+      }
+    },
+    {
+      "file": "server/logger.ts",
+      "sourceSha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5",
+      "retainedRuntime": {
+        "codeSha256": "e02e165c5051aed078cf43fbd723817625c723b2660eaa611cef9a7b165e1ecb",
+        "mapSha256": "f99a0fcf3f1e70090f21307a0595e55e3cd012c631c4d8fa9fc3430c35a523ef",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/logger.ts",
+            "sha256": "5f01d80a911170282910ed53d0731fd1175008832e5325c77a8b504df695fac5"
+          }
+        ]
+      },
+      "constructs": [],
+      "differingNodeWitnesses": 4,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 21,
+          "nodeEntries": 21,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 2
+        },
+        "fnMap": {
+          "canonicalEntries": 7,
+          "nodeEntries": 7,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 1
+        },
+        "branchMap": {
+          "canonicalEntries": 7,
+          "nodeEntries": 7,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 1
+        }
+      }
+    },
+    {
+      "file": "external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+      "sourceSha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f",
+      "retainedRuntime": {
+        "codeSha256": "0b50e98f09e7e108406e620158db69b5dafe2431d6b2d1953bcd991bef58e7f6",
+        "mapSha256": "e00ff784eded4be3b0c78e2f71239290178cc27e42e3774da19e2e036f6e9f2c",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+            "sha256": "c545aafe8452eea8124923cee34c2e1ffde8c578299b9268793096c736eb6e3f"
+          }
+        ]
+      },
+      "constructs": [
+        {
+          "kind": "class-static-name-call",
+          "generatedStart": {
+            "line": 1,
+            "column": 598
+          },
+          "generatedEnd": {
+            "line": 1,
+            "column": 620
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/external/pdim/artifacts/api-server/src/workers/lua-pool.ts",
+            "line": 58,
+            "column": 14,
+            "name": null
+          },
+          "originalLineExcerpt": "class LuaPool {",
+          "nodeSha256": "1b9b1a126aa156d1f4551eb2f9c439bd27df279a768420a57b6e8e1dc69a8cb5"
+        }
+      ],
+      "differingNodeWitnesses": 5,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 67,
+          "nodeEntries": 68,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 2
+        },
+        "fnMap": {
+          "canonicalEntries": 15,
+          "nodeEntries": 15,
+          "onlyCanonicalEntries": 3,
+          "onlyNodeEntries": 3
+        },
+        "branchMap": {
+          "canonicalEntries": 12,
+          "nodeEntries": 12,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        }
+      }
+    },
+    {
+      "file": "server/config/ports.ts",
+      "sourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+      "retainedRuntime": {
+        "codeSha256": "075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8",
+        "mapSha256": "bfcf58e56e80e00c267f694979e1635aec3be58b20efe88057845a6ff2badd24",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/config/ports.ts",
+            "sha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d"
+          }
+        ]
+      },
+      "constructs": [],
+      "differingNodeWitnesses": 0,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 21,
+          "nodeEntries": 21,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        },
+        "fnMap": {
+          "canonicalEntries": 3,
+          "nodeEntries": 3,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        },
+        "branchMap": {
+          "canonicalEntries": 6,
+          "nodeEntries": 6,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        }
+      }
+    },
+    {
+      "file": "server/lib/luaExecutor.ts",
+      "sourceSha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00",
+      "retainedRuntime": {
+        "codeSha256": "679b846d2ed26f6ecbe38d992d23876c0e2e95b6fd326075a22aeed633992a1e",
+        "mapSha256": "76b537860892fa08d8c8c94846d2fc20f740057bef0ec83ae701ac625c304d92",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "sha256": "9c03eb59e0a888ecb6dde05c4db00b3899aec5034841dc28fa21831b5370af00"
+          }
+        ]
+      },
+      "constructs": [
+        {
+          "kind": "tsx-dynamic-import-interop",
+          "generatedStart": {
+            "line": 135,
+            "column": 2781
+          },
+          "generatedEnd": {
+            "line": 135,
+            "column": 2866
+          },
+          "mappedOriginal": {
+            "source": "/workspace/maxbooster7.5/server/lib/luaExecutor.ts",
+            "line": 562,
+            "column": 70,
+            "name": null
+          },
+          "originalLineExcerpt": "const { getPdimQueueDepth } = await import(\"./pdimClient.js\");",
+          "nodeSha256": "79d13a12d245549454d10fc4bfb1eaed0e17aa53c49e1fda2ac7692c89a9fe82"
+        }
+      ],
+      "differingNodeWitnesses": 19,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 194,
+          "nodeEntries": 195,
+          "onlyCanonicalEntries": 1,
+          "onlyNodeEntries": 2
+        },
+        "fnMap": {
+          "canonicalEntries": 29,
+          "nodeEntries": 30,
+          "onlyCanonicalEntries": 14,
+          "onlyNodeEntries": 15
+        },
+        "branchMap": {
+          "canonicalEntries": 45,
+          "nodeEntries": 47,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 2
+        }
+      }
+    },
+    {
+      "file": "server/lib/pdimCircuitBreaker.ts",
+      "sourceSha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4",
+      "retainedRuntime": {
+        "codeSha256": "211edc83d396ecd800d67f31ac03b7c0a6547422f952303b5cba8143b19f8f75",
+        "mapSha256": "355b383f4e4256995c20bcad97c939236369db7794beef7171a218e4e3843e92",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/lib/pdimCircuitBreaker.ts",
+            "sha256": "beb5d21a1bf9d41affb5edcff3a1cfdc5dd8102c5eef27fbb41d7aaa0e0b65f4"
+          }
+        ]
+      },
+      "constructs": [],
+      "differingNodeWitnesses": 0,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 106,
+          "nodeEntries": 106,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        },
+        "fnMap": {
+          "canonicalEntries": 11,
+          "nodeEntries": 11,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        },
+        "branchMap": {
+          "canonicalEntries": 35,
+          "nodeEntries": 35,
+          "onlyCanonicalEntries": 0,
+          "onlyNodeEntries": 0
+        }
+      }
+    },
+    {
+      "file": "server/logSanitizer.ts",
+      "sourceSha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5",
+      "retainedRuntime": {
+        "codeSha256": "eb2e9c18e466e7458e305916d0350644d5a75845f32889ef6b2f05812224496e",
+        "mapSha256": "5e106cb7d9d0c4bf00be963b20a8497cb1f9f1e63ff61e264a5838358506a4b0",
+        "originalSources": [
+          {
+            "file": "/workspace/maxbooster7.5/server/logSanitizer.ts",
+            "sha256": "f012622e80390701551ab38f7eda478daf9f7ee4a692e63a71ebaa856a145fb5"
+          }
+        ]
+      },
+      "constructs": [],
+      "differingNodeWitnesses": 6,
+      "maps": {
+        "statementMap": {
+          "canonicalEntries": 44,
+          "nodeEntries": 44,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 2
+        },
+        "fnMap": {
+          "canonicalEntries": 5,
+          "nodeEntries": 5,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 2
+        },
+        "branchMap": {
+          "canonicalEntries": 22,
+          "nodeEntries": 22,
+          "onlyCanonicalEntries": 2,
+          "onlyNodeEntries": 2
+        }
+      }
+    }
+  ],
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false
+}

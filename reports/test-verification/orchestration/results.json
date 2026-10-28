@@ -1,6 +1,6 @@
 {
-  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
-  "startedAt": "2026-10-28T09:11:45.486233+00:00",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "startedAt": "2026-10-28T13:30:12.580402+00:00",
   "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
   "selectedGroups": [
     "browser",
@@ -24,13 +24,13 @@
         "build"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:11:47.846916+00:00",
-      "durationSeconds": 20.547,
+      "startedAt": "2026-10-28T13:30:14.764621+00:00",
+      "durationSeconds": 22.28,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/build.txt",
-      "logSha256": "eb972c68e457545502e09b4bc4f3c2d69969c8dbbc8b620a8c6e9eb9a83294af",
+      "logSha256": "4c504bea088d96cd4190cf26f316a7c346684579d2ad1ad3d0d62df72ebe8533",
       "group": "checks",
       "id": "build"
     },
@@ -41,13 +41,13 @@
         "test:ci"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:12:08.393997+00:00",
-      "durationSeconds": 160.733,
+      "startedAt": "2026-10-28T13:30:37.045522+00:00",
+      "durationSeconds": 168.953,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/ci.txt",
-      "logSha256": "0a6e991294d317011926f30f7a9666cff526dacc4c0f896ba7e5391f94eaba78",
+      "logSha256": "d9e8f8d221354603d7f870ec57b8727ccd54beba49a2b710a321b0360ca82161",
       "group": "root",
       "id": "ci",
       "unitReportFresh": true
@@ -64,13 +64,13 @@
         "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/additional.junit.xml"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:14:49.140165+00:00",
-      "durationSeconds": 0.817,
+      "startedAt": "2026-10-28T13:33:26.004956+00:00",
+      "durationSeconds": 0.822,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/additional.txt",
-      "logSha256": "556f09cb4a5f08e39b98ab1f4475ff37c067d622b8d5405b3d5d3fbc258b271a",
+      "logSha256": "4e5c3c44ae21b562c1058a372ea97f47f70c830842aaa63f1b8c327314e35e7c",
       "group": "root",
       "id": "additional"
     },
@@ -85,13 +85,13 @@
         "--outputFile=/workspace/maxbooster7.5/reports/test-verification/root/coverage-unit.junit.xml"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:14:49.957848+00:00",
-      "durationSeconds": 225.419,
+      "startedAt": "2026-10-28T13:33:26.827305+00:00",
+      "durationSeconds": 241.114,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/coverage.txt",
-      "logSha256": "74241f684da0ad5c1a32b700f824a238fe5b2aa4eecdad488de5ed6f99c3a753",
+      "logSha256": "e53fb8353c14ae4056d45e84af26524e0686a8437396a0405c1a3b035435ebe5",
       "group": "coverage",
       "id": "coverage",
       "coverageParseExclusions": []
@@ -102,8 +102,8 @@
         "scripts/patch-electron-builder-transport.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:18:35.380394+00:00",
-      "durationSeconds": 0.065,
+      "startedAt": "2026-10-28T13:37:27.945658+00:00",
+      "durationSeconds": 0.117,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -120,13 +120,13 @@
         "/workspace/maxbooster7.5/reports/test-verification/node"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:18:35.445656+00:00",
-      "durationSeconds": 132.008,
-      "exitCode": 1,
+      "startedAt": "2026-10-28T13:37:28.063339+00:00",
+      "durationSeconds": 150.134,
+      "exitCode": 0,
       "timedOut": false,
-      "status": "failed",
+      "status": "passed",
       "log": "reports/test-verification/orchestration/node.txt",
-      "logSha256": "a372a7eaa52449a2558e20ab00bdd57c48d2b81034c646d2fbc0106fa301c3e0",
+      "logSha256": "1baf5bbb09d04d0f9e009f1e187689fd94acc2edb497f0727b5cce6c21856046",
       "group": "node",
       "id": "node"
     },
@@ -143,13 +143,13 @@
         "/workspace/maxbooster7.5/reports/test-verification/python/suites.md"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:20:47.454083+00:00",
-      "durationSeconds": 196.235,
+      "startedAt": "2026-10-28T13:39:58.198124+00:00",
+      "durationSeconds": 235.486,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/python.txt",
-      "logSha256": "4327cc28d95df2fee405e588e962a4c4c3e5cc0c2ae37df5aff76c20a2644426",
+      "logSha256": "108c801cc0fcec617831a06d1c5b819b1b6cbb012e831f4ed3b253ddd36e2f52",
       "group": "python",
       "id": "python"
     },
@@ -161,8 +161,8 @@
         "/workspace/maxbooster7.5/reports/test-verification/commerce"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:24:03.689291+00:00",
-      "durationSeconds": 40.796,
+      "startedAt": "2026-10-28T13:43:53.684669+00:00",
+      "durationSeconds": 44.397,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -187,13 +187,13 @@
         "/workspace/.go/cache"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:24:44.485454+00:00",
-      "durationSeconds": 41.763,
+      "startedAt": "2026-10-28T13:44:38.082320+00:00",
+      "durationSeconds": 49.604,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/subsystems.txt",
-      "logSha256": "b96cfb8d5b2a20992e76dd90df96fb1a26c6b29e1ed4a7eecb3058fb562ca798",
+      "logSha256": "88030cd471b3f21dcd27eb464d95334acf3824babd418ce42c32f2f14e788990",
       "group": "subsystems",
       "id": "subsystems"
     },
@@ -209,13 +209,13 @@
         "tests/studio-plugin-audio-browser.test.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:25:26.249102+00:00",
-      "durationSeconds": 7.415,
+      "startedAt": "2026-10-28T13:45:27.687375+00:00",
+      "durationSeconds": 7.972,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/browser.txt",
-      "logSha256": "9bd4155c1ddc8454a9c99e9188eca4ccfda3ac27e7d89e2189bcb0b0a3adea00",
+      "logSha256": "b6289de24e4a07bb0149ba76393fe4c2cf9adc5819deba0ea6cac530ede90a4f",
       "group": "browser",
       "id": "browser"
     },
@@ -225,13 +225,13 @@
         "scripts/testing/integration-browser.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:25:33.667623+00:00",
-      "durationSeconds": 147.002,
+      "startedAt": "2026-10-28T13:45:35.661842+00:00",
+      "durationSeconds": 148.472,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/http.txt",
-      "logSha256": "dac778cf9138bbcbb2296105cbd6b44c5d02b1290fba41a734562f2d7d10339d",
+      "logSha256": "e945c2769fa8e8b7a4c7bced22e4766a4314f5a6134d54f0e3edf1e8f2f8706b",
       "group": "http",
       "id": "http"
     },
@@ -241,13 +241,13 @@
         "scripts/testing/page80-acceptance.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:28:00.670130+00:00",
-      "durationSeconds": 149.165,
+      "startedAt": "2026-10-28T13:48:04.134378+00:00",
+      "durationSeconds": 150.501,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/pages.txt",
-      "logSha256": "e380e1e86fb859348ae742ab4db8e8e47e07918549e4283d1296d1c8f5f20a01",
+      "logSha256": "144a7fabc4a9ed7ca06958c4373eb2a048040a82e15bbd8f5dc1155ed04ad2e6",
       "group": "pages",
       "id": "pages"
     },
@@ -258,13 +258,13 @@
         "--http-load"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:30:29.836237+00:00",
-      "durationSeconds": 50.889,
+      "startedAt": "2026-10-28T13:50:34.636605+00:00",
+      "durationSeconds": 52.737,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/bounded-http-load.txt",
-      "logSha256": "4870fe179ea012b89e492b9d6eee81249f3cea4a12bf487bbf6102685cbe5cc8",
+      "logSha256": "fdb194fa59172efa7fc4361dd3592464f6c4c64bf741e8d147f9fdfcdfe06d9b",
       "group": "load",
       "id": "bounded-http-load"
     },
@@ -278,8 +278,8 @@
         "/workspace/maxbooster7.5/reports/test-verification/operations"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:20.726212+00:00",
-      "durationSeconds": 21.08,
+      "startedAt": "2026-10-28T13:51:27.374543+00:00",
+      "durationSeconds": 23.099,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -295,8 +295,8 @@
         "check"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:41.807228+00:00",
-      "durationSeconds": 25.923,
+      "startedAt": "2026-10-28T13:51:50.474903+00:00",
+      "durationSeconds": 26.585,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -312,8 +312,8 @@
         "lint"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:32:07.730580+00:00",
-      "durationSeconds": 49.509,
+      "startedAt": "2026-10-28T13:52:17.061009+00:00",
+      "durationSeconds": 57.061,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -331,8 +331,8 @@
         "--json"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:32:57.239900+00:00",
-      "durationSeconds": 0.924,
+      "startedAt": "2026-10-28T13:53:14.123045+00:00",
+      "durationSeconds": 0.922,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -343,20 +343,20 @@
     }
   ],
   "productionReady": false,
-  "sourceInputsSha256": "e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69",
+  "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
   "catalog": {
     "command": [
       "/workspace/.cloud-python/bin/python",
       "scripts/testing/generate-catalog.py"
     ],
     "cwd": ".",
-    "startedAt": "2026-10-28T09:11:45.771949+00:00",
-    "durationSeconds": 2.075,
+    "startedAt": "2026-10-28T13:30:12.838609+00:00",
+    "durationSeconds": 1.926,
     "exitCode": 0,
     "timedOut": false,
     "status": "passed",
     "log": "reports/test-verification/orchestration/catalog.txt",
-    "logSha256": "3d723e643ee4961e64b97208afa4856c899cf72ab9dade4a51ed7e203d5e0bb3"
+    "logSha256": "d0c4d12caf5aa2f85d41e35b7d66bd11645af7809503c3d3937dba7913f81435"
   },
   "sourceInputsUnchanged": true,
   "changedSourceInputs": [],
@@ -369,13 +369,13 @@
         "/workspace/maxbooster7.5/reports/test-verification"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:32:58.420707+00:00",
-      "durationSeconds": 4.78,
+      "startedAt": "2026-10-28T13:53:15.275884+00:00",
+      "durationSeconds": 4.883,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/summary.txt",
-      "logSha256": "af9c7cd3b07dc42e1ecb8f53d80e87111be0fe6df0d829c3f3c757108afbad2f",
+      "logSha256": "0f5dbeea920add0a8e1f56c178c394ee48084ca2e5fb754740d4ce804ad9bbb5",
       "id": "summary"
     },
     {
@@ -389,13 +389,13 @@
         "--strict"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:33:03.201687+00:00",
-      "durationSeconds": 13.122,
+      "startedAt": "2026-10-28T13:53:20.159536+00:00",
+      "durationSeconds": 14.077,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/platform.txt",
-      "logSha256": "15b1b42f893ddd4d89c173eb51bf7a263b1f60cbb910ac1a84041e7a8ecdfa07",
+      "logSha256": "5ca3133e5e7d8d2de2fe4f7000791ca6f39dbadec2ad688e5159c87408fdb429",
       "id": "platform"
     },
     {
@@ -409,13 +409,13 @@
         "--strict"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:33:16.324292+00:00",
-      "durationSeconds": 3.224,
+      "startedAt": "2026-10-28T13:53:34.236800+00:00",
+      "durationSeconds": 3.477,
       "exitCode": 1,
       "timedOut": false,
       "status": "failed",
       "log": "reports/test-verification/orchestration/remediation.txt",
-      "logSha256": "9fee56a2aa02342c8e94f866f79093af1463981c1e2fbe63737778528911a728",
+      "logSha256": "e8113e5ea41617c38768dd089263c81216d97af39e5032928e923aa884dd6fb5",
       "id": "remediation"
     },
     {
@@ -429,13 +429,13 @@
         "--require-page-work"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:33:19.549072+00:00",
-      "durationSeconds": 10.551,
+      "startedAt": "2026-10-28T13:53:37.714508+00:00",
+      "durationSeconds": 11.824,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/completion-plan.txt",
-      "logSha256": "12adadf29460b3d597ac67b46b947c8df90e4ddb1c0cbb0bb87168c31ada0dce",
+      "logSha256": "1110d89453df0062bc6a34caed20aa7b0ae26c662a60e8487adaac219a0584ac",
       "id": "completion-plan"
     },
     {
@@ -446,17 +446,17 @@
         "/workspace/maxbooster7.5/reports/test-verification"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:33:30.100733+00:00",
-      "durationSeconds": 3.878,
+      "startedAt": "2026-10-28T13:53:49.538948+00:00",
+      "durationSeconds": 4.631,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/orchestration/final-summary.txt",
-      "logSha256": "a0039ab309b21c41b2a4cb7a8868935d664867bef6fc8fecf8009dbeb23fb4c2",
+      "logSha256": "8a18b4264da3f86cec7c467264a6854ea814de21e86b3fbb5dd1fbef8c62f02e",
       "id": "final-summary"
     }
   ],
   "status": "failed",
   "allTestsPassed": false,
-  "finishedAt": "2026-10-28T09:33:33.978873+00:00"
+  "finishedAt": "2026-10-28T13:53:54.170206+00:00"
 }

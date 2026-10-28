@@ -1850,9 +1850,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -1915,9 +1920,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103530,9 +103540,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103598,9 +103613,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103671,9 +103691,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103744,9 +103769,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103815,9 +103845,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103896,9 +103931,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -103967,9 +104007,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -104040,9 +104085,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -104116,9 +104166,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -108952,9 +109007,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -109017,9 +109077,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -109082,9 +109147,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -109153,9 +109223,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -109224,9 +109299,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -109295,9 +109375,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -276454,9 +276539,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -276525,9 +276615,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -276596,9 +276691,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",
@@ -276667,9 +276767,14 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "spreadAttributeLines": [],
   "testCandidates": [
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "not_run"
+    },
+    {
       "path": "tests/layout-navigation-accessibility-browser.test.mjs",
       "association": "static-import-or-literal-source-reference",
-      "executionStatus": "failed"
+      "executionStatus": "executed"
     },
     {
       "path": "tests/unit/analytics-pending-render.test.ts",

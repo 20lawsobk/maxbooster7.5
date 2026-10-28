@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: publishing graph builds the application remainder before finalizing
 ok 1 - publishing graph builds the application remainder before finalizing
   ---
-  duration_ms: 1.980878
+  duration_ms: 2.286814
   type: 'test'
   ...
 # Subtest: remainder inventory retains pre-restore modules and selects runtime assets
 ok 2 - remainder inventory retains pre-restore modules and selects runtime assets
   ---
-  duration_ms: 26.617188
+  duration_ms: 35.326746
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - remainder inventory retains pre-restore modules and selects runtime asset
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 137.630103
+# duration_ms 179.416721

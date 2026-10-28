@@ -1,0 +1,112 @@
+# Exact rejected-case evidence matrix
+
+All104rows remain unverified. Raw assertions passed; their identities or indirect subject binding do not satisfy the current exact-proof contract. There is no PASS transfer.
+
+| Gap | Group | Source | Exact emitted case | Classification | Case-result row |
+| --- | --- | --- | --- | --- | ---: |
+| evidence-binding-gap-0001 | root-unit | tests/unit/auth-page-age-policy.test.ts | Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB undefined | parameterized-title-collision | 64 |
+| evidence-binding-gap-0002 | root-unit | tests/unit/auth-page-age-policy.test.ts | Shared minimum age 16 policy > fails closed for missing, malformed, normalized-invalid or future DOB undefined | parameterized-title-collision | 70 |
+| evidence-binding-gap-0003 | root-unit | tests/unit/deployment-small-file-codec.test.ts | deployment small-file native compression > retains exact bytes through its container | parameterized-title-collision | 486 |
+| evidence-binding-gap-0004 | root-unit | tests/unit/deployment-small-file-codec.test.ts | deployment small-file native compression > retains exact bytes through its container | parameterized-title-collision | 487 |
+| evidence-binding-gap-0005 | root-unit | tests/unit/deployment-small-file-codec.test.ts | deployment small-file native compression > retains exact bytes through its container | parameterized-title-collision | 488 |
+| evidence-binding-gap-0006 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 847 |
+| evidence-binding-gap-0007 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 848 |
+| evidence-binding-gap-0008 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 849 |
+| evidence-binding-gap-0009 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 850 |
+| evidence-binding-gap-0010 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 851 |
+| evidence-binding-gap-0011 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 852 |
+| evidence-binding-gap-0012 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects missing, oversized, or unsafe queue IDs | parameterized-title-collision | 853 |
+| evidence-binding-gap-0013 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects unreliable original enqueue timestamps | parameterized-title-collision | 854 |
+| evidence-binding-gap-0014 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects unreliable original enqueue timestamps | parameterized-title-collision | 855 |
+| evidence-binding-gap-0015 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects unreliable original enqueue timestamps | parameterized-title-collision | 856 |
+| evidence-binding-gap-0016 | root-unit | tests/unit/email-provider-ack.test.ts | queued email idempotency retry boundary > rejects unreliable original enqueue timestamps | parameterized-title-collision | 857 |
+| evidence-binding-gap-0017 | root-unit | tests/unit/frontend-batch-response-contracts.test.ts | frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs | parameterized-title-collision | 935 |
+| evidence-binding-gap-0018 | root-unit | tests/unit/frontend-batch-response-contracts.test.ts | frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs | parameterized-title-collision | 936 |
+| evidence-binding-gap-0019 | root-unit | tests/unit/frontend-batch-response-contracts.test.ts | frontend batch Response contracts > rejects malformed batch JSON instead of synthesizing successful IDs | parameterized-title-collision | 937 |
+| evidence-binding-gap-0020 | root-unit | tests/unit/marketplace-storefront-page-contracts.test.ts | Marketplace and storefront page contracts > rejects malformed lists rather than rendering an empty success | parameterized-title-collision | 1166 |
+| evidence-binding-gap-0021 | root-unit | tests/unit/marketplace-storefront-page-contracts.test.ts | Marketplace and storefront page contracts > rejects malformed lists rather than rendering an empty success | parameterized-title-collision | 1167 |
+| evidence-binding-gap-0022 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > accepts exactly 72 UTF-8 bytes | parameterized-title-collision | 1508 |
+| evidence-binding-gap-0023 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > accepts exactly 72 UTF-8 bytes | parameterized-title-collision | 1509 |
+| evidence-binding-gap-0024 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > accepts exactly 72 UTF-8 bytes | parameterized-title-collision | 1510 |
+| evidence-binding-gap-0025 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes | parameterized-title-collision | 1511 |
+| evidence-binding-gap-0026 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes | parameterized-title-collision | 1512 |
+| evidence-binding-gap-0027 | root-unit | tests/unit/password-policy.test.ts | new password bcrypt boundary > rejects input beyond 72 UTF-8 bytes | parameterized-title-collision | 1513 |
+| evidence-binding-gap-0028 | root-unit | tests/unit/registrationCompletion.test.ts | registration completion > rejects an invalid checkout session id | parameterized-title-collision | 1870 |
+| evidence-binding-gap-0029 | root-unit | tests/unit/registrationCompletion.test.ts | registration completion > rejects an invalid checkout session id | parameterized-title-collision | 1871 |
+| evidence-binding-gap-0030 | root-unit | tests/unit/registrationCompletion.test.ts | registration completion > rejects an invalid checkout session id | parameterized-title-collision | 1872 |
+| evidence-binding-gap-0031 | root-unit | tests/unit/registrationCompletion.test.ts | registration completion > rejects an invalid checkout session id | parameterized-title-collision | 1873 |
+| evidence-binding-gap-0032 | root-unit | tests/unit/registrationCompletion.test.ts | registration completion > rejects an invalid checkout session id | parameterized-title-collision | 1874 |
+| evidence-binding-gap-0033 | root-unit | tests/unit/registrationCompletionBoundary.test.ts | paid registration completion boundary > rejects invalid verification sessions | parameterized-title-collision | 1881 |
+| evidence-binding-gap-0034 | root-unit | tests/unit/registrationCompletionBoundary.test.ts | paid registration completion boundary > rejects invalid verification sessions | parameterized-title-collision | 1882 |
+| evidence-binding-gap-0035 | root-unit | tests/unit/registrationCompletionBoundary.test.ts | paid registration completion boundary > rejects invalid verification sessions | parameterized-title-collision | 1883 |
+| evidence-binding-gap-0036 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > rejects checkout objects without a usable client secret | parameterized-title-collision | 2449 |
+| evidence-binding-gap-0037 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > rejects checkout objects without a usable client secret | parameterized-title-collision | 2450 |
+| evidence-binding-gap-0038 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > rejects checkout objects without a usable client secret | parameterized-title-collision | 2451 |
+| evidence-binding-gap-0039 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > rejects checkout objects without a usable client secret | parameterized-title-collision | 2452 |
+| evidence-binding-gap-0040 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error | parameterized-title-collision | 2453 |
+| evidence-binding-gap-0041 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error | parameterized-title-collision | 2454 |
+| evidence-binding-gap-0042 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error | parameterized-title-collision | 2455 |
+| evidence-binding-gap-0043 | root-unit | tests/unit/subscriptionCheckout.test.ts | subscription checkout lifecycle > maps non-object malformed payloads to a retryable checkout error | parameterized-title-collision | 2456 |
+| evidence-binding-gap-0044 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2468 |
+| evidence-binding-gap-0045 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2469 |
+| evidence-binding-gap-0046 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2470 |
+| evidence-binding-gap-0047 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2471 |
+| evidence-binding-gap-0048 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2472 |
+| evidence-binding-gap-0049 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2473 |
+| evidence-binding-gap-0050 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed ticket input | parameterized-title-collision | 2474 |
+| evidence-binding-gap-0051 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2476 |
+| evidence-binding-gap-0052 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2477 |
+| evidence-binding-gap-0053 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2478 |
+| evidence-binding-gap-0054 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2479 |
+| evidence-binding-gap-0055 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2480 |
+| evidence-binding-gap-0056 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2481 |
+| evidence-binding-gap-0057 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2482 |
+| evidence-binding-gap-0058 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2483 |
+| evidence-binding-gap-0059 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2484 |
+| evidence-binding-gap-0060 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects unsafe admin updates input | parameterized-title-collision | 2485 |
+| evidence-binding-gap-0061 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed staff messages input | parameterized-title-collision | 2487 |
+| evidence-binding-gap-0062 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed staff messages input | parameterized-title-collision | 2488 |
+| evidence-binding-gap-0063 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed staff messages input | parameterized-title-collision | 2489 |
+| evidence-binding-gap-0064 | root-unit | tests/unit/support-ticket-validation.test.ts | support ticket write validation > rejects malformed staff messages input | parameterized-title-collision | 2490 |
+| evidence-binding-gap-0065 | python | external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py | test_for_platform | python-class-scope-loss | 2871 |
+| evidence-binding-gap-0066 | python | external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py | test_for_platform | python-class-scope-loss | 2872 |
+| evidence-binding-gap-0067 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_get_invalid_handle_raises | python-class-scope-loss | 2912 |
+| evidence-binding-gap-0068 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_add_correct | python-class-scope-loss | 2922 |
+| evidence-binding-gap-0069 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_softmax_sums_to_one | python-class-scope-loss | 2943 |
+| evidence-binding-gap-0070 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_silicon_report_none_without_model | python-class-scope-loss | 2948 |
+| evidence-binding-gap-0071 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_get_invalid_handle_raises | python-class-scope-loss | 2964 |
+| evidence-binding-gap-0072 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_layer_norm_output_shape | python-class-scope-loss | 2984 |
+| evidence-binding-gap-0073 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_batch_norm_training_output_shape | python-class-scope-loss | 2986 |
+| evidence-binding-gap-0074 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_gelu_shape_preserved | python-class-scope-loss | 2989 |
+| evidence-binding-gap-0075 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_silu_shape_preserved | python-class-scope-loss | 2991 |
+| evidence-binding-gap-0076 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_grouped_gemm_all_correct | python-class-scope-loss | 2996 |
+| evidence-binding-gap-0077 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_fused_attention_norm_shape | python-class-scope-loss | 2998 |
+| evidence-binding-gap-0078 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_status_has_expected_keys | python-class-scope-loss | 3000 |
+| evidence-binding-gap-0079 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_layer_norm_output_shape | python-class-scope-loss | 3005 |
+| evidence-binding-gap-0080 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_batch_norm_training_output_shape | python-class-scope-loss | 3006 |
+| evidence-binding-gap-0081 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_gelu_shape_preserved | python-class-scope-loss | 3007 |
+| evidence-binding-gap-0082 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_silu_shape_preserved | python-class-scope-loss | 3008 |
+| evidence-binding-gap-0083 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_softmax_sums_to_one | python-class-scope-loss | 3009 |
+| evidence-binding-gap-0084 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_add_correct | python-class-scope-loss | 3010 |
+| evidence-binding-gap-0085 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_grouped_gemm_all_correct | python-class-scope-loss | 3011 |
+| evidence-binding-gap-0086 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_fused_attention_norm_shape | python-class-scope-loss | 3012 |
+| evidence-binding-gap-0087 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_silicon_report_none_without_model | python-class-scope-loss | 3014 |
+| evidence-binding-gap-0088 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_status_has_expected_keys | python-class-scope-loss | 3015 |
+| evidence-binding-gap-0089 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_status_has_expected_keys | python-class-scope-loss | 3028 |
+| evidence-binding-gap-0090 | python | external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py | test_status_has_expected_keys | python-class-scope-loss | 3043 |
+| evidence-binding-gap-0091 | commerce | tests/unit/beat-sale-money-loop.test.ts | A. Royalty split ledger > writes a royalty_transactions row with the correct amount | commerce-adapter-subject-binding | 4227 |
+| evidence-binding-gap-0092 | commerce | tests/unit/beat-sale-money-loop.test.ts | A. Royalty split ledger > increments royalty_splits.total_earned and pending_payout | commerce-adapter-subject-binding | 4228 |
+| evidence-binding-gap-0093 | commerce | tests/unit/beat-sale-money-loop.test.ts | A. Royalty split ledger > does NOT double-credit on a second call (idempotency) | commerce-adapter-subject-binding | 4229 |
+| evidence-binding-gap-0094 | commerce | tests/unit/beat-sale-money-loop.test.ts | B. Revenue events > records a revenue_events row with source='marketplace' | commerce-adapter-subject-binding | 4230 |
+| evidence-binding-gap-0095 | commerce | tests/unit/beat-sale-money-loop.test.ts | B. Revenue events > ON CONFLICT: a second revenue_events insert is a no-op | commerce-adapter-subject-binding | 4231 |
+| evidence-binding-gap-0096 | commerce | tests/unit/beat-sale-money-loop.test.ts | C. Sale notifications — confirmed payment idempotency > processPayment on completed order delivers beat_sold + beat_purchased notifications | commerce-adapter-subject-binding | 4232 |
+| evidence-binding-gap-0097 | commerce | tests/unit/beat-sale-money-loop.test.ts | C. Sale notifications — confirmed payment idempotency > replay — second processPayment call produces no additional notifications | commerce-adapter-subject-binding | 4233 |
+| evidence-binding-gap-0098 | commerce | tests/unit/beat-sale-money-loop.test.ts | C. Sale notifications — confirmed payment idempotency > concurrent calls — only one delivery wins; exactly one notification per recipient | commerce-adapter-subject-binding | 4234 |
+| evidence-binding-gap-0099 | commerce | tests/unit/beat-sale-money-loop.test.ts | C. Sale notifications — confirmed payment idempotency > failure resets notifStatus so the next retry can re-attempt delivery | commerce-adapter-subject-binding | 4235 |
+| evidence-binding-gap-0100 | commerce | tests/unit/beat-sale-money-loop.test.ts | C. Sale notifications — confirmed payment idempotency > no beat_sold notification from initiation-time route send | commerce-adapter-subject-binding | 4236 |
+| evidence-binding-gap-0101 | commerce | tests/unit/beat-sale-money-loop.test.ts | D. Content-dispatch — beat-loop posts > beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt | commerce-adapter-subject-binding | 4237 |
+| evidence-binding-gap-0102 | commerce | tests/unit/beat-sale-money-loop.test.ts | D. Content-dispatch — beat-loop posts > runContentDispatch query selects the overdue beat-loop post | commerce-adapter-subject-binding | 4238 |
+| evidence-binding-gap-0103 | commerce | tests/unit/beat-sale-money-loop.test.ts | D. Content-dispatch — beat-loop posts > publishToPlatform enqueues a job without throwing | commerce-adapter-subject-binding | 4239 |
+| evidence-binding-gap-0104 | commerce | tests/unit/beat-sale-money-loop.test.ts | D. Content-dispatch — beat-loop posts > post transitions to published after successful dispatch | commerce-adapter-subject-binding | 4240 |
+
+The complete record for every row—including actual raw XML identities/statuses, source citations/hashes, root cause, affected systems, fixes, dependencies, order, risk and explicit validation/acceptance—is in [entries.json](entries.json). The separate catalog debt is in [catalog-gap.json](catalog-gap.json).

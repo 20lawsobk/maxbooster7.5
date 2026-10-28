@@ -2,37 +2,37 @@ TAP version 13
 # Subtest: fakeSDK: storage uses explicit bucket or validated sidecar default
 ok 1 - fakeSDK: storage uses explicit bucket or validated sidecar default
   ---
-  duration_ms: 1.83018
+  duration_ms: 0.958867
   type: 'test'
   ...
 # Subtest: fakeSDK: managed privacy uses a random canary, anonymous denial, then cleanup
 ok 2 - fakeSDK: managed privacy uses a random canary, anonymous denial, then cleanup
   ---
-  duration_ms: 3.191815
+  duration_ms: 2.519694
   type: 'test'
   ...
 # Subtest: fakeSDK: anonymous success fails privacy verification but canary is removed after probe
 ok 3 - fakeSDK: anonymous success fails privacy verification but canary is removed after probe
   ---
-  duration_ms: 2.23406
+  duration_ms: 1.58274
   type: 'test'
   ...
 # Subtest: fakeSDK: a failed anonymous request still occurs before canary cleanup
 ok 4 - fakeSDK: a failed anonymous request still occurs before canary cleanup
   ---
-  duration_ms: 1.338929
+  duration_ms: 1.911967
   type: 'test'
   ...
 # Subtest: fakeSDK: create-only retained dump is restored from generation readback
 ok 5 - fakeSDK: create-only retained dump is restored from generation readback
   ---
-  duration_ms: 15.610718
+  duration_ms: 19.136749
   type: 'test'
   ...
 # Subtest: fakeSDK: create-only retained PDIM snapshot is generation-bound
 ok 6 - fakeSDK: create-only retained PDIM snapshot is generation-bound
   ---
-  duration_ms: 4.560299
+  duration_ms: 4.892225
   type: 'test'
   ...
 1..6
@@ -43,4 +43,4 @@ ok 6 - fakeSDK: create-only retained PDIM snapshot is generation-bound
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 369.637225
+# duration_ms 416.009698

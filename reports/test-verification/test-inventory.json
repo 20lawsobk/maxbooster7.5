@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
-  "workingTreeInputDigest": "bc6b7cdbda3b4c181c2ba867a45f78d7394e1c1a10c5492d442ae80d35a12690",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "workingTreeInputDigest": "b9af01721cea662071425000bc1d60674309285433a7380f050ba998ba4c4a86",
   "scope": "Canonical first-party tracked tests, operational acceptance scripts, test support and newly added testing runners; not runtime execution evidence",
   "caseEnumeration": "Literal source labels only, not a count of runtime test cases or coverage percentage",
   "counts": {
-    "canonicalTestFiles": 632,
+    "canonicalTestFiles": 636,
     "supportSourceFiles": 75,
     "retainedSnapshotFiles": 71,
     "nonExecutableSupportFiles": 11,
@@ -13,8 +13,8 @@
       "commerce": 21,
       "integration-browser": 26,
       "manual-destructive-provider": 37,
-      "python": 124,
-      "root-node": 122,
+      "python": 125,
+      "root-node": 125,
       "root-unit": 297,
       "runner-support": 75,
       "subsystems": 5
@@ -3494,6 +3494,33 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "sha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Real Chromium keyboard/AX regression for the shared application navigation. Authentication and unrelated widgets are fixtures; layout, navigation, buttons, icons and the production stylesheet execute unchanged.",
+      "caseTitles": [
+        "Shared navigation exposes named controls and keeps closed mobile navigation out of keyboard focus",
+        "390px actual accessibility name: ${expected}",
+        "Settings is one link without nested button or link descendants",
+        "Closed mobile drawer cannot receive sequential keyboard focus",
+        "Menu control references existing drawer and exposes closed state",
+        "Opening with Enter moves focus into named mobile drawer",
+        "Escape closes drawer and restores opener focus and body scrolling",
+        "Desktop resize exposes real navigation and releases mobile inert state"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "script/security-consumers.test.cjs",
       "sha256": "7a09f43d13461ad0e58801d4c448305a606870b22d045b3ca745b08d7a8a5080",
       "category": "test",
@@ -3739,7 +3766,7 @@
     },
     {
       "path": "scripts/testing/collect-node-coverage.mjs",
-      "sha256": "5690f641c69b2d55c12be972920a740cac23e0215a87ef5ed5692b0830308cd3",
+      "sha256": "df4c18686189623a3aed4093bc912283b73a1f908cd88ae932d69cbb0766c965",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3807,7 +3834,7 @@
     },
     {
       "path": "scripts/testing/coverage-provenance.mjs",
-      "sha256": "71e7697be79434da049ccce6b79dc06139ab8ea63f5290891109878efd2c5030",
+      "sha256": "383546d025265e18e12f7ae81e412413133aebbc0297f23e5e3263528d78592c",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -3928,7 +3955,7 @@
     },
     {
       "path": "scripts/testing/platform-register.py",
-      "sha256": "25bf59e91f237d3f256d26bf046e6b3d42c43d3c67863bdb21c88f27f5b457d1",
+      "sha256": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257",
       "category": "support",
       "group": "runner-support",
       "runner": "support",
@@ -6889,6 +6916,33 @@
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "sha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/endpoint-topology.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "Actual durable exports inherit their canonical nested /api/export mount; Actual Fan Hub finite template yields all four concrete public method/action paths",
+      "caseTitles": [
+        "Actual durable exports inherit their canonical nested /api/export mount",
+        "Actual Fan Hub finite template yields all four concrete public method/action paths",
+        "Every source-proven alias of a nested child router is preserved",
+        "Identical shared-router paths in separate application processes remain distinct",
+        "Cycles terminate with an explicit mount diagnostic rather than unlimited invented paths",
+        "Unknown runtime templates and shadowed loop names never become literal high-confidence routes",
+        "Unmounted child modules are retained with explicit unresolved topology",
+        "Unknown interpolated mount prefixes remain explicit rather than literal complete URLs"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
       "path": "tests/fabric-deletion-postgres.test.mjs",
       "sha256": "bc33a720dd7302beca565ae348841a99ef4a8076f527afe39a7b91eeb347078c",
       "category": "test",
@@ -7407,6 +7461,33 @@
       "configMembership": [
         "vitest.integration.config.ts"
       ]
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "sha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264",
+      "category": "test",
+      "group": "root-node",
+      "runner": "node:test",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-node-suites.py --file tests/finite-route-paths.test.mjs",
+      "prerequisites": [
+        "Node.js >=22.12",
+        "npm ci"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "actual Fan Hub declarations produce GET/POST consent/unsubscribe routes; const named literal arrays and repeated template variables retain correlation",
+      "caseTitles": [
+        "actual Fan Hub declarations produce GET/POST consent/unsubscribe routes",
+        "const named literal arrays and repeated template variables retain correlation",
+        "independent nested finite loops expand within a fixed bound",
+        "unsupported ${name} stays unresolved",
+        "large finite products stay unresolved instead of truncating paths",
+        "excessive path lengths stay unresolved",
+        "unsupported lexical ${name} stays unresolved",
+        "a switch-local finite const array resolves its actual binding"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
     {
       "path": "tests/fixture-command-input.test.mjs",
@@ -10534,7 +10615,7 @@
     },
     {
       "path": "tests/testing/coverage-provenance.test.mjs",
-      "sha256": "58492a0d5130c0acbd291699d671c3ebcb894680e6ecd285beceb3f10cc8a85f",
+      "sha256": "e9241993e3e42b57912f6e8450969f92d2aef2ffa85419c85f48be79135e4bfb",
       "category": "test",
       "group": "root-node",
       "runner": "node:test",
@@ -10560,7 +10641,15 @@
         "direct exit ${exitCode} is preserved while its owned lingering descendant is cleaned",
         "output bound forces a TERM-resistant direct runner to stop promptly",
         "spawn failure is preserved with no invented child or cleanup success claim",
-        "P1 rejects a real PostgreSQL suite before execution or output creation"
+        "P1 rejects a real PostgreSQL suite before execution or output creation",
+        "actual isolated VM retains the complete original denominator and unexecuted original function and branch",
+        "actual esbuild helpers never hide an author-defined __name function or its call",
+        "an author-written exact lookalike helper pair remains original source",
+        "function-valued helper arguments are not removed with a compiler wrapper",
+        "a mapped prelude is not accepted as a generated prefix",
+        "reassigned generated bindings fail closed instead of hiding their code",
+        "Unicode original declaration identifiers are matched by parsed identity and exact original coordinate",
+        "unmapped original JavaScript is never classified as compiler output"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10604,6 +10693,32 @@
       "caseTitles": [
         "test_false_condition_is_one_real_pytest_assertion_failure",
         "test_true_condition_passes_without_recording_a_failure"
+      ],
+      "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
+    },
+    {
+      "path": "tests/testing/test_endpoint_mount_resolution.py",
+      "sha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
+      "category": "test",
+      "group": "python",
+      "runner": "isolated-python",
+      "cwd": ".",
+      "command": "python3 scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_mount_resolution.py",
+      "prerequisites": [
+        "Python environment with the repository's locked runtime and pytest",
+        "See python.md for isolated PYTHONPATH/state and optional native dependencies"
+      ],
+      "risks": [],
+      "status": "execution_not_inferred_from_inventory",
+      "purpose": "The actual registry consumer must retain source topology uncertainty.",
+      "caseTitles": [
+        "MountResolutionConsumer.test_high_confidence_mounted_path_is_retained",
+        "MountResolutionConsumer.test_medium_confidence_mounted_path_is_retained",
+        "MountResolutionConsumer.test_unmounted_fallback_path_never_becomes_a_resolved_mount",
+        "MountResolutionConsumer.test_unknown_confidence_cannot_claim_a_verified_mount",
+        "MountResolutionConsumer.test_missing_full_path_remains_unresolved",
+        "MountResolutionConsumer.test_existing_unique_source_route_identity_is_unchanged",
+        "MountResolutionConsumer.test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -10681,7 +10796,7 @@
     },
     {
       "path": "tests/testing/test_platform_evidence.py",
-      "sha256": "7f9580a2333d1ddc5b98429fb3a47bbf302da6dc166715bfa6134f5892746895",
+      "sha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06",
       "category": "test",
       "group": "python",
       "runner": "isolated-python",
@@ -10707,7 +10822,24 @@
         "test_duplicate_case_does_not_count_as_two_independent_required_cases",
         "test_unknown_or_malformed_check_never_becomes_verified",
         "test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity",
-        "test_validator_does_not_mutate_the_declared_proof"
+        "test_validator_does_not_mutate_the_declared_proof",
+        "test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten",
+        "test_actual_selected_producer_can_prove_only_its_exact_current_cases",
+        "test_execution_metadata_cannot_be_relabelled_as_current_proof",
+        "test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts",
+        "test_case_results_must_match_actual_bound_passing_xml",
+        "test_failed_or_skipped_xml_cannot_borrow_a_pass_label",
+        "test_changed_python_source_hash_cannot_borrow_default_file_identity",
+        "test_malformed_case_results_fail_closed",
+        "test_supplemental_node_cases_need_the_actual_current_successful_file_run",
+        "test_malformed_supplemental_node_reports_fail_closed",
+        "test_malformed_supplemental_browser_reports_fail_closed",
+        "test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding",
+        "test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes",
+        "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof",
+        "test_aggregate_browser_tap_cannot_assign_cases_to_files",
+        "test_default_file_producer_requires_exact_command_and_numeric_success",
+        "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass"
       ],
       "caseEnumeration": "Static literal titles/definitions only; generated and parameterized cases expand at runtime"
     },
@@ -19426,7 +19558,7 @@
     },
     {
       "path": "tests/platform-acceptance-map.json",
-      "sha256": "9d5f383c24fbe21eea507e528ace54acc78dd61a78d0e992dfbf9aa8786da6d8",
+      "sha256": "3762913a9145117de82cce57ef5232978093e8d8a79c99dc8b24f5fb8e402315",
       "reason": "Non-executable test data/documentation/fixture"
     }
   ]

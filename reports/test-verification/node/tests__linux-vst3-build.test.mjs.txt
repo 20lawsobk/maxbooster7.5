@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: JUCE Linux translation preserves original identity, sources, modules and resources
 ok 1 - JUCE Linux translation preserves original identity, sources, modules and resources
   ---
-  duration_ms: 83.934238
+  duration_ms: 84.469298
   type: 'test'
   ...
 # Subtest: repository inventory verifies actual bundle metadata and never reports a native execution host
 ok 2 - repository inventory verifies actual bundle metadata and never reports a native execution host
   ---
-  duration_ms: 41.863727
+  duration_ms: 45.807895
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - repository inventory verifies actual bundle metadata and never reports a 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 291.574196
+# duration_ms 256.778169

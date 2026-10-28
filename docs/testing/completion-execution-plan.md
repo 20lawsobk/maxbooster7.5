@@ -1,14 +1,15 @@
 # Max Booster completion execution plan
 
 Recorded October 26, 2026; reconciled October 28, 2026, America/Detroit. This
-ledger governs the remaining work; it is not a launch certificate. The pushed
-review checkpoint remains `c06fbecdb32a5c3b76662f631604bfd9abac386b` on
-`sophia/platform-production-hardening-2026-10-27`. Later local commits are
+ledger governs the remaining work; it is not a launch certificate. The verified
+pushed review checkpoint is `13c199569e5f6fa29a6002b36169b76c65e26b5f` on
+`sophia/platform-production-hardening-2026-10-27`. It includes source commits
 `a1603b13b6352a978e3877a2f43f1ccd98a98a18` and the fixture-only correction
-`cb783f1f9b34719a214dd7f9203a31dea64c051e`; neither is yet pushed at this
-reconciliation. The full master completed against a160. The later complete
-Node-group recheck has its own cb783f1f source receipt; it does not rewrite the
-full master's original outcome.
+`cb783f1f9b34719a214dd7f9203a31dea64c051e`, plus the source-bound reports and
+instructions. Main remains unchanged. Later local source commits bca5f4e1,
+e5124419 and 10d19267 now have a completed unchanged-source full master. They
+remain pending a normal review-branch push at this reconciliation. Prior a160
+and cb receipts retain their own original outcomes.
 The scope is the existing Replit web/API application, its local
 imported MaxCore/PDIM services, Neon, enabled provider journeys and 80 declared
 pages. The owner's latest instruction extends the completion plan to the entire
@@ -72,7 +73,24 @@ outages remain honest states. Private account aggregates are transient and
 never enter public-awareness learning. Its first integrated run is now
 complete; the next paragraph records its actual failures and subsequent fixes.
 
-The latest completed full master ran 05:11:45–05:33:33 on October 28,
+The latest full master completed 09:30:12–09:53:54 on October 28,
+America/Detroit (`13:30:12Z`–`13:53:54Z`), about 23m42s, from
+`10d192675beefcf1b7beef3ce47c271db0cc17cf`. Common digest
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418`
+remained unchanged. Build, 2,728 unit cases, 18 additional cases, all 124 Node
+files, Python, commerce, native subsystems, focused Chromium, HTTP, page render
+observations, bounded load, operations, types, lint and production audit pass.
+The Node group has 690 TAP passes and two skips (692 including parents); Python
+has 112 passing files, one skipped and 19 blocked, zero failed. All 2,771
+instrumented assertions pass, but 100% thresholds fail at 13.11% lines, 13.01%
+statements, 8.68% functions and 8.78% branches over the same 2,653 files, with
+zero transform exclusions. Strict platform/remediation gates remain open. The
+[new history](../../reports/test-verification/history/2026-10-28-10d19267-master/README.md)
+preserves its real outcome. The deliberately
+[interrupted e512 attempt](../../reports/test-verification/history/2026-10-28-e5124419-preflight-aborted/README.md)
+remains separately recorded as cancellation (exit 143), not a product failure.
+
+The prior a160 full master ran 05:11:45–05:33:33 on October 28,
 America/Detroit (`09:11:45Z`–`09:33:33Z` in its raw receipts), about 21m48s,
 from a160. Source digest
 `e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69`
@@ -98,32 +116,37 @@ passes all 122 files in 126.867s: 644 passing TAP cases, two explicit skips,
 Production layout code did not change. Those separate results do not make the
 a160 full master pass or prove that its other groups reran against cb783f1f.
 
-The isolated bounded HTTP profile now passes 150/150 requests: steady 70 at
-10 workers with p95 221.834846ms and spike 80 at 20 workers with p95
-280.208732ms, both below the unchanged 500ms limit. The preceding
+The current 10d bounded HTTP profile passes 150/150 requests: steady 70 at
+10 workers with p95 308.680022ms and spike 80 at 20 workers with p95
+375.381277ms, both below the unchanged 500ms limit. The preceding
 [8cad history](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
 retains its 613.903365ms p95 failure under competing compression/native work,
 along with the earlier fixed nested-install and awareness-status failures.
 The new bounded result does not establish global generation capacity or
 90M simultaneous clients.
 
-The refreshed cb register retains all 80 declarations, 8,374 controls, 2,907 backend
-registrations, 932 frontend contracts and 33,538 required feature checks.
-Six exact operational/auth checks passed their eight cases; 33,532 checks and
-130 mapping warnings remain unverified, with zero invalid evidence links.
-The plan retains 2,162 named sections, 12,972 dimension steps and 52,965 work
-items. The refreshed launch matrix remains 80 Red/zero Green; its full-master
-binding correctly remains stale after the fixture-only cb change. These
-inventory counts do not measure implementation completion.
-The [mapping trace](mapping-blocker-trace.md) preserves every one of the 130
-entries and existing work identities, and identifies actual producer topology
-errors without treating dormant or computed declarations as missing features.
+The completed 10d register retains all 80 declarations, 8,374 controls, 2,909
+backend registrations, 932 frontend contracts and 33,549 required feature checks.
+Six exact operational/auth checks pass their eight current HTTP cases; 33,543
+checks and 170 mapping warnings remain unverified, with zero invalid links.
+The source-binding producer reports CURRENT inputs; 90 identities not proven by bound XML
+and 14 unbound default-file proofs are rejected as feature evidence, not recast
+as product assertion failures. The plan retains 2,162 named sections, 12,972
+dimension steps, 20 shared lanes, 5,532 repository files and 53,020 work items.
+All 80 pages remain Red. Matching source and passing ordinary test groups do not
+waive failed coverage, exact feature, accessibility or deployed gates.
+The [mapping trace](mapping-blocker-trace.md) preserves the original 130 warnings
+plus 40 newly exposed unresolved mounts and their work identities. Four incorrect
+backend rows now map to six correct rows; 24 old check intentions map to 35
+concrete requirements. No page or section was removed. The source-evidence
+repair has [133 focused passes](../../reports/platform-evidence/2026-10-28-source-binding-final/README.md)
+plus actual frozen-master proof for only the six reviewed access-policy links.
 
 The current-format [joint SQL/PDIM recovery rehearsal](current-storage-joint-recovery.md)
 passes nine leaf checks including existing backup-tool regressions. That closes
 the controlled writer-drained fixture scope, not the deployed/offsite recovery
 gate. The [first Node coverage producer](node-coverage-producer.md) now preserves
-actual runtime source/maps and bounds owned process-group cleanup. Its fourteen
+actual runtime source/maps and bounds owned process-group cleanup. Its 22
 framework cases pass, but incompatible counters remain unmerged. Explicit
 [conjunctive feature links](acceptance-link-review.md) allow multiple exact
 passing cases to establish one full check without weakening its requirements.
@@ -241,14 +264,14 @@ The resumed execution order minimizes stale work:
 | 1B | Hybrid storage: replace whole-index snapshots with fresh, owner-scoped per-file PostgreSQL metadata. Commit verified bytes before metadata; prevent dedup aliases from deleting another file's bytes. Import legacy metadata once without resurrecting deletions. Prove concurrent two-instance insert/read/delete and failure propagation on disposable PostgreSQL. Migration 0097. | Source complete; SQL/codec/unit/type checks and all 15 owner-isolation/file-lifecycle HTTP cases pass |
 | 1C | Media jobs: persist owner/family/status/results in PostgreSQL before accepting work; use worker leases, heartbeat and conditional completion. A different worker must poll the same result; an expired worker must expose interruption and cannot overwrite a successor. Preserve real renderer contracts. Migration 0098. | Source complete; 21 shared media-job cases pass through Node and direct TS instrumentation, with all four metrics at 100% for the three scoped media files |
 | 1D | Fabric migration: retain both physical keys and durable progress across target copying, verified publication, source deletion and capacity accounting. Prove restart, stale-owner rejection, duplicate retry and failed I/O with real disposable SQL. Migration 0099. | Durable repair complete; actual SQL/filesystem/PDIM restart, stale-writer, key-rotation, target-loss and schema contracts pass 25 focused leaf cases |
-| 2 | Review each patch and focused receipt independently. Run applicable types and focused Node/Vitest/HTTP checks. Reconcile schema-generated fixture SQL, check migrations on disposable databases and record backward-compatibility/rollback limits. No actual Neon migration during this step. | Scoped source/runtime/oracle/navigation corrections pass focused receipts. The a160 full sweep and separate cb Node recheck are complete; measurement/topology findings remain tracked next work. |
-| 3 | Preserve before/after provenance and ten-repeat load evidence in portable repository reports. Refresh source/test inventory, add new canonical tests to discovery, fix stale instructions and record exact tool/runtime selectors. | Source/test instructions and original failures are retained, including the 562-member a160 archive and separate cb Node recheck. The cb cold-result and refreshed matrix are retained; evidence review and review-branch push remain step 9. |
-| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; HTTP suites; all 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. No heavy release/native work may overlap. Preserve real exit codes, source hashes, logs and cleanup status. | Completed a160 master in about 21m48s with unchanged inputs: ordinary scopes pass except one Node startup fixture; strict coverage/evidence fail. The later fixture-only cb complete Node group passes 122 files separately. |
-| 5 | Triage integrated failures by root cause. Repair confirmed reachable defects first, then inaccurate fixtures/reporting. Follow the 100% coverage sequence below, adding behavior assertions rather than excluding untested code. Re-run the affected group; re-run integrated checks when changes affect shared startup/auth/schema/runtime. | Chromium socket-path fixture failure repaired and exact nested/full Node rechecks pass. Remaining 100% coverage, all exact feature acceptance and proven coverage/topology producer corrections remain open. |
-| 6 | After the master finishes, prepare the configured release in a disposable publishing copy with complete admitted before/after inventories. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Rebuild stale/policy-invalidated capsules normally. | The cb783f1f serialized rehearsal completed at 08:15:15–08:30:50 America/Detroit on October 28: all four real commands and all 37 independent audit checks passed, with unchanged common source and all 4,526 admitted entries. All 37 tracked descendants were cleaned. The credential-free startup scope retains `productionReady: false`; deployed/full generation/global acceptance remains open. |
+| 2 | Review each patch and focused receipt independently. Run applicable types and focused Node/Vitest/HTTP checks. Reconcile schema-generated fixture SQL, check migrations on disposable databases and record backward-compatibility/rollback limits. No actual Neon migration during this step. | Current source-binding/plan/mount reporting checks pass 133 focused cases. The 10d full master passes all ordinary groups from unchanged inputs; coverage and full feature gates remain open. No production Neon mutation ran. |
+| 3 | Preserve before/after provenance and ten-repeat load evidence in portable repository reports. Refresh source/test inventory, add new canonical tests to discovery, fix stale instructions and record exact tool/runtime selectors. | Original failures, a160/cb histories, the explicitly cancelled e512 preflight, and the completed 10d source-bound master are retained. Current inventory includes the added tests; final evidence review and normal review-branch persistence remain step 9. |
+| 4 | Execute the full master once from stable source: build; root/additional/coverage with the requested 100% line/statement/function/branch target; Node; Python; commerce; native subsystems; Chromium; HTTP suites; all 80 pages; bounded HTTP load; operations/recovery; types/lint/audit; strict source/register/remediation gates. No heavy release/native work may overlap. Preserve real exit codes, source hashes, logs and cleanup status. | Completed 10d full master in about 23m42s with unchanged common digest cbf794e0: every ordinary group passes; 2,771 instrumented assertions pass, but strict 100% coverage and platform/remediation gates fail. Node 124 files have zero failed files and two explicit skips. |
+| 5 | Triage integrated failures by root cause. Repair confirmed reachable defects first, then inaccurate fixtures/reporting. Follow the 100% coverage sequence below, adding behavior assertions rather than excluding untested code. Re-run the affected group; re-run integrated checks when changes affect shared startup/auth/schema/runtime. | Nested Chromium startup, generated helper attribution, nested route prefixes/finite templates and stale/duplicate evidence acceptance have focused regression proof. Remaining 33,543 exact checks, 170 mappings, all-page accessibility, cross-language measurement and global/deployed requirements remain tracked. |
+| 6 | After the master finishes, prepare the configured release in a disposable publishing copy with complete admitted before/after inventories. Verify capsule/hash/restore/runtime integrity, cold start, local child supervision, health/readiness and cleanup. Never run destructive publishing scripts in the working checkout. Rebuild stale/policy-invalidated capsules normally. | The current 10d rehearsal passed all four commands and 37 independent checks at 13:49:17–13:51:58 America/Detroit, with unchanged common source and all 4,527 admitted entries. Payload 37 entries/719,501,006 bytes; all 36 tracked descendants cleaned. Accepted cold-startup-with-ml-unavailable scope retains productionReady:false and does not certify live generation, actual Replit or global launch. The historical cb receipt remains unchanged. |
 | 7 | Verify deployed Replit identity, actual published HTTPS origin, required schema, enabled provider callbacks/webhooks and real application journeys. Perform controlled migration/deploy only after a concrete reviewed package and required production-change authorization. Do not guess an app origin from the editor URL. | External gates remain |
-| 8 | Capacity gate: run the existing bounded source HTTP profile without competing release/native workloads and retain its unchanged latency/error limits. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | The isolated a160 bounded profile passes 150/150 requests; steady p95 221.834846ms and spike p95 280.208732ms satisfy 500ms. The previous failing run is retained; global topology/capacity remains unverified. |
-| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | a160 and cb are committed locally on the review branch but not yet pushed at this reconciliation. The completed cb cold receipt and refreshed 80 Red/zero Green matrix are retained; final artifact/link/redaction review and normal review-branch push remain pending. Main readiness condition is unmet. |
+| 8 | Capacity gate: run the existing bounded source HTTP profile without competing release/native workloads and retain its unchanged latency/error limits. Before multi-instance/global capacity claims, establish shared PDIM/blob/queue authority, job routing, staging, recovery and a measured realistic topology. Projection arithmetic is retained separately. | The current 10d bounded profile passes 150/150 requests; steady p95 308.680022ms and spike p95 375.381277ms satisfy 500ms. Earlier profiles/failures remain retained; global topology/capacity is unverified. |
+| 9 | Reconcile one final release matrix, page/feature evidence and remaining tasks. Verify catalog consistency, log provenance/redaction, diff/size/whitespace and latest upstream. Commit source, tests, reports and usage instructions together. Normal push only; never certify a failing release to satisfy a requested percentage. | Review checkpoint 13c19956 is verified pushed; bca/e512/10d source plus refreshed evidence remain local pending final artifact/link/value/size checks and a normal review-branch push; current-source cold acceptance now passes its bounded startup scope. All 80 pages remain Red and main remains unchanged; no final launch acceptance is granted. |
 
 ## Detailed gate checks
 
@@ -269,9 +292,9 @@ rechecks the affected scope. A failed assertion is fixed before expanding the
 batch. There is no automatic exclusion, fabricated hit, threshold reduction or
 blanket pass for code that has not run.
 
-The completed a160 unit coverage producer executed 2,771 passing assertions
-without transform exclusions and measured 13.10% lines, 13.00% statements, 8.67%
-functions and 8.77% branches across 2,653 files. Separately executed Node files,
+The completed 10d unit coverage producer executed 2,771 passing assertions
+without transform exclusions and measured 13.11% lines, 13.01% statements, 8.68%
+functions and 8.78% branches across 2,653 files. Separately executed Node files,
 application HTTP processes and Chromium execution have separate collectors or
 no compatible global collector. To avoid duplicating their existing assertions,
 execute the initial C5 provenance/comparator and single-producer batch directly
@@ -283,12 +306,13 @@ names every affected runner, isolation boundary and rejection test. Keep
 incompatible profiles separate: the validated Studio browser and unit statement
 maps currently differ, even though their function/branch maps match. The
 [new C5 compatibility trace](coverage-compatibility-trace.md) also reproduces
-all nine retained Node profiles exactly and confirms compiler-generated helpers
-are being misattributed to original statement/function locations. Raw Infinity
-and explicit undefined coordinates explain additional comparison differences;
-all nine complete profiles remain incompatible and unmerged. Repair the
-producer and validate original-source attribution before any combined counter
-claim, then continue the existing C0–C7 sequence.
+all nine retained Node profiles exactly and confirms the original helper
+attribution defect. The bca keep-name policy now removes only proven compiler
+nodes, with 22 framework cases and a real two-assertion P1 recheck. All nine
+profiles remain strictly incompatible and unmerged; seven serialized maps still
+differ, and raw Infinity/undefined representation remains explicit. Continue
+the shared transform/coordinate contract and validate actual runtime source
+before any combined counter claim, within the existing C0–C7 sequence.
 
 | Batch | Work and smallest reviewable unit | Evidence required before moving on |
 | --- | --- | --- |
@@ -312,9 +336,9 @@ instrumentation remain visible. Do not write a test that merely mirrors a
 condition or imports a file to raise its percentage.
 
 At the latest completed measurement, the remaining JS/TS gaps to 100% were
-86.90 percentage points for lines, 87.00 for statements, 91.33 for functions and
-91.23 for branches. These are the recorded a160 profile's rounded values.
-The later cb783f1f Node recheck does not change that instrumented profile.
+86.89 percentage points for lines, 86.99 for statements, 91.32 for functions and
+91.22 for branches. These are the recorded 10d profile's rounded values.
+No standalone Node or map-only control has been merged into that profile.
 
 For each change: inspect exact callers and failure contracts; implement the
 smallest coherent behavior; test owner isolation and a successful real outcome;

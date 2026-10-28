@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: connected account brand icons resolve without traversing the entire icon library
 ok 1 - connected account brand icons resolve without traversing the entire icon library
   ---
-  duration_ms: 27.181653
+  duration_ms: 25.046732
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - connected account brand icons resolve without traversing the entire icon 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 142.205009
+# duration_ms 138.645649

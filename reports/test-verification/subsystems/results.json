@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-28T09:25:26.206633+00:00",
-  "revision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "generatedAt": "2026-10-28T13:45:27.668278+00:00",
+  "revision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
   "scope": "Canonical native/imported subsystem checks; no production database or provider credentials",
   "settings": {
     "includeRustConcurrency": true,
@@ -38,7 +38,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.366,
+      "seconds": 0.717,
       "command": [
         "go",
         "test",
@@ -62,7 +62,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 0.165,
+      "seconds": 0.215,
       "command": [
         "node",
         "--import",
@@ -103,7 +103,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 36.226,
+      "seconds": 43.573,
       "command": [
         "node",
         "--test",
@@ -124,7 +124,7 @@
       "status": "passed",
       "exitCode": 0,
       "timedOut": false,
-      "seconds": 4.697,
+      "seconds": 4.812,
       "command": [
         "node",
         "scripts/testing/run-pdim-smoke.mjs",

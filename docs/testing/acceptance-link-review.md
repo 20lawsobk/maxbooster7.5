@@ -13,12 +13,19 @@ Its [preserved evidence](../../reports/test-verification/history/2026-10-27-befo
 retains the full case results, register and exact inputs. This establishes only
 those checks at that snapshot, not whole endpoints, pages or launch readiness.
 
-Required-awareness error classification, release/upload isolation and native
-packaging have since changed production inputs. The next frozen master must
-execute the eight exact current cases again. Refreshing a candidate map's
+Subsequent production and verification changes make that result historical.
+The current source checkpoint is `10d192675beefcf1b7beef3ce47c271db0cc17cf`;
+its integrated master completed09:30:12–09:53:54 America/Detroit on October28
+with unchanged common digest
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418`.
+All eight exact current HTTP cases qualified, establishing the six reviewed
+checks with zero invalid links. This closes no complete endpoint, page or launch
+gate. Future changed source must execute the exact cases again. Refreshing a candidate map's
 `platformSourceDigest` does not transfer an earlier result to later source.
 A passing test name, import, page render or source association never supplies
-missing assertions.
+missing assertions. The [source-binding repair receipt](../../reports/platform-evidence/2026-10-28-source-binding-final/README.md)
+preserves the demonstrated false pass and final 133 passing focused regressions.
+That focused result tests evidence machinery and grants no feature or page Green.
 
 ## Conjunctive evidence format
 
@@ -45,19 +52,57 @@ unregistered member rejects the entire bundle. Mixed legacy/bundle identities
 and duplicate case identities are rejected. The validator does not create
 bundles from static associations or decide whether assertions satisfy a check;
 that semantic review still applies to every explicit link. Source/test hashes
-must match and the exact case must appear in the current passing results.
+must match and the exact case must appear in current passing results bound to
+its actual execution, as described below.
+
+## Current execution is required
+
+`collect_current_passing_cases` first matches the complete common source-input
+file/hash map and calculated digest to both the current repository and the
+master's actual unchanged-input ledger. Each qualifying leaf must then belong
+to a selected, uniquely recorded command with valid start/duration, owned raw
+artifacts, exact command-log hash and current artifact timestamps. Normal final
+postprocessing fields do not change the stable execution binding.
+
+The raw producer must prove the exact unique passing identity. XML failures,
+errors, skips and duplicate identities are rejected. Python/commerce default-file
+reports require the matching successful per-file producer and command; Python
+also requires the file's current source hash. A JSON case label alone is not
+evidence. Node requires one actual successful execution of its exact file and
+unique passing TAP names; duplicate executions reject that file even if either
+run passed. Aggregate browser TAP cannot attribute a case to several possible
+files; supported proof needs an unambiguous exact file/command/case binding.
+Malformed timing/results, booleans as exit codes, stale logs, changed hashes,
+unselected groups and ambiguous identities cannot supply a passing leaf.
+
+A distinct failed coverage threshold does not erase a valid passing leaf. Leaf
+qualification still closes only the exact reviewed check; the full master,
+100% source coverage, complete pages and launch approval have separate gates.
+The [historical schema diagnostic](../../reports/platform-evidence/2026-10-28-historical-compatibility/README.md)
+accepted the eight old HTTP identities only with explicitly injected old-source
+context and returned zero with real current inputs. Never use that diagnostic
+injection to claim current readiness.
 
 Run the focused validator and existing plan regressions with the prepared
 Python interpreter:
 
 ```sh
-python -m pytest -q tests/testing/test_platform_evidence.py tests/testing/test_platform_plan.py
+python -m pytest -q tests/testing/test_platform_evidence.py \
+  tests/testing/test_endpoint_mount_resolution.py \
+  tests/testing/test_launch_readiness_audit.py tests/testing/test_platform_plan.py
 python scripts/testing/platform-register.py --self-test
 ```
 
-The isolated tests prove conjunctive acceptance/rejection, legacy compatibility,
-source/test freshness, exact identities, malformed-input rejection and lack of
-input mutation. They do not prove a product feature or application readiness.
+The final focused run passed 133 cases: 77 evidence, seven mount-consumer,
+42 launch-audit and seven plan regressions, with no failures/errors/skips.
+The retained original main-linker reproduction fails once because old execution
+was wrongly accepted after refreshing an editable candidate digest. The three
+original duplicate-file reproductions also fail before their repair. Actual
+credential-free temporary Node/Python executions exercise the repaired gate;
+conjunctive format tests retain legacy compatibility and reject stale, malformed
+and ambiguous proof. These are evidence-system regressions, not product feature
+or application readiness proof. Use a fresh output directory and retain actual
+command, exit, logs/XML and source hashes as instructed in the cohort README.
 
 ## Reviewed links requiring current frozen-source evidence
 
@@ -126,8 +171,38 @@ requirements. Keep both declarations distinct.
 
 `tests/platform-acceptance-map.json` implements these six reviewed links; the
 preserved master register records six passing checks and no invalid links.
-It leaves 33,532 other requirements unverified rather than extrapolating from
-the eight cases. Recompute the platform digest and generated IDs after source
+The current 10d register leaves33,543 of 33,549requirements unverified and
+170 mapping warnings tracked rather than extrapolating from the eight cases. Recompute the platform digest and generated IDs after source
 freeze, verify the actual current declarations and unchanged test hashes, then
 require the next run's exact passing cases. Keep the earlier source-bound
 result as historical evidence when current inputs differ.
+
+## Frozen-master procedure and current acceptance
+
+1. Verify each exact generated check, route declaration, test hash and all eight
+   case identities. Set the candidate platform digest before freezing source;
+   changing the acceptance map afterwards also changes common test/config inputs.
+2. Finish source/config/test changes and discovery. Freeze all common inputs. Run
+   the actual canonical master with its owned command/log/JUnit/TAP producers;
+   retain the real unchanged-source ledger and all failures, blocks and skips.
+3. Let canonical postprocessing resolve links from those actual producer files.
+   Do not synthesize execution rows or refresh old artifact timestamps. A manual
+   `platform-register.py` refresh can account for existing current execution; it
+   cannot execute a missing test or repair stale provenance.
+4. Inspect `evidenceProvenance`, rejected-evidence reasons and invalid links in
+   the resulting register. Require every case in a bundle to qualify against the
+   unchanged current common source and current platform/test hashes.
+5. Keep prior source-bound results historical when inputs differ. Reconcile all
+   exact feature checks and every page/shared/deployed/accessibility/coverage
+   requirement separately. The completed 10d master admits only the six reviewed
+   checks;33,543requirements and all 80full-page launch decisions remain open.
+
+The six map IDs and eight exact HTTP case identities above remain unchanged.
+The current candidate digest alone grants none of them a pass. The original
+8cad and a160 results remain source-bound historical observations. The completed
+10d master supplies the actual current eight-case proof. Its evidenceProvenance
+reports CURRENT source; 90 identities not proven by bound XML and 14 unbound default-file
+proofs are rejected as feature evidence, not counted as product test failures. The current 10d four-command cold rehearsal and 37-check audit also pass their
+startup scope, retainingproductionReady:false; they do not broaden any of the
+six policy checks. No review signature, private dataset or trained-checkpoint
+requirement is introduced.

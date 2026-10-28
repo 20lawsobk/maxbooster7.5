@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-28T12:57:46.490Z",
+  "source": "for(const action of [\"outer\"]){const x=class action {static {router.get(`/${action}`,h)}}}",
+  "actualRegistration": [
+    "/class action {static {router.get(`/${action}`,h)}}"
+  ],
+  "candidateResult": [
+    "/outer"
+  ],
+  "helperSha256": "23675b0e7751172eb9b0825c2940a81b479489913c46002aa18361606110d16c",
+  "scope": "credential-free synthetic VM fixture only; no application source execution"
+}

@@ -2,31 +2,31 @@ TAP version 13
 # Subtest: marketplace checkout freezes database pricing, metadata identity, and provider idempotency
 ok 1 - marketplace checkout freezes database pricing, metadata identity, and provider idempotency
   ---
-  duration_ms: 25.281151
+  duration_ms: 29.159149
   type: 'test'
   ...
 # Subtest: merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions
 ok 2 - merchant checkout enforces buyer ownership, trusts reserved cents, and settles only paid matching sessions
   ---
-  duration_ms: 10.418914
+  duration_ms: 13.350748
   type: 'test'
   ...
 # Subtest: growth merchandise checkout validates shipping and immutable subtotal before provider create
 ok 3 - growth merchandise checkout validates shipping and immutable subtotal before provider create
   ---
-  duration_ms: 14.101702
+  duration_ms: 13.443173
   type: 'test'
   ...
 # Subtest: growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once
 ok 4 - growth merchandise reservation prices from catalog, fences command replay, and applies verified payment events once
   ---
-  duration_ms: 18.615352
+  duration_ms: 24.843813
   type: 'test'
   ...
 # Subtest: billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
 ok 5 - billing create-checkout route executes canonical price catalog and rejects caller-supplied prices
   ---
-  duration_ms: 44.626132
+  duration_ms: 47.735691
   type: 'test'
   ...
 1..5
@@ -37,4 +37,4 @@ ok 5 - billing create-checkout route executes canonical price catalog and reject
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 199.836178
+# duration_ms 231.326281

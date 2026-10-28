@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "scope": "All 80 registered page declarations, every retained business section/dimension, every existing global work item and shared/native/deployment lane",
   "productionReady": false,
-  "sourceRevision": "cb783f1f9b34719a214dd7f9203a31dea64c051e",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
   "sourceFreshness": {
-    "status": "STALE",
-    "recordedPlatformDigest": "7845665111f1ef5a5fcfe2850234c2901d03ef115b655554531f5e9344a14b20",
-    "recordedSourceFiles": 3544,
+    "status": "PASS",
+    "recordedPlatformDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+    "recordedSourceFiles": 3545,
     "digestInternallyConsistent": true,
     "changedFiles": [],
     "missingFiles": [],
@@ -21,14 +21,14 @@
     },
     "meaning": "Current bytes AND admitted source path set must match; changed evidence is historical, not a current pass.",
     "canonicalMasterEvidence": {
-      "status": "STALE_OR_MISSING",
-      "sourceInputsMatchCurrent": false,
+      "status": "PASS",
+      "sourceInputsMatchCurrent": true,
       "completedUnchangedReceiptMatches": true,
       "allRequiredGroupsSelected": true,
       "allSelectedCommandsPassed": false,
       "producerAllTestsPassed": false,
-      "recordedSourceInputsSha256": "e63075778a6d1617379217a3bf111bd51338fd12f3a75bbd628131f88aa0bd69",
-      "currentSourceInputsSha256": "eba9dafdb3a96f430c05e6782cd9b23b21f5eeb01ba71c51e9b9875a313dbd07",
+      "recordedSourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+      "currentSourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
       "meaning": "Matching current files, internally valid source digest, completed unchanged master and every required group are needed; inventory regeneration alone is not execution."
     },
     "masterLaunchGatePassed": false
@@ -12173,19 +12173,19 @@
     "api-fa069308f06001dd/tenant-boundary",
     "api-fa069308f06001dd/dependency-failure",
     "api-fa069308f06001dd/mutation-durability",
-    "api-972dd5ce32a073e2/response-contract",
-    "api-972dd5ce32a073e2/access-policy",
-    "api-972dd5ce32a073e2/input-boundaries",
-    "api-972dd5ce32a073e2/tenant-boundary",
-    "api-972dd5ce32a073e2/dependency-failure",
-    "api-972dd5ce32a073e2/mutation-durability",
-    "api-e7ca6c071ab1c2ca/response-contract",
-    "api-e7ca6c071ab1c2ca/access-policy",
-    "api-e7ca6c071ab1c2ca/input-boundaries",
-    "api-e7ca6c071ab1c2ca/tenant-boundary",
-    "api-e7ca6c071ab1c2ca/dependency-failure",
-    "api-e7ca6c071ab1c2ca/mutation-durability",
-    "api-e7ca6c071ab1c2ca/deletion-durability",
+    "api-c5c109d4a9a644c9/response-contract",
+    "api-c5c109d4a9a644c9/access-policy",
+    "api-c5c109d4a9a644c9/input-boundaries",
+    "api-c5c109d4a9a644c9/tenant-boundary",
+    "api-c5c109d4a9a644c9/dependency-failure",
+    "api-c5c109d4a9a644c9/mutation-durability",
+    "api-d80e3bfc15855f30/response-contract",
+    "api-d80e3bfc15855f30/access-policy",
+    "api-d80e3bfc15855f30/input-boundaries",
+    "api-d80e3bfc15855f30/tenant-boundary",
+    "api-d80e3bfc15855f30/dependency-failure",
+    "api-d80e3bfc15855f30/mutation-durability",
+    "api-d80e3bfc15855f30/deletion-durability",
     "api-1c3ee4654d6db272/response-contract",
     "api-1c3ee4654d6db272/access-policy",
     "api-1c3ee4654d6db272/input-boundaries",
@@ -12503,17 +12503,28 @@
     "api-f8f799ee6c45dbf9/dependency-failure",
     "api-f8f799ee6c45dbf9/mutation-durability",
     "api-f8f799ee6c45dbf9/deletion-durability",
-    "api-34fc89e127fc051f/response-contract",
-    "api-34fc89e127fc051f/access-policy",
-    "api-34fc89e127fc051f/input-boundaries",
-    "api-34fc89e127fc051f/tenant-boundary",
-    "api-34fc89e127fc051f/dependency-failure",
-    "api-a985a7e5e584a792/response-contract",
-    "api-a985a7e5e584a792/access-policy",
-    "api-a985a7e5e584a792/input-boundaries",
-    "api-a985a7e5e584a792/tenant-boundary",
-    "api-a985a7e5e584a792/dependency-failure",
-    "api-a985a7e5e584a792/mutation-durability",
+    "api-621114b0a65095e5/response-contract",
+    "api-621114b0a65095e5/access-policy",
+    "api-621114b0a65095e5/input-boundaries",
+    "api-621114b0a65095e5/tenant-boundary",
+    "api-621114b0a65095e5/dependency-failure",
+    "api-69404ac4c40ff1c7/response-contract",
+    "api-69404ac4c40ff1c7/access-policy",
+    "api-69404ac4c40ff1c7/input-boundaries",
+    "api-69404ac4c40ff1c7/tenant-boundary",
+    "api-69404ac4c40ff1c7/dependency-failure",
+    "api-50e467fa4f4e4018/response-contract",
+    "api-50e467fa4f4e4018/access-policy",
+    "api-50e467fa4f4e4018/input-boundaries",
+    "api-50e467fa4f4e4018/tenant-boundary",
+    "api-50e467fa4f4e4018/dependency-failure",
+    "api-50e467fa4f4e4018/mutation-durability",
+    "api-b4f3f6941b54a095/response-contract",
+    "api-b4f3f6941b54a095/access-policy",
+    "api-b4f3f6941b54a095/input-boundaries",
+    "api-b4f3f6941b54a095/tenant-boundary",
+    "api-b4f3f6941b54a095/dependency-failure",
+    "api-b4f3f6941b54a095/mutation-durability",
     "api-8aad877069f262ed/response-contract",
     "api-8aad877069f262ed/access-policy",
     "api-8aad877069f262ed/input-boundaries",
@@ -18466,7 +18477,6 @@
     "api-42607c96b7c2f94b/dependency-failure",
     "api-42607c96b7c2f94b/mutation-durability",
     "api-7f174c69ff83279c/response-contract",
-    "api-7f174c69ff83279c/access-policy",
     "api-7f174c69ff83279c/input-boundaries",
     "api-7f174c69ff83279c/tenant-boundary",
     "api-7f174c69ff83279c/dependency-failure",
@@ -18518,12 +18528,10 @@
     "api-990f128ed205a047/tenant-boundary",
     "api-990f128ed205a047/dependency-failure",
     "api-50167c08abd2dfe2/response-contract",
-    "api-50167c08abd2dfe2/access-policy",
     "api-50167c08abd2dfe2/input-boundaries",
     "api-50167c08abd2dfe2/tenant-boundary",
     "api-50167c08abd2dfe2/dependency-failure",
     "api-2153be5bc8e5692b/response-contract",
-    "api-2153be5bc8e5692b/access-policy",
     "api-2153be5bc8e5692b/input-boundaries",
     "api-2153be5bc8e5692b/tenant-boundary",
     "api-2153be5bc8e5692b/dependency-failure",
@@ -18549,13 +18557,11 @@
     "api-dc72c62bc4805fb6/tenant-boundary",
     "api-dc72c62bc4805fb6/dependency-failure",
     "api-059a423751b44e6c/response-contract",
-    "api-059a423751b44e6c/access-policy",
     "api-059a423751b44e6c/input-boundaries",
     "api-059a423751b44e6c/tenant-boundary",
     "api-059a423751b44e6c/dependency-failure",
     "api-059a423751b44e6c/readiness-truth",
     "api-ebf54287f664010e/response-contract",
-    "api-ebf54287f664010e/access-policy",
     "api-ebf54287f664010e/input-boundaries",
     "api-ebf54287f664010e/tenant-boundary",
     "api-ebf54287f664010e/dependency-failure",
@@ -32488,6 +32494,46 @@
     "mapping-e31f14732d881dfc-1/resolve",
     "mapping-c003f8aa916fd11a-1/resolve",
     "mapping-2c4445130493d6ce-1/resolve",
+    "mapping-f308c5aec9488bfd-1/resolve",
+    "mapping-8bc7073db69953fd-1/resolve",
+    "mapping-7e4c597a88034112-1/resolve",
+    "mapping-158c34b1aba5454b-1/resolve",
+    "mapping-f29e4d1c3f604fce-1/resolve",
+    "mapping-f2506a99230b9ed9-1/resolve",
+    "mapping-e2d6a5011780b50a-1/resolve",
+    "mapping-d9424c90b603cf1b-1/resolve",
+    "mapping-6e9ef0c125385a44-1/resolve",
+    "mapping-fa2c56f256d625da-1/resolve",
+    "mapping-d946f39bdb39837f-1/resolve",
+    "mapping-f6bad221aa38bf0c-1/resolve",
+    "mapping-266bf7c0212f005e-1/resolve",
+    "mapping-00edf3e45c82654c-1/resolve",
+    "mapping-573415486f7338c5-1/resolve",
+    "mapping-a790e3c468cdf00b-1/resolve",
+    "mapping-369c6db566d4f351-1/resolve",
+    "mapping-092df018d15ce04a-1/resolve",
+    "mapping-25a9af4f072aa632-1/resolve",
+    "mapping-e761705c9f0f76df-1/resolve",
+    "mapping-5c3d8cb27f915e3f-1/resolve",
+    "mapping-dd8bd45a9aa5bee5-1/resolve",
+    "mapping-e2e895907c1b4ce1-1/resolve",
+    "mapping-53713a573d037a7c-1/resolve",
+    "mapping-d4973caa02b0cc65-1/resolve",
+    "mapping-46ac80d4e8359527-1/resolve",
+    "mapping-b03318f4d99fa46f-1/resolve",
+    "mapping-04486102b9038929-1/resolve",
+    "mapping-9eac6bb4cd24ec03-1/resolve",
+    "mapping-ef3ef477e8b3d66b-1/resolve",
+    "mapping-44e6562a1df489be-1/resolve",
+    "mapping-9b34f786174cc009-1/resolve",
+    "mapping-b2c879ec83d6b042-1/resolve",
+    "mapping-28571dbd1091423a-1/resolve",
+    "mapping-fe760de2a5bd05bb-1/resolve",
+    "mapping-770ab1721b882ebc-1/resolve",
+    "mapping-4b002e7662835d82-1/resolve",
+    "mapping-b8e440046b3ae892-1/resolve",
+    "mapping-934fb79046f9f412-1/resolve",
+    "mapping-13bc8cd2a844545a-1/resolve",
     "mapping-e7bdcdc717ca8480-1/resolve",
     "mapping-c31e77fd3a5e8f6c-1/resolve",
     "mapping-0cab2a29362df927-1/resolve",
@@ -36454,6 +36500,7 @@
     "file-c67afcec0e40af69/contract",
     "file-085abc94da2f6907/contract",
     "file-ffe33ac9a8caac86/contract",
+    "file-8c704b3e03229975/contract",
     "file-97180aa75f85e95d/contract",
     "file-a056601fe08ddeb5/contract",
     "file-a2e2330dcd7abca8/contract",
@@ -37610,6 +37657,7 @@
     "file-2bdf70184ce599c9/contract",
     "file-0d45eddf5ec351f6/contract",
     "file-7d4755df40dd5f30/contract",
+    "file-26dbc23302268c2a/contract",
     "file-630d2eecdf76aea4/contract",
     "file-45fc6b603988933f/contract",
     "file-4388d38bba6bf169/contract",
@@ -37623,6 +37671,7 @@
     "file-79399e644d12d00e/contract",
     "file-1b35c7a66551074e/contract",
     "file-e80a72f561661d72/contract",
+    "file-f530422b64f427d2/contract",
     "file-fbb26c8d725daa89/contract",
     "file-38c9ef4c22d480f3/contract",
     "file-cbeeb3fb185da79c/contract",
@@ -37770,6 +37819,7 @@
     "file-4808be4048aefa91/contract",
     "file-d09287ffbae98f87/contract",
     "file-fa28ace81987fffd/contract",
+    "file-3029c7611299f437/contract",
     "file-ed3df1c4f7a7b22b/contract",
     "file-f2f0be08e4d631a7/contract",
     "file-39632a71db61e800/contract",
@@ -60043,19 +60093,19 @@
     "api-fa069308f06001dd/tenant-boundary": "UNVERIFIED",
     "api-fa069308f06001dd/dependency-failure": "UNVERIFIED",
     "api-fa069308f06001dd/mutation-durability": "UNVERIFIED",
-    "api-972dd5ce32a073e2/response-contract": "UNVERIFIED",
-    "api-972dd5ce32a073e2/access-policy": "UNVERIFIED",
-    "api-972dd5ce32a073e2/input-boundaries": "UNVERIFIED",
-    "api-972dd5ce32a073e2/tenant-boundary": "UNVERIFIED",
-    "api-972dd5ce32a073e2/dependency-failure": "UNVERIFIED",
-    "api-972dd5ce32a073e2/mutation-durability": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/response-contract": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/access-policy": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/input-boundaries": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/tenant-boundary": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/dependency-failure": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/mutation-durability": "UNVERIFIED",
-    "api-e7ca6c071ab1c2ca/deletion-durability": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/response-contract": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/access-policy": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/input-boundaries": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/tenant-boundary": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/dependency-failure": "UNVERIFIED",
+    "api-c5c109d4a9a644c9/mutation-durability": "UNVERIFIED",
+    "api-d80e3bfc15855f30/response-contract": "UNVERIFIED",
+    "api-d80e3bfc15855f30/access-policy": "UNVERIFIED",
+    "api-d80e3bfc15855f30/input-boundaries": "UNVERIFIED",
+    "api-d80e3bfc15855f30/tenant-boundary": "UNVERIFIED",
+    "api-d80e3bfc15855f30/dependency-failure": "UNVERIFIED",
+    "api-d80e3bfc15855f30/mutation-durability": "UNVERIFIED",
+    "api-d80e3bfc15855f30/deletion-durability": "UNVERIFIED",
     "api-1c3ee4654d6db272/response-contract": "UNVERIFIED",
     "api-1c3ee4654d6db272/access-policy": "UNVERIFIED",
     "api-1c3ee4654d6db272/input-boundaries": "UNVERIFIED",
@@ -60373,17 +60423,28 @@
     "api-f8f799ee6c45dbf9/dependency-failure": "UNVERIFIED",
     "api-f8f799ee6c45dbf9/mutation-durability": "UNVERIFIED",
     "api-f8f799ee6c45dbf9/deletion-durability": "UNVERIFIED",
-    "api-34fc89e127fc051f/response-contract": "UNVERIFIED",
-    "api-34fc89e127fc051f/access-policy": "UNVERIFIED",
-    "api-34fc89e127fc051f/input-boundaries": "UNVERIFIED",
-    "api-34fc89e127fc051f/tenant-boundary": "UNVERIFIED",
-    "api-34fc89e127fc051f/dependency-failure": "UNVERIFIED",
-    "api-a985a7e5e584a792/response-contract": "UNVERIFIED",
-    "api-a985a7e5e584a792/access-policy": "UNVERIFIED",
-    "api-a985a7e5e584a792/input-boundaries": "UNVERIFIED",
-    "api-a985a7e5e584a792/tenant-boundary": "UNVERIFIED",
-    "api-a985a7e5e584a792/dependency-failure": "UNVERIFIED",
-    "api-a985a7e5e584a792/mutation-durability": "UNVERIFIED",
+    "api-621114b0a65095e5/response-contract": "UNVERIFIED",
+    "api-621114b0a65095e5/access-policy": "UNVERIFIED",
+    "api-621114b0a65095e5/input-boundaries": "UNVERIFIED",
+    "api-621114b0a65095e5/tenant-boundary": "UNVERIFIED",
+    "api-621114b0a65095e5/dependency-failure": "UNVERIFIED",
+    "api-69404ac4c40ff1c7/response-contract": "UNVERIFIED",
+    "api-69404ac4c40ff1c7/access-policy": "UNVERIFIED",
+    "api-69404ac4c40ff1c7/input-boundaries": "UNVERIFIED",
+    "api-69404ac4c40ff1c7/tenant-boundary": "UNVERIFIED",
+    "api-69404ac4c40ff1c7/dependency-failure": "UNVERIFIED",
+    "api-50e467fa4f4e4018/response-contract": "UNVERIFIED",
+    "api-50e467fa4f4e4018/access-policy": "UNVERIFIED",
+    "api-50e467fa4f4e4018/input-boundaries": "UNVERIFIED",
+    "api-50e467fa4f4e4018/tenant-boundary": "UNVERIFIED",
+    "api-50e467fa4f4e4018/dependency-failure": "UNVERIFIED",
+    "api-50e467fa4f4e4018/mutation-durability": "UNVERIFIED",
+    "api-b4f3f6941b54a095/response-contract": "UNVERIFIED",
+    "api-b4f3f6941b54a095/access-policy": "UNVERIFIED",
+    "api-b4f3f6941b54a095/input-boundaries": "UNVERIFIED",
+    "api-b4f3f6941b54a095/tenant-boundary": "UNVERIFIED",
+    "api-b4f3f6941b54a095/dependency-failure": "UNVERIFIED",
+    "api-b4f3f6941b54a095/mutation-durability": "UNVERIFIED",
     "api-dfd60c7965309d1e/response-contract": "UNVERIFIED",
     "api-dfd60c7965309d1e/access-policy": "UNVERIFIED",
     "api-dfd60c7965309d1e/input-boundaries": "UNVERIFIED",
@@ -67855,7 +67916,7 @@
     "api-00b8697ba4d89701/tenant-boundary": "UNVERIFIED",
     "api-00b8697ba4d89701/dependency-failure": "UNVERIFIED",
     "api-ef05357bba6ab833/response-contract": "UNVERIFIED",
-    "api-ef05357bba6ab833/access-policy": "UNVERIFIED",
+    "api-ef05357bba6ab833/access-policy": "PASS",
     "api-ef05357bba6ab833/input-boundaries": "UNVERIFIED",
     "api-ef05357bba6ab833/tenant-boundary": "UNVERIFIED",
     "api-ef05357bba6ab833/dependency-failure": "UNVERIFIED",
@@ -68655,7 +68716,7 @@
     "api-42607c96b7c2f94b/dependency-failure": "UNVERIFIED",
     "api-42607c96b7c2f94b/mutation-durability": "UNVERIFIED",
     "api-7f174c69ff83279c/response-contract": "UNVERIFIED",
-    "api-7f174c69ff83279c/access-policy": "UNVERIFIED",
+    "api-7f174c69ff83279c/access-policy": "PASS",
     "api-7f174c69ff83279c/input-boundaries": "UNVERIFIED",
     "api-7f174c69ff83279c/tenant-boundary": "UNVERIFIED",
     "api-7f174c69ff83279c/dependency-failure": "UNVERIFIED",
@@ -68713,12 +68774,12 @@
     "api-990f128ed205a047/tenant-boundary": "UNVERIFIED",
     "api-990f128ed205a047/dependency-failure": "UNVERIFIED",
     "api-50167c08abd2dfe2/response-contract": "UNVERIFIED",
-    "api-50167c08abd2dfe2/access-policy": "UNVERIFIED",
+    "api-50167c08abd2dfe2/access-policy": "PASS",
     "api-50167c08abd2dfe2/input-boundaries": "UNVERIFIED",
     "api-50167c08abd2dfe2/tenant-boundary": "UNVERIFIED",
     "api-50167c08abd2dfe2/dependency-failure": "UNVERIFIED",
     "api-2153be5bc8e5692b/response-contract": "UNVERIFIED",
-    "api-2153be5bc8e5692b/access-policy": "UNVERIFIED",
+    "api-2153be5bc8e5692b/access-policy": "PASS",
     "api-2153be5bc8e5692b/input-boundaries": "UNVERIFIED",
     "api-2153be5bc8e5692b/tenant-boundary": "UNVERIFIED",
     "api-2153be5bc8e5692b/dependency-failure": "UNVERIFIED",
@@ -68744,13 +68805,13 @@
     "api-dc72c62bc4805fb6/tenant-boundary": "UNVERIFIED",
     "api-dc72c62bc4805fb6/dependency-failure": "UNVERIFIED",
     "api-059a423751b44e6c/response-contract": "UNVERIFIED",
-    "api-059a423751b44e6c/access-policy": "UNVERIFIED",
+    "api-059a423751b44e6c/access-policy": "PASS",
     "api-059a423751b44e6c/input-boundaries": "UNVERIFIED",
     "api-059a423751b44e6c/tenant-boundary": "UNVERIFIED",
     "api-059a423751b44e6c/dependency-failure": "UNVERIFIED",
     "api-059a423751b44e6c/readiness-truth": "UNVERIFIED",
     "api-ebf54287f664010e/response-contract": "UNVERIFIED",
-    "api-ebf54287f664010e/access-policy": "UNVERIFIED",
+    "api-ebf54287f664010e/access-policy": "PASS",
     "api-ebf54287f664010e/input-boundaries": "UNVERIFIED",
     "api-ebf54287f664010e/tenant-boundary": "UNVERIFIED",
     "api-ebf54287f664010e/dependency-failure": "UNVERIFIED",
@@ -85455,6 +85516,46 @@
     "mapping-e31f14732d881dfc-1/resolve": "UNVERIFIED",
     "mapping-c003f8aa916fd11a-1/resolve": "UNVERIFIED",
     "mapping-2c4445130493d6ce-1/resolve": "UNVERIFIED",
+    "mapping-f308c5aec9488bfd-1/resolve": "UNVERIFIED",
+    "mapping-8bc7073db69953fd-1/resolve": "UNVERIFIED",
+    "mapping-7e4c597a88034112-1/resolve": "UNVERIFIED",
+    "mapping-158c34b1aba5454b-1/resolve": "UNVERIFIED",
+    "mapping-f29e4d1c3f604fce-1/resolve": "UNVERIFIED",
+    "mapping-f2506a99230b9ed9-1/resolve": "UNVERIFIED",
+    "mapping-e2d6a5011780b50a-1/resolve": "UNVERIFIED",
+    "mapping-d9424c90b603cf1b-1/resolve": "UNVERIFIED",
+    "mapping-6e9ef0c125385a44-1/resolve": "UNVERIFIED",
+    "mapping-fa2c56f256d625da-1/resolve": "UNVERIFIED",
+    "mapping-d946f39bdb39837f-1/resolve": "UNVERIFIED",
+    "mapping-f6bad221aa38bf0c-1/resolve": "UNVERIFIED",
+    "mapping-266bf7c0212f005e-1/resolve": "UNVERIFIED",
+    "mapping-00edf3e45c82654c-1/resolve": "UNVERIFIED",
+    "mapping-573415486f7338c5-1/resolve": "UNVERIFIED",
+    "mapping-a790e3c468cdf00b-1/resolve": "UNVERIFIED",
+    "mapping-369c6db566d4f351-1/resolve": "UNVERIFIED",
+    "mapping-092df018d15ce04a-1/resolve": "UNVERIFIED",
+    "mapping-25a9af4f072aa632-1/resolve": "UNVERIFIED",
+    "mapping-e761705c9f0f76df-1/resolve": "UNVERIFIED",
+    "mapping-5c3d8cb27f915e3f-1/resolve": "UNVERIFIED",
+    "mapping-dd8bd45a9aa5bee5-1/resolve": "UNVERIFIED",
+    "mapping-e2e895907c1b4ce1-1/resolve": "UNVERIFIED",
+    "mapping-53713a573d037a7c-1/resolve": "UNVERIFIED",
+    "mapping-d4973caa02b0cc65-1/resolve": "UNVERIFIED",
+    "mapping-46ac80d4e8359527-1/resolve": "UNVERIFIED",
+    "mapping-b03318f4d99fa46f-1/resolve": "UNVERIFIED",
+    "mapping-04486102b9038929-1/resolve": "UNVERIFIED",
+    "mapping-9eac6bb4cd24ec03-1/resolve": "UNVERIFIED",
+    "mapping-ef3ef477e8b3d66b-1/resolve": "UNVERIFIED",
+    "mapping-44e6562a1df489be-1/resolve": "UNVERIFIED",
+    "mapping-9b34f786174cc009-1/resolve": "UNVERIFIED",
+    "mapping-b2c879ec83d6b042-1/resolve": "UNVERIFIED",
+    "mapping-28571dbd1091423a-1/resolve": "UNVERIFIED",
+    "mapping-fe760de2a5bd05bb-1/resolve": "UNVERIFIED",
+    "mapping-770ab1721b882ebc-1/resolve": "UNVERIFIED",
+    "mapping-4b002e7662835d82-1/resolve": "UNVERIFIED",
+    "mapping-b8e440046b3ae892-1/resolve": "UNVERIFIED",
+    "mapping-934fb79046f9f412-1/resolve": "UNVERIFIED",
+    "mapping-13bc8cd2a844545a-1/resolve": "UNVERIFIED",
     "mapping-e7bdcdc717ca8480-1/resolve": "UNVERIFIED",
     "mapping-c31e77fd3a5e8f6c-1/resolve": "UNVERIFIED",
     "mapping-0cab2a29362df927-1/resolve": "UNVERIFIED",
@@ -89421,6 +89522,7 @@
     "file-c67afcec0e40af69/contract": "UNVERIFIED",
     "file-085abc94da2f6907/contract": "UNVERIFIED",
     "file-ffe33ac9a8caac86/contract": "UNVERIFIED",
+    "file-8c704b3e03229975/contract": "UNVERIFIED",
     "file-97180aa75f85e95d/contract": "UNVERIFIED",
     "file-a056601fe08ddeb5/contract": "UNVERIFIED",
     "file-a2e2330dcd7abca8/contract": "UNVERIFIED",
@@ -90577,6 +90679,7 @@
     "file-2bdf70184ce599c9/contract": "UNVERIFIED",
     "file-0d45eddf5ec351f6/contract": "UNVERIFIED",
     "file-7d4755df40dd5f30/contract": "UNVERIFIED",
+    "file-26dbc23302268c2a/contract": "UNVERIFIED",
     "file-630d2eecdf76aea4/contract": "UNVERIFIED",
     "file-45fc6b603988933f/contract": "UNVERIFIED",
     "file-4388d38bba6bf169/contract": "UNVERIFIED",
@@ -90590,6 +90693,7 @@
     "file-79399e644d12d00e/contract": "UNVERIFIED",
     "file-1b35c7a66551074e/contract": "UNVERIFIED",
     "file-e80a72f561661d72/contract": "UNVERIFIED",
+    "file-f530422b64f427d2/contract": "UNVERIFIED",
     "file-fbb26c8d725daa89/contract": "UNVERIFIED",
     "file-38c9ef4c22d480f3/contract": "UNVERIFIED",
     "file-cbeeb3fb185da79c/contract": "UNVERIFIED",
@@ -90737,6 +90841,7 @@
     "file-4808be4048aefa91/contract": "UNVERIFIED",
     "file-d09287ffbae98f87/contract": "UNVERIFIED",
     "file-fa28ace81987fffd/contract": "UNVERIFIED",
+    "file-3029c7611299f437/contract": "UNVERIFIED",
     "file-ed3df1c4f7a7b22b/contract": "UNVERIFIED",
     "file-f2f0be08e4d631a7/contract": "UNVERIFIED",
     "file-39632a71db61e800/contract": "UNVERIFIED",
@@ -91166,7 +91271,7 @@
     },
     "businessSections": 2162,
     "businessDimensionSteps": 12972,
-    "retainedExistingWorkItems": 52965,
+    "retainedExistingWorkItems": 53020,
     "criterionInstances": 2720,
     "greenPages": 0,
     "verifiedImplementationPercentage": null
@@ -91189,7 +91294,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -92038,7 +92143,6 @@
       "requiredSectionDimensionSteps": 108,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "116 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -92068,7 +92172,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -92813,7 +92917,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "74 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -92843,7 +92946,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -93346,7 +93449,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "31 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -93376,7 +93478,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -93909,7 +94011,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "47 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -93939,7 +94040,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -94734,7 +94835,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "88 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -95271,7 +95371,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "41 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -95301,7 +95400,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -96090,7 +96189,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "88 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -96114,13 +96212,13 @@
       },
       "implementationCompletionPercent": null,
       "completionPercentageMeaning": "Unknown until complete feature acceptance; static source presence is not an implementation percentage.",
-      "verifiedAcceptanceCoveragePercent": 0.0,
+      "verifiedAcceptanceCoveragePercent": 0.1961,
       "requiredRegisteredChecks": 510,
-      "verifiedRegisteredChecks": 0,
+      "verifiedRegisteredChecks": 1,
       "historicalPassingRegisteredChecks": 1,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -98111,7 +98209,6 @@
         "api-7c8878c0bdcf5f2f/dependency-failure",
         "api-7c8878c0bdcf5f2f/mutation-durability",
         "api-ef05357bba6ab833/response-contract",
-        "api-ef05357bba6ab833/access-policy",
         "api-ef05357bba6ab833/input-boundaries",
         "api-ef05357bba6ab833/tenant-boundary",
         "api-ef05357bba6ab833/dependency-failure",
@@ -98345,12 +98442,11 @@
         "call-ab8530d5f33740ad/consumer-contract"
       ],
       "requiredExactPageWorkItems": 637,
-      "verifiedExactPageWorkItems": 0,
+      "verifiedExactPageWorkItems": 1,
       "requiredSectionDimensionSteps": 558,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
-        "510 exact registered checks remain unverified",
+        "509 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
       "requiredActions": [
@@ -98379,7 +98475,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -99572,7 +99668,6 @@
       "requiredSectionDimensionSteps": 84,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "210 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -100097,7 +100192,6 @@
       "requiredSectionDimensionSteps": 252,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "3 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -100586,7 +100680,6 @@
       "requiredSectionDimensionSteps": 144,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "3 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -100616,7 +100709,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -101749,7 +101842,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "198 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -101779,7 +101871,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -104165,7 +104257,6 @@
       "requiredSectionDimensionSteps": 1050,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "571 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -104195,7 +104286,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -105525,7 +105616,6 @@
       "requiredSectionDimensionSteps": 144,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "261 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -105555,7 +105645,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -109915,7 +110005,6 @@
       "requiredSectionDimensionSteps": 1134,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1408 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -109945,7 +110034,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -112876,7 +112965,6 @@
       "requiredSectionDimensionSteps": 888,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "798 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -112906,7 +112994,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -117029,7 +117117,6 @@
       "requiredSectionDimensionSteps": 870,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1513 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -117059,7 +117146,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -121182,7 +121269,6 @@
       "requiredSectionDimensionSteps": 870,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1513 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -121212,7 +121298,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -122541,7 +122627,6 @@
       "requiredSectionDimensionSteps": 102,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "262 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -122571,7 +122656,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -124798,7 +124883,6 @@
       "requiredSectionDimensionSteps": 402,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "506 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -124828,7 +124912,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -130025,7 +130109,6 @@
       "requiredSectionDimensionSteps": 678,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1777 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -130055,7 +130138,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -135252,7 +135335,6 @@
       "requiredSectionDimensionSteps": 678,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1777 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -135282,7 +135364,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -136659,7 +136741,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "320 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -136689,7 +136770,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -143191,7 +143272,6 @@
       "requiredSectionDimensionSteps": 1530,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "1964 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -143721,7 +143801,6 @@
       "requiredSectionDimensionSteps": 48,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "43 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -143751,7 +143830,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -144559,7 +144638,6 @@
       "requiredSectionDimensionSteps": 72,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "94 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -144589,7 +144667,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -145877,7 +145955,6 @@
       "requiredSectionDimensionSteps": 132,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "226 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -145907,7 +145984,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -147093,7 +147170,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "222 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -147123,7 +147199,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -148399,7 +148475,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "249 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -148429,7 +148504,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -149695,7 +149770,6 @@
       "requiredSectionDimensionSteps": 42,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "251 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -149725,7 +149799,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -150884,7 +150958,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "207 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -150914,7 +150987,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -151787,7 +151860,6 @@
       "requiredSectionDimensionSteps": 54,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "111 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -151817,7 +151889,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -152978,7 +153050,6 @@
       "requiredSectionDimensionSteps": 96,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "214 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -153008,7 +153079,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -154311,7 +154382,6 @@
       "requiredSectionDimensionSteps": 90,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "271 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -154341,7 +154411,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -155845,7 +155915,6 @@
       "requiredSectionDimensionSteps": 294,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "289 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -155875,7 +155944,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -157379,7 +157448,6 @@
       "requiredSectionDimensionSteps": 294,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "289 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -157409,7 +157477,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -159114,7 +159182,6 @@
       "requiredSectionDimensionSteps": 222,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "370 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -159144,7 +159211,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -162480,7 +162547,6 @@
       "requiredSectionDimensionSteps": 708,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "876 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -162991,7 +163057,6 @@
       "requiredSectionDimensionSteps": 102,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "21 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -163498,7 +163563,6 @@
       "requiredSectionDimensionSteps": 90,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "21 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -163981,7 +164045,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "21 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -164458,7 +164521,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "17 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -164957,7 +165019,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "29 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -165455,7 +165516,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "27 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -165924,7 +165984,6 @@
       "requiredSectionDimensionSteps": 12,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "13 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -166406,7 +166465,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "19 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -166878,7 +166936,6 @@
       "requiredSectionDimensionSteps": 12,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "15 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -167369,7 +167426,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "25 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -167840,7 +167896,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "13 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -167870,7 +167925,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -169001,7 +169056,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "212 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -169484,7 +169538,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "17 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -169514,7 +169567,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -170649,7 +170702,6 @@
       "requiredSectionDimensionSteps": 36,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "184 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -170679,7 +170731,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -171814,7 +171866,6 @@
       "requiredSectionDimensionSteps": 36,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "184 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -171844,7 +171895,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -172979,7 +173030,6 @@
       "requiredSectionDimensionSteps": 36,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "184 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -173009,7 +173059,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -173472,7 +173522,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "16 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -173502,7 +173551,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -175058,7 +175107,6 @@
       "requiredSectionDimensionSteps": 42,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "292 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -175088,7 +175136,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -176480,7 +176528,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "330 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -176510,7 +176557,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -178152,7 +178199,6 @@
       "requiredSectionDimensionSteps": 36,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "359 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -178182,7 +178228,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -179771,7 +179817,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "330 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -179801,7 +179846,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -180998,7 +181043,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "237 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -181028,7 +181072,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -182368,7 +182412,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "280 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -182398,7 +182441,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -183519,7 +183562,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "208 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -183549,7 +183591,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -184696,7 +184738,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "220 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -184726,7 +184767,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -186110,7 +186151,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "304 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -186559,7 +186599,6 @@
       "requiredSectionDimensionSteps": 12,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "5 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -186589,7 +186628,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -187764,7 +187803,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "217 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -187794,7 +187832,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -188909,7 +188947,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "204 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -188939,7 +188976,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -190620,7 +190657,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "369 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -190650,7 +190686,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -191982,7 +192018,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "304 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -192012,7 +192047,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -193591,7 +193626,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "372 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -193621,7 +193655,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -195065,7 +195099,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "298 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -195095,7 +195128,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -196289,7 +196322,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "213 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -196319,7 +196351,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -197719,7 +197751,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "296 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -197749,7 +197780,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -199241,7 +199272,6 @@
       "requiredSectionDimensionSteps": 36,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "343 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -199271,7 +199301,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -200571,7 +200601,6 @@
       "requiredSectionDimensionSteps": 30,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "281 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -200601,7 +200630,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -201937,7 +201966,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "297 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -201967,7 +201995,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -203355,7 +203383,6 @@
       "requiredSectionDimensionSteps": 24,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "306 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -203385,7 +203412,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -204642,7 +204669,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "265 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -204672,7 +204698,7 @@
       "historicalPassingRegisteredChecks": 0,
       "frontendStatus": "UNVERIFIED",
       "backendStatus": "UNVERIFIED",
-      "apiStatus": "STALE",
+      "apiStatus": "UNVERIFIED",
       "databaseStatus": "UNVERIFIED",
       "aiStatus": "UNVERIFIED",
       "testingStatus": "UNVERIFIED",
@@ -205159,7 +205185,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "28 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],
@@ -205642,7 +205667,6 @@
       "requiredSectionDimensionSteps": 18,
       "verifiedSectionDimensionSteps": 0,
       "blockers": [
-        "Current-source evidence is stale",
         "21 exact registered checks remain unverified",
         "34 launch criteria remain unverified"
       ],

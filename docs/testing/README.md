@@ -6,32 +6,51 @@ prerequisites. [results.md](results.md) records the actual rerun, including
 failures, skipped cases and work that could not run. A source index is not a
 coverage percentage or evidence of a passing test.
 
-The latest local source checkpoint is
-`cb783f1f9b34719a214dd7f9203a31dea64c051e` on
-`sophia/platform-production-hardening-2026-10-27`, not yet pushed at this
-reconciliation. The completed a160 full master ran 05:11:45–05:33:33 on
-October 28, America/Detroit, with unchanged source inputs. Build, 2,728 unit
-cases, 18 additional cases and the Python/commerce/subsystem/browser/HTTP/page/
-load/operational/type/lint/audit scopes passed. Its 2,771 instrumented assertions
-passed, but the strict 100% thresholds failed at 13.10% lines, 13.00% statements,
-8.67% functions and 8.77% branches; feature-evidence gates also failed. One Node
-fixture failed before assertions because Chromium's nested temporary socket
-path exceeded the Unix limit. The
-[original a160 master](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md)
-and [preceding 8cad run](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md)
-retain their actual failures.
+The verified pushed review checkpoint is
+`13c199569e5f6fa29a6002b36169b76c65e26b5f` on
+`sophia/platform-production-hardening-2026-10-27`. The later source commits
+`bca5f4e1`, `e5124419` and `10d192675beefcf1b7beef3ce47c271db0cc17cf` are local at this
+reconciliation; a normal review-branch push is still pending. Main remains
+unchanged and has no launch approval.
 
-The fixture-only cb783f1f repair then passed the exact nested reproduction and
-[complete 122-file Node recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md):
-644 passing TAP cases, two skips and zero failures, including parents in its
-646 total, in 126.867s with unchanged inputs. This separate recheck does not
-make the a160 full master pass or claim that its other groups reran against cb.
-The [serialized cb cold rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
-then passed all four actual commands and all 37 independent audit checks. Common
-source and all 4,526 admitted entries stayed unchanged. Its accepted scope remains
-credential-free cold startup with `productionReady: false`.
-The [launch gates](global-launch-readiness.md) distinguish completed scopes
-from remaining deployed/native/global acceptance.
+The latest full master completed on October 28, 2026, 09:30:12–09:53:54
+America/Detroit (`13:30:12Z`–`13:53:54Z`), about 23m42s, from `10d192675beefcf1b7beef3ce47c271db0cc17cf`.
+Its complete common source/config/test digest stayed unchanged:
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418`.
+Build, 2,728 unit cases, 18 additional cases, all 124 Node files, Python,
+commerce, native subsystems, focused Chromium, HTTP, 80-page render observations,
+bounded load, operations, types, lint and production audit pass their stated
+scopes. Node records 690 passing TAP cases and two skips, including parents in
+692 total; Python records 112 passing files, one skipped file and 19 blocked
+files, with zero failed files. Counts across groups overlap and are not summed.
+All 2,771 instrumented assertions pass, but the unchanged 100% coverage thresholds
+fail at 13.11% lines, 13.01% statements, 8.68% functions and 8.78% branches across
+2,653 files, with zero parse exclusions. Strict platform/remediation gates also
+fail. The [source-bound history](../../reports/test-verification/history/2026-10-28-10d19267-master/README.md)
+and [master results](results.md) retain the actual outcome.
+
+The new evidence gate admits six narrowly reviewed access-policy checks through
+eight actual current HTTP cases, with zero invalid links. It does not turn the
+other 33,543 requirements, 170 unresolved mappings or any whole page Green.
+The [current-source cold rehearsal](../../reports/release-rehearsal/2026-10-28-10d19267-final/README.md)
+passes all four commands and 37 independent checks from the same unchanged 10d
+source. All 4,527 admitted entries match, the37-entry payload totals 719,501,006 bytes
+and all 36 tracked descendants were cleaned. Its accepted scope retains
+`productionReady: false`; it does not certify full generation or launch. The earlier
+[cb cold rehearsal](../../reports/release-rehearsal/2026-10-28-cb783f1f-final/README.md)
+passed all four commands and 37 independent checks only for its original source
+and credential-free startup scope, retaining `productionReady: false`.
+
+The [a160 master](../../reports/test-verification/history/2026-10-28-a1603b13-master/README.md),
+[earlier 8cad master](../../reports/test-verification/history/2026-10-27-before-awareness-release-isolation/README.md),
+[cb Node recheck](../../reports/test-rechecks/2026-10-28-node-final/README.md) and
+[deliberately interrupted e512 attempt](../../reports/test-verification/history/2026-10-28-e5124419-preflight-aborted/README.md)
+retain their original outcomes. The e512 attempt exited 143 after explicit
+cancellation to finish the duplicate-producer guard; it is not an assertion
+failure or a completed full run. The final 10d run includes the corrected
+Chromium fixture and source-evidence guards without rewriting prior receipts.
+The [launch gates](global-launch-readiness.md) distinguish these scopes from
+remaining deployed/native/global acceptance.
 
 The single entry point is `npm run test:master` (`test:all` is the same command).
 It discovers the current tests, runs all supported isolated groups, measures
@@ -53,12 +72,12 @@ The [seven-level critical path](launch-critical-path.md) extends that plan;
 the [launch audit](launch-readiness-audit.md) supplies the complete status,
 feature/gap/dependency registers, explicit domain pass/fail criteria and
 machine roadmap. Its current inventory retains all 80 declarations, 2,162
-sections, 12,972 dimension steps and 52,965 existing work items. Its refreshed
+sections, 12,972 dimension steps and 53,020 work items. Its refreshed
 matrix remains 80 Red/zero Green, with unknown implementation completion left
-unknown. The older failed canonical master remains correctly stale after the
-fixture-only cb source change; separate passing Node/cold receipts retain their
-own scopes. Report creation and its 42 passing reporting/provenance regressions
-are not product acceptance. The initial independent review's stale-input
+unknown. The completed 10d master has matching unchanged current inputs and
+failed coverage/feature-evidence gates. Historical Node/cold receipts retain
+their own scopes. Reporting regressions and the 133 focused source-binding
+checks test evidence machinery; they are not product acceptance. The initial independent review's stale-input
 failure remains retained until a new versioned review validates fresh outputs.
 
 The full run closes successfully only when its tests and strict evidence gates
@@ -84,8 +103,10 @@ The first [standalone Node producer](node-coverage-producer.md) documents its
 commands, retained artifacts, failed attempts and current unmerged scope.
 The [compatibility trace](coverage-compatibility-trace.md) identifies confirmed
 compiler-helper attribution defects that must be repaired before merging.
-The [mapping trace](mapping-blocker-trace.md) retains all 130 unresolved entries
-and exact source-producer corrections without inventing missing handlers.
+The [mapping trace](mapping-blocker-trace.md) retains all 130 original unresolved
+entries and the 40 newly exposed unmounted declarations. The implemented nested
+prefix/finite-template fixes replace four incorrect backend records with six
+concrete records; no handler acceptance is inferred from inventory correction.
 Focused instructions cover [account analytics](account-analytics.md),
 [monitoring alert outcomes](monitoring-alerts.md), and
 [current-format SQL/PDIM recovery](current-storage-joint-recovery.md).

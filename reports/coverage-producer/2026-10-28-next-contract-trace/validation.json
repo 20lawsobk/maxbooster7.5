@@ -1,0 +1,11 @@
+{
+  "scope": "Read-only artifact/source/API/map compatibility validation; not execution coverage, policy adoption or launch acceptance",
+  "passed": 116,
+  "failed": 0,
+  "failedChecks": [],
+  "checked": 116,
+  "productionReady": false,
+  "mergedIntoGlobalCoverage": false,
+  "observedAt": "2026-10-28T18:01:03.532574+00:00",
+  "phase": "Before outer manifest creation; typed observations and current canonical/API checks included"
+}

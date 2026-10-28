@@ -52,4 +52,4 @@ server.py:7549
     @app.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-13 passed, 8 warnings in 3.66s
+13 passed, 8 warnings in 3.91s

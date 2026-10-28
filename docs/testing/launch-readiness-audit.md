@@ -12,7 +12,7 @@ all 80 route declarations, including aliases. Machine-readable
 the detail behind every row.
 
 The canonical inventory currently contains 2,162 business sections, 12,972 section
-dimension steps and 52,965 existing work items after the latest source additions.
+dimension steps and 53,020 existing work items after the latest source additions.
 These are snapshot denominators;
 regeneration reports the actual counts and rejects missing identities. The
 [governing critical path](launch-critical-path.md),

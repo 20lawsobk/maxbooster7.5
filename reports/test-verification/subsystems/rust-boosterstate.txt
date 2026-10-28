@@ -1,4 +1,4 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
      Running unittests src/lib.rs (.cache/testing/subsystems/target/debug/deps/boosterstate-99f1eb151b291ccd)
 
 running 0 tests

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-28T17:52:50.052567+00:00",
+  "scope": "Read-only portable copied-payload provenance, exact admitted-source stability, archive hygiene and process-cleanup review; not a deployed/desktop/global launch certificate",
+  "productionReady": false,
+  "checks": {
+    "driver": true,
+    "exactCommandSequence": true,
+    "prepareRecordedExitAndLog": true,
+    "verifyRecordedExitAndLog": true,
+    "coldRecordedExitAndLog": true,
+    "verify-after-coldRecordedExitAndLog": true,
+    "codeBeforeRecordedDigest": true,
+    "codeAfterRecordedDigest": true,
+    "codeInputUnchanged": true,
+    "currentCodeInputMatches": true,
+    "admittedBeforeFileHash": true,
+    "admittedAfterFileHash": true,
+    "admittedExactBeforeAfter": true,
+    "admittedCompleteEmptyDiff": true,
+    "releaseManifestHash": true,
+    "recordedManifestMatchesPrepared": true,
+    "recordedSourceMatchesManifest": true,
+    "recordedSourceDigest": true,
+    "currentFullSourceMatches": true,
+    "currentPayloadMatchesManifest": true,
+    "currentGitHeadMatches": true,
+    "app_remainderArchiveHash": true,
+    "app_remainderSafeMembers": true,
+    "app_remainderScratchAbsent": true,
+    "runtimeRegistryPresent": true,
+    "migration0099Present": true,
+    "external_maxcoreArchiveHash": true,
+    "external_maxcoreSafeMembers": true,
+    "external_maxcoreScratchAbsent": true,
+    "maxcoreRuntimeUploadsAbsent": true,
+    "maxcoreUploadExclusionRecorded": true,
+    "sourceScratchAbsent": true,
+    "sourceRuntimeUploadsAbsent": true,
+    "coldStartupPassed": true,
+    "ownedDescendantsCleaned": true,
+    "preparedCurrentAfterCold": true,
+    "honestProductionScope": true
+  },
+  "summarySha256": "4d6210e8b547a1cab301946b8d8fa00b4fb1ff1c2f2ce92ed1b5273d866cf445",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceInventoryEntries": 4527,
+  "payloadInventoryEntries": 37,
+  "payloadBytes": 719501006,
+  "archiveEntries": {
+    "app_remainder": 1892,
+    "external_maxcore": 46255
+  },
+  "coldStartup": "pass",
+  "coldReportedProductionReady": false,
+  "readinessScope": {
+    "accepted": true,
+    "scope": "cold-startup-with-ml-unavailable",
+    "productionReady": false,
+    "unverifiedNonMl": []
+  },
+  "processCleanup": {
+    "tracked": 36,
+    "remaining": []
+  },
+  "runExitCodes": {
+    "prepare": 0,
+    "verify": 0,
+    "cold": 0,
+    "verify-after-cold": 0
+  },
+  "allChecksPass": true
+}

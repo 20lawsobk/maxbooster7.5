@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="14" failures="0" errors="0" time="1.538799271">
-    <testsuite name="tests/unit/beat-sale-money-loop.test.ts" timestamp="2026-10-28T09:24:44.101Z" hostname="af966a6fd55d" tests="14" failures="0" errors="0" skipped="0" time="1.538799271">
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; writes a royalty_transactions row with the correct amount" time="0.011075965">
+<testsuites name="vitest tests" tests="14" failures="0" errors="0" time="1.941065399">
+    <testsuite name="tests/unit/beat-sale-money-loop.test.ts" timestamp="2026-10-28T13:44:37.718Z" hostname="af966a6fd55d" tests="14" failures="0" errors="0" skipped="0" time="1.941065399">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; writes a royalty_transactions row with the correct amount" time="0.013287768">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; increments royalty_splits.total_earned and pending_payout" time="0.000876386">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; increments royalty_splits.total_earned and pending_payout" time="0.001167071">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; does NOT double-credit on a second call (idempotency)" time="0.002305001">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="A. Royalty split ledger &gt; does NOT double-credit on a second call (idempotency)" time="0.003661304">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; records a revenue_events row with source=&apos;marketplace&apos;" time="0.001547574">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; records a revenue_events row with source=&apos;marketplace&apos;" time="0.002232067">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; ON CONFLICT: a second revenue_events insert is a no-op" time="0.001170307">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="B. Revenue events &gt; ON CONFLICT: a second revenue_events insert is a no-op" time="0.001310868">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; processPayment on completed order delivers beat_sold + beat_purchased notifications" time="0.013648522">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; processPayment on completed order delivers beat_sold + beat_purchased notifications" time="0.021782904">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; replay — second processPayment call produces no additional notifications" time="0.002896349">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; replay — second processPayment call produces no additional notifications" time="0.004842536">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; concurrent calls — only one delivery wins; exactly one notification per recipient" time="0.009877248">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; concurrent calls — only one delivery wins; exactly one notification per recipient" time="0.012350549">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; failure resets notifStatus so the next retry can re-attempt delivery" time="0.002993985">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; failure resets notifStatus so the next retry can re-attempt delivery" time="0.001798133">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; no beat_sold notification from initiation-time route send" time="0.001169035">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="C. Sale notifications — confirmed payment idempotency &gt; no beat_sold notification from initiation-time route send" time="0.000956583">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt" time="0.000843656">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; beat-loop post was inserted with _beatMoneyLoop marker and overdue scheduledAt" time="0.000819457">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; runContentDispatch query selects the overdue beat-loop post" time="0.001183527">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; runContentDispatch query selects the overdue beat-loop post" time="0.001116204">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; publishToPlatform enqueues a job without throwing" time="0.252270641">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; publishToPlatform enqueues a job without throwing" time="0.30092568">
         </testcase>
-        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; post transitions to published after successful dispatch" time="0.004740267">
+        <testcase classname="tests/unit/beat-sale-money-loop.test.ts" name="D. Content-dispatch — beat-loop posts &gt; post transitions to published after successful dispatch" time="0.006002531">
         </testcase>
     </testsuite>
 </testsuites>

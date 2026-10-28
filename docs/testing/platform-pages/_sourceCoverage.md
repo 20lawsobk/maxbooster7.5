@@ -226838,7 +226838,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "external/pdim/artifacts/api-server/src/redis/store.ts",
   "statements": {
-    "covered": 1379,
+    "covered": 1374,
     "total": 3004
   },
   "functions": {
@@ -226846,7 +226846,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 339
   },
   "branches": {
-    "covered": 894,
+    "covered": 892,
     "total": 2264
   },
   "uncoveredFunctions": [
@@ -227725,7 +227725,12 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1100,
     1101,
     1118,
+    1123,
     1132,
+    1152,
+    1153,
+    1154,
+    1155,
     1181,
     1215,
     1216,
@@ -364332,7 +364337,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 46
   },
   "branches": {
-    "covered": 158,
+    "covered": 157,
     "total": 176
   },
   "uncoveredFunctions": [
@@ -364965,7 +364970,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "server/services/dsp/instruments/pianoEngines.ts",
   "statements": {
-    "covered": 595,
+    "covered": 601,
     "total": 610
   },
   "functions": {
@@ -364973,7 +364978,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "total": 80
   },
   "branches": {
-    "covered": 8,
+    "covered": 10,
     "total": 12
   },
   "uncoveredFunctions": [
@@ -364986,16 +364991,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     26,
     27,
     28,
-    872,
     873,
     874,
     876,
     877,
-    878,
-    880,
-    881,
-    883,
-    884
+    878
   ],
   "scope": "Actual V8/Istanbul execution coverage; not proof of business acceptance"
 }
@@ -433407,15 +433407,15 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 {
   "file": "shared/ml/nlp/ContentGenerator.ts",
   "statements": {
-    "covered": 322,
+    "covered": 350,
     "total": 542
   },
   "functions": {
-    "covered": 45,
+    "covered": 49,
     "total": 82
   },
   "branches": {
-    "covered": 225,
+    "covered": 236,
     "total": 448
   },
   "uncoveredFunctions": [
@@ -433430,22 +433430,6 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     {
       "name": "(anonymous_16)",
       "line": 616
-    },
-    {
-      "name": "generateMarkovBody",
-      "line": 971
-    },
-    {
-      "name": "(anonymous_29)",
-      "line": 993
-    },
-    {
-      "name": "(anonymous_30)",
-      "line": 994
-    },
-    {
-      "name": "weightedRandomChoice",
-      "line": 1447
     },
     {
       "name": "(anonymous_44)",
@@ -433588,27 +433572,8 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     951,
     965,
     975,
-    977,
-    993,
-    994,
-    995,
-    998,
     999,
-    1003,
-    1004,
-    1005,
-    1007,
-    1008,
-    1009,
-    1010,
-    1011,
     1015,
-    1016,
-    1017,
-    1018,
-    1019,
-    1020,
-    1023,
     1024,
     1025,
     1119,
@@ -433631,16 +433596,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     1284,
     1290,
     1305,
+    1320,
     1328,
     1330,
     1331,
     1338,
     1340,
     1342,
-    1451,
-    1452,
-    1453,
-    1454,
     1456,
     1575,
     1589,

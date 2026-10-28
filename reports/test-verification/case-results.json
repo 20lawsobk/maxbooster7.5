@@ -1,302 +1,6 @@
 [
   {
     "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips a plain write/read using the new codec-mesh container format",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips arbitrary binary data (not just text) through the new codec",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips data through an encrypted pocket dimension with the new codec",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension compression engine (codec-mesh integration) > reads a pre-existing legacy gzip chunk with no container envelope (backward compatibility)",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension compression engine (codec-mesh integration) > dedupes identical content within one dimension while still round-tripping",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > allows a genuinely new pocket only when metadata and index are both absent",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > fails closed for malformed metadata JSON without writing",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > fails closed for invalid metadata shape without writing",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > fails closed for malformed index JSON without writing",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > fails closed for orphaned index without writing",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/pocket-dimension/__tests__/index.test.ts",
-    "name": "PocketDimension recovery initialization > propagates PDIM read failures and remains retryable without writes",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > does not report a fake untrained state when MaxCore status is unavailable",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > uses the user-scoped MaxCore autopilot contract for recommendations",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > preserves MaxCore's explicit unavailable status for engagement prediction",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > starts storage-backed global training through MaxCore and requires admin middleware",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > returns the existing training state without claiming a new job started",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > rejects a malformed MaxCore training response instead of claiming it started",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
-    "name": "autopilot MaxCore routes > does not start MaxCore training with invalid or identity-bearing input",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > does not let public caller identities authorize private artifact commits",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/generate/campaign",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/video/extend",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/optimize/ad",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/mastering-recommendation",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/mixing-recommendation",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/models/social/state",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/train/feedback",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/training/status",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers get /api/audio/:jobId/stems",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > registers post /api/audio/upload",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > forwards authenticated identity and preserves the MaxCore response",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
-    "name": "MaxCore public proxy contract > returns an explicit error when MaxCore is unavailable",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
-    "name": "organic generation without an optional prediction dependency > returns every MaxCore variant in order without calling a separate scorer",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
-    "name": "organic generation without an optional prediction dependency > preserves explicit upstream generation unavailability",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/studioGenerationMidi.test.ts",
-    "name": "studio MaxCore MIDI serialization > converts a genuine standard MIDI note to the legacy DTO",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > maps current MaxCore status fields to the dashboard contract",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > derives legacy dashboard dataset totals from current MaxCore datasets",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
-    "file": "server/routes/__tests__/trainingDtos.test.ts",
-    "name": "training route DTO compatibility > preserves curriculum phases while adding authoritative live state",
-    "status": "passed",
-    "message": null,
-    "junit": "reports/test-verification/root/unit.junit.xml"
-  },
-  {
-    "group": "root-unit",
     "file": "tests/unit/account-analytics-proxy.test.ts",
     "name": "dispatches actual analytics/capability contract during model warmup without injecting identity into private aggregates",
     "status": "passed",
@@ -7522,7 +7226,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.$(touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86) using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.$(touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5) using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7530,7 +7234,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.`touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86` using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.`touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5` using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7538,7 +7242,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "audio: safely transcodes filename beat.\"; touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86; # using real FFmpeg",
+    "name": "audio: safely transcodes filename beat.\"; touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5; # using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7586,7 +7290,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.$(touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86) using real FFmpeg",
+    "name": "video: safely transcodes filename beat.$(touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5) using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7594,7 +7298,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.`touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86` using real FFmpeg",
+    "name": "video: safely transcodes filename beat.`touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5` using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -7602,7 +7306,7 @@
   {
     "group": "root-unit",
     "file": "tests/unit/fabricMediaTranscoder.test.ts",
-    "name": "video: safely transcodes filename beat.\"; touch fabric-injection-proof-732c849a-1dbc-4e01-a4cd-fe09a31a4a86; # using real FFmpeg",
+    "name": "video: safely transcodes filename beat.\"; touch fabric-injection-proof-adf72a1a-5474-4923-bc5e-21afdcc6dfa5; # using real FFmpeg",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/root/unit.junit.xml"
@@ -20937,6 +20641,302 @@
   },
   {
     "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips a plain write/read using the new codec-mesh container format",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips arbitrary binary data (not just text) through the new codec",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension compression engine (codec-mesh integration) > round-trips data through an encrypted pocket dimension with the new codec",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension compression engine (codec-mesh integration) > reads a pre-existing legacy gzip chunk with no container envelope (backward compatibility)",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension compression engine (codec-mesh integration) > dedupes identical content within one dimension while still round-tripping",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > allows a genuinely new pocket only when metadata and index are both absent",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > fails closed for malformed metadata JSON without writing",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > fails closed for invalid metadata shape without writing",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > fails closed for malformed index JSON without writing",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > fails closed for orphaned index without writing",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/pocket-dimension/__tests__/index.test.ts",
+    "name": "PocketDimension recovery initialization > propagates PDIM read failures and remains retryable without writes",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > does not report a fake untrained state when MaxCore status is unavailable",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > uses the user-scoped MaxCore autopilot contract for recommendations",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > preserves MaxCore's explicit unavailable status for engagement prediction",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > starts storage-backed global training through MaxCore and requires admin middleware",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > returns the existing training state without claiming a new job started",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > rejects a malformed MaxCore training response instead of claiming it started",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/autopilotMaxCore.test.ts",
+    "name": "autopilot MaxCore routes > does not start MaxCore training with invalid or identity-bearing input",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > does not let public caller identities authorize private artifact commits",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/generate/campaign",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/video/extend",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/optimize/ad",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/mastering-recommendation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/mixing-recommendation",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/models/social/state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/train/feedback",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/training/status",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers get /api/audio/:jobId/stems",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > registers post /api/audio/upload",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > forwards authenticated identity and preserves the MaxCore response",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/maxcoreProxy.test.ts",
+    "name": "MaxCore public proxy contract > returns an explicit error when MaxCore is unavailable",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+    "name": "organic generation without an optional prediction dependency > returns every MaxCore variant in order without calling a separate scorer",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/organicMaxCoreGeneration.test.ts",
+    "name": "organic generation without an optional prediction dependency > preserves explicit upstream generation unavailability",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/studioGenerationMidi.test.ts",
+    "name": "studio MaxCore MIDI serialization > converts a genuine standard MIDI note to the legacy DTO",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > maps current MaxCore status fields to the dashboard contract",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > derives legacy dashboard dataset totals from current MaxCore datasets",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
+    "file": "server/routes/__tests__/trainingDtos.test.ts",
+    "name": "training route DTO compatibility > preserves curriculum phases while adding authoritative live state",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/root/unit.junit.xml"
+  },
+  {
+    "group": "root-unit",
     "file": "server/services/__tests__/accessControl.test.ts",
     "name": "object and account authorization > checks ownership and deletion for URL, absolute URL, and bare storage keys",
     "status": "passed",
@@ -31137,6 +31137,62 @@
   },
   {
     "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_existing_unique_source_route_identity_is_unchanged",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_high_confidence_mounted_path_is_retained",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_medium_confidence_mounted_path_is_retained",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_missing_full_path_remains_unresolved",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_unknown_confidence_cannot_claim_a_verified_mount",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_endpoint_mount_resolution.py",
+    "name": "test_unmounted_fallback_path_never_becomes_a_resolved_mount",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_endpoint_mount_resolution.xml"
+  },
+  {
+    "group": "python",
     "file": "tests/testing/test_launch_readiness_audit.py",
     "name": "test_missing_quality_domain_is_rejected[frontend]",
     "status": "passed",
@@ -32139,6 +32195,422 @@
     "group": "python",
     "file": "tests/testing/test_platform_evidence.py",
     "name": "test_validator_does_not_mutate_the_declared_proof",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_actual_selected_producer_can_prove_only_its_exact_current_cases[python]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_actual_selected_producer_can_prove_only_its_exact_current_cases[node]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_actual_selected_producer_can_prove_only_its_exact_current_cases[browser]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[missing-ledger]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[missing-inputs]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[source-changed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[digest-relabelled]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[unchanged-false]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[changed-inputs]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[missing-run]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[unselected-group]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[missing-log-hash]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_execution_metadata_cannot_be_relabelled_as_current_proof[changed-log]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts[python]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts[node]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts[browser]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_case_results_must_match_actual_bound_passing_xml",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_failed_or_skipped_xml_cannot_borrow_a_pass_label",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_changed_python_source_hash_cannot_borrow_default_file_identity",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_case_results_fail_closed[None]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_case_results_fail_closed[value1]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_case_results_fail_closed[all cases]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_supplemental_node_cases_need_the_actual_current_successful_file_run[missing-hash]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_supplemental_node_cases_need_the_actual_current_successful_file_run[changed-log]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_supplemental_node_cases_need_the_actual_current_successful_file_run[wrong-command]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_supplemental_node_cases_need_the_actual_current_successful_file_run[failed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_supplemental_node_cases_need_the_actual_current_successful_file_run[missing-run]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_node_reports_fail_closed[None]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_node_reports_fail_closed[value1]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_node_reports_fail_closed[value2]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_node_reports_fail_closed[value3]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_browser_reports_fail_closed[None]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_browser_reports_fail_closed[value1]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_browser_reports_fail_closed[value2]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_malformed_supplemental_browser_reports_fail_closed[value3]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes[passed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes[failed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes[skipped]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof[source-map-digest]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof[timeout]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof[duplicate-run]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof[outside-artifact]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_aggregate_browser_tap_cannot_assign_cases_to_files[False]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_aggregate_browser_tap_cannot_assign_cases_to_files[True]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_default_file_producer_requires_exact_command_and_numeric_success[wrong-source-command]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_default_file_producer_requires_exact_command_and_numeric_success[false-exit]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_default_file_producer_requires_exact_command_and_numeric_success[command-prefix-only]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass[passed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass[failed]",
+    "status": "passed",
+    "message": null,
+    "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"
+  },
+  {
+    "group": "python",
+    "file": "tests/testing/test_platform_evidence.py",
+    "name": "test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass[skipped]",
     "status": "passed",
     "message": null,
     "junit": "reports/test-verification/python/tests__testing__test_platform_evidence.xml"

@@ -3,133 +3,133 @@ TAP version 13
     # Subtest: marketplace: historical charge.disputed=true with current won
     ok 1 - marketplace: historical charge.disputed=true with current won
       ---
-      duration_ms: 43.532664
+      duration_ms: 53.748703
       type: 'test'
       ...
     # Subtest: marketplace: historical charge.disputed=true with current needs_response
     ok 2 - marketplace: historical charge.disputed=true with current needs_response
       ---
-      duration_ms: 15.298905
+      duration_ms: 18.271888
       type: 'test'
       ...
     # Subtest: marketplace: historical charge.disputed=true with current provider_failure
     ok 3 - marketplace: historical charge.disputed=true with current provider_failure
       ---
-      duration_ms: 20.038886
+      duration_ms: 19.568674
       type: 'test'
       ...
     # Subtest: marketplace: historical charge.disputed=true with current missing_accounting
     ok 4 - marketplace: historical charge.disputed=true with current missing_accounting
       ---
-      duration_ms: 20.063993
+      duration_ms: 19.746653
       type: 'test'
       ...
     # Subtest: marketplace: historical charge.disputed=true with current pending_created
     ok 5 - marketplace: historical charge.disputed=true with current pending_created
       ---
-      duration_ms: 16.890583
+      duration_ms: 17.722729
       type: 'test'
       ...
     # Subtest: marketplace: historical charge.disputed=true with current pending_succeeded
     ok 6 - marketplace: historical charge.disputed=true with current pending_succeeded
       ---
-      duration_ms: 17.563175
+      duration_ms: 17.646033
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current won
     ok 7 - merchant: historical charge.disputed=true with current won
       ---
-      duration_ms: 23.041988
+      duration_ms: 27.162231
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current needs_response
     ok 8 - merchant: historical charge.disputed=true with current needs_response
       ---
-      duration_ms: 17.697929
+      duration_ms: 16.349817
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current provider_failure
     ok 9 - merchant: historical charge.disputed=true with current provider_failure
       ---
-      duration_ms: 15.688122
+      duration_ms: 15.217089
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current missing_accounting
     ok 10 - merchant: historical charge.disputed=true with current missing_accounting
       ---
-      duration_ms: 17.53577
+      duration_ms: 22.64139
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current pending_created
     ok 11 - merchant: historical charge.disputed=true with current pending_created
       ---
-      duration_ms: 19.32858
+      duration_ms: 14.304301
       type: 'test'
       ...
     # Subtest: merchant: historical charge.disputed=true with current pending_succeeded
     ok 12 - merchant: historical charge.disputed=true with current pending_succeeded
       ---
-      duration_ms: 12.888154
+      duration_ms: 13.59424
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current won
     ok 13 - growth: historical charge.disputed=true with current won
       ---
-      duration_ms: 23.764648
+      duration_ms: 21.828874
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current needs_response
     ok 14 - growth: historical charge.disputed=true with current needs_response
       ---
-      duration_ms: 9.807473
+      duration_ms: 11.239537
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current provider_failure
     ok 15 - growth: historical charge.disputed=true with current provider_failure
       ---
-      duration_ms: 17.861134
+      duration_ms: 21.603283
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current missing_accounting
     ok 16 - growth: historical charge.disputed=true with current missing_accounting
       ---
-      duration_ms: 17.399339
+      duration_ms: 22.124741
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current pending_created
     ok 17 - growth: historical charge.disputed=true with current pending_created
       ---
-      duration_ms: 10.057154
+      duration_ms: 12.242321
       type: 'test'
       ...
     # Subtest: growth: historical charge.disputed=true with current pending_succeeded
     ok 18 - growth: historical charge.disputed=true with current pending_succeeded
       ---
-      duration_ms: 12.858519
+      duration_ms: 16.955872
       type: 'test'
       ...
     # Subtest: stale initial snapshot replay never queues recovery against an already drawn won allocation
     ok 19 - stale initial snapshot replay never queues recovery against an already drawn won allocation
       ---
-      duration_ms: 12.889786
+      duration_ms: 10.335975
       type: 'test'
       ...
     # Subtest: invalid initial compensation rolls back booking, allocations and journals
     ok 20 - invalid initial compensation rolls back booking, allocations and journals
       ---
-      duration_ms: 3.609317
+      duration_ms: 2.975769
       type: 'test'
       ...
     # Subtest: real refund engine/provider refresh pending state inside the source transaction
     ok 21 - real refund engine/provider refresh pending state inside the source transaction
       ---
-      duration_ms: 21.53181
+      duration_ms: 23.929093
       type: 'test'
       ...
     1..21
 ok 1 - all settlement consumers use current dispute accounting under the source lock
   ---
-  duration_ms: 1075.880239
+  duration_ms: 1203.47231
   type: 'test'
   ...
 1..1
@@ -140,4 +140,4 @@ ok 1 - all settlement consumers use current dispute accounting under the source 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1153.874008
+# duration_ms 1302.109224

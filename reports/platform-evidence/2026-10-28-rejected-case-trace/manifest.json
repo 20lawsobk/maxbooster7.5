@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "scope": "All104 currently rejected case occurrences plusone retained-source catalog debt; metadata/source inspection only; no new product execution or evidence promotion",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceCommonSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6968,
+      "sha256": "c865c08665f87df17cf4c269bcfc592bc4045e89e173149a552ab87c720df28d"
+    },
+    {
+      "path": "build-report.initial.py",
+      "bytes": 14170,
+      "sha256": "f044035ac282b3bd4988f199bd9374062be895bba6f5b955cdaff51aad5a1d0a"
+    },
+    {
+      "path": "build-report.py",
+      "bytes": 14150,
+      "sha256": "008ef7483fc4771004325f2a0f501207e60905c8df524347fa1962ca0139e382"
+    },
+    {
+      "path": "catalog-gap.json",
+      "bytes": 7871,
+      "sha256": "d33eeb28536e1368b10b0be7b8554261095b8c32d983555426d38eaaeb7dacc7"
+    },
+    {
+      "path": "entries.json",
+      "bytes": 774283,
+      "sha256": "615d38f7aa7df195f6a5d325d9935005f834e2ba8a2c36c91ebdeea7e14f4bb3"
+    },
+    {
+      "path": "initial-build-syntax-error.txt",
+      "bytes": 618,
+      "sha256": "8e23dc1dc41eb4e2338171e3360294b11eb117219f1ebaeb80ebdace7de29786"
+    },
+    {
+      "path": "initial-syntax-error.txt",
+      "bytes": 430,
+      "sha256": "828b832de9fc5a6fa6a499aba6424cfd60b8774df72c947b6594df8e1e915ccf"
+    },
+    {
+      "path": "matrix.md",
+      "bytes": 22447,
+      "sha256": "e7339ef5d1c276a215c17612de541d93b67f67fb884c49a7c79a0742857aba2c"
+    },
+    {
+      "path": "parameter-table-semantics.json",
+      "bytes": 3021,
+      "sha256": "ca949aea46ac2ed3a4d4dd4960527af19194c29e057c5c0c1fcfafc87ea8129b"
+    },
+    {
+      "path": "parameterized-source-sites.json",
+      "bytes": 15791,
+      "sha256": "5959006924719ddde7c1dd1ccd6aa93f06733d00b6f5fc9fcaff6111b2a8a8d3"
+    },
+    {
+      "path": "replay-receipt.json",
+      "bytes": 3818,
+      "sha256": "7d5b2a6f43f00d1ab68a4c0b2151d79706413660d759dc90a00278f91fac4711"
+    },
+    {
+      "path": "replay.txt",
+      "bytes": 981,
+      "sha256": "4f794d5b2155f29c714336470bdf501484fa860cd44da09f748a8da71f2582c0"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1146,
+      "sha256": "d3dd7f1fceedc790b44ce16ea0f7628d9fb02f52ee31510692fc8d78c1de3744"
+    },
+    {
+      "path": "trace-rejections.executed.py",
+      "bytes": 6428,
+      "sha256": "111db3f327a59f23f5350ee8cafba07372f99fb252ffcccbd50f68d5a6532e38"
+    },
+    {
+      "path": "trace-rejections.initial.py",
+      "bytes": 6430,
+      "sha256": "90948f347c34e32e35e00efb2b0596a745a1a532ada6e901e12fa10f3b7f143f"
+    },
+    {
+      "path": "trace-rejections.py",
+      "bytes": 6751,
+      "sha256": "ad56cd9bfe509c26b190297e3127d3c24821d529ecaf0939814af66bcf320f30"
+    },
+    {
+      "path": "validate-cohort.py",
+      "bytes": 3700,
+      "sha256": "5fc2a146a23ed3ac68154bb7ec11c262067fac3aa4d02bf5858a5192a229d8fe"
+    }
+  ],
+  "fileCount": 17,
+  "bytes": 889003,
+  "newAcceptedEvidence": 0,
+  "productionReady": false,
+  "validatedAt": "2026-10-28T18:03:46.382119+00:00",
+  "validationResults": {
+    "artifactHashesPassed": 17,
+    "caseOccurrencesReviewed": 104,
+    "catalogDebtsReviewed": 1,
+    "fileLinksPassed": 11,
+    "newAcceptedEvidence": 0,
+    "productionReady": false
+  }
+}

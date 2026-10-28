@@ -57,4 +57,4 @@ tests/test_dedicated_handler_routing.py::test_audio_internal_body_caller_mood_an
     "created_at": datetime.utcnow().isoformat() + "Z",
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-23 passed, 10 warnings in 3.79s
+23 passed, 10 warnings in 4.43s

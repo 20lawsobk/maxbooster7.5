@@ -1,0 +1,15 @@
+{
+  "scope": "Source/receipt observation integrity checks only; proposed codec/tests are NOT implemented or executed",
+  "checks": {
+    "libraryFilesReadableAndHashed": true,
+    "infinityAssignmentExplicitInLibrary": true,
+    "undefinedSyntheticArmExplicitInLibrary": true,
+    "providerWrapperActualOffsetRecorded": true,
+    "observedRawInfinityIdentified": true,
+    "noNaNOriginClaim": true,
+    "proposalOnlyNoProfilesMerged": true
+  },
+  "passed": 7,
+  "failed": 0,
+  "productionReady": false
+}

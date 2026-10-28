@@ -19,6 +19,8 @@ source excerpts and hashes, required correction, dependencies, execution order,
 risk, validation and production acceptance. Empty current associations do not
 prove that a cross-process consumer is absent.
 
+The original trace below is historical. The later [implemented repair delta](#implemented-bounded-topology-repair--october-28-2026) records subsequent source changes without rewriting that audit.
+
 ## Source findings
 
 | Warning group | Entries | What the source establishes | Remaining acceptance |
@@ -122,3 +124,50 @@ hashes every retained output, and
 [validation.json](../../reports/mapping-audit/2026-10-28/validation.json) records
 the actual identity, citation, source-hash and preservation checks. These are
 report-integrity checks, not extra product tests.
+
+
+## Implemented bounded topology repair — October 28, 2026
+
+The [versioned implementation cohort](../../reports/mapping-audit/2026-10-28-topology-final/README.md)
+preserves the exact six-file topology patch and actual integrated execution:
+**38 Node assertions and 7 Python consumer assertions passed with 0 failures or
+skips; the existing parser self-test passed.** Eight real scanner fixtures cover
+both confirmed defects, aliases/process boundaries, cycles and unresolved paths.
+Thirty finite-template cases retain lexical/mutation/deferred-function and bound
+failures. The consumer now distinguishes an unresolved fallback from a verified
+mount and prevents same-source URL identities from colliding across processes.
+These are inventory checks, not complete application journeys.
+
+An actual static comparison copied 1800 server/client source files into an owned
+fixture, ran the original and corrected scanner without importing the app, and
+verified the 1800 original hashes stayed unchanged. Exactly 4 old route records
+become 6 correct records: the two durable-export prefixes and the four concrete
+FanHub method/action paths above. The other 2387 source/method/path/process
+identities remain present; two records improve mount provenance. Audit rows
+2391→2393 and 13 dynamic diagnostics→13.
+
+[Explicit identity relations](../../reports/mapping-audit/2026-10-28-topology-final/candidate/backend-id-remap.json)
+preserve all 4 replaced backend identities as relationships to 6 replacements,
+and all 24 old required checks as 35 concrete checks. No existing PASS transfers.
+Neither hand-authored 80-page supplement references these 4 IDs; all 80 page IDs
+and 2162 section IDs remain unchanged. The original seven-step roadmap remains
+active; only this bounded part of mount-context/finite-loop discovery and its
+consumer contract has been implemented.
+
+The honest consumer exposes 40 previously masked unmounted main-router records.
+The [preservation receipt](../../reports/mapping-audit/2026-10-28-topology-final/mapping-preservation.json)
+proves every original 130 warning object and exact `/resolve` ID remains in the
+new 170-warning inventory, and records all 40 new obligations. This is additional
+visible uncertainty, not 40 newly proved production bugs or 130 closed gaps.
+At capture the register retained 80 pages, 2909 backend registrations and 33549
+required checks; all 33549 were unverified and six prior source-bound links were
+stale. Root-level current-source evidence reconciliation remains separate work.
+
+Middleware/re-export classification, other finite arrays/helpers, distribution
+specialization, Python factory/conditional mounts, legacy-source admission and
+cross-process joins remain open exactly as listed above. Existing regex/scope
+limits, conditional/deferred mounts, absolute-looking relative paths and escaped
+literal interpolation remain tracked. Graph depth is bounded at 13; alias breadth
+still requires a global resource budget. The source checkpoint was pending when
+the focused receipt was captured; later source changes need their own validation.
+No feature check, page Green designation or global launch approval is inferred.

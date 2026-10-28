@@ -1,1 +1,1 @@
-{"status": "needs_work", "unresolvedTasks": 3415, "countsByKind": {"command_failure": 2, "assertion_failure": 2, "blocked_check": 20, "skipped_case": 20, "coverage_gap": 2494, "missing_execution": 29, "feature_acceptance_gap": 833, "mapping_gap": 15}}
+{"status": "needs_work", "unresolvedTasks": 3419, "countsByKind": {"command_failure": 1, "assertion_failure": 1, "blocked_check": 20, "skipped_case": 20, "coverage_gap": 2494, "missing_execution": 30, "feature_acceptance_gap": 833, "mapping_gap": 20}}

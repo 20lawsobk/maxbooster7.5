@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: publishing owns authorization and isolates every child cache before cleanup
 ok 1 - publishing owns authorization and isolates every child cache before cleanup
   ---
-  duration_ms: 11.47585
+  duration_ms: 14.112503
   type: 'test'
   ...
 # Subtest: conflicting inherited authorization fails before publishing
 ok 2 - conflicting inherited authorization fails before publishing
   ---
-  duration_ms: 9.608128
+  duration_ms: 8.585634
   type: 'test'
   ...
 # Subtest: overlapping publishing is rejected; normal exit releases the lock
 ok 3 - overlapping publishing is rejected; normal exit releases the lock
   ---
-  duration_ms: 61.393017
+  duration_ms: 67.275819
   type: 'test'
   ...
 # Subtest: actual historical entry hands off once with isolated caches and authorized recovery
 ok 4 - actual historical entry hands off once with isolated caches and authorized recovery
   ---
-  duration_ms: 826.713157
+  duration_ms: 1076.354355
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - actual historical entry hands off once with isolated caches and authorize
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1033.06842
+# duration_ms 1314.789653

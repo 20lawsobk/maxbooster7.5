@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T13:07:15.930354+00:00",
+  "scope": "Actual integrated in-repository focused topology tests; no behavior/page/global acceptance inferred",
+  "sourceCommit": "PENDING_SOURCE_CHECKPOINT",
+  "headAtReceipt": "bca5f4e1f632db835dc90b1e57d85f919ed6e0aa",
+  "appliedProposalPatchSha256": "bb12479dfde12508348a5d7b8a4e7373322b8f73d16ef23c23c09d98b979eb86",
+  "sourceFiles": {
+    "scripts/audit-endpoints.mjs": {
+      "proposalSha256": "5d0d339b1e497910f59763646be74ee0204ae29d28a9208fe2b14f69cd631303",
+      "currentSha256": "5d0d339b1e497910f59763646be74ee0204ae29d28a9208fe2b14f69cd631303",
+      "currentlyMatchesProposal": true
+    },
+    "scripts/lib/finite-route-paths.mjs": {
+      "proposalSha256": "c6b6e8d51e49f31d85d4a168852ef49859feb1f85c1ea9e25205a0a574c54288",
+      "currentSha256": "c6b6e8d51e49f31d85d4a168852ef49859feb1f85c1ea9e25205a0a574c54288",
+      "currentlyMatchesProposal": true
+    },
+    "scripts/testing/platform-register.py": {
+      "proposalSha256": "bdbcf9a3426e4447fcc68fc7514e01dba8d27823dff900e38d903b012b9b0aff",
+      "currentSha256": "bdbcf9a3426e4447fcc68fc7514e01dba8d27823dff900e38d903b012b9b0aff",
+      "currentlyMatchesProposal": true
+    },
+    "tests/endpoint-topology.test.mjs": {
+      "proposalSha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec",
+      "currentSha256": "4b97011ea7147ee3fed7eaaf8650b897fb7a3af9ebd14531f8226f3979c09aec",
+      "currentlyMatchesProposal": true
+    },
+    "tests/finite-route-paths.test.mjs": {
+      "proposalSha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264",
+      "currentSha256": "f05acb9390269a2b36a553cb9c940475d4e050528f2d1a1ac1e78f3a303e9264",
+      "currentlyMatchesProposal": true
+    },
+    "tests/testing/test_endpoint_mount_resolution.py": {
+      "proposalSha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
+      "currentSha256": "f0bb84c0f26508cb200bcb893bf102bdd32032f4ed79a58a9939bfed312a0482",
+      "currentlyMatchesProposal": true
+    }
+  },
+  "node": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0,
+    "skipped": 0
+  },
+  "consumer": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "selfTest": "PASS: platform parser preserves page bindings, distinct controls/events, router mounts and unresolved paths without executing source",
+  "logs": {
+    "node": {
+      "bytes": 7384,
+      "sha256": "642594872df8a651286ec488e5e381d1e56c3e0da324cb88ff10ddf30e1b75d4"
+    },
+    "consumer": {
+      "bytes": 98,
+      "sha256": "15be9e29acfb9af509f76be546e214ba2e874086568562b11118d8a499c56aad"
+    },
+    "selftest": {
+      "bytes": 133,
+      "sha256": "2aa94c04b915cd2c6af508146bdba20cb9ef93945d2cb92ea8e660fc07989a91"
+    }
+  },
+  "registryObservation": {
+    "routedPages": 80,
+    "backendRegistrations": 2909,
+    "requiredChecks": 33549,
+    "unverifiedChecks": 33549,
+    "unknownMappings": 170,
+    "invalidEvidenceLinks": 6
+  },
+  "otherInFlightWork": "Root identified additional source-freshness evidence binding gate in platform-register; any later source modification/commit needs its own validation. This receipt does not bless future bytes.",
+  "productionReady": false
+}

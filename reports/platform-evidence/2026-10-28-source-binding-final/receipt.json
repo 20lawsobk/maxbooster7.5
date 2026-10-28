@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "documentedAt": "2026-10-28T13:32:43.000085+00:00",
+  "scope": "Preserved actual focused provenance-gate regressions and historical-source compatibility; no product feature or launch acceptance granted",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceCommits": [
+    "e5124419",
+    "10d19267"
+  ],
+  "currentSourceHashesObservedDuringDocumentation": {
+    "scripts/testing/platform-register.py": {
+      "bytes": 63626,
+      "sha256": "f8c4e518a50cfb66cce48e4b305b1760df6729ffbacbdaccaddb0708ab106257"
+    },
+    "tests/testing/test_platform_evidence.py": {
+      "bytes": 24976,
+      "sha256": "7cad1816b277bb29e6f1bd43b877ffc98ba3fb92207368df5bd906f65eea7f06"
+    }
+  },
+  "productionReady": false,
+  "integratedMasterStatusAtDocumentation": "PENDING",
+  "focusedResults": {
+    "platform-evidence-duplicate-file-green-2026-10-28.xml": {
+      "tests": 133,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "durationSeconds": 14.564,
+      "timestamp": "2026-10-28T13:29:15.444699+00:00",
+      "classCounts": {
+        "tests.testing.test_platform_evidence": 77,
+        "tests.testing.test_endpoint_mount_resolution.MountResolutionConsumer": 7,
+        "tests.testing.test_launch_readiness_audit": 42,
+        "tests.testing.test_platform_plan": 7
+      }
+    },
+    "platform-evidence-final-2026-10-28.xml": {
+      "tests": 124,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "durationSeconds": 9.688,
+      "timestamp": "2026-10-28T13:19:29.823337+00:00",
+      "classCounts": {
+        "tests.testing.test_platform_evidence": 68,
+        "tests.testing.test_endpoint_mount_resolution.MountResolutionConsumer": 7,
+        "tests.testing.test_launch_readiness_audit": 42,
+        "tests.testing.test_platform_plan": 7
+      }
+    },
+    "platform-evidence-fixed-2026-10-28.xml": {
+      "tests": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "durationSeconds": 7.872,
+      "timestamp": "2026-10-28T13:17:24.757170+00:00",
+      "classCounts": {
+        "tests.testing.test_platform_evidence": 62,
+        "tests.testing.test_endpoint_mount_resolution.MountResolutionConsumer": 7,
+        "tests.testing.test_launch_readiness_audit": 42,
+        "tests.testing.test_platform_plan": 7
+      }
+    },
+    "platform-evidence-reviewed-final-2026-10-28.xml": {
+      "tests": 130,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "durationSeconds": 10.365,
+      "timestamp": "2026-10-28T13:21:46.815648+00:00",
+      "classCounts": {
+        "tests.testing.test_platform_evidence": 74,
+        "tests.testing.test_endpoint_mount_resolution.MountResolutionConsumer": 7,
+        "tests.testing.test_launch_readiness_audit": 42,
+        "tests.testing.test_platform_plan": 7
+      }
+    }
+  },
+  "originalFailureReproductions": {
+    "platform-evidence-stale-baseline-2026-10-28.txt": {
+      "failed": 1,
+      "deselected": 25,
+      "meaning": "New actual main-linker regression expected UNVERIFIED but the old implementation wrongly returned PASS for old execution after editable candidate digest refresh."
+    },
+    "platform-evidence-duplicate-file-red-2026-10-28.txt": {
+      "failed": 3,
+      "deselected": 74,
+      "meaning": "Three actual two-run Node fixtures expected rejection for duplicate file execution; the gate wrongly borrowed the earlier pass when the second run passed, failed or skipped."
+    }
+  },
+  "preservation": {
+    "sourceFilesCopiedByteExactlyFrom": "/workspace/onboarding-results",
+    "copies": [
+      {
+        "path": "platform-evidence-stale-baseline-2026-10-28.txt",
+        "bytes": 3985,
+        "sha256": "c4a1d41e09cdcc71bde432f3fc7e4b1b91b989b8ef910464543cd5b5d05115cb"
+      },
+      {
+        "path": "platform-evidence-fixed-2026-10-28.txt",
+        "bytes": 180,
+        "sha256": "c60fff521a7d0b6ba3c323ba625242543424a75383bceba94e98222ce853f810"
+      },
+      {
+        "path": "platform-evidence-fixed-2026-10-28.xml",
+        "bytes": 18079,
+        "sha256": "14d370227b80ce0bece2fe3cdad017080605c040ae0c78688155c64624a0655a"
+      },
+      {
+        "path": "platform-evidence-final-2026-10-28.txt",
+        "bytes": 180,
+        "sha256": "0f37def55822f7cfe3c50cfb34de076cbfb0e65ecdb7ae1657837a452e26f2b3"
+      },
+      {
+        "path": "platform-evidence-final-2026-10-28.xml",
+        "bytes": 19056,
+        "sha256": "3761dbcf9aae2e3e300ff699d20663a7267e2d250b4198ac486b98060dd9e2f6"
+      },
+      {
+        "path": "platform-evidence-reviewed-final-2026-10-28.txt",
+        "bytes": 181,
+        "sha256": "b9e1877e3c735bca77ab446275cf0d6e3bde057dd562031d9d370b1978d29a15"
+      },
+      {
+        "path": "platform-evidence-reviewed-final-2026-10-28.xml",
+        "bytes": 20013,
+        "sha256": "5b1b098e81067743e6d17f6289ec1157f3dda540a86039c3bffc5747dcf2f4ba"
+      },
+      {
+        "path": "platform-evidence-duplicate-file-red-2026-10-28.txt",
+        "bytes": 12406,
+        "sha256": "9e9706d98865e42ce909d1620798e82430d7192b165e1b524a711cd96b7fbeef"
+      },
+      {
+        "path": "platform-evidence-duplicate-file-green-2026-10-28.txt",
+        "bytes": 181,
+        "sha256": "e9299761d45a32800c9575db1d673197f28b9992188c8cf960052ad420231087"
+      },
+      {
+        "path": "platform-evidence-duplicate-file-green-2026-10-28.xml",
+        "bytes": 20461,
+        "sha256": "5cbb6e2f6e31c1724f29c03c7af76556df30edda41fcc93c938b62ed0dfebced"
+      },
+      {
+        "path": "platform-evidence-review-2026-10-28.json",
+        "bytes": 1824,
+        "sha256": "3c48fe401467fd7f3b6fc3f862bb8df903447f869424377a091fb51c9027be43"
+      }
+    ]
+  },
+  "limits": [
+    "The130-case review JSON retains its original earlier source hashes; it is not rewritten as final10d source evidence.",
+    "The133-case final XML covers77 evidence,7 mount consumer,42 launch audit and7 plan regressions; it is not a product feature acceptance run.",
+    "The final133 raw output/XML do not themselves retain a shell command line or numeric process exit; recorded pytest counts are preserved, and reproduction commands are separately documented rather than inventing missing metadata.",
+    "Two incorrect related test-file paths caused earlier collection errors. Their first local log was overwritten by a subsequent successful focused run; no retained raw artifact for those errors is claimed.",
+    "Historical schema replay injects old recorded source only as a diagnostic and does not establish current execution proof.",
+    "Fullmaster results, current matrix and final exact feature counts remain pending until their actual current-source execution/reconciliation completes."
+  ]
+}

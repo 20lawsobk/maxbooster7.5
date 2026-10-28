@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "startedAt": "2026-10-28T09:31:21.063418+00:00",
-  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "startedAt": "2026-10-28T13:51:27.764508+00:00",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
   "sourceSha256": {
     "scripts/testing/run-engine-load.py": "b9fa8427d9da2565f2d8527f976b4c096f7df0d44341a39795e0c5a17eafb5d6",
     "external/maxcore/artifacts/ai-training-server/ai_model/maxcore/tests/load_test.py": "6e034b3786126a90bcd6b044febeda50b86a97d2ed57a58c40a953298cdc1c84",
@@ -54,20 +54,20 @@
         "ai_model/maxcore/tests/load_test.py"
       ],
       "cwd": "external/maxcore/artifacts/ai-training-server",
-      "startedAt": "2026-10-28T09:31:21.066014+00:00",
-      "durationSeconds": 0.266,
+      "startedAt": "2026-10-28T13:51:27.767439+00:00",
+      "durationSeconds": 0.317,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/operations/engine-load/run-01.txt",
-      "logSha256": "026488213949deaf81f6acb78fa30a1197094ed64286f9d3219c2f589456a430",
+      "logSha256": "3bde0847d00d85d9677eaea1ddb279eafc80a7ac9a873a1b505468ecf3fccfb6",
       "observed": {
         "coldGraphCalls": 40,
         "numericReferenceMatches": true,
         "contentionSources": {
           "compute": 40,
-          "coalesced": 16,
-          "cache": 444
+          "cache": 437,
+          "coalesced": 23
         },
         "contentionCalls": 500,
         "serialCacheCalls": 400,
@@ -86,6 +86,6 @@
   ],
   "productionReady": false,
   "status": "passed",
-  "finishedAt": "2026-10-28T09:31:21.333271+00:00",
+  "finishedAt": "2026-10-28T13:51:28.086250+00:00",
   "unchangedSources": true
 }

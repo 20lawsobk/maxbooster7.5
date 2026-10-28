@@ -8,13 +8,13 @@ This source register and the machine JSON distinguish declarations, static assoc
 | --- | ---: |
 | routedPageDeclarations | 80 |
 | uiInteractionDeclarations | 8374 |
-| backendRegistrations | 2907 |
+| backendRegistrations | 2909 |
 | frontendApiContracts | 932 |
-| scannedTypeScriptJavaScriptFiles | 3404 |
+| scannedTypeScriptJavaScriptFiles | 3408 |
 | actualCoverageFiles | 2653 |
-| requiredChecks | 33538 |
-| unverifiedChecks | 33532 |
-| unknownMappings | 130 |
+| requiredChecks | 33549 |
+| unverifiedChecks | 33543 |
+| unknownMappings | 170 |
 | invalidEvidenceLinks | 0 |
 
 ## Routed pages
@@ -172,10 +172,10 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/errors` | 2 | 2 | 12 |
 | `main-endpoint-audit/events` | 1 | 1 | 5 |
 | `main-endpoint-audit/executive` | 2 | 1 | 11 |
-| `main-endpoint-audit/export` | 26 | 1 | 152 |
+| `main-endpoint-audit/export` | 28 | 2 | 165 |
 | `main-endpoint-audit/fabric` | 14 | 1 | 77 |
 | `main-endpoint-audit/fan-campaigns` | 7 | 1 | 40 |
-| `main-endpoint-audit/fan-hub` | 14 | 1 | 80 |
+| `main-endpoint-audit/fan-hub` | 16 | 1 | 91 |
 | `main-endpoint-audit/fan-memberships` | 9 | 1 | 50 |
 | `main-endpoint-audit/files` | 15 | 2 | 85 |
 | `main-endpoint-audit/generate` | 8 | 2 | 56 |
@@ -185,7 +185,6 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/growth` | 23 | 1 | 135 |
 | `main-endpoint-audit/health` | 15 | 7 | 92 |
 | `main-endpoint-audit/helpdesk` | 5 | 1 | 28 |
-| `main-endpoint-audit/history` | 1 | 1 | 7 |
 | `main-endpoint-audit/hns` | 11 | 1 | 60 |
 | `main-endpoint-audit/hybrid-storage` | 10 | 1 | 56 |
 | `main-endpoint-audit/infer` | 1 | 1 | 6 |
@@ -193,7 +192,6 @@ Every method/path registration, source location, mount uncertainty and acceptanc
 | `main-endpoint-audit/insights` | 1 | 1 | 5 |
 | `main-endpoint-audit/internal` | 2 | 1 | 14 |
 | `main-endpoint-audit/invoices` | 10 | 1 | 59 |
-| `main-endpoint-audit/jobs` | 1 | 1 | 6 |
 | `main-endpoint-audit/kill-switch` | 6 | 1 | 34 |
 | `main-endpoint-audit/kyc` | 18 | 1 | 101 |
 | `main-endpoint-audit/label-submissions` | 8 | 1 | 46 |
@@ -497,7 +495,7 @@ Coverage comes from the supplied V8/Istanbul `coverage-final.json`. Uncovered fu
 | `server/lib/pdimClient.ts` | 529/954 | 92/278 | 186 |
 | `shared/ml/models/AdOptimizationEngine.ts` | 0/902 | 0/163 | 163 |
 | `client/src/components/marketplace/StorefrontBuilder.tsx` | 86/493 | 3/158 | 155 |
-| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1379/3004 | 185/339 | 154 |
+| `external/pdim/artifacts/api-server/src/redis/store.ts` | 1374/3004 | 185/339 | 154 |
 | `client/src/pages/Advertisement.tsx` | 0/388 | 0/151 | 151 |
 | `client/src/components/marketplace/StorefrontDnsZoneManager.tsx` | 8/338 | 0/147 | 147 |
 | `server/services/hyperLearningEngine.ts` | 0/1004 | 0/145 | 145 |

@@ -43,6 +43,7 @@ passed: tests/desktop-runtime-policy.test.mjs
 passed: tests/distribution-workflow-tenancy.test.mjs
 passed: tests/dns-dependency-consumers.test.mjs
 passed: tests/electron-asar-launch-policy.test.mjs
+passed: tests/endpoint-topology.test.mjs
 passed: tests/fabric-deletion-postgres.test.mjs
 passed: tests/fabric-imported-reconcile-postgres.test.mjs
 passed: tests/fabric-migration-outbox-postgres.test.mjs
@@ -50,6 +51,7 @@ passed: tests/fabric-object-lineage.test.mjs
 passed: tests/fabric-replica-generation.test.mjs
 passed: tests/fabric-root-storage-postgres.test.mjs
 passed: tests/fabric-schema-generation.test.mjs
+passed: tests/finite-route-paths.test.mjs
 passed: tests/fixture-command-input.test.mjs
 passed: tests/http-dependency-consumers.test.mjs
 passed: tests/hybrid-storage-postgres.test.mjs
@@ -58,7 +60,7 @@ passed: tests/integrations-readiness.cjs
 passed: tests/isolated-acceptance-readiness.test.mjs
 passed: tests/isolated-codec-guard.test.mjs
 passed: tests/labelgrid-retirement-boundaries.test.cjs
-failed: tests/layout-navigation-accessibility-browser.test.mjs
+passed: tests/layout-navigation-accessibility-browser.test.mjs
 passed: tests/legacy-security-update.test.mjs
 passed: tests/legacy-sendgrid-security-coherence.test.mjs
 passed: tests/linux-vst3-build.test.mjs

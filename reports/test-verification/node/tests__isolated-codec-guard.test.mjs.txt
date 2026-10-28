@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: storage fixture codecs accept streams and deny files, shells and extra options
 ok 1 - storage fixture codecs accept streams and deny files, shells and extra options
   ---
-  duration_ms: 1.174522
+  duration_ms: 0.843092
   type: 'test'
   ...
 # Subtest: codec children have bounded concurrency/lifetime and no application credentials
 ok 2 - codec children have bounded concurrency/lifetime and no application credentials
   ---
-  duration_ms: 0.735219
+  duration_ms: 0.689701
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - codec children have bounded concurrency/lifetime and no application crede
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 110.96787
+# duration_ms 119.851271

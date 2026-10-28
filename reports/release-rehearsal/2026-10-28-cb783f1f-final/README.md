@@ -45,9 +45,12 @@ and its source-drift evidence remain unchanged.
 - The actual application archive has 1,892 members, including the social-platform
   runtime registry and migration 0099. MaxCore has 46,255 members. Both archive
   hashes match the payload manifest. Member lists retain exact names.
-- Scratch trees are absent from source and capsules. MaxCore runtime uploads
-  are absent from both source and its capsule, with the precise exclusion
+- Scratch trees and MaxCore runtime uploads are absent from the **admitted
+  release-source inventory** and capsules, with the precise upload exclusion
   recorded; source assets and fixtures remain subject to their normal policy.
+  These checks inspect admitted release inputs, not physical absence from the
+  developer checkout. Original ignored runtime uploads remain in the checkout
+  and were not deleted by this rehearsal.
 - The audit matched current code, admitted source, payload and Git HEAD to this
   recorded cb source at its review timestamp. These are historical source-bound
   observations, not a blanket claim about a later checkout or evidence commit.

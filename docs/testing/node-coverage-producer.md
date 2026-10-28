@@ -18,7 +18,7 @@ node scripts/testing/collect-node-coverage.mjs \
   reports/coverage-producer/my-new-owned-run
 ```
 
-The first command runs fourteen framework tests. They exercise actual inspector
+The first command runs twenty-two framework tests. They exercise actual inspector
 coverage with a Unicode fixture and a deliberately unexecuted branch, then
 verify rejection of stale originals, substituted code, changed counters,
 malformed offsets/encoding, missing source-map content, escaped paths,
@@ -26,7 +26,13 @@ incomplete producers and incompatible complete maps. Actual child-process
 fixtures also verify timeout escalation, output bounds, missing executables and
 preservation of both successful and nonzero direct exits while lingering owned
 descendants are terminated. A real PostgreSQL suite is rejected before execution
-or output creation.
+or output creation. Eight additional tests cover actual compiler-generated
+keep-name helpers, authored lookalikes/collisions, mapped prefixes, reassigned
+bindings, Unicode declarations and function-valued wrappers. An actual isolated
+VM/inspector fixture verifies complete original maps against a compiler control,
+with an uncalled original function and unexecuted branches/statements still
+present at zero hits. The control supplies denominator identity only; its empty
+counters are never represented as executed evidence.
 
 The second command runs the existing two-assertion storage suite through an
 internal inspector collector. Choose a **new** output directory beneath
@@ -117,6 +123,46 @@ still differs. No counters were combined or global percentage changed. Repair
 and test original-source attribution before treating these converted maps as
 compatible; the trace specifies the next C5 tasks and preserves the existing
 P2–P7/C0–C7 dependencies.
+
+The [committed keep-name repair and fresh collector](../../reports/coverage-producer/2026-10-28-keepnames-final/README.md)
+ran from source `bca5f4e1f632db835dc90b1e57d85f919ed6e0aa`: 22 framework tests
+passed with zero skips, and the actual existing two-assertion P1 suite again
+passed. Both selected source inventories stayed unchanged, the one retained
+profile covered nine files, and owned-group cleanup left zero live members.
+Independent raw-manifest validation and exact reconversion reproduced all saved
+profiles. The outer canonical input digest and the collector's different
+selection digest are retained separately; canonical global coverage bytes did
+not change.
+
+The source now recognizes the exact unmapped esbuild keep-name binding pair,
+absent from every original parsed identifier, and standalone helper calls
+mapped exclusively to an actual original declaration name. Collisions and
+ambiguous writers decline filtering. Original function-valued wrappers are
+retained. Each ignored node records its exact code span/hash and proof reason;
+original parser identity and source/map/runtime hashes are retained. For ports,
+the phantom helper is gone: 21 original statements/three functions, with the
+uncalled `loopbackUrl` still at zero hits.
+
+All nine profiles **remain strictly incompatible and unmerged**. Disk-serialized
+complete-map diagnostics match for ports and pdimCircuitBreaker; the other seven
+still differ. Infinity/undefined coordinate differences remain explicit. That
+diagnostic is not a normalization or merge policy. C5 complete-map compatibility,
+P2–P7/C0–C7 producer/process integration and the full-platform 100% thresholds
+remain open. The earlier trace's original failures remain historical evidence;
+this repair does not retroactively change their outcomes.
+
+The completed 10d master independently passes all 124canonical Node files
+(690 TAPpasses,two skips including parents in692total), with common digest
+`cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418`
+unchanged. Its actual instrumented global profile is13.11% lines,13.01% statements,
+8.68% functions and 8.78% branches over 2,653 files; all 100%thresholds remain enforced
+and failed. These Node assertions do not merge the separate bca profiles or
+repair their seven remaining serialized-map mismatches.
+
+The current 10d release also passes its four-command cold-startup rehearsal
+and 37 independent checks from unchanged common/admitted inputs. That startup
+scope retains productionReady:false; it does not merge coverage or certify
+full generation, the actual Replit target or all-page acceptance.
 
 This command is intentionally a standalone first producer. It has not yet been
 wired into the master Node runner, SQL bundle retention, HTTP server processes

@@ -1,0 +1,54 @@
+{
+  "sourceRevision": "e512441913599fd7f1a4f1e62f74e5da745e94df",
+  "startedAt": "2026-10-28T13:23:59.744786+00:00",
+  "scope": "Isolated groups; live provider, destructive, long-running and hardware checks remain explicit in the catalog",
+  "selectedGroups": [
+    "browser",
+    "checks",
+    "commerce",
+    "coverage",
+    "http",
+    "load",
+    "node",
+    "operations",
+    "pages",
+    "python",
+    "root",
+    "subsystems"
+  ],
+  "runs": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": ".",
+      "startedAt": "2026-10-28T13:24:01.934975+00:00",
+      "durationSeconds": 25.511,
+      "exitCode": 0,
+      "timedOut": false,
+      "status": "passed",
+      "log": "reports/test-verification/orchestration/build.txt",
+      "logSha256": "aa9d1de7f7f8a2e0ec8cd020760fadd27226ebe9136ca1e5d457c35ed0f6739d",
+      "group": "checks",
+      "id": "build"
+    }
+  ],
+  "productionReady": false,
+  "sourceInputsSha256": "f1aa89d9789a1ce0d85f4a0ab6e75a12bbd1a3eacab2a435dd8e66a5494beed2",
+  "catalog": {
+    "command": [
+      "/workspace/.cloud-python/bin/python",
+      "scripts/testing/generate-catalog.py"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-28T13:24:00.011870+00:00",
+    "durationSeconds": 1.923,
+    "exitCode": 0,
+    "timedOut": false,
+    "status": "passed",
+    "log": "reports/test-verification/orchestration/catalog.txt",
+    "logSha256": "d0c4d12caf5aa2f85d41e35b7d66bd11645af7809503c3d3937dba7913f81435"
+  }
+}

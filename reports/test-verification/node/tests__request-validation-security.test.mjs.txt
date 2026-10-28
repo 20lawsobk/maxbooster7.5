@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: oversized Zod collections reject before producing an issue per member
 ok 1 - oversized Zod collections reject before producing an issue per member
   ---
-  duration_ms: 4.313286
+  duration_ms: 5.296788
   type: 'test'
   ...
 # Subtest: compressed JSON with trailing bytes cannot crash the HTTP parser process
 ok 2 - compressed JSON with trailing bytes cannot crash the HTTP parser process
   ---
-  duration_ms: 146.280912
+  duration_ms: 198.433964
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - compressed JSON with trailing bytes cannot crash the HTTP parser process
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 348.222894
+# duration_ms 442.971758

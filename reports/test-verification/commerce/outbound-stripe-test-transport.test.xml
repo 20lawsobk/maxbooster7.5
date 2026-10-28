@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="dedicated test transport rejects live and unsupported opaque bindings" time="0.001182" classname="test"/>
-	<testcase name="a test-looking key cannot mutate before actual test-mode balance verification" time="0.010838" classname="test"/>
-	<testcase name="test transport rejects foreign destinations and non-dedicated credentials" time="0.001003" classname="test"/>
+	<testcase name="dedicated test transport rejects live and unsupported opaque bindings" time="0.001471" classname="test"/>
+	<testcase name="a test-looking key cannot mutate before actual test-mode balance verification" time="0.016782" classname="test"/>
+	<testcase name="test transport rejects foreign destinations and non-dedicated credentials" time="0.001548" classname="test"/>
 	<!-- tests 3 -->
 	<!-- suites 0 -->
 	<!-- pass 3 -->
@@ -10,5 +10,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 138.441098 -->
+	<!-- duration_ms 182.406879 -->
 </testsuites>

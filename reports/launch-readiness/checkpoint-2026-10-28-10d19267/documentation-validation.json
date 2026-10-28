@@ -1,0 +1,68 @@
+{
+  "observedAt": "2026-10-28T17:58:54.055371+00:00",
+  "scope": "Completed10d master/cold documentation, artifact and all80a11yrow integrity; no production launch approval",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+  "sourceInputsSha256": "cbf794e080119fa4f64ec6ebce2b29b3d78641d606a3059c0c207b2420324418",
+  "relativeFileLinksChecked": 219,
+  "missingLinks": [],
+  "accessibilityRows": 80,
+  "allAccessibilityRowsUnchanged": true,
+  "coldCohortArtifactsVerified": 23,
+  "independentColdChecksPassed": 37,
+  "coldCommandsExitZero": 4,
+  "admittedInputsUnchanged": true,
+  "admittedEntries": 4527,
+  "payloadEntries": 37,
+  "payloadBytes": 719501006,
+  "ownedTrackedDescendants": 36,
+  "remainingOwnedDescendants": 0,
+  "sourceFreshness": "PASS",
+  "productionReady": false,
+  "documents": [
+    {
+      "path": "docs/testing/README.md",
+      "bytes": 22571,
+      "sha256": "c7f4781b123d92b7b8dccdc1af0f849a73332d3387df2929383b5e517a980f25"
+    },
+    {
+      "path": "docs/testing/completion-execution-plan.md",
+      "bytes": 37141,
+      "sha256": "e17b3e77b11c31a11b65ce87072accbcc84a350a63b8fbe7c93e3810428ad94f"
+    },
+    {
+      "path": "docs/testing/global-launch-readiness.md",
+      "bytes": 22336,
+      "sha256": "a13c5a037d95f3bed99f8733f81336642f24ac5a4d23c633e0c89fa480fb58eb"
+    },
+    {
+      "path": "docs/testing/release-rehearsal.md",
+      "bytes": 12217,
+      "sha256": "edae5715ec1ea91716a72450be9349d5c5dfd223c29727636bf992ad606c91dd"
+    },
+    {
+      "path": "docs/testing/accessibility-launch-audit.md",
+      "bytes": 30808,
+      "sha256": "65aeebf19f6377da3871563f91f5aefa6b8e8e14979939df29127f51b7e2f1a9"
+    },
+    {
+      "path": "docs/testing/node-coverage-producer.md",
+      "bytes": 10854,
+      "sha256": "6abae4cff4426e2debe3474db3ad2ecac9a3943f6892e80ddcf893369e27ac8f"
+    },
+    {
+      "path": "docs/testing/acceptance-link-review.md",
+      "bytes": 13349,
+      "sha256": "c23790f4fb7aa8746892776445214b2e5d2a56c0fd57c50cf74d1f4483305dcb"
+    },
+    {
+      "path": "reports/test-verification/history/2026-10-28-10d19267-master/README.md",
+      "bytes": 2777,
+      "sha256": "cb4b934959bd667dad1addc90d984b013975f244e4d746904d936700690530a8"
+    },
+    {
+      "path": "reports/release-rehearsal/2026-10-28-10d19267-final/README.md",
+      "bytes": 6052,
+      "sha256": "2819a6d8d54ef1ee4ad3ea368f53bfea4866ca2a17d1169409d11c48413f13c4"
+    }
+  ]
+}

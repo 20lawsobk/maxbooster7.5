@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-28T09:31:15.932Z",
-  "startedAt": "2026-10-28T09:30:29.933Z",
+  "generatedAt": "2026-10-28T13:51:22.584Z",
+  "startedAt": "2026-10-28T13:50:34.738Z",
   "decision": "PASS_WITH_UNTESTED_CATEGORIES",
   "command": "env -i PATH=\"$PATH\" HOME=/tmp node scripts/testing/page80-acceptance.mjs",
   "artifactLabel": "sealed non-ML authenticated HTTP load; not full-stack or packed acceptance",
   "extendedRunnerSha256": "900864610ffeaab8ba6f1cd67a9a29dfb5d8c42e22266830ec4dfefcd0deb97a",
-  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
   "sourceFileDigestsSha256": {
     "scripts/testing/page80-acceptance.mjs": "900864610ffeaab8ba6f1cd67a9a29dfb5d8c42e22266830ec4dfefcd0deb97a",
     "scripts/readiness-egress-guard.mjs": "69e4bd4cf4dcc884936c61d4e902a8f23dfb1a4a524a51268b0a487a7e673b03",
@@ -34,19 +34,19 @@
   "evidence": {
     "capacityAdmission": {
       "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-      "hostMemAvailableBytes": 33383710720,
+      "hostMemAvailableBytes": 33317040128,
       "cgroup": {
-        "currentBytes": 8865447936,
+        "currentBytes": 9883475968,
         "maximumBytes": 34359738368,
-        "headroomBytes": 25494290432,
-        "anonymousBytes": 559517696,
-        "filePageCacheBytes": 7384473600,
-        "inactiveFileBytes": 403316736,
-        "activeFileBytes": 6493605888,
-        "kernelBytes": 920686592,
-        "reclaimableKernelSlabBytes": 883523784
+        "headroomBytes": 24476262400,
+        "anonymousBytes": 562925568,
+        "filePageCacheBytes": 8345903104,
+        "inactiveFileBytes": 402894848,
+        "activeFileBytes": 7414452224,
+        "kernelBytes": 973524992,
+        "reclaimableKernelSlabBytes": 928849768
       },
-      "effectiveAvailableBytes": 25494290432,
+      "effectiveAvailableBytes": 24476262400,
       "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
       "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
       "minimumAvailableBytes": 1610612736
@@ -109,19 +109,19 @@
       "label": "source application HTTP simulation; not packed application acceptance",
       "admission": {
         "source": "/proc/meminfo MemAvailable and cgroup v2 memory.current, memory.max, memory.stat",
-        "hostMemAvailableBytes": 33383710720,
+        "hostMemAvailableBytes": 33317040128,
         "cgroup": {
-          "currentBytes": 8865447936,
+          "currentBytes": 9883475968,
           "maximumBytes": 34359738368,
-          "headroomBytes": 25494290432,
-          "anonymousBytes": 559517696,
-          "filePageCacheBytes": 7384473600,
-          "inactiveFileBytes": 403316736,
-          "activeFileBytes": 6493605888,
-          "kernelBytes": 920686592,
-          "reclaimableKernelSlabBytes": 883523784
+          "headroomBytes": 24476262400,
+          "anonymousBytes": 562925568,
+          "filePageCacheBytes": 8345903104,
+          "inactiveFileBytes": 402894848,
+          "activeFileBytes": 7414452224,
+          "kernelBytes": 973524992,
+          "reclaimableKernelSlabBytes": 928849768
         },
-        "effectiveAvailableBytes": 25494290432,
+        "effectiveAvailableBytes": 24476262400,
         "admissionRule": "minimum of host MemAvailable and raw cgroup headroom",
         "reclaimableAccounting": "file/inactive_file page cache and slab_reclaimable are reported only; none is added to raw cgroup headroom",
         "minimumAvailableBytes": 1610612736
@@ -196,8 +196,8 @@
           "successful": 70,
           "failed": 0,
           "successPercent": 100,
-          "p95Ms": 221.834846,
-          "p99Ms": 275.653345,
+          "p95Ms": 308.680022,
+          "p99Ms": 356.119224,
           "durationDefinition": "all completed request durations, including failed requests"
         },
         {
@@ -208,8 +208,8 @@
           "successful": 80,
           "failed": 0,
           "successPercent": 100,
-          "p95Ms": 280.208732,
-          "p99Ms": 348.751157,
+          "p95Ms": 375.381277,
+          "p99Ms": 397.717012,
           "durationDefinition": "all completed request durations, including failed requests"
         }
       ],

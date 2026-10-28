@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testcase name="real isolated PostgreSQL: ownership, concurrent caps, shipping rejection, reservation rollback and expiry" time="0.780907" classname="test"/>
+	<testcase name="real isolated PostgreSQL: ownership, concurrent caps, shipping rejection, reservation rollback and expiry" time="0.871127" classname="test"/>
 	<!-- tests 1 -->
 	<!-- suites 0 -->
 	<!-- pass 1 -->
@@ -8,5 +8,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 1218.591353 -->
+	<!-- duration_ms 1295.747199 -->
 </testsuites>

@@ -1,6 +1,6 @@
 {"id": "rust-boosterstate", "status": "passed", "exitCode": 0, "seconds": 0.115}
-{"id": "go-dns", "status": "passed", "exitCode": 0, "seconds": 0.366}
-{"id": "pdim-erasure", "status": "passed", "exitCode": 0, "seconds": 0.165}
+{"id": "go-dns", "status": "passed", "exitCode": 0, "seconds": 0.717}
+{"id": "pdim-erasure", "status": "passed", "exitCode": 0, "seconds": 0.215}
 {"id": "maxcore-js-security", "status": "passed", "exitCode": 0, "seconds": 0.115}
-{"id": "rust-cleanup-concurrency", "status": "passed", "exitCode": 0, "seconds": 36.226}
-{"id": "pdim-http-load", "status": "passed", "exitCode": 0, "seconds": 4.697}
+{"id": "rust-cleanup-concurrency", "status": "passed", "exitCode": 0, "seconds": 43.573}
+{"id": "pdim-http-load", "status": "passed", "exitCode": 0, "seconds": 4.812}

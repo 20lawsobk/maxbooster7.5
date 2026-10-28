@@ -994,6 +994,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1110,6 +1115,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/deployment-current-source.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -1234,6 +1244,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1350,6 +1365,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/deployment-current-source.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -1474,6 +1494,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1590,6 +1615,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/deployment-current-source.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -1724,6 +1754,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1849,6 +1884,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -1965,6 +2005,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/deployment-current-source.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -2249,6 +2294,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -2370,6 +2420,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "tests/deployment-current-source.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -2544,6 +2599,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -2674,6 +2734,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -2799,6 +2864,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -2919,6 +2989,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/labelgrid-retirement-boundaries.test.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -2975,7 +3050,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/metrics",
@@ -3040,7 +3115,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/metrics",
@@ -3099,7 +3174,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/health",
@@ -3163,7 +3238,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/ready",
@@ -3273,7 +3348,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/live",
@@ -5556,7 +5631,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/status",
@@ -5626,7 +5701,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/narrative",
@@ -5685,7 +5760,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/insights",
@@ -5750,7 +5825,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/security",
@@ -5815,7 +5890,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/events",
@@ -5874,7 +5949,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/analyze",
@@ -63345,13 +63420,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-972dd5ce32a073e2
+## api-c5c109d4a9a644c9
 
 ```json
 {
-  "id": "api-972dd5ce32a073e2",
+  "id": "api-c5c109d4a9a644c9",
   "method": "POST",
-  "path": "/jobs/:jobId/:action",
+  "path": "/api/export/jobs/:jobId/:action",
   "source": {
     "file": "server/routes/durableExports.ts",
     "line": 98
@@ -63361,51 +63436,56 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "mountResolved": true,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
-  "domain": "main-endpoint-audit/jobs",
+  "domain": "main-endpoint-audit/export",
   "requiredChecks": [
     {
-      "id": "api-972dd5ce32a073e2/response-contract",
+      "id": "api-c5c109d4a9a644c9/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-972dd5ce32a073e2/access-policy",
+      "id": "api-c5c109d4a9a644c9/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-972dd5ce32a073e2/input-boundaries",
+      "id": "api-c5c109d4a9a644c9/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-972dd5ce32a073e2/tenant-boundary",
+      "id": "api-c5c109d4a9a644c9/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-972dd5ce32a073e2/dependency-failure",
+      "id": "api-c5c109d4a9a644c9/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-972dd5ce32a073e2/mutation-durability",
+      "id": "api-c5c109d4a9a644c9/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "tests/integration/jobs-acceptance.test.ts",
-    "command": "node scripts/testing/integration-browser.mjs tests/integration/jobs-acceptance.test.ts",
+    "suggestedPath": "tests/integration/export-acceptance.test.ts",
+    "command": "node scripts/testing/integration-browser.mjs tests/integration/export-acceptance.test.ts",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "main-http",
     "requiredConfigChanges": [
-      "Add tests/integration/jobs-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
+      "Add tests/integration/export-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
   "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -63415,13 +63495,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-e7ca6c071ab1c2ca
+## api-d80e3bfc15855f30
 
 ```json
 {
-  "id": "api-e7ca6c071ab1c2ca",
+  "id": "api-d80e3bfc15855f30",
   "method": "DELETE",
-  "path": "/history/:id",
+  "path": "/api/export/history/:id",
   "source": {
     "file": "server/routes/durableExports.ts",
     "line": 124
@@ -63431,56 +63511,61 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "mountResolved": true,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
-  "domain": "main-endpoint-audit/history",
+  "domain": "main-endpoint-audit/export",
   "requiredChecks": [
     {
-      "id": "api-e7ca6c071ab1c2ca/response-contract",
+      "id": "api-d80e3bfc15855f30/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/access-policy",
+      "id": "api-d80e3bfc15855f30/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/input-boundaries",
+      "id": "api-d80e3bfc15855f30/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/tenant-boundary",
+      "id": "api-d80e3bfc15855f30/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/dependency-failure",
+      "id": "api-d80e3bfc15855f30/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/mutation-durability",
+      "id": "api-d80e3bfc15855f30/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-e7ca6c071ab1c2ca/deletion-durability",
+      "id": "api-d80e3bfc15855f30/deletion-durability",
       "template": "deletion-durability",
       "status": "UNVERIFIED"
     }
   ],
   "status": "UNVERIFIED",
   "addTest": {
-    "suggestedPath": "tests/integration/history-acceptance.test.ts",
-    "command": "node scripts/testing/integration-browser.mjs tests/integration/history-acceptance.test.ts",
+    "suggestedPath": "tests/integration/export-acceptance.test.ts",
+    "command": "node scripts/testing/integration-browser.mjs tests/integration/export-acceptance.test.ts",
     "cwd": ".",
     "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
     "fixtureTemplate": "main-http",
     "requiredConfigChanges": [
-      "Add tests/integration/history-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
+      "Add tests/integration/export-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
   "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -67075,13 +67160,13 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
-## api-34fc89e127fc051f
+## api-621114b0a65095e5
 
 ```json
 {
-  "id": "api-34fc89e127fc051f",
+  "id": "api-621114b0a65095e5",
   "method": "GET",
-  "path": "/api/fan-hub/${action}/:token",
+  "path": "/api/fan-hub/consent/:token",
   "source": {
     "file": "server/routes/fanHub.ts",
     "line": 18
@@ -67094,27 +67179,27 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/fan-hub",
   "requiredChecks": [
     {
-      "id": "api-34fc89e127fc051f/response-contract",
+      "id": "api-621114b0a65095e5/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34fc89e127fc051f/access-policy",
+      "id": "api-621114b0a65095e5/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34fc89e127fc051f/input-boundaries",
+      "id": "api-621114b0a65095e5/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34fc89e127fc051f/tenant-boundary",
+      "id": "api-621114b0a65095e5/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-34fc89e127fc051f/dependency-failure",
+      "id": "api-621114b0a65095e5/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     }
@@ -67130,17 +67215,98 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
-## api-a985a7e5e584a792
+## api-69404ac4c40ff1c7
 
 ```json
 {
-  "id": "api-a985a7e5e584a792",
+  "id": "api-69404ac4c40ff1c7",
+  "method": "GET",
+  "path": "/api/fan-hub/unsubscribe/:token",
+  "source": {
+    "file": "server/routes/fanHub.ts",
+    "line": 18
+  },
+  "processScope": "main-app",
+  "confidence": "high",
+  "mountResolved": true,
+  "hasAuthMarker": false,
+  "origin": "main-endpoint-audit",
+  "domain": "main-endpoint-audit/fan-hub",
+  "requiredChecks": [
+    {
+      "id": "api-69404ac4c40ff1c7/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-69404ac4c40ff1c7/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-69404ac4c40ff1c7/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-69404ac4c40ff1c7/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-69404ac4c40ff1c7/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/integration/fan-hub-acceptance.test.ts",
+    "command": "node scripts/testing/integration-browser.mjs tests/integration/fan-hub-acceptance.test.ts",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "main-http",
+    "requiredConfigChanges": [
+      "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
+    ]
+  },
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-50e467fa4f4e4018
+
+```json
+{
+  "id": "api-50e467fa4f4e4018",
   "method": "POST",
-  "path": "/api/fan-hub/${action}/:token",
+  "path": "/api/fan-hub/consent/:token",
   "source": {
     "file": "server/routes/fanHub.ts",
     "line": 25
@@ -67153,32 +67319,32 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   "domain": "main-endpoint-audit/fan-hub",
   "requiredChecks": [
     {
-      "id": "api-a985a7e5e584a792/response-contract",
+      "id": "api-50e467fa4f4e4018/response-contract",
       "template": "response-contract",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a985a7e5e584a792/access-policy",
+      "id": "api-50e467fa4f4e4018/access-policy",
       "template": "access-policy",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a985a7e5e584a792/input-boundaries",
+      "id": "api-50e467fa4f4e4018/input-boundaries",
       "template": "input-boundaries",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a985a7e5e584a792/tenant-boundary",
+      "id": "api-50e467fa4f4e4018/tenant-boundary",
       "template": "tenant-boundary",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a985a7e5e584a792/dependency-failure",
+      "id": "api-50e467fa4f4e4018/dependency-failure",
       "template": "dependency-failure",
       "status": "UNVERIFIED"
     },
     {
-      "id": "api-a985a7e5e584a792/mutation-durability",
+      "id": "api-50e467fa4f4e4018/mutation-durability",
       "template": "mutation-durability",
       "status": "UNVERIFIED"
     }
@@ -67194,7 +67360,93 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
+}
+```
+
+## api-b4f3f6941b54a095
+
+```json
+{
+  "id": "api-b4f3f6941b54a095",
+  "method": "POST",
+  "path": "/api/fan-hub/unsubscribe/:token",
+  "source": {
+    "file": "server/routes/fanHub.ts",
+    "line": 25
+  },
+  "processScope": "main-app",
+  "confidence": "high",
+  "mountResolved": true,
+  "hasAuthMarker": false,
+  "origin": "main-endpoint-audit",
+  "domain": "main-endpoint-audit/fan-hub",
+  "requiredChecks": [
+    {
+      "id": "api-b4f3f6941b54a095/response-contract",
+      "template": "response-contract",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b4f3f6941b54a095/access-policy",
+      "template": "access-policy",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b4f3f6941b54a095/input-boundaries",
+      "template": "input-boundaries",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b4f3f6941b54a095/tenant-boundary",
+      "template": "tenant-boundary",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b4f3f6941b54a095/dependency-failure",
+      "template": "dependency-failure",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "api-b4f3f6941b54a095/mutation-durability",
+      "template": "mutation-durability",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "status": "UNVERIFIED",
+  "addTest": {
+    "suggestedPath": "tests/integration/fan-hub-acceptance.test.ts",
+    "command": "node scripts/testing/integration-browser.mjs tests/integration/fan-hub-acceptance.test.ts",
+    "cwd": ".",
+    "instructions": "Implement the named behavioral assertions using disposable fixtures, then map exact passing case identities in the acceptance map; source associations alone never close a check.",
+    "fixtureTemplate": "main-http",
+    "requiredConfigChanges": [
+      "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
+    ]
+  },
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67258,7 +67510,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67317,7 +67580,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67381,7 +67655,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67440,7 +67725,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67504,7 +67800,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67568,7 +67875,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67637,7 +67955,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67701,7 +68030,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67760,7 +68100,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67824,7 +68175,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67883,7 +68245,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -67947,7 +68320,18 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "Add tests/integration/fan-hub-acceptance.test.ts to test.include in vitest.integration.config.ts before selecting it with the isolated wrapper."
     ]
   },
-  "testCandidates": []
+  "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/finite-route-paths.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    }
+  ]
 }
 ```
 
@@ -89519,7 +89903,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/2fa",
@@ -89578,7 +89962,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/2fa",
@@ -91876,7 +92260,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/sms",
@@ -91961,7 +92345,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/sms",
@@ -92046,7 +92430,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/root",
@@ -92126,7 +92510,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/:id",
@@ -92211,7 +92595,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/mark-all-read",
@@ -92296,7 +92680,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/clear-all",
@@ -92386,7 +92770,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/mobile-tokens",
@@ -92476,7 +92860,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push-subscriptions",
@@ -92566,7 +92950,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/:id",
@@ -92661,7 +93045,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/preferences",
@@ -92746,7 +93130,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/preferences",
@@ -92836,7 +93220,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push",
@@ -92921,7 +93305,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push",
@@ -93006,7 +93390,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/sms",
@@ -93091,7 +93475,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/sms",
@@ -93176,7 +93560,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/test",
@@ -93271,7 +93655,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push",
@@ -93351,7 +93735,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/mobile-tokens",
@@ -93436,7 +93820,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/mobile-tokens",
@@ -93516,7 +93900,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push",
@@ -93601,7 +93985,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push-key",
@@ -93681,7 +94065,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push-subscriptions",
@@ -93766,7 +94150,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push-subscriptions",
@@ -93846,7 +94230,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/push-test",
@@ -93931,7 +94315,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/unread-count",
@@ -94011,7 +94395,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/:id",
@@ -105566,7 +105950,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "processScope": "main-app",
   "confidence": "unmounted-or-unresolved",
-  "mountResolved": true,
+  "mountResolved": false,
   "hasAuthMarker": true,
   "origin": "main-endpoint-audit",
   "domain": "main-endpoint-audit/metrics",
@@ -113186,7 +113570,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "line": 11
   },
   "processScope": "main-app",
-  "confidence": "medium",
+  "confidence": "high",
   "mountResolved": true,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
@@ -113245,7 +113629,7 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     "line": 107
   },
   "processScope": "main-app",
-  "confidence": "medium",
+  "confidence": "high",
   "mountResolved": true,
   "hasAuthMarker": false,
   "origin": "main-endpoint-audit",
@@ -159932,6 +160316,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -160206,6 +160595,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -160520,6 +160914,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -160771,6 +161170,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -161035,6 +161439,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -161215,6 +161624,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -161380,6 +161794,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -161536,6 +161955,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -161710,6 +162134,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -161871,6 +162300,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -162055,6 +162489,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -162226,6 +162665,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -162410,6 +162854,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -162581,6 +163030,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -162760,6 +163214,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -162935,6 +163394,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -163095,6 +163559,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -163246,6 +163715,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -163425,6 +163899,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -163581,6 +164060,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -163745,6 +164229,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -163896,6 +164385,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -164060,6 +164554,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -164216,6 +164715,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -164385,6 +164889,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -164540,6 +165049,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -164691,6 +165205,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -164851,6 +165370,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -165030,6 +165554,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -165200,6 +165729,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -165361,6 +165895,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -165530,6 +166069,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -165686,6 +166230,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -165850,6 +166399,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -166006,6 +166560,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -166170,6 +166729,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -166326,6 +166890,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -166505,6 +167074,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -166661,6 +167235,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -166825,6 +167404,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -166981,6 +167565,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -167145,6 +167734,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -167301,6 +167895,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -167475,6 +168074,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -167640,6 +168244,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -167795,6 +168404,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -167946,6 +168560,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -168110,6 +168729,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -168261,6 +168885,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -168425,6 +169054,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -168581,6 +169215,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -168750,6 +169389,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -168911,6 +169555,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -169080,6 +169729,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -169236,6 +169890,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -169400,6 +170059,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -169556,6 +170220,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -169720,6 +170389,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -169871,6 +170545,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -170035,6 +170714,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -170186,6 +170870,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -170346,6 +171035,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -170515,6 +171209,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -170666,6 +171365,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -170830,6 +171534,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -170986,6 +171695,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -171150,6 +171864,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -171301,6 +172020,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -171465,6 +172189,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -171616,6 +172345,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -171780,6 +172514,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -171935,6 +172674,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -172086,6 +172830,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -172285,6 +173034,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -172475,6 +173229,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -172635,6 +173394,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -172791,6 +173555,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -172960,6 +173729,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -173111,6 +173885,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -173275,6 +174054,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -173426,6 +174210,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -173586,6 +174375,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -173760,6 +174554,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -173920,6 +174719,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -174071,6 +174875,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -174240,6 +175049,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -174396,6 +175210,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -174560,6 +175379,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -174711,6 +175535,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -174875,6 +175704,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -175026,6 +175860,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -175190,6 +176029,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -175341,6 +176185,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -175505,6 +176354,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -175656,6 +176510,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -175815,6 +176674,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -175966,6 +176830,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -176130,6 +176999,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -176290,6 +177164,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -176441,6 +177320,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -176605,6 +177489,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -176760,6 +177649,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -176911,6 +177805,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -177071,6 +177970,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -177245,6 +178149,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -177405,6 +178314,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -177561,6 +178475,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -177730,6 +178649,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -177886,6 +178810,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -178050,6 +178979,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -178210,6 +179144,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -178361,6 +179300,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -178530,6 +179474,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -178691,6 +179640,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -178860,6 +179814,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -179016,6 +179975,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -179180,6 +180144,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -179331,6 +180300,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -179495,6 +180469,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -179651,6 +180630,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -179820,6 +180804,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -179976,6 +180965,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -180140,6 +181134,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -180296,6 +181295,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -180461,6 +181465,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -180635,6 +181644,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -180791,6 +181805,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -180955,6 +181974,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -181111,6 +182135,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -181275,6 +182304,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -181431,6 +182465,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -181595,6 +182634,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -181751,6 +182795,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -181915,6 +182964,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -182071,6 +183125,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -182235,6 +183294,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -182391,6 +183455,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -182555,6 +183624,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -182711,6 +183785,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -182875,6 +183954,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -183031,6 +184115,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -183197,6 +184286,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -183446,6 +184540,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -183602,6 +184701,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -183767,6 +184871,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -183976,6 +185085,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -184137,6 +185251,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -184306,6 +185425,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -184466,6 +185590,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -184621,6 +185750,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
       "executionStatus": "executed"
     },
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/marketplace-storefront-access.cjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -184772,6 +185906,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     },
     {
       "path": "server/services/securityJwtChain.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
+      "path": "tests/endpoint-topology.test.mjs",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
     },
@@ -206775,6 +207914,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -206844,6 +207988,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -206907,6 +208056,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     ]
   },
   "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
@@ -206972,6 +208126,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
   },
   "testCandidates": [
     {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
+    {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",
       "executionStatus": "executed"
@@ -207035,6 +208194,11 @@ Every original entry and detail is preserved below, including unmounted/unrouted
     ]
   },
   "testCandidates": [
+    {
+      "path": "tests/endpoint-topology.test.mjs",
+      "association": "static-import-or-literal-source-reference",
+      "executionStatus": "executed"
+    },
     {
       "path": "tests/unit/coverage-gaps.test.ts",
       "association": "static-import-or-literal-source-reference",

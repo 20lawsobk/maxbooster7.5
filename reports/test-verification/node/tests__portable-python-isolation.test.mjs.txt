@@ -2,13 +2,13 @@ TAP version 13
 # Subtest: real portable interpreter ignores host Python paths, home and user packages
 ok 1 - real portable interpreter ignores host Python paths, home and user packages
   ---
-  duration_ms: 192.328059
+  duration_ms: 259.112482
   type: 'test'
   ...
 # Subtest: origin verifier refuses wrong prefixes and foreign search paths
 ok 2 - origin verifier refuses wrong prefixes and foreign search paths
   ---
-  duration_ms: 54.638635
+  duration_ms: 55.318036
   type: 'test'
   ...
 1..2
@@ -19,4 +19,4 @@ ok 2 - origin verifier refuses wrong prefixes and foreign search paths
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 363.655156
+# duration_ms 463.028969

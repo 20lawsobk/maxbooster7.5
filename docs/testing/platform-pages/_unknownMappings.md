@@ -230,6 +230,486 @@ Every original entry and detail is preserved below, including unmounted/unrouted
 }
 ```
 
+## mapping-f308c5aec9488bfd-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-1869efa45fd99774",
+  "file": "server/infrastructure/autoScaling.ts",
+  "line": 317,
+  "declaredPath": "/metrics"
+}
+```
+
+## mapping-8bc7073db69953fd-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-880691c4bb3cdae8",
+  "file": "server/infrastructure/autoScaling.ts",
+  "line": 338,
+  "declaredPath": "/metrics/kube"
+}
+```
+
+## mapping-7e4c597a88034112-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-f6495072863529da",
+  "file": "server/infrastructure/autoScaling.ts",
+  "line": 346,
+  "declaredPath": "/health/detailed"
+}
+```
+
+## mapping-158c34b1aba5454b-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-5a2b6fec46e57896",
+  "file": "server/infrastructure/autoScaling.ts",
+  "line": 381,
+  "declaredPath": "/ready"
+}
+```
+
+## mapping-f29e4d1c3f604fce-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-a389d342b314bc55",
+  "file": "server/infrastructure/autoScaling.ts",
+  "line": 385,
+  "declaredPath": "/live"
+}
+```
+
+## mapping-f2506a99230b9ed9-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-f6211b8d0e4ec6b5",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 24,
+  "declaredPath": "/status"
+}
+```
+
+## mapping-e2d6a5011780b50a-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-4a66ddba3a805cb6",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 34,
+  "declaredPath": "/narrative"
+}
+```
+
+## mapping-d9424c90b603cf1b-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-251ebbca2e0df2b1",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 45,
+  "declaredPath": "/insights"
+}
+```
+
+## mapping-6e9ef0c125385a44-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-450ee59e61c25343",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 56,
+  "declaredPath": "/security"
+}
+```
+
+## mapping-fa2c56f256d625da-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-8b1b82f23a0d2279",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 67,
+  "declaredPath": "/events"
+}
+```
+
+## mapping-d946f39bdb39837f-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-a877e18e0f59b8a3",
+  "file": "server/routes/admin/intelligence.ts",
+  "line": 88,
+  "declaredPath": "/analyze"
+}
+```
+
+## mapping-f6bad221aa38bf0c-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-f698e3b8134a742a",
+  "file": "server/routes/mfaChallenge.ts",
+  "line": 17,
+  "declaredPath": "/2fa/challenge"
+}
+```
+
+## mapping-266bf7c0212f005e-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-904a580f65970b9e",
+  "file": "server/routes/mfaChallenge.ts",
+  "line": 26,
+  "declaredPath": "/2fa/challenge"
+}
+```
+
+## mapping-00edf3e45c82654c-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-7dd517cf8d01b28c",
+  "file": "server/routes/notifications.ts",
+  "line": 18,
+  "declaredPath": "/sms/status"
+}
+```
+
+## mapping-573415486f7338c5-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-77c8ac1231a77645",
+  "file": "server/routes/notifications.ts",
+  "line": 19,
+  "declaredPath": "/sms/incoming"
+}
+```
+
+## mapping-a790e3c468cdf00b-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-68ef867d8f8e6e95",
+  "file": "server/routes/notifications.ts",
+  "line": 114,
+  "declaredPath": "/"
+}
+```
+
+## mapping-369c6db566d4f351-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-1e0e1bd12d4e151e",
+  "file": "server/routes/notifications.ts",
+  "line": 172,
+  "declaredPath": "/:id/read"
+}
+```
+
+## mapping-092df018d15ce04a-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-91a1ba2f50c1b935",
+  "file": "server/routes/notifications.ts",
+  "line": 210,
+  "declaredPath": "/mark-all-read"
+}
+```
+
+## mapping-25a9af4f072aa632-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-2c0ca49d88f4bcbc",
+  "file": "server/routes/notifications.ts",
+  "line": 232,
+  "declaredPath": "/clear-all"
+}
+```
+
+## mapping-e761705c9f0f76df-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-01162051183e00ac",
+  "file": "server/routes/notifications.ts",
+  "line": 254,
+  "declaredPath": "/mobile-tokens"
+}
+```
+
+## mapping-5c3d8cb27f915e3f-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-f75564dae88a69b1",
+  "file": "server/routes/notifications.ts",
+  "line": 291,
+  "declaredPath": "/push-subscriptions"
+}
+```
+
+## mapping-dd8bd45a9aa5bee5-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-5c8769a16f7969a6",
+  "file": "server/routes/notifications.ts",
+  "line": 314,
+  "declaredPath": "/:id"
+}
+```
+
+## mapping-e2e895907c1b4ce1-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-6331b37ff9857298",
+  "file": "server/routes/notifications.ts",
+  "line": 350,
+  "declaredPath": "/preferences"
+}
+```
+
+## mapping-53713a573d037a7c-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-b648cdbedbb7ab87",
+  "file": "server/routes/notifications.ts",
+  "line": 400,
+  "declaredPath": "/preferences"
+}
+```
+
+## mapping-d4973caa02b0cc65-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-eea3fb52f000319b",
+  "file": "server/routes/notifications.ts",
+  "line": 452,
+  "declaredPath": "/push/subscribe"
+}
+```
+
+## mapping-46ac80d4e8359527-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-ba946a948e6a532c",
+  "file": "server/routes/notifications.ts",
+  "line": 498,
+  "declaredPath": "/push/unsubscribe"
+}
+```
+
+## mapping-b03318f4d99fa46f-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-977e1ecd65f9119e",
+  "file": "server/routes/notifications.ts",
+  "line": 535,
+  "declaredPath": "/sms/verify"
+}
+```
+
+## mapping-04486102b9038929-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-89573c7601d1b115",
+  "file": "server/routes/notifications.ts",
+  "line": 655,
+  "declaredPath": "/sms/confirm"
+}
+```
+
+## mapping-9eac6bb4cd24ec03-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-326210e462c7d1e6",
+  "file": "server/routes/notifications.ts",
+  "line": 767,
+  "declaredPath": "/test"
+}
+```
+
+## mapping-ef3ef477e8b3d66b-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-3a0ca7271aaff839",
+  "file": "server/routes/notifications.ts",
+  "line": 819,
+  "declaredPath": "/push/status"
+}
+```
+
+## mapping-44e6562a1df489be-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-5cf795a7ce23ce3e",
+  "file": "server/routes/notifications.ts",
+  "line": 851,
+  "declaredPath": "/mobile-tokens"
+}
+```
+
+## mapping-9b34f786174cc009-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-c24c0ce21acbe444",
+  "file": "server/routes/notifications.ts",
+  "line": 889,
+  "declaredPath": "/mobile-tokens"
+}
+```
+
+## mapping-b2c879ec83d6b042-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-435c9b064fe590bf",
+  "file": "server/routes/notifications.ts",
+  "line": 1016,
+  "declaredPath": "/push/silent"
+}
+```
+
+## mapping-28571dbd1091423a-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-77dd72821adbe56a",
+  "file": "server/routes/notifications.ts",
+  "line": 1043,
+  "declaredPath": "/push-key"
+}
+```
+
+## mapping-fe760de2a5bd05bb-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-f4027c7161425acd",
+  "file": "server/routes/notifications.ts",
+  "line": 1053,
+  "declaredPath": "/push-subscriptions"
+}
+```
+
+## mapping-770ab1721b882ebc-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-56e4829c0a1933f4",
+  "file": "server/routes/notifications.ts",
+  "line": 1098,
+  "declaredPath": "/push-subscriptions/status"
+}
+```
+
+## mapping-4b002e7662835d82-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-579cd614bd126e1e",
+  "file": "server/routes/notifications.ts",
+  "line": 1122,
+  "declaredPath": "/push-test"
+}
+```
+
+## mapping-b8e440046b3ae892-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-b315effaeb4b8b20",
+  "file": "server/routes/notifications.ts",
+  "line": 1156,
+  "declaredPath": "/unread-count"
+}
+```
+
+## mapping-934fb79046f9f412-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-e174878eb815f461",
+  "file": "server/routes/notifications.ts",
+  "line": 1188,
+  "declaredPath": "/:id"
+}
+```
+
+## mapping-13bc8cd2a844545a-1
+
+```json
+{
+  "kind": "unverified-route-mount",
+  "subjectId": "api-bdb9078c8ebd02e7",
+  "file": "server/routes/prometheus.ts",
+  "line": 94,
+  "declaredPath": "/metrics"
+}
+```
+
 ## mapping-e7bdcdc717ca8480-1
 
 ```json

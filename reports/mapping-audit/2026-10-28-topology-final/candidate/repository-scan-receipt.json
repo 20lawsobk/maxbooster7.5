@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "13c199569e5f6fa29a6002b36169b76c65e26b5f",
+  "scope": "Actual copied server/client source static topology only; no server or provider invoked",
+  "productionReady": false,
+  "commands": [
+    {
+      "name": "before",
+      "script": "/workspace/maxbooster7.5/scripts/audit-endpoints.mjs",
+      "scriptSha256": "d4532347e5bb688306125b52c138a7dfbaf4d4e98727cf03eceae6b17de09513",
+      "startedAt": "2026-10-28T12:59:30.795178+00:00",
+      "durationSeconds": 16.9375619489947,
+      "exitCode": 0
+    },
+    {
+      "name": "after",
+      "script": "/workspace/onboarding-results/topology-candidate/scripts/audit-endpoints.mjs",
+      "scriptSha256": "5d0d339b1e497910f59763646be74ee0204ae29d28a9208fe2b14f69cd631303",
+      "startedAt": "2026-10-28T12:59:47.733618+00:00",
+      "durationSeconds": 16.86482240800251,
+      "exitCode": 0
+    }
+  ],
+  "sourceFiles": 1800,
+  "sourceUnchanged": true
+}

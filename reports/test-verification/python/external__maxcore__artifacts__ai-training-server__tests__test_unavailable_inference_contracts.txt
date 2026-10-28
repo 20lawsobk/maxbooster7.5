@@ -5,4 +5,4 @@ tests/test_unavailable_inference_contracts.py::test_real_conductor_analyzes_tiny
     warnings.warn(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-7 passed, 1 warning in 11.16s
+7 passed, 1 warning in 14.94s

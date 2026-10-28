@@ -1,5 +1,5 @@
 {
-  "sourceRevision": "a1603b13b6352a978e3877a2f43f1ccd98a98a18",
+  "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
   "scope": "Bounded, disposable recovery and read-only retained-evidence verification.",
   "runs": [
     {
@@ -9,8 +9,8 @@
         "--self-test"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:20.756067+00:00",
-      "durationSeconds": 0.266,
+      "startedAt": "2026-10-28T13:51:27.409900+00:00",
+      "durationSeconds": 0.316,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -28,8 +28,8 @@
         "/workspace/maxbooster7.5/reports/test-verification/operations/engine-load"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:21.025096+00:00",
-      "durationSeconds": 0.366,
+      "startedAt": "2026-10-28T13:51:27.728560+00:00",
+      "durationSeconds": 0.416,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -45,8 +45,8 @@
         "evaluations/maxcore-quality/verify_types.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:21.393944+00:00",
-      "durationSeconds": 0.064,
+      "startedAt": "2026-10-28T13:51:28.148131+00:00",
+      "durationSeconds": 0.066,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -60,7 +60,7 @@
         "evaluations/maxcore-quality/verify_evidence.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:21.460857+00:00",
+      "startedAt": "2026-10-28T13:51:28.216650+00:00",
       "durationSeconds": 0.065,
       "exitCode": 0,
       "timedOut": false,
@@ -75,8 +75,8 @@
         "scripts/maxcore-isolated-recovery-acceptance.py"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:21.528345+00:00",
-      "durationSeconds": 6.57,
+      "startedAt": "2026-10-28T13:51:28.285102+00:00",
+      "durationSeconds": 7.209,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
@@ -90,13 +90,13 @@
         "tests/payment-processing/run.mjs"
       ],
       "cwd": ".",
-      "startedAt": "2026-10-28T09:31:28.100700+00:00",
-      "durationSeconds": 13.678,
+      "startedAt": "2026-10-28T13:51:35.496782+00:00",
+      "durationSeconds": 14.962,
       "exitCode": 0,
       "timedOut": false,
       "status": "passed",
       "log": "reports/test-verification/operations/run.mjs.txt",
-      "logSha256": "bc57fb779746f6e111fedecec511f9b0cc6374b5b09ae51f7ae0f8bbb05bfdcb",
+      "logSha256": "9eb0fe6b6221636f42eaea6a0b8994a891afaafa1e58c25d865d09ae995da28b",
       "file": "tests/payment-processing/run.mjs"
     }
   ]

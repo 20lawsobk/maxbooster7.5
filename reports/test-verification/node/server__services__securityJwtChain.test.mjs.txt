@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs
 ok 1 - real signed JWT chain carries MFA, rotates refresh, and rejects revoked epochs
   ---
-  duration_ms: 55.116692
+  duration_ms: 61.183041
   type: 'test'
   ...
 # Subtest: shared auth integration keeps atomic password epoch changes and mandatory hydration guard
 ok 2 - shared auth integration keeps atomic password epoch changes and mandatory hydration guard
   ---
-  duration_ms: 3.17581
+  duration_ms: 5.865311
   type: 'test'
   ...
 # Subtest: webhook dispatch pins DNS, refuses mixed/internal results and never follows redirects
 ok 3 - webhook dispatch pins DNS, refuses mixed/internal results and never follows redirects
   ---
-  duration_ms: 8.299562
+  duration_ms: 10.731179
   type: 'test'
   ...
 # Subtest: maintenance permits exact recovery and verified webhooks, not header spoofing or prefix lookalikes
 ok 4 - maintenance permits exact recovery and verified webhooks, not header spoofing or prefix lookalikes
   ---
-  duration_ms: 7.563467
+  duration_ms: 10.113285
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - maintenance permits exact recovery and verified webhooks, not header spoo
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 184.910941
+# duration_ms 221.370579

@@ -2,69 +2,69 @@ TAP version 13
 # Subtest: cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
 ok 1 - cgroup quotas bound physical CPU/RAM and override cannot bypass bounds
   ---
-  duration_ms: 48.214369
+  duration_ms: 69.339003
   type: 'test'
   ...
 # Subtest: disjoint pools fit under capacity; invalid overrides and impossible machines reject
 ok 2 - disjoint pools fit under capacity; invalid overrides and impossible machines reject
   ---
-  duration_ms: 13.145446
+  duration_ms: 29.123948
   type: 'test'
   ...
 # Subtest: 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
 ok 3 - 4 effective CPUs / 8 GiB admit app, MaxCore and Python without overlap
   ---
-  duration_ms: 4.814051
+  duration_ms: 7.122958
   type: 'test'
   ...
 # Subtest: role-specific minima are validated and small feasible CPU shares time-share
 ok 4 - role-specific minima are validated and small feasible CPU shares time-share
   ---
-  duration_ms: 12.000811
+  duration_ms: 18.18398
   type: 'test'
   ...
 # Subtest: readiness publishes atomically, single-flights refreshes, expires and recovers
 ok 5 - readiness publishes atomically, single-flights refreshes, expires and recovers
   ---
-  duration_ms: 4.792648
+  duration_ms: 6.275459
   type: 'test'
   ...
 # Subtest: Sentry repeated never-successful sends cross 24h; success resets silence age
 ok 6 - Sentry repeated never-successful sends cross 24h; success resets silence age
   ---
-  duration_ms: 11.607031
+  duration_ms: 19.213455
   type: 'test'
   ...
 # Subtest: Python respects the interpreter selected at the critical restore barrier
 ok 7 - Python respects the interpreter selected at the critical restore barrier
   ---
-  duration_ms: 4.155954
+  duration_ms: 6.226449
   type: 'test'
   ...
-# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-7ce352c3/deployment-contract-e0rSsv/.pdim-scratch-fixture-163468/ (staging for fixture/) ...
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-sid28u7a/deployment-contract-9tGNeA/.pdim-scratch-fixture-234880/ (staging for fixture/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
 # [pdim-restore] ✅ fixture/ restored from fixture.pdim
-# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-7ce352c3/deployment-contract-e0rSsv/.pdim-scratch-fixture-163468/ (staging for fixture/) ...
+# [pdim-restore] Extracting fixture.pdim (gzip-9) → /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-sid28u7a/deployment-contract-9tGNeA/.pdim-scratch-fixture-234880/ (staging for fixture/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
 # [pdim-restore] ✅ fixture/ restored from fixture.pdim
 # [pdim-restore] Checksum mismatch for fixture.pdim
-# [pdim-restore] Extracting fixture.pdim (xz-9e) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-7ce352c3/deployment-contract-e0rSsv/.pdim-scratch-fixture-163468/ (staging for fixture/) ...
+# [pdim-restore] Extracting fixture.pdim (xz-9e) → /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-sid28u7a/deployment-contract-9tGNeA/.pdim-scratch-fixture-234880/ (staging for fixture/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
 # [pdim-restore] ✅ fixture/ restored from fixture.pdim
-# [pdim-restore] Extracting fixture.pdim (xz-6) → /tmp/maxbooster-test-l6unjntq/maxbooster-test-7ce352c3/deployment-contract-e0rSsv/.pdim-scratch-fixture-163468/ (staging for fixture/) ...
+# [pdim-restore] Extracting fixture.pdim (xz-6) → /tmp/maxbooster-test-_4hzi4xn/maxbooster-test-sid28u7a/deployment-contract-9tGNeA/.pdim-scratch-fixture-234880/ (staging for fixture/) ...
 # [pdim-restore] bsdtar not found — falling back to GNU tar for fixture.pdim
 # [pdim-restore] ✅ fixture/ restored from fixture.pdim
 # [pdim-restore] Checksum mismatch for fixture.pdim
 # Subtest: capsule restoration reuses only the matching generation and rejects corruption
 ok 8 - capsule restoration reuses only the matching generation and rejects corruption
   ---
-  duration_ms: 48.644003
+  duration_ms: 69.060041
   type: 'test'
   ...
 # Subtest: build verifies dependencies without fetching package managers; explicit synchronization is offline
 ok 9 - build verifies dependencies without fetching package managers; explicit synchronization is offline
   ---
-  duration_ms: 0.556619
+  duration_ms: 0.627778
   type: 'test'
   ...
 1..9
@@ -75,4 +75,4 @@ ok 9 - build verifies dependencies without fetching package managers; explicit s
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 279.552496
+# duration_ms 405.365686

@@ -12,4 +12,4 @@ ai_model/training/test_live_learning.py::LiveLearningTests::test_status_endpoint
     @router.on_event("startup")
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-13 passed, 3 warnings, 8 subtests passed in 7.31s
+13 passed, 3 warnings, 8 subtests passed in 7.68s

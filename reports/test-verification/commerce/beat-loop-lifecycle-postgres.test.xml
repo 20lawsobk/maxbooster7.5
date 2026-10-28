@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <testsuites>
-	<testsuite name="Beat Money Loop lifecycle on a disposable PostgreSQL database" time="14.010244" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="af966a6fd55d">
-		<testcase name="concurrent initialization creates exactly one paused state row" time="0.032439" classname="test"/>
-		<testcase name="generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership" time="0.643928" classname="test"/>
-		<testcase name="a second replica cannot run or orphan an active cycle while its database lock is held" time="0.007125" classname="test"/>
-		<testcase name="only a completed marketplace settlement marks sold; replay does not duplicate seller earnings" time="0.029100" classname="test"/>
-		<testcase name="zero published posts is reported honestly while retaining the payable listing" time="0.514780" classname="test"/>
-		<testcase name="concurrent manual requests cannot overlap and pause clears queued cycles" time="0.518110" classname="test"/>
-		<testcase name="listing failure rolls back beat and royalty rows and removes public/audio uploads" time="0.542749" classname="test"/>
-		<testcase name="silent audio is rejected before listing even without renderer quality metadata" time="0.301122" classname="test"/>
-		<testcase name="renderer failure lists nothing, releases the slot and records backoff" time="0.009149" classname="test"/>
-		<testcase name="real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint" time="9.211672" classname="test"/>
+	<testsuite name="Beat Money Loop lifecycle on a disposable PostgreSQL database" time="14.964498" disabled="0" errors="0" tests="10" failures="0" skipped="0" hostname="af966a6fd55d">
+		<testcase name="concurrent initialization creates exactly one paused state row" time="0.024782" classname="test"/>
+		<testcase name="generates decoded audio, a shorter private preview, awareness artwork, atomic listing and royalty ownership" time="0.610098" classname="test"/>
+		<testcase name="a second replica cannot run or orphan an active cycle while its database lock is held" time="0.013704" classname="test"/>
+		<testcase name="only a completed marketplace settlement marks sold; replay does not duplicate seller earnings" time="0.034718" classname="test"/>
+		<testcase name="zero published posts is reported honestly while retaining the payable listing" time="0.583063" classname="test"/>
+		<testcase name="concurrent manual requests cannot overlap and pause clears queued cycles" time="0.682321" classname="test"/>
+		<testcase name="listing failure rolls back beat and royalty rows and removes public/audio uploads" time="0.576650" classname="test"/>
+		<testcase name="silent audio is rejected before listing even without renderer quality metadata" time="0.360871" classname="test"/>
+		<testcase name="renderer failure lists nothing, releases the slot and records backoff" time="0.011905" classname="test"/>
+		<testcase name="real Python ASGI synthesizes and delivers beat audio and poster into the SQL listing without a checkpoint" time="9.731554" classname="test"/>
 	</testsuite>
 	<!-- tests 11 -->
 	<!-- suites 0 -->
@@ -19,5 +19,5 @@
 	<!-- cancelled 0 -->
 	<!-- skipped 0 -->
 	<!-- todo 0 -->
-	<!-- duration_ms 17026.771187 -->
+	<!-- duration_ms 18072.460791 -->
 </testsuites>

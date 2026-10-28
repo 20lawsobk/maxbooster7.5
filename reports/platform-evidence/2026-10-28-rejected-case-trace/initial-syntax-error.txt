@@ -1,0 +1,4 @@
+  File "/workspace/onboarding-results/evidence-gap-trace/trace-rejections.initial.py", line 46
+    status='failed'if any(e.find(t)is not None for t in ['failure','error'])else'skipped'if e.find('skipped')is not None else's'passed'
+                                                                                                                                      ^
+SyntaxError: unterminated string literal (detected at line 46)

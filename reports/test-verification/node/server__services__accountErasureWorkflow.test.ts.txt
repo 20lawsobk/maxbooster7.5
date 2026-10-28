@@ -2,67 +2,67 @@ TAP version 13
 # Subtest: approval gate rejects missing authority, expiry, holds, retention, incomplete inventory and unfenced writes
 ok 1 - approval gate rejects missing authority, expiry, holds, retention, incomplete inventory and unfenced writes
   ---
-  duration_ms: 1.406551
+  duration_ms: 1.69421
   type: 'test'
   ...
 # Subtest: all adapters required, unknown systems denied, authority outage fails closed
 ok 2 - all adapters required, unknown systems denied, authority outage fails closed
   ---
-  duration_ms: 1.258528
+  duration_ms: 1.12538
   type: 'test'
   ...
 # Subtest: claimed step rechecks authority, verifies receipt and never marks request completed
 ok 3 - claimed step rechecks authority, verifies receipt and never marks request completed
   ---
-  duration_ms: 0.63667
+  duration_ms: 0.584473
   type: 'test'
   ...
 # Subtest: hold introduced during claim prevents adapter execution
 ok 4 - hold introduced during claim prevents adapter execution
   ---
-  duration_ms: 0.308195
+  duration_ms: 0.255185
   type: 'test'
   ...
 # Subtest: ambiguous provider outcome retries with same key; unverifiable receipt is not acknowledged
 ok 5 - ambiguous provider outcome retries with same key; unverifiable receipt is not acknowledged
   ---
-  duration_ms: 0.481877
+  duration_ms: 0.616371
   type: 'test'
   ...
 # Subtest: lost claim does not execute; lost ACK and retry persistence failure surface errors
 ok 6 - lost claim does not execute; lost ACK and retry persistence failure surface errors
   ---
-  duration_ms: 0.507375
+  duration_ms: 0.464802
   type: 'test'
   ...
 # Subtest: real SQL repository binds subjects, snapshot, leases and receipts; zero-row ACK/retry rejected
 ok 7 - real SQL repository binds subjects, snapshot, leases and receipts; zero-row ACK/retry rejected
   ---
-  duration_ms: 0.617872
+  duration_ms: 0.632816
   type: 'test'
   ...
 # Subtest: real request repository atomically revokes, creates new cycle only after cancellation, propagates outages
 ok 8 - real request repository atomically revokes, creates new cycle only after cancellation, propagates outages
   ---
-  duration_ms: 0.452893
+  duration_ms: 0.607118
   type: 'test'
   ...
 # Subtest: real handlers require principal and local proof, ignore attacker subject, acknowledge only after revocation/destroy
 ok 9 - real handlers require principal and local proof, ignore attacker subject, acknowledge only after revocation/destroy
   ---
-  duration_ms: 0.988381
+  duration_ms: 1.365723
   type: 'test'
   ...
 # Subtest: real passwordless handler requires owner-bound recent nonfuture OAuth stamp
 ok 10 - real passwordless handler requires owner-bound recent nonfuture OAuth stamp
   ---
-  duration_ms: 0.961891
+  duration_ms: 0.954362
   type: 'test'
   ...
 # Subtest: status/cancellation only access caller; started/noncancellable requests return conflict
 ok 11 - status/cancellation only access caller; started/noncancellable requests return conflict
   ---
-  duration_ms: 0.308936
+  duration_ms: 0.477521
   type: 'test'
   ...
 1..11
@@ -73,4 +73,4 @@ ok 11 - status/cancellation only access caller; started/noncancellable requests 
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 204.896477
+# duration_ms 205.564437

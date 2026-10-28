@@ -44,9 +44,9 @@ A passing file may contain skipped cases; skips are counted separately. Blocked 
 
 ## Recorded run
 
-- Source baseline: `a1603b13b6352a978e3877a2f43f1ccd98a98a18`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
-- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 111, "skipped": 1, "timeout": 0}.
-- JUnit cases: 1381; failures: 0; errors: 0; skipped: 12.
+- Source baseline: `10d192675beefcf1b7beef3ce47c271db0cc17cf`; individual `sourceSha256` fields bind test-file contents, including reviewed fixture updates.
+- Files: {"blocked": 19, "empty": 0, "failed": 0, "passed": 112, "skipped": 1, "timeout": 0}.
+- JUnit cases: 1440; failures: 0; errors: 0; skipped: 12.
 - Original model quality, live provider delivery and a production deployment are not certified by these tests.
 
 ## Every Python suite
@@ -3235,6 +3235,31 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 10}.
 
 </details>
 
+### `tests/testing/test_endpoint_mount_resolution.py`
+
+The actual registry consumer must retain source topology uncertainty.
+
+Status: **passed**.
+
+```sh
+python3 scripts/testing/run-python-suites.py --file tests/testing/test_endpoint_mount_resolution.py --output /tmp/maxbooster-python-single
+```
+
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 7}.
+
+<details>
+<summary>What each case checks</summary>
+
+- `MountResolutionConsumer.test_high_confidence_mounted_path_is_retained`: high confidence mounted path is retained
+- `MountResolutionConsumer.test_medium_confidence_mounted_path_is_retained`: medium confidence mounted path is retained
+- `MountResolutionConsumer.test_unmounted_fallback_path_never_becomes_a_resolved_mount`: unmounted fallback path never becomes a resolved mount
+- `MountResolutionConsumer.test_unknown_confidence_cannot_claim_a_verified_mount`: unknown confidence cannot claim a verified mount
+- `MountResolutionConsumer.test_missing_full_path_remains_unresolved`: missing full path remains unresolved
+- `MountResolutionConsumer.test_existing_unique_source_route_identity_is_unchanged`: existing unique source route identity is unchanged
+- `MountResolutionConsumer.test_same_source_url_in_distinct_processes_has_distinct_actual_consumer_ids`: same source url in distinct processes has distinct actual consumer ids
+
+</details>
+
 ### `tests/testing/test_launch_readiness_audit.py`
 
 Fail-closed launch decisions and exact inventory/provenance regressions.
@@ -3315,7 +3340,7 @@ Status: **passed**.
 python3 scripts/testing/run-python-suites.py --file tests/testing/test_platform_evidence.py --output /tmp/maxbooster-python-single
 ```
 
-JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 25}.
+JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 77}.
 
 <details>
 <summary>What each case checks</summary>
@@ -3333,6 +3358,23 @@ JUnit: {"errors": 0, "failures": 0, "skipped": 0, "tests": 25}.
 - `test_unknown_or_malformed_check_never_becomes_verified`: unknown or malformed check never becomes verified
 - `test_unregistered_test_cannot_borrow_an_existing_exact_passing_identity`: unregistered test cannot borrow an existing exact passing identity
 - `test_validator_does_not_mutate_the_declared_proof`: validator does not mutate the declared proof
+- `test_generator_refuses_old_execution_even_when_candidate_digest_is_rewritten`: Exercise the actual main linker, not a replacement of its acceptance rule.
+- `test_actual_selected_producer_can_prove_only_its_exact_current_cases`: actual selected producer can prove only its exact current cases
+- `test_execution_metadata_cannot_be_relabelled_as_current_proof`: execution metadata cannot be relabelled as current proof
+- `test_refreshing_case_results_does_not_refresh_stale_underlying_artifacts`: refreshing case results does not refresh stale underlying artifacts
+- `test_case_results_must_match_actual_bound_passing_xml`: case results must match actual bound passing xml
+- `test_failed_or_skipped_xml_cannot_borrow_a_pass_label`: failed or skipped xml cannot borrow a pass label
+- `test_changed_python_source_hash_cannot_borrow_default_file_identity`: changed python source hash cannot borrow default file identity
+- `test_malformed_case_results_fail_closed`: malformed case results fail closed
+- `test_supplemental_node_cases_need_the_actual_current_successful_file_run`: supplemental node cases need the actual current successful file run
+- `test_malformed_supplemental_node_reports_fail_closed`: malformed supplemental node reports fail closed
+- `test_malformed_supplemental_browser_reports_fail_closed`: malformed supplemental browser reports fail closed
+- `test_postprocessing_ledger_updates_preserve_exact_stable_execution_binding`: postprocessing ledger updates preserve exact stable execution binding
+- `test_duplicate_xml_identity_is_ambiguous_even_if_one_occurrence_passes`: duplicate xml identity is ambiguous even if one occurrence passes
+- `test_partial_or_ambiguous_producer_bindings_never_become_leaf_proof`: partial or ambiguous producer bindings never become leaf proof
+- `test_aggregate_browser_tap_cannot_assign_cases_to_files`: aggregate browser tap cannot assign cases to files
+- `test_default_file_producer_requires_exact_command_and_numeric_success`: default file producer requires exact command and numeric success
+- `test_duplicate_node_file_runs_cannot_borrow_an_earlier_pass`: Both occurrences really execute the same unchanged owned source.
 
 </details>
 

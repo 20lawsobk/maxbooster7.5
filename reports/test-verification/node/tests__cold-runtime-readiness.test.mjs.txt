@@ -2,19 +2,19 @@ TAP version 13
 # Subtest: actual imported liveness permits only the observed operational ML gate
 ok 1 - actual imported liveness permits only the observed operational ML gate
   ---
-  duration_ms: 1.357087
+  duration_ms: 1.418463
   type: 'test'
   ...
 # Subtest: missing runtime data, non-ML degradation and generic readiness exceptions fail closed
 ok 2 - missing runtime data, non-ML degradation and generic readiness exceptions fail closed
   ---
-  duration_ms: 0.500485
+  duration_ms: 0.713508
   type: 'test'
   ...
 # Subtest: healthy aggregate must agree with the actual model and awareness evidence
 ok 3 - healthy aggregate must agree with the actual model and awareness evidence
   ---
-  duration_ms: 0.140041
+  duration_ms: 0.416019
   type: 'test'
   ...
 1..3
@@ -25,4 +25,4 @@ ok 3 - healthy aggregate must agree with the actual model and awareness evidence
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 112.551352
+# duration_ms 128.681772

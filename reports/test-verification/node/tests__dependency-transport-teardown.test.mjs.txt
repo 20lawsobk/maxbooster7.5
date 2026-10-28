@@ -2,25 +2,25 @@ TAP version 13
 # Subtest: .: pending asynchronous upload filter cannot reopen an aborted request
 ok 1 - .: pending asynchronous upload filter cannot reopen an aborted request
   ---
-  duration_ms: 97.962667
+  duration_ms: 122.331519
   type: 'test'
   ...
 # Subtest: external/pdim/artifacts/api-server: pending asynchronous upload filter cannot reopen an aborted request
 ok 2 - external/pdim/artifacts/api-server: pending asynchronous upload filter cannot reopen an aborted request
   ---
-  duration_ms: 96.246629
+  duration_ms: 111.924602
   type: 'test'
   ...
 # Subtest: .: fetch refuses excessive response encodings and remains usable
 ok 3 - .: fetch refuses excessive response encodings and remains usable
   ---
-  duration_ms: 144.966425
+  duration_ms: 195.257464
   type: 'test'
   ...
 # Subtest: external/maxcore/artifacts/api-server: fetch refuses excessive response encodings and remains usable
 ok 4 - external/maxcore/artifacts/api-server: fetch refuses excessive response encodings and remains usable
   ---
-  duration_ms: 135.694306
+  duration_ms: 183.130046
   type: 'test'
   ...
 1..4
@@ -31,4 +31,4 @@ ok 4 - external/maxcore/artifacts/api-server: fetch refuses excessive response e
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 601.368184
+# duration_ms 773.725204

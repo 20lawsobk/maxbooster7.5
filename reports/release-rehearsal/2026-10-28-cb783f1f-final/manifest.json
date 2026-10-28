@@ -9,8 +9,8 @@
   "artifacts": [
     {
       "path": "README.md",
-      "bytes": 8055,
-      "sha256": "b329600a36780f145beaa581bd9ab8ca920613888025873bcd1209ecc3e0bb99"
+      "bytes": 8254,
+      "sha256": "ea2ae323d5c13fe35a3a1f0606b85f18d67bfdc06d836c697c4b3d726234a38b"
     },
     {
       "path": "admitted-after-observation.txt",
@@ -122,5 +122,7 @@
       "bytes": 285,
       "sha256": "777bb8b19e58a39fa4702df6ff481c255ec2f1866b95abefd30a4429a3d1d486"
     }
-  ]
+  ],
+  "documentationClarifiedAt": "2026-10-28T13:22:10.142073+00:00",
+  "documentationClarification": "README distinguishes admitted release-source exclusions from physical checkout state; raw command/source/audit receipts unchanged."
 }

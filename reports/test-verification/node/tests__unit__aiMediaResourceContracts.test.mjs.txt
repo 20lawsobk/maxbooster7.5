@@ -2,31 +2,31 @@ TAP version 13
 # Subtest: nested Node allocation includes primary/launcher and removes inherited heap override
 ok 1 - nested Node allocation includes primary/launcher and removes inherited heap override
   ---
-  duration_ms: 1.069914
+  duration_ms: 8.350649
   type: 'test'
   ...
 # Subtest: all child BLAS/OpenMP and nested libuv pools are capped
 ok 2 - all child BLAS/OpenMP and nested libuv pools are capped
   ---
-  duration_ms: 0.209436
+  duration_ms: 0.350539
   type: 'test'
   ...
 # Subtest: insufficient nested-process memory fails explicitly
 ok 3 - insufficient nested-process memory fails explicitly
   ---
-  duration_ms: 0.328565
+  duration_ms: 0.553847
   type: 'test'
   ...
 # Subtest: actual nested primary setup supplies allocated worker heap without changing lifecycle
 ok 4 - actual nested primary setup supplies allocated worker heap without changing lifecycle
   ---
-  duration_ms: 3.345186
+  duration_ms: 10.176922
   type: 'test'
   ...
 # Subtest: A/B variant method contains no local transforms, fabricated scores or dead alternate result
 ok 5 - A/B variant method contains no local transforms, fabricated scores or dead alternate result
   ---
-  duration_ms: 0.339071
+  duration_ms: 0.597983
   type: 'test'
   ...
 1..5
@@ -37,4 +37,4 @@ ok 5 - A/B variant method contains no local transforms, fabricated scores or dea
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 171.631428
+# duration_ms 223.035967

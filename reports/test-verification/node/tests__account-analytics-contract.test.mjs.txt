@@ -3,79 +3,79 @@ TAP version 13
     # Subtest: capability is dedicated and model-free; unauthorized direct requests fail
     ok 1 - capability is dedicated and model-free; unauthorized direct requests fail
       ---
-      duration_ms: 9.139865
+      duration_ms: 9.658226
       type: 'test'
       ...
     # Subtest: calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
     ok 2 - calendar-day SQL and MaxCore OLS produce exact owned trend with no foreign/current-day data
       ---
-      duration_ms: 14.970924
+      duration_ms: 12.101657
       type: 'test'
       ...
     # Subtest: owned factual summaries preserve exact currency fractions and listener-observation caveat
     ok 3 - owned factual summaries preserve exact currency fractions and listener-observation caveat
       ---
-      duration_ms: 12.919982
+      duration_ms: 12.281949
       type: 'test'
       ...
     # Subtest: multiple platforms aggregate once per UTC day without flattening missing days
     ok 4 - multiple platforms aggregate once per UTC day without flattening missing days
       ---
-      duration_ms: 4.875623
+      duration_ms: 8.470843
       type: 'test'
       ...
     # Subtest: empty account does not inherit another owner's data or claim zero performance
     ok 5 - empty account does not inherit another owner's data or claim zero performance
       ---
-      duration_ms: 6.472672
+      duration_ms: 7.407257
       type: 'test'
       ...
     # Subtest: lifetime post counters cannot masquerade as timestamped daily engagement history
     ok 6 - lifetime post counters cannot masquerade as timestamped daily engagement history
       ---
-      duration_ms: 3.495552
+      duration_ms: 7.807656
       type: 'test'
       ...
     # Subtest: invalid input and absent identity reject before SQL or external requests
     ok 7 - invalid input and absent identity reject before SQL or external requests
       ---
-      duration_ms: 2.787314
+      duration_ms: 6.179683
       type: 'test'
       ...
     # Subtest: invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
     ok 8 - invalid recorded numeric values fail explicitly rather than entering public learning or fabricating output
       ---
-      duration_ms: 1.312319
+      duration_ms: 2.021268
       type: 'test'
       ...
     # Subtest: unavailable or structurally empty MaxCore output never invokes a local forecast fallback
     ok 9 - unavailable or structurally empty MaxCore output never invokes a local forecast fallback
       ---
-      duration_ms: 4.354847
+      duration_ms: 3.842793
       type: 'test'
       ...
     # Subtest: generic availability cannot advertise a dedicated model-free no-retention analytics capability
     ok 10 - generic availability cannot advertise a dedicated model-free no-retention analytics capability
       ---
-      duration_ms: 1.036423
+      duration_ms: 0.9471
       type: 'test'
       ...
     # Subtest: protocol mismatches cannot replace the requested forecast calendar or observation accounting
     ok 11 - protocol mismatches cannot replace the requested forecast calendar or observation accounting
       ---
-      duration_ms: 6.422877
+      duration_ms: 6.713188
       type: 'test'
       ...
     # Subtest: personal summaries reject unbacked totals, impossible counts and ready states without observations
     ok 12 - personal summaries reject unbacked totals, impossible counts and ready states without observations
       ---
-      duration_ms: 5.790644
+      duration_ms: 7.010919
       type: 'test'
       ...
     1..12
 ok 1 - private owner aggregates reach actual MaxCore statistics without model or learning state
   ---
-  duration_ms: 1256.517703
+  duration_ms: 1368.858489
   type: 'test'
   ...
 1..1
@@ -86,4 +86,4 @@ ok 1 - private owner aggregates reach actual MaxCore statistics without model or
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1783.025595
+# duration_ms 1946.561224

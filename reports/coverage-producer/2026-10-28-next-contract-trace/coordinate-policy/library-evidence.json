@@ -1,0 +1,291 @@
+{
+  "recordedAt": "2026-10-28T13:35:38.301387+00:00",
+  "scope": "Read-only installed-library source observation while root source is frozen",
+  "files": [
+    {
+      "id": "converter",
+      "path": "node_modules/ast-v8-to-istanbul/dist/index.mjs",
+      "sha256": "855d3467ff70f75a152bee7fd3e51fc8c1207b7f25809853570f099ed1c1e566",
+      "bytes": 20912,
+      "citations": [
+        {
+          "startLine": 152,
+          "endLine": 190,
+          "reason": "Map builders copy location fields without JSON conversion",
+          "text": "\t\t\tname: a || `(anonymous_${i})`,\n\t\t\tdecl: pickLocation(e.decl),\n\t\t\tloc: pickLocation(e.loc),\n\t\t\tline: e.loc.start.line\n\t\t};\n\t}\n\tt.f[i] ||= 0, t.f[i] += e.covered || 0;\n}\nfunction addStatement(e) {\n\tlet t = e.coverageMapData[e.filename], n = t.meta, r = `s:${cacheKey(e.loc)}`, i = n.seen[r];\n\ti ?? (i = n.lastStatement, n.lastStatement++, n.seen[r] = i, t.statementMap[i] = pickLocation(e.loc)), t.s[i] = e.covered || 0;\n}\nfunction addBranch(e) {\n\tlet t = e.coverageMapData[e.filename], n = t.meta, r = [\"b\", ...e.locations.map(cacheKey)].join(\":\"), i = n.seen[r];\n\ti ?? (i = n.lastBranch, n.lastBranch++, n.seen[r] = i, t.branchMap[i] = {\n\t\tloc: pickLocation(e.loc),\n\t\ttype: e.type,\n\t\tlocations: e.locations.map((e) => pickLocation(e)),\n\t\tline: e.loc.start.line\n\t}), t.b[i] || (t.b[i] = Array(e.locations.length).fill(0)), e.covered?.forEach((e, n) => {\n\t\tt.b[i][n] !== void 0 && (t.b[i][n] += e);\n\t});\n}\nfunction pickLocation(e) {\n\treturn {\n\t\tstart: {\n\t\t\tline: e.start.line,\n\t\t\tcolumn: e.start.column\n\t\t},\n\t\tend: {\n\t\t\tline: e.end.line,\n\t\t\tcolumn: e.end.column\n\t\t}\n\t};\n}\nfunction cacheKey(e) {\n\treturn `${e.start.line}:${e.start.column}:${e.end.line}:${e.end.column}`;\n}\n//#endregion",
+          "sha256": "bcd17a034084390ad6695b9a92fb478a3cf9006e9113370a4239aeb353c3ff3b"
+        },
+        {
+          "startLine": 246,
+          "endLine": 324,
+          "reason": "Locator getLoc, last-generated-mapping positive-Infinity end sentinel and LUB fallback",
+          "text": "const _ = /(\\w+|\\s|[^\\w\\s])/g, v = /#\\s*sourceMappingURL=(.*)\\s*$/m, y = \"data:application/json;base64,\";\nvar Locator = class {\n\t#e = [0];\n\t#t;\n\t#n;\n\t#r = new Map();\n\tconstructor(e, t, n) {\n\t\tfor (let t = 0; t < e.length; t++) e.charCodeAt(t) === 10 && this.#e.push(t + 1);\n\t\tthis.#t = t, this.#n = n;\n\t}\n\treset() {\n\t\tthis.#r.clear(), this.#e = [0];\n\t}\n\toffsetToNeedle(e) {\n\t\tlet t = 0, n = this.#e.length - 1;\n\t\tfor (; t <= n;) {\n\t\t\tlet r = t + n >> 1;\n\t\t\tthis.#e[r] <= e ? t = r + 1 : n = r - 1;\n\t\t}\n\t\treturn {\n\t\t\tline: n + 1,\n\t\t\tcolumn: e - this.#e[n]\n\t\t};\n\t}\n\tgetLoc(e) {\n\t\tlet t = this.offsetToNeedle(e.start), n = getPosition(t, this.#t);\n\t\tif (n === null) return null;\n\t\tlet r = this.offsetToNeedle(e.end);\n\t\t--r.column;\n\t\tlet a = getPosition(r, this.#t);\n\t\tif (a === null) {\n\t\t\tfor (let e = r.line; e >= t.line && a === null; e--) a = getPosition({\n\t\t\t\tline: e,\n\t\t\t\tcolumn: Infinity\n\t\t\t}, this.#t);\n\t\t\tif (a === null) return null;\n\t\t}\n\t\tlet l = {\n\t\t\tstart: n,\n\t\t\tend: a\n\t\t}, u = o(this.#t, {\n\t\t\tsource: l.end.filename,\n\t\t\tline: l.end.line,\n\t\t\tcolumn: l.end.column + 1,\n\t\t\tbias: i\n\t\t});\n\t\tif (u.length === 0) l.end.column = Infinity;\n\t\telse for (let e of u) {\n\t\t\tif (e.line === null) continue;\n\t\t\tlet t = s(this.#t, e);\n\t\t\tif (t.line === l.end.line) {\n\t\t\t\tl.end = {\n\t\t\t\t\t...t,\n\t\t\t\t\tfilename: t.source\n\t\t\t\t};\n\t\t\t\tbreak;\n\t\t\t}\n\t\t}\n\t\tlet d = l.start.filename, f = this.#r.get(d);\n\t\treturn f || (f = getIgnoredLines(c(this.#t, d) ?? tryReadFileSync(d)), this.#r.set(d, f)), f.has(l.start.line) ? null : l;\n\t}\n\tgetSourceLines(e, t) {\n\t\tlet r = this.#t.resolvedSources.findIndex((e) => e === t || n(this.#n, e) === t), i = this.#t.sourcesContent?.[r];\n\t\tif (i == null) return null;\n\t\tlet a = i.split(\"\\n\").slice(e.start.line - 1, e.end.line);\n\t\treturn a[0] = a[0].slice(e.start.column), a[a.length - 1] = a[a.length - 1].slice(0, e.end.column), a.join(\"\\n\");\n\t}\n};\nfunction getPosition(e, t) {\n\tlet n = s(t, e);\n\treturn n.source ?? (n = s(t, {\n\t\tcolumn: e.column,\n\t\tline: e.line,\n\t\tbias: i\n\t})), n.source == null ? null : {\n\t\tline: n.line,\n\t\tcolumn: n.column,\n\t\tfilename: n.source\n\t};",
+          "sha256": "ec7402173bae61d80ddd9e3bad44d264e01de6312a957b2dae3eb829debd526a"
+        },
+        {
+          "startLine": 515,
+          "endLine": 570,
+          "reason": "Implicit absent branch creates complete undefined location",
+          "text": "\t\t\t})) return;\n\t\t}\n\t\taddStatement({\n\t\t\tcoverageMapData: this.coverageMapData,\n\t\t\tloc: n,\n\t\t\tcovered: r,\n\t\t\tfilename: this.#e(n)\n\t\t});\n\t}\n\tonBranch(e, t, n) {\n\t\tif (this.#t(t, \"branch\")) return;\n\t\tlet r = this.locator.getLoc(t);\n\t\tif (r === null) return;\n\t\tlet i = [], a = [];\n\t\tfor (let e of n) {\n\t\t\tif (!e) {\n\t\t\t\ti.push({\n\t\t\t\t\tstart: {\n\t\t\t\t\t\tline: void 0,\n\t\t\t\t\t\tcolumn: void 0\n\t\t\t\t\t},\n\t\t\t\t\tend: {\n\t\t\t\t\t\tline: void 0,\n\t\t\t\t\t\tcolumn: void 0\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t\tlet e = getCount({\n\t\t\t\t\tstartOffset: t.start + this.wrapperLength,\n\t\t\t\t\tendOffset: t.end + this.wrapperLength\n\t\t\t\t}, this.ranges), n = a.at(-1) || 0;\n\t\t\t\ta.push(e - n);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tlet n = this.locator.getLoc(e);\n\t\t\tn !== null && i.push(n);\n\t\t\tlet r = +(e.type === \"BlockStatement\");\n\t\t\ta.push(getCount({\n\t\t\t\tstartOffset: e.start + r + this.wrapperLength,\n\t\t\t\tendOffset: e.end - r + this.wrapperLength\n\t\t\t}, this.ranges));\n\t\t}\n\t\tif (e === \"if\" && i.length > 0 && (i[0] = r), i.length !== 0) {\n\t\t\tif (this.ignoreSourceCode) {\n\t\t\t\tlet e = this.locator.getSourceLines(r, this.#e(r));\n\t\t\t\tif (e != null && this.ignoreSourceCode(e, \"branch\", {\n\t\t\t\t\tstart: {\n\t\t\t\t\t\tline: r.start.line,\n\t\t\t\t\t\tcolumn: r.start.column\n\t\t\t\t\t},\n\t\t\t\t\tend: {\n\t\t\t\t\t\tline: r.end.line,\n\t\t\t\t\t\tcolumn: r.end.column\n\t\t\t\t\t}\n\t\t\t\t})) return;\n\t\t\t}\n\t\t\taddBranch({",
+          "sha256": "7ad368df45b1661faa5e4aa2bbe97968d93bd16c86623853b0d14d0908b5f422"
+        },
+        {
+          "startLine": 596,
+          "endLine": 741,
+          "reason": "Converter callbacks, original branch kinds and declaration traversal",
+          "text": "async function convert(e) {\n\tlet t = getIgnoreHints(e.code);\n\tif (t.length === 1 && t[0].type === \"file\") return {};\n\tlet n = getWalker(), r = await b.create(e, n.onIgnore), i = await e.ast;\n\treturn n.walk(i, t, e.ignoreClassMethods, {\n\t\tonFunctionDeclaration(e) {\n\t\t\tr.onFunction(e, {\n\t\t\t\tloc: e.body,\n\t\t\t\tdecl: e.id || {\n\t\t\t\t\t...e,\n\t\t\t\t\tend: e.start + 1\n\t\t\t\t}\n\t\t\t});\n\t\t},\n\t\tonFunctionExpression(e) {\n\t\t\tisCovered(e) || r.onFunction(e, {\n\t\t\t\tloc: e.body,\n\t\t\t\tdecl: e.id || {\n\t\t\t\t\t...e,\n\t\t\t\t\tend: e.start + 1\n\t\t\t\t}\n\t\t\t});\n\t\t},\n\t\tonArrowFunctionExpression(e) {\n\t\t\tr.onFunction(e, {\n\t\t\t\tloc: e.body,\n\t\t\t\tdecl: {\n\t\t\t\t\t...e,\n\t\t\t\t\tend: e.start + 1\n\t\t\t\t}\n\t\t\t}), e.body.type !== \"BlockStatement\" && r.onStatement(e.body, e);\n\t\t},\n\t\tonMethodDefinition(e) {\n\t\t\te.value.type === \"FunctionExpression\" && setCovered(e.value), r.onFunction(e, {\n\t\t\t\tloc: e.value.body,\n\t\t\t\tdecl: e.key\n\t\t\t});\n\t\t},\n\t\tonProperty(e) {\n\t\t\te.value.type === \"FunctionExpression\" && (setCovered(e.value), r.onFunction(e, {\n\t\t\t\tloc: e.value.body,\n\t\t\t\tdecl: e.key\n\t\t\t}));\n\t\t},\n\t\tonClassMethod(e) {\n\t\t\tlet t = {\n\t\t\t\ttype: \"FunctionExpression\",\n\t\t\t\tstart: e.start,\n\t\t\t\tend: e.end,\n\t\t\t\tbody: {\n\t\t\t\t\ttype: \"BlockStatement\",\n\t\t\t\t\tstart: e.body.start,\n\t\t\t\t\tend: e.body.end,\n\t\t\t\t\tbody: []\n\t\t\t\t},\n\t\t\t\tparams: [],\n\t\t\t\tid: e.key.type === \"Identifier\" ? {\n\t\t\t\t\ttype: \"Identifier\",\n\t\t\t\t\tname: e.key.name,\n\t\t\t\t\tstart: e.key.start,\n\t\t\t\t\tend: e.key.end\n\t\t\t\t} : null\n\t\t\t};\n\t\t\tr.onFunction(t, {\n\t\t\t\tloc: t.body,\n\t\t\t\tdecl: {\n\t\t\t\t\tstart: e.key.start,\n\t\t\t\t\tend: e.key.end\n\t\t\t\t}\n\t\t\t});\n\t\t},\n\t\tonObjectMethod(e) {\n\t\t\tlet t = {\n\t\t\t\ttype: \"FunctionExpression\",\n\t\t\t\tstart: e.start,\n\t\t\t\tend: e.end,\n\t\t\t\tbody: {\n\t\t\t\t\ttype: \"BlockStatement\",\n\t\t\t\t\tstart: e.body.start,\n\t\t\t\t\tend: e.body.end,\n\t\t\t\t\tbody: []\n\t\t\t\t},\n\t\t\t\tparams: [],\n\t\t\t\tid: e.key.type === \"Identifier\" ? {\n\t\t\t\t\ttype: \"Identifier\",\n\t\t\t\t\tname: e.key.name,\n\t\t\t\t\tstart: e.key.start,\n\t\t\t\t\tend: e.key.end\n\t\t\t\t} : null\n\t\t\t};\n\t\t\tr.onFunction(t, {\n\t\t\t\tloc: t.body,\n\t\t\t\tdecl: {\n\t\t\t\t\tstart: e.key.start,\n\t\t\t\t\tend: e.key.end\n\t\t\t\t}\n\t\t\t});\n\t\t},\n\t\tonBreakStatement: (e) => r.onStatement(e),\n\t\tonContinueStatement: (e) => r.onStatement(e),\n\t\tonDebuggerStatement: (e) => r.onStatement(e),\n\t\tonReturnStatement: (e) => r.onStatement(e),\n\t\tonThrowStatement: (e) => r.onStatement(e),\n\t\tonTryStatement: (e) => r.onStatement(e),\n\t\tonForStatement: (e) => r.onStatement(e),\n\t\tonForInStatement: (e) => r.onStatement(e),\n\t\tonForOfStatement: (e) => r.onStatement(e),\n\t\tonWhileStatement: (e) => r.onStatement(e),\n\t\tonDoWhileStatement: (e) => r.onStatement(e),\n\t\tonWithStatement: (e) => r.onStatement(e),\n\t\tonLabeledStatement: (e) => r.onStatement(e),\n\t\tonExpressionStatement(e) {\n\t\t\t(e.expression.type !== \"Literal\" || e.expression.value !== \"use strict\") && r.onStatement(e);\n\t\t},\n\t\tonVariableDeclarator(e) {\n\t\t\te.init && r.onStatement(e.init, e);\n\t\t},\n\t\tonClassBody(e) {\n\t\t\tfor (let t of e.body) (t.type === \"PropertyDefinition\" || t.type === \"ClassProperty\" || t.type === \"ClassPrivateProperty\") && t.value && r.onStatement(t.value);\n\t\t},\n\t\tonIfStatement(e, t) {\n\t\t\tr.onBranch(\"if\", e, t), r.onStatement(e);\n\t\t},\n\t\tonConditionalExpression(e, t) {\n\t\t\tr.onBranch(\"cond-expr\", e, t);\n\t\t},\n\t\tonLogicalExpression(e, t) {\n\t\t\tr.onBranch(\"binary-expr\", e, t);\n\t\t},\n\t\tonSwitchStatement(e, t) {\n\t\t\tr.onBranch(\"switch\", e, t), r.onStatement(e);\n\t\t},\n\t\tonAssignmentPattern(e) {\n\t\t\tr.onBranch(\"default-arg\", e, [e.right]);\n\t\t}\n\t}), r.generate();\n}\nconst x = new WeakSet();\nfunction setCovered(e) {\n\tx.add(e);\n}\nfunction isCovered(e) {\n\treturn x.has(e);\n}\n//#endregion\nexport { convert, convert as default };",
+          "sha256": "28d26f4218cdee6a624cdc221e3f90cdf7b441e5e422adf66eb83f7944fef6d1"
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "path": "node_modules/@vitest/coverage-v8/dist/provider.js",
+      "sha256": "9f7848b27aabc311e867d9a034b4f569892e68533b837116ab932e05fa20558f",
+      "bytes": 12314,
+      "citations": [
+        {
+          "startLine": 130,
+          "endLine": 191,
+          "reason": "Vitest actual remapCoverage parser, wrapper/class/ignoreNode policy",
+          "text": "\tasync remapCoverage(filename, wrapperLength, result, functions) {\n\t\tlet ast;\n\t\ttry {\n\t\t\tast = await parseAstAsync(result.code);\n\t\t} catch (error) {\n\t\t\tthis.ctx.logger.error(`Failed to parse ${filename}. Excluding it from coverage.\\n`, error);\n\t\t\treturn {};\n\t\t}\n\t\treturn await astV8ToIstanbul({\n\t\t\tcode: result.code,\n\t\t\tsourceMap: result.map,\n\t\t\tast,\n\t\t\tcoverage: {\n\t\t\t\tfunctions,\n\t\t\t\turl: filename\n\t\t\t},\n\t\t\tignoreClassMethods: this.options.ignoreClassMethods,\n\t\t\twrapperLength,\n\t\t\tignoreNode: (node, type) => {\n\t\t\t\t// SSR transformed imports\n\t\t\t\tif (type === \"statement\" && node.type === \"VariableDeclarator\" && node.id.type === \"Identifier\" && node.id.name.startsWith(\"__vite_ssr_import_\")) {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// SSR transformed exports vite@>6.3.5\n\t\t\t\tif (type === \"statement\" && node.type === \"ExpressionStatement\" && node.expression.type === \"AssignmentExpression\" && node.expression.left.type === \"MemberExpression\" && node.expression.left.object.type === \"Identifier\" && node.expression.left.object.name === \"__vite_ssr_exports__\") {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// SSR transformed exports vite@^6.3.5\n\t\t\t\tif (type === \"statement\" && node.type === \"VariableDeclarator\" && node.id.type === \"Identifier\" && node.id.name === \"__vite_ssr_export_default__\") {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// CJS imports as ternaries - e.g.\n\t\t\t\t// const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react;\n\t\t\t\tif (type === \"branch\" && node.type === \"ConditionalExpression\" && node.test.type === \"MemberExpression\" && node.test.object.type === \"Identifier\" && node.test.object.name.startsWith(\"__vite__cjsImport\") && node.test.property.type === \"Identifier\" && node.test.property.name === \"__esModule\") {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// in-source test with \"if (import.meta.vitest)\"\n\t\t\t\tif ((type === \"branch\" || type === \"statement\") && node.type === \"IfStatement\" && node.test.type === \"MemberExpression\" && node.test.property.type === \"Identifier\" && node.test.property.name === \"vitest\") {\n\t\t\t\t\t// SSR\n\t\t\t\t\tif (node.test.object.type === \"Identifier\" && node.test.object.name === \"__vite_ssr_import_meta__\") {\n\t\t\t\t\t\treturn \"ignore-this-and-nested-nodes\";\n\t\t\t\t\t}\n\t\t\t\t\t// Web\n\t\t\t\t\tif (node.test.object.type === \"MetaProperty\" && node.test.object.meta.name === \"import\" && node.test.object.property.name === \"meta\") {\n\t\t\t\t\t\treturn \"ignore-this-and-nested-nodes\";\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t// Browser mode's \"import.meta.env =\"\n\t\t\t\tif (type === \"statement\" && node.type === \"ExpressionStatement\" && node.expression.type === \"AssignmentExpression\" && node.expression.left.type === \"MemberExpression\" && node.expression.left.object.type === \"MetaProperty\" && node.expression.left.object.meta.name === \"import\" && node.expression.left.object.property.name === \"meta\" && node.expression.left.property.type === \"Identifier\" && node.expression.left.property.name === \"env\") {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// SSR mode's \"import.meta.env =\"\n\t\t\t\tif (type === \"statement\" && node.type === \"ExpressionStatement\" && node.expression.type === \"AssignmentExpression\" && node.expression.left.type === \"MemberExpression\" && node.expression.left.object.type === \"Identifier\" && node.expression.left.object.name === \"__vite_ssr_import_meta__\") {\n\t\t\t\t\treturn true;\n\t\t\t\t}\n\t\t\t\t// SWC's decorators\n\t\t\t\tif (type === \"statement\" && node.type === \"ExpressionStatement\" && node.expression.type === \"CallExpression\" && node.expression.callee.type === \"Identifier\" && node.expression.callee.name === \"_ts_decorate\") {\n\t\t\t\t\treturn \"ignore-this-and-nested-nodes\";\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t}",
+          "sha256": "6a19202555273163ca7f7f613e6faa9514a93809a340b55b882359bfd43ac819"
+        },
+        {
+          "startLine": 222,
+          "endLine": 272,
+          "reason": "Actual per-script startOffset becomes converter wrapperLength",
+          "text": "\tasync convertCoverage(coverage, project = this.ctx.getRootProject(), environment) {\n\t\tif (environment === \"__browser__\" && !project.browser) {\n\t\t\tthrow new Error(`Cannot access browser module graph because it was torn down.`);\n\t\t}\n\t\tconst onTransform = async (filepath) => {\n\t\t\tconst result = await this.transformFile(filepath, project, environment);\n\t\t\tif (result && environment === \"__browser__\" && project.browser) {\n\t\t\t\treturn {\n\t\t\t\t\t...result,\n\t\t\t\t\tcode: `${result.code}// <inline-source-map>`\n\t\t\t\t};\n\t\t\t}\n\t\t\treturn result;\n\t\t};\n\t\tconst scriptCoverages = [];\n\t\tfor (const result of coverage.result) {\n\t\t\tif (environment === \"__browser__\") {\n\t\t\t\tif (result.url.startsWith(\"/@fs\")) {\n\t\t\t\t\tresult.url = `${FILE_PROTOCOL}${removeStartsWith(result.url, \"/@fs\")}`;\n\t\t\t\t} else if (result.url.startsWith(project.config.root)) {\n\t\t\t\t\tresult.url = `${FILE_PROTOCOL}${result.url}`;\n\t\t\t\t} else {\n\t\t\t\t\tresult.url = `${FILE_PROTOCOL}${project.config.root}${result.url}`;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (this.isIncluded(fileURLToPath(result.url))) {\n\t\t\t\tscriptCoverages.push({\n\t\t\t\t\t...result,\n\t\t\t\t\turl: decodeURIComponent(result.url)\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\tconst coverageMap = this.createCoverageMap();\n\t\tlet index = 0;\n\t\tfor (const chunk of this.toSlices(scriptCoverages, this.options.processingConcurrency)) {\n\t\t\tif (debug.enabled) {\n\t\t\t\tindex += chunk.length;\n\t\t\t\tdebug(\"Converting %d/%d\", index, scriptCoverages.length);\n\t\t\t}\n\t\t\tawait Promise.all(chunk.map(async ({ url, functions, startOffset }) => {\n\t\t\t\tlet timeout;\n\t\t\t\tlet start;\n\t\t\t\tif (debug.enabled) {\n\t\t\t\t\tstart = performance.now();\n\t\t\t\t\ttimeout = setTimeout(() => debug(c.bgRed(`File \"${fileURLToPath(url)}\" is taking longer than 3s`)), 3e3);\n\t\t\t\t}\n\t\t\t\tconst sources = await this.getSources(url, onTransform, functions);\n\t\t\t\tcoverageMap.merge(await this.remapCoverage(url, startOffset, sources, functions));\n\t\t\t\tif (debug.enabled) {\n\t\t\t\t\tclearTimeout(timeout);\n\t\t\t\t\tconst diff = performance.now() - start;",
+          "sha256": "615e5b36b3a73f5d99cf9435681a89432c6e0c8b64e92fc19b299b9e4ca06b8f"
+        }
+      ]
+    },
+    {
+      "id": "collector",
+      "path": "node_modules/@vitest/coverage-v8/dist/index.js",
+      "sha256": "be14126e3dc6e83461555879c53945dd8adbce254d6ffba32e4e83ee04e270e7",
+      "bytes": 1719,
+      "citations": [
+        {
+          "startLine": 20,
+          "endLine": 43,
+          "reason": "Actual inspector precise coverage with moduleExecutionInfo startOffset",
+          "text": "\t\t});\n\t},\n\tasync takeCoverage(options) {\n\t\tif (provider === \"stackblitz\") {\n\t\t\treturn { result: [] };\n\t\t}\n\t\tconst coverage = await session.post(\"Profiler.takePreciseCoverage\");\n\t\tconst result = [];\n\t\t// Reduce amount of data sent over rpc by doing some early result filtering\n\t\tfor (const entry of coverage.result) {\n\t\t\tif (filterResult(entry)) {\n\t\t\t\tresult.push({\n\t\t\t\t\t...entry,\n\t\t\t\t\tstartOffset: options?.moduleExecutionInfo?.get(normalize(fileURLToPath(entry.url)))?.startOffset || 0\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\treturn { result };\n\t},\n\tasync stopCoverage({ isolate }) {\n\t\tif (isolate === false) {\n\t\t\treturn;\n\t\t}\n\t\tawait session.post(\"Profiler.stopPreciseCoverage\");",
+          "sha256": "be3c47cec926d6743d02703ca2cdc4ff98422ab9a94630927f1ad4201aa7b3fc"
+        }
+      ]
+    },
+    {
+      "id": "custom-loader",
+      "path": "node_modules/vitest/dist/chunks/coverage.CTzCuANN.js",
+      "sha256": "ba99c6accd29ea165736009002ae739b448733098eda3847d85f3b3697923b4e",
+      "bytes": 1267,
+      "citations": [
+        {
+          "startLine": 1,
+          "endLine": 28,
+          "reason": "Supported custom coverage provider module loading",
+          "text": "const CoverageProviderMap = {\n\tv8: \"@vitest/coverage-v8\",\n\tistanbul: \"@vitest/coverage-istanbul\"\n};\nasync function resolveCoverageProviderModule(options, loader) {\n\tif (!options?.enabled || !options.provider) return null;\n\tconst provider = options.provider;\n\tif (provider === \"v8\" || provider === \"istanbul\") {\n\t\tlet builtInModule = CoverageProviderMap[provider];\n\t\tif (provider === \"v8\" && loader.isBrowser) builtInModule += \"/browser\";\n\t\tconst { default: coverageModule } = loader.isBrowser ? await loader.import(builtInModule) : await import(\n\t\t\t/* @vite-ignore */\n\t\t\tbuiltInModule\n);\n\t\tif (!coverageModule) throw new Error(`Failed to load ${CoverageProviderMap[provider]}. Default export is missing.`);\n\t\treturn coverageModule;\n\t}\n\tlet customProviderModule;\n\ttry {\n\t\tcustomProviderModule = await loader.import(options.customProviderModule);\n\t} catch (error) {\n\t\tthrow new Error(`Failed to load custom CoverageProviderModule from ${options.customProviderModule}`, { cause: error });\n\t}\n\tif (customProviderModule.default == null) throw new Error(`Custom CoverageProviderModule loaded from ${options.customProviderModule} was not the default export`);\n\treturn customProviderModule.default;\n}\n\nexport { CoverageProviderMap as C, resolveCoverageProviderModule as r };",
+          "sha256": "cca99307e90abb3396d050b0aa5ffd585fc2eaa68f8150a6f14764aa54b2a6f2"
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "path": "vitest.platform.config.ts",
+      "sha256": "19db3933ad5515138a5831dc7f064f7f2f5622ce027ab76f02a6ed611c6c7438",
+      "bytes": 1254,
+      "citations": [
+        {
+          "startLine": 1,
+          "endLine": 28,
+          "reason": "Current measured denominator/provider/reporter settings are unchanged",
+          "text": "import { defineConfig, mergeConfig } from \"vitest/config\";\nimport base from \"./vitest.config\";\n\n// Executed-source coverage complements business assertions. Uncovered files\n// remain visible; importing a module or rendering a page is not a full journey.\nexport default mergeConfig(base, defineConfig({\n  test: {\n    // The real database contracts are instrumented here while ordinary unit\n    // CI keeps its dependency-light scope. The master supplies owned PG tools.\n    include: [\"tests/coverage/**/*.test.ts\"],\n    coverage: {\n      enabled: true,\n      provider: \"v8\",\n      include: [\n        \"client/src/**/*.{ts,tsx,js,mjs,cjs}\",\n        \"server/**/*.{ts,tsx,js,mjs,cjs}\",\n        \"shared/**/*.{ts,tsx,js,mjs,cjs}\",\n        \"built-in plugins dsp/**/*.{ts,tsx,js,mjs,cjs}\",\n        \"external/{maxcore,pdim}/artifacts/*/src/**/*.{ts,tsx,js,mjs,cjs}\",\n        \"external/{maxcore,pdim}/lib/*/src/**/*.{ts,tsx,js,mjs,cjs}\",\n      ],\n      exclude: [\"**/node_modules/**\", \"**/*.d.ts\", \"**/__tests__/**\", \"**/tests/**\", \"**/*.test.*\", \"**/*.spec.*\"],\n      reportsDirectory: process.env.MAXBOOSTER_TEST_COVERAGE_DIR || \"reports/test-verification/coverage\",\n      reporter: [\"json-summary\", \"json\", \"lcov\"],\n      reportOnFailure: true,\n    },\n  },\n}));",
+          "sha256": "b9894d63c38645b1e1f3e2f8df838bb3a7ff1051070979f835cf348a4b2a34bd"
+        }
+      ]
+    }
+  ],
+  "observations": {
+    "scope": "Typed values previously retained from real runtime replay, not a new execution or a normalized profile",
+    "sourceReceipt": "reports/coverage-producer/2026-10-28-compatibility-trace/ports-exact-details.json",
+    "sourceReceiptSha256": "b7c21feabaf705a4a0343da3ca8dd481cade9922a7da0c9520463d986d249fd5",
+    "originalSource": "server/config/ports.ts",
+    "originalSourceSha256": "5b70d59ba8e2e30e7a5c965c635b0f036554081a7907dcdbce6b365146b7f84d",
+    "executedCodeSha256": "075b0b5c95394506d98c213ce21b192243175db88bd4d32198c5d348e1c43ca8",
+    "sourceMapSha256": "bfcf58e56e80e00c267f694979e1635aec3be58b20efe88057845a6ff2badd24",
+    "typedDifferences": [
+      {
+        "path": "branchMap.0.loc.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.0.locations.0.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.0.locations.1.end.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.0.locations.1.end.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.0.locations.1.start.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.0.locations.1.start.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.2.loc.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.2.locations.0.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.2.locations.1.end.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.2.locations.1.end.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.2.locations.1.start.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.2.locations.1.start.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.3.loc.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.3.locations.0.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.3.locations.1.end.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.3.locations.1.end.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.3.locations.1.start.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.3.locations.1.start.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.5.loc.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.5.locations.0.end.column",
+        "leftKind": "null",
+        "rightKind": "Infinity",
+        "leftValue": null,
+        "rightValue": "Infinity"
+      },
+      {
+        "path": "branchMap.5.locations.1.end.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.5.locations.1.end.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.5.locations.1.start.column",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      },
+      {
+        "path": "branchMap.5.locations.1.start.line",
+        "leftPresent": false,
+        "rightPresent": true,
+        "leftKind": "undefined",
+        "rightKind": "undefined"
+      }
+    ],
+    "serializedBranchMapsEqual": true,
+    "conclusion": "Known positive-Infinity and undefined properties explain representation-only differences for this retained branch map; this does not establish that arbitrary persisted null/missing values have those origins."
+  },
+  "productionReady": false
+}

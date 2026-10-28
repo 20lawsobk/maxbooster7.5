@@ -1,0 +1,262 @@
+[
+  {
+    "file": "tests/unit/auth-page-age-policy.test.ts",
+    "sites": [
+      {
+        "line": 37,
+        "title": "fails closed for missing, malformed, normalized-invalid or future DOB %j",
+        "titleSource": "\"fails closed for missing, malformed, normalized-invalid or future DOB %j\"",
+        "tableSource": "[\n    undefined, null, \"\", \" \", 20100615, {}, [], \"2010-6-15\", \"2010/06/15\",\n    \"2010-06-15T00:00:00Z\", \" 2010-06-15\", \"2010-06-15 \", \"2010-02-29\",\n    \"2010-04-31\", \"2010-13-01\", \"2010-00-01\", \"2010-01-00\", \"0000-01-01\",\n    \"9999-01-01\", \"2026-06-16\",\n  ]",
+        "directEmptyArrayRows": [
+          {
+            "line": 38,
+            "source": "[]"
+          }
+        ],
+        "callbackSource": "value => {\n    expect(getAccountEligibilityError(value, birthday)).toEqual(expect.any(String));\n  }"
+      },
+      {
+        "line": 165,
+        "title": "rejects unsafe password %j before account or provider writes",
+        "titleSource": "\"rejects unsafe password %j before account or provider writes\"",
+        "tableSource": "[\"a\".repeat(73), \"é\".repeat(37), {}, 42]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async password => {\n    const h = backendHarness();\n    const signup = await h.invoke(\"post\", \"/api/auth/register\", {\n      birthdate: \"1990-06-15\", email: \"age-unit@example.test\", username: \"age_unit\", password,\n    });\n    expect(signup.statusCode).toBe(400);\n    const paid = await h.invoke(\"post\", \"/api/register-after-payment\", {\n      sessionId: \"cs_fixture\", password, tosAccepted: true, privacyAccepted: true,\n    });\n    expect(paid.statusCode).toBe(400);\n    expect(h.created).toEqual([]);\n    expect(h.consents).toEqual([]);\n  }"
+      },
+      {
+        "line": 218,
+        "title": "password signup and public checkout reject ineligible DOB %j before creation/payment",
+        "titleSource": "\"password signup and public checkout reject ineligible DOB %j before creation/payment\"",
+        "tableSource": "[undefined, \"2010-02-30\", \"2999-01-01\", \"2020-01-01\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async birthdate => {\n      const h = backendHarness();\n      const signup = await h.invoke(\"post\", \"/api/auth/register\", {\n        email: \"age-unit@example.test\", username: \"age_unit\", password: \"Password1!\", birthdate,\n      });\n      expect(signup.statusCode).toBe(400);\n      const checkout = await h.invoke(\"post\", \"/api/create-checkout-session\", {\n        userEmail: \"age-unit@example.test\", username: \"age_unit\", tier: \"monthly\", birthdate,\n      });\n      expect(checkout.statusCode).toBe(400);\n      expect(h.created).toEqual([]);\n    }"
+      },
+      {
+        "line": 233,
+        "title": "paid registration rechecks Stripe metadata DOB %j before creating any account",
+        "titleSource": "\"paid registration rechecks Stripe metadata DOB %j before creating any account\"",
+        "tableSource": "[undefined, \"2010-02-30\", \"2999-01-01\", \"2020-01-01\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async birthdate => {\n      const h = backendHarness();\n      h.checkoutSession.metadata.birthdate = birthdate;\n      const result = await h.invoke(\"post\", \"/api/register-after-payment\", {\n        sessionId: \"cs_unit\", password: \"Password1!\", tosAccepted: true, privacyAccepted: true,\n      });\n      expect(result.statusCode).toBe(400);\n      expect(result.body.code).toBe(\"REGISTRATION_ELIGIBILITY_REQUIRED\");\n      expect(result.body.error).toMatch(/contact support before purchasing again/);\n      expect(h.created).toEqual([]);\n    }"
+      },
+      {
+        "line": 305,
+        "title": "rejects a %s Google signup receipt without creating a new account",
+        "titleSource": "\"rejects a %s Google signup receipt without creating a new account\"",
+        "tableSource": "[\"expired\", \"wrong-state\", \"old-policy\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async failure => {\n    const h = backendHarness();\n    h.session.googleOAuthState = \"unit-oauth-state\";\n    h.session.googleOAuthEligibility = {\n      minimumAge: failure === \"old-policy\" ? 13 : 16,\n      expiresAt: Date.now() + (failure === \"expired\" ? -1000 : 600_000),\n      state: failure === \"wrong-state\" ? \"other-state\" : \"unit-oauth-state\",\n    };\n    const result = await h.invoke(\"get\", \"/api/auth/google/callback\", {}, { code: \"unit-code\", state: \"unit-oauth-state\" });\n    expect(result.location).toBe(\"/register?error=eligibility_required\");\n    expect(h.created).toEqual([]);\n  }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/deployment-small-file-codec.test.ts",
+    "sites": [
+      {
+        "line": 8,
+        "title": "retains exact bytes through its container",
+        "titleSource": "\"retains exact bytes through its container\"",
+        "tableSource": "[Buffer.alloc(0), Buffer.from(\"source code\\n\".repeat(900)), randomBytes(8192)]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async (input) => {\n      expect(await codec.decompress(await codec.compress(input))).toEqual(input);\n    }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/email-provider-ack.test.ts",
+    "sites": [
+      {
+        "line": 16,
+        "title": "rejects missing or unconfirmed provider acceptance: %j",
+        "titleSource": "\"rejects missing or unconfirmed provider acceptance: %j\"",
+        "tableSource": "[undefined, null, { data: null }, { data: {} }, { data: { id: \"\" } }, { data: { id: \"  \" } }]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(response) => {\n      expect(() => requireAcceptedEmail(response)).toThrow();\n    }"
+      },
+      {
+        "line": 26,
+        "title": "rejects missing provider API key: %j",
+        "titleSource": "\"rejects missing provider API key: %j\"",
+        "tableSource": "[undefined, \"\", \"   \"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(apiKey) => {\n    expect(() => requireEmailSettings(apiKey, \"verified@example.test\")).toThrow(/credentials are not configured/);\n  }"
+      },
+      {
+        "line": 30,
+        "title": "rejects missing verified sender: %j",
+        "titleSource": "\"rejects missing verified sender: %j\"",
+        "tableSource": "[undefined, \"\", \"   \"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(sender) => {\n    expect(() => requireEmailSettings(\"test-api-key\", sender)).toThrow(/sender is not configured/);\n  }"
+      },
+      {
+        "line": 57,
+        "title": "rejects missing, oversized, or unsafe queue IDs",
+        "titleSource": "\"rejects missing, oversized, or unsafe queue IDs\"",
+        "tableSource": "[undefined, \"\", \"  \", \"x\".repeat(201), \"bad\\\\nkey\", \"bad\\nkey\", \"bad key\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "id => expect(() => requireRetrySafeEmailJob(id, queuedAt, queuedAt + 1000)).toThrow(/queue ID/)"
+      },
+      {
+        "line": 62,
+        "title": "rejects unreliable original enqueue timestamps",
+        "titleSource": "\"rejects unreliable original enqueue timestamps\"",
+        "tableSource": "[undefined, -1, 0, Number.NaN]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "timestamp => expect(() => requireRetrySafeEmailJob(\"job-123\", timestamp, queuedAt + 1000))\n      .toThrow(/manual reconciliation/)"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/frontend-batch-response-contracts.test.ts",
+    "sites": [
+      {
+        "line": 99,
+        "title": "rejects malformed batch JSON instead of synthesizing successful IDs",
+        "titleSource": "\"rejects malformed batch JSON instead of synthesizing successful IDs\"",
+        "tableSource": "[\"batch action\", \"batch actions\", \"bulk action\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async (parserName) => {\n      const parse = {\n        \"batch action\": parseBatchResultResponse,\n        \"batch actions\": parseBatchActionsResponse,\n        \"bulk action\": parseBulkActionResponse,\n      }[parserName];\n      await expect(\n        parse(jsonResponse({ message: \"accepted\" }), [\"one\"]),\n      ).rejects.toThrow(\"invalid response\");\n    }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/marketplace-storefront-page-contracts.test.ts",
+    "sites": [
+      {
+        "line": 20,
+        "title": "parses %s without syntax errors",
+        "titleSource": "\"parses %s without syntax errors\"",
+        "tableSource": "[[\"Marketplace\", marketplace], [\"StorefrontBuilder\", storefront]]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(_name, source) => {\n    const file = ts.createSourceFile(\"page.tsx\", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);\n    expect((file as any).parseDiagnostics).toEqual([]);\n  }"
+      },
+      {
+        "line": 25,
+        "title": "rejects malformed lists rather than rendering an empty success",
+        "titleSource": "\"rejects malformed lists rather than rendering an empty success\"",
+        "tableSource": "[\n    [marketplace, \"loadMarketplaceData\", \"/api/marketplace/purchases\"],\n    [storefront, \"loadStorefrontList\", \"/api/storefront/my\"],\n  ]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "async (source, name, path) => {\n    const calls: unknown[][] = [];\n    const load = extractFunction(source, name, {\n      apiRequest: async (...args: unknown[]) => {\n        calls.push(args);\n        return { json: async () => ({ error: \"not a list\" }) };\n      },\n    });\n    await expect(load(path)).rejects.toThrow(/invalid list/);\n    expect(calls).toEqual([[\"GET\", path]]);\n  }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/password-policy.test.ts",
+    "sites": [
+      {
+        "line": 7,
+        "title": "rejects invalid input %j",
+        "titleSource": "\"rejects invalid input %j\"",
+        "tableSource": "[null, undefined, {}, 123, \"\", \"short\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "value => {\n    expect(getNewPasswordError(value)).toBeTypeOf(\"string\");\n  }"
+      },
+      {
+        "line": 10,
+        "title": "accepts exactly 72 UTF-8 bytes",
+        "titleSource": "\"accepts exactly 72 UTF-8 bytes\"",
+        "tableSource": "[\"a\".repeat(72), \"é\".repeat(36), \"😀\".repeat(18)]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "value => {\n    expect(getNewPasswordError(value)).toBeUndefined();\n    expect(() => validateRegistrationPassword(value, value)).not.toThrow();\n  }"
+      },
+      {
+        "line": 14,
+        "title": "rejects input beyond 72 UTF-8 bytes",
+        "titleSource": "\"rejects input beyond 72 UTF-8 bytes\"",
+        "tableSource": "[\"a\".repeat(73), \"é\".repeat(37), \"😀\".repeat(19)]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "value => {\n    expect(getNewPasswordError(value)).toContain(\"72 UTF-8 bytes\");\n    expect(() => validateRegistrationPassword(value, value)).toThrow(\"72 UTF-8 bytes\");\n  }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/registrationCompletion.test.ts",
+    "sites": [
+      {
+        "line": 11,
+        "title": "accepts a bounded Stripe checkout session id: %s",
+        "titleSource": "\"accepts a bounded Stripe checkout session id: %s\"",
+        "tableSource": "[\"cs_test_123\", \"cs_live_abcDEF123\"]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(sessionId) => {\n      expect(validateCheckoutSessionId(sessionId)).toBe(sessionId);\n    }"
+      },
+      {
+        "line": 18,
+        "title": "rejects an invalid checkout session id",
+        "titleSource": "\"rejects an invalid checkout session id\"",
+        "tableSource": "[null, \"\", \"pi_123\", \"cs_bad-value\", `cs_${\"a\".repeat(253)}`]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(sessionId) => {\n      expect(() => validateCheckoutSessionId(sessionId)).toThrow(/Invalid payment session/i);\n    }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/registrationCompletionBoundary.test.ts",
+    "sites": [
+      {
+        "line": 14,
+        "title": "rejects invalid verification sessions",
+        "titleSource": "\"rejects invalid verification sessions\"",
+        "tableSource": "[{}, { sessionId: 123 }, { sessionId: \"pi_123\" }]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(body) => {\n      expect(normalizeRegistrationVerificationBody(body)).toEqual({\n        ok: false,\n        message: \"Invalid checkout session\",\n      });\n    }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/subscriptionCheckout.test.ts",
+    "sites": [
+      {
+        "line": 54,
+        "title": "rejects checkout objects without a usable client secret",
+        "titleSource": "\"rejects checkout objects without a usable client secret\"",
+        "tableSource": "[\n    {},\n    { clientSecret: null },\n    { clientSecret: 123 },\n    { clientSecret: \"   \" },\n  ]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "(payload) => {\n    expect(parseSubscriptionSetupPayload(payload)).toEqual({\n      ok: false,\n      error: {\n        message:\n          \"The payment service did not return a usable checkout session. Please try again.\",\n        code: \"INVALID_CHECKOUT_RESPONSE\",\n        retryable: true,\n      },\n    });\n  }"
+      },
+      {
+        "line": 71,
+        "title": "maps non-object malformed payloads to a retryable checkout error",
+        "titleSource": "\"maps non-object malformed payloads to a retryable checkout error\"",
+        "tableSource": "[null, undefined, [], \"not-json-object\"]",
+        "directEmptyArrayRows": [
+          {
+            "line": 71,
+            "source": "[]"
+          }
+        ],
+        "callbackSource": "(payload) => {\n      expect(parseSubscriptionSetupPayload(payload)).toEqual({\n        ok: false,\n        error: {\n          message:\n            \"The payment service returned an invalid response. Please try again.\",\n          code: \"INVALID_CHECKOUT_RESPONSE\",\n          retryable: true,\n        },\n      });\n    }"
+      }
+    ]
+  },
+  {
+    "file": "tests/unit/support-ticket-validation.test.ts",
+    "sites": [
+      {
+        "line": 5,
+        "title": "rejects malformed ticket input",
+        "titleSource": "\"rejects malformed ticket input\"",
+        "tableSource": "[null, {}, {subject: 42}, {subject: \"  \"}, {subject: \"a\".repeat(256)}, {subject: \"Valid\", description: []}, {subject: \"Valid\", priority: \"\"}]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "input => {\n    expect(supportTicketCreateSchema.safeParse(input).success).toBe(false);\n  }"
+      },
+      {
+        "line": 11,
+        "title": "rejects unsafe admin updates input",
+        "titleSource": "\"rejects unsafe admin updates input\"",
+        "tableSource": "[{}, {status: null}, {status: \"\"}, {priority: false}, {responseTimeMinutes: -1}, {responseTimeMinutes: \"10\"}, {satisfactionRating: 6}, {satisfactionRating: 1.5}, {resolvedAt: \"garbage\"}, {userId: \"victim\"}]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "input => {\n    expect(supportTicketUpdateSchema.safeParse(input).success).toBe(false);\n  }"
+      },
+      {
+        "line": 17,
+        "title": "rejects malformed staff messages input",
+        "titleSource": "\"rejects malformed staff messages input\"",
+        "tableSource": "[null, {message: 1}, {message: \" \"}, {message: \"a\".repeat(10001)}]",
+        "directEmptyArrayRows": [],
+        "callbackSource": "input => {\n    expect(supportMessageSchema.safeParse(input).success).toBe(false);\n  }"
+      }
+    ]
+  }
+]

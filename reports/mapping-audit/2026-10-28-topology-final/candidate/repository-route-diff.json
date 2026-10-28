@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "scope": "Static route declarations only; changes are not behavior PASS",
+  "beforeCount": 2391,
+  "afterCount": 2393,
+  "removed": [
+    {
+      "method": "POST",
+      "rawPath": "/jobs/:jobId/:action",
+      "file": "server/routes/durableExports.ts",
+      "line": 98,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/jobs/:jobId/:action",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes/export.ts:13"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/${action}/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 25,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/${action}/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "GET",
+      "rawPath": "/${action}/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 18,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/${action}/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "DELETE",
+      "rawPath": "/history/:id",
+      "file": "server/routes/durableExports.ts",
+      "line": 124,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/history/:id",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes/export.ts:13"
+      ],
+      "processScope": "main-app"
+    }
+  ],
+  "added": [
+    {
+      "method": "GET",
+      "rawPath": "/unsubscribe/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 18,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/unsubscribe/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/unsubscribe/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 25,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/unsubscribe/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "DELETE",
+      "rawPath": "/history/:id",
+      "file": "server/routes/durableExports.ts",
+      "line": 124,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/export/history/:id",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7888",
+        "server/routes/export.ts:13"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/jobs/:jobId/:action",
+      "file": "server/routes/durableExports.ts",
+      "line": 98,
+      "resolvedVia": "literal",
+      "registeredOn": "router",
+      "hasAuthMarker": true,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/export/jobs/:jobId/:action",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7888",
+        "server/routes/export.ts:13"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "GET",
+      "rawPath": "/consent/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 18,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/consent/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/consent/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 25,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/consent/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    }
+  ],
+  "metadataChanges": [
+    {
+      "old": {
+        "method": "GET",
+        "rawPath": "/robots.txt",
+        "file": "server/routes/seo.ts",
+        "line": 107,
+        "resolvedVia": "literal",
+        "registeredOn": "router",
+        "hasAuthMarker": false,
+        "callsNext": false,
+        "stubMarkers": [],
+        "stubStrength": "none",
+        "fullPath": "/robots.txt",
+        "confidence": "medium",
+        "mountedFrom": [
+          "server/index.ts:1295",
+          "server/routes.ts:7717"
+        ],
+        "processScope": "main-app"
+      },
+      "new": {
+        "method": "GET",
+        "rawPath": "/robots.txt",
+        "file": "server/routes/seo.ts",
+        "line": 107,
+        "resolvedVia": "literal",
+        "registeredOn": "router",
+        "hasAuthMarker": false,
+        "callsNext": false,
+        "stubMarkers": [],
+        "stubStrength": "none",
+        "fullPath": "/robots.txt",
+        "confidence": "high",
+        "mountedFrom": [
+          "server/index.ts:1295",
+          "server/routes.ts:7717"
+        ],
+        "processScope": "main-app"
+      }
+    },
+    {
+      "old": {
+        "method": "GET",
+        "rawPath": "/sitemap.xml",
+        "file": "server/routes/seo.ts",
+        "line": 11,
+        "resolvedVia": "literal",
+        "registeredOn": "router",
+        "hasAuthMarker": false,
+        "callsNext": false,
+        "stubMarkers": [],
+        "stubStrength": "none",
+        "fullPath": "/sitemap.xml",
+        "confidence": "medium",
+        "mountedFrom": [
+          "server/index.ts:1295",
+          "server/routes.ts:7717"
+        ],
+        "processScope": "main-app"
+      },
+      "new": {
+        "method": "GET",
+        "rawPath": "/sitemap.xml",
+        "file": "server/routes/seo.ts",
+        "line": 11,
+        "resolvedVia": "literal",
+        "registeredOn": "router",
+        "hasAuthMarker": false,
+        "callsNext": false,
+        "stubMarkers": [],
+        "stubStrength": "none",
+        "fullPath": "/sitemap.xml",
+        "confidence": "high",
+        "mountedFrom": [
+          "server/index.ts:1295",
+          "server/routes.ts:7717"
+        ],
+        "processScope": "main-app"
+      }
+    }
+  ]
+}

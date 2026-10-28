@@ -1,8 +1,8 @@
 {
   "meta": {
     "mode": "static",
-    "backendCount": 2391,
-    "uniqueBackendCount": 2371,
+    "backendCount": 2393,
+    "uniqueBackendCount": 2372,
     "frontendCallCount": 1198,
     "uniqueFrontendCount": 932,
     "matchedCount": 932,
@@ -102,7 +102,7 @@
       "recommendation": "Trace the variable assignment and verify its resolved path against the mounted backend inventory."
     }
   ],
-  "generatedAt": "2026-10-28T09:15:24.158Z",
+  "generatedAt": "2026-10-28T13:34:02.881Z",
   "baseUrl": null,
   "backendRoutes": [
     {
@@ -15643,9 +15643,10 @@
       "callsNext": false,
       "stubMarkers": [],
       "stubStrength": "none",
-      "fullPath": "/jobs/:jobId/:action",
+      "fullPath": "/api/export/jobs/:jobId/:action",
       "confidence": "high",
       "mountedFrom": [
+        "server/routes.ts:7888",
         "server/routes/export.ts:13"
       ],
       "processScope": "main-app"
@@ -15661,9 +15662,10 @@
       "callsNext": false,
       "stubMarkers": [],
       "stubStrength": "none",
-      "fullPath": "/history/:id",
+      "fullPath": "/api/export/history/:id",
       "confidence": "high",
       "mountedFrom": [
+        "server/routes.ts:7888",
         "server/routes/export.ts:13"
       ],
       "processScope": "main-app"
@@ -16678,16 +16680,34 @@
     },
     {
       "method": "GET",
-      "rawPath": "/${action}/:token",
+      "rawPath": "/consent/:token",
       "file": "server/routes/fanHub.ts",
       "line": 18,
-      "resolvedVia": "literal",
+      "resolvedVia": "finite-loop-template",
       "registeredOn": "router",
       "hasAuthMarker": false,
       "callsNext": false,
       "stubMarkers": [],
       "stubStrength": "none",
-      "fullPath": "/api/fan-hub/${action}/:token",
+      "fullPath": "/api/fan-hub/consent/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "GET",
+      "rawPath": "/unsubscribe/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 18,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/unsubscribe/:token",
       "confidence": "high",
       "mountedFrom": [
         "server/routes.ts:7811"
@@ -16696,16 +16716,34 @@
     },
     {
       "method": "POST",
-      "rawPath": "/${action}/:token",
+      "rawPath": "/consent/:token",
       "file": "server/routes/fanHub.ts",
       "line": 25,
-      "resolvedVia": "literal",
+      "resolvedVia": "finite-loop-template",
       "registeredOn": "router",
       "hasAuthMarker": false,
       "callsNext": false,
       "stubMarkers": [],
       "stubStrength": "none",
-      "fullPath": "/api/fan-hub/${action}/:token",
+      "fullPath": "/api/fan-hub/consent/:token",
+      "confidence": "high",
+      "mountedFrom": [
+        "server/routes.ts:7811"
+      ],
+      "processScope": "main-app"
+    },
+    {
+      "method": "POST",
+      "rawPath": "/unsubscribe/:token",
+      "file": "server/routes/fanHub.ts",
+      "line": 25,
+      "resolvedVia": "finite-loop-template",
+      "registeredOn": "router",
+      "hasAuthMarker": false,
+      "callsNext": false,
+      "stubMarkers": [],
+      "stubStrength": "none",
+      "fullPath": "/api/fan-hub/unsubscribe/:token",
       "confidence": "high",
       "mountedFrom": [
         "server/routes.ts:7811"
@@ -28503,7 +28541,7 @@
       "stubMarkers": [],
       "stubStrength": "none",
       "fullPath": "/sitemap.xml",
-      "confidence": "medium",
+      "confidence": "high",
       "mountedFrom": [
         "server/index.ts:1295",
         "server/routes.ts:7717"
@@ -28522,7 +28560,7 @@
       "stubMarkers": [],
       "stubStrength": "none",
       "fullPath": "/robots.txt",
-      "confidence": "medium",
+      "confidence": "high",
       "mountedFrom": [
         "server/index.ts:1295",
         "server/routes.ts:7717"
@@ -42474,6 +42512,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/index.ts:131"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:131"
+          ]
+        }
       ]
     },
     {
@@ -42481,6 +42528,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/index.ts:187"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:187"
+          ]
+        }
       ]
     },
     {
@@ -42488,6 +42544,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/index.ts:203"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:203"
+          ]
+        }
       ]
     },
     {
@@ -42495,6 +42560,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/index.ts:734"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:734"
+          ]
+        }
       ]
     },
     {
@@ -42503,6 +42577,16 @@
       "mountedFrom": [
         "server/index.ts:767",
         "server/index.ts:768"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:767",
+            "server/index.ts:768"
+          ]
+        }
       ]
     },
     {
@@ -42510,6 +42594,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/index.ts:1038"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:1038"
+          ]
+        }
       ]
     },
     {
@@ -42518,64 +42611,16 @@
       "mountedFrom": [
         "server/index.ts:1295",
         "server/routes.ts:7717"
-      ]
-    },
-    {
-      "file": "server/middleware/auth.ts",
-      "prefix": "",
-      "mountedFrom": [
-        "server/routes/adaptivePricing.ts:18",
-        "server/routes/admin/auditLog.ts:20",
-        "server/routes/admin/beatMoneyLoop.ts:19",
-        "server/routes/admin/beatMoneyLoop.ts:20",
-        "server/routes/admin/contentSampler.ts:16",
-        "server/routes/admin/index.ts:22",
-        "server/routes/admin/metrics.ts:23",
-        "server/routes/analytics-internal.ts:14",
-        "server/routes/apiKeys.ts:16",
-        "server/routes/arIntelligence.ts:31",
-        "server/routes/artistProfiles.ts:54",
-        "server/routes/audit.ts:26",
-        "server/routes/autopilotKnowledge.ts:13",
-        "server/routes/autopilotPreferences.ts:12",
-        "server/routes/connectedAccounts.ts:12",
-        "server/routes/content-analysis.ts:200",
-        "server/routes/executiveDashboard.ts:12",
-        "server/routes/executiveDashboard.ts:17",
-        "server/routes/executiveDashboard.ts:144",
-        "server/routes/fanHub.ts:36",
-        "server/routes/fanMemberships.ts:32",
-        "server/routes/kyc.ts:21",
-        "server/routes/kyc.ts:25",
-        "server/routes/logs.ts:21",
-        "server/routes/monitoring.ts:13",
-        "server/routes/monitoring.ts:14",
-        "server/routes/notifications.ts:20",
-        "server/routes/outreach.ts:27",
-        "server/routes/payouts.ts:90",
-        "server/routes/playlistPitching.ts:14",
-        "server/routes/publishing.ts:59",
-        "server/routes/recoveryCodes.ts:11",
-        "server/routes/security.ts:10",
-        "server/routes/simulation.ts:24",
-        "server/routes/testing.ts:71",
-        "server/routes/webhooks-admin.ts:18"
-      ]
-    },
-    {
-      "file": "server/middleware/rateLimiter.ts",
-      "prefix": "",
-      "mountedFrom": [
-        "server/routes/ai.ts:26",
-        "server/routes/payouts.ts:91",
-        "server/routes/socialAI.ts:69"
-      ]
-    },
-    {
-      "file": "server/routes/durableExports.ts",
-      "prefix": "",
-      "mountedFrom": [
-        "server/routes/export.ts:13"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/index.ts:1295",
+            "server/routes.ts:7717"
+          ]
+        }
       ]
     },
     {
@@ -42583,6 +42628,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/routes.ts:243"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:243"
+          ]
+        }
       ]
     },
     {
@@ -42590,6 +42644,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/routes.ts:248"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:248"
+          ]
+        }
       ]
     },
     {
@@ -42597,6 +42660,15 @@
       "prefix": "/api",
       "mountedFrom": [
         "server/routes.ts:257"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:257"
+          ]
+        }
       ]
     },
     {
@@ -42608,6 +42680,43 @@
         "server/routes.ts:270",
         "server/routes.ts:271",
         "server/routes.ts:272"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/ai",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:268"
+          ]
+        },
+        {
+          "prefix": "/api/career-coach",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:269"
+          ]
+        },
+        {
+          "prefix": "/api/billing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:270"
+          ]
+        },
+        {
+          "prefix": "/api/admin",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:271"
+          ]
+        },
+        {
+          "prefix": "/api/studio/generation",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:272"
+          ]
+        }
       ]
     },
     {
@@ -42615,6 +42724,15 @@
       "prefix": "/api/auth",
       "mountedFrom": [
         "server/routes.ts:1409"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auth",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:1409"
+          ]
+        }
       ]
     },
     {
@@ -42622,6 +42740,15 @@
       "prefix": "/api/user",
       "mountedFrom": [
         "server/routes.ts:5249"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/user",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:5249"
+          ]
+        }
       ]
     },
     {
@@ -42630,6 +42757,22 @@
       "mountedFrom": [
         "server/routes.ts:6987",
         "server/routes.ts:6988"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/ai-service",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6987"
+          ]
+        },
+        {
+          "prefix": "/api/boosterstate",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6988"
+          ]
+        }
       ]
     },
     {
@@ -42637,6 +42780,15 @@
       "prefix": "/api/admin",
       "mountedFrom": [
         "server/routes.ts:6990"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6990"
+          ]
+        }
       ]
     },
     {
@@ -42644,6 +42796,15 @@
       "prefix": "/api/distribution",
       "mountedFrom": [
         "server/routes.ts:6991"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/distribution",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6991"
+          ]
+        }
       ]
     },
     {
@@ -42651,6 +42812,15 @@
       "prefix": "/api/training",
       "mountedFrom": [
         "server/routes.ts:6993"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/training",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6993"
+          ]
+        }
       ]
     },
     {
@@ -42658,6 +42828,15 @@
       "prefix": "/api/maxcore",
       "mountedFrom": [
         "server/routes.ts:6996"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/maxcore",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6996"
+          ]
+        }
       ]
     },
     {
@@ -42665,6 +42844,15 @@
       "prefix": "/api/paid",
       "mountedFrom": [
         "server/routes.ts:6997"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/paid",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6997"
+          ]
+        }
       ]
     },
     {
@@ -42672,6 +42860,15 @@
       "prefix": "/api/artist-progress",
       "mountedFrom": [
         "server/routes.ts:6998"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/artist-progress",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6998"
+          ]
+        }
       ]
     },
     {
@@ -42679,6 +42876,15 @@
       "prefix": "/api/artist-profiles",
       "mountedFrom": [
         "server/routes.ts:6999"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/artist-profiles",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6999"
+          ]
+        }
       ]
     },
     {
@@ -42686,6 +42892,15 @@
       "prefix": "/api/revenue-forecast",
       "mountedFrom": [
         "server/routes.ts:7000"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/revenue-forecast",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7000"
+          ]
+        }
       ]
     },
     {
@@ -42693,6 +42908,15 @@
       "prefix": "/api/files",
       "mountedFrom": [
         "server/routes.ts:7001"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/files",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7001"
+          ]
+        }
       ]
     },
     {
@@ -42700,6 +42924,15 @@
       "prefix": "/api/preferences",
       "mountedFrom": [
         "server/routes.ts:7002"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/preferences",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7002"
+          ]
+        }
       ]
     },
     {
@@ -42707,6 +42940,15 @@
       "prefix": "/api/shortcuts",
       "mountedFrom": [
         "server/routes.ts:7003"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/shortcuts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7003"
+          ]
+        }
       ]
     },
     {
@@ -42714,6 +42956,15 @@
       "prefix": "/api/undo",
       "mountedFrom": [
         "server/routes.ts:7004"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/undo",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7004"
+          ]
+        }
       ]
     },
     {
@@ -42721,6 +42972,15 @@
       "prefix": "/api/batch",
       "mountedFrom": [
         "server/routes.ts:7005"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/batch",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7005"
+          ]
+        }
       ]
     },
     {
@@ -42728,6 +42988,15 @@
       "prefix": "/api/social",
       "mountedFrom": [
         "server/routes.ts:7280"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/social",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7280"
+          ]
+        }
       ]
     },
     {
@@ -42735,6 +43004,15 @@
       "prefix": "/api/infrastructure",
       "mountedFrom": [
         "server/routes.ts:8521"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/infrastructure",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8521"
+          ]
+        }
       ]
     },
     {
@@ -42742,6 +43020,15 @@
       "prefix": "/api/content/generate-unified",
       "mountedFrom": [
         "server/routes.ts:8549"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/content/generate-unified",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8549"
+          ]
+        }
       ]
     },
     {
@@ -42749,6 +43036,15 @@
       "prefix": "/api/content/creative-model",
       "mountedFrom": [
         "server/routes.ts:8561"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/content/creative-model",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8561"
+          ]
+        }
       ]
     },
     {
@@ -42756,6 +43052,15 @@
       "prefix": "/api/collaboration",
       "mountedFrom": [
         "server/routes.ts:8573"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/collaboration",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8573"
+          ]
+        }
       ]
     },
     {
@@ -42763,6 +43068,15 @@
       "prefix": "/api/music-workflow-automations",
       "mountedFrom": [
         "server/routes.ts:8586"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/music-workflow-automations",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8586"
+          ]
+        }
       ]
     },
     {
@@ -42770,6 +43084,15 @@
       "prefix": "/api/fabric",
       "mountedFrom": [
         "server/routes.ts:8596"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/fabric",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8596"
+          ]
+        }
       ]
     },
     {
@@ -42777,6 +43100,15 @@
       "prefix": "/api/label-submissions",
       "mountedFrom": [
         "server/routes.ts:8608"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/label-submissions",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8608"
+          ]
+        }
       ]
     },
     {
@@ -42784,6 +43116,15 @@
       "prefix": "/api/radio-pitches",
       "mountedFrom": [
         "server/routes.ts:8619"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/radio-pitches",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8619"
+          ]
+        }
       ]
     },
     {
@@ -42791,6 +43132,15 @@
       "prefix": "/api/venues",
       "mountedFrom": [
         "server/routes.ts:8629"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/venues",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8629"
+          ]
+        }
       ]
     },
     {
@@ -42798,6 +43148,15 @@
       "prefix": "/api/project-budgets",
       "mountedFrom": [
         "server/routes.ts:8640"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/project-budgets",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8640"
+          ]
+        }
       ]
     },
     {
@@ -42805,6 +43164,15 @@
       "prefix": "/api/sample-clearances",
       "mountedFrom": [
         "server/routes.ts:8652"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/sample-clearances",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8652"
+          ]
+        }
       ]
     },
     {
@@ -42812,6 +43180,15 @@
       "prefix": "/api/music-videos",
       "mountedFrom": [
         "server/routes.ts:8662"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/music-videos",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8662"
+          ]
+        }
       ]
     },
     {
@@ -42819,6 +43196,15 @@
       "prefix": "/api/songwriting",
       "mountedFrom": [
         "server/routes.ts:8672"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/songwriting",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8672"
+          ]
+        }
       ]
     },
     {
@@ -42826,6 +43212,15 @@
       "prefix": "/api/fan-campaigns",
       "mountedFrom": [
         "server/routes.ts:8683"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/fan-campaigns",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8683"
+          ]
+        }
       ]
     },
     {
@@ -42833,6 +43228,15 @@
       "prefix": "/api/custom-workflows",
       "mountedFrom": [
         "server/routes.ts:8694"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/custom-workflows",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8694"
+          ]
+        }
       ]
     },
     {
@@ -42840,6 +43244,15 @@
       "prefix": "/api/assistant",
       "mountedFrom": [
         "server/routes.ts:8704"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/assistant",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8704"
+          ]
+        }
       ]
     },
     {
@@ -42847,6 +43260,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/routes.ts:8719"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:8719"
+          ]
+        }
       ]
     },
     {
@@ -42854,6 +43276,15 @@
       "prefix": "/api/bootstrap",
       "mountedFrom": [
         "server/routes.ts:7300"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/bootstrap",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7300"
+          ]
+        }
       ]
     },
     {
@@ -42861,6 +43292,15 @@
       "prefix": "/api/achievements",
       "mountedFrom": [
         "server/routes.ts:7306"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/achievements",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7306"
+          ]
+        }
       ]
     },
     {
@@ -42868,6 +43308,15 @@
       "prefix": "/api/onboarding",
       "mountedFrom": [
         "server/routes.ts:7311"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/onboarding",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7311"
+          ]
+        }
       ]
     },
     {
@@ -42875,6 +43324,15 @@
       "prefix": "/api/personalization",
       "mountedFrom": [
         "server/routes.ts:7316"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/personalization",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7316"
+          ]
+        }
       ]
     },
     {
@@ -42882,6 +43340,15 @@
       "prefix": "/api/countdowns",
       "mountedFrom": [
         "server/routes.ts:7321"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/countdowns",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7321"
+          ]
+        }
       ]
     },
     {
@@ -42889,6 +43356,15 @@
       "prefix": "/api/storefront",
       "mountedFrom": [
         "server/routes.ts:7326"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/storefront",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7326"
+          ]
+        }
       ]
     },
     {
@@ -42896,6 +43372,15 @@
       "prefix": "/api/storefront-domains",
       "mountedFrom": [
         "server/routes.ts:7331"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/storefront-domains",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7331"
+          ]
+        }
       ]
     },
     {
@@ -42903,6 +43388,15 @@
       "prefix": "/api/dns",
       "mountedFrom": [
         "server/routes.ts:7335"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/dns",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7335"
+          ]
+        }
       ]
     },
     {
@@ -42910,6 +43404,15 @@
       "prefix": "/api/dns-manager",
       "mountedFrom": [
         "server/routes.ts:7337"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/dns-manager",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7337"
+          ]
+        }
       ]
     },
     {
@@ -42917,6 +43420,15 @@
       "prefix": "/api/domain-registrar",
       "mountedFrom": [
         "server/routes.ts:7342"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/domain-registrar",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7342"
+          ]
+        }
       ]
     },
     {
@@ -42924,6 +43436,15 @@
       "prefix": "/api/hns",
       "mountedFrom": [
         "server/routes.ts:7346"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/hns",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7346"
+          ]
+        }
       ]
     },
     {
@@ -42931,6 +43452,15 @@
       "prefix": "/api/analytics",
       "mountedFrom": [
         "server/routes.ts:7348"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/analytics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7348"
+          ]
+        }
       ]
     },
     {
@@ -42938,6 +43468,15 @@
       "prefix": "/api/status",
       "mountedFrom": [
         "server/routes.ts:7353"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/status",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7353"
+          ]
+        }
       ]
     },
     {
@@ -42945,6 +43484,15 @@
       "prefix": "/api/monitoring",
       "mountedFrom": [
         "server/routes.ts:7358"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/monitoring",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7358"
+          ]
+        }
       ]
     },
     {
@@ -42952,6 +43500,15 @@
       "prefix": "/api/dmca",
       "mountedFrom": [
         "server/routes.ts:7362"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/dmca",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7362"
+          ]
+        }
       ]
     },
     {
@@ -42959,6 +43516,15 @@
       "prefix": "/api/growth",
       "mountedFrom": [
         "server/routes.ts:7364"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/growth",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7364"
+          ]
+        }
       ]
     },
     {
@@ -42966,6 +43532,15 @@
       "prefix": "/api/backup",
       "mountedFrom": [
         "server/routes.ts:7369"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/backup",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7369"
+          ]
+        }
       ]
     },
     {
@@ -42973,6 +43548,15 @@
       "prefix": "/api/retention",
       "mountedFrom": [
         "server/routes.ts:7374"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/retention",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7374"
+          ]
+        }
       ]
     },
     {
@@ -42980,6 +43564,15 @@
       "prefix": "/api/billing",
       "mountedFrom": [
         "server/routes.ts:7381"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/billing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7381"
+          ]
+        }
       ]
     },
     {
@@ -42987,6 +43580,15 @@
       "prefix": "/api/payouts",
       "mountedFrom": [
         "server/routes.ts:7386"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/payouts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7386"
+          ]
+        }
       ]
     },
     {
@@ -42994,6 +43596,15 @@
       "prefix": "/api/invoices",
       "mountedFrom": [
         "server/routes.ts:7391"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/invoices",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7391"
+          ]
+        }
       ]
     },
     {
@@ -43001,6 +43612,15 @@
       "prefix": "/api/kyc",
       "mountedFrom": [
         "server/routes.ts:7395"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/kyc",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7395"
+          ]
+        }
       ]
     },
     {
@@ -43008,6 +43628,15 @@
       "prefix": "/api/social",
       "mountedFrom": [
         "server/routes.ts:7399"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/social",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7399"
+          ]
+        }
       ]
     },
     {
@@ -43015,6 +43644,15 @@
       "prefix": "/api/social/approvals",
       "mountedFrom": [
         "server/routes.ts:7405"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/social/approvals",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7405"
+          ]
+        }
       ]
     },
     {
@@ -43022,6 +43660,15 @@
       "prefix": "/api/social/bulk",
       "mountedFrom": [
         "server/routes.ts:7410"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/social/bulk",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7410"
+          ]
+        }
       ]
     },
     {
@@ -43029,6 +43676,15 @@
       "prefix": "/api/social",
       "mountedFrom": [
         "server/routes.ts:7415"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/social",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7415"
+          ]
+        }
       ]
     },
     {
@@ -43036,6 +43692,15 @@
       "prefix": "/api/multimodal",
       "mountedFrom": [
         "server/routes.ts:7420"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/multimodal",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7420"
+          ]
+        }
       ]
     },
     {
@@ -43043,6 +43708,15 @@
       "prefix": "/api/organic",
       "mountedFrom": [
         "server/routes.ts:7425"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/organic",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7425"
+          ]
+        }
       ]
     },
     {
@@ -43050,6 +43724,15 @@
       "prefix": "/api/advertising",
       "mountedFrom": [
         "server/routes.ts:7430"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/advertising",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7430"
+          ]
+        }
       ]
     },
     {
@@ -43057,6 +43740,15 @@
       "prefix": "/api/advertising/autopilot",
       "mountedFrom": [
         "server/routes.ts:7435"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/advertising/autopilot",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7435"
+          ]
+        }
       ]
     },
     {
@@ -43064,6 +43756,15 @@
       "prefix": "/api/autopilot",
       "mountedFrom": [
         "server/routes.ts:7440"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7440"
+          ]
+        }
       ]
     },
     {
@@ -43071,6 +43772,15 @@
       "prefix": "/api/autopilot",
       "mountedFrom": [
         "server/routes.ts:7445"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7445"
+          ]
+        }
       ]
     },
     {
@@ -43078,6 +43788,15 @@
       "prefix": "/api/autopilot/coordinator",
       "mountedFrom": [
         "server/routes.ts:7450"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot/coordinator",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7450"
+          ]
+        }
       ]
     },
     {
@@ -43085,6 +43804,15 @@
       "prefix": "/api/autopilot/learning",
       "mountedFrom": [
         "server/routes.ts:7455"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot/learning",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7455"
+          ]
+        }
       ]
     },
     {
@@ -43092,6 +43820,15 @@
       "prefix": "/api/auto/social",
       "mountedFrom": [
         "server/routes.ts:7460"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auto/social",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7460"
+          ]
+        }
       ]
     },
     {
@@ -43099,6 +43836,15 @@
       "prefix": "/api/auto-updates",
       "mountedFrom": [
         "server/routes.ts:7465"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auto-updates",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7465"
+          ]
+        }
       ]
     },
     {
@@ -43106,6 +43852,15 @@
       "prefix": "/api/downloads",
       "mountedFrom": [
         "server/routes.ts:7470"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/downloads",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7470"
+          ]
+        }
       ]
     },
     {
@@ -43113,6 +43868,15 @@
       "prefix": "/api/platform-sync",
       "mountedFrom": [
         "server/routes.ts:7475"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/platform-sync",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7475"
+          ]
+        }
       ]
     },
     {
@@ -43120,6 +43884,15 @@
       "prefix": "/api/autopilot/preferences",
       "mountedFrom": [
         "server/routes.ts:7480"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot/preferences",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7480"
+          ]
+        }
       ]
     },
     {
@@ -43127,6 +43900,15 @@
       "prefix": "/api/autopilot/knowledge",
       "mountedFrom": [
         "server/routes.ts:7485"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/autopilot/knowledge",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7485"
+          ]
+        }
       ]
     },
     {
@@ -43134,6 +43916,15 @@
       "prefix": "/api/studio",
       "mountedFrom": [
         "server/routes.ts:7492"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7492"
+          ]
+        }
       ]
     },
     {
@@ -43141,6 +43932,15 @@
       "prefix": "/api/studio",
       "mountedFrom": [
         "server/routes.ts:7497"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7497"
+          ]
+        }
       ]
     },
     {
@@ -43148,6 +43948,15 @@
       "prefix": "/api/studio",
       "mountedFrom": [
         "server/routes.ts:7502"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7502"
+          ]
+        }
       ]
     },
     {
@@ -43155,6 +43964,15 @@
       "prefix": "/api/studio/plugins",
       "mountedFrom": [
         "server/routes.ts:7507"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio/plugins",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7507"
+          ]
+        }
       ]
     },
     {
@@ -43162,6 +43980,15 @@
       "prefix": "/api/studio",
       "mountedFrom": [
         "server/routes.ts:7512"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7512"
+          ]
+        }
       ]
     },
     {
@@ -43169,6 +43996,15 @@
       "prefix": "/api/studio/warping",
       "mountedFrom": [
         "server/routes.ts:7517"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio/warping",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7517"
+          ]
+        }
       ]
     },
     {
@@ -43176,6 +44012,15 @@
       "prefix": "/api/studio/generation",
       "mountedFrom": [
         "server/routes.ts:7522"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio/generation",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7522"
+          ]
+        }
       ]
     },
     {
@@ -43183,6 +44028,15 @@
       "prefix": "/api/studio",
       "mountedFrom": [
         "server/routes.ts:7527"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7527"
+          ]
+        }
       ]
     },
     {
@@ -43190,6 +44044,15 @@
       "prefix": "/api/studio/vst",
       "mountedFrom": [
         "server/routes.ts:7532"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/studio/vst",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7532"
+          ]
+        }
       ]
     },
     {
@@ -43197,6 +44060,15 @@
       "prefix": "/api/audio-analysis",
       "mountedFrom": [
         "server/routes.ts:7537"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/audio-analysis",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7537"
+          ]
+        }
       ]
     },
     {
@@ -43204,6 +44076,15 @@
       "prefix": "/api/audio-processing",
       "mountedFrom": [
         "server/routes.ts:7542"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/audio-processing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7542"
+          ]
+        }
       ]
     },
     {
@@ -43211,6 +44092,15 @@
       "prefix": "/api/distribution/promo",
       "mountedFrom": [
         "server/routes.ts:7547"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/distribution/promo",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7547"
+          ]
+        }
       ]
     },
     {
@@ -43218,6 +44108,15 @@
       "prefix": "/api/offline",
       "mountedFrom": [
         "server/routes.ts:7554"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/offline",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7554"
+          ]
+        }
       ]
     },
     {
@@ -43225,6 +44124,15 @@
       "prefix": "/api/sync",
       "mountedFrom": [
         "server/routes.ts:7558"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/sync",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7558"
+          ]
+        }
       ]
     },
     {
@@ -43232,6 +44140,15 @@
       "prefix": "/api/workspace",
       "mountedFrom": [
         "server/routes.ts:7562"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/workspace",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7562"
+          ]
+        }
       ]
     },
     {
@@ -43239,6 +44156,15 @@
       "prefix": "/api/developer",
       "mountedFrom": [
         "server/routes.ts:7567"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/developer",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7567"
+          ]
+        }
       ]
     },
     {
@@ -43246,6 +44172,15 @@
       "prefix": "/api/content-analysis",
       "mountedFrom": [
         "server/routes.ts:7572"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/content-analysis",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7572"
+          ]
+        }
       ]
     },
     {
@@ -43253,6 +44188,15 @@
       "prefix": "/api/collaborations",
       "mountedFrom": [
         "server/routes.ts:7579"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/collaborations",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7579"
+          ]
+        }
       ]
     },
     {
@@ -43260,6 +44204,15 @@
       "prefix": "/api/helpdesk",
       "mountedFrom": [
         "server/routes.ts:7586"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/helpdesk",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7586"
+          ]
+        }
       ]
     },
     {
@@ -43267,6 +44220,15 @@
       "prefix": "/api/support",
       "mountedFrom": [
         "server/routes.ts:7591"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/support",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7591"
+          ]
+        }
       ]
     },
     {
@@ -43274,6 +44236,15 @@
       "prefix": "/api/executive",
       "mountedFrom": [
         "server/routes.ts:7598"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/executive",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7598"
+          ]
+        }
       ]
     },
     {
@@ -43281,6 +44252,15 @@
       "prefix": "/api/admin",
       "mountedFrom": [
         "server/routes.ts:7603"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7603"
+          ]
+        }
       ]
     },
     {
@@ -43288,6 +44268,15 @@
       "prefix": "/api/admin/metrics",
       "mountedFrom": [
         "server/routes.ts:7608"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/metrics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7608"
+          ]
+        }
       ]
     },
     {
@@ -43295,6 +44284,15 @@
       "prefix": "/api/admin/beat-money-loop",
       "mountedFrom": [
         "server/routes.ts:7613"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/beat-money-loop",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7613"
+          ]
+        }
       ]
     },
     {
@@ -43302,6 +44300,15 @@
       "prefix": "/api/admin/audit-log",
       "mountedFrom": [
         "server/routes.ts:7618"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/audit-log",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7618"
+          ]
+        }
       ]
     },
     {
@@ -43309,6 +44316,15 @@
       "prefix": "/api/admin/content-sampler",
       "mountedFrom": [
         "server/routes.ts:7623"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/content-sampler",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7623"
+          ]
+        }
       ]
     },
     {
@@ -43316,6 +44332,15 @@
       "prefix": "/api/audit",
       "mountedFrom": [
         "server/routes.ts:7628"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/audit",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7628"
+          ]
+        }
       ]
     },
     {
@@ -43323,6 +44348,15 @@
       "prefix": "/api/testing",
       "mountedFrom": [
         "server/routes.ts:7633"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/testing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7633"
+          ]
+        }
       ]
     },
     {
@@ -43330,6 +44364,15 @@
       "prefix": "/api/admin/webhooks",
       "mountedFrom": [
         "server/routes.ts:7638"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/webhooks",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7638"
+          ]
+        }
       ]
     },
     {
@@ -43337,6 +44380,15 @@
       "prefix": "/api/logs",
       "mountedFrom": [
         "server/routes.ts:7642"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/logs",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7642"
+          ]
+        }
       ]
     },
     {
@@ -43344,6 +44396,15 @@
       "prefix": "/api/v1/analytics",
       "mountedFrom": [
         "server/routes.ts:7646"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/v1/analytics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7646"
+          ]
+        }
       ]
     },
     {
@@ -43351,6 +44412,15 @@
       "prefix": "/api/certified-analytics",
       "mountedFrom": [
         "server/routes.ts:7651"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/certified-analytics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7651"
+          ]
+        }
       ]
     },
     {
@@ -43358,6 +44428,15 @@
       "prefix": "/api/analytics-alerts",
       "mountedFrom": [
         "server/routes.ts:7656"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/analytics-alerts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7656"
+          ]
+        }
       ]
     },
     {
@@ -43365,6 +44444,15 @@
       "prefix": "/api/webhooks/resend",
       "mountedFrom": [
         "server/routes.ts:7663"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/webhooks/resend",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7663"
+          ]
+        }
       ]
     },
     {
@@ -43372,6 +44460,15 @@
       "prefix": "/webhooks/sendgrid",
       "mountedFrom": [
         "server/routes.ts:7668"
+      ],
+      "contexts": [
+        {
+          "prefix": "/webhooks/sendgrid",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7668"
+          ]
+        }
       ]
     },
     {
@@ -43379,6 +44476,15 @@
       "prefix": "/api/webhooks/stripe",
       "mountedFrom": [
         "server/routes.ts:7673"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/webhooks/stripe",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7673"
+          ]
+        }
       ]
     },
     {
@@ -43386,6 +44492,15 @@
       "prefix": "/api/reliability",
       "mountedFrom": [
         "server/routes.ts:7680"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/reliability",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7680"
+          ]
+        }
       ]
     },
     {
@@ -43393,6 +44508,15 @@
       "prefix": "",
       "mountedFrom": [
         "server/routes.ts:7687"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7687"
+          ]
+        }
       ]
     },
     {
@@ -43400,6 +44524,15 @@
       "prefix": "/api/simulation",
       "mountedFrom": [
         "server/routes.ts:7694"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/simulation",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7694"
+          ]
+        }
       ]
     },
     {
@@ -43407,6 +44540,15 @@
       "prefix": "/api/kill-switch",
       "mountedFrom": [
         "server/routes.ts:7701"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/kill-switch",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7701"
+          ]
+        }
       ]
     },
     {
@@ -43414,6 +44556,15 @@
       "prefix": "/api/admin/payment-bypass",
       "mountedFrom": [
         "server/routes.ts:7706"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/payment-bypass",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7706"
+          ]
+        }
       ]
     },
     {
@@ -43421,6 +44572,15 @@
       "prefix": "/api/admin/dns-node-local",
       "mountedFrom": [
         "server/routes.ts:7711"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/admin/dns-node-local",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7711"
+          ]
+        }
       ]
     },
     {
@@ -43428,6 +44588,15 @@
       "prefix": "/api/security/self-healing",
       "mountedFrom": [
         "server/routes.ts:7721"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/security/self-healing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7721"
+          ]
+        }
       ]
     },
     {
@@ -43435,6 +44604,15 @@
       "prefix": "/api/security",
       "mountedFrom": [
         "server/routes.ts:7728"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/security",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7728"
+          ]
+        }
       ]
     },
     {
@@ -43442,6 +44620,15 @@
       "prefix": "/api/marketplace",
       "mountedFrom": [
         "server/routes.ts:7735"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/marketplace",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7735"
+          ]
+        }
       ]
     },
     {
@@ -43449,6 +44636,15 @@
       "prefix": "/api/adaptive-pricing",
       "mountedFrom": [
         "server/routes.ts:7742"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/adaptive-pricing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7742"
+          ]
+        }
       ]
     },
     {
@@ -43456,6 +44652,15 @@
       "prefix": "/api/search",
       "mountedFrom": [
         "server/routes.ts:7749"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/search",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7749"
+          ]
+        }
       ]
     },
     {
@@ -43463,6 +44668,15 @@
       "prefix": "/api/contracts",
       "mountedFrom": [
         "server/routes.ts:7756"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/contracts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7756"
+          ]
+        }
       ]
     },
     {
@@ -43470,6 +44684,15 @@
       "prefix": "/api/ai",
       "mountedFrom": [
         "server/routes.ts:7762"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/ai",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7762"
+          ]
+        }
       ]
     },
     {
@@ -43477,6 +44700,15 @@
       "prefix": "/api/career-coach",
       "mountedFrom": [
         "server/routes.ts:7766"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/career-coach",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7766"
+          ]
+        }
       ]
     },
     {
@@ -43484,6 +44716,15 @@
       "prefix": "/api/ar-intelligence",
       "mountedFrom": [
         "server/routes.ts:7773"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/ar-intelligence",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7773"
+          ]
+        }
       ]
     },
     {
@@ -43491,6 +44732,15 @@
       "prefix": "/api/outreach",
       "mountedFrom": [
         "server/routes.ts:7780"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/outreach",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7780"
+          ]
+        }
       ]
     },
     {
@@ -43498,6 +44748,15 @@
       "prefix": "/api/auth/api-keys",
       "mountedFrom": [
         "server/routes.ts:7787"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auth/api-keys",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7787"
+          ]
+        }
       ]
     },
     {
@@ -43505,6 +44764,15 @@
       "prefix": "/api/auth/recovery-codes",
       "mountedFrom": [
         "server/routes.ts:7794"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auth/recovery-codes",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7794"
+          ]
+        }
       ]
     },
     {
@@ -43512,6 +44780,15 @@
       "prefix": "/api/auth/connected-accounts",
       "mountedFrom": [
         "server/routes.ts:7801"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auth/connected-accounts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7801"
+          ]
+        }
       ]
     },
     {
@@ -43519,6 +44796,15 @@
       "prefix": "/api/auth",
       "mountedFrom": [
         "server/routes.ts:7807"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/auth",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7807"
+          ]
+        }
       ]
     },
     {
@@ -43526,6 +44812,15 @@
       "prefix": "/api/fan-hub",
       "mountedFrom": [
         "server/routes.ts:7811"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/fan-hub",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7811"
+          ]
+        }
       ]
     },
     {
@@ -43533,6 +44828,15 @@
       "prefix": "/api/fan-memberships",
       "mountedFrom": [
         "server/routes.ts:7818"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/fan-memberships",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7818"
+          ]
+        }
       ]
     },
     {
@@ -43540,6 +44844,15 @@
       "prefix": "/api/press-kit",
       "mountedFrom": [
         "server/routes.ts:7825"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/press-kit",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7825"
+          ]
+        }
       ]
     },
     {
@@ -43547,6 +44860,15 @@
       "prefix": "/api/playlist-pitching",
       "mountedFrom": [
         "server/routes.ts:7832"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/playlist-pitching",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7832"
+          ]
+        }
       ]
     },
     {
@@ -43554,6 +44876,15 @@
       "prefix": "/api/shows",
       "mountedFrom": [
         "server/routes.ts:7839"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/shows",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7839"
+          ]
+        }
       ]
     },
     {
@@ -43561,6 +44892,15 @@
       "prefix": "/api/merch",
       "mountedFrom": [
         "server/routes.ts:7846"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/merch",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7846"
+          ]
+        }
       ]
     },
     {
@@ -43568,6 +44908,15 @@
       "prefix": "/api/sync-licensing",
       "mountedFrom": [
         "server/routes.ts:7853"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/sync-licensing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7853"
+          ]
+        }
       ]
     },
     {
@@ -43575,6 +44924,15 @@
       "prefix": "/api/publishing",
       "mountedFrom": [
         "server/routes.ts:7860"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/publishing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7860"
+          ]
+        }
       ]
     },
     {
@@ -43582,6 +44940,15 @@
       "prefix": "/api/uploads",
       "mountedFrom": [
         "server/routes.ts:7867"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/uploads",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7867"
+          ]
+        }
       ]
     },
     {
@@ -43589,6 +44956,15 @@
       "prefix": "/api/storage",
       "mountedFrom": [
         "server/routes.ts:7874"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/storage",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7874"
+          ]
+        }
       ]
     },
     {
@@ -43596,6 +44972,15 @@
       "prefix": "/api/hybrid-storage",
       "mountedFrom": [
         "server/routes.ts:7881"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/hybrid-storage",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7881"
+          ]
+        }
       ]
     },
     {
@@ -43603,6 +44988,15 @@
       "prefix": "/api/export",
       "mountedFrom": [
         "server/routes.ts:7888"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/export",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7888"
+          ]
+        }
       ]
     },
     {
@@ -43610,6 +45004,396 @@
       "prefix": "",
       "mountedFrom": [
         "server/safety/mandatoryMiddleware.ts:503"
+      ],
+      "contexts": [
+        {
+          "prefix": "",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/safety/mandatoryMiddleware.ts:503"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "server/middleware/auth.ts",
+      "prefix": "/api/artist-profiles",
+      "mountedFrom": [
+        "server/routes.ts:6999",
+        "server/routes/artistProfiles.ts:54",
+        "server/routes.ts:7348",
+        "server/routes/analytics-internal.ts:14",
+        "server/routes.ts:7358",
+        "server/routes/monitoring.ts:13",
+        "server/routes/monitoring.ts:14",
+        "server/routes.ts:7386",
+        "server/routes/payouts.ts:90",
+        "server/routes.ts:7395",
+        "server/routes/kyc.ts:21",
+        "server/routes/kyc.ts:25",
+        "server/routes.ts:7480",
+        "server/routes/autopilotPreferences.ts:12",
+        "server/routes.ts:7485",
+        "server/routes/autopilotKnowledge.ts:13",
+        "server/routes.ts:7572",
+        "server/routes/content-analysis.ts:200",
+        "server/routes.ts:7598",
+        "server/routes/executiveDashboard.ts:12",
+        "server/routes/executiveDashboard.ts:17",
+        "server/routes/executiveDashboard.ts:144",
+        "server/routes.ts:7603",
+        "server/routes/admin/index.ts:22",
+        "server/routes.ts:7608",
+        "server/routes/admin/metrics.ts:23",
+        "server/routes.ts:7613",
+        "server/routes/admin/beatMoneyLoop.ts:19",
+        "server/routes/admin/beatMoneyLoop.ts:20",
+        "server/routes.ts:7618",
+        "server/routes/admin/auditLog.ts:20",
+        "server/routes.ts:7623",
+        "server/routes/admin/contentSampler.ts:16",
+        "server/routes.ts:7628",
+        "server/routes/audit.ts:26",
+        "server/routes.ts:7633",
+        "server/routes/testing.ts:71",
+        "server/routes.ts:7638",
+        "server/routes/webhooks-admin.ts:18",
+        "server/routes.ts:7642",
+        "server/routes/logs.ts:21",
+        "server/routes.ts:7694",
+        "server/routes/simulation.ts:24",
+        "server/routes.ts:7728",
+        "server/routes/security.ts:10",
+        "server/routes.ts:7742",
+        "server/routes/adaptivePricing.ts:18",
+        "server/routes.ts:7773",
+        "server/routes/arIntelligence.ts:31",
+        "server/routes.ts:7780",
+        "server/routes/outreach.ts:27",
+        "server/routes.ts:7787",
+        "server/routes/apiKeys.ts:16",
+        "server/routes.ts:7794",
+        "server/routes/recoveryCodes.ts:11",
+        "server/routes.ts:7801",
+        "server/routes/connectedAccounts.ts:12",
+        "server/routes.ts:7811",
+        "server/routes/fanHub.ts:36",
+        "server/routes.ts:7818",
+        "server/routes/fanMemberships.ts:32",
+        "server/routes.ts:7832",
+        "server/routes/playlistPitching.ts:14",
+        "server/routes.ts:7860",
+        "server/routes/publishing.ts:59"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/artist-profiles",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:6999",
+            "server/routes/artistProfiles.ts:54"
+          ]
+        },
+        {
+          "prefix": "/api/analytics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7348",
+            "server/routes/analytics-internal.ts:14"
+          ]
+        },
+        {
+          "prefix": "/api/monitoring",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7358",
+            "server/routes/monitoring.ts:13",
+            "server/routes/monitoring.ts:14"
+          ]
+        },
+        {
+          "prefix": "/api/payouts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7386",
+            "server/routes/payouts.ts:90"
+          ]
+        },
+        {
+          "prefix": "/api/kyc",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7395",
+            "server/routes/kyc.ts:21"
+          ]
+        },
+        {
+          "prefix": "/api/kyc/admin",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7395",
+            "server/routes/kyc.ts:25"
+          ]
+        },
+        {
+          "prefix": "/api/autopilot/preferences",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7480",
+            "server/routes/autopilotPreferences.ts:12"
+          ]
+        },
+        {
+          "prefix": "/api/autopilot/knowledge",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7485",
+            "server/routes/autopilotKnowledge.ts:13"
+          ]
+        },
+        {
+          "prefix": "/api/content-analysis",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7572",
+            "server/routes/content-analysis.ts:200"
+          ]
+        },
+        {
+          "prefix": "/api/executive",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7598",
+            "server/routes/executiveDashboard.ts:12",
+            "server/routes/executiveDashboard.ts:17",
+            "server/routes/executiveDashboard.ts:144"
+          ]
+        },
+        {
+          "prefix": "/api/admin",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7603",
+            "server/routes/admin/index.ts:22"
+          ]
+        },
+        {
+          "prefix": "/api/admin/metrics",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7608",
+            "server/routes/admin/metrics.ts:23"
+          ]
+        },
+        {
+          "prefix": "/api/admin/beat-money-loop",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7613",
+            "server/routes/admin/beatMoneyLoop.ts:19",
+            "server/routes/admin/beatMoneyLoop.ts:20"
+          ]
+        },
+        {
+          "prefix": "/api/admin/audit-log",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7618",
+            "server/routes/admin/auditLog.ts:20"
+          ]
+        },
+        {
+          "prefix": "/api/admin/content-sampler",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7623",
+            "server/routes/admin/contentSampler.ts:16"
+          ]
+        },
+        {
+          "prefix": "/api/audit",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7628",
+            "server/routes/audit.ts:26"
+          ]
+        },
+        {
+          "prefix": "/api/testing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7633",
+            "server/routes/testing.ts:71"
+          ]
+        },
+        {
+          "prefix": "/api/admin/webhooks",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7638",
+            "server/routes/webhooks-admin.ts:18"
+          ]
+        },
+        {
+          "prefix": "/api/logs",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7642",
+            "server/routes/logs.ts:21"
+          ]
+        },
+        {
+          "prefix": "/api/simulation",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7694",
+            "server/routes/simulation.ts:24"
+          ]
+        },
+        {
+          "prefix": "/api/security",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7728",
+            "server/routes/security.ts:10"
+          ]
+        },
+        {
+          "prefix": "/api/adaptive-pricing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7742",
+            "server/routes/adaptivePricing.ts:18"
+          ]
+        },
+        {
+          "prefix": "/api/ar-intelligence",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7773",
+            "server/routes/arIntelligence.ts:31"
+          ]
+        },
+        {
+          "prefix": "/api/outreach",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7780",
+            "server/routes/outreach.ts:27"
+          ]
+        },
+        {
+          "prefix": "/api/auth/api-keys",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7787",
+            "server/routes/apiKeys.ts:16"
+          ]
+        },
+        {
+          "prefix": "/api/auth/recovery-codes",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7794",
+            "server/routes/recoveryCodes.ts:11"
+          ]
+        },
+        {
+          "prefix": "/api/auth/connected-accounts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7801",
+            "server/routes/connectedAccounts.ts:12"
+          ]
+        },
+        {
+          "prefix": "/api/fan-hub",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7811",
+            "server/routes/fanHub.ts:36"
+          ]
+        },
+        {
+          "prefix": "/api/fan-memberships",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7818",
+            "server/routes/fanMemberships.ts:32"
+          ]
+        },
+        {
+          "prefix": "/api/playlist-pitching",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7832",
+            "server/routes/playlistPitching.ts:14"
+          ]
+        },
+        {
+          "prefix": "/api/publishing",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7860",
+            "server/routes/publishing.ts:59"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "server/middleware/rateLimiter.ts",
+      "prefix": "/api/payouts",
+      "mountedFrom": [
+        "server/routes.ts:7386",
+        "server/routes/payouts.ts:91",
+        "server/routes.ts:7415",
+        "server/routes/socialAI.ts:69",
+        "server/routes.ts:7762",
+        "server/routes/ai.ts:26"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/payouts",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7386",
+            "server/routes/payouts.ts:91"
+          ]
+        },
+        {
+          "prefix": "/api/social",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7415",
+            "server/routes/socialAI.ts:69"
+          ]
+        },
+        {
+          "prefix": "/api/ai",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7762",
+            "server/routes/ai.ts:26"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "server/routes/durableExports.ts",
+      "prefix": "/api/export",
+      "mountedFrom": [
+        "server/routes.ts:7888",
+        "server/routes/export.ts:13"
+      ],
+      "contexts": [
+        {
+          "prefix": "/api/export",
+          "processScope": "main-app",
+          "mountedFrom": [
+            "server/routes.ts:7888",
+            "server/routes/export.ts:13"
+          ]
+        }
       ]
     }
   ],
@@ -48164,6 +49948,13 @@
       ],
       "status": "matched",
       "backendMatches": [
+        {
+          "method": "DELETE",
+          "path": "/api/export/history/:id",
+          "file": "server/routes/durableExports.ts",
+          "line": 124,
+          "confidence": "high"
+        },
         {
           "method": "DELETE",
           "path": "/api/export/history/:id",

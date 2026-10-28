@@ -3,37 +3,37 @@ TAP version 13
     # Subtest: current service writes settle, then actual authoritative PDIM snapshot is exported through its pinned descriptor
     ok 1 - current service writes settle, then actual authoritative PDIM snapshot is exported through its pinned descriptor
       ---
-      duration_ms: 1305.556222
+      duration_ms: 1546.957423
       type: 'test'
       ...
     # Subtest: real production pg_dump helper uses a caller-pinned SQL snapshot after all owned writers stop
     ok 2 - real production pg_dump helper uses a caller-pinned SQL snapshot after all owned writers stop
       ---
-      duration_ms: 72.010347
+      duration_ms: 125.34726
       type: 'test'
       ...
     # Subtest: corrupt SQL, corrupt PDIM and mismatched pair reject before protected SQL or file mutation
     ok 3 - corrupt SQL, corrupt PDIM and mismatched pair reject before protected SQL or file mutation
       ---
-      duration_ms: 8.525009
+      duration_ms: 11.777356
       type: 'test'
       ...
     # Subtest: original process and original SQL/database directory are unavailable before independent restore
     ok 4 - original process and original SQL/database directory are unavailable before independent restore
       ---
-      duration_ms: 15.515823
+      duration_ms: 20.468792
       type: 'test'
       ...
     # Subtest: verified paired bytes restore fresh SQL in one transaction and a fresh canonical owner from retained checkpoint only
     ok 5 - verified paired bytes restore fresh SQL in one transaction and a fresh canonical owner from retained checkpoint only
       ---
-      duration_ms: 964.911528
+      duration_ms: 1270.020218
       type: 'test'
       ...
     1..5
 ok 1 - current SQL metadata and canonical PDIM bytes jointly recover in independent fresh processes
   ---
-  duration_ms: 3201.317506
+  duration_ms: 3912.520887
   type: 'test'
   ...
 1..1
@@ -44,4 +44,4 @@ ok 1 - current SQL metadata and canonical PDIM bytes jointly recover in independ
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 3347.534827
+# duration_ms 4089.656302

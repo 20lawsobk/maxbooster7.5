@@ -1,0 +1,150 @@
+{
+  "id": "evidence-catalog-historical-before-snapshot",
+  "status": "UNVERIFIED",
+  "existingPlanLane": "source-evidence",
+  "rootCause": "Catalog discovery admits all Git-visible report paths, but retained snapshots recognize only reports/.snapshots. The before-test name is therefore advertised as a canonical root-node suite even though the canonical runner excludes report paths and rejects that selector.",
+  "affectedSystems": [
+    "generate-catalog.py",
+    "run-node-suites.py",
+    "test-inventory documentation"
+  ],
+  "requiredFixes": [
+    "Classify retained report source artifacts by evidence ownership before suffix-based canonical test detection; preserve their indexed path, provenance and reproduction instructions.",
+    "Keep actual canonical test sources and executable support recipes discoverable in their appropriate groups. Do not drop the historical file or rerun it as current acceptance."
+  ],
+  "dependencies": [
+    "Existing source-evidence lane",
+    "Source/evidence ownership classification contract"
+  ],
+  "orderOfExecution": 1,
+  "riskLevel": "Low execution risk; moderate audit-completeness ambiguity.",
+  "validationCriteria": [
+    "Fixture containing an actual current tests/*.test.mjs and its old report copy catalogs only the current file as canonical and retains the report bytes/hash as historical.",
+    "Ordinary reports/<cohort>/test-before.mjs and reports/<cohort>/.snapshots/test-before.mjs both remain retained, never active wrapper selectors.",
+    "Current canonical Node/TypeScript/Python/commerce/operational/support source registrations remain unchanged; no filename-only suppression outside report-owned paths.",
+    "Report-only validators/replay recipes remain documented as such and are not silently removed from inventory.",
+    "Catalog root-node path set equals default Node discovery plus explicitly separately grouped/blocked canonical sources, and every generated --file command is admitted by the owning runner.",
+    "Correction changes no execution receipt, counters, coverage target, production source denominator, existing page or section identity."
+  ],
+  "productionAcceptanceCriteria": [
+    "The index and canonical runner agree on 124 current Node files for this snapshot, while the historical before source remains a retained snapshot with its original failed proof."
+  ],
+  "proposedCountCorrection": {
+    "canonicalTestFiles": [
+      636,
+      635
+    ],
+    "rootNode": [
+      125,
+      124
+    ],
+    "retainedSnapshotFiles": [
+      71,
+      72
+    ],
+    "currentExecutedNodeFiles": 124,
+    "sourceCoverageFiles": 2653,
+    "pages": 80,
+    "businessSections": 2162
+  },
+  "diagnostic": {
+    "observedAt": "2026-10-28T17:53:00.834682+00:00",
+    "sourceRevision": "10d192675beefcf1b7beef3ce47c271db0cc17cf",
+    "scope": "Read-only source classification and discovery; no script/test/application executed",
+    "artifact": "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+    "artifactSha256": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226",
+    "actualClassification": {
+      "candidate": true,
+      "snapshot": false,
+      "classified": {
+        "category": "test",
+        "group": "root-node",
+        "runner": "node:test",
+        "cwd": ".",
+        "command": "python3 scripts/testing/run-node-suites.py --file reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs",
+        "prerequisites": [
+          "Node.js >=22.12",
+          "npm ci"
+        ],
+        "risks": [],
+        "status": "execution_not_inferred_from_inventory"
+      }
+    },
+    "discoveredByCanonicalNodeRunner": false,
+    "catalogNodeCount": 125,
+    "executedNodeCount": 124,
+    "catalogOnlyNodePaths": [
+      "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs"
+    ],
+    "rootCauses": [
+      {
+        "file": "scripts/testing/generate-catalog.py",
+        "line": 63,
+        "finding": "All tracked paths, including retained report source, enter catalog input."
+      },
+      {
+        "file": "scripts/testing/generate-catalog.py",
+        "line": 77,
+        "finding": "Report snapshots recognized only inside /.snapshots/; this retained cohort uses a normal directory."
+      },
+      {
+        "file": "scripts/testing/generate-catalog.py",
+        "line": 88,
+        "finding": "test-before.mjs satisfies generic /^test[_-]/ source candidate rule."
+      },
+      {
+        "file": "scripts/testing/generate-catalog.py",
+        "line": 245,
+        "finding": "node:test import causes active root-node classification and wrapper --file command."
+      },
+      {
+        "file": "scripts/testing/run-node-suites.py",
+        "line": 23,
+        "finding": "Default discovery permits only canonical source roots, excluding reports; --file must belong discover result."
+      },
+      {
+        "file": "scripts/testing/generate-catalog.py",
+        "line": 262,
+        "finding": "The generated root-node selector wraps the report copy with --file even though canonical discovery cannot admit it."
+      },
+      {
+        "file": "scripts/testing/run-node-suites.py",
+        "line": 46,
+        "finding": "Explicit selectors outside discovery are rejected before test execution."
+      },
+      {
+        "file": "reports/accessibility-audit/2026-10-28-sealed-startup/README.md",
+        "line": 66,
+        "finding": "Cohort documentation explicitly identifies test-before.mjs as the original retained committed test."
+      }
+    ],
+    "minimalFutureFix": {
+      "classification": "Retain every test-like source beneath reports/ as report evidence/snapshot or report-only replay support; do not enroll it as a canonical current suite solely from its filename/import. Keep its hash and owning canonical link. Broaden existing report-snapshot ownership rule instead of adding a one-file exception.",
+      "preserve": "Do not delete historical source, rerun it as a current test, mark it passed or remove its current canonical counterpart. Keep explicit report-only replay instructions for unique validators.",
+      "expectedCorrectedCounts": {
+        "canonicalTestFiles": 635,
+        "rootNodeFiles": 124,
+        "retainedSnapshotFiles": 72,
+        "sourceCoverageFilesUnchanged": 2653,
+        "pagesUnchanged": 80,
+        "sectionsUnchanged": 2162
+      },
+      "regressionCriteria": [
+        "Fixture containing an actual current tests/*.test.mjs and its old report copy catalogs only the current file as canonical and retains the report bytes/hash as historical.",
+        "Ordinary reports/<cohort>/test-before.mjs and reports/<cohort>/.snapshots/test-before.mjs both remain retained, never active wrapper selectors.",
+        "Current canonical Node/TypeScript/Python/commerce/operational/support source registrations remain unchanged; no filename-only suppression outside report-owned paths.",
+        "Report-only validators/replay recipes remain documented as such and are not silently removed from inventory.",
+        "Catalog root-node path set equals default Node discovery plus explicitly separately grouped/blocked canonical sources, and every generated --file command is admitted by the owning runner.",
+        "Correction changes no execution receipt, counters, coverage target, production source denominator, existing page or section identity."
+      ]
+    },
+    "productionReady": false,
+    "passTransfer": 0,
+    "protectedSourceHashes": {
+      "scripts/testing/generate-catalog.py": "177fc3778137b5e255b2fd6618ed3f184c9d6a74f7ed2327b2cef927e598ccfe",
+      "scripts/testing/run-node-suites.py": "bdae9321758f45e4eb1c857918bbc000e50565c6b2b7acb50ba9ab7fa778998e",
+      "reports/accessibility-audit/2026-10-28-sealed-startup/test-before.mjs": "70c93c2e05c31fb4c46aebaa37a2c7e0dd2dcfa5320e0a9922023c9d96617226"
+    }
+  },
+  "newAcceptedEvidence": false
+}

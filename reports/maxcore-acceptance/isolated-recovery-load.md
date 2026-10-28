@@ -11,7 +11,7 @@
 - restart: interrupted render failed without rerender; readiness HTTP 503
 - instance_loss: destroyed isolated state directory; restored copy to same path; delivery-only startup produced one validated fixture receipt
 - fixture_artifact_sha256: 933912207f0318df35de7f60a7b503a27e3557fec60a5949af044d2318510d98
-- http_load: {'requests': 96, 'max_concurrency': 8, 'expected_unready_responses': 32, 'unexpected_responses': 0, 'wall_seconds': 1.24, 'p50_ms': 5.21, 'p95_ms': 1183.93, 'p99_ms': 1185.47}
+- http_load: {'requests': 96, 'max_concurrency': 8, 'expected_unready_responses': 32, 'unexpected_responses': 0, 'wall_seconds': 1.6, 'p50_ms': 6.57, 'p95_ms': 1531.49, 'p99_ms': 1531.99}
 - idempotent_restart: completed job remained terminal; no second fixture delivery
 
 ## Limits

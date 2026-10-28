@@ -2,7 +2,7 @@ TAP version 13
 # Subtest: real SQL deletion journals survive node/commit failures and fence concurrent releases
 ok 1 - real SQL deletion journals survive node/commit failures and fence concurrent releases
   ---
-  duration_ms: 968.029853
+  duration_ms: 1164.357691
   type: 'test'
   ...
 1..1
@@ -13,4 +13,4 @@ ok 1 - real SQL deletion journals survive node/commit failures and fence concurr
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1087.187855
+# duration_ms 1308.480504

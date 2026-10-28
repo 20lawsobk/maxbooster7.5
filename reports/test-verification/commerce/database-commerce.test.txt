@@ -2,93 +2,93 @@ TAP version 13
 # Subtest: durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
 ok 1 - durable checkout SQL serializes retries, rolls back order receipts, and fences expired unknown payments
   ---
-  duration_ms: 688.082256
+  duration_ms: 736.234038
   type: 'test'
   ...
 # Subtest: PostgreSQL migrations and real CommerceRepository settlement/fulfillment
     # Subtest: applies additive 0022/0023 migrations and books one balanced, allocated order atomically
     ok 1 - applies additive 0022/0023 migrations and books one balanced, allocated order atomically
       ---
-      duration_ms: 35.916813
+      duration_ms: 41.221493
       type: 'test'
       ...
     # Subtest: rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
     ok 2 - rolls back source, allocations, journal, revenue, and order status when fulfillment is not ready
       ---
-      duration_ms: 8.308285
+      duration_ms: 8.160732
       type: 'test'
       ...
     # Subtest: concurrent duplicate settlements serialize on the production advisory lock
     ok 3 - concurrent duplicate settlements serialize on the production advisory lock
       ---
-      duration_ms: 18.047064
+      duration_ms: 20.103611
       type: 'test'
       ...
     # Subtest: rejects a reused PaymentIntent attached to another order
     ok 4 - rejects a reused PaymentIntent attached to another order
       ---
-      duration_ms: 9.152547
+      duration_ms: 12.376364
       type: 'test'
       ...
     # Subtest: database deferred constraint also rejects unbalanced journals at COMMIT
     ok 5 - database deferred constraint also rejects unbalanced journals at COMMIT
       ---
-      duration_ms: 1.848074
+      duration_ms: 1.886426
       type: 'test'
       ...
     1..5
 ok 2 - PostgreSQL migrations and real CommerceRepository settlement/fulfillment
   ---
-  duration_ms: 74.499481
+  duration_ms: 85.331104
   type: 'test'
   ...
 # Subtest: CommerceEngine executes production payout/refund/reversal workflows against SQL
     # Subtest: reserves against funded payable, idempotently, and rejects over-reservation
     ok 1 - reserves against funded payable, idempotently, and rejects over-reservation
       ---
-      duration_ms: 20.053407
+      duration_ms: 20.61914
       type: 'test'
       ...
     # Subtest: concurrent same-key requests for conflicting payout accounts have one immutable winner
     ok 2 - concurrent same-key requests for conflicting payout accounts have one immutable winner
       ---
-      duration_ms: 14.00723
+      duration_ms: 13.874222
       type: 'test'
       ...
     # Subtest: pays a claimed reservation through the engine's real SQL state transitions
     ok 3 - pays a claimed reservation through the engine's real SQL state transitions
       ---
-      duration_ms: 9.992131
+      duration_ms: 10.463587
       type: 'test'
       ...
     # Subtest: refund authorization, duplicate intent, partial reversal, and over-refund guardrails
     ok 4 - refund authorization, duplicate intent, partial reversal, and over-refund guardrails
       ---
-      duration_ms: 17.339839
+      duration_ms: 16.00367
       type: 'test'
       ...
     # Subtest: full refund creates balanced reversal, exposes the debt, then recovers it exactly once
     ok 5 - full refund creates balanced reversal, exposes the debt, then recovers it exactly once
       ---
-      duration_ms: 20.422483
+      duration_ms: 21.917978
       type: 'test'
       ...
     1..5
 ok 3 - CommerceEngine executes production payout/refund/reversal workflows against SQL
   ---
-  duration_ms: 89.453686
+  duration_ms: 91.057387
   type: 'test'
   ...
 # Subtest: production commerce webhook inbox deduplicates concurrent duplicate events
 ok 4 - production commerce webhook inbox deduplicates concurrent duplicate events
   ---
-  duration_ms: 11.453913
+  duration_ms: 17.205758
   type: 'test'
   ...
 # Subtest: real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL
 ok 5 - real Stripe test-mode checkout and PaymentIntent settle through production code in disposable SQL # SKIP STRIPE_TEST_SECRET and STRIPE_TEST_CLIENT were not supplied.
   ---
-  duration_ms: 0.170417
+  duration_ms: 0.208775
   type: 'test'
   ...
 1..5
@@ -99,4 +99,4 @@ ok 5 - real Stripe test-mode checkout and PaymentIntent settle through productio
 # cancelled 0
 # skipped 1
 # todo 0
-# duration_ms 1152.673461
+# duration_ms 1276.564362

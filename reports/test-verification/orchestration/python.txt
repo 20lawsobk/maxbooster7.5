@@ -10,8 +10,8 @@ passed   external/maxcore/artifacts/ai-training-server/ai_model/generation/test_
 passed   external/maxcore/artifacts/ai-training-server/ai_model/director/test_director.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/native/tests/test_native_kernels.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_backend_bridge.py
-passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_digital_gpu_comprehensive.py
+passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_kernels.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_silicon_model.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/gpu/tests/test_pocket_execution.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/image/test_controls.py
@@ -34,8 +34,8 @@ passed   external/maxcore/artifacts/ai-training-server/ai_model/model/test_sampl
 passed   external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_phase4.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_rcgs.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_retrieval.py
-passed   external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/rta/test_render_contracts.py
+passed   external/maxcore/artifacts/ai-training-server/ai_model/retrieval/test_pipeline.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/test_ranker_upgrades.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/test_request_intelligence_trends.py
 passed   external/maxcore/artifacts/ai-training-server/ai_model/test_quality_awareness.py
@@ -58,9 +58,9 @@ blocked  external/maxcore/artifacts/ai-training-server/tests/test_awareness_and_
 passed   external/maxcore/artifacts/ai-training-server/tests/test_auto_selection_scaling.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_awareness_conditioner.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_beat_context.py
-passed   external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py
-blocked  external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_checkpoint_release.py
+blocked  external/maxcore/artifacts/ai-training-server/tests/test_content_endpoints.py
+passed   external/maxcore/artifacts/ai-training-server/tests/test_campaign_rollout.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_dedicated_handler_routing.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_dedicated_media_http.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_diffusion_frame_resolution.py
@@ -81,8 +81,8 @@ passed   external/maxcore/artifacts/ai-training-server/tests/test_local_canonica
 passed   external/maxcore/artifacts/ai-training-server/tests/test_live_serving_integration.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_media_delivery_contract.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_media_learning.py
-passed   external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_api.py
+passed   external/maxcore/artifacts/ai-training-server/tests/test_native_analysis_safe_http.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_native_media_analysis.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_original_quality_runner.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_platform_awareness_wiring.py
@@ -114,19 +114,20 @@ blocked  tests/prepare-production-fixture.py
 blocked  tests/production-restart-smoke.py
 blocked  tests/production_fixture_support.py
 passed   external/maxcore/artifacts/ai-training-server/tests/test_unavailable_inference_contracts.py
+passed   tests/test_ltx_adapter_download.py
 passed   tests/test_portable_rust_toolchain.py
 passed   tests/test_production_fixture_support.py
-passed   tests/test_ltx_adapter_download.py
 passed   tests/test_secure_http.py
 passed   tests/test_torch_provenance.py
 passed   tests/testing/test_archived_quality_verifiers.py
+passed   tests/testing/test_endpoint_mount_resolution.py
 passed   tests/testing/test_launch_readiness_audit.py
 passed   tests/testing/test_assertion_oracles.py
-passed   tests/testing/test_platform_evidence.py
-passed   tests/testing/test_platform_plan.py
 passed   tests/testing/test_maxcore_analytics.py
+passed   tests/testing/test_platform_plan.py
 passed   tests/testing/test_remediation.py
 passed   tests/testing/test_summary_results.py
-passed   tools/sophia-agent-runner/tests/test_sophia.py
 passed   tests/urllib3-security-paths.py
-{"summary": {"passed": 111, "failed": 0, "timeout": 0, "skipped": 1, "blocked": 19, "empty": 0}, "counts": {"tests": 1381, "failures": 0, "errors": 0, "skipped": 12}}
+passed   tools/sophia-agent-runner/tests/test_sophia.py
+passed   tests/testing/test_platform_evidence.py
+{"summary": {"passed": 112, "failed": 0, "timeout": 0, "skipped": 1, "blocked": 19, "empty": 0}, "counts": {"tests": 1440, "failures": 0, "errors": 0, "skipped": 12}}
