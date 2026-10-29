@@ -1224,24 +1224,14 @@ router.post(
         });
       }
 
-      return res.json({
-        success: true,
-        outcome: "preview_generated",
-        file: {
-          id: file.id,
-          name: file.fileName,
-        },
-        preview: {
-          waveformUrl: `/api/files/${file?.id}/waveform`,
-          thumbnailUrl: file.mimeType?.startsWith("image/")
-            ? `/api/files/${file?.id}/thumbnail`
-            : null,
-          duration: file.mimeType?.startsWith("audio/")
-            ? (file as any)?.size
-              ? Math.floor((file as any)?.size / 16000)
-              : null
-            : null,
-        },
+      // No preview generator is connected to this route. Returning fabricated
+      // waveform/thumbnail URLs or a duration estimated from file size would
+      // falsely advertise generated media that does not exist.
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.status(503).json({
+        success: false,
+        error: "File preview generation is unavailable; no preview was created",
+        outcome: "preview_unavailable",
       });
     } catch (error) {
       logger.warn({ err: error }, "Preview generation error:");
