@@ -185,7 +185,7 @@ router.post(
       const { fileId } = req.body;
       const category = sanitizeCategory(req.body.category);
       const safeFileName = sanitizeFileName(req.file.originalname);
-      const userId = req.user!.id;
+      const userId = req.user?.id;
 
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
@@ -305,7 +305,7 @@ router.post(
     } catch (error) {
       logger.warn({ err: error }, "File upload failed:");
       res.status(500).json({
-        error: error instanceof Error ? error?.message : "Upload failed",
+        error: "Upload failed",
       });
     }
   },
