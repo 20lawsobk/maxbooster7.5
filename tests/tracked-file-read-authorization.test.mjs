@@ -14,12 +14,17 @@ assert.ok(end < source.indexOf('storageService.downloadFile(key)', end), 'deny b
 const guard = source.slice(start, end);
 const check = new Function('row', 'req', 'stemAccess', 'hybridStorageService', 'key', 'res', guard);
 
-function run({ owner = 'owner', requester = 'outsider', publicFile = false, stemAccess = null, tracked = true } = {}) {
+function run({
+  owner = 'owner', requester = 'outsider', publicFile = false,
+  stemAccess = null, tracked = true, metadataOwner = null,
+  key = 'uploads/non-user-prefix/private.bin',
+} = {}) {
   const response = { code: 200, body: null, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };
   const result = check(tracked ? { userId: owner, deletedAt: null } : undefined,
     { user: { id: requester } }, stemAccess,
-    { getMetadata: () => publicFile ? { isPublic: true, userId: owner } : null },
-    'uploads/non-user-prefix/private.bin', response);
+    { getMetadata: () => (publicFile || metadataOwner !== null)
+      ? { isPublic: publicFile, userId: metadataOwner ?? owner } : null },
+    key, response);
   return { code: response.code, body: response.body, result };
 }
 
@@ -39,7 +44,25 @@ test('false or missing marketplace entitlement never grants private access', () 
   assert.equal(run({ stemAccess: false }).code, 403);
   assert.equal(run({ stemAccess: null }).code, 403);
 });
-test('untracked legacy keys are not covered by this narrow guard', () => {
-  // Explicitly document remaining integration work; do not claim these are safe.
-  assert.equal(run({ tracked: false }).code, 200);
+test('untracked direct keys outside a verified namespace fail closed', () => {
+  assert.equal(run({ tracked: false }).code, 403);
+  assert.equal(run({ tracked: false, stemAccess: false }).code, 403);
+});
+test('untracked legacy users/ keys are limited to their requester-owner prefix', () => {
+  assert.equal(run({ tracked: false, key: 'users/outsider/legacy.bin' }).code, 200);
+  assert.equal(run({ tracked: false, key: 'users/owner/legacy.bin' }).code, 403);
+});
+test('untracked hybrid metadata grants only its actual owner private access', () => {
+  assert.equal(run({ tracked: false, metadataOwner: 'outsider' }).code, 200);
+  assert.equal(run({ tracked: false, metadataOwner: 'owner' }).code, 403);
+});
+test('untracked hybrid objects explicitly marked public remain accessible', () => {
+  assert.equal(run({ tracked: false, publicFile: true }).code, 200);
+});
+test('verified paid stem access remains an exception for untracked direct keys', () => {
+  assert.equal(run({ tracked: false, stemAccess: true }).code, 200);
+});
+test('tracked owner and purchaser remain authorized', () => {
+  assert.equal(run({ requester: 'owner' }).code, 200);
+  assert.equal(run({ stemAccess: true }).code, 200);
 });
