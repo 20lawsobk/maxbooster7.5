@@ -1611,6 +1611,11 @@ export async function registerRoutes(
         if (key.startsWith("studio-renders/") && stemAccess !== true && (!row || row.userId !== req.user.id)) {
           return res.status(403).json({ message: "Access denied" });
         }
+        // Deny cross-account reads of tracked files regardless of storage key prefix.
+        if (row && row.userId !== req.user.id && stemAccess !== true &&
+            hybridStorageService.getMetadata(key)?.isPublic !== true) {
+          return res.status(403).json({ message: "Access denied" });
+        }
         if (row?.deletedAt) {
           logger.warn(
             { key, deletedAt: row.deletedAt },
