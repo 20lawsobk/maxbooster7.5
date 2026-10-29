@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const source = readFileSync(new URL('../../server/routes.ts', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../server/routes.ts', import.meta.url), 'utf8');
 const startMarker = 'app.get("/api/storage/file/*key"';
 const endMarker = '// Auth: Export user data';
 
