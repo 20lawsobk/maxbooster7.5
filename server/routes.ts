@@ -1648,6 +1648,17 @@ export async function registerRoutes(
         }
       }
 
+      // A hybrid metadata entry is authoritative for its key. Never serve
+      // unchecked bytes from the separate direct-storage namespace after a
+      // failed hybrid read (including a hash-integrity failure or null read).
+      if (hybridMeta && !fileBuffer) {
+        logger.warn(
+          { err: hybridReadError },
+          "Hybrid file read failed; refusing unverified direct-storage fallback",
+        );
+        return res.status(503).json({ message: "Hybrid file temporarily unavailable" });
+      }
+
       if (!fileBuffer) {
         try {
           fileBuffer = await storageService.downloadFile(key);
