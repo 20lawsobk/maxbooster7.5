@@ -46,4 +46,19 @@ describe("hybrid download response safety (committed helper)", () => {
     assert.doesNotMatch(route, /inline; filename="\$\{metadata\.originalName\}"/);
     assert.match(route, /"Cache-Control", "private, no-store"/);
   });
+  it("the legacy /api/storage/hybrid/file route also blocks active-content rendering", () => {
+    const route = readFileSync(new URL("../server/routes/storage.ts", import.meta.url), "utf8");
+    const start = route.indexOf('router.get(\n  "/hybrid/file/*key"');
+    const end = route.indexOf('router.delete(\n  "/hybrid/file/*key"', start);
+    assert.ok(start >= 0 && end > start);
+    const handler = route.slice(start, end);
+    assert.match(handler, /classifyHybridDownloadMimeType\(contentType\)/);
+    assert.match(handler, /res\.setHeader\("X-Content-Type-Options", "nosniff"\)/);
+    assert.match(handler, /res\.setHeader\("Cache-Control", "private, no-store"\)/);
+    assert.match(handler, /res\.attachment\(metadata\?\.originalName \|\| "download"\)/);
+    assert.match(handler, /res\.setHeader\("Content-Type", safeDownload\.contentType\)/);
+    assert.ok(handler.indexOf('res.setHeader("Content-Type", safeDownload.contentType)') < handler.indexOf('if (range)'));
+    assert.doesNotMatch(handler, /res\.setHeader\("Content-Type", contentType\)/);
+  });
+
 });
