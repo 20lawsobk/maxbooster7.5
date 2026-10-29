@@ -1,1 +1,1 @@
-export { db } from "@workspace/db";
+export { db, withFabricChunkLock, withFabricCatalogLock } from "@workspace/db";
