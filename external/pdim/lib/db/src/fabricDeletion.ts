@@ -21,18 +21,13 @@ export class DurableDeletionOutbox<Query> {
 
   async initialize(): Promise<void> {
     this.ready ??= this.db.transaction(async tx => {
-      // Serialize additive bootstrap DDL between concurrently starting workers.
-      await tx.execute(this.sql`SELECT pg_advisory_xact_lock(hashtextextended('fabric-deletion-schema',0))`);
-      await tx.execute(this.sql`CREATE TABLE IF NOT EXISTS fabric_deletion_objects (
-        object_id text PRIMARY KEY, object_data jsonb NOT NULL,
-        created_at timestamptz NOT NULL DEFAULT now())`);
-      await tx.execute(this.sql`CREATE TABLE IF NOT EXISTS fabric_deletion_chunks (
-        object_id text NOT NULL, ordinal integer NOT NULL, chunk_id text NOT NULL,
-        state text NOT NULL DEFAULT 'pending', location jsonb,
-        done_nodes jsonb NOT NULL DEFAULT '[]'::jsonb,
-        PRIMARY KEY (object_id, ordinal))`);
-      await tx.execute(this.sql`CREATE INDEX IF NOT EXISTS fabric_deletion_chunks_chunk_idx
-        ON fabric_deletion_chunks(chunk_id)`);
+      // Schema is owned by the migration runner, not application startup.
+      // Read-only probes fail closed if the journal migration is missing or
+      // incompatible; runtime workers must never silently create partial DDL.
+      await tx.execute(this.sql`SELECT object_id,object_data FROM fabric_deletion_objects LIMIT 0`);
+      await tx.execute(this.sql`SELECT object_id,ordinal,chunk_id,state,location,done_nodes
+        FROM fabric_deletion_chunks LIMIT 0`);
+      await tx.execute(this.sql`SELECT id,ref_count,node_ids,size_bytes FROM fabric_chunks LIMIT 0`);
     }).catch(error => { this.ready = undefined; throw error; });
     return this.ready;
   }
