@@ -99,4 +99,28 @@ describe("hybrid auto-tiering tenant isolation and failure rollback (committed m
     assert.equal(await h.tierDown(alice.key), false);
     assert.equal(calls.saves, 0);
   });
+  it("an empty authenticated identity must not select global maintenance", async () => {
+    const { h, alice, bob, calls } = makeHarness();
+    await assert.rejects(h.runAutoTiering(""), /identity|scope|user/i);
+    assert.equal(alice.tier, "hot");
+    assert.equal(bob.tier, "hot");
+    assert.equal(calls.saves, 0);
+  });
+
+  it("authenticated auto-tier route passes the caller identity to the service", () => {
+    const routes = readFileSync(new URL("../server/routes/storage.ts", import.meta.url), "utf8");
+    const start = routes.indexOf('"/hybrid/auto-tier"');
+    const end = routes.indexOf("\nrouter.", start + 1);
+    assert.ok(start > 0);
+    const handler = routes.slice(start, end > start ? end : undefined);
+    assert.match(handler, /requireAuth/);
+    assert.match(handler, /async \(req: Request, res: Response\)/);
+    assert.match(handler, /runAutoTiering\(req\.user!\.id\)/);
+  });
+
+  it("background auto-tiering remains an explicit unscoped maintenance path", () => {
+    const server = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
+    assert.match(server, /hybridStorageService\?\.runAutoTiering\(\)/);
+  });
+
 });
