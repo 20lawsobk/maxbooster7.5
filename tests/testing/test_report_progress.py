@@ -41,9 +41,37 @@ def fixture():
     return readiness, register, plan, coverage, summary
 
 
+def complete_green_fixture():
+    """Synthetic complete acceptance for gate regression only, never launch proof."""
+    readiness, register, plan, coverage, summary = fixture()
+    gates = {domain: 'PASS' for domain in
+             ('frontend', 'backend', 'integration', 'database', 'ai', 'qa', 'accessibility', 'deployment')}
+    checks = []
+    for i, page in enumerate(readiness['pages']):
+        check = {'id': f'page-{i}/access', 'status': 'PASS'}
+        checks.append(check)
+        register['pages'][i]['requiredChecks'] = [check]
+        page.update(productionReadinessStatus='GREEN', gates=copy.deepcopy(gates),
+                    requiredRegisteredChecks=1, verifiedRegisteredChecks=1,
+                    blockers=[], globalBlockerIds=[], pendingExactPageWorkItemIds=[])
+    work = checks + [{'id': 'other/work', 'status': 'PASS'}]
+    register['summary'].update(requiredChecks=80, unverifiedChecks=0)
+    plan.update(workItems=work, summary={'workItems': len(work)})
+    readiness['workItemAcceptanceStatus'] = {row['id']: row['status'] for row in work}
+    readiness['summary'].update(greenPages=80, colors={'GREEN': 80}, retainedExistingWorkItems=len(work))
+    readiness['productionReady'] = True
+    readiness['sourceFreshness']['masterLaunchGatePassed'] = True
+    for row in coverage['total'].values():
+        row.update(covered=row['total'], pct=100)
+    summary['groups'][0]['totals'] = copy.deepcopy(coverage['total'])
+    summary.update(status='executed_groups_passed', productionReady=False)
+    return readiness, register, plan, coverage, summary
+
+
 class CountedProgressTests(unittest.TestCase):
-    def measure(self, docs=None, current=True):
-        return progress.measure(*(docs or fixture()), current=current, reasons=[] if current else ['Changed source'])
+    def measure(self, docs=None, current=True, master_gate_passed=False):
+        return progress.measure(*(docs or fixture()), current=current, reasons=[] if current else ['Changed source'],
+                                master_gate_passed=master_gate_passed)
 
     def test_independent_denominators_and_no_invented_implementation_or_test_total(self):
         report = self.measure()
@@ -77,6 +105,42 @@ class CountedProgressTests(unittest.TestCase):
         self.assertIsNone(report['currentVerified'])
         self.assertEqual(report['lastMeasured']['requiredCheckAcceptance']['completed'], 1)
         self.assertFalse(report['productionReady'])
+
+    def test_complete_current_launch_uses_audit_and_master_not_summary_approval(self):
+        docs = complete_green_fixture()
+        self.assertFalse(docs[4]['productionReady'], 'The test summary intentionally grants no launch approval')
+        measured = self.measure(docs, master_gate_passed=True)
+        self.assertEqual(measured['currentVerified']['greenPages']['completed'], 80)
+        self.assertTrue(measured['masterLaunchGatePassed'])
+        self.assertTrue(measured['productionReady'])
+
+    def test_complete_green_cannot_override_missing_failed_or_stale_master(self):
+        docs = complete_green_fixture()
+        self.assertFalse(self.measure(docs)['productionReady'], 'Omitted master gate must default to failure')
+        for value in (False, None, 1, 'true'):
+            with self.subTest(master_gate=value):
+                measured = self.measure(docs, master_gate_passed=value)
+                self.assertFalse(measured['masterLaunchGatePassed'])
+                self.assertFalse(measured['productionReady'])
+        measured = self.measure(docs, current=False, master_gate_passed=True)
+        self.assertIsNone(measured['currentVerified'])
+        self.assertFalse(measured['masterLaunchGatePassed'])
+        self.assertFalse(measured['productionReady'])
+        for value in (False, None, 1, 'true'):
+            changed = copy.deepcopy(docs)
+            changed[0]['sourceFreshness']['masterLaunchGatePassed'] = value
+            with self.subTest(recorded_master_gate=value):
+                self.assertFalse(self.measure(changed, master_gate_passed=True)['productionReady'])
+
+    def test_summary_claim_cannot_override_partial_or_unapproved_launch(self):
+        docs = fixture()
+        docs[4]['productionReady'] = True
+        self.assertFalse(self.measure(docs, master_gate_passed=True)['productionReady'])
+        docs = complete_green_fixture()
+        docs[4]['productionReady'] = True
+        self.assertFalse(self.measure(docs, master_gate_passed=False)['productionReady'])
+        docs[0]['productionReady'] = False
+        self.assertFalse(self.measure(docs, master_gate_passed=True)['productionReady'])
 
     def test_raw_fraction_is_separate_from_istanbul_truncated_percent(self):
         value = self.measure()['lastMeasured']['coverage']['lines']

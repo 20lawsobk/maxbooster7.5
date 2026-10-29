@@ -171,3 +171,19 @@ literal interpolation remain tracked. Graph depth is bounded at 13; alias breadt
 still requires a global resource budget. The source checkpoint was pending when
 the focused receipt was captured; later source changes need their own validation.
 No feature check, page Green designation or global launch approval is inferred.
+
+## Verified Python factory inventory — October 29, 2026
+
+Source `8a9b638c` implements the bounded AST-only factory parser and paired
+consumer. The [retained cohort](../../reports/mapping-audit/2026-10-29-python-factory-final/)
+keeps the proposal, failure history, source patch and preservation checks.
+Focused integration passed 28 tests and 41 subtests. Nineteen declarations have
+finite static contexts: 13 unconditional and six conditional Director contexts.
+Fourteen paths gain a discovered prefix; five were already complete. Every
+runtime-availability claim remains `UNVERIFIED`; the parser imports no app.
+
+The frozen master preserves all 221 Python declaration IDs, all 1,287 associated
+checks, all 19 warning objects, all 170 unresolved mappings and the complete
+80-page plan. Static context does not establish an operational cross-process
+binding. Existing unresolved router, helper, middleware, process-join and
+specialization work above remains open, including each original warning ID.

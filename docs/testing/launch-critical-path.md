@@ -252,3 +252,35 @@ verification-lane subtasks, not 104 newly proven product failures. The
 [unfinished Python factory proposal](../../reports/mapping-audit/2026-10-28-python-factory-proposal/README.md)
 remains unreviewed and unlanded. Resume its existing mapping lane only after
 its scope, tests and identity relations are checked; it supplies no acceptance.
+
+## Continued execution — October 29
+
+Work now targets local repository `main`, preserving all earlier commits. Remote
+`main` remains `f227ce74`; production promotion retains the M8/M9 acceptance
+condition. The [frozen 8a9 master](../../reports/test-verification/history/2026-10-29-8a9b638c-master/README.md)
+preserves 591 hashed evidence members and a separate nine-member launch/progress
+archive. All 17 scheduled commands finished: 14 passed; coverage, Node and Python
+failed. Strict platform and remediation also failed. No failure is erased.
+
+The actual run verifies all 90 repaired case identities and 14 commerce subject
+bindings. It retains every old 53,020 work ID, every page/section/check identity
+and 170 mapping diagnostics; 13 new source files raise plan work to 53,033.
+The launch audit remains 0/80 Green. Nine policy links pin a previous platform
+digest, so this snapshot accepts 0/33,549 checks. No implementation percentage
+can be inferred from those acceptance counts.
+
+The immediate M3 repair batch fixes the observed runner failures: exclude only
+the parent-owned coverage lifecycle helper from standalone Node execution;
+join ordinary Python workers before full-repository read-only tests; retain
+report-owned historical Python copies without executing them; refresh only the
+nine policy digests against the final unchanged platform inputs. The progress
+reporter uses the actual master and launch-audit approval gates. Focused root
+validation passes 154 tests and 21 subtests, including real worker overlap,
+cleanup, timeouts/failures, retained historical selectors and malformed evidence.
+These are scoped repairs requiring a new frozen master, not 80-page acceptance.
+
+C5/P1 now executes the original Node suite with compatible maps for nine subjects
+and retains canonical typed originals. No profiles are merged. Continue P2
+source/command/time/snapshot admission, then the existing P3–P7, C6/C7 and M5–M9
+dependency chains. All 20 shared lanes and every one of the 2,162 business
+sections remain required; this checkpoint changes none of their acceptance.

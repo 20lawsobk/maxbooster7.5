@@ -31,6 +31,9 @@ The reporter checks the complete source/config/test inventory, unchanged master
 receipt, selected groups, source epochs, launch artifact hashes, all 80 page
 identities, actual check and work-item counts, and raw coverage counters. A Green
 row must also agree with its gates, exact checks and absence of blockers.
+Its final readiness flag requires the actual current master launch gate and the
+matching launch audit to pass. The test summary deliberately grants no launch
+approval; its permanent `productionReady: false` field is not that decision.
 
 | Exit | Meaning |
 | --- | --- |
@@ -71,6 +74,8 @@ claims, malformed/overflow counts, disagreeing coverage totals, stale evidence
 and missing inputs. The real read-only check compares repository files before
 and after collection. Run it without concurrent writes to Git-visible files;
 unrelated report generation would otherwise invalidate that comparison.
+The Python runner schedules this suite after ordinary workers finish their
+children and report writes. Run standalone checks without unrelated writers too.
 While the master is unfinished, rejection of mixed old/new reports is expected;
 the same check still requires every file to remain unchanged. A completed
 inconsistent report fails, and the reporter must run successfully again after

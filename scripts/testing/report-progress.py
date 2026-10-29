@@ -48,7 +48,7 @@ def unique_rows(rows, label):
     return result
 
 
-def measure(readiness, register, plan, coverage, summary, *, current, reasons):
+def measure(readiness, register, plan, coverage, summary, *, current, reasons, master_gate_passed=False):
     """Pure counter reconciliation. Stale observations never receive current credit."""
     pages = unique_rows(readiness['pages'], 'readiness pages')
     registered_pages = unique_rows(register['pages'], 'registered pages')
@@ -130,8 +130,11 @@ def measure(readiness, register, plan, coverage, summary, *, current, reasons):
         'lastMeasured': observed,
         'currentVerified': observed if current else None,
         'workStatusCounts': dict(sorted(Counter(work_status.values()).items())),
+        'masterLaunchGatePassed': (current and master_gate_passed is True
+                                  and readiness.get('sourceFreshness', {}).get('masterLaunchGatePassed') is True),
         'productionReady': (current and green == 80 and readiness.get('productionReady') is True
-                            and summary.get('productionReady') is True),
+                            and master_gate_passed is True
+                            and readiness.get('sourceFreshness', {}).get('masterLaunchGatePassed') is True),
         'masterStatus': summary['status'],
         'testGroupObservations': [{key: row[key] for key in ('group', 'status', 'counts', 'fileCounts', 'countScope') if key in row}
                                   for row in summary['groups']],
@@ -196,7 +199,9 @@ def _collect(repo, base, readiness_dir):
     if after_inputs != current_inputs:
         reasons.append('Source inputs changed during measurement')
     report = measure(docs['readiness'], docs['register'], docs['plan'], docs['coverage'], docs['summary'],
-                     current=not reasons, reasons=reasons)
+                     current=not reasons, reasons=reasons,
+                     master_gate_passed=(master_fresh['status'] == 'PASS'
+                                         and master_fresh['allSelectedCommandsPassed'] is True))
     report.update({
         'measuredSourceRevision': next(iter(epochs)),
         'measuredSourceInputsSha256': docs['sourceInputs'].get('sha256'),

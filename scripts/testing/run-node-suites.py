@@ -15,6 +15,10 @@ ASSERTION_SCRIPTS = {"tests/integration-webhooks.cjs", "tests/integrations-readi
                      "tests/unit/generated-pdim-isolated.mjs", "scripts/test-data-runtime.mjs",
                      "scripts/test-fabric-deletion.mjs"}
 
+# Imports node:test lifecycle hooks but has no standalone assertions. The parent
+# collector supplies the exact target, private output and producer identity.
+PARENT_OWNED_SUPPORT = {"scripts/testing/coverage-node-vite-entry.mjs"}
+
 
 def discover():
     paths = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
@@ -22,7 +26,7 @@ def discover():
     for file in paths:
         if not file.startswith(("tests/", "script/", "scripts/", "server/", "evaluations/")):
             continue
-        if file in BROWSER or file.startswith("tests/payment-processing/") or "/fixtures/" in file:
+        if file in BROWSER or file in PARENT_OWNED_SUPPORT or file.startswith("tests/payment-processing/") or "/fixtures/" in file:
             continue
         if Path(file).suffix not in (".mjs", ".cjs", ".ts"):
             continue

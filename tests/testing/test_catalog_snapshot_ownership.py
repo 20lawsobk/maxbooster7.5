@@ -133,7 +133,8 @@ class CatalogSnapshotOwnership(unittest.TestCase):
 
     def test_actual_node_builder_admits_generated_commands_and_rejects_report_selectors(self):
         current = ("tests/current.test.mjs", "tests/current-contract.test.ts", "scripts/test-data-runtime.mjs")
-        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs")
+        separately_owned = ("tests/studio-plugin-audio-browser.test.mjs", "tests/payment-processing/pay.test.mjs",
+                            "scripts/testing/coverage-node-vite-entry.mjs")
         historical = ("reports/cohort/test-before.mjs", "reports/cohort/.snapshots/test-before.mjs")
         for name in (*current, *separately_owned, *historical):
             self.put(name, NODE_TEST)
@@ -146,6 +147,9 @@ class CatalogSnapshotOwnership(unittest.TestCase):
             canonical = {row["path"] for row in data["entries"] if row["group"] == "root-node"}
             self.assertEqual(canonical, discovered)
             self.assertEqual(canonical, set(current))
+            helper = self.rows(data)["scripts/testing/coverage-node-vite-entry.mjs"]
+            self.assertEqual((helper["category"], helper["group"], helper["command"]),
+                             ("support", "runner-support", None))
             for name in canonical:
                 command = shlex.split(self.rows(data)[name]["command"])
                 self.assertEqual(command, ["python3", "scripts/testing/run-node-suites.py", "--file", name])
@@ -153,7 +157,7 @@ class CatalogSnapshotOwnership(unittest.TestCase):
                 with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stdout(out):
                     self.assertEqual(runner.main(), 0)
                 self.assertEqual(json.loads(out.getvalue()), [name])
-            for name in historical:
+            for name in (*historical, "scripts/testing/coverage-node-vite-entry.mjs"):
                 error = io.StringIO()
                 with patch.object(sys, "argv", [str(NODE_SOURCE), "--file", name, "--list", "--output", str(output)]), redirect_stderr(error):
                     with self.assertRaises(SystemExit) as rejected:

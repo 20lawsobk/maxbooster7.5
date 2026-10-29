@@ -45,6 +45,13 @@ internal inspector collector. Choose a **new** output directory beneath
 argument must be exactly `tests/fabric-replica-generation.test.mjs`, the single
 proven in-process `node:test` suite admitted by this P1 command. Other suites,
 including PostgreSQL fixtures, are rejected before execution or output creation.
+The child `scripts/testing/coverage-node-vite-entry.mjs` is parent-owned support,
+not a standalone test suite. Its `node:test` import registers lifecycle cleanup;
+the collector supplies the exact target, private output and producer identity.
+The canonical Node runner keeps it out of standalone discovery and rejects an
+explicit `--file` selector for it. The existing two-assertion suite remains a
+canonical Node test and also runs through this collector.
+
 It executes through public Vite ModuleRunner APIs and an observed VM wrapper,
 one test worker, a two-minute timeout and a
 small explicitly constructed environment. It does not inherit application

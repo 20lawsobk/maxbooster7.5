@@ -192,3 +192,26 @@ execution, exact guarded provider policy, typed raw/wire validation, canonical
 pre-serialization capture and a fresh same-source P1 proof before complete-map
 merge admission. It then resumes P3–P7 and C6/C7. This trace implements none of
 those future source changes and grants no feature, coverage or launch pass.
+
+## Executed shared producer — October 29, 2026
+
+The committed `8a9b638c` implementation adds the bounded typed-coordinate
+contract, public Vite execution/provider adapter and original pre-serialization
+canonical sidecars described above. Real execution of the original two-assertion
+Node suite matches all 27 complete maps for nine subjects; untouched functions
+and branch arms remain present. The frozen full master independently retains
+all 2,653 canonical files and nine original sidecars. Profiles remain unmerged.
+
+The [frozen run](../../reports/test-verification/history/2026-10-29-8a9b638c-master/README.md)
+records actual lines 29,344/224,013, statements 31,245/240,335, functions
+4,150/47,857 and branches 13,914/158,578. All requested 100% gates still fail.
+This supersedes the next-source-edit description for P1 only; it does not close
+P2–P7, other-language coverage, page journeys or deployed acceptance.
+
+The next C5 step is P2 admission: bind canonical command/log/JUnit/time and raw
+maps/counters to the official profile, require a fresh producer from the same
+complete source inventory with parent time bounds, reject repeated/overlapping
+snapshots and preserve every original zero. A matching map by itself grants no
+counter credit. A new source epoch requires new execution; historical P1 data
+must fail current admission. The master runner excludes the parent-owned
+lifecycle entrypoint from standalone discovery while retaining its actual suite.

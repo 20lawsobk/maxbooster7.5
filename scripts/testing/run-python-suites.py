@@ -50,6 +50,12 @@ OPERATIONAL = {
     'production_fixture_support.py': 'Fixture safety helper module, exercised by test_production_fixture_support.py.',
 }
 
+# These tests snapshot every Git-visible file and therefore require this runner
+# to finish every ordinary suite, including its JUnit/log writes, first.
+QUIESCENT_REPOSITORY_SUITES = {
+    'tests/testing/test_report_progress.py',
+}
+
 GUARD = '''import ipaddress, socket
 _connect=socket.socket.connect
 _connect_ex=socket.socket.connect_ex
@@ -112,8 +118,9 @@ def discover():
     suites, duplicates = [], []
     for name in tracked:
         path = Path(name)
-        if name.startswith('.pdim-scratch'):
-            if path.name.startswith('test_'): duplicates.append(name)
+        if name.startswith(('.pdim-', 'reports/')):
+            if path.name.startswith(('test_', 'test-')) or '/tests/' in name:
+                duplicates.append(name)
             continue
         if path.name == '__init__.py': continue
         relevant = (path.name.startswith('test_') or name.startswith('tests/')
@@ -206,6 +213,31 @@ def run_suite(suite, output, interpreter, timeout, coverage_config=None, coverag
             status = 'skipped'
         return result | {'status': status, 'exitCode': child.returncode, 'durationSeconds': round(time.monotonic() - started, 3),
                          'counts': counts, 'junit': junit.name if junit.exists() else None, 'log': log.name}
+
+
+
+def execute_suites(suites, output, interpreter, timeout, workers, coverage_config=None, coverage_data=None):
+    """Join normal workers before executing full-repository read-only checks.
+
+    Every selected suite still executes once. Failed, blocked or timed-out normal
+    workers retain their results and do not suppress the quiescent phase.
+    """
+    ordinary = [suite for suite in suites if suite['file'] not in QUIESCENT_REPOSITORY_SUITES]
+    quiescent = [suite for suite in suites if suite['file'] in QUIESCENT_REPOSITORY_SUITES]
+    results = []
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(run_suite, suite, output, interpreter, timeout,
+                                   coverage_config, coverage_data): suite for suite in ordinary}
+        for future in as_completed(futures):
+            result = future.result(); results.append(result)
+            print(f'{result["status"]:8} {result["file"]}', flush=True)
+    # run_suite returns only after child cleanup and final JUnit/log writes.
+    # Keep the full-file snapshot assertion intact rather than ignoring outputs.
+    for suite in quiescent:
+        result = run_suite(suite, output, interpreter, timeout, coverage_config, coverage_data)
+        results.append(result)
+        print(f'{result["status"]:8} {result["file"]}', flush=True)
+    return results
 
 
 def coverage_environment(home):
@@ -325,7 +357,7 @@ def write_documentation(report, target):
     counts = report['counts']
     lines = ['# Python tests', '',
              'These instructions cover canonical MaxCore, application security, evaluator-contract and Sophia runner tests. '
-             'The generated scratch copies under `.pdim-scratch-external_maxcore-989/` are retained snapshots, not a second application to execute.', '',
+             'Report-owned copies under `reports/` and generated state copies under `.pdim-*/` are retained snapshots, not independent current suites. They remain listed in `duplicateSnapshots`; select the canonical source instead.', '',
              '## Setup', '',
              'Use Python 3.12 with the application dependencies from '
              '`external/maxcore/artifacts/ai-training-server/pyproject.toml` and its frozen `uv.lock`. '
@@ -342,7 +374,7 @@ def write_documentation(report, target):
              'python3 scripts/testing/run-python-suites.py --file tests/test_secure_http.py --output /tmp/maxbooster-python-single', '```', '',
              'Use `--python /path/to/python` to select another prepared interpreter, '
              '`--workers 1` to run serially, or `--timeout 180` to change the per-file timeout. '
-             'The default is two workers and 120 seconds per file. A selected run writes only its selected suites; '
+             'The default is two workers and 120 seconds per file. Full-repository read-only checks run after all ordinary workers and their report writes finish; no selected suite is skipped. A selected run writes only its selected suites; '
              'use a fresh output directory to preserve earlier reports.', '',
              'Add `--coverage` to measure first-party Python statements and branches with coverage.py. '
              'It is optional for this scoped runner and enabled by the master platform runner. '
@@ -441,12 +473,8 @@ def main():
                                                             'reason': coverage['reason']}, indent=2) + '\n')
             print('blocked: ' + coverage['reason'], file=sys.stderr)
         else:
-            with ThreadPoolExecutor(max_workers=args.workers) as executor:
-                futures = {executor.submit(run_suite, suite, output, args.python, args.timeout,
-                                           config, data_file): suite for suite in suites}
-                for future in as_completed(futures):
-                    result = future.result(); results.append(result)
-                    print(f'{result["status"]:8} {result["file"]}', flush=True)
+            results = execute_suites(suites, output, args.python, args.timeout,
+                                     args.workers, config, data_file)
             if args.coverage:
                 coverage = export_coverage(args.python, workspace, config, data_file, output, suites, coverage)
     summary = {status: sum(result['status'] == status for result in results)
