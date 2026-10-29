@@ -1,74 +1,105 @@
-/** Run one existing canonical Node suite in a credential-free owned producer. */
+/** Collect one existing P1 suite using the shared Vite/provider typed contract. */
 import fs from 'node:fs';
+import {randomUUID}from'node:crypto';
 import path from 'node:path';
+import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { createRequire } from 'node:module';
-import { sha256, ownedPath, validateManifest, validateIstanbul, compareCoverageMaps, runOwnedCommand, createKeepNamesPolicy } from './coverage-provenance.mjs';
-const require = createRequire(import.meta.url);
-const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const args = process.argv.slice(2), target = args[0], requested = args[1];
-if (!target || !requested || !/^tests\/[\w./-]+\.test\.mjs$/.test(target) || target.includes('..')) throw Error('Use: node scripts/testing/collect-node-coverage.mjs tests/existing.test.mjs reports/owned-output');
-// P1 proves this in-process suite only. pg_ctl and other daemonizing fixtures
-// require independent-session ownership tracking before admission is safe.
-if (target !== 'tests/fabric-replica-generation.test.mjs') throw Error('P1 coverage producer supports only tests/fabric-replica-generation.test.mjs; other suites require independent-session ownership tracking');
-const tracked = spawnSync('git', ['ls-files','--',target], { cwd: root, encoding:'utf8' });
-if (tracked.status || tracked.stdout.trim() !== target || !/from\s*["']node:test["']/.test(fs.readFileSync(path.join(root,target),'utf8'))) throw Error('Only an existing Git-visible canonical node:test suite is supported');
-const output = ownedPath(path.join(root,'reports'), path.resolve(root,requested));
-if (fs.existsSync(output)) throw Error('Producer output must be a new owned directory');
-fs.mkdirSync(output,{recursive:true,mode:0o700});
-const home=path.join(output,'home');fs.mkdirSync(home,{mode:0o700});
-function sourceInputs() {
- const list=spawnSync('git',['ls-files','-cz','--others','--exclude-standard'],{cwd:root,encoding:'utf8'});
- if(list.status!==0)throw Error('Cannot inventory current source');
- const files={};
- for(const file of [...new Set(list.stdout.split('\0').filter(Boolean))].sort()){
-  if(/^(reports|docs|dist)\//.test(file)||file.split('/').some(part=>['node_modules','__pycache__','.local'].includes(part)))continue;
-  if(!/\.(?:[cm]?[jt]sx?|json|py|sh|go|rs|sql|nix|toml|ya?ml)$/.test(file)&&!['.replit','package-lock.json','pnpm-lock.yaml'].includes(file))continue;
-  const full=path.join(root,file);if(fs.existsSync(full)&&fs.statSync(full).isFile())files[file]=sha256(fs.readFileSync(full));
- }
- return {scope:'Git-visible code/config files including new source; docs/reports/dist/private ignored state excluded',sha256:sha256(JSON.stringify(files)),files};
+import { serialize, deserialize } from 'node:v8';
+import { isDeepStrictEqual } from 'node:util';
+import { createSharedProvider, subjectFiles, originalCoverageData,validateCapturedManifest,readSourceInputs } from './coverage-shared-provider.mjs';
+import { sha256, typedSha256, encodeCoverage, decodeCoverage } from './coverage-coordinate-contract.mjs';
+const here = path.dirname(fileURLToPath(import.meta.url)), args = process.argv.slice(2);
+let explicitRoot;
+if (args[0] === '--repository-root') {
+    args.shift();
+    explicitRoot = args.shift();
 }
-const inputsBefore=sourceInputs();
-const sourceBefore=sha256(fs.readFileSync(path.join(root,target)));
-const env={PATH:process.env.PATH||'/usr/bin:/bin',HOME:home,TMPDIR:home,LANG:'C',CI:'1',MAXBOOSTER_NODE_COVERAGE_DIR:output,NODE_V8_COVERAGE:path.join(output,'node-native-corroboration')};
-if(process.env.LD_LIBRARY_PATH)env.LD_LIBRARY_PATH=process.env.LD_LIBRARY_PATH;
-const command=['--import',path.join(root,'scripts/testing/coverage-node-bootstrap.mjs'),'--import','tsx','--test','--test-concurrency=1','--test-reporter=tap',target];
-const run=await runOwnedCommand(process.execPath,command,{cwd:root,env,timeoutMs:120000,maxBuffer:8*1024*1024});
-fs.writeFileSync(path.join(output,'test.txt'),(run.stdout||'')+(run.stderr||''));
-const report={schemaVersion:1,scope:'One existing Node suite; separate UNMERGED profile, not global coverage',command:[process.execPath,...command],sourceRevision:spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).stdout.trim(),test:target,testSha256:sourceBefore,exitCode:run.status,signal:run.signal,timedOut:run.timedOut,bufferExceeded:run.bufferExceeded,cleanup:run.cleanup,status:'collecting',profiles:[],productionReady:false,mergedIntoGlobalCoverage:false};
-try{
- if(run.status!==0||run.error||run.timedOut||run.bufferExceeded||!run.cleanup.complete)throw Error('Existing test execution, producer or owned-process cleanup failed');
- const inputsAfter=sourceInputs(); report.sourceInputs={beforeSha256:inputsBefore.sha256,afterSha256:inputsAfter.sha256,unchanged:inputsBefore.sha256===inputsAfter.sha256};
- fs.writeFileSync(path.join(output,'source-inputs.json'),JSON.stringify({before:inputsBefore,after:inputsAfter},null,2));
- if(inputsBefore.sha256!==inputsAfter.sha256||sourceBefore!==sha256(fs.readFileSync(path.join(root,target))))throw Error('Source/configuration changed during execution');
- const [{convert},{parseAstAsync},{default:libCoverage}]=await Promise.all([import('ast-v8-to-istanbul'),import('vite'),import('istanbul-lib-coverage')]);
- const combined=libCoverage.createCoverageMap({});
- for(const member of fs.readdirSync(output).filter(x=>/^\d+-\d+$/.test(x))){
-  const directory=path.join(output,member),manifest=JSON.parse(fs.readFileSync(path.join(directory,'manifest.json'),'utf8'));
-  validateManifest(manifest,directory,root);
-  report.profiles.push({producerId:manifest.producerId,manifestSha256:sha256(fs.readFileSync(path.join(directory,'manifest.json'))),runtime:manifest.runtime});
-  for(const script of manifest.scripts){
-   const code=fs.readFileSync(path.join(directory,script.codeFile),'utf8');
-   const map=script.mapFile?JSON.parse(fs.readFileSync(path.join(directory,script.mapFile),'utf8')):undefined;
-   const ast=await parseAstAsync(code);
-   const generatedPolicy=createKeepNamesPolicy({code,sourceMap:map,ast});
-   const converted=await convert({code,sourceMap:map,ast,ignoreNode:generatedPolicy.ignoreNode,coverage:{url:script.url,functions:script.coverage.functions}});
-   (report.generatedNodePolicies??=[]).push({scriptId:script.scriptId,...generatedPolicy.audit});
-   for(const[file,data]of Object.entries(converted)){
-    validateIstanbul(data);
-    if(combined.files().includes(file)&&!compareCoverageMaps(combined.fileCoverageFor(file).toJSON(),data).compatible)throw Error('Incompatible producer maps for '+file);
-    combined.merge({[file]:data});
-   }
-  }
- }
- if(!combined.files().length)throw Error('No retained executed production source');
- fs.writeFileSync(path.join(output,'coverage-final.json'),JSON.stringify(combined.toJSON()));
- fs.writeFileSync(path.join(output,'coverage-summary.json'),JSON.stringify({total:combined.getCoverageSummary().toJSON(),...Object.fromEntries(combined.files().map(file=>[file,combined.fileCoverageFor(file).toSummary().toJSON()]))},null,2));
- const baseline=path.join(root,'reports/test-verification/coverage/coverage-final.json');
- if(fs.existsSync(baseline)){const global=JSON.parse(fs.readFileSync(baseline,'utf8'));report.comparison={baselineSha256:sha256(fs.readFileSync(baseline)),files:combined.files().map(file=>({file,...(global[file]?compareCoverageMaps(global[file],combined.fileCoverageFor(file).toJSON()):{compatible:false,mismatches:['missing-global-source']})}))};}
- report.converter={package:'ast-v8-to-istanbul',version:JSON.parse(fs.readFileSync(path.join(path.dirname(require.resolve('ast-v8-to-istanbul')),'../package.json'),'utf8')).version};
- report.status='collected_unmerged';
-}catch(error){report.status='failed';report.error=error.message;process.exitCode=1;}
-finally{fs.writeFileSync(path.join(output,'receipt.json'),JSON.stringify(report,null,2));fs.rmSync(home,{recursive:true,force:true});}
-console.log(JSON.stringify({status:report.status,exitCode:report.exitCode,profiles:report.profiles.length,output:path.relative(root,output)}));
+const root = fs.realpathSync(explicitRoot || path.join(here, '../..')), target = args[0], requested = args[1], canonical = args[2];
+if(explicitRoot&&(here===root||here.startsWith(root+path.sep)))throw Error('Repository override is only for an outside review copy');
+// The allowlist is checked before importing app code or creating any output.
+if (target !== 'tests/fabric-replica-generation.test.mjs' || !requested || args.length > 3)
+    throw Error('P1 coverage producer supports only tests/fabric-replica-generation.test.mjs and a new owned output');
+const tracked = spawnSync('git', ['ls-files', '--', target], { cwd: root, encoding: 'utf8' });
+if (tracked.status || tracked.stdout.trim() !== target || !/from\s*["']node:test["']/.test(fs.readFileSync(path.join(root, target), 'utf8')))
+    throw Error('An existing Git-visible canonical node:test suite is required');
+const { runOwnedCommand, ownedPath } = await import(path.join(root, 'scripts/testing/coverage-provenance.mjs'));
+const out = ownedPath(explicitRoot ? here : path.join(root, 'reports'), path.resolve(root, requested));
+if (fs.existsSync(out))
+    throw Error('Producer output must be a new owned directory');
+const sourceInputs=()=>readSourceInputs(root);
+const inputsBefore = sourceInputs(), canonicalFile = path.join(root, 'reports/test-verification/coverage/coverage-final.json'), globalBefore = sha256(fs.readFileSync(canonicalFile)), testSha256 = sha256(fs.readFileSync(path.join(root, target))), candidateFiles = {};
+const candidatePaths=Object.fromEntries(['coverage-coordinate-contract.mjs','coverage-shared-provider.mjs','coverage-node-vite-entry.mjs','collect-node-coverage.mjs','coverage-raw-sidecar-reporter.cjs'].map(f=>[f,path.join(here,f)]));candidatePaths['tests/testing/coverage-coordinate-contract.test.mjs']=explicitRoot?path.join(here,'coverage-coordinate-contract.test.mjs'):path.join(root,'tests/testing/coverage-coordinate-contract.test.mjs');for(const[f,full]of Object.entries(candidatePaths))candidateFiles[f]=sha256(fs.readFileSync(full));
+const { contract, convert } = await createSharedProvider(root);const producerId=randomUUID();
+fs.mkdirSync(out, { recursive: true, mode: 0o700 });
+const home = path.join(out, 'home');
+fs.mkdirSync(home, { mode: 0o700 });
+const env = { PATH: process.env.PATH || '/usr/bin:/bin', HOME: home, TMPDIR: home, LANG: 'C', CI: '1', P1_REPOSITORY_ROOT: root, P1_TARGET: target, P1_OUTPUT: out,P1_PRODUCER_ID:producerId, NODE_V8_COVERAGE:path.join(out,'node-native-corroboration') };
+if (process.env.LD_LIBRARY_PATH)
+    env.LD_LIBRARY_PATH = process.env.LD_LIBRARY_PATH;
+const command = ['--test', '--test-concurrency=1', '--test-reporter=tap', path.join(here, 'coverage-node-vite-entry.mjs')], run = await runOwnedCommand(process.execPath, command, { cwd: root, env, timeoutMs: 120000, maxBuffer: 8 * 1024 * 1024 });
+fs.writeFileSync(path.join(out, 'test.txt'), run.stdout + run.stderr);
+const receipt = { schemaVersion: 2, status: 'collecting', sourceRevision: spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim(), sourceInputsBeforeSha256: inputsBefore.sha256, test: target, testSha256, contract, contractSha256: typedSha256(contract), candidateFiles, command: [process.execPath, ...command], envKeys: Object.keys(env), exitCode: run.status, signal: run.signal, timedOut: run.timedOut, bufferExceeded: run.bufferExceeded, cleanup: run.cleanup, profiles: [], mergedIntoGlobalCoverage: false, productionReady: false };
+try {
+    if (run.status || run.error || run.timedOut || run.bufferExceeded || !run.cleanup.complete)
+        throw Error('Actual suite or owned cleanup failed');
+    const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json')));
+    if (manifest.schemaVersion !== 3 || manifest.contractSha256 !== typedSha256(contract) || manifest.rawSha256 !== sha256(fs.readFileSync(path.join(out, 'raw-v8.json'))))
+        throw Error('Unsupported/stale actual capture contract');
+    const raw=JSON.parse(fs.readFileSync(path.join(out,'raw-v8.json')));validateCapturedManifest(manifest,{raw,root,target,contract,producerId});receipt.producerId = manifest.producerId;
+    receipt.snapshot = manifest.snapshot;
+    const rawManifest = canonical ? JSON.parse(fs.readFileSync(path.join(canonical, 'manifest.json'))) : null;
+    if (rawManifest && rawManifest.contractSha256 !== typedSha256(contract))
+        throw Error('Canonical sidecar has different/unproven producer contract');
+    for (const item of manifest.scripts) {
+        if (!subjectFiles.includes(path.relative(root, item.file)))
+            throw Error('Unsupported retained production source');
+        const bytes = { source: fs.readFileSync(item.file, 'utf8'), body: fs.readFileSync(ownedPath(out, path.resolve(out, item.bodyFile)), 'utf8'), executed: fs.readFileSync(ownedPath(out, path.resolve(out, item.codeFile)), 'utf8'), map: JSON.parse(fs.readFileSync(ownedPath(out, path.resolve(out, item.mapFile)))) };
+        const result = await convert(item, bytes), stem = path.relative(root, item.file).replaceAll('/', '__');
+        fs.writeFileSync(path.join(out, stem + '.raw.v8'), serialize(result.providerRaw));
+        fs.writeFileSync(path.join(out, stem + '.wire.json'), JSON.stringify(result.encoded.wire));
+        fs.writeFileSync(path.join(out, stem + '.typed.json'), JSON.stringify(result.encoded.sidecar, null, 2));
+        const mapComparison = {};
+        if (rawManifest) {
+            const ci = rawManifest.files.find(x => x.file === path.relative(root, item.file));
+            if (!ci)
+                throw Error('Missing canonical original');
+            const rawBytes = fs.readFileSync(ownedPath(canonical, path.resolve(canonical, ci.name)));
+            assert.equal(sha256(rawBytes), ci.sha256);
+            assert.equal(sha256(bytes.source), ci.sourceSha256);
+            const canonicalRaw = originalCoverageData(deserialize(rawBytes)), provenance = { ...result.provenance, kind: 'actual-public-Istanbul-pre-JSON-sidecar', rawSidecarSha256: ci.sha256 }, context = { source: bytes.source, sourceFile: item.file, contract, provenance, body: bytes.body, map: bytes.map }, encoded = encodeCoverage(canonicalRaw, context), decoded = decodeCoverage(encoded.wire, encoded.sidecar, context);
+            for (const k of ['statementMap', 'fnMap', 'branchMap'])
+                mapComparison[k] = isDeepStrictEqual(decoded[k], result.raw[k]);
+            if (Object.values(mapComparison).some(v => !v))
+                throw Error('Complete canonical map mismatch');
+            fs.writeFileSync(path.join(out, stem + '.canonical.wire.json'), JSON.stringify(encoded.wire));
+            fs.writeFileSync(path.join(out, stem + '.canonical.typed.json'), JSON.stringify(encoded.sidecar, null, 2));
+        }
+        const zeros = { statements: Object.values(result.raw.s).filter(n => n === 0).length, functions: Object.values(result.raw.f).filter(n => n === 0).length, branchArms: Object.values(result.raw.b).flat().filter(n => n === 0).length };
+        if (stem === 'server__config__ports.ts') {
+            const id = Object.keys(result.raw.fnMap).find(id => result.raw.fnMap[id].name === 'loopbackUrl');
+            assert.ok(id);
+            assert.equal(result.raw.f[id], 0);
+            assert.ok(zeros.branchArms > 0);
+        }
+        receipt.profiles.push({ file: path.relative(root, item.file), scriptId: item.scriptId, wrapperLength: item.wrapperLength, codeSha256: item.codeSha256, bodySha256: item.bodySha256, mapSha256: item.mapSha256, rawTypedSha256: typedSha256(result.raw), sentinels: result.encoded.sidecar.sentinels.length, zeros, mapComparison, audit: result.audit });
+    }
+    assert.deepEqual(receipt.profiles.map(x => x.file).sort(), [...subjectFiles].sort());
+    const inputsAfter = sourceInputs();
+    receipt.sourceInputs = { beforeSha256: inputsBefore.sha256, afterSha256: inputsAfter.sha256, unchanged: inputsBefore.sha256 === inputsAfter.sha256 };
+    fs.writeFileSync(path.join(out, 'source-inputs.json'), JSON.stringify({ before: inputsBefore, after: inputsAfter }, null, 2));
+    receipt.globalCoverage = { beforeSha256: globalBefore, afterSha256: sha256(fs.readFileSync(canonicalFile)) };
+    if (!receipt.sourceInputs.unchanged || receipt.globalCoverage.beforeSha256 !== receipt.globalCoverage.afterSha256 || testSha256 !== sha256(fs.readFileSync(path.join(root, target))))
+        throw Error('Source/global coverage changed during capture');
+    for(const[f,sha]of Object.entries(candidateFiles))if(sha256(fs.readFileSync(candidatePaths[f]))!==sha)throw Error('Outside candidate files changed during execution');receipt.nativeCorroboration={directory:'node-native-corroboration',scope:'Separate Node native V8 corroboration; never combined with the same inspector snapshot'};receipt.status = rawManifest ? 'typed_compatible_unmerged' : 'typed_collected_no_canonical_baseline_unmerged';
+}
+catch (error) {
+    receipt.status = 'failed';
+    receipt.error = error.stack;
+    process.exitCode = 1;
+}
+finally {
+    fs.writeFileSync(path.join(out, 'receipt.json'), JSON.stringify(receipt, null, 2));
+    fs.rmSync(home, { recursive: true, force: true });
+}
+console.log(JSON.stringify({ status: receipt.status, profiles: receipt.profiles.length, cleanup: receipt.cleanup, output: out }));

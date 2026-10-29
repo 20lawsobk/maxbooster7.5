@@ -16,7 +16,7 @@ describe("registration completion", () => {
   );
 
   it.each([null, "", "pi_123", "cs_bad-value", `cs_${"a".repeat(253)}`])(
-    "rejects an invalid checkout session id",
+    "rejects an invalid checkout session id [row %#]",
     (sessionId) => {
       expect(() => validateCheckoutSessionId(sessionId)).toThrow(/Invalid payment session/i);
     },

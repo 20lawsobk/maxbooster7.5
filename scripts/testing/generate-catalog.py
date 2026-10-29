@@ -74,7 +74,9 @@ def input_paths() -> list[str]:
 
 
 def snapshot(p: str) -> bool:
-    return p.startswith(".pdim-") or p.startswith("reports/") and "/.snapshots/" in p
+    # Report-owned test copies and replay sources are retained evidence, not
+    # canonical suites, regardless of whether the report uses .snapshots/.
+    return p.startswith((".pdim-", "reports/"))
 
 
 def test_candidate(p: str, source: str) -> bool:

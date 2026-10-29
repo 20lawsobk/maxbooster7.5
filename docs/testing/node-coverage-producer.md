@@ -1,6 +1,9 @@
 # Collecting one existing Node suite without changing global coverage
 
-This is the first isolated coverage producer from the
+The current C5 producer uses a shared Vite/Vitest conversion contract and strict
+typed coordinate sidecars. The historical tsx attempts below remain immutable;
+the final section records the new producer and its bounded acceptance results.
+This continues the isolated coverage producer from the
 [implementation plan](coverage-producer-implementation-plan.md). It preserves
 the actual JavaScript, source maps and V8 counters from an existing `node:test`
 suite. Its output is **unmerged evidence**, not the platform's coverage result
@@ -12,13 +15,15 @@ Use the installed Node 22 runtime and the root lockfile's dependencies. Run
 these commands from the repository root:
 
 ```sh
-node --test --test-reporter=tap tests/testing/coverage-provenance.test.mjs
+node --test --test-reporter=tap tests/testing/coverage-provenance.test.mjs \
+  tests/testing/coverage-coordinate-contract.test.mjs
 node scripts/testing/collect-node-coverage.mjs \
   tests/fabric-replica-generation.test.mjs \
   reports/coverage-producer/my-new-owned-run
 ```
 
-The first command runs twenty-two framework tests. They exercise actual inspector
+The first command runs twenty-two original framework tests plus fifty shared
+producer/typed-wire regressions. The original tests exercise actual inspector
 coverage with a Unicode fixture and a deliberately unexecuted branch, then
 verify rejection of stale originals, substituted code, changed counters,
 malformed offsets/encoding, missing source-map content, escaped paths,
@@ -40,7 +45,8 @@ internal inspector collector. Choose a **new** output directory beneath
 argument must be exactly `tests/fabric-replica-generation.test.mjs`, the single
 proven in-process `node:test` suite admitted by this P1 command. Other suites,
 including PostgreSQL fixtures, are rejected before execution or output creation.
-It executes with `tsx`, one test worker, a two-minute timeout and a
+It executes through public Vite ModuleRunner APIs and an observed VM wrapper,
+one test worker, a two-minute timeout and a
 small explicitly constructed environment. It does not inherit application
 credentials, `NODE_OPTIONS` or an ambient coverage selector. It opens no remote
 debug port and creates a private temporary home beneath its owned output.
@@ -57,18 +63,21 @@ general replacement for the master Node runner.
 Freeze source, tests, dependency locks and configuration during collection.
 The collector inventories Git-visible code/configuration, including new
 unignored files, before and after execution. Any change fails the attempt even
-if the behavioral assertions pass. This inventory currently has its own
-documented selection algorithm; its digest is not interchangeable with the
-master runner's differently selected source-input digest. The selection covers
-the listed code/configuration extensions; it omits C/C++ files, `Cargo.lock`,
-`go.sum` and Dockerfiles, and can include tracked historical PDIM JSON. It must
-not be described as complete platform provenance or a canonical master identity.
+if the behavioral assertions pass. The current collector calls the authoritative `common.source_inputs` through a
+credential-free, bounded Python 3 subprocess (`-I -B`), with a short private home
+and temporary directory. Python 3 and Git are required. C/C++, SQL, lockfiles,
+Docker files and new unignored source use exactly the same inventory as the
+master; generated snapshots, reports and coverage outputs remain excluded.
+The earlier collector's narrower digest is retained only in historical receipts.
 
 ## What the output means
 
 `receipt.json` records the command, actual test exit, Node/V8 identity,
 source-input stability and the resulting status. A successful collection says
-`collected_unmerged` and `mergedIntoGlobalCoverage: false`.
+`typed_collected_no_canonical_baseline_unmerged`, or
+`typed_compatible_unmerged` after a fresh raw canonical baseline passes all
+three complete map comparisons. Every result retains
+`mergedIntoGlobalCoverage: false`.
 
 Each process/thread profile contains `manifest.json`, `raw-v8.json`, actual
 executed `.js` bytes and source maps. The manifest hashes every retained input.
@@ -77,16 +86,19 @@ must fit the executed JavaScript's UTF-16 length. Invalid or missing TypeScript
 maps fail collection. Package source is outside this isolated application-source
 profile; that choice does not remove anything from the global denominator.
 
-`node-native-corroboration/` contains Node's own coverage output. The installed
-`tsx` loader uses that setting to retain source-map `sourcesContent`. The
+`node-native-corroboration/` contains Node's own coverage output. The Vite collector retains actual transform maps and source content separately. The
 internal inspector's single final snapshot is the authoritative counter source;
 the native output is **not added** to those same counters.
 
-`coverage-final.json` and `coverage-summary.json` describe only the retained
-executed files. The receipt compares all three complete Istanbul maps against
-the saved global profile. A mismatch rejects combination for that file. Equal
-function maps do not permit copying hits when statement or branch maps differ.
-The command never writes the global profile or raises its measured percentages.
+Each source has lossless `.raw.v8`, `.wire.json` and `.typed.json` artifacts.
+The wire sidecar records every permitted positive-Infinity end column and
+complete synthetic branch location before JSON loses its original type.
+Decoding requires matching source, producer, body/map hashes and independent
+pinned-provider replay. NaN, negative Infinity, partial undefined coordinates,
+unsupported fields/prototypes, mismatched counters, stale wrappers and missing
+raw records fail validation. The optional third command argument names a fresh
+canonical `raw-p1` directory for strict complete-map comparison. Legacy untyped
+JSON does not gain this contract through serialization.
 
 An exit of zero establishes successful isolated collection. It does **not**
 establish map compatibility, full feature coverage or launch readiness. Check
@@ -171,3 +183,55 @@ capture production subjects whose generated bundles have already been removed.
 Those boundaries and consistent full-profile conversion remain explicit later
 steps in the implementation plan; do not enable a platform-wide merge until
 they are implemented and verified.
+
+## C5 shared producer and current raw canonical capture
+
+[The shared producer candidate](../../reports/coverage-producer/2026-10-28-shared-producer-candidate/README.md)
+records the first strict same-contract result. The existing P1 suite passed both
+assertions, all nine original scripts were observed with Debugger.getScriptSource,
+and all 27 complete statement/function/branch maps matched a fresh canonical
+pre-JSON sidecar. The actual executed prefix is 209 UTF-16 code units; its suffix,
+body, maps, raw ranges, module identity and hashes reconstruct the observed code.
+The uncalled original `loopbackUrl` and untouched branch arms remain present at
+zero. Raw sentinels include 7,434 positive-Infinity end columns and 3,080 own
+undefined coordinates forming 770 complete synthetic branch locations.
+
+The new fifty portable cases cover finite/sentinel roundtrips, original TypeScript
+AST provenance, authored helpers, public Vite SSR transformation, actual Unicode
+VM/Debugger capture, raw-record/identity tampering, source-inventory conformance
+and the public Istanbul reporter's inline/file contract lifecycle. Map-only
+controls explicitly use zero counters and establish no application execution.
+
+`vitest.platform.config.ts` now adds the public Istanbul reporter after the normal
+reports. It writes nine selected lossless raw originals to `<reportsDirectory>/raw-p1`
+using an inline versioned contract after Vitest cleans its report directory. The
+full platform include/exclude lists and all four 100% thresholds remain enforced.
+The focused candidate emitted 2,652 files; its one historical-only runtime-imported
+JSON rules file must return under final full-master denominator verification. This reporter changes no maps or counters.
+
+From the repository root, collect a new canonical profile and a separate P1 proof:
+
+```sh
+MAXBOOSTER_TEST_COVERAGE_DIR=reports/coverage-producer/canonical-new \
+  npm run test:platform:coverage
+node scripts/testing/collect-node-coverage.mjs \
+  tests/fabric-replica-generation.test.mjs \
+  reports/coverage-producer/p1-new \
+  reports/coverage-producer/canonical-new/raw-p1
+```
+
+A failed coverage threshold remains a failure; inspect the retained assertion
+results and exact failure reason. The focused canonical candidate passed its two
+existing SQL files/43 assertions and retained 2,652 focused files, while its
+focused counters failed all four 100% thresholds. Its output is not a replacement
+for a full master run. Both producers completed owned cleanup with no surviving
+owned processes or SQL daemons, and the historical global coverage bytes stayed
+unchanged. The current collector's source digest matches the master's full
+inventory; the earlier narrower selection is explicitly historical.
+
+These profiles remain **UNMERGED**. A later admission gate must bind the final
+same-source master, complete original maps, unique producer/snapshot identities,
+reset/overlap semantics and every source/runtime artifact before combining hits.
+The broader SQL, server/child, browser/worker, other-language and all-80-page
+acceptance work remains required. The shared producer does not grant production
+approval or increase the published global percentages by itself.

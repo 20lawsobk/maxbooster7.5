@@ -25,7 +25,7 @@ describe("Marketplace and storefront page contracts", () => {
   it.each([
     [marketplace, "loadMarketplaceData", "/api/marketplace/purchases"],
     [storefront, "loadStorefrontList", "/api/storefront/my"],
-  ])("rejects malformed lists rather than rendering an empty success", async (source, name, path) => {
+  ])("rejects malformed lists rather than rendering an empty success [row %#]", async (source, name, path) => {
     const calls: unknown[][] = [];
     const load = extractFunction(source, name, {
       apiRequest: async (...args: unknown[]) => {

@@ -95,6 +95,8 @@ def test_empty_evidence_never_green_even_when_all_source_checks_pass():
     assert page["verifiedSectionDimensionSteps"] == 0
     assert not report["productionReady"]
     assert page["productionReadinessStatus"] == "RED"
+    assert any("launch criteria remain unverified" in blocker for blocker in page["blockers"])
+    assert all(not blocker.startswith("0 ") for blocker in page["blockers"])
 
 
 def test_full_page_criteria_and_global_gap_proofs_do_not_close_missing_exact_section_work():
@@ -125,6 +127,7 @@ def test_full_producer_can_green_only_with_every_retained_requirement_and_dimens
     report = AUDIT.make_report(register, plan, {"status": "PASS"}, proofs)
     assert report["productionReady"]
     assert report["summary"]["greenPages"] == 80
+    assert all(not page["blockers"] for page in report["pages"])
     assert not report["pendingGlobalWorkItemIds"]
     assert all(feature["sectionAcceptanceStatus"] == "PASS" and feature["verifiedDimensionSteps"] == 6 for feature in report["features"])
     proofs.pop("page-0/section-0/frontendWork")

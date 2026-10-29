@@ -39,7 +39,7 @@ describe("Shared minimum age 16 policy", () => {
     "2010-06-15T00:00:00Z", " 2010-06-15", "2010-06-15 ", "2010-02-29",
     "2010-04-31", "2010-13-01", "2010-00-01", "2010-01-00", "0000-01-01",
     "9999-01-01", "2026-06-16",
-  ])("fails closed for missing, malformed, normalized-invalid or future DOB %j", value => {
+  ])("fails closed for missing, malformed, normalized-invalid or future DOB %j [row %#]", value => {
     expect(getAccountEligibilityError(value, birthday)).toEqual(expect.any(String));
   });
 

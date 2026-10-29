@@ -6,7 +6,7 @@ import { decodeContainer, encodeContainer } from "../../server/pocket-dimension/
 
 describe("deployment small-file native compression", () => {
   it.each([Buffer.alloc(0), Buffer.from("source code\n".repeat(900)), randomBytes(8192)])(
-    "retains exact bytes through its container",
+    "retains exact bytes through its container [row %#]",
     async (input) => {
       expect(await codec.decompress(await codec.compress(input))).toEqual(input);
     },

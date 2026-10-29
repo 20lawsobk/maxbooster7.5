@@ -69,8 +69,10 @@ def main():
         jobs = [(p.stem, str(p.relative_to(ROOT)), [node, '--test', '--test-concurrency=1',
                  '--test-reporter=tap', '--test-reporter-destination=stdout', '--test-reporter=junit',
                  f'--test-reporter-destination={output / (p.stem + ".xml")}', str(p.relative_to(ROOT))]) for p in files]
-        jobs.append(('legacy-beat', 'tests/unit/beat-sale-money-loop.test.ts', [node,
-                     'scripts/testing/commerce-legacy-fixture.mjs', str(output / 'legacy-beat.xml')]))
+        legacy_subject = 'tests/unit/beat-sale-money-loop.test.ts'
+        jobs.append(('legacy-beat', legacy_subject, [node,
+                     'scripts/testing/commerce-legacy-fixture.mjs', str(output / 'legacy-beat.xml'),
+                     '--subject-file', legacy_subject]))
         jobs.append(('provider-report-summary', 'tests/payment-processing/real-stripe-api.mjs', [node,
                      'tests/payment-processing/real-stripe-api.mjs', '--self-test-summary']))
         if args.only and not any(args.only in (name, Path(file).name) for name, file, _ in jobs):

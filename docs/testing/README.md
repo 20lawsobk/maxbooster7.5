@@ -6,6 +6,13 @@ prerequisites. [results.md](results.md) records the actual rerun, including
 failures, skipped cases and work that could not run. A source index is not a
 coverage percentage or evidence of a passing test.
 
+[Measured completion](measured-progress.md) documents `npm run test:progress`.
+It derives percentages from exact accepted work and coverage counters, retains
+historical results after source changes, and never estimates implementation
+completion from source presence. The October 29 evidence-binding/reporting
+batch is in progress; the completed `10d19267` receipts below describe their
+own tested source until the next frozen master is complete.
+
 The verified pushed review checkpoint is
 `70e2e68f46652ac9a82fb203b1d8d6cb9ceb3c60` on
 `sophia/platform-production-hardening-2026-10-27`. The remote ref was verified

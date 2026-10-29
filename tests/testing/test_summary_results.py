@@ -64,6 +64,10 @@ def test_source_identity_detects_new_code_changes_and_excludes_generated_private
         (root / 'server').mkdir()
         code = root / 'server/new.ts'
         code.write_text('export const result = 1;\n')
+        declaration = root / 'server/contract.d.mts'
+        declaration.write_text('export declare const result: number;\n')
+        commonjs = root / 'server/interop.cts'
+        commonjs.write_text('export const interop = 1;\n')
         (root / 'docs').mkdir()
         (root / 'docs/result.json').write_text('{"generated":1}')
         (root / 'coverage').mkdir()
@@ -74,7 +78,7 @@ def test_source_identity_detects_new_code_changes_and_excludes_generated_private
         (root / 'secret.json').write_text('{"private":"fixture-only"}')
         monkeypatch.setattr(common, 'ROOT', root)
         first = common.source_inputs()
-        assert set(first['files']) == {'server/new.ts', 'tests/coverage/storage.test.ts'}
+        assert set(first['files']) == {'server/new.ts', 'server/contract.d.mts', 'server/interop.cts', 'tests/coverage/storage.test.ts'}
         (root / 'docs/result.json').write_text('{"generated":2}')
         assert common.source_inputs()['sha256'] == first['sha256']
         code.write_text('export const result = 2;\n')
@@ -82,6 +86,12 @@ def test_source_identity_detects_new_code_changes_and_excludes_generated_private
         second = common.source_inputs()
         contract.write_text('export const databaseContract = 2;\n')
         assert common.source_inputs()['sha256'] != second['sha256']
+        third = common.source_inputs()
+        declaration.write_text('export declare const result: string;\n')
+        assert common.source_inputs()['sha256'] != third['sha256']
+        fourth = common.source_inputs()
+        commonjs.write_text('export const interop = 2;\n')
+        assert common.source_inputs()['sha256'] != fourth['sha256']
 
 
 def test_provider_parse_exclusions_cannot_be_mistaken_for_complete_coverage():
@@ -105,3 +115,36 @@ def test_coverage_only_database_cases_are_retained_without_repeating_ordinary_un
         assert [(case['file'], case['name'], case['status']) for case in cases] == [
             ('tests/coverage/storage.test.ts', 'actual database outcome', 'passed'),
             ('tests/coverage/storage.test.ts', 'database failure', 'failed')]
+
+
+def test_python_scopes_qualify_only_ambiguous_explicit_classes(tmp_path):
+    path = tmp_path / 'scopes.xml'
+    path.write_text('<testsuites><testsuite name="outer"><testsuite name="inner">'
+                    '<testcase classname="module.First" name="test_shared"/>'
+                    '<testcase classname="module.Second" name="test_shared"><skipped/></testcase>'
+                    '<testcase classname="module.First" name="test_unique"/>'
+                    '</testsuite></testsuite></testsuites>')
+    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
+    assert [row['name'] for row in rows] == ['module.First::test_shared', 'module.Second::test_shared', 'test_unique']
+    assert [row['status'] for row in rows] == ['passed', 'skipped', 'passed']
+    assert all(row['suiteNames'] == ['outer', 'inner'] for row in rows)
+    assert all(row['file'] == 'tests/owned.py' for row in rows)
+    assert [row['name'] for row in MODULE.xml_cases(path, 'http', 'tests/owned.py')] == ['test_shared', 'test_shared', 'test_unique']
+
+
+def test_python_missing_class_scope_stays_ambiguous(tmp_path):
+    path = tmp_path / 'missing-class.xml'
+    path.write_text('<testsuite name="pytest"><testcase classname="module.First" name="test_shared"/>'
+                    '<testcase name="test_shared"/></testsuite>')
+    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
+    assert [row['name'] for row in rows] == ['test_shared', 'test_shared']
+
+
+def test_python_missing_names_or_blank_classes_never_acquire_a_usable_identity(tmp_path):
+    path = tmp_path / 'malformed-scopes.xml'
+    path.write_text('<testsuite name="pytest"><testcase classname="module.First"/>'
+                    '<testcase classname="module.Second"/>'
+                    '<testcase classname=" " name="test_blank"/>'
+                    '<testcase classname="module.Second" name="test_blank"/></testsuite>')
+    rows = MODULE.xml_cases(path, 'python', 'tests/owned.py')
+    assert [row['name'] for row in rows] == [None, None, 'test_blank', 'test_blank']

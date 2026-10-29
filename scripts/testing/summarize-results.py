@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
+from junit_evidence import read_cases
 from common import ROOT, source_revision, write_json
 
 
@@ -19,24 +19,8 @@ def read(file, fallback=None):
 def xml_cases(file, group, default_file=None):
     cases = []
     if not file.is_file(): return cases
-    root = ET.parse(file).getroot()
-    def collect(element, suite_name=''):
-        name = element.get('name', '') if element.tag == 'testsuite' else suite_name
-        if element.tag == 'testcase':
-            case = element
-            failure = case.find('failure')
-            if failure is None: failure = case.find('error')
-            status = 'failed' if failure is not None else 'skipped' if case.find('skipped') is not None else 'passed'
-            cases.append({'group': group, 'file': default_file or case.get('file') or name,
-                          'name': case.get('name'), 'status': status,
-                          'message': failure.get('message', '')[:500] if failure is not None else None,
-                          'junit': str(file.relative_to(ROOT)) if file.is_relative_to(ROOT) else str(file)})
-            return
-        for child in element:
-            collect(child, name)
-    # Node emits root-level cases alongside nested suites. Retain both once.
-    collect(root)
-    return cases
+    junit = str(file.relative_to(ROOT)) if file.is_relative_to(ROOT) else str(file)
+    return [dict(case, group=group, junit=junit) for case in read_cases(file, group, default_file)]
 
 
 def coverage_contract_cases(file):

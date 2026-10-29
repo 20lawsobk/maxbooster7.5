@@ -61,7 +61,115 @@
         {
           "testFile": "tests/api-guards.test.ts",
           "testSha256": "74ab6394eb742fe27365983ebd98a2955bc54c09a90d4ef1255783e25d398bc3",
-          "caseName": "Unauthenticated route guards > GET /api/auth/me → 200 (public, returns null)",
+          "caseName": "Unauthenticated route guards > GET /api/auth/me \u2192 200 (public, returns null)",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-3f640ac3745d3b6a/access-policy",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+      "cases": [
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 9. GET /api/billing/subscription returns complete tier shape when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 10. GET /api/billing/subscription returns 401 when unauthenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects suspended session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects banned session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects mfa-required session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects trial-expired session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > access policy: GET /api/billing/subscription rejects subscription-expired session",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-0772b8611dc21e1d/access-policy",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+      "cases": [
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > 9. GET /api/storage/quota returns quota info when authenticated",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > 10. GET /api/storage/quota returns 401 or 403 without authentication",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects suspended session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects banned session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects mfa-required session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects trial-expired session",
+          "group": "http"
+        },
+        {
+          "testFile": "tests/file-management.test.ts",
+          "testSha256": "fa745d1c3d803967c4594c7b672ff9990d8d825834fb31d58405fd609805c392",
+          "caseName": "File Management (Storage Round-Trip) > access policy: GET /api/storage/quota rejects subscription-expired session",
+          "group": "http"
+        }
+      ]
+    },
+    {
+      "checkId": "api-51e06323624f6bc1/access-policy",
+      "platformSourceDigest": "0e9c292340e7abdb713beb11031e1a6b3a171656b69c8bd4060b692616ced9b7",
+      "cases": [
+        {
+          "testFile": "tests/billing-lifecycle.test.ts",
+          "testSha256": "b2dbe3b7c35982649dbaa513d06c6601e8bda3924dcfe3b8fa8e292a51a39421",
+          "caseName": "Billing Webhook Lifecycle > 11. GET /api/billing/plans returns a non-empty plan list without auth",
           "group": "http"
         }
       ]

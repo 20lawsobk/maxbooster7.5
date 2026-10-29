@@ -12,6 +12,7 @@ from collections import Counter, defaultdict, deque
 import datetime
 import math
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -22,6 +23,13 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
+# The registry is also imported directly by tooling outside this script folder.
+_JUNIT_SPEC = importlib.util.spec_from_file_location("maxbooster_junit_evidence", Path(__file__).with_name("junit_evidence.py"))
+_JUNIT = importlib.util.module_from_spec(_JUNIT_SPEC)
+_JUNIT_SPEC.loader.exec_module(_JUNIT)
+_FACTORY_SPEC = importlib.util.spec_from_file_location("maxbooster_python_factory_mounts", Path(__file__).with_name("python_factory_mounts.py"))
+_FACTORY = importlib.util.module_from_spec(_FACTORY_SPEC)
+_FACTORY_SPEC.loader.exec_module(_FACTORY)
 METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all"}
 
 NODE_EXTRACTOR = r'''
@@ -348,20 +356,15 @@ def collect_current_passing_cases(incoming, current_inputs, *, root=ROOT):
             if len(matching) != 1:
                 rejected["unbound-default-file-producer"] += 1; continue
             default_file = identity[1]
-        cache_key = artifact, default_file
+        cache_key = artifact, default_file, identity[0]
         if cache_key not in xml_cache:
             passed, occurrences = set(), Counter()
             try:
-                def collect(element, suite=""):
-                    name = element.get("name", "") if element.tag == "testsuite" else suite
-                    if element.tag == "testcase":
-                        identity = default_file or element.get("file") or name, element.get("name")
-                        occurrences[identity] += 1
-                        if not any(element.find(tag) is not None for tag in ("failure", "error", "skipped")):
-                            passed.add(identity)
-                    else:
-                        for child in element: collect(child, name)
-                collect(ET.parse(artifact).getroot())
+                for row in _JUNIT.read_cases(artifact, identity[0], default_file):
+                    leaf = row["file"], row["name"]
+                    occurrences[leaf] += 1
+                    if row["status"] == "passed":
+                        passed.add(leaf)
                 artifacts[str(artifact)] = digest(artifact)
             except (OSError, ET.ParseError): rejected["unreadable-case-xml"] += 1
             xml_cache[cache_key] = {identity for identity in passed if occurrences[identity] == 1}
@@ -439,13 +442,14 @@ def parsed_ts_paths(source, tests):
 
 
 def python_routes(paths):
-    rows, unknown = [], []
+    rows, unknown, trees = [], [], {}
     for file in paths:
         if not file.endswith(".py") or not file.startswith(("server/", "external/")): continue
         try: tree = ast.parse((ROOT / file).read_text())
         except (SyntaxError, UnicodeError) as error:
             unknown.append({"kind": "python-parse-diagnostic", "file": file, "line": getattr(error, "lineno", None)})
             continue
+        trees[file] = tree
         owners = {}
         for node in ast.walk(tree):
             if isinstance(node, (ast.Assign, ast.AnnAssign)):
@@ -473,7 +477,29 @@ def python_routes(paths):
                     rows.append({"file": file, "line": decorator.lineno, "method": verb, "path": path,
                                  "processScope": "python-declared:" + file, "confidence": "declared-only; mount prefix unverified",
                                  "receiver": owner, "handler": node.name, "mountResolved": owners[owner] in ("FastAPI", "Flask")})
-    return rows, unknown
+    mounted, mount_unknown = _FACTORY.python_factory_mounts(trees)
+    expanded = []
+    for row in rows:
+        contexts = mounted.get((row["file"], row["line"]), [])
+        if not contexts:
+            expanded.append(row)
+            continue
+        if len(contexts) != 1:
+            # Preserve the original declaration and all its acceptance checks.
+            # Multiple process-specific instances need an explicit identity
+            # contract rather than arbitrarily selecting or merging a mount.
+            expanded.append(row)
+            mount_unknown.append({"kind": "python-factory-multiple-mounts", "file": row["file"], "line": row["line"],
+                                  "contexts": contexts})
+            continue
+        context = contexts[0]
+        resolved_path = context["includeRouterPrefix"] + context["routerPrefix"] + row["path"] if isinstance(row["path"], str) else None
+        expanded.append({**row, **context, "declaredPath": row["path"], "path": resolved_path,
+                         "declarationSubjectId": identifier("api", row["file"], row["line"], row["method"], row["path"]),
+                         "pathResolved": resolved_path is not None,
+                         "mountResolved": resolved_path is not None and not context["mountConditional"],
+                         "confidence": "source-proven conditional factory mount" if context["mountConditional"] else "source-proven factory mount; runtime unverified"})
+    return expanded, unknown + mount_unknown
 
 
 def native_routes(paths):
@@ -724,10 +750,16 @@ def main():
                            "mountResolved": base is not None and bool(path), "origin": "typescript-router-ast"})
     python, python_unknown = python_routes(source); unknown += python_unknown
     for raw in python + native_routes(source):
-        routes.append({"id": identifier("api", raw["file"], raw["line"], raw["method"], raw["path"]),
-                       "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
-                       "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
-                       "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"})
+        # Factory prefix resolution enriches an existing declaration; it does
+        # not erase or replace its original subject/check identities.
+        item = {"id": raw.get("declarationSubjectId") or identifier("api", raw["file"], raw["line"], raw["method"], raw["path"]),
+                "method": raw["method"], "path": raw["path"], "source": location(raw["file"], raw["line"]),
+                "processScope": raw["processScope"], "confidence": raw["confidence"], "mountResolved": raw["mountResolved"],
+                "origin": "python-decorator-ast" if raw["file"].endswith(".py") else "native-source-declaration"}
+        for key in ("declaredPath", "declarationSubjectId", "pathResolved", "routerPrefix", "includeRouterPrefix", "factory",
+                    "mountSource", "mountConditions", "mountConditional", "runtimeAvailability"):
+            if key in raw: item[key] = raw[key]
+        routes.append(item)
     route_by_location = defaultdict(list)
     for item in routes:
         file = item["source"]["file"]; path = item["path"] or "<computed>"
@@ -751,7 +783,11 @@ def main():
             present = {row["path"] for row in item["testCandidates"]}
             item["testCandidates"] += [{"path": test, "association": "exact-route-literal-only", "executionStatus": execution.get(test, {}).get("status", "not_run")}
                                        for test in sorted(literal_url_tests.get(item["path"], set()) - present)]
-        if not item["mountResolved"]: unknown.append({"kind": "unverified-route-mount", "subjectId": item["id"], **item["source"], "declaredPath": item["path"]})
+        if not item["mountResolved"] or item.get("runtimeAvailability") == "UNVERIFIED":
+            # Source topology does not close runtime-mount acceptance. Retain
+            # the original warning bytes so existing mapping work IDs survive.
+            unknown.append({"kind": "unverified-route-mount", "subjectId": item["id"], **item["source"],
+                            "declaredPath": item.get("declaredPath", item["path"])})
         route_by_location[(file, item["source"]["line"], item["method"])].append(item["id"])
 
     contracts_by_file = defaultdict(list)

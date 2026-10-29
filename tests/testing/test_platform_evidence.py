@@ -158,7 +158,7 @@ def actual_execution(tmp_path):
     import json
     import sys
 
-    def produce(group="python", multifile=False):
+    def produce(group="python", multifile=False, python_source=None, expected_exit=0):
         base = tmp_path / group
         incoming = base / "reports/incoming"
         (incoming / "orchestration").mkdir(parents=True)
@@ -166,7 +166,7 @@ def actual_execution(tmp_path):
         source = base / relative
         source.parent.mkdir()
         if group == "python":
-            source.write_text("def test_owned_producer():\n    assert 2 + 2 == 4\n")
+            source.write_text(python_source or "def test_owned_producer():\n    assert 2 + 2 == 4\n")
             artifact = incoming / "python/owned.xml"
             artifact.parent.mkdir()
             command = [sys.executable, "-m", "pytest", "-q", relative, "--junitxml=" + str(artifact)]
@@ -189,7 +189,7 @@ def actual_execution(tmp_path):
         started = datetime.datetime.now(datetime.timezone.utc).isoformat()
         run = common.run_command(command, incoming / "orchestration" / (group + ".txt"), cwd=base,
                                  timeout=15, extra_env={"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"})
-        assert run["exitCode"] == 0, (incoming / "orchestration" / (group + ".txt")).read_text()
+        assert run["exitCode"] == expected_exit, (incoming / "orchestration" / (group + ".txt")).read_text()
         run.update(group=group, id=group)
         files = {relative: hashlib.sha256(source.read_bytes()).hexdigest()}
         if additional: files[additional] = hashlib.sha256((base / additional).read_bytes()).hexdigest()
@@ -202,9 +202,10 @@ def actual_execution(tmp_path):
         (incoming / "orchestration/results.json").write_text(json.dumps(master))
         cases = []
         if group == "python":
-            cases = [{"group": group, "file": relative, "name": name, "status": "passed", "junit": str(artifact)}]
+            cases = [dict(row, group=group, junit=str(artifact))
+                     for row in MODULE._JUNIT.read_cases(artifact, group, relative)]
             (incoming / "python/results.json").write_text(json.dumps({"suites": [{"file": relative,
-                "sourceSha256": files[relative], "junit": "owned.xml", "exitCode": 0,
+                "sourceSha256": files[relative], "junit": "owned.xml", "exitCode": run["exitCode"],
                 "command": __import__("shlex").join(command)}]}))
         elif group == "node":
             (incoming / "node").mkdir()
@@ -217,7 +218,9 @@ def actual_execution(tmp_path):
                 "exitCode": 0, "log": "../orchestration/browser.txt"}}))
         (incoming / "case-results.json").write_text(json.dumps(cases))
         return {"root": base, "incoming": incoming, "current": current, "master": master,
-                "expected": {(group, relative, name)}, "caseFile": relative, "source": source,
+                "expected": ({(group, relative, row["name"]) for row in cases if row["status"] == "passed" and expected_exit == 0}
+                             if group == "python" else {(group, relative, name)}),
+                "caseFile": relative, "source": source,
                 "junit": artifact if group == "python" else None}
     return produce
 
@@ -443,3 +446,54 @@ print('Two actual owned runs completed: passed + ' + second)
     passed, state = collect_actual(proof)
     assert passed == set()
     assert state["rejectedEvidence"]["duplicate-node-file-execution"] == 1
+
+
+@pytest.mark.parametrize("second_status", ["passed", "skipped", "failed"])
+def test_real_python_class_scopes_share_extractor_and_linker_identity(actual_execution, monkeypatch, second_status):
+    """Real pytest classnames separate methods; outcome and producer guards remain."""
+    source = ("import pytest\n"
+              "class TestFirst:\n    def test_same_method(self):\n        assert 2 + 2 == 4\n"
+              "class TestSecond:\n" +
+              ("    @pytest.mark.skip(reason='actual owned skip')\n" if second_status == "skipped" else "") +
+              "    def test_same_method(self):\n        assert 2 + 2 == " + ("5" if second_status == "failed" else "4") + "\n")
+    proof = actual_execution(python_source=source, expected_exit=1 if second_status == "failed" else 0)
+    monkeypatch.syspath_prepend(str(ROOT / "scripts/testing"))
+    spec = importlib.util.spec_from_file_location("scoped_case_summary", ROOT / "scripts/testing/summarize-results.py")
+    summary = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(summary)
+    rows = summary.xml_cases(proof["junit"], "python", proof["caseFile"])
+    assert len(rows) == 2
+    assert {row["rawName"] for row in rows} == {"test_same_method"}
+    assert all(row["suiteNames"] == ["pytest"] for row in rows)
+    by_class = {row["className"].rsplit(".", 1)[1]: row for row in rows}
+    assert set(by_class) == {"TestFirst", "TestSecond"}
+    assert by_class["TestFirst"]["status"] == "passed"
+    assert by_class["TestSecond"]["status"] == second_status
+    assert all(row["name"] == row["className"] + "::test_same_method" for row in rows)
+    passed, state = collect_actual(proof)
+    expected = {("python", proof["caseFile"], row["name"]) for row in rows if row["status"] == "passed"}
+    assert passed == (set() if second_status == "failed" else expected)
+    assert state["sourceInputsMatchCurrent"] is True
+    # Claiming all XML outcomes passed cannot import a failed/skipped class.
+    rewrite_artifact(proof, "case-results.json", lambda cases: [row.update(status="passed") for row in cases] and cases)
+    assert collect_actual(proof)[0] == passed
+
+
+@pytest.mark.parametrize("duplicate_status", ["passed", "failed", "skipped"])
+def test_duplicate_fully_qualified_python_scope_cannot_union_a_pass(actual_execution, duplicate_status):
+    """Disambiguating distinct classes must not disambiguate real duplicates."""
+    import xml.etree.ElementTree as ET
+    source = ("class TestFirst:\n    def test_same_method(self):\n        assert True\n"
+              "class TestSecond:\n    def test_same_method(self):\n        assert True\n")
+    proof = actual_execution(python_source=source)
+    tree = ET.parse(proof["junit"])
+    suite = next(tree.getroot().iter("testsuite"))
+    original = next(suite.iter("testcase"))
+    duplicate = copy.deepcopy(original)
+    if duplicate_status != "passed":
+        ET.SubElement(duplicate, "failure" if duplicate_status == "failed" else "skipped")
+    suite.append(duplicate)
+    tree.write(proof["junit"])
+    passed, state = collect_actual(proof)
+    assert passed == {identity for identity in proof["expected"] if "TestSecond::" in identity[2]}
+    assert state["rejectedEvidence"]["case-not-passed-in-bound-xml"] == 1

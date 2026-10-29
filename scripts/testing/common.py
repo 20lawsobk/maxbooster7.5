@@ -46,7 +46,7 @@ def source_inputs():
     for flags in (("--cached",), ("--others", "--exclude-standard")):
         raw = subprocess.check_output(["git", "ls-files", "-z", *flags], cwd=ROOT)
         paths.update(p for p in raw.decode().split("\0") if p)
-    extensions = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".sh",
+    extensions = {".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".py", ".sh",
                   ".go", ".rs", ".cpp", ".cc", ".h", ".json", ".yaml", ".yml",
                   ".toml", ".nix", ".sql"}
     hashes = {}

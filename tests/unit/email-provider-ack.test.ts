@@ -55,12 +55,12 @@ describe("queued email idempotency retry boundary", () => {
   });
 
   it.each([undefined, "", "  ", "x".repeat(201), "bad\\nkey", "bad\nkey", "bad key"])(
-    "rejects missing, oversized, or unsafe queue IDs",
+    "rejects missing, oversized, or unsafe queue IDs [row %#]",
     id => expect(() => requireRetrySafeEmailJob(id, queuedAt, queuedAt + 1000)).toThrow(/queue ID/),
   );
 
   it.each([undefined, -1, 0, Number.NaN])(
-    "rejects unreliable original enqueue timestamps",
+    "rejects unreliable original enqueue timestamps [row %#]",
     timestamp => expect(() => requireRetrySafeEmailJob("job-123", timestamp, queuedAt + 1000))
       .toThrow(/manual reconciliation/),
   );

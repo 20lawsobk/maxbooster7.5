@@ -12,7 +12,7 @@ describe("paid registration completion boundary", () => {
   });
 
   it.each([{}, { sessionId: 123 }, { sessionId: "pi_123" }])(
-    "rejects invalid verification sessions",
+    "rejects invalid verification sessions [row %#]",
     (body) => {
       expect(normalizeRegistrationVerificationBody(body)).toEqual({
         ok: false,

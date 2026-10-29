@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from "vitest";
 
-import { provisionFixtureEntitlement } from "./helpers-http-fixture";
+import { provisionFixtureEntitlement, withFixtureAccountPolicyState, FIXTURE_ACCOUNT_POLICY_DENIALS } from "./helpers-http-fixture";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 
@@ -307,9 +307,39 @@ describe("File Management (Storage Round-Trip)", () => {
     const savedCsrf = csrfToken;
     authCookies = "";
     csrfToken = "";
-    const r = await apiJson("GET", "/api/storage/quota");
-    expect([401, 403]).toContain(r.status);
-    authCookies = saved;
-    csrfToken = savedCsrf;
+    try {
+      const r = await apiJson("GET", "/api/storage/quota");
+      expect(r.status).toBe(401);
+      // Error-only response must not expose usage, limits, files or user data.
+      expect(r.json).toEqual({ error: "Authentication required" });
+    } finally {
+      authCookies = saved;
+      csrfToken = savedCsrf;
+    }
   });
+
+  for (const denied of FIXTURE_ACCOUNT_POLICY_DENIALS) {
+    it(`access policy: GET /api/storage/quota rejects ${denied.state} session`, async () => {
+      const clientHeaders = { "x-maxbooster-fixture-client": `account-policy-${denied.state}` };
+      // Warm the exact same URL first: a cached success cannot authorize a
+      // later forbidden state. Each request hydrates authoritative user state.
+      expect((await apiJson("GET", "/api/storage/quota", undefined, clientHeaders)).status).toBe(200);
+      const savedCookies = authCookies;
+      const savedCsrf = csrfToken;
+      try {
+        await withFixtureAccountPolicyState(testUser.email, denied.state, async () => {
+          const result = await apiJson("GET", "/api/storage/quota", undefined, clientHeaders);
+          expect(result.status).toBe(denied.status);
+          expect(result.json).toEqual(denied.body);
+        });
+      } finally {
+        // Disabled-session lookup may issue an anonymous cookie; retain the
+        // original session for the SQL-restored account and subsequent cases.
+        authCookies = savedCookies;
+        csrfToken = savedCsrf;
+      }
+      expect((await apiJson("GET", "/api/storage/quota", undefined, clientHeaders)).status).toBe(200);
+    });
+  }
+
 });

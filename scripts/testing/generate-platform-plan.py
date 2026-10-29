@@ -126,7 +126,7 @@ def repository_files(root):
         category = ({".py": "python", ".go": "go", ".rs": "rust", ".cpp": "cpp", ".cc": "cpp", ".c": "native-c",
                      ".h": "native-header", ".hpp": "native-header", ".sql": "database", ".sh": "shell", ".nix": "nix",
                      ".yaml": "configuration", ".yml": "configuration", ".json": "data-configuration-translation",
-                     ".css": "styles", ".html": "markup", ".ts": "typescript", ".tsx": "typescript-ui",
+                     ".css": "styles", ".html": "markup", ".ts": "typescript", ".mts": "typescript", ".cts": "typescript", ".tsx": "typescript-ui",
                      ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript"}.get(suffix, "asset-or-other-source"))
         result.append({"id": stable_id("file", name), "path": name, "kind": kind, "category": category, "sha256": value,
                        "status": "UNVERIFIED", "acceptance": "Review this exact file's callers and input/output contract; implement missing behavior, add appropriate execution/format/configuration checks and link current evidence. Binary assets require decode, integrity, licensing/availability and consumer checks; test count alone is not source coverage."})

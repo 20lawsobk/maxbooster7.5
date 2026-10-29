@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from "vitest";
 import crypto from "crypto";
-import { withFixtureDatabase } from "./helpers-http-fixture";
+import { withFixtureDatabase, withFixtureAccountPolicyState, FIXTURE_ACCOUNT_POLICY_DENIALS } from "./helpers-http-fixture";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:5000";
 const WEBHOOK_PATH = "/api/webhooks/stripe";
@@ -384,16 +384,52 @@ describe("Billing Webhook Lifecycle", () => {
     const saved = authCookies;
     const savedCsrf = csrfToken;
     authCookies = "";
-    const r = await api("GET", "/api/billing/subscription");
-    expect([401, 403]).toContain(r.status);
-    authCookies = saved;
-    csrfToken = savedCsrf;
+    csrfToken = "";
+    try {
+      const r = await api("GET", "/api/billing/subscription");
+      expect(r.status).toBe(401);
+      // Exact error-only response proves no subscription/account fields leak.
+      expect(r.json).toEqual({ error: "Authentication required" });
+    } finally {
+      authCookies = saved;
+      csrfToken = savedCsrf;
+    }
   });
 
+
+  for (const denied of FIXTURE_ACCOUNT_POLICY_DENIALS) {
+    it(`access policy: GET /api/billing/subscription rejects ${denied.state} session`, async () => {
+      const clientHeaders = { "x-maxbooster-fixture-client": `account-policy-${denied.state}` };
+      // Warm the exact same URL first: a cached success cannot authorize a
+      // later forbidden state. Each request hydrates authoritative user state.
+      expect((await api("GET", "/api/billing/subscription", undefined, clientHeaders)).status).toBe(200);
+      const savedCookies = authCookies;
+      const savedCsrf = csrfToken;
+      try {
+        await withFixtureAccountPolicyState(testUser.email, denied.state, async () => {
+          const result = await api("GET", "/api/billing/subscription", undefined, clientHeaders);
+          expect(result.status).toBe(denied.status);
+          expect(result.json).toEqual(denied.body);
+        });
+      } finally {
+        // Disabled-session lookup may issue an anonymous cookie; retain the
+        // original session for the SQL-restored account and subsequent cases.
+        authCookies = savedCookies;
+        csrfToken = savedCsrf;
+      }
+      expect((await api("GET", "/api/billing/subscription", undefined, clientHeaders)).status).toBe(200);
+    });
+  }
+
   it("11. GET /api/billing/plans returns a non-empty plan list without auth", async () => {
-    const r = await api("GET", "/api/billing/plans");
-    expect(r.status).toBe(200);
-    const body = r.json as Record<string, unknown>;
+    // A direct request carries no session, authorization or inherited cookie jar.
+    const response = await fetch(`${BASE}/api/billing/plans`, {
+      signal: AbortSignal.timeout(15000),
+      redirect: "manual",
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    const body = await response.json() as Record<string, unknown>;
     expect(Array.isArray(body.plans)).toBe(true);
     const plans = body.plans as Array<Record<string, unknown>>;
     expect(plans.length).toBeGreaterThan(0);

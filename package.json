@@ -67,6 +67,7 @@
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "test:all": "python3 scripts/testing/run-all.py",
     "test:master": "python3 scripts/testing/run-all.py",
+    "test:progress": "python3 scripts/testing/report-progress.py --output reports/progress/current",
     "test:platform:coverage": "vitest run --config vitest.platform.config.ts",
     "test:platform:register": "python3 scripts/testing/platform-register.py --strict",
     "test:remediation": "python3 scripts/testing/remediation.py --strict",

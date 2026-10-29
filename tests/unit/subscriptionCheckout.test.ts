@@ -56,7 +56,7 @@ describe("subscription checkout lifecycle", () => {
     { clientSecret: null },
     { clientSecret: 123 },
     { clientSecret: "   " },
-  ])("rejects checkout objects without a usable client secret", (payload) => {
+  ])("rejects checkout objects without a usable client secret [row %#]", (payload) => {
     expect(parseSubscriptionSetupPayload(payload)).toEqual({
       ok: false,
       error: {
@@ -69,7 +69,7 @@ describe("subscription checkout lifecycle", () => {
   });
 
   it.each([null, undefined, [], "not-json-object"])(
-    "maps non-object malformed payloads to a retryable checkout error",
+    "maps non-object malformed payloads to a retryable checkout error [row %#]",
     (payload) => {
       expect(parseSubscriptionSetupPayload(payload)).toEqual({
         ok: false,

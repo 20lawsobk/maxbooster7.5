@@ -7,11 +7,11 @@ describe("new password bcrypt boundary", () => {
   it.each([null, undefined, {}, 123, "", "short"])("rejects invalid input %j", value => {
     expect(getNewPasswordError(value)).toBeTypeOf("string");
   });
-  it.each(["a".repeat(72), "é".repeat(36), "😀".repeat(18)])("accepts exactly 72 UTF-8 bytes", value => {
+  it.each(["a".repeat(72), "é".repeat(36), "😀".repeat(18)])("accepts exactly 72 UTF-8 bytes [row %#]", value => {
     expect(getNewPasswordError(value)).toBeUndefined();
     expect(() => validateRegistrationPassword(value, value)).not.toThrow();
   });
-  it.each(["a".repeat(73), "é".repeat(37), "😀".repeat(19)])("rejects input beyond 72 UTF-8 bytes", value => {
+  it.each(["a".repeat(73), "é".repeat(37), "😀".repeat(19)])("rejects input beyond 72 UTF-8 bytes [row %#]", value => {
     expect(getNewPasswordError(value)).toContain("72 UTF-8 bytes");
     expect(() => validateRegistrationPassword(value, value)).toThrow("72 UTF-8 bytes");
   });

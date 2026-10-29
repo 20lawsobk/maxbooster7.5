@@ -97,7 +97,7 @@ describe("frontend batch Response contracts", () => {
   });
 
   it.each(["batch action", "batch actions", "bulk action"])(
-    "rejects malformed batch JSON instead of synthesizing successful IDs",
+    "rejects malformed batch JSON instead of synthesizing successful IDs [row %#]",
     async (parserName) => {
       const parse = {
         "batch action": parseBatchResultResponse,

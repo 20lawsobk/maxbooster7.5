@@ -416,7 +416,9 @@ def make_report(register, plan, freshness, proofs=None, invalid=None):
             "verifiedSectionDimensionSteps": sum(bool(proofs.get(f"{page['id']}/{section['id']}/{name}")) and fresh
                 for section in sections for name in ("frontendWork", "backendWork", "validationPermissionsSecurity", "durableProviderGenerationJourneys", "failureAccessibilityMobileI18nPerformance", "evidenceNeeded")),
             "blockers": (["Current-source evidence is stale"] if not fresh else []) +
-                        [f"{len(checks) - len(passed)} exact registered checks remain unverified", f"{len(criterion_rows) - sum(r['status'] == 'PASS' for r in criterion_rows)} launch criteria remain unverified"] +
+                        ([f"{len(checks) - len(passed)} exact registered checks remain unverified"] if len(checks) > len(passed) else []) +
+                        ([f"{len(criterion_rows) - sum(r['status'] == 'PASS' for r in criterion_rows)} launch criteria remain unverified"]
+                         if any(r['status'] != 'PASS' for r in criterion_rows) else []) +
                         ([f"{unresolved} frontend API candidates need binding resolution"] if unresolved else []),
             "requiredActions": [business.get("routeSpecificWork"), business.get("businessJourneyWork"),
                                 "Execute every business section and all six dimensions; then every explicit pass/fail criterion retained in this row.",
