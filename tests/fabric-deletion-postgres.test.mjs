@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, symlink, rm } from "node:fs/promises";
+import { mkdtemp, symlink, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,8 @@ test("real SQL deletion journals survive node/commit failures and fence concurre
       CREATE TABLE fabric_storage_nodes (id text PRIMARY KEY, used_bytes bigint NOT NULL);
       CREATE TABLE fabric_segments (object_id text NOT NULL);
     `);
+    // Production workers require the pre-applied migration; never bootstrap DDL.
+    await database.pool.query(await readFile(new URL("../migrations/0096_fabric_deletion_journals.sql", import.meta.url), "utf8"));
     await symlink(path.join(root, "node_modules"), path.join(scratch, "node_modules"), "dir");
     const contents = `
       import assert from 'node:assert/strict';
@@ -29,7 +31,7 @@ test("real SQL deletion journals survive node/commit failures and fence concurre
       const outbox = new DeletionOutbox();
       const query = (text) => pool.query(text);
       async function seed(refs=1) {
-        await query('TRUNCATE fabric_objects,fabric_chunks,fabric_storage_nodes,fabric_segments,fabric_deletion_objects,fabric_deletion_chunks');
+        await query('TRUNCATE fabric_object_dependencies,fabric_objects,fabric_chunks,fabric_storage_nodes,fabric_segments,fabric_deletion_objects,fabric_deletion_chunks');
         await query(\`INSERT INTO fabric_objects VALUES ('object','["chunk"]');
           INSERT INTO fabric_chunks VALUES ('chunk',\${refs},'["a","b"]',10);
           INSERT INTO fabric_storage_nodes VALUES ('a',10),('b',10);\`);
