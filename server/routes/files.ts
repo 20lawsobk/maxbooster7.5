@@ -5,7 +5,6 @@ import { eq, and, desc, sql, isNull, isNotNull } from "drizzle-orm";
 import { storageService } from "../services/storageService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { requireAuthOnly } from "../middleware/auth.js";
-import crypto from "crypto";
 import { logger } from "../logger.js";
 import {
   requireUUIDParam,
@@ -13,27 +12,6 @@ import {
 } from "../middleware/requestValidation.js";
 
 const PERMANENT_DELETE_DAYS = 30;
-
-const transcodeJobs = new Map<
-  string,
-  { startedAt: number; estimatedDurationMs: number; userId: string }
->();
-
-// Evict transcode jobs whose clients never polled for completion.
-// Grace window = max(3× the job's estimated duration, 10 min).
-const TRANSCODE_MIN_TTL_MS = 10 * 60 * 1000;
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [jobId, job] of transcodeJobs) {
-      const ttl = Math.max(job.estimatedDurationMs * 3, TRANSCODE_MIN_TTL_MS);
-      if (now - job.startedAt > ttl) {
-        transcodeJobs.delete(jobId);
-      }
-    }
-  },
-  5 * 60 * 1000,
-);
 
 const router = Router();
 
@@ -1153,7 +1131,6 @@ router.post(
       }
 
       const { id } = req.params as Record<string, string>;
-      const { targetFormat = "mp3", quality = "high" } = req.body;
 
       const [file] = await db
         .select()
@@ -1174,28 +1151,13 @@ router.post(
         });
       }
 
-      const jobId = crypto?.randomUUID();
-      const fileSizeMB = (file?.sizeBytes || 0) / (1024 * 1024);
-      const estimatedDurationMs = Math.max(5000, Math.ceil(fileSizeMB * 2000));
-
-      transcodeJobs?.set(jobId, {
-        startedAt: Date.now(),
-        estimatedDurationMs,
-        userId: req.user!.id,
-      });
-
-      return res.json({
-        success: true,
-        outcome: "transcoding_started",
-        jobId,
-        file: {
-          id: file.id,
-          name: file.fileName,
-          originalFormat: file.mimeType,
-        },
-        targetFormat,
-        quality,
-        estimatedTime: Math.ceil(estimatedDurationMs / 1000),
+      // No transcoder or durable result store is connected to this route.
+      // An in-memory timer must never be represented as actual media work.
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.status(503).json({
+        success: false,
+        error: "File transcoding is unavailable; no job was started",
+        outcome: "transcode_unavailable",
       });
     } catch (error) {
       logger.warn({ err: error }, "Transcode error:");
@@ -1217,45 +1179,13 @@ router.get(
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const jobId = (req.params.jobId as string);
-      const tracked = transcodeJobs?.get(jobId);
-
-      if (!tracked) {
-        return res.json({
-          success: true,
-          jobId,
-          status: "complete",
-          progress: 100,
-          outcome: "transcode_complete",
-        });
-      }
-
-      if (tracked?.userId !== req.user!.id) {
-        return res.status(404).json({ error: "Job not found" });
-      }
-
-      const elapsedMs = Date?.now() - tracked?.startedAt;
-      const estimatedDurationMs = tracked?.estimatedDurationMs || 30000;
-      const progress = Math.min(
-        100,
-        Math.floor((elapsedMs / estimatedDurationMs) * 100),
-      );
-      const status =
-        progress >= 100 ? "complete" : progress > 0 ? "processing" : "queued";
-
-      if (progress >= 100) {
-        transcodeJobs?.delete(jobId);
-      }
-
-      return res.json({
-        success: true,
-        jobId,
-        status,
-        progress,
-        outcome:
-          status === "complete"
-            ? "transcode_complete"
-            : "transcode_in_progress",
+      // There is no persistent transcoding worker or result repository.
+      // Unknown, evicted and invented IDs must never be reported complete.
+      res.setHeader("Cache-Control", "private, no-store");
+      return res.status(404).json({
+        success: false,
+        error: "Transcode job not found",
+        outcome: "not_found",
       });
     } catch (error) {
       logger.warn({ err: error }, "Transcode status error:");
